@@ -70,7 +70,7 @@ static class Benchmarks
         using var snapshot = system.GetSnapshot();
         using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, system.GenesisBlock, protocol, tx.SystemFee);
         engine.LoadScript(tx.Script);
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
         engine.Execute();
         stopwatch.Stop();
         Debug.Assert(engine.State == VMState.FAULT);

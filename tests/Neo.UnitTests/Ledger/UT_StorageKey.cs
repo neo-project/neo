@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Id_Set()
         {
-            int val = 1;
+            var val = 1;
             StorageKey uut = new() { Id = val };
             uut.Id.Should().Be(val);
         }
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Key_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32 };
+            var val = new byte[] { 0x42, 0x32 };
             StorageKey uut = new() { Key = val };
             uut.Key.Length.Should().Be(2);
             uut.Key.Span[0].Should().Be(val[0]);
@@ -60,9 +60,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_SameKey()
         {
-            int val = 0x42000000;
-            byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
-            StorageKey newSk = new StorageKey
+            var val = 0x42000000;
+            var keyVal = TestUtils.GetByteArray(10, 0x42);
+            var newSk = new StorageKey
             {
                 Id = val,
                 Key = keyVal
@@ -74,9 +74,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_DiffHash_SameKey()
         {
-            int val = 0x42000000;
-            byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
-            StorageKey newSk = new StorageKey
+            var val = 0x42000000;
+            var keyVal = TestUtils.GetByteArray(10, 0x42);
+            var newSk = new StorageKey
             {
                 Id = val,
                 Key = keyVal
@@ -88,9 +88,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals_SameHash_DiffKey()
         {
-            int val = 0x42000000;
-            byte[] keyVal = TestUtils.GetByteArray(10, 0x42);
-            StorageKey newSk = new StorageKey
+            var val = 0x42000000;
+            var keyVal = TestUtils.GetByteArray(10, 0x42);
+            var newSk = new StorageKey
             {
                 Id = val,
                 Key = keyVal

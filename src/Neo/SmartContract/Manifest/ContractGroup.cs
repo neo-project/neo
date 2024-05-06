@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Manifest
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             PubKey = ECPoint.DecodePoint(@struct[0].GetSpan(), ECCurve.Secp256r1);
             Signature = @struct[1].GetSpan().ToArray();
         }

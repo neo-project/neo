@@ -103,7 +103,7 @@ public abstract class JToken
     /// <exception cref="OverflowException">The JSON token cannot be converted to a 32-bit signed integer.</exception>
     public int GetInt32()
     {
-        double d = GetNumber();
+        var d = GetNumber();
         if (d % 1 != 0) throw new InvalidCastException();
         return checked((int)d);
     }
@@ -138,7 +138,7 @@ public abstract class JToken
         });
         try
         {
-            JToken? json = Read(ref reader);
+            var json = Read(ref reader);
             if (reader.Read()) throw new FormatException();
             return json;
         }
@@ -202,9 +202,9 @@ public abstract class JToken
                 case JsonTokenType.EndObject:
                     return obj;
                 case JsonTokenType.PropertyName:
-                    string name = ReadString(ref reader);
+                    var name = ReadString(ref reader);
                     if (obj.Properties.ContainsKey(name)) throw new FormatException();
-                    JToken? value = Read(ref reader);
+                    var value = Read(ref reader);
                     obj.Properties.Add(name, value);
                     break;
                 default:
@@ -272,7 +272,7 @@ public abstract class JToken
         JToken?[] objects = { this };
         if (expr.Length == 0) return objects;
         Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
-        JPathToken first = tokens.Dequeue();
+        var first = tokens.Dequeue();
         if (first.Type != JPathTokenType.Root) throw new FormatException();
         JPathToken.ProcessJsonPath(ref objects, tokens);
         return objects;

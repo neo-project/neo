@@ -49,7 +49,7 @@ namespace Neo.SmartContract
         /// <returns>The created search prefix.</returns>
         public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
         {
-            byte[] buffer = new byte[sizeof(int) + prefix.Length];
+            var buffer = new byte[sizeof(int) + prefix.Length];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
             prefix.CopyTo(buffer.AsSpan(sizeof(int)));
             return buffer;

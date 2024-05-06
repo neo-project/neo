@@ -106,7 +106,7 @@ namespace Neo.SmartContract
                 throw new ArgumentException();
             using ScriptBuilder sb = new();
             sb.EmitPush(m);
-            foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
+            foreach (var publicKey in publicKeys.OrderBy(p => p))
             {
                 sb.EmitPush(publicKey.EncodePoint(true));
             }

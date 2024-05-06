@@ -37,7 +37,7 @@ namespace Neo.GUI
 
         public KeyPair GetKey()
         {
-            HashSet<ECPoint> hashSet = new HashSet<ECPoint>(publicKeys);
+            var hashSet = new HashSet<ECPoint>(publicKeys);
             return Service.CurrentWallet.GetAccounts().FirstOrDefault(p => p.HasKey && hashSet.Contains(p.GetKey().PublicKey))?.GetKey();
         }
 

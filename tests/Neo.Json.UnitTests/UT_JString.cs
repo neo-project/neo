@@ -17,8 +17,8 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestConstructor()
         {
-            string s = "hello world";
-            JString jstring = new JString(s);
+            var s = "hello world";
+            var jstring = new JString(s);
             Assert.AreEqual(s, jstring.Value);
             Assert.ThrowsException<ArgumentNullException>(() => new JString(null));
         }
@@ -26,10 +26,10 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAsBoolean()
         {
-            string s1 = "hello world";
-            string s2 = "";
-            JString jstring1 = new JString(s1);
-            JString jstring2 = new JString(s2);
+            var s1 = "hello world";
+            var s2 = "";
+            var jstring1 = new JString(s1);
+            var jstring2 = new JString(s2);
             Assert.AreEqual(true, jstring1.AsBoolean());
             Assert.AreEqual(false, jstring2.AsBoolean());
         }
@@ -37,12 +37,12 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAsNumber()
         {
-            string s1 = "hello world";
-            string s2 = "123";
-            string s3 = "";
-            JString jstring1 = new JString(s1);
-            JString jstring2 = new JString(s2);
-            JString jstring3 = new JString(s3);
+            var s1 = "hello world";
+            var s2 = "123";
+            var s3 = "";
+            var jstring1 = new JString(s1);
+            var jstring2 = new JString(s2);
+            var jstring3 = new JString(s3);
             Assert.AreEqual(double.NaN, jstring1.AsNumber());
             Assert.AreEqual(123, jstring2.AsNumber());
             Assert.AreEqual(0, jstring3.AsNumber());
@@ -52,7 +52,7 @@ namespace Neo.Json.UnitTests
         public void TestGetEnum()
         {
             JString s = "James";
-            Woo woo = s.GetEnum<Woo>();
+            var woo = s.GetEnum<Woo>();
             Assert.AreEqual(Woo.James, woo);
 
             s = "";

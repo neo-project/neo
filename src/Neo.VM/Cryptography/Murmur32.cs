@@ -47,11 +47,11 @@ namespace Neo.VM.Cryptography
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
             length += cbSize;
-            int remainder = cbSize & 3;
-            int alignedLength = ibStart + (cbSize - remainder);
-            for (int i = ibStart; i < alignedLength; i += 4)
+            var remainder = cbSize & 3;
+            var alignedLength = ibStart + (cbSize - remainder);
+            for (var i = ibStart; i < alignedLength; i += 4)
             {
-                uint k = BinaryPrimitives.ReadUInt32LittleEndian(array.AsSpan(i));
+                var k = BinaryPrimitives.ReadUInt32LittleEndian(array.AsSpan(i));
                 k *= c1;
                 k = BitOperations.RotateLeft(k, r1);
                 k *= c2;
@@ -84,7 +84,7 @@ namespace Neo.VM.Cryptography
             hash *= 0xc2b2ae35;
             hash ^= hash >> 16;
 
-            byte[] buffer = new byte[sizeof(uint)];
+            var buffer = new byte[sizeof(uint)];
             BinaryPrimitives.WriteUInt32LittleEndian(buffer, hash);
             return buffer;
         }

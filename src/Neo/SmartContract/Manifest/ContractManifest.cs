@@ -70,7 +70,7 @@ namespace Neo.SmartContract.Manifest
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Name = @struct[0].GetString();
             Groups = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>()).ToArray();
             if (((Map)@struct[2]).Count != 0)

@@ -33,7 +33,7 @@ namespace Neo.CLI
         {
             var testGas = NativeContract.NEO.GetRegisterPrice(NeoSystem.StoreView) + (BigInteger)Math.Pow(10, NativeContract.GAS.Decimals) * 10;
             if (NoWallet()) return;
-            WalletAccount currentAccount = CurrentWallet!.GetAccount(account);
+            var currentAccount = CurrentWallet!.GetAccount(account);
 
             if (currentAccount == null)
             {
@@ -49,7 +49,7 @@ namespace Neo.CLI
                 }
             }
 
-            ECPoint? publicKey = currentAccount.GetKey()?.PublicKey;
+            var publicKey = currentAccount.GetKey()?.PublicKey;
             byte[] script;
             using (ScriptBuilder scriptBuilder = new())
             {
@@ -68,7 +68,7 @@ namespace Neo.CLI
         private void OnUnregisterCandidateCommand(UInt160 account)
         {
             if (NoWallet()) return;
-            WalletAccount currentAccount = CurrentWallet!.GetAccount(account);
+            var currentAccount = CurrentWallet!.GetAccount(account);
 
             if (currentAccount == null)
             {
@@ -84,7 +84,7 @@ namespace Neo.CLI
                 }
             }
 
-            ECPoint? publicKey = currentAccount?.GetKey()?.PublicKey;
+            var publicKey = currentAccount?.GetKey()?.PublicKey;
             byte[] script;
             using (ScriptBuilder scriptBuilder = new())
             {
@@ -138,7 +138,7 @@ namespace Neo.CLI
         [ConsoleCommand("get candidates", Category = "Vote Commands")]
         private void OnGetCandidatesCommand()
         {
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCandidates", out StackItem result, null, null, false)) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCandidates", out var result, null, null, false)) return;
 
             var resJArray = (VM.Types.Array)result;
 
@@ -164,7 +164,7 @@ namespace Neo.CLI
         [ConsoleCommand("get committee", Category = "Vote Commands")]
         private void OnGetCommitteeCommand()
         {
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCommittee", out StackItem result, null, null, false)) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCommittee", out var result, null, null, false)) return;
 
             var resJArray = (VM.Types.Array)result;
 
@@ -186,7 +186,7 @@ namespace Neo.CLI
         [ConsoleCommand("get next validators", Category = "Vote Commands")]
         private void OnGetNextBlockValidatorsCommand()
         {
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getNextBlockValidators", out StackItem result, null, null, false)) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getNextBlockValidators", out var result, null, null, false)) return;
 
             var resJArray = (VM.Types.Array)result;
 
@@ -208,14 +208,14 @@ namespace Neo.CLI
         [ConsoleCommand("get accountstate", Category = "Vote Commands")]
         private void OnGetAccountState(UInt160 address)
         {
-            string notice = "No vote record!";
+            var notice = "No vote record!";
             var arg = new JObject
             {
                 ["type"] = "Hash160",
                 ["value"] = address.ToString()
             };
 
-            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getAccountState", out StackItem result, null, new JArray(arg))) return;
+            if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getAccountState", out var result, null, new JArray(arg))) return;
             Console.WriteLine();
             if (result.IsNull)
             {
@@ -229,7 +229,7 @@ namespace Neo.CLI
                 return;
             }
 
-            foreach (StackItem value in resJArray)
+            foreach (var value in resJArray)
             {
                 if (value.IsNull)
                 {

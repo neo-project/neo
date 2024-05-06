@@ -53,11 +53,11 @@ public readonly struct G2Affine : IEquatable<G2Affine>
 
     public G2Affine(in G2Projective p)
     {
-        bool s = p.Z.TryInvert(out Fp2 zinv);
+        var s = p.Z.TryInvert(out var zinv);
 
         zinv = ConditionalSelect(in Fp2.Zero, in zinv, s);
-        Fp2 x = p.X * zinv;
-        Fp2 y = p.Y * zinv;
+        var x = p.X * zinv;
+        var y = p.Y * zinv;
 
         G2Affine tmp = new(in x, in y, false);
         this = ConditionalSelect(in tmp, in Identity, !s);
@@ -164,9 +164,9 @@ public readonly struct G2Affine : IEquatable<G2Affine>
     private static G2Affine FromBytes(ReadOnlySpan<byte> bytes, bool compressed, bool check)
     {
         // Obtain the three flags from the start of the byte sequence
-        bool compression_flag_set = (bytes[0] & 0x80) != 0;
-        bool infinity_flag_set = (bytes[0] & 0x40) != 0;
-        bool sort_flag_set = (bytes[0] & 0x20) != 0;
+        var compression_flag_set = (bytes[0] & 0x80) != 0;
+        var infinity_flag_set = (bytes[0] & 0x40) != 0;
+        var sort_flag_set = (bytes[0] & 0x20) != 0;
 
         // Attempt to obtain the x-coordinate
         var tmp = bytes[0..48].ToArray();
@@ -184,7 +184,7 @@ public readonly struct G2Affine : IEquatable<G2Affine>
             result = ConditionalSelect(in result, in Identity, infinity_flag_set);
             if (check)
             {
-                bool _checked = (!infinity_flag_set | (infinity_flag_set & !sort_flag_set & x.IsZero))
+                var _checked = (!infinity_flag_set | (infinity_flag_set & !sort_flag_set & x.IsZero))
                     & compression_flag_set;
                 _checked &= result.IsTorsionFree;
                 if (!_checked) throw new FormatException();
@@ -203,7 +203,7 @@ public readonly struct G2Affine : IEquatable<G2Affine>
 
             if (check)
             {
-                bool _checked =
+                var _checked =
                     // If the infinity flag is set, the x and y coordinates should have been zero.
                     ((!infinity_flag_set) | (infinity_flag_set & x.IsZero & y.IsZero)) &
                     // The compression flag should not have been set, as this is an uncompressed element

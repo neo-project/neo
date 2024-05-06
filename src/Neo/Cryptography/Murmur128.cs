@@ -54,13 +54,13 @@ namespace Neo.Cryptography
 
         protected override void HashCore(ReadOnlySpan<byte> source)
         {
-            int cbSize = source.Length;
+            var cbSize = source.Length;
             length += cbSize;
-            int remainder = cbSize & 15;
-            int alignedLength = cbSize - remainder;
-            for (int i = 0; i < alignedLength; i += 16)
+            var remainder = cbSize & 15;
+            var alignedLength = cbSize - remainder;
+            for (var i = 0; i < alignedLength; i += 16)
             {
-                ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source[i..]);
+                var k1 = BinaryPrimitives.ReadUInt64LittleEndian(source[i..]);
                 k1 *= c1;
                 k1 = Helper.RotateLeft(k1, r1);
                 k1 *= c2;
@@ -69,7 +69,7 @@ namespace Neo.Cryptography
                 H1 += H2;
                 H1 = H1 * m + n1;
 
-                ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[(i + 8)..]);
+                var k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[(i + 8)..]);
                 k2 *= c2;
                 k2 = Helper.RotateLeft(k2, r2);
                 k2 *= c1;
@@ -108,14 +108,14 @@ namespace Neo.Cryptography
 
         protected override byte[] HashFinal()
         {
-            byte[] buffer = new byte[sizeof(ulong) * 2];
+            var buffer = new byte[sizeof(ulong) * 2];
             TryHashFinal(buffer, out _);
             return buffer;
         }
 
         protected override bool TryHashFinal(Span<byte> destination, out int bytesWritten)
         {
-            ulong len = (ulong)length;
+            var len = (ulong)length;
             H1 ^= len; H2 ^= len;
 
             H1 += H2;

@@ -55,14 +55,14 @@ namespace Neo.Test.Converters
 
                             if (Enum.IsDefined(typeof(OpCode), value) && Enum.TryParse<OpCode>(value, out var opCode))
                             {
-                                for (int x = 0; x < mul; x++)
+                                for (var x = 0; x < mul; x++)
                                 {
                                     script.Emit(opCode);
                                 }
                             }
                             else
                             {
-                                for (int x = 0; x < mul; x++)
+                                for (var x = 0; x < mul; x++)
                                 {
                                     Assert.IsTrue(value.StartsWith("0x"), $"'0x' prefix required for value: '{value}'");
                                     script.EmitRaw(value.FromHexString());
@@ -81,7 +81,7 @@ namespace Neo.Test.Converters
         {
             if (value is byte[] data)
             {
-                int ip = 0;
+                var ip = 0;
                 var array = new JArray();
 
                 try

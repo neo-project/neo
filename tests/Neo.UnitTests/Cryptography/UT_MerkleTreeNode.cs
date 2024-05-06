@@ -33,7 +33,7 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestConstructor()
         {
-            byte[] byteArray = Encoding.ASCII.GetBytes("hello world");
+            var byteArray = Encoding.ASCII.GetBytes("hello world");
             var hash = new UInt256(Crypto.Hash256(byteArray));
             node.Hash = hash;
 
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.Cryptography
         {
             node.IsLeaf.Should().BeTrue();
 
-            MerkleTreeNode child = new MerkleTreeNode();
+            var child = new MerkleTreeNode();
             node.LeftChild = child;
             node.IsLeaf.Should().BeFalse();
         }

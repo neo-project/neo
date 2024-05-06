@@ -42,7 +42,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override JObject ToJson()
         {
-            JObject json = base.ToJson();
+            var json = base.ToJson();
             json["hash"] = Hash.ToString();
             return json;
         }

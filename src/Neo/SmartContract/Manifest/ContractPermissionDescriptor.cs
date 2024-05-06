@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The converted permission descriptor.</returns>
         public static ContractPermissionDescriptor FromJson(JString json)
         {
-            string str = json.GetString();
+            var str = json.GetString();
             if (str.Length == 42)
                 return Create(UInt160.Parse(str));
             if (str.Length == 66)

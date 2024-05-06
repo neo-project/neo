@@ -82,10 +82,10 @@ namespace Neo.SmartContract
         public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, ReferenceCounter referenceCounter = null)
         {
             Stack<StackItem> deserialized = new();
-            int undeserialized = 1;
+            var undeserialized = 1;
             while (undeserialized-- > 0)
             {
-                StackItemType type = (StackItemType)reader.ReadByte();
+                var type = (StackItemType)reader.ReadByte();
                 switch (type)
                 {
                     case StackItemType.Any:
@@ -101,20 +101,20 @@ namespace Neo.SmartContract
                         deserialized.Push(reader.ReadVarMemory((int)maxSize));
                         break;
                     case StackItemType.Buffer:
-                        ReadOnlyMemory<byte> memory = reader.ReadVarMemory((int)maxSize);
+                        var memory = reader.ReadVarMemory((int)maxSize);
                         deserialized.Push(new Buffer(memory.Span));
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:
                         {
-                            int count = (int)reader.ReadVarInt(maxItems);
+                            var count = (int)reader.ReadVarInt(maxItems);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count;
                         }
                         break;
                     case StackItemType.Map:
                         {
-                            int count = (int)reader.ReadVarInt(maxItems);
+                            var count = (int)reader.ReadVarInt(maxItems);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count * 2;
                         }
@@ -128,29 +128,29 @@ namespace Neo.SmartContract
             Stack<StackItem> stack_temp = new();
             while (deserialized.Count > 0)
             {
-                StackItem item = deserialized.Pop();
+                var item = deserialized.Pop();
                 if (item is ContainerPlaceholder placeholder)
                 {
                     switch (placeholder.Type)
                     {
                         case StackItemType.Array:
                             Array array = new(referenceCounter);
-                            for (int i = 0; i < placeholder.ElementCount; i++)
+                            for (var i = 0; i < placeholder.ElementCount; i++)
                                 array.Add(stack_temp.Pop());
                             item = array;
                             break;
                         case StackItemType.Struct:
                             Struct @struct = new(referenceCounter);
-                            for (int i = 0; i < placeholder.ElementCount; i++)
+                            for (var i = 0; i < placeholder.ElementCount; i++)
                                 @struct.Add(stack_temp.Pop());
                             item = @struct;
                             break;
                         case StackItemType.Map:
                             Map map = new(referenceCounter);
-                            for (int i = 0; i < placeholder.ElementCount; i++)
+                            for (var i = 0; i < placeholder.ElementCount; i++)
                             {
-                                StackItem key = stack_temp.Pop();
-                                StackItem value = stack_temp.Pop();
+                                var key = stack_temp.Pop();
+                                var value = stack_temp.Pop();
                                 map[(PrimitiveType)key] = value;
                             }
                             item = map;
@@ -223,7 +223,7 @@ namespace Neo.SmartContract
                         if (!serialized.Add(array))
                             throw new NotSupportedException();
                         writer.WriteVarInt(array.Count);
-                        for (int i = array.Count - 1; i >= 0; i--)
+                        for (var i = array.Count - 1; i >= 0; i--)
                             unserialized.Push(array[i]);
                         break;
                     case Map map:

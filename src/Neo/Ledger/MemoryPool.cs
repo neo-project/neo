@@ -162,7 +162,7 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                bool ret = _unsortedTransactions.TryGetValue(hash, out PoolItem item)
+                var ret = _unsortedTransactions.TryGetValue(hash, out var item)
                            || _unverifiedTransactions.TryGetValue(hash, out item);
                 tx = ret ? item.Tx : null;
                 return ret;
@@ -250,10 +250,10 @@ namespace Neo.Ledger
         private static PoolItem GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
             SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem> sortedPool)
         {
-            PoolItem minItem = unverifiedTxSorted.Min;
+            var minItem = unverifiedTxSorted.Min;
             sortedPool = minItem != null ? unverifiedTxSorted : null;
 
-            PoolItem verifiedMin = verifiedTxSorted.Min;
+            var verifiedMin = verifiedTxSorted.Min;
             if (verifiedMin == null) return minItem;
 
             if (minItem != null && verifiedMin.CompareTo(minItem) >= 0)
@@ -299,8 +299,8 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                if (!CheckConflicts(tx, out List<PoolItem> conflictsToBeRemoved)) return VerifyResult.HasConflicts;
-                VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx));
+                if (!CheckConflicts(tx, out var conflictsToBeRemoved)) return VerifyResult.HasConflicts;
+                var result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx));
                 if (result != VerifyResult.Succeed) return result;
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
@@ -368,7 +368,7 @@ namespace Neo.Ledger
             // Step 2: check if unsorted transactions were in `tx`'s Conflicts attributes.
             foreach (var hash in tx.GetAttributes<Conflicts>().Select(p => p.Hash))
             {
-                if (_unsortedTransactions.TryGetValue(hash, out PoolItem unsortedTx))
+                if (_unsortedTransactions.TryGetValue(hash, out var unsortedTx))
                 {
                     if (!tx.Signers.Select(p => p.Account).Intersect(unsortedTx.Tx.Signers.Select(p => p.Account)).Any()) return false;
                     conflictsFeeSum += unsortedTx.Tx.NetworkFee;
@@ -390,7 +390,7 @@ namespace Neo.Ledger
             List<Transaction> removedTransactions = new();
             do
             {
-                PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
+                var minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
 
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
@@ -425,7 +425,7 @@ namespace Neo.Ledger
         {
             foreach (var h in item.Tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
             {
-                if (_conflicts.TryGetValue(h, out HashSet<UInt256> conflicts))
+                if (_conflicts.TryGetValue(h, out var conflicts))
                 {
                     conflicts.Remove(item.Tx.Hash);
                     if (conflicts.Count() == 0)
@@ -450,7 +450,7 @@ namespace Neo.Ledger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void InvalidateVerifiedTransactions()
         {
-            foreach (PoolItem item in _sortedTransactions)
+            foreach (var item in _sortedTransactions)
             {
                 if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
                     _unverifiedSortedTransactions.Add(item);
@@ -470,10 +470,10 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                Dictionary<UInt256, List<UInt160>> conflicts = new Dictionary<UInt256, List<UInt160>>();
+                var conflicts = new Dictionary<UInt256, List<UInt160>>();
                 // First remove the transactions verified in the block.
                 // No need to modify VerificationContext as it will be reset afterwards.
-                foreach (Transaction tx in block.Transactions)
+                foreach (var tx in block.Transactions)
                 {
                     if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
                     var conflictingSigners = tx.Signers.Select(s => s.Account);
@@ -546,7 +546,7 @@ namespace Neo.Ledger
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
             SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, DataCache snapshot)
         {
-            DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
+            var reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new(count);
             List<PoolItem> invalidItems = new();
 
@@ -554,9 +554,9 @@ namespace Neo.Ledger
             try
             {
                 // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
-                foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
+                foreach (var item in unverifiedSortedTxPool.Reverse().Take(count))
                 {
-                    if (CheckConflicts(item.Tx, out List<PoolItem> conflictsToBeRemoved) &&
+                    if (CheckConflicts(item.Tx, out var conflictsToBeRemoved) &&
                         item.Tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx)) == VerifyResult.Succeed)
                     {
                         reverifiedItems.Add(item);
@@ -588,13 +588,13 @@ namespace Neo.Ledger
                     if (TimeProvider.Current.UtcNow > reverifyCutOffTimeStamp) break;
                 }
 
-                int blocksTillRebroadcast = BlocksTillRebroadcast;
+                var blocksTillRebroadcast = BlocksTillRebroadcast;
                 // Increases, proportionally, blocksTillRebroadcast if mempool has more items than threshold bigger RebroadcastMultiplierThreshold
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
                 var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.Settings.MillisecondsPerBlock * blocksTillRebroadcast);
-                foreach (PoolItem item in reverifiedItems)
+                foreach (var item in reverifiedItems)
                 {
                     if (_unsortedTransactions.ContainsKey(item.Tx.Hash))
                     {
@@ -609,7 +609,7 @@ namespace Neo.Ledger
                     unverifiedSortedTxPool.Remove(item);
                 }
 
-                foreach (PoolItem item in invalidItems)
+                foreach (var item in invalidItems)
                 {
                     _unverifiedTransactions.Remove(item.Tx.Hash);
                     unverifiedSortedTxPool.Remove(item);
@@ -646,7 +646,7 @@ namespace Neo.Ledger
 
             if (_unverifiedSortedTransactions.Count > 0)
             {
-                int verifyCount = _sortedTransactions.Count > _system.Settings.MaxTransactionsPerBlock ? 1 : maxToVerify;
+                var verifyCount = _sortedTransactions.Count > _system.Settings.MaxTransactionsPerBlock ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                     verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
             }

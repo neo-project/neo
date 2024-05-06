@@ -34,13 +34,13 @@ namespace Neo.CLI
             if (verbose)
             {
                 NeoSystem.MemPool.GetVerifiedAndUnverifiedTransactions(
-                    out IEnumerable<Transaction> verifiedTransactions,
-                    out IEnumerable<Transaction> unverifiedTransactions);
+                    out var verifiedTransactions,
+                    out var unverifiedTransactions);
                 ConsoleHelper.Info("Verified Transactions:");
-                foreach (Transaction tx in verifiedTransactions)
+                foreach (var tx in verifiedTransactions)
                     Console.WriteLine($" {tx.Hash} {tx.GetType().Name} {tx.NetworkFee} GAS_NetFee");
                 ConsoleHelper.Info("Unverified Transactions:");
-                foreach (Transaction tx in unverifiedTransactions)
+                foreach (var tx in unverifiedTransactions)
                     Console.WriteLine($" {tx.Hash} {tx.GetType().Name} {tx.NetworkFee} GAS_NetFee");
 
                 verifiedCount = verifiedTransactions.Count();
@@ -65,7 +65,7 @@ namespace Neo.CLI
             Console.CursorVisible = false;
             Console.Clear();
 
-            Task broadcast = Task.Run(async () =>
+            var broadcast = Task.Run(async () =>
             {
                 while (!cancel.Token.IsCancellationRequested)
                 {
@@ -73,19 +73,19 @@ namespace Neo.CLI
                     await Task.Delay(NeoSystem.Settings.TimePerBlock, cancel.Token);
                 }
             });
-            Task task = Task.Run(async () =>
+            var task = Task.Run(async () =>
             {
-                int maxLines = 0;
+                var maxLines = 0;
                 while (!cancel.Token.IsCancellationRequested)
                 {
-                    uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
-                    uint headerHeight = NeoSystem.HeaderCache.Last?.Index ?? height;
+                    var height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+                    var headerHeight = NeoSystem.HeaderCache.Last?.Index ?? height;
 
                     Console.SetCursorPosition(0, 0);
                     WriteLineWithoutFlicker($"block: {height}/{headerHeight}  connected: {LocalNode.ConnectedCount}  unconnected: {LocalNode.UnconnectedCount}", Console.WindowWidth - 1);
 
-                    int linesWritten = 1;
-                    foreach (RemoteNode node in LocalNode.GetRemoteNodes().OrderByDescending(u => u.LastBlockIndex).Take(Console.WindowHeight - 2).ToArray())
+                    var linesWritten = 1;
+                    foreach (var node in LocalNode.GetRemoteNodes().OrderByDescending(u => u.LastBlockIndex).Take(Console.WindowHeight - 2).ToArray())
                     {
                         ConsoleHelper.Info("  ip: ",
                             $"{node.Remote.Address,-15}\t",

@@ -81,7 +81,7 @@ namespace Neo.UnitTests.Ledger
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
-            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
+            var buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
             buffer[0] = prefix;
             key?.CopyTo(buffer.AsSpan(1));
             return new()
@@ -124,7 +124,7 @@ namespace Neo.UnitTests.Ledger
             var accA = walletA.CreateAccount();
             var walletB = TestUtils.GenerateTestWallet("456");
             var accB = walletB.CreateAccount();
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
 
             // Fake balance for accounts A and B.
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.Ledger
                 sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
                 onPersistScript = sb.ToArray();
             }
-            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
+            using (var engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
             {
                 engine2.LoadScript(onPersistScript);
                 if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
@@ -182,7 +182,7 @@ namespace Neo.UnitTests.Ledger
                 sb.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
                 postPersistScript = sb.ToArray();
             }
-            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
+            using (var engine2 = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
             {
                 engine2.LoadScript(postPersistScript);
                 if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;

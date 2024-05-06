@@ -132,7 +132,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The block represented by a JSON object.</returns>
         public JObject ToJson(ProtocolSettings settings)
         {
-            JObject json = Header.ToJson(settings);
+            var json = Header.ToJson(settings);
             json["size"] = Size;
             json["tx"] = Transactions.Select(p => p.ToJson(settings)).ToArray();
             return json;

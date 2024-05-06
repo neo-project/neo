@@ -303,7 +303,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key4)).Select(u => u.State).FirstOrDefault());
 
             var items = myDataCache.GetChangeSet();
-            int i = 0;
+            var i = 0;
             foreach (var item in items)
             {
                 i++;

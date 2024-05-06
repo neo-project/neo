@@ -34,8 +34,8 @@ namespace Neo.Cryptography
         {
             this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
             if (root is null) return;
-            int depth = 1;
-            for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
+            var depth = 1;
+            for (var i = root; i.LeftChild != null; i = i.LeftChild)
                 depth++;
             this.Depth = depth;
         }
@@ -46,8 +46,8 @@ namespace Neo.Cryptography
             if (leaves.Length == 1) return leaves[0];
 
             Span<byte> buffer = stackalloc byte[64];
-            MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
-            for (int i = 0; i < parents.Length; i++)
+            var parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
+            for (var i = 0; i < parents.Length; i++)
             {
                 parents[i] = new MerkleTreeNode
                 {

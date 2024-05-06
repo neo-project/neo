@@ -58,7 +58,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The converted <see cref="WitnessRule"/>.</returns>
         public static WitnessRule FromJson(JObject json)
         {
-            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"].GetString());
+            var action = Enum.Parse<WitnessRuleAction>(json["action"].GetString());
 
             if (action != WitnessRuleAction.Allow && action != WitnessRuleAction.Deny)
                 throw new FormatException();

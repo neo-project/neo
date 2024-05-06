@@ -71,11 +71,11 @@ namespace Neo.UnitTests.Ledger
             };
             UT_SmartContractHelper.TransactionAdd(snapshot, state1, state2);
 
-            TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
+            var tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
             UT_SmartContractHelper.BlocksAdd(snapshot, tblock.Hash, tblock);
 
-            Block block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
+            var block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
 
             block.Index.Should().Be(1);
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
@@ -88,8 +88,8 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetHeader()
         {
-            TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            Header header = tblock.Header;
+            var tblock = GetTrimmedBlockWithNoTransaction();
+            var header = tblock.Header;
             header.PrevHash.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
             header.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
         }
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetSize()
         {
-            TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
+            var tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             tblock.Size.Should().Be(146); // 138 + 8
         }
@@ -105,7 +105,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestDeserialize()
         {
-            TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
+            var tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             var newBlock = new TrimmedBlock();
             using (MemoryStream ms = new(1024))

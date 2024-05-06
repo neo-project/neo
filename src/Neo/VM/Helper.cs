@@ -40,7 +40,7 @@ namespace Neo.VM
         {
             if (list is null || list.Count == 0)
                 return builder.Emit(OpCode.NEWARRAY0);
-            for (int i = list.Count - 1; i >= 0; i--)
+            for (var i = list.Count - 1; i >= 0; i--)
                 builder.EmitPush(list[i]);
             builder.EmitPush(list.Count);
             return builder.Emit(OpCode.PACK);
@@ -76,7 +76,7 @@ namespace Neo.VM
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
         public static ScriptBuilder Emit(this ScriptBuilder builder, params OpCode[] ops)
         {
-            foreach (OpCode op in ops)
+            foreach (var op in ops)
                 builder.Emit(op);
             return builder;
         }
@@ -164,8 +164,8 @@ namespace Neo.VM
                         break;
                     case ContractParameterType.Array:
                         {
-                            IList<ContractParameter> parameters = (IList<ContractParameter>)parameter.Value;
-                            for (int i = parameters.Count - 1; i >= 0; i--)
+                            var parameters = (IList<ContractParameter>)parameter.Value;
+                            for (var i = parameters.Count - 1; i >= 0; i--)
                                 builder.EmitPush(parameters[i]);
                             builder.EmitPush(parameters.Count);
                             builder.Emit(OpCode.PACK);
@@ -256,7 +256,7 @@ namespace Neo.VM
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
         public static ScriptBuilder EmitSysCall(this ScriptBuilder builder, uint method, params object[] args)
         {
-            for (int i = args.Length - 1; i >= 0; i--)
+            for (var i = args.Length - 1; i >= 0; i--)
                 EmitPush(builder, args[i]);
             return builder.EmitSysCall(method);
         }
@@ -319,14 +319,14 @@ namespace Neo.VM
                         if (!context.Add(array)) throw new InvalidOperationException();
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
                         JArray a = new();
-                        foreach (StackItem stackItem in array)
+                        foreach (var stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
                         break;
                     }
                 case Boolean boolean:
                     {
-                        bool b = boolean.GetBoolean();
+                        var b = boolean.GetBoolean();
                         maxSize -= b ? 4/*true*/: 5/*false*/;
                         value = b;
                         break;
@@ -334,14 +334,14 @@ namespace Neo.VM
                 case Buffer _:
                 case ByteString _:
                     {
-                        string s = Convert.ToBase64String(item.GetSpan());
+                        var s = Convert.ToBase64String(item.GetSpan());
                         maxSize -= 2/*""*/+ s.Length;
                         value = s;
                         break;
                     }
                 case Integer integer:
                     {
-                        string s = integer.GetInteger().ToString();
+                        var s = integer.GetInteger().ToString();
                         maxSize -= 2/*""*/+ s.Length;
                         value = s;
                         break;

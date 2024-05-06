@@ -97,7 +97,7 @@ namespace Neo.Network.P2P
         private void CheckMessageQueue()
         {
             if (!verack || !ack) return;
-            Queue<Message> queue = message_queue_high;
+            var queue = message_queue_high;
             if (queue.Count == 0)
             {
                 queue = message_queue_low;
@@ -117,12 +117,12 @@ namespace Neo.Network.P2P
         /// <param name="message">The message to be added.</param>
         private void EnqueueMessage(Message message)
         {
-            bool is_single = message.Command switch
+            var is_single = message.Command switch
             {
                 MessageCommand.Addr or MessageCommand.GetAddr or MessageCommand.GetBlocks or MessageCommand.GetHeaders or MessageCommand.Mempool or MessageCommand.Ping or MessageCommand.Pong => true,
                 _ => false,
             };
-            Queue<Message> message_queue = message.Command switch
+            var message_queue = message.Command switch
             {
                 MessageCommand.Alert or MessageCommand.Extensible or MessageCommand.FilterAdd or MessageCommand.FilterClear or MessageCommand.FilterLoad or MessageCommand.GetAddr or MessageCommand.Mempool => message_queue_high,
                 _ => message_queue_low,
@@ -145,7 +145,7 @@ namespace Neo.Network.P2P
         {
             msg_buffer = msg_buffer.Concat(data);
 
-            for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            for (var message = TryParseMessage(); message != null; message = TryParseMessage())
                 OnMessage(message);
         }
 

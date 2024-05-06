@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestConstructorWithKeyPair()
         {
-            string password = "hello world";
+            var password = "hello world";
             var wallet = TestUtils.GenerateTestWallet(password);
             byte[] array1 = { 0x01 };
             var hash = new UInt160(Crypto.Hash160(array1));
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["lock"] = false;
             json["contract"] = null;
             json["extra"] = null;
-            NEP6Account account = NEP6Account.FromJson(json, _wallet);
+            var account = NEP6Account.FromJson(json, _wallet);
             account.ScriptHash.Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion));
             account.Label.Should().BeNull();
             account.IsDefault.Should().BeTrue();
@@ -143,7 +143,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             nep6contract["parameters"] = array;
             nep6contract["deployed"] = false;
             _account.Contract = NEP6Contract.FromJson(nep6contract);
-            JObject json = _account.ToJson();
+            var json = _account.ToJson();
             json["address"].AsString().Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf");
             json["label"].Should().BeNull();
             json["isDefault"].ToString().Should().Be("false");

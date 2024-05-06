@@ -71,7 +71,7 @@ namespace Neo.VM.Types
                 _ => new List<StackItem>(items)
             };
             if (referenceCounter != null)
-                foreach (StackItem item in _array)
+                foreach (var item in _array)
                     referenceCounter.AddReference(item, this);
         }
 
@@ -90,7 +90,7 @@ namespace Neo.VM.Types
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             if (ReferenceCounter != null)
-                foreach (StackItem item in _array)
+                foreach (var item in _array)
                     ReferenceCounter.RemoveReference(item, this);
             _array.Clear();
         }
@@ -104,10 +104,10 @@ namespace Neo.VM.Types
 
         internal sealed override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
-            if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
-            Array result = this is Struct ? new Struct(ReferenceCounter) : new Array(ReferenceCounter);
+            if (refMap.TryGetValue(this, out var mappedItem)) return mappedItem;
+            var result = this is Struct ? new Struct(ReferenceCounter) : new Array(ReferenceCounter);
             refMap.Add(this, result);
-            foreach (StackItem item in _array)
+            foreach (var item in _array)
                 result.Add(item.DeepCopy(refMap, asImmutable));
             result.IsReadOnly = true;
             return result;

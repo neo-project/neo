@@ -62,7 +62,7 @@ namespace Neo
 
         public int CompareTo(UInt160 other)
         {
-            int result = value3.CompareTo(other.value3);
+            var result = value3.CompareTo(other.value3);
             if (result != 0) return result;
             result = value2.CompareTo(other.value2);
             if (result != 0) return result;
@@ -139,8 +139,8 @@ namespace Neo
                 result = null;
                 return false;
             }
-            byte[] data = new byte[Length];
-            for (int i = 0; i < Length; i++)
+            var data = new byte[Length];
+            for (var i = 0; i < Length; i++)
                 if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
                 {
                     result = null;

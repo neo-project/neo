@@ -55,7 +55,7 @@ namespace Neo.Network.P2P.Payloads
         {
             MerkleTree tree = new(block.Transactions.Select(p => p.Hash).ToArray());
             tree.Trim(flags);
-            byte[] buffer = new byte[(flags.Length + 7) / 8];
+            var buffer = new byte[(flags.Length + 7) / 8];
             flags.CopyTo(buffer, 0);
             return new MerkleBlockPayload
             {

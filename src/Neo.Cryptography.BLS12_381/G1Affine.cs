@@ -42,11 +42,11 @@ public readonly struct G1Affine : IEquatable<G1Affine>
 
     public G1Affine(in G1Projective p)
     {
-        bool s = p.Z.TryInvert(out Fp zinv);
+        var s = p.Z.TryInvert(out var zinv);
 
         zinv = ConditionalSelect(in Fp.Zero, in zinv, s);
-        Fp x = p.X * zinv;
-        Fp y = p.Y * zinv;
+        var x = p.X * zinv;
+        var y = p.Y * zinv;
 
         G1Affine tmp = new(in x, in y, false);
         this = ConditionalSelect(in tmp, in Identity, !s);
@@ -64,21 +64,21 @@ public readonly struct G1Affine : IEquatable<G1Affine>
 
     private static G1Affine FromBytes(ReadOnlySpan<byte> data, bool compressed, bool check)
     {
-        bool compression_flag_set = (data[0] & 0x80) != 0;
-        bool infinity_flag_set = (data[0] & 0x40) != 0;
-        bool sort_flag_set = (data[0] & 0x20) != 0;
-        byte[] tmp = data[0..48].ToArray();
+        var compression_flag_set = (data[0] & 0x80) != 0;
+        var infinity_flag_set = (data[0] & 0x40) != 0;
+        var sort_flag_set = (data[0] & 0x20) != 0;
+        var tmp = data[0..48].ToArray();
         tmp[0] &= 0b0001_1111;
-        Fp x = Fp.FromBytes(tmp);
+        var x = Fp.FromBytes(tmp);
         if (compressed)
         {
-            Fp y = ((x.Square() * x) + B).Sqrt();
+            var y = ((x.Square() * x) + B).Sqrt();
             y = ConditionalSelect(in y, -y, y.LexicographicallyLargest() ^ sort_flag_set);
             G1Affine result = new(in x, in y, infinity_flag_set);
             result = ConditionalSelect(in result, in Identity, infinity_flag_set);
             if (check)
             {
-                bool _checked = (!infinity_flag_set | (infinity_flag_set & !sort_flag_set & x.IsZero))
+                var _checked = (!infinity_flag_set | (infinity_flag_set & !sort_flag_set & x.IsZero))
                     & compression_flag_set;
                 _checked &= result.IsTorsionFree;
                 if (!_checked) throw new FormatException();
@@ -87,11 +87,11 @@ public readonly struct G1Affine : IEquatable<G1Affine>
         }
         else
         {
-            Fp y = Fp.FromBytes(data[48..96]);
-            G1Affine result = ConditionalSelect(new(in x, in y, infinity_flag_set), in Identity, infinity_flag_set);
+            var y = Fp.FromBytes(data[48..96]);
+            var result = ConditionalSelect(new(in x, in y, infinity_flag_set), in Identity, infinity_flag_set);
             if (check)
             {
-                bool _checked = (!infinity_flag_set | (infinity_flag_set & x.IsZero & y.IsZero))
+                var _checked = (!infinity_flag_set | (infinity_flag_set & x.IsZero & y.IsZero))
                     & !compression_flag_set
                     & !sort_flag_set;
                 _checked &= result.IsOnCurve & result.IsTorsionFree;
@@ -135,7 +135,7 @@ public readonly struct G1Affine : IEquatable<G1Affine>
 
     public byte[] ToCompressed()
     {
-        byte[] res = ConditionalSelect(in X, in Fp.Zero, Infinity).ToArray();
+        var res = ConditionalSelect(in X, in Fp.Zero, Infinity).ToArray();
 
         // This point is in compressed form, so we set the most significant bit.
         res[0] |= 0x80;
@@ -153,7 +153,7 @@ public readonly struct G1Affine : IEquatable<G1Affine>
 
     public byte[] ToUncompressed()
     {
-        byte[] res = new byte[96];
+        var res = new byte[96];
 
         ConditionalSelect(in X, in Fp.Zero, Infinity).TryWrite(res.AsSpan(0..48));
         ConditionalSelect(in Y, in Fp.Zero, Infinity).TryWrite(res.AsSpan(48..96));

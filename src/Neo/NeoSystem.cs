@@ -205,7 +205,7 @@ namespace Neo
         /// <returns>The service object found.</returns>
         public T GetService<T>(Func<T, bool> filter = null)
         {
-            IEnumerable<T> result = services.OfType<T>();
+            var result = services.OfType<T>();
             if (filter is null)
                 return result.FirstOrDefault();
             return result.FirstOrDefault(filter);
@@ -217,7 +217,7 @@ namespace Neo
         /// <param name="actor">The actor to wait.</param>
         public void EnsureStopped(IActorRef actor)
         {
-            using Inbox inbox = Inbox.Create(ActorSystem);
+            using var inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromMinutes(5));

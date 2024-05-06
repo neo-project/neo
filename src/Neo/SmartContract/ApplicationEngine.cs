@@ -201,14 +201,14 @@ namespace Neo.SmartContract
                 uint tokenId = instruction.TokenU16;
 
                 app.ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
-                ContractState contract = app.CurrentContext.GetState<ExecutionContextState>().Contract;
+                var contract = app.CurrentContext.GetState<ExecutionContextState>().Contract;
                 if (contract is null || tokenId >= contract.Nef.Tokens.Length)
                     throw new InvalidOperationException();
-                MethodToken token = contract.Nef.Tokens[tokenId];
+                var token = contract.Nef.Tokens[tokenId];
                 if (token.ParametersCount > app.CurrentContext.EvaluationStack.Count)
                     throw new InvalidOperationException();
-                StackItem[] args = new StackItem[token.ParametersCount];
-                for (int i = 0; i < token.ParametersCount; i++)
+                var args = new StackItem[token.ParametersCount];
+                for (var i = 0; i < token.ParametersCount; i++)
                     args[i] = app.Pop();
                 app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
             }
@@ -222,7 +222,7 @@ namespace Neo.SmartContract
         {
             if (engine is ApplicationEngine app)
             {
-                uint method = instruction.TokenU32;
+                var method = instruction.TokenU32;
 
                 app.OnSysCall(services[method]);
             }
@@ -259,9 +259,9 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            var contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Length);
+            var md = contract.Manifest.Abi.GetMethod(method, args.Length);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
             return CallContractInternal(contract, md, flags, hasReturnValue, args);
         }
@@ -277,7 +277,7 @@ namespace Neo.SmartContract
             }
             else
             {
-                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                var currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
                 if (currentContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
@@ -291,17 +291,17 @@ namespace Neo.SmartContract
                 invocationCounter[contract.Hash] = 1;
             }
 
-            ExecutionContext currentContext = CurrentContext;
-            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
-            CallFlags callingFlags = state.CallFlags;
+            var currentContext = CurrentContext;
+            var state = currentContext.GetState<ExecutionContextState>();
+            var callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
-            ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags);
+            var context_new = LoadContract(contract, method, flags & callingFlags);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingContext = currentContext;
 
-            for (int i = args.Count - 1; i >= 0; i--)
+            for (var i = args.Count - 1; i >= 0; i--)
                 context_new.EvaluationStack.Push(args[i]);
 
             return context_new;
@@ -309,8 +309,8 @@ namespace Neo.SmartContract
 
         internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
-            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
+            var context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
+            var state = context_new.GetState<ExecutionContextState>();
             state.NativeCallingScriptHash = callingScriptHash;
             ContractTask task = new();
             contractTasks.Add(context_new, task.GetAwaiter());
@@ -319,8 +319,8 @@ namespace Neo.SmartContract
 
         internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
-            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
+            var context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
+            var state = context_new.GetState<ExecutionContextState>();
             state.NativeCallingScriptHash = callingScriptHash;
             ContractTask<T> task = new();
             contractTasks.Add(context_new, task.GetAwaiter());
@@ -332,13 +332,13 @@ namespace Neo.SmartContract
             base.UnloadContext(context);
             if (context.Script != CurrentContext?.Script)
             {
-                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                var state = context.GetState<ExecutionContextState>();
                 if (UncaughtException is null)
                 {
                     state.Snapshot?.Commit();
                     if (CurrentContext != null)
                     {
-                        ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
+                        var contextState = CurrentContext.GetState<ExecutionContextState>();
                         contextState.NotificationCount += state.NotificationCount;
                         if (state.IsDynamicCall)
                         {
@@ -403,7 +403,7 @@ namespace Neo.SmartContract
         /// <returns>The loaded context.</returns>
         public ExecutionContext LoadContract(ContractState contract, ContractMethodDescriptor method, CallFlags callFlags)
         {
-            ExecutionContext context = LoadScript(contract.Script,
+            var context = LoadScript(contract.Script,
                 rvcount: method.ReturnType == ContractParameterType.Void ? 0 : 1,
                 initialPosition: method.Offset,
                 configureState: p =>
@@ -441,8 +441,8 @@ namespace Neo.SmartContract
         public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
         {
             // Create and configure context
-            ExecutionContext context = CreateContext(script, rvcount, initialPosition);
-            ExecutionContextState state = context.GetState<ExecutionContextState>();
+            var context = CreateContext(script, rvcount, initialPosition);
+            var state = context.GetState<ExecutionContextState>();
             state.Snapshot = Snapshot?.CreateSnapshot();
             configureState?.Invoke(state);
 
@@ -501,22 +501,22 @@ namespace Neo.SmartContract
                 if (item is VMArray array)
                 {
                     av = Array.CreateInstance(descriptor.Type.GetElementType(), array.Count);
-                    for (int i = 0; i < av.Length; i++)
+                    for (var i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(array[i]), i);
                 }
                 else
                 {
-                    int count = (int)item.GetInteger();
+                    var count = (int)item.GetInteger();
                     if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
-                    for (int i = 0; i < av.Length; i++)
+                    for (var i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);
                 }
                 return av;
             }
             else
             {
-                object value = descriptor.Converter(item);
+                var value = descriptor.Converter(item);
                 if (descriptor.IsEnum)
                     value = Enum.ToObject(descriptor.Type, value);
                 else if (descriptor.IsInterface)
@@ -530,7 +530,7 @@ namespace Neo.SmartContract
             Diagnostic?.Disposed();
             if (disposables != null)
             {
-                foreach (IDisposable disposable in disposables)
+                foreach (var disposable in disposables)
                     disposable.Dispose();
                 disposables = null;
             }
@@ -543,7 +543,7 @@ namespace Neo.SmartContract
         /// <param name="requiredCallFlags">The requirements to check.</param>
         internal protected void ValidateCallFlags(CallFlags requiredCallFlags)
         {
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            var state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
@@ -557,11 +557,11 @@ namespace Neo.SmartContract
             ValidateCallFlags(descriptor.RequiredCallFlags);
             AddGas(descriptor.FixedPrice * ExecFeeFactor);
 
-            object[] parameters = new object[descriptor.Parameters.Count];
-            for (int i = 0; i < parameters.Length; i++)
+            var parameters = new object[descriptor.Parameters.Count];
+            for (var i = 0; i < parameters.Length; i++)
                 parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
 
-            object returnValue = descriptor.Handler.Invoke(this, parameters);
+            var returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
         }
@@ -580,8 +580,8 @@ namespace Neo.SmartContract
 
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
         {
-            UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
-            Block currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
+            var hash = NativeContract.Ledger.CurrentHash(snapshot);
+            var currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
             return new Block
             {
                 Header = new Header
@@ -604,7 +604,7 @@ namespace Neo.SmartContract
 
         private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags)
         {
-            MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+            var method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).GetMethod;
             InteropDescriptor descriptor = new()
             {
@@ -633,7 +633,7 @@ namespace Neo.SmartContract
         public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
+            var engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
             return engine;
@@ -642,7 +642,7 @@ namespace Neo.SmartContract
         public T GetState<T>()
         {
             if (states is null) return default;
-            if (!states.TryGetValue(typeof(T), out object state)) return default;
+            if (!states.TryGetValue(typeof(T), out var state)) return default;
             return (T)state;
         }
 
@@ -650,13 +650,13 @@ namespace Neo.SmartContract
         {
             if (states is null)
             {
-                T state = factory();
+                var state = factory();
                 SetState(state);
                 return state;
             }
             else
             {
-                if (!states.TryGetValue(typeof(T), out object state))
+                if (!states.TryGetValue(typeof(T), out var state))
                 {
                     state = factory();
                     SetState(state);

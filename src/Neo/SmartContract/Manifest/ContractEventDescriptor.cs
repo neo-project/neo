@@ -35,7 +35,7 @@ namespace Neo.SmartContract.Manifest
 
         public virtual void FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Name = @struct[0].GetString();
             Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
         }

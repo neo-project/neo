@@ -20,12 +20,12 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestFromJson()
         {
-            ContractEventDescriptor expected = new ContractEventDescriptor
+            var expected = new ContractEventDescriptor
             {
                 Name = "AAA",
                 Parameters = new ContractParameterDefinition[0]
             };
-            ContractEventDescriptor actual = ContractEventDescriptor.FromJson(expected.ToJson());
+            var actual = ContractEventDescriptor.FromJson(expected.ToJson());
             Assert.AreEqual(expected.Name, actual.Name);
             Assert.AreEqual(0, actual.Parameters.Length);
         }

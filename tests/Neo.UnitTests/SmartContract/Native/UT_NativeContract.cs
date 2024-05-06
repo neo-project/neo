@@ -67,11 +67,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestIsInitializeBlock()
         {
-            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Cockatrice\": 20");
+            var json = UT_ProtocolSettings.CreateHKSettings("\"HF_Cockatrice\": 20");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            var settings = ProtocolSettings.Load(file, false);
             File.Delete(file);
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 0, out var hf));

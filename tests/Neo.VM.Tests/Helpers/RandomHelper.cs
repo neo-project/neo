@@ -39,7 +39,7 @@ namespace Neo.Test.Helpers
         {
             var stringChars = new char[length];
 
-            for (int i = 0; i < stringChars.Length; i++)
+            for (var i = 0; i < stringChars.Length; i++)
             {
                 stringChars[i] = _randchars[_rand.Next(_randchars.Length)];
             }

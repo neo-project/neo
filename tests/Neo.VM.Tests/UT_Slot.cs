@@ -26,7 +26,7 @@ namespace Neo.Test
         {
             var check = new Integer[count];
 
-            for (int x = 1; x <= count; x++)
+            for (var x = 1; x <= count; x++)
             {
                 check[x - 1] = x;
             }

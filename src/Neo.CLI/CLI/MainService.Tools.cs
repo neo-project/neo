@@ -43,7 +43,7 @@ namespace Neo.CLI
                 { "String to Base64", StringToBase64 }
             };
 
-            bool any = false;
+            var any = false;
 
             foreach (var pair in parseFunctions)
             {
@@ -129,7 +129,7 @@ namespace Neo.CLI
         /// </exception>
         private string ClearHexString(string hexString)
         {
-            bool hasHexPrefix = hexString.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
+            var hasHexPrefix = hexString.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
 
             try
             {
@@ -200,8 +200,8 @@ namespace Neo.CLI
         {
             try
             {
-                byte[] bytearray = Utility.StrictUTF8.GetBytes(strParam);
-                string base64 = Convert.ToBase64String(bytearray.AsSpan());
+                var bytearray = Utility.StrictUTF8.GetBytes(strParam);
+                var base64 = Convert.ToBase64String(bytearray.AsSpan());
                 return base64;
             }
             catch
@@ -256,8 +256,8 @@ namespace Neo.CLI
                 {
                     return null;
                 }
-                byte[] bytearray = number.ToByteArray();
-                string base64 = Convert.ToBase64String(bytearray.AsSpan());
+                var bytearray = number.ToByteArray();
+                var base64 = Convert.ToBase64String(bytearray.AsSpan());
 
                 return base64;
             }
@@ -308,7 +308,7 @@ namespace Neo.CLI
             try
             {
                 var script = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
-                string base64 = Convert.ToBase64String(script.ToArray().AsSpan());
+                var base64 = Convert.ToBase64String(script.ToArray().AsSpan());
 
                 return base64;
             }
@@ -342,11 +342,11 @@ namespace Neo.CLI
                 }
                 else
                 {
-                    if (!UInt160.TryParse(script, out UInt160 littleEndScript))
+                    if (!UInt160.TryParse(script, out var littleEndScript))
                     {
                         return null;
                     }
-                    string bigEndScript = littleEndScript.ToArray().ToHexString();
+                    var bigEndScript = littleEndScript.ToArray().ToHexString();
                     if (!UInt160.TryParse(bigEndScript, out scriptHash))
                     {
                         return null;
@@ -377,15 +377,15 @@ namespace Neo.CLI
         {
             try
             {
-                byte[] result = Convert.FromBase64String(bytearray).Reverse().ToArray();
-                string hex = result.ToHexString();
+                var result = Convert.FromBase64String(bytearray).Reverse().ToArray();
+                var hex = result.ToHexString();
 
                 if (!UInt160.TryParse(hex, out var scripthash))
                 {
                     return null;
                 }
 
-                string address = scripthash.ToAddress(NeoSystem.Settings.AddressVersion);
+                var address = scripthash.ToAddress(NeoSystem.Settings.AddressVersion);
                 return address;
             }
             catch
@@ -410,8 +410,8 @@ namespace Neo.CLI
         {
             try
             {
-                byte[] result = Convert.FromBase64String(bytearray);
-                string utf8String = Utility.StrictUTF8.GetString(result);
+                var result = Convert.FromBase64String(bytearray);
+                var utf8String = Utility.StrictUTF8.GetString(result);
                 return IsPrintable(utf8String) ? utf8String : null;
             }
             catch

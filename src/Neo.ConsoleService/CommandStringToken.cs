@@ -43,7 +43,7 @@ namespace Neo.ConsoleService
         internal static CommandStringToken Parse(string commandLine, ref int index, CommandQuoteToken? quote)
         {
             int end;
-            int offset = index;
+            var offset = index;
 
             if (quote != null)
             {

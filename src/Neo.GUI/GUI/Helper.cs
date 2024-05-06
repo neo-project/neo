@@ -31,7 +31,7 @@ namespace Neo.GUI
 
         public static void Show<T>() where T : Form, new()
         {
-            Type t = typeof(T);
+            var t = typeof(T);
             if (!tool_forms.ContainsKey(t))
             {
                 tool_forms.Add(t, new T());

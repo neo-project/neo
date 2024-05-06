@@ -53,7 +53,7 @@ namespace Neo.Cryptography
             length += source.Length;
             for (; source.Length >= 4; source = source[4..])
             {
-                uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
+                var k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;
                 k = Helper.RotateLeft(k, r1);
                 k *= c2;
@@ -79,7 +79,7 @@ namespace Neo.Cryptography
 
         protected override byte[] HashFinal()
         {
-            byte[] buffer = new byte[sizeof(uint)];
+            var buffer = new byte[sizeof(uint)];
             TryHashFinal(buffer, out _);
             return buffer;
         }

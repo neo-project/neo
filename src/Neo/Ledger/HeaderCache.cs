@@ -39,7 +39,7 @@ namespace Neo.Ledger
                 try
                 {
                     if (headers.Count == 0) return null;
-                    uint firstIndex = headers[0].Index;
+                    var firstIndex = headers[0].Index;
                     if (index < firstIndex) return null;
                     index -= firstIndex;
                     if (index >= headers.Count) return null;
@@ -118,7 +118,7 @@ namespace Neo.Ledger
             readerWriterLock.EnterReadLock();
             try
             {
-                foreach (Header header in headers)
+                foreach (var header in headers)
                     yield return header;
             }
             finally

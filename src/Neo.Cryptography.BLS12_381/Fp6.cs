@@ -56,9 +56,9 @@ public readonly struct Fp6 : IEquatable<Fp6>, INumber<Fp6>
     {
         if (data.Length != Size)
             throw new FormatException($"The argument `{nameof(data)}` must contain {Size} bytes.");
-        Fp2 c0 = Fp2.FromBytes(data[(Fp2.Size * 2)..]);
-        Fp2 c1 = Fp2.FromBytes(data[Fp2.Size..(Fp2.Size * 2)]);
-        Fp2 c2 = Fp2.FromBytes(data[..Fp2.Size]);
+        var c0 = Fp2.FromBytes(data[(Fp2.Size * 2)..]);
+        var c1 = Fp2.FromBytes(data[Fp2.Size..(Fp2.Size * 2)]);
+        var c2 = Fp2.FromBytes(data[..Fp2.Size]);
         return new(in c0, in c1, in c2);
     }
 
@@ -90,7 +90,7 @@ public readonly struct Fp6 : IEquatable<Fp6>, INumber<Fp6>
 
     public byte[] ToArray()
     {
-        byte[] result = new byte[Size];
+        var result = new byte[Size];
         TryWrite(result);
         return result;
     }

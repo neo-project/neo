@@ -117,7 +117,7 @@ namespace Neo.CLI
         [ConsoleCommand("broadcast transaction", Category = "Network Commands")]
         private void OnBroadcastTransactionCommand(UInt256 hash)
         {
-            if (NeoSystem.MemPool.TryGetValue(hash, out Transaction tx))
+            if (NeoSystem.MemPool.TryGetValue(hash, out var tx))
                 OnBroadcastCommand(MessageCommand.Transaction, tx);
         }
 
@@ -141,7 +141,7 @@ namespace Neo.CLI
 
             try
             {
-                ContractParametersContext context = ContractParametersContext.Parse(jsonObjectToRelay.ToString(), NeoSystem.StoreView);
+                var context = ContractParametersContext.Parse(jsonObjectToRelay.ToString(), NeoSystem.StoreView);
                 if (!context.Completed)
                 {
                     ConsoleHelper.Error("The signature is incomplete.");

@@ -94,7 +94,7 @@ namespace Neo.UnitTests.Wallets
 
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
-            accounts.TryGetValue(scriptHash, out WalletAccount account);
+            accounts.TryGetValue(scriptHash, out var account);
             return account;
         }
 
@@ -145,8 +145,8 @@ namespace Neo.UnitTests.Wallets
         public void TestCreateAccount2()
         {
             MyWallet wallet = new();
-            Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
-            WalletAccount account = wallet.CreateAccount(contract, UT_Crypto.GenerateCertainKey(32).PrivateKey);
+            var contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
+            var account = wallet.CreateAccount(contract, UT_Crypto.GenerateCertainKey(32).PrivateKey);
             account.Should().NotBeNull();
 
             wallet = new();
@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Wallets
         public void TestCreateAccount3()
         {
             MyWallet wallet = new();
-            Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
+            var contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             wallet.CreateAccount(contract, glkey).Should().NotBeNull();
         }
 
@@ -188,7 +188,7 @@ namespace Neo.UnitTests.Wallets
         {
             MyWallet wallet = new();
             wallet.CreateAccount(UInt160.Parse("0x7efe7ee0d3e349e085388c351955e5172605de66"));
-            WalletAccount account = wallet.GetAccount(ECCurve.Secp256r1.G);
+            var account = wallet.GetAccount(ECCurve.Secp256r1.G);
             account.ScriptHash.Should().Be(UInt160.Parse("0x7efe7ee0d3e349e085388c351955e5172605de66"));
         }
 
@@ -212,8 +212,8 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAvailable()
         {
             MyWallet wallet = new();
-            Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
-            WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
+            var contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
+            var account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
             // Fake balance
@@ -232,8 +232,8 @@ namespace Neo.UnitTests.Wallets
         public void TestGetBalance()
         {
             MyWallet wallet = new();
-            Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
-            WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
+            var contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
+            var account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
             // Fake balance
@@ -292,8 +292,8 @@ namespace Neo.UnitTests.Wallets
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             MyWallet wallet = new();
-            Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
-            WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
+            var contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
+            var account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
             Action action = () => wallet.MakeTransaction(snapshot, new TransferOutput[]
@@ -378,8 +378,8 @@ namespace Neo.UnitTests.Wallets
             Action action = () => wallet.MakeTransaction(snapshot, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>());
             action.Should().Throw<InvalidOperationException>();
 
-            Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
-            WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
+            var contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
+            var account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
             // Fake balance

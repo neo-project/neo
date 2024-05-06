@@ -76,13 +76,13 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            var contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
+            var md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
-            bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
+            var hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
-            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            var context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
             context.GetState<ExecutionContextState>().IsDynamicCall = true;
         }
 
@@ -93,7 +93,7 @@ namespace Neo.SmartContract
         /// <param name="version">The version of the native contract to be called.</param>
         protected internal void CallNativeContract(byte version)
         {
-            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
+            var contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
             if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot)))
@@ -120,7 +120,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            var fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);
@@ -136,7 +136,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            var fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);
@@ -153,7 +153,7 @@ namespace Neo.SmartContract
             {
                 if (Trigger != TriggerType.OnPersist)
                     throw new InvalidOperationException();
-                foreach (NativeContract contract in NativeContract.Contracts)
+                foreach (var contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
                         await contract.OnPersistAsync(this);
@@ -175,7 +175,7 @@ namespace Neo.SmartContract
             {
                 if (Trigger != TriggerType.PostPersist)
                     throw new InvalidOperationException();
-                foreach (NativeContract contract in NativeContract.Contracts)
+                foreach (var contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
                         await contract.PostPersistAsync(this);

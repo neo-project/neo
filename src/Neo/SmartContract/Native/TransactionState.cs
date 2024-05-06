@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TransactionState from = (TransactionState)replica;
+            var from = (TransactionState)replica;
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             BlockIndex = (uint)@struct[0].GetInteger();
 
             // Conflict record.

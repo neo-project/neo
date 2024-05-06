@@ -27,7 +27,7 @@ namespace Neo.Test
             var check = new Integer[count];
             var stack = new EvaluationStack(new ReferenceCounter());
 
-            for (int x = 1; x <= count; x++)
+            for (var x = 1; x <= count; x++)
             {
                 stack.Push(x);
                 check[x - 1] = x;

@@ -113,7 +113,7 @@ namespace Neo.ConsoleService
                 case 1:
                     {
                         var (command, arguments) = availableCommands[0];
-                        object? result = command.Method.Invoke(command.Instance, arguments);
+                        var result = command.Method.Invoke(command.Instance, arguments);
                         if (result is Task task) task.Wait();
                         return true;
                     }
@@ -222,7 +222,7 @@ namespace Neo.ConsoleService
 
                 string? last = null;
                 string? lastKey = null;
-                bool found = false;
+                var found = false;
 
                 foreach (var command in withHelp.Where(u => u.Key == key))
                 {
@@ -436,12 +436,12 @@ namespace Neo.ConsoleService
                         ConsoleHelper.Warning("Only support for installing services on Windows.");
                         return;
                     }
-                    string arguments = string.Format("create {0} start= auto binPath= \"{1}\"", ServiceName, Process.GetCurrentProcess().MainModule!.FileName);
+                    var arguments = string.Format("create {0} start= auto binPath= \"{1}\"", ServiceName, Process.GetCurrentProcess().MainModule!.FileName);
                     if (!string.IsNullOrEmpty(Depends))
                     {
                         arguments += string.Format(" depend= {0}", Depends);
                     }
-                    Process? process = Process.Start(new ProcessStartInfo
+                    var process = Process.Start(new ProcessStartInfo
                     {
                         Arguments = arguments,
                         FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
@@ -465,7 +465,7 @@ namespace Neo.ConsoleService
                         ConsoleHelper.Warning("Only support for installing services on Windows.");
                         return;
                     }
-                    Process? process = Process.Start(new ProcessStartInfo
+                    var process = Process.Start(new ProcessStartInfo
                     {
                         Arguments = string.Format("delete {0}", ServiceName),
                         FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
@@ -499,7 +499,7 @@ namespace Neo.ConsoleService
 
         protected string? ReadLine()
         {
-            Task<string?> readLineTask = Task.Run(Console.ReadLine);
+            var readLineTask = Task.Run(Console.ReadLine);
 
             try
             {
@@ -535,7 +535,7 @@ namespace Neo.ConsoleService
                 }
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                string? line = ReadLine()?.Trim();
+                var line = ReadLine()?.Trim();
                 if (line == null) break;
                 Console.ForegroundColor = ConsoleColor.White;
 

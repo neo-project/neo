@@ -22,7 +22,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Hash = new UInt256(@struct[0].GetSpan());
             Index = (uint)@struct[1].GetInteger();
         }

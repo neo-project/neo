@@ -67,7 +67,7 @@ namespace Neo.Network.P2P.Payloads
             Timestamp = reader.ReadUInt32();
 
             // Address
-            ReadOnlyMemory<byte> data = reader.ReadMemory(16);
+            var data = reader.ReadMemory(16);
             Address = new IPAddress(data.Span).Unmap();
 
             // Capabilities

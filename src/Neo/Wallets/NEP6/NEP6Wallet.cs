@@ -57,7 +57,7 @@ namespace Neo.Wallets.NEP6
             this.password = password;
             if (File.Exists(path))
             {
-                JObject wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
+                var wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else
@@ -98,7 +98,7 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                if (accounts.TryGetValue(account.ScriptHash, out NEP6Account account_old))
+                if (accounts.TryGetValue(account.ScriptHash, out var account_old))
                 {
                     account.Label = account_old.Label;
                     account.IsDefault = account_old.IsDefault;
@@ -109,10 +109,10 @@ namespace Neo.Wallets.NEP6
                     }
                     else
                     {
-                        NEP6Contract contract_old = (NEP6Contract)account_old.Contract;
+                        var contract_old = (NEP6Contract)account_old.Contract;
                         if (contract_old != null)
                         {
-                            NEP6Contract contract = (NEP6Contract)account.Contract;
+                            var contract = (NEP6Contract)account.Contract;
                             contract.ParameterNames = contract_old.ParameterNames;
                             contract.Deployed = contract_old.Deployed;
                         }
@@ -207,7 +207,7 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                accounts.TryGetValue(scriptHash, out NEP6Account account);
+                accounts.TryGetValue(scriptHash, out var account);
                 return account;
             }
         }
@@ -216,7 +216,7 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (var account in accounts.Values)
                     yield return account;
             }
         }
@@ -224,7 +224,7 @@ namespace Neo.Wallets.NEP6
         public override WalletAccount Import(X509Certificate2 cert)
         {
             KeyPair key;
-            using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
+            using (var ecdsa = cert.GetECDsaPrivateKey())
             {
                 key = new KeyPair(ecdsa.ExportParameters(true).D);
             }
@@ -310,7 +310,7 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                NEP6Account account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
+                var account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
                 if (account == null)
                 {
                     account = accounts.Values.FirstOrDefault(p => p.HasKey);
@@ -337,7 +337,7 @@ namespace Neo.Wallets.NEP6
 
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
-            bool succeed = true;
+            var succeed = true;
             lock (accounts)
             {
                 Parallel.ForEach(accounts.Values, (account, state) =>
@@ -351,13 +351,13 @@ namespace Neo.Wallets.NEP6
             }
             if (succeed)
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (var account in accounts.Values)
                     account.ChangePasswordCommit();
                 password = newPassword;
             }
             else
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (var account in accounts.Values)
                     account.ChangePasswordRoolback();
             }
             return succeed;

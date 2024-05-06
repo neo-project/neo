@@ -152,7 +152,7 @@ namespace Neo.Network.P2P.Payloads
         public void Deserialize(ref MemoryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(ref reader);
-            Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
+            var witnesses = reader.ReadSerializableArray<Witness>(1);
             if (witnesses.Length != 1) throw new FormatException();
             Witness = witnesses[0];
         }
@@ -191,7 +191,7 @@ namespace Neo.Network.P2P.Payloads
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
+            var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) throw new InvalidOperationException();
             return new[] { prev.Header.nextConsensus };
         }
@@ -240,7 +240,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (primaryIndex >= settings.ValidatorsCount)
                 return false;
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
+            var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) return false;
             if (prev.Index + 1 != index) return false;
             if (prev.Hash != prevHash) return false;
@@ -251,7 +251,7 @@ namespace Neo.Network.P2P.Payloads
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
-            Header prev = headerCache.Last;
+            var prev = headerCache.Last;
             if (prev is null) return Verify(settings, snapshot);
             if (primaryIndex >= settings.ValidatorsCount)
                 return false;

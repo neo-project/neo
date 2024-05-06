@@ -238,7 +238,7 @@ namespace Neo.CLI
                     if (installedPlugin != null)
                     {
                         var maxLength = plugins.Select(s => s.Length).OrderDescending().First();
-                        string tabs = string.Empty;
+                        var tabs = string.Empty;
                         if (f.Length < maxLength)
                             tabs = "\t";
                         ConsoleHelper.Info("", $"[Installed]\t {f,6}{tabs}", "  @", $"{installedPlugin.Version.ToString(3)}  {installedPlugin.Description}");

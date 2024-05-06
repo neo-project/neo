@@ -148,7 +148,7 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-            string[] temp = new string[2];
+            var temp = new string[2];
 
             Action action = () => cache.CopyTo(null, 1);
             action.Should().Throw<ArgumentNullException>();
@@ -201,9 +201,9 @@ namespace Neo.UnitTests.IO.Caching
         public void TestTryGet()
         {
             cache.Add("hello");
-            cache.TryGet("hello".GetHashCode(), out string output).Should().BeTrue();
+            cache.TryGet("hello".GetHashCode(), out var output).Should().BeTrue();
             output.Should().Be("hello");
-            cache.TryGet("world".GetHashCode(), out string output2).Should().BeFalse();
+            cache.TryGet("world".GetHashCode(), out var output2).Should().BeFalse();
             output2.Should().NotBe("world");
             output2.Should().BeNull();
         }
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.IO.Caching
 
             Action action = () =>
             {
-                string temp = cache["non exist string".GetHashCode()];
+                var temp = cache["non exist string".GetHashCode()];
             };
             action.Should().Throw<KeyNotFoundException>();
         }
@@ -228,8 +228,8 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-            int i = 0;
-            foreach (string item in cache)
+            var i = 0;
+            foreach (var item in cache)
             {
                 if (i == 0) item.Should().Be("hello");
                 if (i == 1) item.Should().Be("world");
@@ -242,7 +242,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestOverMaxCapacity()
         {
-            int i = 1;
+            var i = 1;
             for (; i <= max_capacity; i++)
             {
                 cache.Add(i.ToString());
@@ -261,7 +261,7 @@ namespace Neo.UnitTests.IO.Caching
 
             Action action = () =>
             {
-                int count = cache.Count;
+                var count = cache.Count;
             };
             action.Should().Throw<ObjectDisposedException>();
         }

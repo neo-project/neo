@@ -22,9 +22,9 @@ namespace Neo.UnitTests.SmartContract
         public void TestGeneratorAndGet()
         {
             IVerifiable container = new Header();
-            UInt160 scripthash = UInt160.Zero;
-            string message = "lalala";
-            LogEventArgs logEventArgs = new LogEventArgs(container, scripthash, message);
+            var scripthash = UInt160.Zero;
+            var message = "lalala";
+            var logEventArgs = new LogEventArgs(container, scripthash, message);
             Assert.IsNotNull(logEventArgs);
             Assert.AreEqual(container, logEventArgs.ScriptContainer);
             Assert.AreEqual(scripthash, logEventArgs.ScriptHash);

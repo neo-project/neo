@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TrimmedBlock from = (TrimmedBlock)replica;
+            var from = (TrimmedBlock)replica;
             Header = from.Header;
             Hashes = from.Hashes;
         }

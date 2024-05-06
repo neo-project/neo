@@ -38,7 +38,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_ScryptParameters_Default_ToJson()
         {
-            JObject json = ScryptParameters.Default.ToJson();
+            var json = ScryptParameters.Default.ToJson();
             json["n"].AsNumber().Should().Be(ScryptParameters.Default.N);
             json["r"].AsNumber().Should().Be(ScryptParameters.Default.R);
             json["p"].AsNumber().Should().Be(ScryptParameters.Default.P);
@@ -47,12 +47,12 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_Default_ScryptParameters_FromJson()
         {
-            JObject json = new JObject();
+            var json = new JObject();
             json["n"] = 16384;
             json["r"] = 8;
             json["p"] = 8;
 
-            ScryptParameters uut2 = ScryptParameters.FromJson(json);
+            var uut2 = ScryptParameters.FromJson(json);
             uut2.N.Should().Be(ScryptParameters.Default.N);
             uut2.R.Should().Be(ScryptParameters.Default.R);
             uut2.P.Should().Be(ScryptParameters.Default.P);
@@ -62,7 +62,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestScryptParametersConstructor()
         {
             int n = 1, r = 2, p = 3;
-            ScryptParameters parameter = new ScryptParameters(n, r, p);
+            var parameter = new ScryptParameters(n, r, p);
             parameter.N.Should().Be(n);
             parameter.R.Should().Be(r);
             parameter.P.Should().Be(p);

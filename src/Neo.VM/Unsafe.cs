@@ -19,17 +19,17 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(ReadOnlySpan<byte> x)
         {
-            int len = x.Length;
+            var len = x.Length;
             if (len == 0) return false;
             fixed (byte* xp = x)
             {
-                long* xlp = (long*)xp;
+                var xlp = (long*)xp;
                 for (; len >= 8; len -= 8)
                 {
                     if (*xlp != 0) return true;
                     xlp++;
                 }
-                byte* xbp = (byte*)xlp;
+                var xbp = (byte*)xlp;
                 for (; len > 0; len--)
                 {
                     if (*xbp != 0) return true;

@@ -75,7 +75,7 @@ namespace Neo.VM
             this._value = script;
             if (strictMode)
             {
-                for (int ip = 0; ip < script.Length; ip += GetInstruction(ip).Size) { }
+                for (var ip = 0; ip < script.Length; ip += GetInstruction(ip).Size) { }
                 foreach (var (ip, instruction) in _instructions)
                 {
                     switch (instruction.OpCode)
@@ -124,7 +124,7 @@ namespace Neo.VM
                         case OpCode.NEWARRAY_T:
                         case OpCode.ISTYPE:
                         case OpCode.CONVERT:
-                            StackItemType type = (StackItemType)instruction.TokenU8;
+                            var type = (StackItemType)instruction.TokenU8;
                             if (!Enum.IsDefined(typeof(StackItemType), type))
                                 throw new BadScriptException();
                             if (instruction.OpCode != OpCode.NEWARRAY_T && type == StackItemType.Any)
@@ -145,7 +145,7 @@ namespace Neo.VM
         public Instruction GetInstruction(int ip)
         {
             if (ip >= Length) throw new ArgumentOutOfRangeException(nameof(ip));
-            if (!_instructions.TryGetValue(ip, out Instruction? instruction))
+            if (!_instructions.TryGetValue(ip, out var instruction))
             {
                 if (strictMode) throw new ArgumentException($"ip not found with strict mode", nameof(ip));
                 instruction = new Instruction(_value, ip);

@@ -124,7 +124,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the parameter is added successfully; otherwise, <see langword="false"/>.</returns>
         public bool Add(Contract contract, int index, object parameter)
         {
-            ContextItem item = CreateItem(contract);
+            var item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
             return true;
@@ -138,9 +138,9 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the parameters are added successfully; otherwise, <see langword="false"/>.</returns>
         public bool Add(Contract contract, params object[] parameters)
         {
-            ContextItem item = CreateItem(contract);
+            var item = CreateItem(contract);
             if (item == null) return false;
-            for (int index = 0; index < parameters.Length; index++)
+            for (var index = 0; index < parameters.Length; index++)
             {
                 item.Parameters[index].Value = parameters[index];
             }
@@ -159,24 +159,24 @@ namespace Neo.SmartContract
             if (IsMultiSigContract(contract.Script, out _, out ECPoint[] points))
             {
                 if (!points.Contains(pubkey)) return false;
-                ContextItem item = CreateItem(contract);
+                var item = CreateItem(contract);
                 if (item == null) return false;
                 if (item.Parameters.All(p => p.Value != null)) return false;
                 if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
                 if (item.Signatures.Count == contract.ParameterList.Length)
                 {
-                    Dictionary<ECPoint, int> dic = points.Select((p, i) => new
+                    var dic = points.Select((p, i) => new
                     {
                         PublicKey = p,
                         Index = i
                     }).ToDictionary(p => p.PublicKey, p => p.Index);
-                    byte[][] sigs = item.Signatures.Select(p => new
+                    var sigs = item.Signatures.Select(p => new
                     {
                         Signature = p.Value,
                         Index = dic[p.Key]
                     }).OrderByDescending(p => p.Index).Select(p => p.Signature).ToArray();
-                    for (int i = 0; i < sigs.Length; i++)
+                    for (var i = 0; i < sigs.Length; i++)
                         if (!Add(contract, i, sigs[i]))
                             throw new InvalidOperationException();
                 }
@@ -184,8 +184,8 @@ namespace Neo.SmartContract
             }
             else
             {
-                int index = -1;
-                for (int i = 0; i < contract.ParameterList.Length; i++)
+                var index = -1;
+                for (var i = 0; i < contract.ParameterList.Length; i++)
                     if (contract.ParameterList[i] == ContractParameterType.Signature)
                         if (index >= 0)
                             throw new NotSupportedException();
@@ -198,7 +198,7 @@ namespace Neo.SmartContract
                     // return now to prevent array index out of bounds exception
                     return false;
                 }
-                ContextItem item = CreateItem(contract);
+                var item = CreateItem(contract);
                 if (item == null) return false;
                 if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
@@ -209,7 +209,7 @@ namespace Neo.SmartContract
 
         private ContextItem CreateItem(Contract contract)
         {
-            if (ContextItems.TryGetValue(contract.ScriptHash, out ContextItem item))
+            if (ContextItems.TryGetValue(contract.ScriptHash, out var item))
                 return item;
             if (!ScriptHashes.Contains(contract.ScriptHash))
                 return null;
@@ -230,12 +230,12 @@ namespace Neo.SmartContract
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            byte[] data = Convert.FromBase64String(json["data"].AsString());
+            var data = Convert.FromBase64String(json["data"].AsString());
             MemoryReader reader = new(data);
             verifiable.DeserializeUnsigned(ref reader);
             if (json.ContainsProperty("hash"))
             {
-                UInt256 hash = UInt256.Parse(json["hash"].GetString());
+                var hash = UInt256.Parse(json["hash"].GetString());
                 if (hash != verifiable.Hash) throw new FormatException();
             }
             ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
@@ -264,7 +264,7 @@ namespace Neo.SmartContract
         /// <returns>The parameters from the witness script.</returns>
         public IReadOnlyList<ContractParameter> GetParameters(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
             return item.Parameters;
         }
@@ -276,7 +276,7 @@ namespace Neo.SmartContract
         /// <returns>The signatures from the witness script.</returns>
         public IReadOnlyDictionary<ECPoint, byte[]> GetSignatures(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
             return item.Signatures;
         }
@@ -288,7 +288,7 @@ namespace Neo.SmartContract
         /// <returns>The witness script.</returns>
         public byte[] GetScript(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out var item))
                 return null;
             return item.Script;
         }
@@ -301,12 +301,12 @@ namespace Neo.SmartContract
         public Witness[] GetWitnesses()
         {
             if (!Completed) throw new InvalidOperationException();
-            Witness[] witnesses = new Witness[ScriptHashes.Count];
-            for (int i = 0; i < ScriptHashes.Count; i++)
+            var witnesses = new Witness[ScriptHashes.Count];
+            for (var i = 0; i < ScriptHashes.Count; i++)
             {
-                ContextItem item = ContextItems[ScriptHashes[i]];
+                var item = ContextItems[ScriptHashes[i]];
                 using ScriptBuilder sb = new();
-                for (int j = item.Parameters.Length - 1; j >= 0; j--)
+                for (var j = item.Parameters.Length - 1; j >= 0; j--)
                 {
                     sb.EmitPush(item.Parameters[j]);
                 }

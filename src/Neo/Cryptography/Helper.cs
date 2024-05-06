@@ -50,7 +50,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] RIPEMD160(this ReadOnlySpan<byte> value)
         {
-            byte[] source = value.ToArray();
+            var source = value.ToArray();
             return source.RIPEMD160();
         }
 
@@ -100,7 +100,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Murmur128(this ReadOnlySpan<byte> value, uint seed)
         {
-            byte[] buffer = new byte[16];
+            var buffer = new byte[16];
             using Murmur128 murmur = new(seed);
             murmur.TryComputeHash(value, buffer, out _);
             return buffer;
@@ -137,7 +137,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Sha256(this ReadOnlySpan<byte> value)
         {
-            byte[] buffer = new byte[32];
+            var buffer = new byte[32];
             using var sha256 = SHA256.Create();
             sha256.TryComputeHash(value, buffer, out _);
             return buffer;
@@ -215,7 +215,7 @@ namespace Neo.Cryptography
         {
             ReadOnlySpan<byte> pubkey_local = local.PublicKey.EncodePoint(false);
             ReadOnlySpan<byte> pubkey_remote = remote.EncodePoint(false);
-            using ECDiffieHellman ecdh1 = ECDiffieHellman.Create(new ECParameters
+            using var ecdh1 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = local.PrivateKey,
@@ -225,7 +225,7 @@ namespace Neo.Cryptography
                     Y = pubkey_local[1..][32..].ToArray()
                 }
             });
-            using ECDiffieHellman ecdh2 = ECDiffieHellman.Create(new ECParameters
+            using var ecdh2 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 Q = new System.Security.Cryptography.ECPoint

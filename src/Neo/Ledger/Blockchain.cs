@@ -152,8 +152,8 @@ namespace Neo.Ledger
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
-            foreach (Block block in blocks)
+            var currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+            foreach (var block in blocks)
             {
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
@@ -200,7 +200,7 @@ namespace Neo.Ledger
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
             system.MemPool.InvalidateAllTransactions();
 
-            DataCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
@@ -228,7 +228,7 @@ namespace Neo.Ledger
 
         private void OnInventory(IInventory inventory, bool relay = true)
         {
-            VerifyResult result = inventory switch
+            var result = inventory switch
             {
                 Block block => OnNewBlock(block),
                 Transaction transaction => OnNewTransaction(transaction),
@@ -244,9 +244,9 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            DataCache snapshot = system.StoreView;
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
+            var snapshot = system.StoreView;
+            var currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            var headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
             if (block.Index - 1 > headerHeight)
@@ -267,21 +267,21 @@ namespace Neo.Ledger
             block_cache.TryAdd(block.Hash, block);
             if (block.Index == currentHeight + 1)
             {
-                Block block_persist = block;
+                var block_persist = block;
                 List<Block> blocksToPersistList = new();
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
                     if (block_persist.Index + 1 > headerHeight) break;
-                    UInt256 hash = system.HeaderCache[block_persist.Index + 1].Hash;
+                    var hash = system.HeaderCache[block_persist.Index + 1].Hash;
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
                 }
 
-                int blocksPersisted = 0;
-                uint extraRelayingBlocks = system.Settings.MillisecondsPerBlock < ProtocolSettings.Default.MillisecondsPerBlock
+                var blocksPersisted = 0;
+                var extraRelayingBlocks = system.Settings.MillisecondsPerBlock < ProtocolSettings.Default.MillisecondsPerBlock
                     ? (ProtocolSettings.Default.MillisecondsPerBlock - system.Settings.MillisecondsPerBlock) / 1000
                     : 0;
-                foreach (Block blockToPersist in blocksToPersistList)
+                foreach (var blockToPersist in blocksToPersistList)
                 {
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
@@ -314,9 +314,9 @@ namespace Neo.Ledger
         {
             if (!system.HeaderCache.Full)
             {
-                DataCache snapshot = system.StoreView;
-                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-                foreach (Header header in headers)
+                var snapshot = system.StoreView;
+                var headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                foreach (var header in headers)
                 {
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
@@ -330,7 +330,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            DataCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
@@ -385,7 +385,7 @@ namespace Neo.Ledger
                     OnPreverifyCompleted(task);
                     break;
                 case Reverify reverify:
-                    foreach (IInventory inventory in reverify.Inventories)
+                    foreach (var inventory in reverify.Inventories)
                         OnInventory(inventory, false);
                     break;
                 case Idle _:
@@ -417,11 +417,11 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotCache snapshot = system.GetSnapshot())
+            using (var snapshot = system.GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new();
                 TransactionState[] transactionStates;
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
+                using (var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT)
@@ -435,12 +435,12 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
-                DataCache clonedSnapshot = snapshot.CreateSnapshot();
+                var clonedSnapshot = snapshot.CreateSnapshot();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
-                foreach (TransactionState transactionState in transactionStates)
+                foreach (var transactionState in transactionStates)
                 {
-                    Transaction tx = transactionState.Transaction;
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
+                    var tx = transactionState.Transaction;
+                    using var engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
                     if (transactionState.State == VMState.HALT)
@@ -455,7 +455,7 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
+                using (var engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT)
@@ -476,7 +476,7 @@ namespace Neo.Ledger
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            if (system.HeaderCache.TryRemoveFirst(out Header header))
+            if (system.HeaderCache.TryRemoveFirst(out var header))
                 Debug.Assert(header.Index == block.Index);
         }
 
@@ -503,7 +503,7 @@ namespace Neo.Ledger
 
         private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(ProtocolSettings settings, DataCache snapshot)
         {
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            var currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();
             builder.Add(NativeContract.NEO.GetCommitteeAddress(snapshot));
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, settings.ValidatorsCount);

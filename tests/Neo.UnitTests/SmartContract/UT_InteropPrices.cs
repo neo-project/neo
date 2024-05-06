@@ -24,24 +24,24 @@ namespace Neo.UnitTests.SmartContract
         public void ApplicationEngineFixedPrices()
         {
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
-            byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0))
+            var SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
+            using (var ae = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
                 ApplicationEngine.System_Runtime_CheckWitness.FixedPrice.Should().Be(0_00001024L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
-            byte[] SyscallSystemStorageGetContextHash = new byte[] { 0x68, 0x9b, 0xf6, 0x67, 0xce };
-            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0))
+            var SyscallSystemStorageGetContextHash = new byte[] { 0x68, 0x9b, 0xf6, 0x67, 0xce };
+            using (var ae = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
                 ApplicationEngine.System_Storage_GetContext.FixedPrice.Should().Be(0_00000016L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
-            byte[] SyscallSystemStorageGetHash = new byte[] { 0x68, 0x92, 0x5d, 0xe8, 0x31 };
-            using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0))
+            var SyscallSystemStorageGetHash = new byte[] { 0x68, 0x92, 0x5d, 0xe8, 0x31 };
+            using (var ae = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
                 ApplicationEngine.System_Storage_Get.FixedPrice.Should().Be(32768L);
@@ -57,18 +57,18 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1 };
 
-            byte[] script = CreatePutScript(key, value);
+            var script = CreatePutScript(key, value);
 
-            ContractState contractState = TestUtils.GetContract(script);
+            var contractState = TestUtils.GetContract(script);
 
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(System.Array.Empty<byte>());
+            var skey = TestUtils.GetStorageKey(contractState.Id, key);
+            var sItem = TestUtils.GetStorageItem(System.Array.Empty<byte>());
 
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
@@ -88,18 +88,18 @@ namespace Neo.UnitTests.SmartContract
             var key = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1 };
 
-            byte[] script = CreatePutScript(key, value);
+            var script = CreatePutScript(key, value);
 
-            ContractState contractState = TestUtils.GetContract(script);
+            var contractState = TestUtils.GetContract(script);
 
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(value);
+            var skey = TestUtils.GetStorageKey(contractState.Id, key);
+            var sItem = TestUtils.GetStorageItem(value);
 
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             Debugger debugger = new(applicationEngine);
             applicationEngine.LoadScript(script);
             debugger.StepInto();
@@ -121,18 +121,18 @@ namespace Neo.UnitTests.SmartContract
             var oldValue = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH1 };
 
-            byte[] script = CreatePutScript(key, value);
+            var script = CreatePutScript(key, value);
 
-            ContractState contractState = TestUtils.GetContract(script);
+            var contractState = TestUtils.GetContract(script);
 
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(oldValue);
+            var skey = TestUtils.GetStorageKey(contractState.Id, key);
+            var sItem = TestUtils.GetStorageItem(oldValue);
 
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
@@ -155,18 +155,18 @@ namespace Neo.UnitTests.SmartContract
             var oldValue = new byte[] { (byte)OpCode.PUSH1 };
             var value = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH1 };
 
-            byte[] script = CreateMultiplePutScript(key, value);
+            var script = CreateMultiplePutScript(key, value);
 
-            ContractState contractState = TestUtils.GetContract(script);
+            var contractState = TestUtils.GetContract(script);
 
-            StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(oldValue);
+            var skey = TestUtils.GetStorageKey(contractState.Id, key);
+            var sItem = TestUtils.GetStorageItem(oldValue);
 
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto(); //push value
@@ -185,7 +185,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var scriptBuilder = new ScriptBuilder();
 
-            for (int i = 0; i < times; i++)
+            for (var i = 0; i < times; i++)
             {
                 scriptBuilder.EmitPush(value);
                 scriptBuilder.EmitPush(key);

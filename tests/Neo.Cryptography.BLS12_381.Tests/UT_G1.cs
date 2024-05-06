@@ -41,7 +41,7 @@ public class UT_G1
         Assert.IsTrue(G1Projective.Identity.IsOnCurve);
         Assert.IsTrue(G1Projective.Generator.IsOnCurve);
 
-        Fp z = Fp.FromRawUnchecked(new ulong[]
+        var z = Fp.FromRawUnchecked(new ulong[]
         {
             0xba7a_fa1f_9a6f_e250,
             0xfa0f_5b59_5eaf_e731,
@@ -81,7 +81,7 @@ public class UT_G1
         Assert.AreEqual(b, b);
         Assert.AreNotEqual(a, b);
 
-        Fp z = Fp.FromRawUnchecked(new ulong[]
+        var z = Fp.FromRawUnchecked(new ulong[]
         {
             0xba7a_fa1f_9a6f_e250,
             0xfa0f_5b59_5eaf_e731,
@@ -141,7 +141,7 @@ public class UT_G1
         Assert.IsTrue(new G1Affine(b).IsOnCurve);
         Assert.IsTrue(new G1Affine(b).IsIdentity);
 
-        Fp z = Fp.FromRawUnchecked(new ulong[]
+        var z = Fp.FromRawUnchecked(new ulong[]
         {
             0xba7a_fa1f_9a6f_e250,
             0xfa0f_5b59_5eaf_e731,
@@ -215,7 +215,7 @@ public class UT_G1
             var a = G1Projective.Identity;
             var b = G1Projective.Generator;
 
-            Fp z = Fp.FromRawUnchecked(new ulong[]
+            var z = Fp.FromRawUnchecked(new ulong[]
             {
                 0xba7a_fa1f_9a6f_e250,
                 0xfa0f_5b59_5eaf_e731,
@@ -235,7 +235,7 @@ public class UT_G1
             var a = G1Projective.Identity;
             var b = G1Projective.Generator;
 
-            Fp z = Fp.FromRawUnchecked(new ulong[]
+            var z = Fp.FromRawUnchecked(new ulong[]
             {
                 0xba7a_fa1f_9a6f_e250,
                 0xfa0f_5b59_5eaf_e731,
@@ -257,7 +257,7 @@ public class UT_G1
             var c = a + b;
 
             var d = G1Projective.Generator;
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 d += G1Projective.Generator;
             }
@@ -268,7 +268,7 @@ public class UT_G1
             Assert.AreEqual(c, d);
         }
         {
-            Fp beta = Fp.FromRawUnchecked(new ulong[]
+            var beta = Fp.FromRawUnchecked(new ulong[]
             {
                 0xcd03_c9e4_8671_f071,
                 0x5dab_2246_1fcd_a5d2,
@@ -320,7 +320,7 @@ public class UT_G1
             var a = G1Affine.Identity;
             var b = G1Projective.Generator;
 
-            Fp z = Fp.FromRawUnchecked(new ulong[]
+            var z = Fp.FromRawUnchecked(new ulong[]
             {
                 0xba7a_fa1f_9a6f_e250,
                 0xfa0f_5b59_5eaf_e731,
@@ -340,7 +340,7 @@ public class UT_G1
             var a = G1Affine.Identity;
             var b = G1Projective.Generator;
 
-            Fp z = Fp.FromRawUnchecked(new ulong[]
+            var z = Fp.FromRawUnchecked(new ulong[]
             {
                 0xba7a_fa1f_9a6f_e250,
                 0xfa0f_5b59_5eaf_e731,
@@ -362,7 +362,7 @@ public class UT_G1
             var c = a + b;
 
             var d = G1Projective.Generator;
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 d += G1Affine.Generator;
             }
@@ -373,7 +373,7 @@ public class UT_G1
             Assert.AreEqual(c, d);
         }
         {
-            Fp beta = Fp.FromRawUnchecked(new ulong[]
+            var beta = Fp.FromRawUnchecked(new ulong[]
             {
                 0xcd03_c9e4_8671_f071,
                 0x5dab_2246_1fcd_a5d2,
@@ -570,11 +570,11 @@ public class UT_G1
         var b = a.Double();
         var c = b.Double();
 
-        foreach (bool a_identity in new[] { false, true })
+        foreach (var a_identity in new[] { false, true })
         {
-            foreach (bool b_identity in new[] { false, true })
+            foreach (var b_identity in new[] { false, true })
             {
-                foreach (bool c_identity in new[] { false, true })
+                foreach (var c_identity in new[] { false, true })
                 {
                     var v = new[] { a, b, c };
                     if (a_identity)

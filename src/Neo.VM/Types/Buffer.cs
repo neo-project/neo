@@ -79,9 +79,9 @@ namespace Neo.VM.Types
                     return new BigInteger(InnerBuffer.Span);
                 case StackItemType.ByteString:
 #if NET5_0_OR_GREATER
-                    byte[] clone = GC.AllocateUninitializedArray<byte>(InnerBuffer.Length);
+                    var clone = GC.AllocateUninitializedArray<byte>(InnerBuffer.Length);
 #else
-                    byte[] clone = new byte[InnerBuffer.Length];
+                    var clone = new byte[InnerBuffer.Length];
 #endif
                     InnerBuffer.CopyTo(clone);
                     return clone;
@@ -92,7 +92,7 @@ namespace Neo.VM.Types
 
         internal override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
-            if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
+            if (refMap.TryGetValue(this, out var mappedItem)) return mappedItem;
             StackItem result = asImmutable ? new ByteString(InnerBuffer.ToArray()) : new Buffer(InnerBuffer.Span);
             refMap.Add(this, result);
             return result;

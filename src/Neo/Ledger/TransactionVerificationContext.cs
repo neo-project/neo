@@ -57,10 +57,10 @@ namespace Neo.Ledger
         /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
         public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
         {
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
-            BigInteger expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
+            var expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
                 expectedFee -= (conflictTx.NetworkFee + conflictTx.SystemFee);
             if (balance < expectedFee) return false;

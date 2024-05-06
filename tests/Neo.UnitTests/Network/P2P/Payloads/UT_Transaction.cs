@@ -72,11 +72,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Script_Set()
         {
-            byte[] val = TestUtils.GetByteArray(32, 0x42);
+            var val = TestUtils.GetByteArray(32, 0x42);
             uut.Script = val;
             var span = uut.Script.Span;
             span.Length.Should().Be(32);
-            for (int i = 0; i < val.Length; i++)
+            for (var i = 0; i < val.Length; i++)
             {
                 span[i].Should().Be(val[i]);
             }
@@ -181,7 +181,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
-                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -242,7 +242,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             data.ScriptHashes.Count.Should().Be(1);
             data.ScriptHashes[0].Should().BeEquivalentTo(acc.ScriptHash);
             // will sign tx
-            bool signed = wallet.Sign(data);
+            var signed = wallet.Sign(data);
             Assert.IsTrue(signed);
             // get witnesses from signed 'data'
             tx.Witnesses = data.GetWitnesses();
@@ -257,7 +257,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
-                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -323,7 +323,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value, null);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -348,7 +348,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // ----
 
             var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            bool signed = wallet.Sign(data);
+            var signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
             // get witnesses from signed 'data'
@@ -362,7 +362,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
-                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -402,7 +402,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value, null);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -428,7 +428,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // ----
 
             var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            bool signed = wallet.Sign(data);
+            var signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
             // get witnesses from signed 'data'
@@ -442,7 +442,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
-                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -482,7 +482,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value, null);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -511,7 +511,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // ----
 
             var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            bool signed = wallet.Sign(data);
+            var signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
             // get witnesses from signed 'data'
@@ -525,7 +525,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
-                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -563,7 +563,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -610,7 +610,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value, null);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -636,7 +636,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // ----
 
             var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            bool signed = wallet.Sign(data);
+            var signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
             // get witnesses from signed 'data'
@@ -655,7 +655,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
-                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -693,7 +693,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -741,7 +741,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value, null);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -789,7 +789,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Witnesses = Array.Empty<Witness>()
             };
-            UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
+            var hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(1, hashes.Length);
             Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(TestProtocolSettings.Default, snapshot, new TransactionVerificationContext(), new List<Transaction>()));
         }
@@ -811,7 +811,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
-            byte[] sTx = txSimple.ToArray();
+            var sTx = txSimple.ToArray();
 
             // detailed hexstring info (basic checking)
             sTx.ToHexString().Should().Be(
@@ -826,7 +826,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 "010000"); // empty witnesses
 
             // try to deserialize
-            Transaction tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx);
+            var tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx);
 
             tx2.Version.Should().Be(0x00);
             tx2.Nonce.Should().Be(0x01020304);
@@ -880,7 +880,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
-            byte[] sTx = txDoubleCosigners.ToArray();
+            var sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
             sTx.ToHexString().Should().Be("000403020100e1f5050000000001000000000000000403020102090807060504030201000908070605040302010080090807060504030201000908070605040302010001000111010000");
@@ -899,15 +899,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             // cosigners must respect count
 
-            int maxCosigners = 16;
+            var maxCosigners = 16;
 
             // --------------------------------------
             // this should pass (respecting max size)
 
             var cosigners1 = new Signer[maxCosigners];
-            for (int i = 0; i < cosigners1.Length; i++)
+            for (var i = 0; i < cosigners1.Length; i++)
             {
-                string hex = i.ToString("X4");
+                var hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
                 cosigners1[i] = new Signer
@@ -930,7 +930,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
-            byte[] sTx1 = txCosigners1.ToArray();
+            var sTx1 = txCosigners1.ToArray();
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.AsSerializable<Transaction>(sTx1));
@@ -941,7 +941,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var cosigners = new Signer[maxCosigners + 1];
             for (var i = 0; i < maxCosigners + 1; i++)
             {
-                string hex = i.ToString("X4");
+                var hex = i.ToString("X4");
                 while (hex.Length < 40)
                     hex = hex.Insert(0, "0");
                 cosigners[i] = new Signer
@@ -963,7 +963,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
-            byte[] sTx2 = txCosigners.ToArray();
+            var sTx2 = txCosigners.ToArray();
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
@@ -1002,7 +1002,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             using (ScriptBuilder sb = new())
             {
                 // self-transfer of 1e-8 GAS
-                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                var value = new BigDecimal(BigInteger.One, 8).Value;
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value, null);
                 sb.Emit(OpCode.ASSERT);
                 script = sb.ToArray();
@@ -1030,7 +1030,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // ----
 
             var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            bool signed = wallet.Sign(data);
+            var signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
             // get witnesses from signed 'data'
@@ -1044,7 +1044,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
-                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -1076,7 +1076,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
             };
 
-            JObject jObj = uut.ToJson(ProtocolSettings.Default);
+            var jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0x0ab073429086d9e48fc87386122917989705d1c81fe4a60bf90e2fc228de3146");
             jObj["size"].AsNumber().Should().Be(84);

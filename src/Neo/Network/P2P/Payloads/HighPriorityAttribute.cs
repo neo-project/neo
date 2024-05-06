@@ -35,7 +35,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            UInt160 committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
             return tx.Signers.Any(p => p.Account.Equals(committee));
         }
     }

@@ -27,7 +27,7 @@ namespace Neo.Wallets.NEP6
         {
             if (File.Exists(path))
                 throw new InvalidOperationException("The wallet file already exists.");
-            NEP6Wallet wallet = new NEP6Wallet(path, password, settings, name);
+            var wallet = new NEP6Wallet(path, password, settings, name);
             wallet.Save();
             return wallet;
         }

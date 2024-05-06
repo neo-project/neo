@@ -47,16 +47,16 @@ namespace Neo.VM.Types
         /// <returns>The copied structure.</returns>
         public Struct Clone(ExecutionEngineLimits limits)
         {
-            int count = (int)(limits.MaxStackSize - 1);
+            var count = (int)(limits.MaxStackSize - 1);
             Struct result = new(ReferenceCounter);
             Queue<Struct> queue = new();
             queue.Enqueue(result);
             queue.Enqueue(this);
             while (queue.Count > 0)
             {
-                Struct a = queue.Dequeue();
-                Struct b = queue.Dequeue();
-                foreach (StackItem item in b)
+                var a = queue.Dequeue();
+                var b = queue.Dequeue();
+                foreach (var item in b)
                 {
                     count--;
                     if (count < 0) throw new InvalidOperationException("Beyond clone limits!");
@@ -95,14 +95,14 @@ namespace Neo.VM.Types
             Stack<StackItem> stack2 = new();
             stack1.Push(this);
             stack2.Push(s);
-            uint count = limits.MaxStackSize;
-            uint maxComparableSize = limits.MaxComparableSize;
+            var count = limits.MaxStackSize;
+            var maxComparableSize = limits.MaxComparableSize;
             while (stack1.Count > 0)
             {
                 if (count-- == 0)
                     throw new InvalidOperationException("Too many struct items to compare.");
-                StackItem a = stack1.Pop();
-                StackItem b = stack2.Pop();
+                var a = stack1.Pop();
+                var b = stack2.Pop();
                 if (a is ByteString byteString)
                 {
                     if (!byteString.Equals(b, ref maxComparableSize)) return false;
@@ -117,9 +117,9 @@ namespace Neo.VM.Types
                         if (ReferenceEquals(a, b)) continue;
                         if (b is not Struct sb) return false;
                         if (sa.Count != sb.Count) return false;
-                        foreach (StackItem item in sa)
+                        foreach (var item in sa)
                             stack1.Push(item);
-                        foreach (StackItem item in sb)
+                        foreach (var item in sb)
                             stack2.Push(item);
                     }
                     else

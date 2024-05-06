@@ -22,7 +22,7 @@ namespace Neo.GUI
 
         public static DialogResult Show(string text, string message = null, string title = null)
         {
-            using InformationBox box = new InformationBox();
+            using var box = new InformationBox();
             box.textBox1.Text = text;
             if (message != null)
             {

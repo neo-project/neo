@@ -45,7 +45,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var wallets = new NEP6Wallet[pubKeys];
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            for (int x = 0; x < pubKeys; x++)
+            for (var x = 0; x < pubKeys; x++)
             {
                 wallets[x] = TestUtils.GenerateTestWallet("123");
                 address[x] = wallets[x].CreateAccount();
@@ -55,7 +55,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var multiSignContract = Contract.CreateMultiSigContract(m, address.Select(a => a.GetKey().PublicKey).ToArray());
 
-            for (int x = 0; x < pubKeys; x++)
+            for (var x = 0; x < pubKeys; x++)
             {
                 wallets[x].CreateAccount(multiSignContract, address[x].GetKey());
             }
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = Array.Empty<Witness>()
             }, TestProtocolSettings.Default.Network);
 
-            for (int x = 0; x < m; x++)
+            for (var x = 0; x < m; x++)
             {
                 Assert.IsTrue(wallets[x].Sign(data));
             }
@@ -128,7 +128,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void InvocationScript_Set()
         {
-            byte[] dataArray = new byte[] { 0, 32, 32, 20, 32, 32 };
+            var dataArray = new byte[] { 0, 32, 32, 20, 32, 32 };
             uut.InvocationScript = dataArray;
             uut.InvocationScript.Length.Should().Be(6);
             Assert.AreEqual(uut.InvocationScript.Span.ToHexString(), "002020142020");
@@ -163,7 +163,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             SetupWitnessWithValues(uut, 2, 3, out _, out _);
 
-            JObject json = uut.ToJson();
+            var json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));
             Assert.IsTrue(json.ContainsProperty("verification"));
             Assert.AreEqual(json["invocation"].AsString(), "ICA=");

@@ -61,7 +61,7 @@ namespace Neo.IO
         {
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
                 throw new InvalidCastException();
-            ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
+            var serializable = (ISerializable)Activator.CreateInstance(type);
             MemoryReader reader = new(value);
             serializable.Deserialize(ref reader);
             return serializable;
@@ -101,10 +101,10 @@ namespace Neo.IO
         /// <returns>The compressed data.</returns>
         public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
         {
-            int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
-            byte[] buffer = new byte[sizeof(uint) + maxLength];
+            var maxLength = LZ4Codec.MaximumOutputSize(data.Length);
+            var buffer = new byte[sizeof(uint) + maxLength];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
-            int length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
+            var length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
             return buffer.AsMemory(0, sizeof(uint) + length);
         }
 
@@ -116,9 +116,9 @@ namespace Neo.IO
         /// <returns>The original data.</returns>
         public static byte[] DecompressLz4(this ReadOnlySpan<byte> data, int maxOutput)
         {
-            int length = BinaryPrimitives.ReadInt32LittleEndian(data);
+            var length = BinaryPrimitives.ReadInt32LittleEndian(data);
             if (length < 0 || length > maxOutput) throw new FormatException();
-            byte[] result = new byte[length];
+            var result = new byte[length];
             if (LZ4Codec.Decode(data[4..], result) != length)
                 throw new FormatException();
             return result;
@@ -148,7 +148,7 @@ namespace Neo.IO
         public static int GetVarSize<T>(this IReadOnlyCollection<T> value)
         {
             int value_size;
-            Type t = typeof(T);
+            var t = typeof(T);
             if (typeof(ISerializable).IsAssignableFrom(t))
             {
                 value_size = value.OfType<ISerializable>().Sum(p => p.Size);
@@ -156,7 +156,7 @@ namespace Neo.IO
             else if (t.GetTypeInfo().IsEnum)
             {
                 int element_size;
-                Type u = t.GetTypeInfo().GetEnumUnderlyingType();
+                var u = t.GetTypeInfo().GetEnumUnderlyingType();
                 if (u == typeof(sbyte) || u == typeof(byte))
                     element_size = 1;
                 else if (u == typeof(short) || u == typeof(ushort))
@@ -191,7 +191,7 @@ namespace Neo.IO
         /// <returns>The size of the <see cref="string"/>.</returns>
         public static int GetVarSize(this string value)
         {
-            int size = Utility.StrictUTF8.GetByteCount(value);
+            var size = Utility.StrictUTF8.GetByteCount(value);
             return GetVarSize(size) + size;
         }
 
@@ -231,8 +231,8 @@ namespace Neo.IO
         /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
         public static T[] ReadNullableArray<T>(this ref MemoryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
         {
-            T[] array = new T[reader.ReadVarInt((ulong)max)];
-            for (int i = 0; i < array.Length; i++)
+            var array = new T[reader.ReadVarInt((ulong)max)];
+            for (var i = 0; i < array.Length; i++)
                 array[i] = reader.ReadBoolean() ? reader.ReadSerializable<T>() : null;
             return array;
         }
@@ -259,8 +259,8 @@ namespace Neo.IO
         /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
         public static T[] ReadSerializableArray<T>(this ref MemoryReader reader, int max = 0x1000000) where T : ISerializable, new()
         {
-            T[] array = new T[reader.ReadVarInt((ulong)max)];
-            for (int i = 0; i < array.Length; i++)
+            var array = new T[reader.ReadVarInt((ulong)max)];
+            for (var i = 0; i < array.Length; i++)
             {
                 array[i] = new T();
                 array[i].Deserialize(ref reader);
@@ -287,7 +287,7 @@ namespace Neo.IO
         /// <returns>The integer read from the <see cref="BinaryReader"/>.</returns>
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
         {
-            byte fb = reader.ReadByte();
+            var fb = reader.ReadByte();
             ulong value;
             if (fb == 0xFD)
                 value = reader.ReadUInt16();
@@ -349,7 +349,7 @@ namespace Neo.IO
         public static void Write<T>(this BinaryWriter writer, IReadOnlyCollection<T> value) where T : ISerializable
         {
             writer.WriteVarInt(value.Count);
-            foreach (T item in value)
+            foreach (var item in value)
             {
                 item.Serialize(writer);
             }
@@ -367,7 +367,7 @@ namespace Neo.IO
                 throw new ArgumentNullException(nameof(value));
             if (value.Length > length)
                 throw new ArgumentException(null, nameof(value));
-            byte[] bytes = Utility.StrictUTF8.GetBytes(value);
+            var bytes = Utility.StrictUTF8.GetBytes(value);
             if (bytes.Length > length)
                 throw new ArgumentException(null, nameof(value));
             writer.Write(bytes);
@@ -386,7 +386,7 @@ namespace Neo.IO
             writer.WriteVarInt(value.Length);
             foreach (var item in value)
             {
-                bool isNull = item is null;
+                var isNull = item is null;
                 writer.Write(!isNull);
                 if (isNull) continue;
                 item.Serialize(writer);

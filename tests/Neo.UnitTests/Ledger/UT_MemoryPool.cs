@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Ledger
         private static long LongRandom(long min, long max, Random rand)
         {
             // Only returns positive random long values.
-            long longRand = (long)rand.NextBigInteger(63);
+            var longRand = (long)rand.NextBigInteger(63);
             return longRand % (max - min) + min;
         }
 
@@ -103,7 +103,7 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
-            UInt160 sender = senderAccount;
+            var sender = senderAccount;
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
@@ -131,7 +131,7 @@ namespace Neo.UnitTests.Ledger
         private void AddTransactions(int count)
         {
             var snapshot = GetSnapshot();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransaction();
                 _unit.TryAdd(txToAdd, snapshot);
@@ -148,7 +148,7 @@ namespace Neo.UnitTests.Ledger
 
         private void AddTransactionsWithBalanceVerify(int count, long fee, DataCache snapshot)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransactionWithFeeAndBalanceVerify(fee);
                 _unit.TryAdd(txToAdd, snapshot);
@@ -218,8 +218,8 @@ namespace Neo.UnitTests.Ledger
         public async Task BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
         {
             var snapshot = GetSnapshot();
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
@@ -236,9 +236,9 @@ namespace Neo.UnitTests.Ledger
             };
 
             // Simulate the transfer process in tx by burning the balance
-            UInt160 sender = block.Transactions[0].Sender;
+            var sender = block.Transactions[0].Sender;
 
-            ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
+            var applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
             applicationEngine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
             _ = NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
@@ -259,8 +259,8 @@ namespace Neo.UnitTests.Ledger
             // Arrange: prepare mempooled and in-bock txs conflicting with each other.
             long txFee = 1;
             var snapshot = GetSnapshot();
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 7, true); // balance enough for 7 mempooled txs
@@ -326,8 +326,8 @@ namespace Neo.UnitTests.Ledger
             long txFee = 1;
             var maliciousSender = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 }));
             var snapshot = GetSnapshot();
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
@@ -426,8 +426,8 @@ namespace Neo.UnitTests.Ledger
             // Arrange: prepare mempooled txs that have conflicts.
             long txFee = 1;
             var snapshot = GetSnapshot();
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
@@ -607,8 +607,8 @@ namespace Neo.UnitTests.Ledger
         {
             AddTransactions(10);
             _unit.InvalidateVerifiedTransactions();
-            IEnumerator<Transaction> enumerator = _unit.GetEnumerator();
-            foreach (Transaction tx in _unit)
+            var enumerator = _unit.GetEnumerator();
+            foreach (var tx in _unit)
             {
                 enumerator.MoveNext();
                 enumerator.Current.Should().BeSameAs(tx);
@@ -622,7 +622,7 @@ namespace Neo.UnitTests.Ledger
             _unit.InvalidateVerifiedTransactions();
             IEnumerable enumerable = _unit;
             var enumerator = enumerable.GetEnumerator();
-            foreach (Transaction tx in _unit)
+            foreach (var tx in _unit)
             {
                 enumerator.MoveNext();
                 enumerator.Current.Should().BeSameAs(tx);
@@ -638,7 +638,7 @@ namespace Neo.UnitTests.Ledger
             _unit.TryAdd(tx1, snapshot);
             _unit.InvalidateVerifiedTransactions();
             _unit.TryAdd(tx2, snapshot);
-            IEnumerable<Transaction> enumerable = _unit.GetVerifiedTransactions();
+            var enumerable = _unit.GetVerifiedTransactions();
             enumerable.Count().Should().Be(1);
             var enumerator = enumerable.GetEnumerator();
             enumerator.MoveNext();
@@ -696,7 +696,7 @@ namespace Neo.UnitTests.Ledger
             var snapshot = GetSnapshot();
             var tx1 = CreateTransaction();
             _unit.TryAdd(tx1, snapshot);
-            _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
+            _unit.TryGetValue(tx1.Hash, out var tx).Should().BeTrue();
             tx.Should().BeEquivalentTo(tx1);
 
             _unit.InvalidateVerifiedTransactions();
@@ -748,7 +748,7 @@ namespace Neo.UnitTests.Ledger
 
         public static StorageKey CreateStorageKey(int id, byte prefix, byte[] key = null)
         {
-            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
+            var buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
             buffer[0] = prefix;
             key?.CopyTo(buffer.AsSpan(1));
             return new()

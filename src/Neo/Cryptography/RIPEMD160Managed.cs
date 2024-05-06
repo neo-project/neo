@@ -79,8 +79,8 @@ namespace Neo.Cryptography
         private unsafe void HashData(byte[] partIn, int ibStart, int cbSize)
         {
             int bufferLen;
-            int partInLen = cbSize;
-            int partInBase = ibStart;
+            var partInLen = cbSize;
+            var partInBase = ibStart;
 
             /* Compute length of buffer */
             bufferLen = (int)(_count & 0x3f);
@@ -127,7 +127,7 @@ namespace Neo.Cryptography
             byte[] pad;
             int padLen;
             long bitCount;
-            byte[] hash = new byte[20];
+            var hash = new byte[20];
 
             /* Compute padding: 80 00 00 ... 00 00 <bit count>
              */
@@ -164,17 +164,17 @@ namespace Neo.Cryptography
         [SecurityCritical]
         private static unsafe void MDTransform(uint* blockDWords, uint* state, byte* block)
         {
-            uint aa = state[0];
-            uint bb = state[1];
-            uint cc = state[2];
-            uint dd = state[3];
-            uint ee = state[4];
+            var aa = state[0];
+            var bb = state[1];
+            var cc = state[2];
+            var dd = state[3];
+            var ee = state[4];
 
-            uint aaa = aa;
-            uint bbb = bb;
-            uint ccc = cc;
-            uint ddd = dd;
-            uint eee = ee;
+            var aaa = aa;
+            var bbb = bb;
+            var ccc = cc;
+            var ddd = dd;
+            var eee = ee;
 
             DWORDFromLittleEndian(blockDWords, 16, block);
 

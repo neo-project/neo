@@ -51,13 +51,13 @@ namespace Neo.GUI
 
         public Transaction GetTransaction()
         {
-            byte[] script = textBox6.Text.Trim().HexToBytes();
+            var script = textBox6.Text.Trim().HexToBytes();
             return tx ?? Service.CurrentWallet.MakeTransaction(Service.NeoSystem.StoreView, script);
         }
 
         private void UpdateScript()
         {
-            using ScriptBuilder sb = new ScriptBuilder();
+            using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(script_hash, (string)comboBox1.SelectedItem, parameters);
             textBox6.Text = sb.ToArray().ToHexString();
         }
@@ -80,15 +80,15 @@ namespace Neo.GUI
                 MessageBox.Show(ex.Message);
                 return;
             }
-            Transaction tx_test = tx ?? new Transaction
+            var tx_test = tx ?? new Transaction
             {
                 Signers = new Signer[0],
                 Attributes = new TransactionAttribute[0],
                 Script = script,
                 Witnesses = new Witness[0]
             };
-            using ApplicationEngine engine = ApplicationEngine.Run(tx_test.Script, Service.NeoSystem.StoreView, container: tx_test);
-            StringBuilder sb = new StringBuilder();
+            using var engine = ApplicationEngine.Run(tx_test.Script, Service.NeoSystem.StoreView, container: tx_test);
+            var sb = new StringBuilder();
             sb.AppendLine($"VM State: {engine.State}");
             sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
             sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
@@ -124,7 +124,7 @@ namespace Neo.GUI
 
         private void button8_Click(object sender, EventArgs e)
         {
-            using (ParametersEditor dialog = new ParametersEditor(parameters))
+            using (var dialog = new ParametersEditor(parameters))
             {
                 dialog.ShowDialog();
             }
@@ -134,9 +134,9 @@ namespace Neo.GUI
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!(comboBox1.SelectedItem is string method)) return;
-            JArray functions = (JArray)abi["functions"];
+            var functions = (JArray)abi["functions"];
             var function = functions.First(p => p["name"].AsString() == method);
-            JArray _params = (JArray)function["parameters"];
+            var _params = (JArray)function["parameters"];
             parameters = _params.Select(p => new ContractParameter(p["type"].AsEnum<ContractParameterType>())).ToArray();
             textBox9.Text = string.Join(", ", _params.Select(p => p["name"].AsString()));
             button8.Enabled = parameters.Length > 0;

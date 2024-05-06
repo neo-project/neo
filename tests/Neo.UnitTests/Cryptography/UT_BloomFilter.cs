@@ -25,7 +25,7 @@ namespace Neo.UnitTests.Cryptography
             int m = 7, n = 10;
             uint nTweak = 123456;
             byte[] elements = { 0, 1, 2, 3, 4 };
-            BloomFilter filter = new BloomFilter(m, n, nTweak);
+            var filter = new BloomFilter(m, n, nTweak);
             filter.Add(elements);
             filter.Check(elements).Should().BeTrue();
             byte[] anotherElements = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Cryptography
             action.Should().Throw<ArgumentOutOfRangeException>();
 
             n = 10;
-            BloomFilter filter = new BloomFilter(m, n, nTweak);
+            var filter = new BloomFilter(m, n, nTweak);
             filter.M.Should().Be(m);
             filter.K.Should().Be(n);
             filter.Tweak.Should().Be(nTweak);
@@ -70,10 +70,10 @@ namespace Neo.UnitTests.Cryptography
             int m = 7, n = 10;
             uint nTweak = 123456;
             byte[] elements = { 0, 1, 2, 3, 4 };
-            BloomFilter filter = new BloomFilter(m, n, nTweak);
-            byte[] result = new byte[m];
+            var filter = new BloomFilter(m, n, nTweak);
+            var result = new byte[m];
             filter.GetBits(result);
-            foreach (byte value in result)
+            foreach (var value in result)
                 value.Should().Be(0);
         }
     }

@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestClone()
         {
             Random random = new();
-            byte[] privateKey = new byte[32];
+            var privateKey = new byte[32];
             random.NextBytes(privateKey);
             KeyPair keyPair = new(privateKey);
             ContractGroup contractGroup = new()

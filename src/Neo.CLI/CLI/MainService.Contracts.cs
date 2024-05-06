@@ -32,7 +32,7 @@ namespace Neo.CLI
         private void OnDeployCommand(string filePath, string? manifestPath = null, JObject? data = null)
         {
             if (NoWallet()) return;
-            byte[] script = LoadDeploymentScript(filePath, manifestPath, data, out var nef, out var manifest);
+            var script = LoadDeploymentScript(filePath, manifestPath, data, out var nef, out var manifest);
             Transaction tx;
             try
             {
@@ -43,7 +43,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error(GetExceptionMessage(e));
                 return;
             }
-            UInt160 hash = SmartContract.Helper.GetContractHash(tx.Sender, nef.CheckSum, manifest.Name);
+            var hash = SmartContract.Helper.GetContractHash(tx.Sender, nef.CheckSum, manifest.Name);
 
             ConsoleHelper.Info("Contract hash: ", $"{hash}");
             ConsoleHelper.Info("Gas consumed: ", $"{new BigDecimal((BigInteger)tx.SystemFee, NativeContract.GAS.Decimals)}");
@@ -68,7 +68,7 @@ namespace Neo.CLI
         [ConsoleCommand("update", Category = "Contract Commands")]
         private void OnUpdateCommand(UInt160 scriptHash, string filePath, string manifestPath, UInt160 sender, UInt160[]? signerAccounts = null, JObject? data = null)
         {
-            Signer[] signers = Array.Empty<Signer>();
+            var signers = Array.Empty<Signer>();
 
             if (NoWallet()) return;
             if (sender != null)
@@ -91,7 +91,7 @@ namespace Neo.CLI
             Transaction tx;
             try
             {
-                byte[] script = LoadUpdateScript(scriptHash, filePath, manifestPath, data, out var nef, out var manifest);
+                var script = LoadUpdateScript(scriptHash, filePath, manifestPath, data, out var nef, out var manifest);
                 tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, script, sender, signers);
             }
             catch (InvalidOperationException e)
@@ -99,7 +99,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error(GetExceptionMessage(e));
                 return;
             }
-            ContractState contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
+            var contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
             if (contract == null)
             {
                 ConsoleHelper.Warning($"Can't upgrade, contract hash not exist: {scriptHash}");
@@ -132,7 +132,7 @@ namespace Neo.CLI
         private void OnInvokeCommand(UInt160 scriptHash, string operation, JArray? contractParameters = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
         {
             var gas = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
-            Signer[] signers = Array.Empty<Signer>();
+            var signers = Array.Empty<Signer>();
             if (!NoWallet())
             {
                 if (sender == null)
@@ -156,7 +156,7 @@ namespace Neo.CLI
                 }
             }
 
-            Transaction tx = new Transaction
+            var tx = new Transaction
             {
                 Signers = signers,
                 Attributes = Array.Empty<TransactionAttribute>(),

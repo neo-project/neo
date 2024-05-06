@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Cryptography
             var hash3 = GetByteArrayHash(array3);
 
             UInt256[] hashes = { hash1, hash2, hash3 };
-            MerkleTree tree = new MerkleTree(hashes);
+            var tree = new MerkleTree(hashes);
             var hashArray = tree.ToHashArray();
             hashArray[0].Should().Be(hash1);
             hashArray[1].Should().Be(hash2);
@@ -69,10 +69,10 @@ namespace Neo.UnitTests.Cryptography
             var hash3 = GetByteArrayHash(array3);
 
             UInt256[] hashes = { hash1, hash2, hash3 };
-            MerkleTree tree = new MerkleTree(hashes);
+            var tree = new MerkleTree(hashes);
 
             bool[] boolArray = { false, false, false };
-            BitArray bitArray = new BitArray(boolArray);
+            var bitArray = new BitArray(boolArray);
             tree.Trim(bitArray);
             var hashArray = tree.ToHashArray();
 

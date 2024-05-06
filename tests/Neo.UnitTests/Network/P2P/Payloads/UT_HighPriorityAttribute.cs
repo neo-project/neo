@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // As transactionAttribute
 
-            byte[] buffer = test.ToArray();
+            var buffer = test.ToArray();
             var reader = new MemoryReader(buffer);
             clone = TransactionAttribute.DeserializeFrom(ref reader) as HighPriorityAttribute;
             Assert.AreEqual(clone.Type, test.Type);

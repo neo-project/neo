@@ -29,8 +29,8 @@ public class UT_Fp
     {
         static bool IsEqual(in Fp a, in Fp b)
         {
-            bool eq = StructuralComparisons.StructuralEqualityComparer.Equals(a, b);
-            bool ct_eq = a == b;
+            var eq = StructuralComparisons.StructuralEqualityComparer.Equals(a, b);
+            var ct_eq = a == b;
             Assert.AreEqual(eq, ct_eq);
             return eq;
         }
@@ -48,8 +48,8 @@ public class UT_Fp
     [TestMethod]
     public void TestConditionalSelection()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[] { 1, 2, 3, 4, 5, 6 });
-        Fp b = Fp.FromRawUnchecked(new ulong[] { 7, 8, 9, 10, 11, 12 });
+        var a = Fp.FromRawUnchecked(new ulong[] { 1, 2, 3, 4, 5, 6 });
+        var b = Fp.FromRawUnchecked(new ulong[] { 7, 8, 9, 10, 11, 12 });
 
         Assert.AreEqual(a, ConditionalSelect(in a, in b, false));
         Assert.AreEqual(b, ConditionalSelect(in a, in b, true));
@@ -58,7 +58,7 @@ public class UT_Fp
     [TestMethod]
     public void TestSquaring()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0xd215_d276_8e83_191b,
             0x5085_d80f_8fb2_8261,
@@ -67,7 +67,7 @@ public class UT_Fp
             0x6436_b6f7_f4d9_5dfb,
             0x1060_6628_ad4a_4d90
         });
-        Fp b = Fp.FromRawUnchecked(new ulong[]
+        var b = Fp.FromRawUnchecked(new ulong[]
         {
             0x33d9_c42a_3cb3_e235,
             0xdad1_1a09_4c4c_d455,
@@ -83,7 +83,7 @@ public class UT_Fp
     [TestMethod]
     public void TestMultiplication()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0x0397_a383_2017_0cd4,
             0x734c_1b2c_9e76_1d30,
@@ -92,7 +92,7 @@ public class UT_Fp
             0x2294_ce75_d4e2_6a27,
             0x1333_8bd8_7001_1ebb
         });
-        Fp b = Fp.FromRawUnchecked(new ulong[]
+        var b = Fp.FromRawUnchecked(new ulong[]
         {
             0xb9c3_c7c5_b119_6af7,
             0x2580_e208_6ce3_35c1,
@@ -101,7 +101,7 @@ public class UT_Fp
             0xe076_2346_c384_52ce,
             0x0652_e893_26e5_7dc0
         });
-        Fp c = Fp.FromRawUnchecked(new ulong[]
+        var c = Fp.FromRawUnchecked(new ulong[]
         {
             0xf96e_f3d7_11ab_5355,
             0xe8d4_59ea_00f1_48dd,
@@ -117,7 +117,7 @@ public class UT_Fp
     [TestMethod]
     public void TestAddition()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0x5360_bb59_7867_8032,
             0x7dd2_75ae_799e_128e,
@@ -126,7 +126,7 @@ public class UT_Fp
             0xc323_65c5_e73f_474a,
             0x115a_2a54_89ba_be5b
         });
-        Fp b = Fp.FromRawUnchecked(new ulong[]
+        var b = Fp.FromRawUnchecked(new ulong[]
         {
             0x9fd2_8773_3d23_dda0,
             0xb16b_f2af_738b_3554,
@@ -135,7 +135,7 @@ public class UT_Fp
             0xd319_a080_efb2_45fe,
             0x15fd_caa4_e4bb_2091
         });
-        Fp c = Fp.FromRawUnchecked(new ulong[]
+        var c = Fp.FromRawUnchecked(new ulong[]
         {
             0x3934_42cc_b58b_b327,
             0x1092_685f_3bd5_47e3,
@@ -151,7 +151,7 @@ public class UT_Fp
     [TestMethod]
     public void TestSubtraction()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0x5360_bb59_7867_8032,
             0x7dd2_75ae_799e_128e,
@@ -160,7 +160,7 @@ public class UT_Fp
             0xc323_65c5_e73f_474a,
             0x115a_2a54_89ba_be5b
         });
-        Fp b = Fp.FromRawUnchecked(new ulong[]
+        var b = Fp.FromRawUnchecked(new ulong[]
         {
             0x9fd2_8773_3d23_dda0,
             0xb16b_f2af_738b_3554,
@@ -169,7 +169,7 @@ public class UT_Fp
             0xd319_a080_efb2_45fe,
             0x15fd_caa4_e4bb_2091
         });
-        Fp c = Fp.FromRawUnchecked(new ulong[]
+        var c = Fp.FromRawUnchecked(new ulong[]
         {
             0x6d8d_33e6_3b43_4d3d,
             0xeb12_82fd_b766_dd39,
@@ -185,7 +185,7 @@ public class UT_Fp
     [TestMethod]
     public void TestNegation()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0x5360_bb59_7867_8032,
             0x7dd2_75ae_799e_128e,
@@ -194,7 +194,7 @@ public class UT_Fp
             0xc323_65c5_e73f_474a,
             0x115a_2a54_89ba_be5b
         });
-        Fp b = Fp.FromRawUnchecked(new ulong[]
+        var b = Fp.FromRawUnchecked(new ulong[]
         {
             0x669e_44a6_8798_2a79,
             0xa0d9_8a50_37b5_ed71,
@@ -210,7 +210,7 @@ public class UT_Fp
     [TestMethod]
     public void TestToString()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0x5360_bb59_7867_8032,
             0x7dd2_75ae_799e_128e,
@@ -226,7 +226,7 @@ public class UT_Fp
     [TestMethod]
     public void TestConstructor()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0xdc90_6d9b_e3f9_5dc8,
             0x8755_caf7_4596_91a1,
@@ -236,11 +236,11 @@ public class UT_Fp
             0x085d_bea8_4ed4_7f79
         });
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             a = a.Square();
-            byte[] tmp = a.ToArray();
-            Fp b = Fp.FromBytes(tmp);
+            var tmp = a.ToArray();
+            var b = Fp.FromBytes(tmp);
 
             Assert.AreEqual(b, a);
         }
@@ -266,7 +266,7 @@ public class UT_Fp
     public void TestSqrt()
     {
         // a = 4
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0xaa27_0000_000c_fff3,
             0x53cc_0032_fc34_000a,
@@ -277,7 +277,7 @@ public class UT_Fp
         });
 
         // b = 2
-        Fp b = Fp.FromRawUnchecked(new ulong[]
+        var b = Fp.FromRawUnchecked(new ulong[]
         {
             0x3213_0000_0006_554f,
             0xb93c_0018_d6c4_0005,
@@ -294,7 +294,7 @@ public class UT_Fp
     [TestMethod]
     public void TestInversion()
     {
-        Fp a = Fp.FromRawUnchecked(new ulong[]
+        var a = Fp.FromRawUnchecked(new ulong[]
         {
             0x43b4_3a50_78ac_2076,
             0x1ce0_7630_46f8_962b,
@@ -303,7 +303,7 @@ public class UT_Fp
             0x2095_bd5b_b4ca_9331,
             0x03b3_5b38_94b0_f7da
         });
-        Fp b = Fp.FromRawUnchecked(new ulong[]
+        var b = Fp.FromRawUnchecked(new ulong[]
         {
             0x69ec_d704_0952_148f,
             0x985c_cc20_2219_0f55,

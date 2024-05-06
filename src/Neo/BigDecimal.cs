@@ -103,8 +103,8 @@ namespace Neo
             }
             else
             {
-                BigInteger divisor = BigInteger.Pow(10, this.decimals - decimals);
-                value = BigInteger.DivRem(this.value, divisor, out BigInteger remainder);
+                var divisor = BigInteger.Pow(10, this.decimals - decimals);
+                value = BigInteger.DivRem(this.value, divisor, out var remainder);
                 if (remainder > BigInteger.Zero)
                     throw new ArgumentOutOfRangeException(nameof(decimals));
             }
@@ -120,7 +120,7 @@ namespace Neo
         /// <exception cref="FormatException"><paramref name="s"/> is not in the correct format.</exception>
         public static BigDecimal Parse(string s, byte decimals)
         {
-            if (!TryParse(s, decimals, out BigDecimal result))
+            if (!TryParse(s, decimals, out var result))
                 throw new FormatException();
             return result;
         }
@@ -131,8 +131,8 @@ namespace Neo
         /// <returns>The <see cref="string"/> representing the number.</returns>
         public override readonly string ToString()
         {
-            BigInteger divisor = BigInteger.Pow(10, decimals);
-            BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
+            var divisor = BigInteger.Pow(10, decimals);
+            var result = BigInteger.DivRem(value, divisor, out var remainder);
             if (remainder == 0) return result.ToString();
             return $"{result}.{remainder.ToString("d" + decimals)}".TrimEnd('0');
         }
@@ -146,11 +146,11 @@ namespace Neo
         /// <returns><see langword="true"/> if a number is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string s, byte decimals, out BigDecimal result)
         {
-            int e = 0;
-            int index = s.IndexOfAny(new[] { 'e', 'E' });
+            var e = 0;
+            var index = s.IndexOfAny(new[] { 'e', 'E' });
             if (index >= 0)
             {
-                if (!sbyte.TryParse(s[(index + 1)..], out sbyte e_temp))
+                if (!sbyte.TryParse(s[(index + 1)..], out var e_temp))
                 {
                     result = default;
                     return false;
@@ -165,7 +165,7 @@ namespace Neo
                 e -= s.Length - index - 1;
                 s = s.Remove(index, 1);
             }
-            int ds = e + decimals;
+            var ds = e + decimals;
             if (ds < 0)
             {
                 result = default;
@@ -173,7 +173,7 @@ namespace Neo
             }
             if (ds > 0)
                 s += new string('0', ds);
-            if (!BigInteger.TryParse(s, out BigInteger value))
+            if (!BigInteger.TryParse(s, out var value))
             {
                 result = default;
                 return false;
@@ -205,8 +205,8 @@ namespace Neo
 
         public override readonly int GetHashCode()
         {
-            BigInteger divisor = BigInteger.Pow(10, decimals);
-            BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
+            var divisor = BigInteger.Pow(10, decimals);
+            var result = BigInteger.DivRem(value, divisor, out var remainder);
             return HashCode.Combine(result, remainder);
         }
 

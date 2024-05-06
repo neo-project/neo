@@ -21,7 +21,7 @@ namespace Neo.GUI.Wrappers
     {
         public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
         {
-            string path = (string)base.EditValue(context, provider, null);
+            var path = (string)base.EditValue(context, provider, null);
             if (path == null) return null;
             return File.ReadAllBytes(path);
         }

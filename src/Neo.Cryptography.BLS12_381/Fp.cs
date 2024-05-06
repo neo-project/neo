@@ -83,7 +83,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
     {
         Span<byte> buffer = stackalloc byte[Size * 2];
         rng.GetBytes(buffer);
-        Span<Fp> d = MemoryMarshal.Cast<byte, Fp>(buffer);
+        var d = MemoryMarshal.Cast<byte, Fp>(buffer);
         return d[0] * R2 + d[1] * R3;
     }
 
@@ -127,7 +127,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
 
     public byte[] ToArray()
     {
-        byte[] result = new byte[Size];
+        var result = new byte[Size];
         TryWrite(result);
         return result;
     }
@@ -137,7 +137,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
         if (buffer.Length < Size) return false;
 
         ReadOnlySpan<ulong> u64 = GetSpanU64();
-        Fp tmp = MontgomeryReduce(u64[0], u64[1], u64[2], u64[3], u64[4], u64[5], 0, 0, 0, 0, 0, 0);
+        var tmp = MontgomeryReduce(u64[0], u64[1], u64[2], u64[3], u64[4], u64[5], 0, 0, 0, 0, 0, 0);
         u64 = tmp.GetSpanU64();
 
         BinaryPrimitives.WriteUInt64BigEndian(buffer[0..8], u64[5]);
@@ -162,7 +162,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
     public bool LexicographicallyLargest()
     {
         ReadOnlySpan<ulong> s = GetSpanU64();
-        Fp tmp = MontgomeryReduce(s[0], s[1], s[2], s[3], s[4], s[5], 0, 0, 0, 0, 0, 0);
+        var tmp = MontgomeryReduce(s[0], s[1], s[2], s[3], s[4], s[5], 0, 0, 0, 0, 0, 0);
         ReadOnlySpan<ulong> t = tmp.GetSpanU64();
         ulong borrow;
 
@@ -182,14 +182,14 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
         // we only need to exponentiate by (p + 1) / 4. This only
         // works for elements that are actually quadratic residue,
         // so we check that we got the correct result at the end.
-        Fp result = this.PowVartime(P_1_4);
+        var result = this.PowVartime(P_1_4);
         if (result.Square() != this) throw new ArithmeticException();
         return result;
     }
 
     public Fp Invert()
     {
-        if (!TryInvert(out Fp result))
+        if (!TryInvert(out var result))
             throw new DivideByZeroException();
         return result;
     }
@@ -208,7 +208,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
     {
         Fp result;
         ReadOnlySpan<ulong> s = GetSpanU64();
-        Span<ulong> r = result.GetSpanU64();
+        var r = result.GetSpanU64();
         ulong borrow;
 
         (r[0], borrow) = Sbb(s[0], MODULUS[0], 0);
@@ -233,7 +233,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
     {
         Fp result;
         ReadOnlySpan<ulong> s = a.GetSpanU64(), r = b.GetSpanU64();
-        Span<ulong> d = result.GetSpanU64();
+        var d = result.GetSpanU64();
 
         ulong carry = 0;
         (d[0], carry) = Adc(s[0], r[0], carry);
@@ -250,7 +250,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
     {
         Fp result;
         ReadOnlySpan<ulong> self = a.GetSpanU64();
-        Span<ulong> d = result.GetSpanU64();
+        var d = result.GetSpanU64();
 
         ulong borrow = 0;
         (d[0], borrow) = Sbb(MODULUS[0], self[0], borrow);
@@ -260,7 +260,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
         (d[4], borrow) = Sbb(MODULUS[4], self[4], borrow);
         (d[5], _) = Sbb(MODULUS[5], self[5], borrow);
 
-        ulong mask = a.IsZero ? ulong.MinValue : ulong.MaxValue;
+        var mask = a.IsZero ? ulong.MinValue : ulong.MaxValue;
         d[0] &= mask;
         d[1] &= mask;
         d[2] &= mask;
@@ -278,21 +278,21 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
 
     public static Fp SumOfProducts(ReadOnlySpan<Fp> a, ReadOnlySpan<Fp> b)
     {
-        int length = a.Length;
+        var length = a.Length;
         if (length != b.Length)
             throw new ArgumentException("The lengths of the two arrays must be the same.");
 
         Fp result;
-        ReadOnlySpan<ulong> au = MemoryMarshal.Cast<Fp, ulong>(a);
-        ReadOnlySpan<ulong> bu = MemoryMarshal.Cast<Fp, ulong>(b);
-        Span<ulong> u = result.GetSpanU64();
+        var au = MemoryMarshal.Cast<Fp, ulong>(a);
+        var bu = MemoryMarshal.Cast<Fp, ulong>(b);
+        var u = result.GetSpanU64();
 
-        for (int j = 0; j < 6; j++)
+        for (var j = 0; j < 6; j++)
         {
             ulong carry;
 
             var (t0, t1, t2, t3, t4, t5, t6) = (u[0], u[1], u[2], u[3], u[4], u[5], 0ul);
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 (t0, carry) = Mac(t0, au[i * SizeL + j], bu[i * SizeL + 0], 0);
                 (t1, carry) = Mac(t1, au[i * SizeL + j], bu[i * SizeL + 1], carry);
@@ -303,7 +303,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
                 (t6, _) = Adc(t6, 0, carry);
             }
 
-            ulong k = unchecked(t0 * INV);
+            var k = unchecked(t0 * INV);
             (_, carry) = Mac(t0, k, MODULUS[0], 0);
             (u[0], carry) = Mac(t1, k, MODULUS[1], carry);
             (u[1], carry) = Mac(t2, k, MODULUS[2], carry);
@@ -320,7 +320,7 @@ public readonly struct Fp : IEquatable<Fp>, INumber<Fp>
     {
         ulong carry, carry2;
 
-        ulong k = unchecked(r0 * INV);
+        var k = unchecked(r0 * INV);
         (_, carry) = Mac(r0, k, MODULUS[0], 0);
         (r1, carry) = Mac(r1, k, MODULUS[1], carry);
         (r2, carry) = Mac(r2, k, MODULUS[2], carry);

@@ -25,8 +25,8 @@ namespace Neo.UnitTests.Cryptography
 
         public static KeyPair GenerateKey(int privateKeyLength)
         {
-            byte[] privateKey = new byte[privateKeyLength];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            var privateKey = new byte[privateKeyLength];
+            using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(privateKey);
             }
@@ -35,8 +35,8 @@ namespace Neo.UnitTests.Cryptography
 
         public static KeyPair GenerateCertainKey(int privateKeyLength)
         {
-            byte[] privateKey = new byte[privateKeyLength];
-            for (int i = 0; i < privateKeyLength; i++)
+            var privateKey = new byte[privateKeyLength];
+            for (var i = 0; i < privateKeyLength; i++)
             {
                 privateKey[i] = (byte)((byte)i % byte.MaxValue);
             }
@@ -52,16 +52,16 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestVerifySignature()
         {
-            byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
-            byte[] signature = Crypto.Sign(message, key.PrivateKey);
+            var message = System.Text.Encoding.Default.GetBytes("HelloWorld");
+            var signature = Crypto.Sign(message, key.PrivateKey);
             Crypto.VerifySignature(message, signature, key.PublicKey).Should().BeTrue();
 
-            byte[] wrongKey = new byte[33];
+            var wrongKey = new byte[33];
             wrongKey[0] = 0x02;
             Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
 
             wrongKey[0] = 0x03;
-            for (int i = 1; i < 33; i++) wrongKey[i] = byte.MaxValue;
+            for (var i = 1; i < 33; i++) wrongKey[i] = byte.MaxValue;
             Action action = () => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
             action.Should().Throw<ArgumentException>();
 
@@ -73,11 +73,11 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestSecp256k1()
         {
-            byte[] privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
-            byte[] message = "2d46a712699bae19a634563d74d04cc2da497b841456da270dccb75ac2f7c4e7".HexToBytes();
+            var privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
+            var message = "2d46a712699bae19a634563d74d04cc2da497b841456da270dccb75ac2f7c4e7".HexToBytes();
             var signature = Crypto.Sign(message, privkey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
 
-            byte[] pubKey = "04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108".HexToBytes();
+            var pubKey = "04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108".HexToBytes();
             Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1)
                 .Should().BeTrue();
 

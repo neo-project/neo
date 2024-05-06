@@ -81,7 +81,7 @@ namespace Neo.Wallets
             data[0] = 0x80;
             PrivateKey.CopyTo(data[1..]);
             data[33] = 0x01;
-            string wif = Base58.Base58CheckEncode(data);
+            var wif = Base58.Base58CheckEncode(data);
             data.Clear();
             return wif;
         }
@@ -97,7 +97,7 @@ namespace Neo.Wallets
         /// <returns>The private key in NEP-2 format.</returns>
         public string Export(string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
-            byte[] passphrasedata = Encoding.UTF8.GetBytes(passphrase);
+            var passphrasedata = Encoding.UTF8.GetBytes(passphrase);
             try
             {
                 return Export(passphrasedata, version, N, r, p);
@@ -119,13 +119,13 @@ namespace Neo.Wallets
         /// <returns>The private key in NEP-2 format.</returns>
         public string Export(byte[] passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
-            UInt160 script_hash = Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
-            string address = script_hash.ToAddress(version);
-            byte[] addresshash = Encoding.ASCII.GetBytes(address).Sha256().Sha256()[..4];
-            byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
-            byte[] derivedhalf1 = derivedkey[..32];
-            byte[] derivedhalf2 = derivedkey[32..];
-            byte[] encryptedkey = Encrypt(XOR(PrivateKey, derivedhalf1), derivedhalf2);
+            var script_hash = Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
+            var address = script_hash.ToAddress(version);
+            var addresshash = Encoding.ASCII.GetBytes(address).Sha256().Sha256()[..4];
+            var derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
+            var derivedhalf1 = derivedkey[..32];
+            var derivedhalf2 = derivedkey[32..];
+            var encryptedkey = Encrypt(XOR(PrivateKey, derivedhalf1), derivedhalf2);
             Span<byte> buffer = stackalloc byte[39];
             buffer[0] = 0x01;
             buffer[1] = 0x42;
@@ -137,11 +137,11 @@ namespace Neo.Wallets
 
         private static byte[] Encrypt(byte[] data, byte[] key)
         {
-            using Aes aes = Aes.Create();
+            using var aes = Aes.Create();
             aes.Key = key;
             aes.Mode = CipherMode.ECB;
             aes.Padding = PaddingMode.None;
-            using ICryptoTransform encryptor = aes.CreateEncryptor();
+            using var encryptor = aes.CreateEncryptor();
             return encryptor.TransformFinalBlock(data, 0, data.Length);
         }
 

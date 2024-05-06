@@ -29,7 +29,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewBuffer(ExecutionEngine engine, Instruction instruction)
         {
-            int length = (int)engine.Pop().GetInteger();
+            var length = (int)engine.Pop().GetInteger();
             engine.Limits.AssertMaxItemSize(length);
             engine.Push(new Types.Buffer(length));
         }
@@ -44,19 +44,19 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Memcpy(ExecutionEngine engine, Instruction instruction)
         {
-            int count = (int)engine.Pop().GetInteger();
+            var count = (int)engine.Pop().GetInteger();
             if (count < 0)
                 throw new InvalidOperationException($"The value {count} is out of range.");
-            int si = (int)engine.Pop().GetInteger();
+            var si = (int)engine.Pop().GetInteger();
             if (si < 0)
                 throw new InvalidOperationException($"The value {si} is out of range.");
-            ReadOnlySpan<byte> src = engine.Pop().GetSpan();
+            var src = engine.Pop().GetSpan();
             if (checked(si + count) > src.Length)
                 throw new InvalidOperationException($"The value {count} is out of range.");
-            int di = (int)engine.Pop().GetInteger();
+            var di = (int)engine.Pop().GetInteger();
             if (di < 0)
                 throw new InvalidOperationException($"The value {di} is out of range.");
-            Types.Buffer dst = engine.Pop<Types.Buffer>();
+            var dst = engine.Pop<Types.Buffer>();
             if (checked(di + count) > dst.Size)
                 throw new InvalidOperationException($"The value {count} is out of range.");
             src.Slice(si, count).CopyTo(dst.InnerBuffer.Span[di..]);
@@ -74,7 +74,7 @@ namespace Neo.VM
         {
             var x2 = engine.Pop().GetSpan();
             var x1 = engine.Pop().GetSpan();
-            int length = x1.Length + x2.Length;
+            var length = x1.Length + x2.Length;
             engine.Limits.AssertMaxItemSize(length);
             Types.Buffer result = new(length, false);
             x1.CopyTo(result.InnerBuffer.Span);
@@ -92,10 +92,10 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void SubStr(ExecutionEngine engine, Instruction instruction)
         {
-            int count = (int)engine.Pop().GetInteger();
+            var count = (int)engine.Pop().GetInteger();
             if (count < 0)
                 throw new InvalidOperationException($"The value {count} is out of range.");
-            int index = (int)engine.Pop().GetInteger();
+            var index = (int)engine.Pop().GetInteger();
             if (index < 0)
                 throw new InvalidOperationException($"The value {index} is out of range.");
             var x = engine.Pop().GetSpan();
@@ -116,7 +116,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Left(ExecutionEngine engine, Instruction instruction)
         {
-            int count = (int)engine.Pop().GetInteger();
+            var count = (int)engine.Pop().GetInteger();
             if (count < 0)
                 throw new InvalidOperationException($"The value {count} is out of range.");
             var x = engine.Pop().GetSpan();
@@ -137,7 +137,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Right(ExecutionEngine engine, Instruction instruction)
         {
-            int count = (int)engine.Pop().GetInteger();
+            var count = (int)engine.Pop().GetInteger();
             if (count < 0)
                 throw new InvalidOperationException($"The value {count} is out of range.");
             var x = engine.Pop().GetSpan();

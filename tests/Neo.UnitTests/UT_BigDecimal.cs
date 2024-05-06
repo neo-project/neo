@@ -23,13 +23,13 @@ namespace Neo.UnitTests
         public void TestChangeDecimals()
         {
             BigDecimal originalValue = new(new BigInteger(12300), 5);
-            BigDecimal result1 = originalValue.ChangeDecimals(7);
+            var result1 = originalValue.ChangeDecimals(7);
             result1.Value.Should().Be(new BigInteger(1230000));
             result1.Decimals.Should().Be(7);
-            BigDecimal result2 = originalValue.ChangeDecimals(3);
+            var result2 = originalValue.ChangeDecimals(3);
             result2.Value.Should().Be(new BigInteger(123));
             result2.Decimals.Should().Be(3);
-            BigDecimal result3 = originalValue.ChangeDecimals(5);
+            var result3 = originalValue.ChangeDecimals(5);
             result3.Value.Should().Be(originalValue.Value);
             Action action = () => originalValue.ChangeDecimals(2);
             action.Should().Throw<ArgumentOutOfRangeException>();
@@ -114,7 +114,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestParse()
         {
-            string s = "12345";
+            var s = "12345";
             byte decimals = 0;
             BigDecimal.Parse(s, decimals).Should().Be(new BigDecimal(new BigInteger(12345), 0));
 
@@ -135,9 +135,9 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestTryParse()
         {
-            string s = "12345";
+            var s = "12345";
             byte decimals = 0;
-            BigDecimal.TryParse(s, decimals, out BigDecimal result).Should().BeTrue();
+            BigDecimal.TryParse(s, decimals, out var result).Should().BeTrue();
             result.Should().Be(new BigDecimal(new BigInteger(12345), 0));
 
             s = "12345E-5";

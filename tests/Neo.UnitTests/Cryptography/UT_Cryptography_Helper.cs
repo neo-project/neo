@@ -29,8 +29,8 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestBase58CheckDecode()
         {
-            string input = "3vQB7B6MrGQZaxCuFg4oh";
-            byte[] result = input.Base58CheckDecode();
+            var input = "3vQB7B6MrGQZaxCuFg4oh";
+            var result = input.Base58CheckDecode();
             byte[] helloWorld = { 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 };
             result.Should().Equal(helloWorld);
 
@@ -46,9 +46,9 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestSha256()
         {
-            byte[] value = Encoding.ASCII.GetBytes("hello world");
-            byte[] result = value.Sha256(0, value.Length);
-            string resultStr = result.ToHexString();
+            var value = Encoding.ASCII.GetBytes("hello world");
+            var result = value.Sha256(0, value.Length);
+            var resultStr = result.ToHexString();
             resultStr.Should().Be("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
         }
 
@@ -56,20 +56,20 @@ namespace Neo.UnitTests.Cryptography
         public void TestRIPEMD160()
         {
             ReadOnlySpan<byte> value = Encoding.ASCII.GetBytes("hello world");
-            byte[] result = value.RIPEMD160();
-            string resultStr = result.ToHexString();
+            var result = value.RIPEMD160();
+            var resultStr = result.ToHexString();
             resultStr.Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
         }
 
         [TestMethod]
         public void TestAESEncryptAndDecrypt()
         {
-            NEP6Wallet wallet = new NEP6Wallet("", "1", TestProtocolSettings.Default);
+            var wallet = new NEP6Wallet("", "1", TestProtocolSettings.Default);
             wallet.CreateAccount();
-            WalletAccount account = wallet.GetAccounts().ToArray()[0];
-            KeyPair key = account.GetKey();
-            Random random = new Random();
-            byte[] nonce = new byte[12];
+            var account = wallet.GetAccounts().ToArray()[0];
+            var key = account.GetKey();
+            var random = new Random();
+            var nonce = new byte[12];
             random.NextBytes(nonce);
             var cypher = Neo.Cryptography.Helper.AES256Encrypt(Encoding.UTF8.GetBytes("hello world"), key.PrivateKey, nonce);
             var m = Neo.Cryptography.Helper.AES256Decrypt(cypher, key.PrivateKey);
@@ -80,21 +80,21 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestEcdhEncryptAndDecrypt()
         {
-            NEP6Wallet wallet = new NEP6Wallet("", "1", ProtocolSettings.Default);
+            var wallet = new NEP6Wallet("", "1", ProtocolSettings.Default);
             wallet.CreateAccount();
             wallet.CreateAccount();
-            WalletAccount account1 = wallet.GetAccounts().ToArray()[0];
-            KeyPair key1 = account1.GetKey();
-            WalletAccount account2 = wallet.GetAccounts().ToArray()[1];
-            KeyPair key2 = account2.GetKey();
+            var account1 = wallet.GetAccounts().ToArray()[0];
+            var key1 = account1.GetKey();
+            var account2 = wallet.GetAccounts().ToArray()[1];
+            var key2 = account2.GetKey();
             Console.WriteLine($"Account:{1},privatekey:{key1.PrivateKey.ToHexString()},publicKey:{key1.PublicKey.ToArray().ToHexString()}");
             Console.WriteLine($"Account:{2},privatekey:{key2.PrivateKey.ToHexString()},publicKey:{key2.PublicKey.ToArray().ToHexString()}");
             var secret1 = Neo.Cryptography.Helper.ECDHDeriveKey(key1, key2.PublicKey);
             var secret2 = Neo.Cryptography.Helper.ECDHDeriveKey(key2, key1.PublicKey);
             Assert.AreEqual(secret1.ToHexString(), secret2.ToHexString());
             var message = Encoding.ASCII.GetBytes("hello world");
-            Random random = new Random();
-            byte[] nonce = new byte[12];
+            var random = new Random();
+            var nonce = new byte[12];
             random.NextBytes(nonce);
             var cypher = message.AES256Encrypt(secret1, nonce);
             cypher.AES256Decrypt(secret2);

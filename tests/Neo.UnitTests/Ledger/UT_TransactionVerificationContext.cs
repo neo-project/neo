@@ -63,8 +63,8 @@ namespace Neo.UnitTests.Ledger
             // Fake balance
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 8, false);
 
@@ -85,8 +85,8 @@ namespace Neo.UnitTests.Ledger
         public async Task TestTransactionSenderFee()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 8, true);
 
@@ -108,8 +108,8 @@ namespace Neo.UnitTests.Ledger
         public async Task TestTransactionSenderFeeWithConflicts()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 3 + 3 + 1, true); // balance is enough for 2 transactions and 1 GAS is left.
 

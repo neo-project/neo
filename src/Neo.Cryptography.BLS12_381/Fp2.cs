@@ -49,8 +49,8 @@ public readonly struct Fp2 : IEquatable<Fp2>, INumber<Fp2>
     {
         if (data.Length != Size)
             throw new FormatException($"The argument `{nameof(data)}` must contain {Size} bytes.");
-        Fp c0 = Fp.FromBytes(data[Fp.Size..]);
-        Fp c1 = Fp.FromBytes(data[..Fp.Size]);
+        var c0 = Fp.FromBytes(data[Fp.Size..]);
+        var c1 = Fp.FromBytes(data[..Fp.Size]);
         return new(in c0, in c1);
     }
 
@@ -87,7 +87,7 @@ public readonly struct Fp2 : IEquatable<Fp2>, INumber<Fp2>
 
     public byte[] ToArray()
     {
-        byte[] result = new byte[Size];
+        var result = new byte[Size];
         TryWrite(result);
         return result;
     }
@@ -237,7 +237,7 @@ public readonly struct Fp2 : IEquatable<Fp2>, INumber<Fp2>
 
     public Fp2 Invert()
     {
-        if (!TryInvert(out Fp2 result))
+        if (!TryInvert(out var result))
             throw new DivideByZeroException();
         return result;
     }
@@ -258,7 +258,7 @@ public readonly struct Fp2 : IEquatable<Fp2>, INumber<Fp2>
         // of (a + bu). Importantly, this can be computing using
         // only a single inversion in Fp.
 
-        bool s = (C0.Square() + C1.Square()).TryInvert(out Fp t);
+        var s = (C0.Square() + C1.Square()).TryInvert(out var t);
         result = new Fp2(C0 * t, C1 * -t);
         return s;
     }

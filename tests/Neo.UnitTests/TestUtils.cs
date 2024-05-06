@@ -59,7 +59,7 @@ namespace Neo.UnitTests
 
         public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
         {
-            ContractManifest manifest = CreateDefaultManifest();
+            var manifest = CreateDefaultManifest();
             manifest.Abi.Methods = new ContractMethodDescriptor[]
             {
                 new ContractMethodDescriptor()
@@ -90,9 +90,9 @@ namespace Neo.UnitTests
 
         public static byte[] GetByteArray(int length, byte firstByte)
         {
-            byte[] array = new byte[length];
+            var array = new byte[length];
             array[0] = firstByte;
-            for (int i = 1; i < length; i++)
+            for (var i = 1; i < length; i++)
             {
                 array[i] = 0x20;
             }
@@ -101,7 +101,7 @@ namespace Neo.UnitTests
 
         public static NEP6Wallet GenerateTestWallet(string password)
         {
-            JObject wallet = new JObject();
+            var wallet = new JObject();
             wallet["name"] = "noname";
             wallet["version"] = new Version("1.0").ToString();
             wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
@@ -216,13 +216,13 @@ namespace Neo.UnitTests
 
         public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
-            Header header = new Header();
+            var header = new Header();
             SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out nonceVal, out indexVal, out scriptVal);
 
             transactionsVal = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)
             {
-                for (int i = 0; i < numberOfTransactions; i++)
+                for (var i = 0; i < numberOfTransactions; i++)
                 {
                     transactionsVal[i] = GetTransaction(UInt160.Zero);
                 }

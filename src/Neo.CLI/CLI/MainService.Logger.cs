@@ -65,7 +65,7 @@ namespace Neo.CLI
             sb.AppendLine(ex.StackTrace);
             if (ex is AggregateException ex2)
             {
-                foreach (Exception inner in ex2.InnerExceptions)
+                foreach (var inner in ex2.InnerExceptions)
                 {
                     sb.AppendLine();
                     GetErrorLogs(sb, inner);
@@ -92,7 +92,7 @@ namespace Neo.CLI
 
             lock (syncRoot)
             {
-                DateTime now = DateTime.Now;
+                var now = DateTime.Now;
                 var log = $"[{now.TimeOfDay:hh\\:mm\\:ss\\.fff}]";
                 if (_showLog)
                 {

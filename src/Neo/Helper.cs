@@ -55,12 +55,12 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Concat(params byte[][] buffers)
         {
-            int length = 0;
-            for (int i = 0; i < buffers.Length; i++)
+            var length = 0;
+            for (var i = 0; i < buffers.Length; i++)
                 length += buffers[i].Length;
-            byte[] dst = new byte[length];
-            int p = 0;
-            foreach (byte[] src in buffers)
+            var dst = new byte[length];
+            var p = 0;
+            foreach (var src in buffers)
             {
                 Buffer.BlockCopy(src, 0, dst, p, src.Length);
                 p += src.Length;
@@ -76,7 +76,7 @@ namespace Neo
         /// <returns>The concatenated byte array.</returns>
         public static byte[] Concat(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
-            byte[] buffer = new byte[a.Length + b.Length];
+            var buffer = new byte[a.Length + b.Length];
             a.CopyTo(buffer);
             b.CopyTo(buffer.AsSpan(a.Length));
             return buffer;
@@ -86,11 +86,11 @@ namespace Neo
         {
             if (i.Sign == 0)
                 return -1;
-            byte[] b = i.ToByteArray();
-            int w = 0;
+            var b = i.ToByteArray();
+            var w = 0;
             while (b[w] == 0)
                 w++;
-            for (int x = 0; x < 8; x++)
+            for (var x = 0; x < 8; x++)
                 if ((b[w] & 1 << x) > 0)
                     return x + w * 8;
             throw new Exception();
@@ -135,7 +135,7 @@ namespace Neo
 
         internal static string GetVersion(this Assembly assembly)
         {
-            CustomAttributeData attribute = assembly.CustomAttributes.FirstOrDefault(p => p.AttributeType == typeof(AssemblyInformationalVersionAttribute));
+            var attribute = assembly.CustomAttributes.FirstOrDefault(p => p.AttributeType == typeof(AssemblyInformationalVersionAttribute));
             if (attribute == null) return assembly.GetName().Version.ToString(3);
             return (string)attribute.ConstructorArguments[0].Value;
         }
@@ -151,8 +151,8 @@ namespace Neo
                 return Array.Empty<byte>();
             if (value.Length % 2 == 1)
                 throw new FormatException();
-            byte[] result = new byte[value.Length / 2];
-            for (int i = 0; i < result.Length; i++)
+            var result = new byte[value.Length / 2];
+            for (var i = 0; i < result.Length; i++)
                 result[i] = byte.Parse(value.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier);
             return result;
         }
@@ -236,7 +236,7 @@ namespace Neo
         public static string ToHexString(this byte[] value)
         {
             StringBuilder sb = new();
-            foreach (byte b in value)
+            foreach (var b in value)
                 sb.AppendFormat("{0:x2}", b);
             return sb.ToString();
         }
@@ -250,7 +250,7 @@ namespace Neo
         public static string ToHexString(this byte[] value, bool reverse = false)
         {
             StringBuilder sb = new();
-            for (int i = 0; i < value.Length; i++)
+            for (var i = 0; i < value.Length; i++)
                 sb.AppendFormat("{0:x2}", value[reverse ? value.Length - i - 1 : i]);
             return sb.ToString();
         }
@@ -263,7 +263,7 @@ namespace Neo
         public static string ToHexString(this ReadOnlySpan<byte> value)
         {
             StringBuilder sb = new();
-            foreach (byte b in value)
+            foreach (var b in value)
                 sb.AppendFormat("{0:x2}", b);
             return sb.ToString();
         }

@@ -299,7 +299,7 @@ public class UT_G2
             var c = a + b;
 
             var d = G2Projective.Generator;
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 d += G2Projective.Generator;
             }
@@ -442,7 +442,7 @@ public class UT_G2
             var c = a + b;
 
             var d = G2Projective.Generator;
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 d += G2Affine.Generator;
             }
@@ -790,11 +790,11 @@ public class UT_G2
         var b = a.Double();
         var c = b.Double();
 
-        foreach (bool a_identity in new[] { false, true })
+        foreach (var a_identity in new[] { false, true })
         {
-            foreach (bool b_identity in new[] { false, true })
+            foreach (var b_identity in new[] { false, true })
             {
-                foreach (bool c_identity in new[] { false, true })
+                foreach (var c_identity in new[] { false, true })
                 {
                     var v = new[] { a, b, c };
                     if (a_identity)

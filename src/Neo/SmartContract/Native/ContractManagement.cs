@@ -42,8 +42,8 @@ namespace Neo.SmartContract.Native
 
         private int GetNextAvailableId(DataCache snapshot)
         {
-            StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
-            int value = (int)(BigInteger)item;
+            var item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
+            var value = (int)(BigInteger)item;
             item.Add(1);
             return value;
         }
@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Native
 
         private async ContractTask OnDeployAsync(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
         {
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
+            var md = contract.Manifest.Abi.GetMethod("_deploy", 2);
             if (md is not null)
                 await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
@@ -68,12 +68,12 @@ namespace Neo.SmartContract.Native
 
         internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
         {
-            foreach (NativeContract contract in Contracts)
+            foreach (var contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out Hardfork? hf))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out var hf))
                 {
-                    ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
-                    StorageItem state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
+                    var contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
+                    var state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
 
                     if (state is null)
                     {
@@ -134,7 +134,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ContractState GetContractById(DataCache snapshot, int id)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
+            var item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
             if (item is null) return null;
             var hash = new UInt160(item.Value.Span);
             return GetContract(snapshot, hash);
@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Native
         private IIterator GetContractHashes(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
-            byte[] prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
+            var prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
             var enumerator = snapshot.Find(prefix_key)
                 .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..])))
                 .Where(p => p.Id >= 0)
@@ -182,7 +182,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The deployed contracts.</returns>
         public IEnumerable<ContractState> ListContracts(DataCache snapshot)
         {
-            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
+            var listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
         }
 
@@ -207,10 +207,10 @@ namespace Neo.SmartContract.Native
                 GetMinimumDeploymentFee(engine.Snapshot)
                 ));
 
-            NefFile nef = nefFile.AsSerializable<NefFile>();
-            ContractManifest parsedManifest = ContractManifest.Parse(manifest);
+            var nef = nefFile.AsSerializable<NefFile>();
+            var parsedManifest = ContractManifest.Parse(manifest);
             Helper.Check(new VM.Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
-            UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
+            var hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
             if (Policy.IsBlocked(engine.Snapshot, hash))
                 throw new InvalidOperationException($"The contract {hash} has been blocked.");
@@ -266,7 +266,7 @@ namespace Neo.SmartContract.Native
             {
                 if (manifest.Length == 0)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
-                ContractManifest manifest_new = ContractManifest.Parse(manifest);
+                var manifest_new = ContractManifest.Parse(manifest);
                 if (manifest_new.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
                 if (!manifest_new.IsValid(engine.Limits, contract.Hash))
@@ -281,9 +281,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
-            UInt160 hash = engine.CallingScriptHash;
+            var hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
-            ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>(false);
+            var contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>(false);
             if (contract is null) return;
             engine.Snapshot.Delete(ckey);
             engine.Snapshot.Delete(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id));

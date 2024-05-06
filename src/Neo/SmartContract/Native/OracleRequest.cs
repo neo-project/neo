@@ -58,7 +58,7 @@ namespace Neo.SmartContract.Native
 
         public void FromStackItem(StackItem stackItem)
         {
-            Array array = (Array)stackItem;
+            var array = (Array)stackItem;
             OriginalTxid = new UInt256(array[0].GetSpan());
             GasForResponse = (long)array[1].GetInteger();
             Url = array[2].GetString();

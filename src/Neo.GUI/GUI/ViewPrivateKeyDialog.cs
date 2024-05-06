@@ -19,7 +19,7 @@ namespace Neo.GUI
         public ViewPrivateKeyDialog(WalletAccount account)
         {
             InitializeComponent();
-            KeyPair key = account.GetKey();
+            var key = account.GetKey();
             textBox3.Text = account.Address;
             textBox4.Text = key.PublicKey.EncodePoint(true).ToHexString();
             textBox1.Text = key.PrivateKey.ToHexString();

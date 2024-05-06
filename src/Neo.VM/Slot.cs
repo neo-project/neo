@@ -57,7 +57,7 @@ namespace Neo.VM
         {
             this.referenceCounter = referenceCounter;
             this.items = items;
-            foreach (StackItem item in items)
+            foreach (var item in items)
                 referenceCounter.AddStackReference(item);
         }
 
@@ -76,13 +76,13 @@ namespace Neo.VM
 
         internal void ClearReferences()
         {
-            foreach (StackItem item in items)
+            foreach (var item in items)
                 referenceCounter.RemoveStackReference(item);
         }
 
         IEnumerator<StackItem> IEnumerable<StackItem>.GetEnumerator()
         {
-            foreach (StackItem item in items) yield return item;
+            foreach (var item in items) yield return item;
         }
 
         IEnumerator IEnumerable.GetEnumerator()

@@ -21,8 +21,8 @@ namespace Neo.GUI
     {
         public Contract GetContract()
         {
-            ContractParameterType[] parameterList = textBox1.Text.HexToBytes().Select(p => (ContractParameterType)p).ToArray();
-            byte[] redeemScript = textBox2.Text.HexToBytes();
+            var parameterList = textBox1.Text.HexToBytes().Select(p => (ContractParameterType)p).ToArray();
+            var redeemScript = textBox2.Text.HexToBytes();
             return Contract.Create(parameterList, redeemScript);
         }
 

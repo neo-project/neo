@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Manifest
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
             Offset = (int)@struct[3].GetInteger();
             Safe = @struct[4].GetBoolean();
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Manifest
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+            var @struct = (Struct)base.ToStackItem(referenceCounter);
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);

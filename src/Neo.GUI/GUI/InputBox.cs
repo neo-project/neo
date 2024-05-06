@@ -25,7 +25,7 @@ namespace Neo.GUI
 
         public static string Show(string text, string caption, string content = "")
         {
-            using InputBox dialog = new InputBox(text, caption, content);
+            using var dialog = new InputBox(text, caption, content);
             if (dialog.ShowDialog() != DialogResult.OK) return null;
             return dialog.textBox1.Text;
         }

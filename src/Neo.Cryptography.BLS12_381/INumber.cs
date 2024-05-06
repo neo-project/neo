@@ -39,9 +39,9 @@ static class NumberExtensions
         // Although this is labeled "vartime", it is only
         // variable time with respect to the exponent.
         var res = one;
-        for (int j = by.Length - 1; j >= 0; j--)
+        for (var j = by.Length - 1; j >= 0; j--)
         {
-            for (int i = 63; i >= 0; i--)
+            for (var i = 63; i >= 0; i--)
             {
                 res = res.Square();
                 if (((by[j] >> i) & 1) == 1)

@@ -30,7 +30,7 @@ namespace Neo.GUI
         public Transaction GetTransaction()
         {
             TransferOutput[] outputs = txOutListBox1.Items.ToArray();
-            UInt160 from = comboBoxFrom.SelectedItem is null ? null : ((string)comboBoxFrom.SelectedItem).ToScriptHash(Service.NeoSystem.Settings.AddressVersion);
+            var from = comboBoxFrom.SelectedItem is null ? null : ((string)comboBoxFrom.SelectedItem).ToScriptHash(Service.NeoSystem.Settings.AddressVersion);
             return Service.CurrentWallet.MakeTransaction(Service.NeoSystem.StoreView, outputs, from);
         }
 

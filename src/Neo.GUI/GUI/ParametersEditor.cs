@@ -80,7 +80,7 @@ namespace Neo.GUI
         private void button1_Click(object sender, EventArgs e)
         {
             if (listView1.SelectedIndices.Count == 0) return;
-            ContractParameter parameter = (ContractParameter)listView1.SelectedItems[0].Tag;
+            var parameter = (ContractParameter)listView1.SelectedItems[0].Tag;
             try
             {
                 parameter.SetValue(textBox2.Text);
@@ -97,8 +97,8 @@ namespace Neo.GUI
         private void button2_Click(object sender, EventArgs e)
         {
             if (listView1.SelectedIndices.Count == 0) return;
-            ContractParameter parameter = (ContractParameter)listView1.SelectedItems[0].Tag;
-            using ParametersEditor dialog = new ParametersEditor((IList<ContractParameter>)parameter.Value);
+            var parameter = (ContractParameter)listView1.SelectedItems[0].Tag;
+            using var dialog = new ParametersEditor((IList<ContractParameter>)parameter.Value);
             dialog.ShowDialog();
             listView1.SelectedItems[0].SubItems["value"].Text = parameter.ToString();
             textBox1.Text = listView1.SelectedItems[0].SubItems["value"].Text;
@@ -106,8 +106,8 @@ namespace Neo.GUI
 
         private void button3_Click(object sender, EventArgs e)
         {
-            string s = textBox2.Text;
-            ContractParameter parameter = new ContractParameter();
+            var s = textBox2.Text;
+            var parameter = new ContractParameter();
             if (string.Equals(s, "true", StringComparison.OrdinalIgnoreCase))
             {
                 parameter.Type = ContractParameterType.Boolean;
@@ -118,24 +118,24 @@ namespace Neo.GUI
                 parameter.Type = ContractParameterType.Boolean;
                 parameter.Value = false;
             }
-            else if (long.TryParse(s, out long num))
+            else if (long.TryParse(s, out var num))
             {
                 parameter.Type = ContractParameterType.Integer;
                 parameter.Value = num;
             }
             else if (s.StartsWith("0x"))
             {
-                if (UInt160.TryParse(s, out UInt160 i160))
+                if (UInt160.TryParse(s, out var i160))
                 {
                     parameter.Type = ContractParameterType.Hash160;
                     parameter.Value = i160;
                 }
-                else if (UInt256.TryParse(s, out UInt256 i256))
+                else if (UInt256.TryParse(s, out var i256))
                 {
                     parameter.Type = ContractParameterType.Hash256;
                     parameter.Value = i256;
                 }
-                else if (BigInteger.TryParse(s.Substring(2), NumberStyles.AllowHexSpecifier, null, out BigInteger bi))
+                else if (BigInteger.TryParse(s.Substring(2), NumberStyles.AllowHexSpecifier, null, out var bi))
                 {
                     parameter.Type = ContractParameterType.Integer;
                     parameter.Value = bi;
@@ -146,7 +146,7 @@ namespace Neo.GUI
                     parameter.Value = s;
                 }
             }
-            else if (ECPoint.TryParse(s, ECCurve.Secp256r1, out ECPoint point))
+            else if (ECPoint.TryParse(s, ECCurve.Secp256r1, out var point))
             {
                 parameter.Type = ContractParameterType.PublicKey;
                 parameter.Value = point;
@@ -190,7 +190,7 @@ namespace Neo.GUI
 
         private void button4_Click(object sender, EventArgs e)
         {
-            int index = listView1.SelectedIndices[0];
+            var index = listView1.SelectedIndices[0];
             parameters.RemoveAt(index);
             listView1.Items.RemoveAt(index);
         }

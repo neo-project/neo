@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestInitialize]
         public void TestSetup()
         {
-            Akka.Actor.ActorSystem system = Sys;
+            var system = Sys;
             var config = TestKit.DefaultConfig;
             var akkaSettings = new Akka.Actor.Settings(system, config);
             uut = new TaskManagerMailbox(akkaSettings, config);
