@@ -24,13 +24,13 @@ namespace Neo.Hosting.App.NamedPipes
     {
         private static readonly int s_minAllocBufferSize = 4096;
 
-        public override IDuplexPipe? Transport { get; set; } = default;
-        public IDuplexPipe? Application { get; set; } = default;
-        public MemoryPool<byte>? MemoryPool { get; } = default;
+        public override IDuplexPipe Transport { get; set; }
+        public IDuplexPipe Application { get; set; }
+        public MemoryPool<byte> MemoryPool { get; }
         public CancellationToken ConnectionClosed { get; set; }
 
-        public PipeWriter Input => Application?.Output ?? throw new NullReferenceException(nameof(Application));
-        public PipeReader Output => Application?.Input ?? throw new NullReferenceException(nameof(Application));
+        public PipeWriter Input => Application.Output;
+        public PipeReader Output => Application.Input;
         public NamedPipeServerStream NamedPipe => _stream;
         public NamedPipeEndPoint LocalEndPoint => _localEndPoint;
 

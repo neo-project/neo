@@ -18,8 +18,8 @@ namespace Neo.Hosting.App.NamedPipes
     internal sealed class NamedPipeTransportOptions
     {
         public int ListenerQueueCount { get; set; } = Math.Min(Environment.ProcessorCount, 16);
-        public long? MaxReadBufferSize { get; set; } = 1024 * 1024;
-        public long? MaxWriteBufferSize { get; set; } = 64 * 1024;
+        public long MaxReadBufferSize { get; set; } = 1024 * 1024;
+        public long MaxWriteBufferSize { get; set; } = 64 * 1024;
         public bool CurrentUserOnly { get; set; } = true;
         internal Func<MemoryPool<byte>> MemoryPoolFactory { get; set; } = () => new PinnedBlockMemoryPool();
     }

@@ -29,14 +29,14 @@ namespace Neo.Hosting.App.CommandLine
         public new sealed class Handler : ICommandHandler
         {
             private readonly NeoSystemHostedService _neoSystemHostedService;
-            private readonly PromptSystemHostedService _promptSystemHostedService;
+            private readonly IPCSystemHostedService _ipcSystemHostedService;
 
             public Handler(
                 NeoSystemHostedService neoSystemHostedService,
-                PromptSystemHostedService promptSystemHostedService)
+                IPCSystemHostedService promptSystemHostedService)
             {
                 _neoSystemHostedService = neoSystemHostedService;
-                _promptSystemHostedService = promptSystemHostedService;
+                _ipcSystemHostedService = promptSystemHostedService;
             }
 
             public async Task<int> InvokeAsync(InvocationContext context)
@@ -45,14 +45,14 @@ namespace Neo.Hosting.App.CommandLine
                 var stoppingToken = context.GetCancellationToken();
 
                 await host.StartAsync(stoppingToken);
-                await _promptSystemHostedService.StartAsync(stoppingToken);
+                await _ipcSystemHostedService.StartAsync(stoppingToken);
                 await _neoSystemHostedService.StartAsync(stoppingToken);
 
                 _ = _neoSystemHostedService.TryStartNode();
 
                 await Task.Delay(Timeout.Infinite, stoppingToken);
                 await _neoSystemHostedService.StopAsync(stoppingToken);
-                await _promptSystemHostedService.StopAsync(stoppingToken);
+                await _ipcSystemHostedService.StopAsync(stoppingToken);
                 await host.StopAsync(stoppingToken);
 
                 return 0;

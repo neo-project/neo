@@ -42,7 +42,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes
             await writeTask.DefaultTimeout();
 
             // Server reading data
-            var readResult = await serverConnection!.Transport!.Input.ReadAtLeastAsync(s_testData.Length).DefaultTimeout();
+            var readResult = await serverConnection!.Transport.Input.ReadAtLeastAsync(s_testData.Length).DefaultTimeout();
             serverConnection.Transport.Input.AdvanceTo(readResult.Buffer.End);
 
             clientConnection.Close();

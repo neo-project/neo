@@ -9,10 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Util;
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.NamedPipes.Protocol;
-using System.Diagnostics;
+using Neo.Hosting.App.Tests.UTHelpers;
 using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
@@ -49,14 +48,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
 
             var className = nameof(PipeVersion);
             var methodName = nameof(PipeVersion.CopyFromAsync);
-            _testOutputHelper.WriteLine(nameof(Debug).PadCenter(17, '-'));
-            _testOutputHelper.WriteLine($"    Class: {className}");
-            _testOutputHelper.WriteLine($"   Method: {methodName}");
-
-            _testOutputHelper.WriteLine(nameof(Result).PadCenter(17, '-'));
-            _testOutputHelper.WriteLine($"   Actual: {actualHexString}");
-            _testOutputHelper.WriteLine($" Expected: {expectedHexString}");
-            _testOutputHelper.WriteLine($"-----------------");
+            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
             Assert.Equal(exception1.IsEmpty, exception2.IsEmpty);
@@ -84,14 +76,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
 
             var className = nameof(PipeVersion);
             var methodName = nameof(PipeVersion.CopyToAsync);
-            _testOutputHelper.WriteLine(nameof(Debug).PadCenter(17, '-'));
-            _testOutputHelper.WriteLine($"    Class: {className}");
-            _testOutputHelper.WriteLine($"   Method: {methodName}");
-
-            _testOutputHelper.WriteLine(nameof(Result).PadCenter(17, '-'));
-            _testOutputHelper.WriteLine($"   Actual: {actualHexString}");
-            _testOutputHelper.WriteLine($" Expected: {expectedHexString}");
-            _testOutputHelper.WriteLine($"-----------------");
+            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
         }

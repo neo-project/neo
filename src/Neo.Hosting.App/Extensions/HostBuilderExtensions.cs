@@ -34,7 +34,7 @@ namespace Neo.Hosting.App.Extensions
                     services.Configure<NeoOptions>(context.Configuration);
                     services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
                     services.AddSingleton<NeoSystemHostedService>();
-                    services.AddSingleton<PromptSystemHostedService>();
+                    services.AddSingleton<IPCSystemHostedService>();
                 }
                 catch (InvalidOperationException)
                 {

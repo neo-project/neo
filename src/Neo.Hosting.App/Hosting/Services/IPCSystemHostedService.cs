@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// PromptSystemHostedService.cs file belongs to the neo project and is free
+// IPCSystemHostedService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,13 +17,14 @@ using Microsoft.Extensions.Options;
 using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.NamedPipes;
+using Neo.Hosting.App.NamedPipes.Protocol;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.Hosting.Services
 {
-    internal sealed class PromptSystemHostedService : IHostedService, IDisposable
+    internal sealed class IPCSystemHostedService : IHostedService, IDisposable
     {
         public NamedPipeEndPoint EndPoint => new(_neoOptions.Remote.PipeName);
 
@@ -46,7 +47,7 @@ namespace Neo.Hosting.App.Hosting.Services
         private bool _hasStarted;
         private int _stopping;
 
-        public PromptSystemHostedService(
+        public IPCSystemHostedService(
             IOptions<NeoOptions> neoOptions,
             ILoggerFactory? loggerFactory = null,
             IOptions<NamedPipeTransportOptions>? options = null,
@@ -72,10 +73,10 @@ namespace Neo.Hosting.App.Hosting.Services
             try
             {
                 if (_hasStarted)
-                    throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been started.");
+                    throw new InvalidOperationException($"{nameof(IPCSystemHostedService)} has already been started.");
 
                 _hasStarted = true;
-                _logger.LogInformation("PromptSystem started.");
+                _logger.LogInformation("IPCSystem started.");
 
                 await BindAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -88,7 +89,7 @@ namespace Neo.Hosting.App.Hosting.Services
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("PromptSystem is shutting down...");
+            _logger.LogInformation("IPCSystem is shutting down...");
 
             if (Interlocked.Exchange(ref _stopping, 1) == 1)
             {
@@ -130,14 +131,43 @@ namespace Neo.Hosting.App.Hosting.Services
             try
             {
                 if (_stopping == 1)
-                    throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been stopped.");
+                    throw new InvalidOperationException($"{nameof(IPCSystemHostedService)} has already been stopped.");
 
                 _connectionListener = await _transportFactory.BindAsync(EndPoint, cancellationToken);
                 _logger.LogInformation("Now listening on: {EndPoint}", EndPoint);
+
+                ThreadPool.UnsafeQueueUserWorkItem(StartAcceptingConnections, _connectionListener, preferLocal: false);
             }
             finally
             {
                 _bindSemaphore.Release();
+            }
+        }
+
+        private void StartAcceptingConnections(NamedPipeConnectionListener listener)
+        {
+            _ = AcceptConnectionsAsync();
+
+            async Task AcceptConnectionsAsync()
+            {
+                try
+                {
+                    while (true)
+                    {
+                        var connection = await listener.AcceptAsync(_stopCts.Token);
+
+                        if (connection == null)
+                            break;
+
+                        var ipcConnection = new IPCConnection(connection, _logger);
+
+                        ThreadPool.UnsafeQueueUserWorkItem(ipcConnection, preferLocal: false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(0, ex, "The connection listener failed to accept any new connections.");
+                }
             }
         }
     }

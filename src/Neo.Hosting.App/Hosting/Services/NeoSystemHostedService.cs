@@ -36,7 +36,7 @@ namespace Neo.Hosting.App.Hosting.Services
         }
 
         public NeoSystem NeoSystem => _neoSystem ??
-            throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} needs to be started.");
+            throw new InvalidOperationException($"{nameof(NeoSystemHostedService)} needs to be started.");
 
         private readonly ProtocolSettings _protocolSettings = protocolSettings;
         private readonly NeoOptions _neoOptions = neoOptions.Value;
@@ -64,7 +64,7 @@ namespace Neo.Hosting.App.Hosting.Services
             try
             {
                 if (_hasStarted)
-                    throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been started.");
+                    throw new InvalidOperationException($"{nameof(NeoSystemHostedService)} has already been started.");
 
                 _hasStarted = true;
 

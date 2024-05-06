@@ -16,7 +16,7 @@ namespace Neo.Hosting.App.NamedPipes
 {
     internal abstract class ConnectionContext : IAsyncDisposable
     {
-        public abstract IDuplexPipe? Transport { get; set; }
+        public abstract IDuplexPipe Transport { get; set; }
 
         public abstract void Abort(Exception abortReason);
 

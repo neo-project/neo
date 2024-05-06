@@ -55,7 +55,7 @@ namespace Neo.Hosting.App.CommandLine
 
                     try
                     {
-                        await pipeStream.ConnectAsync(stopping).TimeoutAfter(TimeSpan.FromSeconds(10));
+                        await pipeStream.ConnectAsync(stopping).DefaultTimeout();
                         await RunConsolePrompt(context, stopping);
                     }
                     catch (TimeoutException)

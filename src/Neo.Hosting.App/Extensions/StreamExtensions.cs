@@ -57,12 +57,12 @@ namespace Neo.Hosting.App.Extensions
         {
             var encoding = s_utf8NoBom;
             var valueSpan = value.AsSpan();
-            var len = encoding.GetByteCount(valueSpan);
+            var encodedLength = encoding.GetByteCount(valueSpan);
 
-            Span<byte> byteSpan = stackalloc byte[len];
-            var encodedLen = encoding.GetBytes(valueSpan, byteSpan);
+            Span<byte> byteSpan = stackalloc byte[encodedLength];
+            var byteLength = encoding.GetBytes(valueSpan, byteSpan);
 
-            stream.Write(encodedLen);
+            stream.Write(byteLength);
             stream.Write(byteSpan);
         }
 

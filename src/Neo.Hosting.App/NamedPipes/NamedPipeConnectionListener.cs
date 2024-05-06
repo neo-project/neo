@@ -61,8 +61,8 @@ namespace Neo.Hosting.App.NamedPipes
             _namedPipeServerStreamPool = objectPoolProvider.Create(_poolPolicy);
             _acceptedQueue = Channel.CreateBounded<NamedPipeConnection>(new BoundedChannelOptions(capacity: 1));
 
-            var maxReadBufferSize = _options.MaxReadBufferSize ?? 0;
-            var maxWriteBufferSize = _options.MaxWriteBufferSize ?? 0;
+            var maxReadBufferSize = _options.MaxReadBufferSize;
+            var maxWriteBufferSize = _options.MaxWriteBufferSize;
 
             _inputOptions = new(_memoryPool, PipeScheduler.ThreadPool, PipeScheduler.Inline, maxReadBufferSize, maxReadBufferSize / 2, useSynchronizationContext: false);
             _outputOptions = new(_memoryPool, PipeScheduler.Inline, PipeScheduler.ThreadPool, maxWriteBufferSize, maxWriteBufferSize / 2, useSynchronizationContext: false);
