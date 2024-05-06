@@ -75,7 +75,8 @@ namespace Neo.UnitTests.SmartContract.Native
             File.Delete(file);
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 0, out var hf));
-            Assert.IsNull(hf);
+            Assert.IsNotNull(hf);
+            Assert.AreEqual(0, hf.Length);
 
             Assert.IsFalse(NativeContract.CryptoLib.IsInitializeBlock(settings, 1, out hf));
             Assert.IsNull(hf);
