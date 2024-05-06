@@ -44,7 +44,6 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
 
             Assert.Equal(expectedBytes, actualBytes);
             Assert.Equal(version1.VersionNumber, version2.VersionNumber);
-            Assert.Equal(version1.Plugins, version2.Plugins);
             Assert.Equal(version1.Platform, version2.Platform);
             Assert.Equal(version1.TimeStamp, version2.TimeStamp);
             Assert.Equal(version1.MachineName, version2.MachineName);

@@ -10,11 +10,8 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Extensions;
-using Neo.Plugins;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,26 +19,93 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal sealed class PipeVersion : IPipeMessage
     {
-        public const ulong Magic = 0x4e4f4953524556ul; // VERSION
+        private readonly byte[] _versionBytes = GC.AllocateUninitializedArray<byte>(sizeof(int));
+        private readonly byte[] _platformBytes = GC.AllocateUninitializedArray<byte>(sizeof(byte));
+        private readonly byte[] _timeStampBytes = GC.AllocateUninitializedArray<byte>(sizeof(long));
+        private byte[] _machineNameBytes = [];
+        private byte[] _userNameBytes = [];
+        private readonly byte[] _processIdBytes = GC.AllocateUninitializedArray<byte>(sizeof(int));
+        private byte[] _processPathBytes = [];
 
         // Assembly Information
-        public int VersionNumber { get; set; }
-        public IDictionary<string, Version> Plugins { get; set; }
+        public int VersionNumber
+        {
+            get => _versionBytes.TryCatch(t => t.AsSpan().Read<int>(), 0);
+            set
+            {
+                var span = _versionBytes.AsSpan();
+                span.Write(value);
+            }
+        }
 
         // Computer Information
-        public PlatformID Platform { get; set; }
-        public DateTime TimeStamp { get; set; }
-        public string MachineName { get; set; }
-        public string UserName { get; set; }
+        public PlatformID Platform
+        {
+            get => _platformBytes.TryCatch(t => (PlatformID)t.AsSpan().Read<byte>(), PlatformID.Other);
+            set
+            {
+                var span = _platformBytes.AsSpan();
+                span.Write((byte)value);
+            }
+        }
+
+        public DateTime TimeStamp
+        {
+            get => _timeStampBytes.TryCatch(t => DateTime.FromBinary(t.AsSpan().Read<long>()), DateTime.UtcNow);
+            set
+            {
+                var span = _timeStampBytes.AsSpan();
+                span.Write(value);
+            }
+        }
+
+        public string MachineName
+        {
+            get => _machineNameBytes.TryCatch(t => t.AsSpan().ReadString(), string.Empty);
+            set
+            {
+                Array.Resize(ref _machineNameBytes, value.GetStructSize());
+                var span = _machineNameBytes.AsSpan();
+                span.Write(value);
+            }
+        }
+
+        public string UserName
+        {
+            get => _userNameBytes.TryCatch(t => t.AsSpan().ReadString(), string.Empty);
+            set
+            {
+                Array.Resize(ref _userNameBytes, value.GetStructSize());
+                var span = _userNameBytes.AsSpan();
+                span.Write(value);
+            }
+        }
 
         // Service Information
-        public int ProcessId { get; set; }
-        public string ProcessPath { get; set; }
+        public int ProcessId
+        {
+            get => _processIdBytes.TryCatch(t => t.AsSpan().Read<int>(), 0);
+            set
+            {
+                var span = _processIdBytes.AsSpan();
+                span.Write(value);
+            }
+        }
+
+        public string ProcessPath
+        {
+            get => _processPathBytes.TryCatch(t => t.AsSpan().ReadString(), string.Empty);
+            set
+            {
+                Array.Resize(ref _processPathBytes, value.GetStructSize());
+                var span = _processPathBytes.AsSpan();
+                span.Write(value);
+            }
+        }
 
         public PipeVersion()
         {
             VersionNumber = Program.ApplicationVersionNumber;
-            Plugins = Plugin.Plugins.ToDictionary(k => k.Name, v => v.Version, StringComparer.InvariantCultureIgnoreCase);
             Platform = Environment.OSVersion.Platform;
             TimeStamp = DateTime.UtcNow;
             MachineName = Environment.MachineName;
@@ -50,38 +114,29 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             ProcessPath = Environment.ProcessPath ?? string.Empty;
         }
 
-        public int Size => 0;
+        public int Size =>
+            sizeof(int) +
+            sizeof(byte) +
+            sizeof(long) +
+            MachineName.GetStructSize() +
+            UserName.GetStructSize() +
+            sizeof(int) +
+            ProcessPath.GetStructSize();
 
         public Task CopyFromAsync(Stream stream)
         {
             if (stream.CanRead == false)
                 throw new IOException();
 
-            var magic = stream.Read<ulong>();
-            if (magic != Magic)
-                throw new InvalidDataException();
+            stream.ReadExactly(_versionBytes);
+            stream.ReadExactly(_platformBytes);
+            stream.ReadExactly(_timeStampBytes);
 
-            var version = stream.Read<int>();
-            if (version != Program.ApplicationVersionNumber)
-                throw new InvalidDataException();
-
-            VersionNumber = version;
-
-            var plugins = new Dictionary<string, Version>(StringComparer.InvariantCultureIgnoreCase);
-            var count = stream.Read<int>();
-
-            for (var i = 0; i < count; i++)
-            {
-                var key = stream.ReadString();
-                if (Version.TryParse(stream.ReadString(), out var value))
-                    _ = plugins.TryAdd(key, value);
-            }
-
-            Platform = stream.Read<PlatformID>();
-            TimeStamp = DateTime.FromBinary(stream.Read<long>());
             MachineName = stream.ReadString();
             UserName = stream.ReadString();
-            ProcessId = stream.Read<int>();
+
+            stream.ReadExactly(_processIdBytes);
+
             ProcessPath = stream.ReadString();
 
             return Task.CompletedTask;
@@ -92,38 +147,21 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             if (stream.CanWrite == false)
                 throw new IOException();
 
-            CopyToStream(stream);
+            var bytes = ToArray();
+            stream.Write(bytes);
+
             return stream.FlushAsync(cancellationToken);
         }
 
-        public byte[] ToArray()
-        {
-            using var ms = new MemoryStream();
-            CopyToStream(ms);
-            return ms.ToArray();
-        }
-
-        private void CopyToStream(Stream stream)
-        {
-            if (stream.CanWrite == false)
-                throw new IOException();
-
-            stream.Write(Magic);
-            stream.Write(Program.ApplicationVersionNumber);
-
-            stream.Write(Plugins.Count);
-            foreach (var plugin in Plugins)
-            {
-                stream.Write(plugin.Key);
-                stream.Write($"{plugin.Value}");
-            }
-
-            stream.Write(Platform);
-            stream.Write(TimeStamp.ToBinary());
-            stream.Write(MachineName);
-            stream.Write(UserName);
-            stream.Write(ProcessId);
-            stream.Write(ProcessPath);
-        }
+        public byte[] ToArray() =>
+        [
+            .. _versionBytes,
+            .. _platformBytes,
+            .. _timeStampBytes,
+            .. _machineNameBytes,
+            .. _userNameBytes,
+            .. _processIdBytes,
+            .. _processPathBytes
+        ];
     }
 }

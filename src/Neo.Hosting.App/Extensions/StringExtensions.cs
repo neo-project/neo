@@ -31,7 +31,7 @@ namespace Neo.Hosting.App.Extensions
         public static int GetByteCount(this string str) =>
             s_utf8NoBom.GetByteCount(str);
 
-        public static int GetSize(this string str) =>
+        public static int GetStructSize(this string str) =>
             str.GetByteCount() + sizeof(int);
     }
 }

@@ -19,8 +19,8 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
     public class TestPipeException
         (ITestOutputHelper testOutputHelper)
     {
-        private static readonly string s_exceptionMessage = "Test1";
-        private static readonly string s_exceptionStackTrace = "Test2";
+        private static readonly string s_exceptionMessage = "Hello";
+        private static readonly string s_exceptionStackTrace = "World";
 
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
@@ -29,7 +29,6 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         {
             var exception1 = new PipeException()
             {
-                IsEmpty = false,
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
             };
@@ -39,7 +38,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             using var ms1 = new MemoryStream();
             await exception1.CopyToAsync(ms1).DefaultTimeout();
 
-            var exception2 = new PipeException() { IsEmpty = true };
+            var exception2 = new PipeException();
             ms1.Position = 0;
             await exception2.CopyFromAsync(ms1).DefaultTimeout();
 
@@ -59,17 +58,14 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public async Task IPipeMessage_CopyFromAsync_WithNoData()
         {
-            var exception1 = new PipeException()
-            {
-                IsEmpty = true,
-            };
+            var exception1 = new PipeException();
             var expectedBytes = exception1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
             using var ms1 = new MemoryStream();
             await exception1.CopyToAsync(ms1).DefaultTimeout();
 
-            var exception2 = new PipeException() { IsEmpty = true };
+            var exception2 = new PipeException();
             ms1.Position = 0;
             await exception2.CopyFromAsync(ms1).DefaultTimeout();
 
@@ -91,7 +87,6 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         {
             var exception = new PipeException()
             {
-                IsEmpty = false,
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
             };
@@ -102,7 +97,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             await exception.CopyToAsync(ms).DefaultTimeout();
 
             var actualBytes = ms.ToArray();
-            var actualBytesWithoutHeader = actualBytes[(sizeof(ulong) + sizeof(uint))..];
+            var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
             var className = nameof(PipeException);
@@ -115,10 +110,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public async Task IPipeMessage_CopyToAsync_WithNoData()
         {
-            var exception = new PipeException()
-            {
-                IsEmpty = true,
-            };
+            var exception = new PipeException();
             var expectedBytes = exception.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
@@ -126,7 +118,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             await exception.CopyToAsync(ms).DefaultTimeout();
 
             var actualBytes = ms.ToArray();
-            var actualBytesWithoutHeader = actualBytes[(sizeof(ulong) + sizeof(uint))..];
+            var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
             var className = nameof(PipeException);
@@ -139,14 +131,10 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public void IPipeMessage_CopyToAsync_SetMessageValue()
         {
-            var exception = new PipeException()
-            {
-                IsEmpty = true,
-            };
-            exception.Message = s_exceptionMessage;
-
+            var exception = new PipeException();
             var expectedBytes = exception.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
+            exception.Message = s_exceptionMessage;
 
             var actualBytes = exception.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
@@ -155,7 +143,27 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var methodName = nameof(PipeException.Message);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
-            Assert.Equal(expectedBytes, actualBytes);
+            Assert.NotEqual(expectedBytes, actualBytes);
+            Assert.Equal(s_exceptionMessage, exception.Message);
+        }
+
+        [Fact]
+        public void IPipeMessage_CopyToAsync_SetStackTraceValue()
+        {
+            var exception = new PipeException();
+            var expectedBytes = exception.ToArray();
+            var expectedHexString = Convert.ToHexString(expectedBytes);
+            exception.StackTrace = s_exceptionStackTrace;
+
+            var actualBytes = exception.ToArray();
+            var actualHexString = Convert.ToHexString(actualBytes);
+
+            var className = nameof(PipeException);
+            var methodName = nameof(PipeException.Message);
+            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
+
+            Assert.NotEqual(expectedBytes, actualBytes);
+            Assert.Equal(s_exceptionStackTrace, exception.StackTrace);
         }
     }
 }

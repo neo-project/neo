@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography;
 using Neo.Hosting.App.Extensions;
 using System;
 using System.IO;
@@ -21,6 +22,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         where TMessage : class, IPipeMessage, new()
     {
         public const ulong Magic = 0x314547415353454dul; // MESSAGE1
+        public const int HeaderSize = sizeof(ulong) + sizeof(uint);
 
         public TMessage Payload { get; private set; }
 
@@ -33,7 +35,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         public PipeMessage()
         {
             Payload = new TMessage();
-            Exception = new() { IsEmpty = true };
+            Exception = new();
         }
 
         public static PipeMessage<TMessage> Create(TMessage payload, Exception? exception = null) =>
@@ -42,7 +44,6 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
                 Payload = payload,
                 Exception = new()
                 {
-                    IsEmpty = exception is null,
                     Message = exception?.InnerException?.Message ?? exception?.Message ?? string.Empty,
                     StackTrace = exception?.InnerException?.StackTrace ?? exception?.StackTrace ?? string.Empty,
                 },
@@ -57,36 +58,34 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             if (magic != Magic)
                 throw new InvalidDataException();
 
+            var crc = stream.Read<uint>();
+
             await Payload.CopyFromAsync(stream);
             await Exception.CopyFromAsync(stream);
+
+            byte[] bytes = [.. Payload.ToArray(), .. Exception.ToArray()];
+            if (crc != Crc32.Compute(bytes))
+                throw new InvalidDataException();
         }
 
-        public async Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
+        public Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             if (stream.CanWrite == false)
                 throw new IOException();
 
+            byte[] bytes = [.. Payload.ToArray(), .. Exception.ToArray()];
+
             stream.Write(Magic);
+            stream.Write(Crc32.Compute(bytes));
+            stream.Write(bytes);
 
-            await Payload.CopyToAsync(stream, cancellationToken);
-            await Exception.CopyToAsync(stream, cancellationToken);
+            return Task.CompletedTask;
         }
 
-        public byte[] ToArray()
-        {
-            using var ms = new MemoryStream();
-
-            ms.Write(Magic);
-
-            var task = Payload.CopyToAsync(ms);
-            if (task.IsCompleted == false)
-                task.RunSynchronously();
-
-            task = Exception.CopyToAsync(ms);
-            if (task.IsCompleted == false)
-                task.RunSynchronously();
-
-            return ms.ToArray();
-        }
+        public byte[] ToArray() =>
+        [
+            .. Payload.ToArray(),
+            .. Exception.ToArray()
+        ];
     }
 }

@@ -42,13 +42,12 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var actualBytes = message2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeMessage<PipeVersion>);
-            var methodName = nameof(PipeVersion.CopyFromAsync);
+            var className = $"{nameof(PipeMessage<PipeVersion>)}<{nameof(PipeVersion)}>";
+            var methodName = nameof(PipeMessage<PipeVersion>.CopyFromAsync);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
             Assert.Equal(message1.Payload.VersionNumber, message2.Payload.VersionNumber);
-            Assert.Equal(message1.Payload.Plugins, message2.Payload.Plugins);
             Assert.Equal(message1.Payload.Platform, message2.Payload.Platform);
             Assert.Equal(message1.Payload.TimeStamp, message2.Payload.TimeStamp);
             Assert.Equal(message1.Payload.MachineName, message2.Payload.MachineName);
@@ -56,8 +55,8 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             Assert.Equal(message1.Payload.ProcessId, message2.Payload.ProcessId);
             Assert.Equal(message1.Payload.ProcessPath, message2.Payload.ProcessPath);
             Assert.True(message2.Exception.IsEmpty);
-            Assert.Null(message2.Exception.Message);
-            Assert.Null(message2.Exception.StackTrace);
+            Assert.Empty(message2.Exception.Message);
+            Assert.Empty(message2.Exception.StackTrace);
         }
 
         [Fact]
@@ -78,13 +77,12 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var actualBytes = message2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeMessage<PipeVersion>);
-            var methodName = nameof(PipeVersion.CopyFromAsync);
+            var className = $"{nameof(PipeMessage<PipeVersion>)}<{nameof(PipeVersion)}>";
+            var methodName = nameof(PipeMessage<PipeVersion>.CopyFromAsync);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
             Assert.Equal(message1.Payload.VersionNumber, message2.Payload.VersionNumber);
-            Assert.Equal(message1.Payload.Plugins, message2.Payload.Plugins);
             Assert.Equal(message1.Payload.Platform, message2.Payload.Platform);
             Assert.Equal(message1.Payload.TimeStamp, message2.Payload.TimeStamp);
             Assert.Equal(message1.Payload.MachineName, message2.Payload.MachineName);
@@ -93,25 +91,25 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             Assert.Equal(message1.Payload.ProcessPath, message2.Payload.ProcessPath);
             Assert.False(message2.Exception.IsEmpty);
             Assert.Equal(s_exceptionMessage, message2.Exception.Message);
-            Assert.Null(message2.Exception.StackTrace);
+            Assert.Empty(message2.Exception.StackTrace);
         }
 
         [Fact]
         public async Task IPipeMessage_CopyToAsync_WithException()
         {
             var version = new PipeVersion();
-            var message1 = PipeMessage<PipeVersion>.Create(version, s_testException);
-            var expectedBytes = message1.ToArray();
+            var message = PipeMessage<PipeVersion>.Create(version, s_testException);
+            var expectedBytes = message.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
             using var ms = new MemoryStream();
-            await message1.CopyToAsync(ms).DefaultTimeout();
+            await message.CopyToAsync(ms).DefaultTimeout();
 
-            var actualBytes = ms.ToArray();
+            var actualBytes = ms.ToArray()[PipeMessage<PipeVersion>.HeaderSize..];
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeVersion);
-            var methodName = nameof(PipeVersion.CopyToAsync);
+            var className = $"{nameof(PipeMessage<PipeVersion>)}<{nameof(PipeVersion)}>";
+            var methodName = nameof(PipeMessage<PipeVersion>.CopyToAsync);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -127,11 +125,11 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             using var ms = new MemoryStream();
             await message1.CopyToAsync(ms).DefaultTimeout();
 
-            var actualBytes = ms.ToArray();
+            var actualBytes = ms.ToArray()[PipeMessage<PipeVersion>.HeaderSize..];
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeVersion);
-            var methodName = nameof(PipeVersion.CopyToAsync);
+            var className = $"{nameof(PipeMessage<PipeVersion>)}<{nameof(PipeVersion)}>";
+            var methodName = nameof(PipeMessage<PipeVersion>.CopyToAsync);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
