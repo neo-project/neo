@@ -533,7 +533,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Error: No help topic for 'pos'
             // NEO-GO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
-            // 0        PUSHINT8     24 (18)    <<
+            // 0        PUSHINT8     122 (7a)    <<
             // 2        SWAP         
             // 3        PUSHDATA1    02fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5
             // 38       SYSCALL      System.Runtime.GetNetwork (c5fba0e0)
@@ -820,7 +820,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // 193      GE           
             // 194      OR           
             // 195      JMPIF        261 (66/42)
-            // 197      PUSHINT8     24 (18)
+            // 197      PUSHINT8     122 (7a)
             // 199      LDLOC0       
             // 200      LDLOC3       
             // 201      PICKITEM     

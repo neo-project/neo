@@ -15,9 +15,6 @@ namespace Neo.SmartContract.Native
     /// Represents a pair of the named curve used in ECDSA and a hash algorithm used to hash message.
     /// This is a compatible extension of an obsolete <see cref="NamedCurve"/> enum.
     /// </summary>
-    /// <remarks>
-    /// https://tools.ietf.org/html/rfc4492#section-5.1.1
-    /// </remarks>
     public enum NamedCurveHash : byte
     {
         /// <summary>
@@ -33,11 +30,11 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The secp256k1 curve and Keccak256 hash algorithm.
         /// </summary>
-        secp256k1Keccak256 = 24,
+        secp256k1Keccak256 = 122,
 
         /// <summary>
         /// The secp256r1 curve, which known as prime256v1 or nistP-256, and Keccak256 hash algorithm.
         /// </summary>
-        secp256r1Keccak256 = 25
+        secp256r1Keccak256 = 123
     }
 }
