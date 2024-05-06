@@ -559,7 +559,7 @@ namespace Neo.UnitTests.SmartContract.Native
         //
         //	keccak256([4-bytes-network-magic-LE, txHash-bytes-BE])
         //
-        // The proposed witness verification script has 266 bytes length, verification costs 8390070 GAS including Invocation script execution.
+        // The proposed witness verification script has 264 bytes length, verification costs 8390070 GAS including Invocation script execution.
         // The users have to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
         public void TestVerifyWithECDsa_CustomTxWitness_MultiSig()
         {
@@ -638,12 +638,12 @@ namespace Neo.UnitTests.SmartContract.Native
             // Store m.
             vrf.Emit(OpCode.STLOC6);
 
-            // Check the number of signatures is m. Return false if not.
+            // Check the number of signatures is m. Abort the execution if not.
             vrf.Emit(OpCode.DEPTH); // push the number of signatures onto stack.
             vrf.Emit(OpCode.LDLOC6); // load m.
             vrf.Emit(OpCode.JMPEQ, new ReadOnlySpan<byte>([0])); // here and below short jumps are sufficient. Offset will be filled later.
             var sigsLenCheckEndOffset = vrf.Length;
-            vrf.Emit(OpCode.CLEAR, OpCode.PUSHF, OpCode.RET); // return if length of the signatures not equal to m.
+            vrf.Emit(OpCode.ABORT); // abort the execution if length of the signatures not equal to m.
 
             // Start the verification itself.
             var checkStartOffset = vrf.Length;
@@ -775,8 +775,8 @@ namespace Neo.UnitTests.SmartContract.Native
             //
             //
             // Resulting witness verification script (266 bytes for 3/4 multisig):
-            // NEO-GO-VM > loadbase64 EwwhAwSGRoaDwRISWXj/6HYkWyAGv+c5rKhTm2czUHkmLLJ6DCEDDSb8KtOxquIPBAtfgzgGcPjvXCsqySG6O915/QrwUlEMIQN7TnKuhUtqCVWz4C2SZRq3+mQak2Bmd2rUOPlbtnSiaQwhArYqxMijUqiS/s6xjX4uOmLIwey6rlUj2J10ewIZJ24iFFcHAHVtwHF2Q24oBUkJQG7AcEHF+6DgAwAAAAABAAAAnhSNQS1RCDAQzotyEHMQdGtuuGxtuJIkQgAYaGvOaWzOahTAHwwPdmVyaWZ5V2l0aEVDRHNhDBQb9XWrEYlohBNhCjWhKIbN4LZsckFifVtSa55zbJx0IrlrbrM=
-            // READY: loaded 266 instructions
+            // NEO-GO-VM 0 > loadbase64 EwwhAwSGRoaDwRISWXj/6HYkWyAGv+c5rKhTm2czUHkmLLJ6DCEDDSb8KtOxquIPBAtfgzgGcPjvXCsqySG6O915/QrwUlEMIQN7TnKuhUtqCVWz4C2SZRq3+mQak2Bmd2rUOPlbtnSiaQwhArYqxMijUqiS/s6xjX4uOmLIwey6rlUj2J10ewIZJ24iFFcHAHVtwHF2Q24oAzhuwHBBxfug4AMAAAAAAQAAAJ4UjUEtUQgwEM6LchBzEHRrbrhsbbiSJEIAGGhrzmlszmoUwB8MD3ZlcmlmeVdpdGhFQ0RzYQwUG/V1qxGJaIQTYQo1oSiGzeC2bHJBYn1bUmuec2ycdCK5a26z
+            // READY: loaded 264 instructions
             // NEO-GO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
             // 0        PUSH3            <<
@@ -793,59 +793,57 @@ namespace Neo.UnitTests.SmartContract.Native
             // 149      STLOC6       
             // 150      DEPTH        
             // 151      LDLOC6       
-            // 152      JMPEQ        157 (5/05)
-            // 154      CLEAR        
-            // 155      PUSHF        
-            // 156      RET          
-            // 157      LDLOC6       
-            // 158      PACK         
-            // 159      STLOC0       
-            // 160      SYSCALL      System.Runtime.GetNetwork (c5fba0e0)
-            // 165      PUSHINT64    4294967296 (0000000001000000)
-            // 174      ADD          
-            // 175      PUSH4        
-            // 176      LEFT         
-            // 177      SYSCALL      System.Runtime.GetScriptContainer (2d510830)
-            // 182      PUSH0        
-            // 183      PICKITEM     
-            // 184      CAT          
-            // 185      STLOC2       
+            // 152      JMPEQ        155 (3/03)
+            // 154      ABORT        
+            // 155      LDLOC6       
+            // 156      PACK         
+            // 157      STLOC0       
+            // 158      SYSCALL      System.Runtime.GetNetwork (c5fba0e0)
+            // 163      PUSHINT64    4294967296 (0000000001000000)
+            // 172      ADD          
+            // 173      PUSH4        
+            // 174      LEFT         
+            // 175      SYSCALL      System.Runtime.GetScriptContainer (2d510830)
+            // 180      PUSH0        
+            // 181      PICKITEM     
+            // 182      CAT          
+            // 183      STLOC2       
+            // 184      PUSH0        
+            // 185      STLOC3       
             // 186      PUSH0        
-            // 187      STLOC3       
-            // 188      PUSH0        
-            // 189      STLOC4       
-            // 190      LDLOC3       
-            // 191      LDLOC6       
-            // 192      GE           
-            // 193      LDLOC4       
-            // 194      LDLOC5       
-            // 195      GE           
-            // 196      OR           
-            // 197      JMPIF        263 (66/42)
-            // 199      PUSHINT8     24 (18)
-            // 201      LDLOC0       
-            // 202      LDLOC3       
-            // 203      PICKITEM     
-            // 204      LDLOC1       
-            // 205      LDLOC4       
-            // 206      PICKITEM     
-            // 207      LDLOC2       
-            // 208      PUSH4        
-            // 209      PACK         
-            // 210      PUSH15       
-            // 211      PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
-            // 228      PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
-            // 250      SYSCALL      System.Contract.Call (627d5b52)
-            // 255      LDLOC3       
-            // 256      ADD          
-            // 257      STLOC3       
-            // 258      LDLOC4       
-            // 259      INC          
-            // 260      STLOC4       
-            // 261      JMP          190 (-71/b9)
-            // 263      LDLOC3       
-            // 264      LDLOC6       
-            // 265      NUMEQUAL
+            // 187      STLOC4       
+            // 188      LDLOC3       
+            // 189      LDLOC6       
+            // 190      GE           
+            // 191      LDLOC4       
+            // 192      LDLOC5       
+            // 193      GE           
+            // 194      OR           
+            // 195      JMPIF        261 (66/42)
+            // 197      PUSHINT8     24 (18)
+            // 199      LDLOC0       
+            // 200      LDLOC3       
+            // 201      PICKITEM     
+            // 202      LDLOC1       
+            // 203      LDLOC4       
+            // 204      PICKITEM     
+            // 205      LDLOC2       
+            // 206      PUSH4        
+            // 207      PACK         
+            // 208      PUSH15       
+            // 209      PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
+            // 226      PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
+            // 248      SYSCALL      System.Contract.Call (627d5b52)
+            // 253      LDLOC3       
+            // 254      ADD          
+            // 255      STLOC3       
+            // 256      LDLOC4       
+            // 257      INC          
+            // 258      STLOC4       
+            // 259      JMP          188 (-71/b9)
+            // 261      LDLOC3       
+            // 262      LDLOC6       
+            // 263      NUMEQUAL
         }
     }
 }
