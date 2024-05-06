@@ -71,8 +71,8 @@ dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
 dotnet_style_predefined_type_for_member_access = true:suggestion
 
 # Suggest more modern language features when available
-dotnet_style_object_initializer = true:suggestion
-dotnet_style_collection_initializer = true:suggestion
+dotnet_style_object_initializer = true:warning
+dotnet_style_collection_initializer = true:warning
 dotnet_style_coalesce_expression = true:suggestion
 dotnet_style_null_propagation = true:suggestion
 dotnet_style_explicit_tuple_names = true:suggestion
@@ -254,6 +254,9 @@ csharp_preserve_single_line_statements = true
 dotnet_diagnostic.IDE0060.severity = none
 
 [src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
+
+# Use collection expression for array
+dotnet_diagnostic.IDE0300.severity = warning
 
 # IDE0011: Add braces
 csharp_prefer_braces = when_multiline:warning
