@@ -845,5 +845,58 @@ namespace Neo.UnitTests.SmartContract.Native
             // 262      LDLOC6       
             // 263      NUMEQUAL
         }
+
+        [TestMethod]
+        public void TestVerifyWithECDsa()
+        {
+            byte[] privR1 = "6e63fda41e9e3aba9bb5696d58a75731f044a9bdc48fe546da571543b2fa460e".HexToBytes();
+            ECPoint pubR1 = ECPoint.Parse("04cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d736413643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
+            byte[] privK1 = "0b5fb3a050385196b327be7d86cbce6e40a04c8832445af83ad19c82103b3ed9".HexToBytes();
+            ECPoint pubK1 = ECPoint.Parse("04b6363b353c3ee1620c5af58594458aa00abf43a6d134d7c4cb2d901dc0f474fd74c94740bd7169aa0b1ef7bc657e824b1d7f4283c547e7ec18c8576acf84418a", ECCurve.Secp256k1);
+            byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
+
+            // secp256r1 + SHA256
+            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.SHA256);
+            Crypto.VerifySignature(message, signature, pubR1).Should().BeTrue(); // SHA256 hash is used by default.
+            CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1SHA256).Should().Be(true);
+
+            // secp256r1 + Keccak256
+            signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.Keccak256);
+            Crypto.VerifySignature(message, signature, pubR1, Hasher.Keccak256).Should().BeTrue();
+            CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1Keccak256).Should().Be(true);
+
+            // secp256k1 + SHA256
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.SHA256);
+            Crypto.VerifySignature(message, signature, pubK1).Should().BeTrue(); // SHA256 hash is used by default.
+            CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1SHA256).Should().Be(true);
+
+            // secp256k1 + Keccak256
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.Keccak256);
+            Crypto.VerifySignature(message, signature, pubK1, Hasher.Keccak256).Should().BeTrue();
+            CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1Keccak256).Should().Be(true);
+        }
+
+        private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            using (ScriptBuilder script = new())
+            {
+                script.EmitPush((int)curveHash);
+                script.EmitPush(signature);
+                script.EmitPush(pub.EncodePoint(true));
+                script.EmitPush(message);
+                script.EmitPush(4);
+                script.Emit(OpCode.PACK);
+                script.EmitPush(CallFlags.All);
+                script.EmitPush("verifyWithECDsa");
+                script.EmitPush(NativeContract.CryptoLib.Hash);
+                script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                return engine.ResultStack.Pop().GetBoolean();
+            }
+        }
     }
 }
