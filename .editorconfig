@@ -48,14 +48,29 @@ indent_size = 2
 end_of_line = lf
 indent_size = 2
 
+# .github workflows
+[*.{yaml, yml}]
+end_of_line = lf
+indent_size = 2
+
 # Dotnet code style settings:
 [*.{cs,vb}]
+
+// Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity = none
+
 # Member can be made 'readonly'
 csharp_style_prefer_readonly_struct_member = true
 dotnet_diagnostic.IDE0251.severity = warning
 dotnet_diagnostic.IDE0044.severity = warning
 
 dotnet_diagnostic.CS1591.severity = silent
+
+# Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = none
+
+# Async methods should have "Async" suffix
+dotnet_diagnostic.VSTHRD200.severity = warning
 
 # Sort using and Import directives with System.* appearing first
 dotnet_sort_system_directives_first = false
@@ -160,9 +175,20 @@ dotnet_naming_symbols.all_members.applicable_kinds = *
 
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
-file_header_template = Copyright (C) 2015-2024 The Neo Project.\n\n{fileName} file belongs to the neo project and is free\nsoftware distributed under the MIT software license, see the\naccompanying file LICENSE in the main directory of the\nrepository or http://www.opensource.org/licenses/mit-license.php\nfor more details.\n\nRedistribution and use in source and binary forms with or without\nmodifications are permitted.
+# Async methods should have "Async" suffix
+dotnet_naming_rule.async_methods_end_in_async.symbols = any_async_methods
+dotnet_naming_rule.async_methods_end_in_async.style = end_in_async
+dotnet_naming_rule.async_methods_end_in_async.severity = warning
+
+dotnet_naming_symbols.any_async_methods.applicable_kinds = method
+dotnet_naming_symbols.any_async_methods.applicable_accessibilities = *
+dotnet_naming_symbols.any_async_methods.required_modifiers = async
+
+dotnet_naming_style.end_in_async.required_suffix = Async
+dotnet_naming_style.end_in_async.capitalization = pascal_case
 
 # Require file header
+file_header_template = Copyright (C) 2015-2024 The Neo Project.\n\n{fileName} file belongs to the neo project and is free\nsoftware distributed under the MIT software license, see the\naccompanying file LICENSE in the main directory of the\nrepository or http://www.opensource.org/licenses/mit-license.php\nfor more details.\n\nRedistribution and use in source and binary forms with or without\nmodifications are permitted.
 dotnet_diagnostic.IDE0073.severity = error
 
 # RS0016: Only enable if API files are present
@@ -250,30 +276,17 @@ csharp_prefer_braces = true:silent
 csharp_preserve_single_line_blocks = true
 csharp_preserve_single_line_statements = true
 
-# IDE0060: Remove unused parameter
-dotnet_diagnostic.IDE0060.severity = none
+# Member can be made 'readonly'
+csharp_style_prefer_readonly_struct_member = true
 
 [src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
-
-# IDE0011: Add braces
-csharp_prefer_braces = when_multiline:warning
-# NOTE: We need the below severity entry for Add Braces due to https://github.com/dotnet/roslyn/issues/44201
-dotnet_diagnostic.IDE0011.severity = warning
-
-# IDE0040: Add accessibility modifiers
-dotnet_diagnostic.IDE0040.severity = warning
-
-# IDE0052: Remove unread private member
-dotnet_diagnostic.IDE0052.severity = warning
-
-# IDE0059: Unnecessary assignment to a value
-dotnet_diagnostic.IDE0059.severity = warning
 
 # CA1012: Abstract types should not have public constructors
 dotnet_diagnostic.CA1012.severity = warning
 
-# CA1822: Make member static
-dotnet_diagnostic.CA1822.severity = warning
+# Member can be made 'readonly'
+dotnet_diagnostic.IDE0251.severity = warning
+dotnet_diagnostic.IDE0044.severity = warning
 
 # Prefer "var" everywhere
 dotnet_diagnostic.IDE0007.severity = warning
@@ -295,6 +308,24 @@ dotnet_diagnostic.IDE2005.severity = warning
 
 # csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental
 dotnet_diagnostic.IDE2006.severity = warning
+
+# IDE0060: Remove unused parameter
+dotnet_diagnostic.IDE0060.severity = none
+
+# IDE0040: Add accessibility modifiers
+dotnet_diagnostic.IDE0040.severity = warning
+
+# IDE0052: Remove unread private member
+dotnet_diagnostic.IDE0052.severity = warning
+
+# IDE0059: Unnecessary assignment to a value
+dotnet_diagnostic.IDE0059.severity = warning
+
+# Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = none
+
+# Async methods should have "Async" suffix
+dotnet_diagnostic.VSTHRD200.severity = warning
 
 [src/{VisualStudio}/**/*.{cs,vb}]
 # CA1822: Make member static

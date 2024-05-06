@@ -367,7 +367,7 @@ namespace Neo.CLI
             CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
         }
 
-        public async void Start(CommandLineOptions options)
+        public async Task StartAsync(CommandLineOptions options)
         {
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
@@ -378,7 +378,7 @@ namespace Neo.CLI
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);
 
-            LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
+            LocalNode = await NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance());
 
             // installing plugins
             var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select(p => InstallPluginAsync(p));

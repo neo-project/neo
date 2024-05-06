@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 #pragma warning disable IDE0051
+#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -350,7 +351,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+#pragma warning disable IDE1006 // Naming Styles
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
+#pragma warning restore IDE1006 // Naming Styles
         {
             if (!engine.CheckWitnessInternal(account)) return false;
             NeoAccountState state_account = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
@@ -621,3 +624,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#pragma warning restore VSTHRD200 // Use "Async" suffix for async methods

@@ -9,6 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable VSTHRD100 // Avoid async void methods
+#pragma warning disable IDE1006 // Naming Styles
+
 using Neo.Properties;
 using System;
 using System.Diagnostics;
@@ -47,7 +50,7 @@ namespace Neo.GUI
             Process.Start(download_url);
         }
 
-        private async void button2_Click(object sender, EventArgs e)
+        private async void Button2_Click(object sender, EventArgs e)
         {
             button1.Enabled = false;
             button2.Enabled = false;
@@ -75,3 +78,6 @@ namespace Neo.GUI
         }
     }
 }
+
+#pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore VSTHRD100 // Avoid async void methods

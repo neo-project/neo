@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 #pragma warning disable IDE0051
+#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
 
 using Neo.Cryptography;
 using Neo.IO;
@@ -184,7 +185,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+#pragma warning disable IDE1006 // Naming Styles
         private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
+#pragma warning restore IDE1006 // Naming Styles
         {
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
@@ -248,3 +251,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
