@@ -22,13 +22,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.10.48">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="GUI\DeveloperToolsForm.ContractParameters.cs">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
     </Compile>
