@@ -68,27 +68,6 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Hex String to String
-        /// input:  48656c6c6f20576f726c6421
-        /// output: Hello World!
-        /// </summary>
-        [ParseFunction("Hex String to String")]
-        private string? HexToString(string hexString)
-        {
-            try
-            {
-                var clearHexString = ClearHexString(hexString);
-                var bytes = clearHexString.HexToBytes();
-                var utf8String = Utility.StrictUTF8.GetString(bytes);
-                return IsPrintable(utf8String) ? utf8String : null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Little-endian to Big-endian
         /// input:  ce616f7f74617e0fc4b805583af2602a238df63f
         /// output: 0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
@@ -246,24 +225,6 @@ namespace Neo.CLI
                 return numberParam.ToByteArray().ToHexString();
             }
             catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Network Id to String
-        /// input:  860833102
-        /// output: NEO3
-        [ParseFunction("Network Id to String")]
-        private string? NumberToHexToString(string input)
-        {
-            try
-            {
-                var hex = NumberToHex(input);
-                return hex == null ? null : HexToString(hex);
-            }
-            catch (Exception)
             {
                 return null;
             }
@@ -503,7 +464,7 @@ namespace Neo.CLI
         /// <summary>
         /// Base64 to Hex String.
         /// input: SGVsbG8gV29ybGQh
-        /// output: 48656c6c6f20576f726c6421
+        /// output: 0x48656C6C6F20576F726C6421
         /// </summary>
         [ParseFunction("Base64 to Hex String")]
         private string? Base64ToHexString(string base64)
@@ -511,7 +472,7 @@ namespace Neo.CLI
             try
             {
                 var bytes = Convert.FromBase64String(base64.Trim());
-                return bytes.ToHexString();
+                return $"0x{Convert.ToHexString(bytes)}";
             }
             catch (Exception)
             {
@@ -519,34 +480,19 @@ namespace Neo.CLI
             }
         }
 
-        private bool IsValidPubKey(string pubKey)
-        {
-            if (pubKey.Length != 66) return false;
-            if (pubKey[0] != '0') return false;
-            if (pubKey[1] != '2' && pubKey[1] != '3') return false;
-
-            for (var i = 2; i < pubKey.Length; i++)
-            {
-                var c = pubKey[i];
-                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         /// <summary>
         /// Public Key to Address
         /// input:  03dab84c1243ec01ab2500e1a8c7a1546a26d734628180b0cf64e72bf776536997
-        /// output: Nd9NceysETPT9PZdWRTeQXJix68WM2x6Wv
+        /// output: NU7RJrzNgCSnoPLxmcY7C72fULkpaGiSpJ
         /// </summary>
         [ParseFunction("Public Key to Address")]
         private string? PublicKeyToAddress(string pubKey)
         {
-            if (!IsValidPubKey(pubKey)) return null;
-            return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
+            if (ECPoint.TryParse(pubKey, ECCurve.Secp256r1, out var publicKey) == false)
+                return null;
+            return Contract.CreateSignatureContract(publicKey)
+                .ScriptHash
+                .ToAddress(NeoSystem.Settings.AddressVersion);
         }
 
         /// <summary>
