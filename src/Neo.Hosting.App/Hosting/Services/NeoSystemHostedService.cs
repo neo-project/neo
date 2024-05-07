@@ -72,6 +72,9 @@ namespace Neo.Hosting.App.Hosting.Services
                 Plugin.LoadPlugins();
                 _logger.LogInformation("Plugin root path: {PluginsDirectory}", Plugin.PluginsDirectory);
 
+                foreach (var plugins in Plugin.Plugins)
+                    _logger.LogInformation("Loaded plugin: {Plugin}", plugins.Name);
+
                 string? storagePath = null;
                 if (string.IsNullOrEmpty(_neoOptions.Storage.Path) == false)
                 {
