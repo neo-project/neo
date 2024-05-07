@@ -41,7 +41,7 @@ namespace Neo.Json
         public JNumber(double value = 0)
         {
             if (!double.IsFinite(value)) throw new FormatException();
-            this.Value = value;
+            Value = value;
         }
 
         /// <summary>

@@ -69,7 +69,7 @@ namespace Neo.SmartContract
         /// <param name="value">The integer value of the <see cref="StorageItem"/>.</param>
         public StorageItem(BigInteger value)
         {
-            this.cache = value;
+            cache = value;
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Neo.SmartContract
         /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
         public StorageItem(IInteroperable interoperable)
         {
-            this.cache = interoperable;
+            cache = interoperable;
         }
 
         /// <summary>
