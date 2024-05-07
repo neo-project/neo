@@ -25,9 +25,9 @@ namespace Neo.VM
 
             public SharedStates(Script script, ReferenceCounter referenceCounter)
             {
-                this.Script = script;
-                this.EvaluationStack = new EvaluationStack(referenceCounter);
-                this.States = new Dictionary<Type, object>();
+                Script = script;
+                EvaluationStack = new EvaluationStack(referenceCounter);
+                States = new Dictionary<Type, object>();
             }
         }
     }

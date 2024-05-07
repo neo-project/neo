@@ -162,16 +162,16 @@ namespace Neo.SmartContract
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
-            this.Trigger = trigger;
-            this.ScriptContainer = container;
-            this.originalSnapshot = snapshot;
-            this.PersistingBlock = persistingBlock;
-            this.ProtocolSettings = settings;
-            this.gas_amount = gas;
-            this.Diagnostic = diagnostic;
-            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
-            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
-            this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            Trigger = trigger;
+            ScriptContainer = container;
+            originalSnapshot = snapshot;
+            PersistingBlock = persistingBlock;
+            ProtocolSettings = settings;
+            gas_amount = gas;
+            Diagnostic = diagnostic;
+            ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
+            StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
+            nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
                 fixed (byte* p = nonceData)

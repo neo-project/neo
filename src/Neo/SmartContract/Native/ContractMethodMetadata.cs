@@ -39,28 +39,28 @@ namespace Neo.SmartContract.Native
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
-            this.Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
-            this.Handler = member switch
+            Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
+            Handler = member switch
             {
                 MethodInfo m => m,
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(null, nameof(member))
             };
-            ParameterInfo[] parameterInfos = this.Handler.GetParameters();
+            ParameterInfo[] parameterInfos = Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
                 NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
                 NeedSnapshot = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(DataCache));
             }
             if (NeedApplicationEngine || NeedSnapshot)
-                this.Parameters = parameterInfos.Skip(1).Select(p => new InteropParameterDescriptor(p)).ToArray();
+                Parameters = parameterInfos.Skip(1).Select(p => new InteropParameterDescriptor(p)).ToArray();
             else
-                this.Parameters = parameterInfos.Select(p => new InteropParameterDescriptor(p)).ToArray();
-            this.CpuFee = attribute.CpuFee;
-            this.StorageFee = attribute.StorageFee;
-            this.RequiredCallFlags = attribute.RequiredCallFlags;
-            this.ActiveIn = attribute.ActiveIn;
-            this.Descriptor = new ContractMethodDescriptor
+                Parameters = parameterInfos.Select(p => new InteropParameterDescriptor(p)).ToArray();
+            CpuFee = attribute.CpuFee;
+            StorageFee = attribute.StorageFee;
+            RequiredCallFlags = attribute.RequiredCallFlags;
+            ActiveIn = attribute.ActiveIn;
+            Descriptor = new ContractMethodDescriptor
             {
                 Name = Name,
                 ReturnType = ToParameterType(Handler.ReturnType),
