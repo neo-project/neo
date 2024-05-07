@@ -45,8 +45,8 @@ namespace Neo.SmartContract
         /// <param name="type">The type of the parameter.</param>
         public ContractParameter(ContractParameterType type)
         {
-            this.Type = type;
-            this.Value = type switch
+            Type = type;
+            Value = type switch
             {
                 ContractParameterType.Any => null,
                 ContractParameterType.Signature => new byte[64],

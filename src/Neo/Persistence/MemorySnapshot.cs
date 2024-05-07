@@ -26,8 +26,8 @@ namespace Neo.Persistence
         public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
         {
             this.innerData = innerData;
-            this.immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            this.writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+            immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
+            writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()

@@ -42,7 +42,7 @@ namespace Neo.IO.Caching
             if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCapacity)} should be greater than 0");
             if (maxBucketCount <= 0) throw new ArgumentOutOfRangeException($"{nameof(maxBucketCount)} should be greater than 0");
 
-            this.Count = 0;
+            Count = 0;
             this.bucketCapacity = bucketCapacity;
             this.maxBucketCount = maxBucketCount;
             sets.AddFirst(new HashSet<T>());

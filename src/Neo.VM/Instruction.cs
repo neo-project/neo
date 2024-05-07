@@ -191,7 +191,7 @@ namespace Neo.VM
 
         private Instruction(OpCode opcode)
         {
-            this.OpCode = opcode;
+            OpCode = opcode;
             if (!Enum.IsDefined(typeof(OpCode), opcode)) throw new BadScriptException();
         }
 
