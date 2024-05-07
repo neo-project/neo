@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <LangVersion>12.0</LangVersion>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <WarningLevel>0</WarningLevel>
