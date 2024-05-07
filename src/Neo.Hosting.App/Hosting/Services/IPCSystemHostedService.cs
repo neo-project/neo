@@ -154,7 +154,7 @@ namespace Neo.Hosting.App.Hosting.Services
                 {
                     while (true)
                     {
-                        var connection = await listener.AcceptAsync(_stopCts.Token);
+                        var connection = await listener.AcceptAsync();
 
                         if (connection == null)
                             break;
