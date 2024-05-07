@@ -22,21 +22,22 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         where TMessage : class, IPipeMessage, new()
     {
         public const ulong Magic = 0x314547415353454dul; // MESSAGE1
-        public const int HeaderSize = sizeof(ulong) + sizeof(uint);
+        public const int HeaderSize = sizeof(ulong) + sizeof(uint) + sizeof(byte);
+        public const byte Version = 0x01;
 
         public TMessage Payload { get; private set; }
 
         public PipeException Exception { get; private set; }
-
-        public int Size =>
-            Payload.Size +
-            Exception.Size;
 
         public PipeMessage()
         {
             Payload = new TMessage();
             Exception = new();
         }
+
+        public int Size =>
+            Payload.Size +
+            Exception.Size;
 
         public static PipeMessage<TMessage> Create(TMessage payload, Exception? exception = null) =>
             new()
@@ -58,12 +59,14 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             if (magic != Magic)
                 throw new InvalidDataException();
 
+            _ = stream.Read<byte>();
+
             var crc = stream.Read<uint>();
 
             await Payload.CopyFromAsync(stream);
             await Exception.CopyFromAsync(stream);
 
-            byte[] bytes = [.. Payload.ToArray(), .. Exception.ToArray()];
+            byte[] bytes = ToArray();
             if (crc != Crc32.Compute(bytes))
                 throw new InvalidDataException();
         }
@@ -73,9 +76,10 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             if (stream.CanWrite == false)
                 throw new IOException();
 
-            byte[] bytes = [.. Payload.ToArray(), .. Exception.ToArray()];
+            byte[] bytes = ToArray();
 
             stream.Write(Magic);
+            stream.Write(Version);
             stream.Write(Crc32.Compute(bytes));
             stream.Write(bytes);
 
