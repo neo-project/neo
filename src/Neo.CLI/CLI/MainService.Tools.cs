@@ -36,7 +36,7 @@ namespace Neo.CLI
             value = Base64Fixed(value);
 
             var parseFunctions = new Dictionary<string, Func<string, string?>>();
-            var methods = this.GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance);
+            var methods = GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance);
 
             foreach (var method in methods)
             {
