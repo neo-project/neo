@@ -4,7 +4,6 @@
     <TargetFrameworks>net8.0</TargetFrameworks>
     <RootNamespace>Neo.Test</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
