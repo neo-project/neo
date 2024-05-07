@@ -10,16 +10,16 @@
 // modifications are permitted.
 
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal interface IPipeMessage
     {
         int Size { get; }
-        Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default);
-        Task CopyFromAsync(Stream stream);
+        void CopyTo(Stream stream);
+        void CopyFrom(Stream stream);
+        void CopyTo(byte[] buffer, int start = 0);
+        void CopyFrom(byte[] buffer, int start = 0);
         byte[] ToArray();
     }
 }

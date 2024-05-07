@@ -13,8 +13,6 @@ using Neo.Cryptography;
 using Neo.Hosting.App.Extensions;
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
@@ -50,7 +48,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
                 },
             };
 
-        public async Task CopyFromAsync(Stream stream)
+        public void CopyFrom(Stream stream)
         {
             if (stream.CanRead == false)
                 throw new IOException();
@@ -63,27 +61,46 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
             var crc = stream.Read<uint>();
 
-            await Payload.CopyFromAsync(stream);
-            await Exception.CopyFromAsync(stream);
+            Payload.CopyFrom(stream);
+            Exception.CopyFrom(stream);
 
             byte[] bytes = ToArray();
             if (crc != Crc32.Compute(bytes))
                 throw new InvalidDataException();
         }
 
-        public Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
+        public void CopyTo(Stream stream)
         {
             if (stream.CanWrite == false)
                 throw new IOException();
 
-            byte[] bytes = ToArray();
+            var bytes = ToArray();
 
             stream.Write(Magic);
             stream.Write(Version);
             stream.Write(Crc32.Compute(bytes));
             stream.Write(bytes);
+            stream.Flush();
+        }
 
-            return Task.CompletedTask;
+        public void CopyTo(byte[] buffer, int start = 0)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
+
+            var bytes = ToArray();
+            var bytesSpan = bytes.AsSpan();
+            var bufferSpan = buffer[start..];
+
+            bytesSpan.CopyTo(bufferSpan);
+        }
+
+        public void CopyFrom(byte[] buffer, int start = 0)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
+
+
+            Payload.CopyFrom(buffer, start);
+            Exception.CopyFrom(buffer, start + Payload.Size);
         }
 
         public byte[] ToArray() =>

@@ -12,8 +12,6 @@
 using Neo.Hosting.App.Extensions;
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
@@ -123,34 +121,42 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             sizeof(int) +
             ProcessPath.GetStructSize();
 
-        public Task CopyFromAsync(Stream stream)
+        public void CopyFrom(Stream stream)
         {
             if (stream.CanRead == false)
                 throw new IOException();
 
-            stream.ReadExactly(_versionBytes);
-            stream.ReadExactly(_platformBytes);
-            stream.ReadExactly(_timeStampBytes);
-
-            MachineName = stream.ReadString();
-            UserName = stream.ReadString();
-
-            stream.ReadExactly(_processIdBytes);
-
-            ProcessPath = stream.ReadString();
-
-            return Task.CompletedTask;
+            CopyFromStream(stream);
         }
 
-        public Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
+        public void CopyTo(Stream stream)
         {
             if (stream.CanWrite == false)
                 throw new IOException();
 
             var bytes = ToArray();
             stream.Write(bytes);
+            stream.Flush();
+        }
 
-            return stream.FlushAsync(cancellationToken);
+        public void CopyTo(byte[] buffer, int start = 0)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
+
+            var bytes = ToArray();
+            var bytesSpan = bytes.AsSpan();
+            var bufferSpan = buffer.AsSpan(start);
+
+            bytesSpan.CopyTo(bufferSpan);
+        }
+
+        public void CopyFrom(byte[] buffer, int start = 0)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
+
+            using var ms = new MemoryStream(buffer);
+
+            CopyFromStream(ms);
         }
 
         public byte[] ToArray() =>
@@ -163,5 +169,19 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             .. _processIdBytes,
             .. _processPathBytes
         ];
+
+        private void CopyFromStream(Stream stream)
+        {
+            stream.ReadExactly(_versionBytes);
+            stream.ReadExactly(_platformBytes);
+            stream.ReadExactly(_timeStampBytes);
+
+            MachineName = stream.ReadString();
+            UserName = stream.ReadString();
+
+            stream.ReadExactly(_processIdBytes);
+
+            ProcessPath = stream.ReadString();
+        }
     }
 }

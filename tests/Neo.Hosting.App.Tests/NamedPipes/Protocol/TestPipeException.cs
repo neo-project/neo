@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Xunit.Abstractions;
@@ -25,7 +24,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
         [Fact]
-        public async Task IPipeMessage_CopyFromAsync_WithData()
+        public void IPipeMessage_CopyFromAsync_WithData()
         {
             var exception1 = new PipeException()
             {
@@ -36,17 +35,17 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
             using var ms1 = new MemoryStream();
-            await exception1.CopyToAsync(ms1).DefaultTimeout();
+            exception1.CopyTo(ms1);
 
             var exception2 = new PipeException();
             ms1.Position = 0;
-            await exception2.CopyFromAsync(ms1).DefaultTimeout();
+            exception2.CopyFrom(ms1);
 
             var actualBytes = exception2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
             var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyFromAsync);
+            var methodName = nameof(PipeException.CopyFrom);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -56,24 +55,24 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         }
 
         [Fact]
-        public async Task IPipeMessage_CopyFromAsync_WithNoData()
+        public void IPipeMessage_CopyFromAsync_WithNoData()
         {
             var exception1 = new PipeException();
             var expectedBytes = exception1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
             using var ms1 = new MemoryStream();
-            await exception1.CopyToAsync(ms1).DefaultTimeout();
+            exception1.CopyTo(ms1);
 
             var exception2 = new PipeException();
             ms1.Position = 0;
-            await exception2.CopyFromAsync(ms1).DefaultTimeout();
+            exception2.CopyFrom(ms1);
 
             var actualBytes = exception2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
             var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyFromAsync);
+            var methodName = nameof(PipeException.CopyFrom);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -83,7 +82,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         }
 
         [Fact]
-        public async Task IPipeMessage_CopyToAsync_WithData()
+        public void IPipeMessage_CopyToAsync_WithData()
         {
             var exception = new PipeException()
             {
@@ -94,35 +93,35 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
             using var ms = new MemoryStream();
-            await exception.CopyToAsync(ms).DefaultTimeout();
+            exception.CopyTo(ms);
 
             var actualBytes = ms.ToArray();
             var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
             var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyToAsync);
+            var methodName = nameof(PipeException.CopyTo);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytesWithoutHeader);
         }
 
         [Fact]
-        public async Task IPipeMessage_CopyToAsync_WithNoData()
+        public void IPipeMessage_CopyToAsync_WithNoData()
         {
             var exception = new PipeException();
             var expectedBytes = exception.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
             using var ms = new MemoryStream();
-            await exception.CopyToAsync(ms).DefaultTimeout();
+            exception.CopyTo(ms);
 
             var actualBytes = ms.ToArray();
             var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
             var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyToAsync);
+            var methodName = nameof(PipeException.CopyTo);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytesWithoutHeader);
