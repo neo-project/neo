@@ -27,9 +27,9 @@ namespace Neo.IO.Caching
 
             public CacheItem(TKey key, TValue value)
             {
-                this.Key = key;
-                this.Value = value;
-                this.Time = TimeProvider.Current.UtcNow;
+                Key = key;
+                Value = value;
+                Time = TimeProvider.Current.UtcNow;
             }
         }
 
@@ -76,7 +76,7 @@ namespace Neo.IO.Caching
         public Cache(int max_capacity, IEqualityComparer<TKey> comparer = null)
         {
             this.max_capacity = max_capacity;
-            this.InnerDictionary = new Dictionary<TKey, CacheItem>(comparer);
+            InnerDictionary = new Dictionary<TKey, CacheItem>(comparer);
         }
 
         public void Add(TValue item)

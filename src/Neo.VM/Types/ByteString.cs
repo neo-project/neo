@@ -41,7 +41,7 @@ namespace Neo.VM.Types
         /// <param name="data">The data to be contained in this <see cref="ByteString"/>.</param>
         public ByteString(ReadOnlyMemory<byte> data)
         {
-            this.Memory = data;
+            Memory = data;
         }
 
         private bool Equals(ByteString other)
