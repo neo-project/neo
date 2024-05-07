@@ -48,8 +48,10 @@ namespace Neo.Cryptography
         {
             if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
             seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            bits = new BitArray(m);
-            bits.Length = m;
+            bits = new BitArray(m)
+            {
+                Length = m
+            };
             Tweak = nTweak;
         }
 
@@ -64,8 +66,10 @@ namespace Neo.Cryptography
         {
             if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
             seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            bits = new BitArray(elements.ToArray());
-            bits.Length = m;
+            bits = new BitArray(elements.ToArray())
+            {
+                Length = m
+            };
             Tweak = nTweak;
         }
 
