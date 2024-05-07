@@ -16,17 +16,19 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class TaskExtensions
     {
+        private const int DefaultTimeoutSeconds = 10;
+
         public static ValueTask<TResult> DefaultTimeout<TResult>(this ValueTask<TResult> valueTask) =>
-            TimeoutAfter(valueTask, TimeSpan.FromSeconds(5));
+            TimeoutAfter(valueTask, TimeSpan.FromSeconds(DefaultTimeoutSeconds));
 
         public static ValueTask DefaultTimeout(this ValueTask valueTask) =>
-            TimeoutAfter(valueTask, TimeSpan.FromSeconds(5));
+            TimeoutAfter(valueTask, TimeSpan.FromSeconds(DefaultTimeoutSeconds));
 
         public static Task<TResult> DefaultTimeout<TResult>(this Task<TResult> task) =>
-            TimeoutAfter(task, TimeSpan.FromSeconds(5));
+            TimeoutAfter(task, TimeSpan.FromSeconds(DefaultTimeoutSeconds));
 
         public static Task DefaultTimeout(this Task task)
-            => TimeoutAfter(task, TimeSpan.FromSeconds(5));
+            => TimeoutAfter(task, TimeSpan.FromSeconds(DefaultTimeoutSeconds));
 
         public static async ValueTask<TResult> TimeoutAfter<TResult>(this ValueTask<TResult> valueTask, TimeSpan timeout) =>
             await valueTask.AsTask().WaitAsync(timeout).ConfigureAwait(false);
