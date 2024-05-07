@@ -13,7 +13,6 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Json;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
@@ -127,9 +126,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
             throw new NotSupportedException();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
+            return new VM.Types.Array(applicationEngine.ReferenceCounter, [(byte)Type]);
         }
     }
 }

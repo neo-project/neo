@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Json;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -38,9 +37,9 @@ namespace Neo.SmartContract.Manifest
             Type = (ContractParameterType)(byte)@struct[1].GetInteger();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Struct(referenceCounter) { Name, (byte)Type };
+            return new Struct(applicationEngine.ReferenceCounter) { Name, (byte)Type };
         }
 
         /// <summary>

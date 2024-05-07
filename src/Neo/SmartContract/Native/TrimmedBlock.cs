@@ -11,7 +11,6 @@
 
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
@@ -79,10 +78,10 @@ namespace Neo.SmartContract.Native
             throw new NotSupportedException();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[]
-            {
+            return new VM.Types.Array(applicationEngine.ReferenceCounter,
+            [
                 // Computed properties
                 Header.Hash.ToArray(),
 
@@ -98,7 +97,7 @@ namespace Neo.SmartContract.Native
 
                 // Block properties
                 Hashes.Length
-            });
+            ]);
         }
     }
 }

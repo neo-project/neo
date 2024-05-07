@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Json;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
@@ -47,9 +46,9 @@ namespace Neo.SmartContract.Manifest
             Safe = @struct[4].GetBoolean();
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+            Struct @struct = (Struct)base.ToStackItem(applicationEngine);
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);

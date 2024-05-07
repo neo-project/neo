@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
 
@@ -30,9 +29,9 @@ namespace Neo.SmartContract.Native
             Balance = ((Struct)stackItem)[0].GetInteger();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Struct(referenceCounter) { Balance };
+            return new Struct(applicationEngine.ReferenceCounter) { Balance };
         }
     }
 }

@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.VM;
 using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
@@ -27,9 +26,9 @@ namespace Neo.SmartContract.Native
             Index = (uint)@struct[1].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Struct(referenceCounter) { Hash.ToArray(), Index };
+            return new Struct(applicationEngine.ReferenceCounter) { Hash.ToArray(), Index };
         }
     }
 }

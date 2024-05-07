@@ -14,7 +14,6 @@ using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
-using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -188,15 +187,29 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        VM.Types.StackItem IInteroperable.ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new VM.Types.Array(referenceCounter,
+            if (!applicationEngine.IsHardforkEnabled(Hardfork.HF_Cockatrice))
+            {
+                // It will FAULT if any of the values are null
+
+                return new VM.Types.Array(applicationEngine.ReferenceCounter,
+                [
+                    Account.ToArray(),
+                    (byte)Scopes,
+                    new VM.Types.Array(applicationEngine.ReferenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                    new VM.Types.Array(applicationEngine.ReferenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                    new VM.Types.Array(applicationEngine.ReferenceCounter, Rules.Select(u => u.ToStackItem(applicationEngine)))
+                ]);
+            }
+
+            return new VM.Types.Array(applicationEngine.ReferenceCounter,
             [
                 Account.ToArray(),
                 (byte)Scopes,
-                Scopes.HasFlag(WitnessScope.CustomContracts) ? new VM.Types.Array(referenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))) : VM.Types.StackItem.Null,
-                Scopes.HasFlag(WitnessScope.CustomGroups) ? new VM.Types.Array(referenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))) : VM.Types.StackItem.Null,
-                Scopes.HasFlag(WitnessScope.WitnessRules) ? new VM.Types.Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter))) : VM.Types.StackItem.Null
+                Scopes.HasFlag(WitnessScope.CustomContracts) ? new VM.Types.Array(applicationEngine.ReferenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))) : VM.Types.StackItem.Null,
+                Scopes.HasFlag(WitnessScope.CustomGroups) ? new VM.Types.Array(applicationEngine.ReferenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))) : VM.Types.StackItem.Null,
+                Scopes.HasFlag(WitnessScope.WitnessRules) ? new VM.Types.Array(applicationEngine.ReferenceCounter, Rules.Select(u => u.ToStackItem(applicationEngine))) : VM.Types.StackItem.Null
             ]);
         }
     }

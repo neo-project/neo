@@ -88,17 +88,17 @@ namespace Neo.SmartContract.Manifest
             Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Struct(referenceCounter)
+            return new Struct(applicationEngine.ReferenceCounter)
             {
                 Name,
-                new Array(referenceCounter, Groups.Select(p => p.ToStackItem(referenceCounter))),
-                new Map(referenceCounter),
-                new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
-                Abi.ToStackItem(referenceCounter),
-                new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
-                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => p.ToArray()?? StackItem.Null)),
+                new Array(applicationEngine.ReferenceCounter, Groups.Select(p => p.ToStackItem(applicationEngine))),
+                new Map(applicationEngine.ReferenceCounter),
+                new Array(applicationEngine.ReferenceCounter, SupportedStandards.Select(p => (StackItem)p)),
+                Abi.ToStackItem(applicationEngine),
+                new Array(applicationEngine.ReferenceCounter, Permissions.Select(p => p.ToStackItem(applicationEngine))),
+                Trusts.IsWildcard ? StackItem.Null : new Array(applicationEngine.ReferenceCounter, Trusts.Select(p => p.ToArray()?? StackItem.Null)),
                 Extra is null ? "null" : Extra.ToByteArray(false)
             };
         }

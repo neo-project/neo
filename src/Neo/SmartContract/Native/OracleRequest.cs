@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.VM;
 using Neo.VM.Types;
 using Array = Neo.VM.Types.Array;
 
@@ -68,9 +67,9 @@ namespace Neo.SmartContract.Native
             UserData = array[6].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Array(referenceCounter)
+            return new Array(applicationEngine.ReferenceCounter)
             {
                 OriginalTxid.ToArray(),
                 GasForResponse,

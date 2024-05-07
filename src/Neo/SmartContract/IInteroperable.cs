@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -29,9 +28,9 @@ namespace Neo.SmartContract
         /// <summary>
         /// Convert the current object to a <see cref="StackItem"/>.
         /// </summary>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <param name="applicationEngine">The <see cref="ApplicationEngine"/> where is the <see cref="StackItem"/>.</param>
         /// <returns>The converted <see cref="StackItem"/>.</returns>
-        StackItem ToStackItem(ReferenceCounter referenceCounter);
+        StackItem ToStackItem(ApplicationEngine applicationEngine);
 
         public IInteroperable Clone()
         {

@@ -200,7 +200,7 @@ namespace Neo.SmartContract
         protected internal StackItem GetScriptContainer()
         {
             if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
-            return interop.ToStackItem(ReferenceCounter);
+            return interop.ToStackItem(this);
         }
 
         /// <summary>

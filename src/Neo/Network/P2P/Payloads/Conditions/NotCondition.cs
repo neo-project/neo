@@ -12,7 +12,6 @@
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
@@ -61,10 +60,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
-            result.Add(Expression.ToStackItem(referenceCounter));
+            var result = (VM.Types.Array)base.ToStackItem(applicationEngine);
+            result.Add(Expression.ToStackItem(applicationEngine));
             return result;
         }
     }

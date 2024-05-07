@@ -51,9 +51,9 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Array(referenceCounter, this.Select(p => ElementToStackItem(p, referenceCounter)));
+            return new Array(applicationEngine.ReferenceCounter, this.Select(p => ElementToStackItem(p, applicationEngine.ReferenceCounter)));
         }
     }
 }

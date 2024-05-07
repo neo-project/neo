@@ -88,13 +88,13 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[]
-            {
+            return new VM.Types.Array(applicationEngine.ReferenceCounter,
+            [
                 (byte)Action,
-                Condition.ToStackItem(referenceCounter)
-            });
+                Condition.ToStackItem(applicationEngine)
+            ]);
         }
     }
 }

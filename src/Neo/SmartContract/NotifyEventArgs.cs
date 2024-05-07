@@ -63,9 +63,9 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Array(referenceCounter)
+            return new Array(applicationEngine.ReferenceCounter)
             {
                 ScriptHash.ToArray(),
                 EventName,

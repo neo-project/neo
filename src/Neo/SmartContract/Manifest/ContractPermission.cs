@@ -11,7 +11,6 @@
 
 using Neo.IO;
 using Neo.Json;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
@@ -68,12 +67,12 @@ namespace Neo.SmartContract.Manifest
             };
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
-            return new Struct(referenceCounter)
+            return new Struct(applicationEngine.ReferenceCounter)
             {
                 Contract.IsWildcard ? StackItem.Null : Contract.IsHash ? Contract.Hash.ToArray() : Contract.Group.ToArray(),
-                Methods.IsWildcard ? StackItem.Null : new Array(referenceCounter, Methods.Select(p => (StackItem)p)),
+                Methods.IsWildcard ? StackItem.Null : new Array(applicationEngine.ReferenceCounter, Methods.Select(p => (StackItem)p)),
             };
         }
 

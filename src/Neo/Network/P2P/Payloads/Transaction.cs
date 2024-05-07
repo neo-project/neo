@@ -456,11 +456,11 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ApplicationEngine applicationEngine)
         {
             if (_signers == null || _signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
-            return new Array(referenceCounter, new StackItem[]
-            {
+            return new Array(applicationEngine.ReferenceCounter,
+            [
                 // Computed properties
                 Hash.ToArray(),
 
@@ -472,7 +472,7 @@ namespace Neo.Network.P2P.Payloads
                 NetworkFee,
                 ValidUntilBlock,
                 Script,
-            });
+            ]);
         }
 
         private static ReadOnlyMemory<byte>[] GetMultiSignatures(ReadOnlyMemory<byte> script)

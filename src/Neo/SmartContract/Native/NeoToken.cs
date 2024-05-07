@@ -569,9 +569,9 @@ namespace Neo.SmartContract.Native
                 LastGasPerVote = @struct[3].GetInteger();
             }
 
-            public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+            public override StackItem ToStackItem(ApplicationEngine applicationEngine)
             {
-                Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+                Struct @struct = (Struct)base.ToStackItem(applicationEngine);
                 @struct.Add(BalanceHeight);
                 @struct.Add(VoteTo?.ToArray() ?? StackItem.Null);
                 @struct.Add(LastGasPerVote);
@@ -591,9 +591,9 @@ namespace Neo.SmartContract.Native
                 Votes = @struct[1].GetInteger();
             }
 
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            public StackItem ToStackItem(ApplicationEngine applicationEngine)
             {
-                return new Struct(referenceCounter) { Registered, Votes };
+                return new Struct(applicationEngine.ReferenceCounter) { Registered, Votes };
             }
         }
 
