@@ -39,8 +39,8 @@ namespace Neo.VM.Types
         /// <param name="position">The position of the pointer in the script.</param>
         public Pointer(Script script, int position)
         {
-            this.Script = script;
-            this.Position = position;
+            Script = script;
+            Position = position;
         }
 
         public override bool Equals(StackItem? other)

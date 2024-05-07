@@ -32,7 +32,7 @@ namespace Neo.Persistence
         public SnapshotCache(IReadOnlyStore store)
         {
             this.store = store;
-            this.snapshot = store as ISnapshot;
+            snapshot = store as ISnapshot;
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)

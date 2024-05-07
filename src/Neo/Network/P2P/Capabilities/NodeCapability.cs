@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <param name="type">The type of the <see cref="NodeCapability"/>.</param>
         protected NodeCapability(NodeCapabilityType type)
         {
-            this.Type = type;
+            Type = type;
         }
 
         void ISerializable.Deserialize(ref MemoryReader reader)

@@ -19,7 +19,7 @@ namespace Neo.ConsoleService
 
         public ServiceProxy(ConsoleServiceBase service)
         {
-            this._service = service;
+            _service = service;
         }
 
         protected override void OnStart(string[] args)

@@ -47,12 +47,12 @@ namespace Neo.Cryptography
         public BloomFilter(int m, int k, uint nTweak)
         {
             if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
-            this.seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            this.bits = new BitArray(m)
+            seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            bits = new BitArray(m)
             {
                 Length = m
             };
-            this.Tweak = nTweak;
+            Tweak = nTweak;
         }
 
         /// <summary>
@@ -65,12 +65,12 @@ namespace Neo.Cryptography
         public BloomFilter(int m, int k, uint nTweak, ReadOnlyMemory<byte> elements)
         {
             if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
-            this.seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            this.bits = new BitArray(elements.ToArray())
+            seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            bits = new BitArray(elements.ToArray())
             {
                 Length = m
             };
-            this.Tweak = nTweak;
+            Tweak = nTweak;
         }
 
         /// <summary>
