@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Json;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;

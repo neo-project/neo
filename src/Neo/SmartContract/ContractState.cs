@@ -12,7 +12,6 @@
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
