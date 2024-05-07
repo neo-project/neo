@@ -15,7 +15,7 @@ using System.CommandLine;
 
 namespace Neo.Hosting.App.CommandLine.Prompt
 {
-    internal class DefaultRemoteCommand : Command
+    internal sealed class DefaultRemoteCommand : Command
     {
         private static string? s_executablePath;
 

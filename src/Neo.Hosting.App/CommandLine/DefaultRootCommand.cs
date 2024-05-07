@@ -15,7 +15,7 @@ using System.IO;
 
 namespace Neo.Hosting.App.CommandLine
 {
-    internal class DefaultRootCommand : Command
+    internal sealed class DefaultRootCommand : Command
     {
         private static string? s_executablePath;
         private static string? s_executableName;

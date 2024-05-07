@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.CommandLine
 {
-    internal class ConnectCommand : Command
+    internal sealed class ConnectCommand : Command
     {
         public ConnectCommand() : base("connect", "Connect to local Neo service")
         {
