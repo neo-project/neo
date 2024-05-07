@@ -701,8 +701,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // End of the loop.
             vrf.Emit(OpCode.JMP, new ReadOnlySpan<byte>([0])); // jump to the start of cycle.
             var loopEndOffset = vrf.Length;
-
-
             // Return condition: the number of valid signatures should be equal to m.
             var progRetOffset = vrf.Length;
             vrf.Emit(OpCode.LDLOC3);  // load sigCnt.
@@ -732,8 +730,6 @@ namespace Neo.UnitTests.SmartContract.Native
                 Version = 0,
                 Witnesses = []
             };
-
-
             // inv is a builder of witness invocation script corresponding to the public key.
             using ScriptBuilder inv = new();
             for (var i = 0; i < n; i++)
