@@ -46,7 +46,7 @@ namespace Neo.Hosting.App.CommandLine
 
                 if (EnvironmentUtility.TryGetServicePipeName(out var pipeName))
                 {
-                    _pipeEndPoint = new NamedPipeEndPoint(pipeName);
+                    _pipeEndPoint = new(pipeName);
                     var pipeStream = NamedPipeTransportFactory.CreateClientStream(_pipeEndPoint);
 
                     context.Console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
@@ -61,11 +61,7 @@ namespace Neo.Hosting.App.CommandLine
                     catch (TimeoutException)
                     {
                         context.Console.WriteLine(string.Empty);
-                        context.Console.ErrorMessage($"Failed to connect! Try again Later!");
-
-                        context.Console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
-                        context.Console.WriteLine("Note: Make sure service is running.");
-                        context.Console.ResetTerminalForegroundColor();
+                        context.Console.ErrorMessage($"Failed to connect! Make sure service is running.");
                     }
 
                     return 0;
