@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed partial class CryptoLib : NativeContract
     {
-        private static readonly Dictionary<NamedCurveHash, (ECCurve, Hasher)> curves = new()
+        private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, Hasher Hasher)> s_curves = new()
         {
             [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, Hasher.SHA256),
             [NamedCurveHash.secp256r1SHA256] = (ECCurve.Secp256r1, Hasher.SHA256),
@@ -90,8 +90,8 @@ namespace Neo.SmartContract.Native
         {
             try
             {
-                var ch = curves[curveHash];
-                return Crypto.VerifySignature(message, signature, pubkey, ch.Item1, ch.Item2);
+                var ch = s_curves[curveHash];
+                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.Hasher);
             }
             catch (ArgumentException)
             {
