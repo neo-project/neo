@@ -76,8 +76,8 @@ namespace Neo.Wallets
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.</param>
         protected WalletAccount(UInt160 scriptHash, ProtocolSettings settings)
         {
-            this.ProtocolSettings = settings;
-            this.ScriptHash = scriptHash;
+            ProtocolSettings = settings;
+            ScriptHash = scriptHash;
         }
     }
 }

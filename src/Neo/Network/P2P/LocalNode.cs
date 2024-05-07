@@ -88,7 +88,7 @@ namespace Neo.Network.P2P
         public LocalNode(NeoSystem system)
         {
             this.system = system;
-            this.SeedList = new IPEndPoint[system.Settings.SeedList.Length];
+            SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
             // Start dns resolution in parallel
             string[] seedList = system.Settings.SeedList;

@@ -51,8 +51,8 @@ namespace Neo.VM
 
         internal ExceptionHandlingContext(int catchPointer, int finallyPointer)
         {
-            this.CatchPointer = catchPointer;
-            this.FinallyPointer = finallyPointer;
+            CatchPointer = catchPointer;
+            FinallyPointer = finallyPointer;
         }
     }
 }
