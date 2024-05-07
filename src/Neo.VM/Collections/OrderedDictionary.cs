@@ -27,8 +27,8 @@ namespace Neo.VM.Collections
 
             public TItem(TKey key, TValue value)
             {
-                this.Key = key;
-                this.Value = value;
+                Key = key;
+                Value = value;
             }
         }
 

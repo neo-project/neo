@@ -56,9 +56,9 @@ namespace Neo.Network.P2P
         /// <param name="local">The address of the local node.</param>
         protected Connection(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            this.Remote = remote;
-            this.Local = local;
-            this.timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimitStart), Self, new Close { Abort = true }, ActorRefs.NoSender);
+            Remote = remote;
+            Local = local;
+            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimitStart), Self, new Close { Abort = true }, ActorRefs.NoSender);
             switch (connection)
             {
                 case IActorRef tcp:
