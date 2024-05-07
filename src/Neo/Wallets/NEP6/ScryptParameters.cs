@@ -46,9 +46,9 @@ namespace Neo.Wallets.NEP6
         /// <param name="p">Parallelization parameter.</param>
         public ScryptParameters(int n, int r, int p)
         {
-            this.N = n;
-            this.R = r;
-            this.P = p;
+            N = n;
+            R = r;
+            P = p;
         }
 
         /// <summary>
