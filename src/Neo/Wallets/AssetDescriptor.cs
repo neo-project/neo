@@ -62,10 +62,10 @@ namespace Neo.Wallets
             }
             using var engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
             if (engine.State != VMState.HALT) throw new ArgumentException(null, nameof(asset_id));
-            this.AssetId = asset_id;
-            this.AssetName = contract.Manifest.Name;
-            this.Symbol = engine.ResultStack.Pop().GetString();
-            this.Decimals = (byte)engine.ResultStack.Pop().GetInteger();
+            AssetId = asset_id;
+            AssetName = contract.Manifest.Name;
+            Symbol = engine.ResultStack.Pop().GetString();
+            Decimals = (byte)engine.ResultStack.Pop().GetInteger();
         }
 
         public override string ToString()

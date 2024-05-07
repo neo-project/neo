@@ -40,11 +40,13 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestToJson()
         {
-            var item = new VM.Types.Array();
-            item.Add(5);
-            item.Add("hello world");
-            item.Add(new byte[] { 1, 2, 3 });
-            item.Add(true);
+            var item = new VM.Types.Array
+            {
+                5,
+                "hello world",
+                new byte[] { 1, 2, 3 },
+                true
+            };
 
             Assert.AreEqual("{\"type\":\"Integer\",\"value\":\"5\"}", item[0].ToJson().ToString());
             Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"}", item[1].ToJson().ToString());
@@ -274,9 +276,11 @@ namespace Neo.UnitTests.VMT
         {
             var sb = new ScriptBuilder();
             var parameter = new ContractParameter(ContractParameterType.Array);
-            IList<ContractParameter> values = new List<ContractParameter>();
-            values.Add(new ContractParameter(ContractParameterType.Integer));
-            values.Add(new ContractParameter(ContractParameterType.Integer));
+            IList<ContractParameter> values = new List<ContractParameter>
+            {
+                new ContractParameter(ContractParameterType.Integer),
+                new ContractParameter(ContractParameterType.Integer)
+            };
             parameter.Value = values;
             sb.EmitPush(parameter);
             var tempArray = new byte[4];

@@ -117,8 +117,8 @@ namespace Neo.VM
             if (rvcount < -1 || rvcount > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(rvcount));
             this.shared_states = shared_states;
-            this.RVCount = rvcount;
-            this.InstructionPointer = initialPosition;
+            RVCount = rvcount;
+            InstructionPointer = initialPosition;
         }
 
         /// <summary>

@@ -25,7 +25,7 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentNullException(nameof(curve));
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
-            this.Value = value;
+            Value = value;
             this.curve = curve;
         }
 

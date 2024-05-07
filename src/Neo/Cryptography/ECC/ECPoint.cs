@@ -49,9 +49,9 @@ namespace Neo.Cryptography.ECC
         {
             if ((x is null ^ y is null) || (curve is null))
                 throw new ArgumentException("Exactly one of the field elements is null");
-            this.X = x;
-            this.Y = y;
-            this.Curve = curve;
+            X = x;
+            Y = y;
+            Curve = curve;
         }
 
         public int CompareTo(ECPoint other)
@@ -378,9 +378,9 @@ namespace Neo.Cryptography.ECC
 
         internal ECPoint Twice()
         {
-            if (this.IsInfinity)
+            if (IsInfinity)
                 return this;
-            if (this.Y.Value.Sign == 0)
+            if (Y.Value.Sign == 0)
                 return Curve.Infinity;
             ECFieldElement TWO = new(2, Curve);
             ECFieldElement THREE = new(3, Curve);

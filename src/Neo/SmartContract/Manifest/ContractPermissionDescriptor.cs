@@ -49,8 +49,8 @@ namespace Neo.SmartContract.Manifest
 
         private ContractPermissionDescriptor(UInt160 hash, ECPoint group)
         {
-            this.Hash = hash;
-            this.Group = group;
+            Hash = hash;
+            Group = group;
         }
 
         internal ContractPermissionDescriptor(ReadOnlySpan<byte> span)

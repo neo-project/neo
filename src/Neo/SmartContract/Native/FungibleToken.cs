@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Native
            "amount", ContractParameterType.Integer)]
         protected FungibleToken() : base()
         {
-            this.Factor = BigInteger.Pow(10, Decimals);
+            Factor = BigInteger.Pow(10, Decimals);
         }
 
         protected override void OnManifestCompose(ContractManifest manifest)

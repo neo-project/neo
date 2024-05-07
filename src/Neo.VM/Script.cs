@@ -72,7 +72,7 @@ namespace Neo.VM
         /// <exception cref="BadScriptException">In strict mode, the script was found to contain bad instructions.</exception>
         public Script(ReadOnlyMemory<byte> script, bool strictMode)
         {
-            this._value = script;
+            _value = script;
             if (strictMode)
             {
                 for (var ip = 0; ip < script.Length; ip += GetInstruction(ip).Size) { }
