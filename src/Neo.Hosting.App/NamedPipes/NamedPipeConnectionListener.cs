@@ -99,6 +99,7 @@ namespace Neo.Hosting.App.NamedPipes
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Named pipe listener aborted.");
                     _acceptedQueue.Writer.TryComplete(ex);
                 }
             });
@@ -125,8 +126,10 @@ namespace Neo.Hosting.App.NamedPipes
                             throw new InvalidOperationException("Accept queue writer was unexpectedly closed.");
                     }
                 }
-                catch (IOException) when (_listeningToken.IsCancellationRequested == false)
+                catch (IOException ex) when (_listeningToken.IsCancellationRequested == false)
                 {
+                    _logger.LogDebug(ex, "Named pipe listener received broken pipe while waiting for a connection.");
+
                     nextStream.Dispose();
                     nextStream = _namedPipeServerStreamPool.Get();
                 }
