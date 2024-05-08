@@ -136,7 +136,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         protected NativeContract()
         {
-            this.Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
+            Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
 
             // Reflection to get the methods
 

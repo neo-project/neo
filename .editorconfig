@@ -56,7 +56,7 @@ indent_size = 2
 # Dotnet code style settings:
 [*.{cs,vb}]
 
-// Missing XML comment for publicly visible type or member
+# Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = none
 
 # Member can be made 'readonly'
@@ -75,19 +75,20 @@ dotnet_diagnostic.VSTHRD200.severity = warning
 # Sort using and Import directives with System.* appearing first
 dotnet_sort_system_directives_first = false
 dotnet_separate_import_directive_groups = false
+
 # Avoid "this." and "Me." if not necessary
-dotnet_style_qualification_for_field = false:refactoring
-dotnet_style_qualification_for_property = false:refactoring
-dotnet_style_qualification_for_method = false:refactoring
-dotnet_style_qualification_for_event = false:refactoring
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
 
 # Use language keywords instead of framework type names for type references
 dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
 dotnet_style_predefined_type_for_member_access = true:suggestion
 
 # Suggest more modern language features when available
-dotnet_style_object_initializer = true:suggestion
-dotnet_style_collection_initializer = true:suggestion
+dotnet_style_object_initializer = true:warning
+dotnet_style_collection_initializer = true:warning
 dotnet_style_coalesce_expression = true:suggestion
 dotnet_style_null_propagation = true:suggestion
 dotnet_style_explicit_tuple_names = true:suggestion
@@ -280,6 +281,27 @@ csharp_preserve_single_line_statements = true
 csharp_style_prefer_readonly_struct_member = true
 
 [src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
+
+# Use collection expression for array
+dotnet_diagnostic.IDE0300.severity = warning
+
+# Avoid "this." and "Me." if not necessary
+dotnet_diagnostic.IDE0003.severity = warning
+dotnet_diagnostic.IDE0009.severity = warning
+
+# IDE0011: Add braces
+csharp_prefer_braces = when_multiline:warning
+# NOTE: We need the below severity entry for Add Braces due to https://github.com/dotnet/roslyn/issues/44201
+dotnet_diagnostic.IDE0011.severity = warning
+
+# IDE0040: Add accessibility modifiers
+dotnet_diagnostic.IDE0040.severity = warning
+
+# IDE0052: Remove unread private member
+dotnet_diagnostic.IDE0052.severity = warning
+
+# IDE0059: Unnecessary assignment to a value
+dotnet_diagnostic.IDE0059.severity = warning
 
 # CA1012: Abstract types should not have public constructors
 dotnet_diagnostic.CA1012.severity = warning

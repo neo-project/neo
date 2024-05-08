@@ -32,12 +32,12 @@ namespace Neo.Cryptography
 
         internal MerkleTree(UInt256[] hashes)
         {
-            this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
+            root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
             if (root is null) return;
             int depth = 1;
             for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
                 depth++;
-            this.Depth = depth;
+            Depth = depth;
         }
 
         private static MerkleTreeNode Build(MerkleTreeNode[] leaves)
