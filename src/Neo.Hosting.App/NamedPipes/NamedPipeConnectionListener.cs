@@ -70,8 +70,7 @@ namespace Neo.Hosting.App.NamedPipes
 
         internal void ReturnStream(NamedPipeServerStream stream)
         {
-            if (stream.IsConnected == false)
-                throw new Exception("Stream should have been successfully disconnected to reach this point.");
+            Debug.Assert(stream.IsConnected == false, "Stream should have been successfully disconnected to reach this point.");
 
             _namedPipeServerStreamPool.Return(stream);
         }
