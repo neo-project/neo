@@ -31,8 +31,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void ToJson()
         {
-            var test = new NotValidBefore();
-            test.Height = 42;
+            var test = new NotValidBefore
+            {
+                Height = 42
+            };
             var json = test.ToJson().ToString();
             Assert.AreEqual(@"{""type"":""NotValidBefore"",""height"":42}", json);
         }

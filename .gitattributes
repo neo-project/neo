@@ -4,6 +4,7 @@
 * text eol=lf
 *.json text eol=lf
 *.cs text eol=lf
+*.csproj text eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.
@@ -46,6 +47,7 @@
 *.png binary
 *.gif binary
 *.ico binary
+*.zip binary
 
 # Zip files
 *.zip binary

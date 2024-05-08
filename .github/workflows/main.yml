@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 8.0.202
+  DOTNET_VERSION: 8.0.x
 
 jobs:
 
@@ -34,7 +34,6 @@ jobs:
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
-        find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
         dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'
         dotnet test ./tests/Neo.ConsoleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
         dotnet test ./tests/Neo.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
