@@ -88,6 +88,8 @@ namespace Neo.Hosting.App.NamedPipes
 
             if (_streamDisconnected == false)
                 _stream.Dispose();
+            else
+                _listener.ReturnStream(_stream);
         }
 
         public void Start()
