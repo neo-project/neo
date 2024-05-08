@@ -11,6 +11,7 @@
 
 #pragma warning disable IDE0051
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
+#pragma warning disable IDE1006 // Naming Styles
 
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -188,16 +189,14 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
-
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
-#pragma warning disable IDE1006 // Naming Styles
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
-#pragma warning restore IDE1006 // Naming Styles
+
         {
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
@@ -302,3 +301,4 @@ namespace Neo.SmartContract.Native
 }
 
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
+#pragma warning restore IDE1006 // Naming Styles

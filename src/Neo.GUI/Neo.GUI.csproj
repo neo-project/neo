@@ -20,7 +20,6 @@
   <ItemGroup>
     <Content Include="neo.ico" />
   </ItemGroup>
-  
   <ItemGroup>
     <Compile Update="GUI\DeveloperToolsForm.ContractParameters.cs">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>

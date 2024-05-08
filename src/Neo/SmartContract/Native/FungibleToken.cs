@@ -72,9 +72,7 @@ namespace Neo.SmartContract.Native
             manifest.SupportedStandards = new[] { "NEP-17" };
         }
 
-#pragma warning disable IDE1006 // Naming Styles
-        internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
-#pragma warning restore IDE1006 // Naming Styles
+        internal async ContractTask MintAsync(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -87,9 +85,7 @@ namespace Neo.SmartContract.Native
             await PostTransferAsync(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
 
-#pragma warning disable IDE1006 // Naming Styles
-        internal async ContractTask Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
-#pragma warning restore IDE1006 // Naming Styles
+        internal async ContractTask BurnAsync(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;

@@ -179,7 +179,7 @@ namespace Neo.SmartContract.Native
                 foreach (var (account, gas) in nodes)
                 {
                     if (gas.Sign > 0)
-                        await GAS.Mint(engine, account, gas, false);
+                        await GAS.MintAsync(engine, account, gas, false);
                 }
             }
         }
@@ -200,7 +200,7 @@ namespace Neo.SmartContract.Native
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
-            await GAS.Mint(engine, Hash, gasForResponse, false);
+            await GAS.MintAsync(engine, Hash, gasForResponse, false);
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RequestId));
