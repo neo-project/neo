@@ -45,8 +45,4 @@
     <InternalsVisibleTo Include="$(AssemblyTitle).Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="IO\" />
-  </ItemGroup>
-
 </Project>
