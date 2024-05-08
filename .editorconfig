@@ -56,7 +56,7 @@ indent_size = 2
 # Dotnet code style settings:
 [*.{cs,vb}]
 
-// Missing XML comment for publicly visible type or member
+# Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = none
 
 # Member can be made 'readonly'
