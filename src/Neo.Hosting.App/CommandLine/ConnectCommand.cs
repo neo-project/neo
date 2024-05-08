@@ -11,6 +11,7 @@
 
 using Neo.Hosting.App.CommandLine.Prompt;
 using Neo.Hosting.App.Extensions;
+using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Helpers;
 using Neo.Hosting.App.NamedPipes;
 using System;
@@ -47,8 +48,8 @@ namespace Neo.Hosting.App.CommandLine
 
                 if (EnvironmentUtility.TryGetServicePipeName(out var pipeName))
                 {
-                    //_pipeEndPoint = new(pipeName);
-                    //var pipeStream = NamedPipeTransportFactory.CreateClientStream(_pipeEndPoint);
+                    _pipeEndPoint = new(pipeName);
+                    var pipeStream = NamedPipeTransportFactory.CreateClientStream(_pipeEndPoint);
 
                     context.Console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
                     context.Console.WriteLine($"Connecting to {_pipeEndPoint}...");
@@ -56,7 +57,7 @@ namespace Neo.Hosting.App.CommandLine
 
                     try
                     {
-                        //await pipeStream.ConnectAsync(stopping).DefaultTimeout();
+                        await pipeStream.ConnectAsync(stopping).DefaultTimeout();
                         await RunConsolePrompt(context, stopping);
                     }
                     catch (TimeoutException)
