@@ -33,7 +33,7 @@ namespace Neo.Hosting.App
         internal static int ApplicationVersionNumber { get; }
         internal static Version ApplicationVersion { get; }
         internal static bool IsRunningAsService =>
-            SystemdHelpers.IsSystemdService() == false && WindowsServiceHelpers.IsWindowsService() == false && Environment.UserInteractive == false;
+            SystemdHelpers.IsSystemdService() && WindowsServiceHelpers.IsWindowsService() && Environment.UserInteractive == false;
 
         static Program()
         {
