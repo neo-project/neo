@@ -31,6 +31,16 @@ namespace Neo.Cryptography
         private static readonly X9ECParameters bouncySecp256r1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
 
         /// <summary>
+        /// Holds domain parameters for Secp256r1 elliptic curve.
+        /// </summary>
+        private static readonly ECDomainParameters secp256r1DomainParams = new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H);
+
+        /// <summary>
+        /// Holds domain parameters for Secp256k1 elliptic curve.
+        /// </summary>
+        private static readonly ECDomainParameters secp256k1DomainParams = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
+
+        /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
         /// </summary>
         /// <param name="message">The message to be hashed.</param>
@@ -63,8 +73,8 @@ namespace Neo.Cryptography
             if (hasher == Hasher.Keccak256 || (IsOSX && ecCurve == ECC.ECCurve.Secp256k1))
             {
                 var domain =
-                    ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H) :
-                    ecCurve == ECC.ECCurve.Secp256k1 ? new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H) :
+                    ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? secp256r1DomainParams :
+                    ecCurve == ECC.ECCurve.Secp256k1 ? secp256k1DomainParams :
                     throw new NotSupportedException(nameof(ecCurve));
                 var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
                 var privateKey = new BigInteger(1, priKey);
@@ -117,8 +127,8 @@ namespace Neo.Cryptography
             if (hasher == Hasher.Keccak256 || (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
                 var domain =
-                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H) :
-                    pubkey.Curve == ECC.ECCurve.Secp256k1 ? new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H) :
+                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? secp256r1DomainParams :
+                    pubkey.Curve == ECC.ECCurve.Secp256k1 ? secp256k1DomainParams :
                     throw new NotSupportedException(nameof(pubkey.Curve));
                 var curve =
                     pubkey.Curve == ECC.ECCurve.Secp256r1 ? bouncySecp256r1.Curve :
