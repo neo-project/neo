@@ -384,9 +384,9 @@ namespace Neo.Cryptography.ECC
                 return Curve.Infinity;
             ECFieldElement TWO = new(2, Curve);
             ECFieldElement THREE = new(3, Curve);
-            var gamma = (this.X.Square() * THREE + Curve.A) / (Y * TWO);
-            var x3 = gamma.Square() - this.X * TWO;
-            var y3 = gamma * (this.X - x3) - this.Y;
+            var gamma = (X.Square() * THREE + Curve.A) / (Y * TWO);
+            var x3 = gamma.Square() - X * TWO;
+            var y3 = gamma * (X - x3) - Y;
             return new ECPoint(x3, y3, Curve);
         }
 

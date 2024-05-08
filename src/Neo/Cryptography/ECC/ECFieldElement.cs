@@ -117,7 +117,7 @@ namespace Neo.Cryptography.ECC
                 return null;
             var u = qMinusOne >> 2;
             var k = (u << 1) + 1;
-            var Q = this.Value;
+            var Q = Value;
             var fourQ = (Q << 2).Mod(curve.Q);
             BigInteger U, V;
             do

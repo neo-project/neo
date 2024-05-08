@@ -46,7 +46,7 @@ namespace Neo.SmartContract.Native
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(null, nameof(member))
             };
-            var parameterInfos = this.Handler.GetParameters();
+            var parameterInfos = Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
                 NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
