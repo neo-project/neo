@@ -27,7 +27,7 @@ namespace Neo.Hosting.App.CommandLine.Prompt
                 var walletPathArgument = new Argument<FileInfo>("JSON_FILE", "Path to the json file");
 
                 AddArgument(walletPathArgument);
-                this.SetHandler(async context => await new Handler(walletPathArgument).InvokeAsync(context));
+                this.SetHandler(context => new Handler(walletPathArgument).InvokeAsync(context));
             }
 
             public new sealed class Handler

@@ -22,7 +22,12 @@ namespace Neo.Hosting.App.CommandLine.Prompt
         public DefaultRemoteCommand() : base(ExecutableName, $"Your are connected to {ExecutablePath}")
         {
             var walletCommand = new WalletCommand();
+            var helpCommand = new HelpCommand();
+            var quitCommand = new QuitCommand();
+
             AddCommand(walletCommand);
+            AddCommand(helpCommand);
+            AddCommand(quitCommand);
         }
 
         public static string ExecutableName => $"{Environment.UserName}@{Environment.MachineName}:~$";

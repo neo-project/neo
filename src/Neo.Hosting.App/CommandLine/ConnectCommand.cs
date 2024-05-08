@@ -11,13 +11,14 @@
 
 using Neo.Hosting.App.CommandLine.Prompt;
 using Neo.Hosting.App.Extensions;
-using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Helpers;
 using Neo.Hosting.App.NamedPipes;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
+using System.CommandLine.Help;
 using System.CommandLine.Invocation;
+using System.CommandLine.IO;
 using System.CommandLine.Parsing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,8 +47,8 @@ namespace Neo.Hosting.App.CommandLine
 
                 if (EnvironmentUtility.TryGetServicePipeName(out var pipeName))
                 {
-                    _pipeEndPoint = new(pipeName);
-                    var pipeStream = NamedPipeTransportFactory.CreateClientStream(_pipeEndPoint);
+                    //_pipeEndPoint = new(pipeName);
+                    //var pipeStream = NamedPipeTransportFactory.CreateClientStream(_pipeEndPoint);
 
                     context.Console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
                     context.Console.WriteLine($"Connecting to {_pipeEndPoint}...");
@@ -55,7 +56,7 @@ namespace Neo.Hosting.App.CommandLine
 
                     try
                     {
-                        await pipeStream.ConnectAsync(stopping).DefaultTimeout();
+                        //await pipeStream.ConnectAsync(stopping).DefaultTimeout();
                         await RunConsolePrompt(context, stopping);
                     }
                     catch (TimeoutException)
@@ -103,10 +104,10 @@ namespace Neo.Hosting.App.CommandLine
                     if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
                         continue;
 
-                    if (line.Equals("exit", StringComparison.OrdinalIgnoreCase) || line.Equals("quit", StringComparison.OrdinalIgnoreCase))
-                        break;
+                    var exitCode = await parser.InvokeAsync(line, context.Console);
 
-                    _ = await parser.InvokeAsync(line, context.Console);
+                    if (exitCode.Is(ExitCode.Exit))
+                        break;
                 }
 
                 return 0;
