@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net8.0</TargetFrameworks>
     <AssemblyTitle>Neo.Hosting.App</AssemblyTitle>
-    <AssemblyName>neo-service</AssemblyName>
+    <AssemblyName>neo-cmd</AssemblyName>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
