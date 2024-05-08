@@ -10,103 +10,98 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.Hosting.App.Extensions;
+using Neo.Hosting.App.Buffers;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
+using System.Reflection;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
-    internal sealed class PipeMessage<TMessage> : IPipeMessage, IPipeException
-        where TMessage : class, IPipeMessage, new()
+    internal sealed class PipeMessage : IPipeMessage
     {
         public const ulong Magic = 0x314547415353454dul; // MESSAGE1
-        public const int HeaderSize = sizeof(ulong) + sizeof(uint) + sizeof(byte);
         public const byte Version = 0x01;
 
-        public TMessage Payload { get; private set; }
+        private static readonly ConcurrentDictionary<PipeCommand, Type> _commandTypes = new();
 
-        public PipeException Exception { get; private set; }
+        public PipeCommand Command { get; private set; }
+
+        public IPipeMessage Payload { get; private set; }
 
         public PipeMessage()
         {
-            Payload = new TMessage();
-            Exception = new();
+            Payload = new PipeEmptyPayload();
+            Command = PipeCommand.Empty;
+        }
+
+        static PipeMessage()
+        {
+            foreach (var pipeProtocolField in typeof(PipeCommand).GetFields(BindingFlags.Public | BindingFlags.Static))
+            {
+                var attr = pipeProtocolField.GetCustomAttribute<PipeProtocolAttribute>();
+                if (attr is null) continue;
+
+                _ = _commandTypes.TryAdd((PipeCommand)pipeProtocolField.GetValue(null)!, attr.Type);
+            }
         }
 
         public int Size =>
-            Payload.Size +
-            Exception.Size;
+            sizeof(ulong) +
+            sizeof(byte) +
+            sizeof(uint) +
+            sizeof(PipeCommand) +
+            Payload.Size;
 
-        public static PipeMessage<TMessage> Create(TMessage payload, Exception? exception = null) =>
+        public static PipeMessage Create(PipeCommand command, IPipeMessage payload) =>
             new()
             {
+                Command = command,
                 Payload = payload,
-                Exception = new()
-                {
-                    Message = exception?.InnerException?.Message ?? exception?.Message ?? string.Empty,
-                    StackTrace = exception?.InnerException?.StackTrace ?? exception?.StackTrace ?? string.Empty,
-                },
             };
 
-        public void CopyFrom(Stream stream)
-        {
-            if (stream.CanRead == false)
-                throw new IOException();
+        public static IPipeMessage? CreateMessage(PipeCommand command) =>
+            _commandTypes.TryGetValue(command, out var t)
+                ? (IPipeMessage?)Activator.CreateInstance(t)
+                : null;
 
-            var magic = stream.Read<ulong>();
+        public void FromArray(byte[] buffer)
+        {
+            var wrapper = new ByteArrayBuffer(buffer);
+
+            var magic = wrapper.Read<ulong>();
             if (magic != Magic)
-                throw new InvalidDataException();
+                throw new FormatException($"Magic number is incorrect: {magic}");
 
-            _ = stream.Read<byte>();
+            var version = wrapper.Read<byte>();
+            if (version != Version)
+                throw new FormatException($"Version number is incorrect: {version}");
 
-            var crc = stream.Read<uint>();
+            var crc32 = wrapper.Read<uint>();
+            var command = wrapper.Read<PipeCommand>();
+            var payloadBytes = wrapper.ReadArray<byte>();
 
-            Payload.CopyFrom(stream);
-            Exception.CopyFrom(stream);
+            if (crc32 != Crc32.Compute(payloadBytes))
+                throw new InvalidDataException("CRC32 mismatch");
 
-            byte[] bytes = ToArray();
-            if (crc != Crc32.Compute(bytes))
-                throw new InvalidDataException();
+            Command = command;
+            Payload = CreateMessage(command) ?? throw new InvalidDataException($"Unknown command: {command}");
+            Payload.FromArray(payloadBytes);
         }
 
-        public void CopyTo(Stream stream)
+        public byte[] ToArray()
         {
-            if (stream.CanWrite == false)
-                throw new IOException();
+            var wrapper = new ByteArrayBuffer();
 
-            var bytes = ToArray();
+            byte[] payloadBytes = Payload.ToArray();
 
-            stream.Write(Magic);
-            stream.Write(Version);
-            stream.Write(Crc32.Compute(bytes));
-            stream.Write(bytes);
-            stream.Flush();
+            wrapper.Write(Magic);
+            wrapper.Write(Version);
+            wrapper.Write(Crc32.Compute(payloadBytes));
+            wrapper.Write(Command);
+            wrapper.Write(payloadBytes);
+
+            return [.. wrapper];
         }
-
-        public void CopyTo(byte[] buffer, int start = 0)
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
-
-            var bytes = ToArray();
-            var bytesSpan = bytes.AsSpan();
-            var bufferSpan = buffer[start..];
-
-            bytesSpan.CopyTo(bufferSpan);
-        }
-
-        public void CopyFrom(byte[] buffer, int start = 0)
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
-
-
-            Payload.CopyFrom(buffer, start);
-            Exception.CopyFrom(buffer, start + Payload.Size);
-        }
-
-        public byte[] ToArray() =>
-        [
-            .. Payload.ToArray(),
-            .. Exception.ToArray()
-        ];
     }
 }

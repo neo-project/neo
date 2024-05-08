@@ -9,41 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Extensions;
-using System;
-using System.IO;
+using Neo.Hosting.App.Buffers;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal sealed class PipeException : IPipeMessage
     {
-        private byte[] _bytes = [];
+        public string Message { get; set; }
 
-        public string Message
-        {
-            get => _bytes.TryCatch(t => t.AsSpan().ReadString(), string.Empty);
-            set
-            {
-                var stackTrace = StackTrace;
-                Array.Resize(ref _bytes, value.GetStructSize() + stackTrace.GetStructSize());
-
-                var span = _bytes.AsSpan();
-                span.Write(value);
-                span.Write(stackTrace, value.GetStructSize());
-            }
-        }
-
-        public string StackTrace
-        {
-            get => _bytes.TryCatch(t => t.AsSpan().ReadString(Message.GetStructSize()), string.Empty);
-            set
-            {
-                var offset = Message.GetStructSize();
-
-                Array.Resize(ref _bytes, value.GetStructSize() + offset);
-                _bytes.AsSpan().Write(value, offset);
-            }
-        }
+        public string StackTrace { get; set; }
 
         public PipeException()
         {
@@ -56,51 +30,25 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             string.IsNullOrEmpty(StackTrace);
 
         public int Size =>
-            Message.GetStructSize() +
-            StackTrace.GetStructSize();
+            ByteArrayBuffer.GetStringSize(Message) +
+            ByteArrayBuffer.GetStringSize(StackTrace);
 
-        public void CopyFrom(Stream stream)
+        public void FromArray(byte[] buffer)
         {
-            if (stream.CanRead == false)
-                throw new IOException();
+            var wrapper = new ByteArrayBuffer(buffer);
 
-            Message = stream.ReadString();
-            StackTrace = stream.ReadString();
+            Message = wrapper.ReadString();
+            StackTrace = wrapper.ReadString();
         }
 
-        public void CopyTo(Stream stream)
+        public byte[] ToArray()
         {
-            if (stream.CanWrite == false)
-                throw new IOException();
+            var wrapper = new ByteArrayBuffer();
 
-            var bytes = ToArray();
-            stream.Write(bytes);
+            wrapper.Write(Message);
+            wrapper.Write(StackTrace);
 
-            stream.Flush();
+            return [.. wrapper];
         }
-
-        public void CopyTo(byte[] buffer, int start = 0)
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
-
-            var bytes = ToArray();
-            var bytesSpan = bytes.AsSpan();
-            var bufferSpan = buffer.AsSpan(start);
-
-            bytesSpan.CopyTo(bufferSpan);
-        }
-
-        public void CopyFrom(byte[] buffer, int start = 0)
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
-
-            var bufferSpan = buffer.AsSpan(start);
-
-            Message = bufferSpan.ReadString();
-            StackTrace = bufferSpan.ReadString(Message.GetStructSize());
-        }
-
-        public byte[] ToArray() =>
-            _bytes[..];
     }
 }

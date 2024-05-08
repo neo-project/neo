@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Hosting.App.Extensions;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +42,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
             try
             {
                 // TODO: Implement the IPC protocol
-                var result = await _transportConnection.Application.Input.ReadAsync();
+                var result = await _transportConnection.Application.Input.ReadPipeMessage();
             }
             catch (Exception ex)
             {

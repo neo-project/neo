@@ -21,24 +21,20 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
         [Fact]
-        public void IPipeMessage_CopyFromAsync()
+        public void IPipeMessage_FromArray()
         {
             var version1 = new PipeVersion();
             var expectedBytes = version1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            using var ms1 = new MemoryStream();
-            version1.CopyTo(ms1);
-
             var version2 = new PipeVersion();
-            ms1.Position = 0;
-            version2.CopyFrom(ms1);
+            version2.FromArray(expectedBytes);
 
             var actualBytes = version2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
             var className = nameof(PipeVersion);
-            var methodName = nameof(PipeVersion.CopyFrom);
+            var methodName = nameof(PipeVersion.FromArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -52,23 +48,35 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         }
 
         [Fact]
-        public void IPipeMessage_CopyToAsync()
+        public void IPipeMessage_ToArray_Stream()
         {
-            var version = new PipeVersion();
-            var expectedBytes = version.ToArray();
+            var date = DateTime.UtcNow;
+            var version1 = new PipeVersion()
+            {
+                TimeStamp = date,
+            };
+            var expectedBytes = version1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            using var ms = new MemoryStream();
-            version.CopyTo(ms);
-
-            var actualBytes = ms.ToArray();
+            var version2 = new PipeVersion()
+            {
+                TimeStamp = date,
+            };
+            var actualBytes = version2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
             var className = nameof(PipeVersion);
-            var methodName = nameof(PipeVersion.CopyTo);
+            var methodName = nameof(PipeVersion.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
+            Assert.Equal(version1.VersionNumber, version2.VersionNumber);
+            Assert.Equal(version1.Platform, version2.Platform);
+            Assert.Equal(version1.TimeStamp, version2.TimeStamp);
+            Assert.Equal(version1.MachineName, version2.MachineName);
+            Assert.Equal(version1.UserName, version2.UserName);
+            Assert.Equal(version1.ProcessId, version2.ProcessId);
+            Assert.Equal(version1.ProcessPath, version2.ProcessPath);
         }
     }
 }

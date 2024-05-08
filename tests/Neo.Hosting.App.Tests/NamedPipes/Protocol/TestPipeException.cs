@@ -24,7 +24,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
         [Fact]
-        public void IPipeMessage_CopyFromAsync_WithData()
+        public void IPipeMessage_FromArray_Data()
         {
             var exception1 = new PipeException()
             {
@@ -34,18 +34,14 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var expectedBytes = exception1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            using var ms1 = new MemoryStream();
-            exception1.CopyTo(ms1);
-
             var exception2 = new PipeException();
-            ms1.Position = 0;
-            exception2.CopyFrom(ms1);
+            exception2.FromArray(expectedBytes);
 
             var actualBytes = exception2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
             var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyFrom);
+            var methodName = nameof(PipeException.FromArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -55,114 +51,30 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         }
 
         [Fact]
-        public void IPipeMessage_CopyFromAsync_WithNoData()
+        public void IPipeMessage_ToArray_Data()
         {
-            var exception1 = new PipeException();
-            var expectedBytes = exception1.ToArray();
-            var expectedHexString = Convert.ToHexString(expectedBytes);
-
-            using var ms1 = new MemoryStream();
-            exception1.CopyTo(ms1);
-
-            var exception2 = new PipeException();
-            ms1.Position = 0;
-            exception2.CopyFrom(ms1);
-
-            var actualBytes = exception2.ToArray();
-            var actualHexString = Convert.ToHexString(actualBytes);
-
-            var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyFrom);
-            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
-
-            Assert.Equal(expectedBytes, actualBytes);
-            Assert.Equal(exception1.IsEmpty, exception2.IsEmpty);
-            Assert.Equal(exception1.Message, exception2.Message);
-            Assert.Equal(exception1.StackTrace, exception2.StackTrace);
-        }
-
-        [Fact]
-        public void IPipeMessage_CopyToAsync_WithData()
-        {
-            var exception = new PipeException()
+            var exception1 = new PipeException()
             {
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
             };
-            var expectedBytes = exception.ToArray();
+            var expectedBytes = exception1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            using var ms = new MemoryStream();
-            exception.CopyTo(ms);
-
-            var actualBytes = ms.ToArray();
+            var exception2 = new PipeException()
+            {
+                Message = s_exceptionMessage,
+                StackTrace = s_exceptionStackTrace
+            };
+            var actualBytes = exception2.ToArray();
             var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
             var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyTo);
+            var methodName = nameof(PipeException.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytesWithoutHeader);
-        }
-
-        [Fact]
-        public void IPipeMessage_CopyToAsync_WithNoData()
-        {
-            var exception = new PipeException();
-            var expectedBytes = exception.ToArray();
-            var expectedHexString = Convert.ToHexString(expectedBytes);
-
-            using var ms = new MemoryStream();
-            exception.CopyTo(ms);
-
-            var actualBytes = ms.ToArray();
-            var actualBytesWithoutHeader = actualBytes;
-            var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
-
-            var className = nameof(PipeException);
-            var methodName = nameof(PipeException.CopyTo);
-            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
-
-            Assert.Equal(expectedBytes, actualBytesWithoutHeader);
-        }
-
-        [Fact]
-        public void IPipeMessage_CopyToAsync_SetMessageValue()
-        {
-            var exception = new PipeException();
-            var expectedBytes = exception.ToArray();
-            var expectedHexString = Convert.ToHexString(expectedBytes);
-            exception.Message = s_exceptionMessage;
-
-            var actualBytes = exception.ToArray();
-            var actualHexString = Convert.ToHexString(actualBytes);
-
-            var className = nameof(PipeException);
-            var methodName = nameof(PipeException.Message);
-            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
-
-            Assert.NotEqual(expectedBytes, actualBytes);
-            Assert.Equal(s_exceptionMessage, exception.Message);
-        }
-
-        [Fact]
-        public void IPipeMessage_CopyToAsync_SetStackTraceValue()
-        {
-            var exception = new PipeException();
-            var expectedBytes = exception.ToArray();
-            var expectedHexString = Convert.ToHexString(expectedBytes);
-            exception.StackTrace = s_exceptionStackTrace;
-
-            var actualBytes = exception.ToArray();
-            var actualHexString = Convert.ToHexString(actualBytes);
-
-            var className = nameof(PipeException);
-            var methodName = nameof(PipeException.Message);
-            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
-
-            Assert.NotEqual(expectedBytes, actualBytes);
-            Assert.Equal(s_exceptionStackTrace, exception.StackTrace);
         }
     }
 }

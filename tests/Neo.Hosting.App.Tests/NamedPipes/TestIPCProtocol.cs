@@ -11,6 +11,7 @@
 
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Factories;
+using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using System.Text;
 using Xunit.Abstractions;
@@ -21,12 +22,12 @@ namespace Neo.Hosting.App.Tests.NamedPipes
         (ITestOutputHelper testOutputHelper)
     {
         private static readonly byte[] s_testData = Encoding.UTF8.GetBytes("Hello world");
-        private static readonly PipeMessage<PipeVersion> s_testPipeMessageData = new();
+        private static readonly PipeMessage s_testPipeMessageData = PipeMessage.Create(PipeCommand.Version, new PipeVersion());
 
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
         [Fact]
-        public async Task IPipeMessage_CopyToAsync_CopyFromAsync_OnNamedPipeStream()
+        public async Task IPipeMessage_CopyTo_Stream_CopyFrom_ByteArray_NamedPipeStream()
         {
             await using var connectionListener = await NamedPipeTransportFactory.CreateConnectionListener();
             var clientConnection = NamedPipeTransportFactory.CreateClientStream(connectionListener.EndPoint);
@@ -38,31 +39,14 @@ namespace Neo.Hosting.App.Tests.NamedPipes
             var serverConnection = await connectionListener.AcceptAsync().DefaultTimeout();
 
             // Client sending data
-            await clientConnection.WriteAsync(s_testPipeMessageData.ToArray());
+            clientConnection.Write(s_testPipeMessageData.ToArray().AsSpan());
 
             // Server reading data
-            var result = new PipeMessage<PipeVersion>();
-
-            var readResult = await serverConnection!.Transport.Input.ReadAsync().DefaultTimeout();
-            var buffer = readResult.Buffer;
-
-            if (buffer.IsSingleSegment)
-                result.CopyFrom(buffer.FirstSpan.ToArray());
-            else
-            {
-                byte[] tmpBuffer = [];
-
-                foreach (var segment in buffer)
-                    tmpBuffer = [.. tmpBuffer, .. segment.ToArray()];
-
-                result.CopyFrom(tmpBuffer);
-            }
-
-            serverConnection.Transport.Input.AdvanceTo(buffer.End);
+            var result = await serverConnection!.Transport.Input.ReadPipeMessage().DefaultTimeout();
 
             clientConnection.Close();
 
-            readResult = await serverConnection.Transport.Input.ReadAsync();
+            var readResult = await serverConnection.Transport.Input.ReadAsync();
             Assert.True(readResult.IsCompleted);
 
             // Server completing input and output
@@ -72,16 +56,18 @@ namespace Neo.Hosting.App.Tests.NamedPipes
             // Server disposing connection
             await serverConnection.DisposeAsync();
 
-            Assert.Equal(s_testPipeMessageData.Payload.VersionNumber, result.Payload.VersionNumber);
-            Assert.Equal(s_testPipeMessageData.Payload.Platform, result.Payload.Platform);
-            Assert.Equal(s_testPipeMessageData.Payload.TimeStamp, result.Payload.TimeStamp);
-            Assert.Equal(s_testPipeMessageData.Payload.MachineName, result.Payload.MachineName);
-            Assert.Equal(s_testPipeMessageData.Payload.UserName, result.Payload.UserName);
-            Assert.Equal(s_testPipeMessageData.Payload.ProcessId, result.Payload.ProcessId);
-            Assert.Equal(s_testPipeMessageData.Payload.ProcessPath, result.Payload.ProcessPath);
-            Assert.Equal(s_testPipeMessageData.Exception.IsEmpty, result.Exception.IsEmpty);
-            Assert.Equal(s_testPipeMessageData.Exception.Message, result.Exception.Message);
-            Assert.Equal(s_testPipeMessageData.Exception.StackTrace, result.Exception.StackTrace);
+            var versionResult1 = s_testPipeMessageData.Payload as PipeVersion;
+            var versionResult2 = result.Payload as PipeVersion;
+
+            Assert.NotNull(versionResult1);
+            Assert.NotNull(versionResult2);
+            Assert.Equal(versionResult1.VersionNumber, versionResult2.VersionNumber);
+            Assert.Equal(versionResult1.Platform, versionResult2.Platform);
+            Assert.Equal(versionResult1.TimeStamp, versionResult2.TimeStamp);
+            Assert.Equal(versionResult1.MachineName, versionResult2.MachineName);
+            Assert.Equal(versionResult1.UserName, versionResult2.UserName);
+            Assert.Equal(versionResult1.ProcessId, versionResult2.ProcessId);
+            Assert.Equal(versionResult1.ProcessPath, versionResult2.ProcessPath);
         }
 
         [Fact]

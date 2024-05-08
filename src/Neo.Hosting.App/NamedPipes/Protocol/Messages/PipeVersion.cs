@@ -9,97 +9,26 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Extensions;
+using Neo.Hosting.App.Buffers;
 using System;
-using System.IO;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal sealed class PipeVersion : IPipeMessage
     {
-        private readonly byte[] _versionBytes = GC.AllocateUninitializedArray<byte>(sizeof(int));
-        private readonly byte[] _platformBytes = GC.AllocateUninitializedArray<byte>(sizeof(byte));
-        private readonly byte[] _timeStampBytes = GC.AllocateUninitializedArray<byte>(sizeof(long));
-        private byte[] _machineNameBytes = [];
-        private byte[] _userNameBytes = [];
-        private readonly byte[] _processIdBytes = GC.AllocateUninitializedArray<byte>(sizeof(int));
-        private byte[] _processPathBytes = [];
+        public int VersionNumber { get; set; }
 
-        // Assembly Information
-        public int VersionNumber
-        {
-            get => _versionBytes.TryCatch(t => t.AsSpan().Read<int>(), 0);
-            set
-            {
-                var span = _versionBytes.AsSpan();
-                span.Write(value);
-            }
-        }
+        public PlatformID Platform { get; set; }
 
-        // Computer Information
-        public PlatformID Platform
-        {
-            get => _platformBytes.TryCatch(t => (PlatformID)t.AsSpan().Read<byte>(), PlatformID.Other);
-            set
-            {
-                var span = _platformBytes.AsSpan();
-                span.Write((byte)value);
-            }
-        }
+        public DateTime TimeStamp { get; set; }
 
-        public DateTime TimeStamp
-        {
-            get => _timeStampBytes.TryCatch(t => DateTime.FromBinary(t.AsSpan().Read<long>()), DateTime.UtcNow);
-            set
-            {
-                var span = _timeStampBytes.AsSpan();
-                span.Write(value);
-            }
-        }
+        public string MachineName { get; set; }
 
-        public string MachineName
-        {
-            get => _machineNameBytes.TryCatch(t => t.AsSpan().ReadString(), string.Empty);
-            set
-            {
-                Array.Resize(ref _machineNameBytes, value.GetStructSize());
-                var span = _machineNameBytes.AsSpan();
-                span.Write(value);
-            }
-        }
+        public string UserName { get; set; }
 
-        public string UserName
-        {
-            get => _userNameBytes.TryCatch(t => t.AsSpan().ReadString(), string.Empty);
-            set
-            {
-                Array.Resize(ref _userNameBytes, value.GetStructSize());
-                var span = _userNameBytes.AsSpan();
-                span.Write(value);
-            }
-        }
+        public int ProcessId { get; set; }
 
-        // Service Information
-        public int ProcessId
-        {
-            get => _processIdBytes.TryCatch(t => t.AsSpan().Read<int>(), 0);
-            set
-            {
-                var span = _processIdBytes.AsSpan();
-                span.Write(value);
-            }
-        }
-
-        public string ProcessPath
-        {
-            get => _processPathBytes.TryCatch(t => t.AsSpan().ReadString(), string.Empty);
-            set
-            {
-                Array.Resize(ref _processPathBytes, value.GetStructSize());
-                var span = _processPathBytes.AsSpan();
-                span.Write(value);
-            }
-        }
+        public string ProcessPath { get; set; }
 
         public PipeVersion()
         {
@@ -116,72 +45,37 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             sizeof(int) +
             sizeof(byte) +
             sizeof(long) +
-            MachineName.GetStructSize() +
-            UserName.GetStructSize() +
+            ByteArrayBuffer.GetStringSize(MachineName) +
+            ByteArrayBuffer.GetStringSize(UserName) +
             sizeof(int) +
-            ProcessPath.GetStructSize();
+            ByteArrayBuffer.GetStringSize(ProcessPath);
 
-        public void CopyFrom(Stream stream)
+        public void FromArray(byte[] buffer)
         {
-            if (stream.CanRead == false)
-                throw new IOException();
+            var wrapper = new ByteArrayBuffer(buffer);
 
-            CopyFromStream(stream);
+            VersionNumber = wrapper.Read<int>();
+            Platform = wrapper.Read<PlatformID>();
+            TimeStamp = DateTime.FromBinary(wrapper.Read<long>());
+            MachineName = wrapper.ReadString();
+            UserName = wrapper.ReadString();
+            ProcessId = wrapper.Read<int>();
+            ProcessPath = wrapper.ReadString();
         }
 
-        public void CopyTo(Stream stream)
+        public byte[] ToArray()
         {
-            if (stream.CanWrite == false)
-                throw new IOException();
+            var wrapper = new ByteArrayBuffer();
 
-            var bytes = ToArray();
-            stream.Write(bytes);
-            stream.Flush();
-        }
+            wrapper.Write(VersionNumber);
+            wrapper.Write(Platform);
+            wrapper.Write(TimeStamp.ToBinary());
+            wrapper.Write(MachineName);
+            wrapper.Write(UserName);
+            wrapper.Write(ProcessId);
+            wrapper.Write(ProcessPath);
 
-        public void CopyTo(byte[] buffer, int start = 0)
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
-
-            var bytes = ToArray();
-            var bytesSpan = bytes.AsSpan();
-            var bufferSpan = buffer.AsSpan(start);
-
-            bytesSpan.CopyTo(bufferSpan);
-        }
-
-        public void CopyFrom(byte[] buffer, int start = 0)
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, start, nameof(start));
-
-            using var ms = new MemoryStream(buffer);
-
-            CopyFromStream(ms);
-        }
-
-        public byte[] ToArray() =>
-        [
-            .. _versionBytes,
-            .. _platformBytes,
-            .. _timeStampBytes,
-            .. _machineNameBytes,
-            .. _userNameBytes,
-            .. _processIdBytes,
-            .. _processPathBytes
-        ];
-
-        private void CopyFromStream(Stream stream)
-        {
-            stream.ReadExactly(_versionBytes);
-            stream.ReadExactly(_platformBytes);
-            stream.ReadExactly(_timeStampBytes);
-
-            MachineName = stream.ReadString();
-            UserName = stream.ReadString();
-
-            stream.ReadExactly(_processIdBytes);
-
-            ProcessPath = stream.ReadString();
+            return [.. wrapper];
         }
     }
 }
