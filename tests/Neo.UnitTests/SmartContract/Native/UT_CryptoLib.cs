@@ -553,7 +553,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // 105      SYSCALL      System.Contract.Call (627d5b52)
         }
 
-        [TestMethod]
         // TestVerifyWithECDsa_CustomTxWitness_MultiSig builds custom multisignature witness verification script for Koblitz public keys
         // and ensures witness check is passed for the M out of N multisignature of message:
         //
@@ -561,6 +560,7 @@ namespace Neo.UnitTests.SmartContract.Native
         //
         // The proposed witness verification script has 264 bytes length, verification costs 8390070 GAS including Invocation script execution.
         // The users have to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
+        [TestMethod]
         public void TestVerifyWithECDsa_CustomTxWitness_MultiSig()
         {
             byte[] privkey1 = "b2dde592bfce654ef03f1ceea452d2b0112e90f9f52099bcd86697a2bd0a2b60".HexToBytes();
