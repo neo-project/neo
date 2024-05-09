@@ -759,7 +759,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var conflicts = new List<Transaction>();
             tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, txVrfContext, conflicts).Should().Be(VerifyResult.Succeed);
 
-            // The resulting witness verification cost for 3/4 multisig is 8389470 GAS. Cost depends on M/N.
+            // The resulting witness verification cost for 3/4 multisig is 8389470  * 10e-8GAS. Cost depends on M/N.
             // The resulting witness Invocation script (198 bytes for 3 signatures):
             // NEO-VM 0 > loadbase64 DEDM23XByPvDK9XRAHRhfGH7/Mp5jdaci3/GpTZ3D9SZx2Zw89tAaOtmQSIutXbCxRQA1kSeUD4AteJGoNXFhFzIDECgeHoey0rYdlFyTVfDJSsuS+VwzC5OtYGCVR2V/MttmLXWA/FWZH/MjmU0obgQXa9zoBxqYQUUJKefivZFxVcTDEAZT6L6ZFybeXbm8+RlVNS7KshusT54d2ImQ6vFvxETphhJOwcQ0yNL6qJKsrLAKAnzicY4az3ct0G35mI17/gQ
             // READY: loaded 198 instructions
