@@ -9,7 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Hosting.App.Tests.UTHelpers
+using Neo;
+using Neo.Hosting;
+using Neo.Hosting.App;
+using Neo.Hosting.App.Tests;
+using Neo.Hosting.App.Tests.UTHelpers;
+using Neo.Hosting.App.Tests.UTHelpers.DataCases;
+
+namespace Neo.Hosting.App.Tests.UTHelpers.DataCases
 {
     internal static class UT_MemberDataCases
     {

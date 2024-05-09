@@ -10,11 +10,17 @@
 // modifications are permitted.
 
 using Akka.Util;
+using Neo;
+using Neo.Hosting;
+using Neo.Hosting.App;
 using Neo.Hosting.App.Extensions;
+using Neo.Hosting.App.Tests;
+using Neo.Hosting.App.Tests.UTHelpers;
+using Neo.Hosting.App.Tests.UTHelpers.Extensions;
 using System.Diagnostics;
 using Xunit.Abstractions;
 
-namespace Neo.Hosting.App.Tests.UTHelpers
+namespace Neo.Hosting.App.Tests.UTHelpers.Extensions
 {
     internal static class UT_ITestOutputHelperExtensions
     {
