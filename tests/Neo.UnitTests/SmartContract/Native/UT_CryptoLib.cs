@@ -531,7 +531,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // READY: loaded 110 instructions
             // NEO-GO-VM 0 > pos
             // Error: No help topic for 'pos'
-            // NEO-GO-VM 0 > ops
+            // NEO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
             // 0        PUSHINT8     122 (7a)    <<
             // 2        SWAP         
