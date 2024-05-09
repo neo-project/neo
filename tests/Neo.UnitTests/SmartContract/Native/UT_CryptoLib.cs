@@ -437,7 +437,6 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for blank string.");
         }
 
-        [TestMethod]
         // TestVerifyWithECDsa_CustomTxWitness_SingleSig builds custom witness verification script for single Koblitz public key
         // and ensures witness check is passed for the following message:
         //
@@ -445,6 +444,7 @@ namespace Neo.UnitTests.SmartContract.Native
         //
         // The proposed witness verification script has 110 bytes length, verification costs 2154270 GAS including Invocation script execution.
         // The user has to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
+        [TestMethod]
         public void TestVerifyWithECDsa_CustomTxWitness_SingleSig()
         {
             byte[] privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
