@@ -521,7 +521,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // The resulting witness Invocation script (66 bytes length):
             // NEO-GO-VM > loadbase64 DEARoaaEjM/3VulrBDUod7eiZgWQS2iXIM0+I24iyJYmffhosZoQjfnnRymF/7+FaBPb9qvQwxLLSVo9ROlrdFdC
             // READY: loaded 66 instructions
-            // NEO-GO-VM 0 > ops
+            // NEO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
             // 0        PUSHDATA1    11a1a6848ccff756e96b04352877b7a26605904b689720cd3e236e22c896267df868b19a108df9e7472985ffbf856813dbf6abd0c312cb495a3d44e96b745742    <<
             //
