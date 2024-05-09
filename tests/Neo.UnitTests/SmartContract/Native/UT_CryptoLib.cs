@@ -763,7 +763,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // The resulting witness Invocation script (198 bytes for 3 signatures):
             // NEO-GO-VM 0 > loadbase64 DEDM23XByPvDK9XRAHRhfGH7/Mp5jdaci3/GpTZ3D9SZx2Zw89tAaOtmQSIutXbCxRQA1kSeUD4AteJGoNXFhFzIDECgeHoey0rYdlFyTVfDJSsuS+VwzC5OtYGCVR2V/MttmLXWA/FWZH/MjmU0obgQXa9zoBxqYQUUJKefivZFxVcTDEAZT6L6ZFybeXbm8+RlVNS7KshusT54d2ImQ6vFvxETphhJOwcQ0yNL6qJKsrLAKAnzicY4az3ct0G35mI17/gQ
             // READY: loaded 198 instructions
-            // NEO-GO-VM 0 > ops
+            // NEO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
             // 0        PUSHDATA1    ccdb75c1c8fbc32bd5d10074617c61fbfcca798dd69c8b7fc6a536770fd499c76670f3db4068eb6641222eb576c2c51400d6449e503e00b5e246a0d5c5845cc8    <<
             // 66       PUSHDATA1    a0787a1ecb4ad87651724d57c3252b2e4be570cc2e4eb58182551d95fccb6d98b5d603f156647fcc8e6534a1b8105daf73a01c6a61051424a79f8af645c55713
