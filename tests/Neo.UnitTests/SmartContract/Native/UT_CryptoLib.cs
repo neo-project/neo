@@ -773,7 +773,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Resulting witness verification script (266 bytes for 3/4 multisig):
             // NEO-GO-VM 0 > loadbase64 EwwhAwSGRoaDwRISWXj/6HYkWyAGv+c5rKhTm2czUHkmLLJ6DCEDDSb8KtOxquIPBAtfgzgGcPjvXCsqySG6O915/QrwUlEMIQN7TnKuhUtqCVWz4C2SZRq3+mQak2Bmd2rUOPlbtnSiaQwhArYqxMijUqiS/s6xjX4uOmLIwey6rlUj2J10ewIZJ24iFFcHAHVtwHF2Q24oAzhuwHBBxfug4AMAAAAAAQAAAJ4UjUEtUQgwEM6LchBzEHRrbrhsbbiSJEIAGGhrzmlszmoUwB8MD3ZlcmlmeVdpdGhFQ0RzYQwUG/V1qxGJaIQTYQo1oSiGzeC2bHJBYn1bUmuec2ycdCK5a26z
             // READY: loaded 264 instructions
-            // NEO-GO-VM 0 > ops
+            // NEO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
             // 0        PUSH3            <<
             // 1        PUSHDATA1    030486468683c112125978ffe876245b2006bfe739aca8539b67335079262cb27a
