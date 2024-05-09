@@ -11,6 +11,8 @@
 
 using Neo.Hosting.App.Buffers;
 using Neo.Hosting.App.Tests.UTHelpers;
+using Neo.Hosting.App.Tests.UTHelpers.DataCases;
+using Neo.Hosting.App.Tests.UTHelpers.Extensions;
 using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.Buffers
