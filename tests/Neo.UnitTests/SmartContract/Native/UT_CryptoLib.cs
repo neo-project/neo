@@ -529,7 +529,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // The resulting witness verificaiton script (110 bytes):
             // NEO-GO-VM 0 > loadbase64 ABhQDCEC/QqMHOWuVXD91G51mcFrF1vw69/pwXjxq4SPsW2sdKVBxfug4AMAAAAAAQAAAJ4UjUEtUQgwEM6LFMAfDA92ZXJpZnlXaXRoRUNEc2EMFBv1dasRiWiEE2EKNaEohs3gtmxyQWJ9W1I=
             // READY: loaded 110 instructions
-            // NEO-GO-VM 0 > pos
+            // NEO-VM 0 > pos
             // Error: No help topic for 'pos'
             // NEO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
