@@ -442,7 +442,7 @@ namespace Neo.UnitTests.SmartContract.Native
         //
         //	keccak256([4-bytes-network-magic-LE, txHash-bytes-BE])
         //
-        // The proposed witness verification script has 110 bytes length, verification costs 2154270 GAS including Invocation script execution.
+        // The proposed witness verification script has 110 bytes length, verification costs 2154270  * 10e-8GAS including Invocation script execution.
         // The user has to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
         [TestMethod]
         public void TestVerifyWithECDsa_CustomTxWitness_SingleSig()
