@@ -519,7 +519,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // The resulting witness verification cost is 2154270 GAS.
             // The resulting witness Invocation script (66 bytes length):
-            // NEO-GO-VM > loadbase64 DEARoaaEjM/3VulrBDUod7eiZgWQS2iXIM0+I24iyJYmffhosZoQjfnnRymF/7+FaBPb9qvQwxLLSVo9ROlrdFdC
+            // NEO-VM > loadbase64 DEARoaaEjM/3VulrBDUod7eiZgWQS2iXIM0+I24iyJYmffhosZoQjfnnRymF/7+FaBPb9qvQwxLLSVo9ROlrdFdC
             // READY: loaded 66 instructions
             // NEO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
