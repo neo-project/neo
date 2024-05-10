@@ -12,6 +12,7 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
+using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -151,6 +152,40 @@ namespace Neo.Cryptography
         public static byte[] Sha256(this Span<byte> value)
         {
             return Sha256((ReadOnlySpan<byte>)value);
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this byte[] value)
+        {
+            KeccakDigest keccak = new(256);
+            keccak.BlockUpdate(value, 0, value.Length);
+            byte[] result = new byte[keccak.GetDigestSize()];
+            keccak.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this ReadOnlySpan<byte> value)
+        {
+            return Keccak256(value.ToArray());
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this Span<byte> value)
+        {
+            return Keccak256(value.ToArray());
         }
 
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
