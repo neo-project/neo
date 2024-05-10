@@ -70,7 +70,7 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out Hardfork? hf))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out var hfs))
                 {
                     ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
                     StorageItem state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
@@ -80,6 +80,13 @@ namespace Neo.SmartContract.Native
                         // Create the contract state
                         engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(contractState));
                         engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
+
+                        // Initialize the native smart contract if it's active starting from the genesis.
+                        // If it's not the case, then hardfork-based initialization will be performed down below.
+                        if (contract.ActiveIn is null)
+                        {
+                            await contract.InitializeAsync(engine, null);
+                        }
                     }
                     else
                     {
@@ -92,7 +99,16 @@ namespace Neo.SmartContract.Native
                         oldContract.Manifest = contractState.Manifest;
                     }
 
-                    await contract.InitializeAsync(engine, hf);
+                    // Initialize native contract for all hardforks that are active starting from the persisting block.
+                    // If the contract is active starting from some non-nil hardfork, then this hardfork is also included into hfs.
+                    if (hfs?.Length > 0)
+                    {
+                        foreach (var hf in hfs)
+                        {
+                            await contract.InitializeAsync(engine, hf);
+                        }
+                    }
+
                     // Emit native contract notification
                     engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
                 }
