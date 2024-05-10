@@ -27,6 +27,11 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
          dotnet format --verify-no-changes --verbosity diagnostic
+    - name: Build CLI
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet publish ./src/Neo.CLI -o ./cli-out -c Release neo-cli
+        find ./cli-out -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g'
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
