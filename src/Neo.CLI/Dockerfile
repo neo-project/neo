@@ -1,13 +1,13 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0 AS Build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS Build
 
 # Run this from the repository root folder
 COPY src . 
 COPY NuGet.Config /Neo.CLI
 
 WORKDIR /Neo.CLI
-RUN dotnet restore && dotnet publish  -f net7.0 -c Release -o /app 
+RUN dotnet restore && dotnet publish  -f net8.0 -c Release -o /app 
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:7.0 AS Final
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:8.0 AS Final
 RUN apt-get update && apt-get install -y \
   screen \
   libleveldb-dev \
