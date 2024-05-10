@@ -78,7 +78,7 @@ namespace Neo.CLI
             try
             {
                 if (!IsHex(hex)) return null;
-                return "0x" + hex.HexToBytes().Reverse().ToArray().ToHexString(); ;
+                return "0x" + hex.HexToBytes().Reverse().ToArray().ToHexString();
             }
             catch (FormatException)
             {
@@ -94,10 +94,17 @@ namespace Neo.CLI
         [ParseFunction("Big-endian to Little-endian")]
         private string? BigEndianToLittleEndian(string hex)
         {
-            bool hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
-            hex = hasHexPrefix ? hex[2..] : hex;
-            if (!hasHexPrefix || !IsHex(hex)) return null;
-            return hex.HexToBytes().Reverse().ToArray().ToHexString();
+            try
+            {
+                bool hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
+                hex = hasHexPrefix ? hex[2..] : hex;
+                if (!hasHexPrefix || !IsHex(hex)) return null;
+                return hex.HexToBytes().Reverse().ToArray().ToHexString();
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -393,7 +400,7 @@ namespace Neo.CLI
             try
             {
                 var pubKey = WIFToPublicKey(wif);
-                return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(0x35);
+                return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
             }
             catch (Exception)
             {
