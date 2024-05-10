@@ -159,9 +159,9 @@ namespace Neo.Hosting.App.Hosting.Services
                         if (connection == null)
                             break;
 
-                        var ipcConnection = new IPCConnection(connection, _logger);
+                        var ipcServer = new IPCServer(connection, _logger);
 
-                        ThreadPool.UnsafeQueueUserWorkItem(ipcConnection, preferLocal: false);
+                        ThreadPool.UnsafeQueueUserWorkItem(ipcServer, preferLocal: false);
                     }
                 }
                 catch (Exception ex)

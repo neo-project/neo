@@ -15,8 +15,8 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 {
     internal enum PipeCommand : byte
     {
-        [PipeProtocol(typeof(PipeEmptyPayload))]
-        Empty = 0x00,
+        [PipeProtocol(typeof(PipeNullPayload))]
+        Null = 0xee,
 
         [PipeProtocol(typeof(PipeVersion))]
         Version = 0x01,

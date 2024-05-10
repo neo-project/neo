@@ -21,11 +21,11 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.NamedPipes
 {
-    public class TestIPCProtocol : UT_SetupTestLogging
+    public class TestNamedPipeConnectionListener : UT_SetupTestLogging
     {
         private static readonly byte[] s_testData = Encoding.UTF8.GetBytes("Hello world");
 
-        public TestIPCProtocol(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+        public TestNamedPipeConnectionListener(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         [Fact]
         public async Task BidirectionalStream_ServerReadsDataAndCompletes_GracefullyClosed()

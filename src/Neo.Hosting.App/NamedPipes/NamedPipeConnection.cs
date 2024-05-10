@@ -27,7 +27,7 @@ namespace Neo.Hosting.App.NamedPipes
         public override IDuplexPipe Transport { get; set; }
         public IDuplexPipe Application { get; set; }
         public MemoryPool<byte> MemoryPool { get; }
-        public CancellationToken ConnectionClosed { get; set; }
+        public bool ConnectionClosed => _connectionClosed;
 
         public PipeWriter Input => Application.Output;
         public PipeReader Output => Application.Input;
@@ -134,10 +134,6 @@ namespace Neo.Hosting.App.NamedPipes
                     if (result.IsCompleted || result.IsCanceled)
                         break;
                 }
-            }
-            catch (ObjectDisposedException ex)
-            {
-                error = ex;
             }
             catch (Exception ex)
             {

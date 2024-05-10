@@ -13,7 +13,7 @@ using System.IO;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
-    internal sealed class PipeEmptyPayload : IPipeMessage
+    internal sealed class PipeNullPayload : IPipeMessage
     {
         public int Size => 0;
 

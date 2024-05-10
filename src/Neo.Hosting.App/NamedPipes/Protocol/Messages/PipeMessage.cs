@@ -23,16 +23,19 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         public const ulong Magic = 0x314547415353454dul; // MESSAGE1
         public const byte Version = 0x01;
 
+        public static readonly IPipeMessage Null = new PipeNullPayload();
+
         private static readonly ConcurrentDictionary<PipeCommand, Type> _commandTypes = new();
 
+        public long RequestId { get; private set; }
         public PipeCommand Command { get; private set; }
 
         public IPipeMessage Payload { get; private set; }
 
         public PipeMessage()
         {
-            Payload = new PipeEmptyPayload();
-            Command = PipeCommand.Empty;
+            Payload = new PipeNullPayload();
+            Command = PipeCommand.Null;
         }
 
         static PipeMessage()
@@ -51,16 +54,25 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             sizeof(byte) +
             sizeof(uint) +
             sizeof(PipeCommand) +
+            sizeof(int) +
             Payload.Size;
 
-        public static PipeMessage Create(PipeCommand command, IPipeMessage payload) =>
+        public static PipeMessage Create(long requestId, PipeCommand command, IPipeMessage payload) =>
             new()
             {
+                RequestId = requestId,
                 Command = command,
                 Payload = payload,
             };
 
-        public static IPipeMessage? CreateMessage(PipeCommand command) =>
+        public static PipeMessage Create(ReadOnlyMemory<byte> memory)
+        {
+            var message = new PipeMessage();
+            message.FromArray(memory.ToArray());
+            return message;
+        }
+
+        internal static IPipeMessage? CreateMessage(PipeCommand command) =>
             _commandTypes.TryGetValue(command, out var t)
                 ? (IPipeMessage?)Activator.CreateInstance(t)
                 : null;
@@ -79,6 +91,8 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
             var crc32 = wrapper.Read<uint>();
             var command = wrapper.Read<PipeCommand>();
+            RequestId = wrapper.Read<long>();
+
             var payloadBytes = wrapper.ReadArray<byte>();
 
             if (crc32 != Crc32.Compute(payloadBytes))
@@ -98,6 +112,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             wrapper.Write(Magic);
             wrapper.Write(Version);
             wrapper.Write(Crc32.Compute(payloadBytes));
+            wrapper.Write(RequestId);
             wrapper.Write(Command);
             wrapper.Write(payloadBytes);
 

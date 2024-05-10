@@ -43,7 +43,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public int Size =>
             sizeof(int) +
-            sizeof(byte) +
+            sizeof(PlatformID) +
             sizeof(long) +
             ByteArrayBuffer.GetStringSize(MachineName) +
             ByteArrayBuffer.GetStringSize(UserName) +

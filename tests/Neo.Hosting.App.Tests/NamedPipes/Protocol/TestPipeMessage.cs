@@ -28,7 +28,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public void IPipeMessage_FromArray_PipeVersion()
         {
-            var message1 = PipeMessage.Create(PipeCommand.Version, new PipeVersion());
+            var message1 = PipeMessage.Create(1, PipeCommand.Version, new PipeVersion());
             var expectedBytes = message1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
@@ -61,11 +61,11 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         public void IPipeMessage_ToArray_PipeVersion()
         {
             var date = DateTime.UtcNow;
-            var message1 = PipeMessage.Create(PipeCommand.Version, new PipeVersion() { TimeStamp = date });
+            var message1 = PipeMessage.Create(1, PipeCommand.Version, new PipeVersion() { TimeStamp = date });
             var expectedBytes = message1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var message2 = PipeMessage.Create(PipeCommand.Version, new PipeVersion() { TimeStamp = date });
+            var message2 = PipeMessage.Create(1, PipeCommand.Version, new PipeVersion() { TimeStamp = date });
             var actualBytes = message2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
