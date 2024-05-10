@@ -102,7 +102,7 @@ namespace Neo.Hosting.App.Factories
             return await transportFactory.BindAsync(endPoint, CancellationToken.None);
         }
 
-        public static NamedPipeClientStream CreateClientStream(EndPoint remoteEndPoint, TokenImpersonationLevel? impersonationLevel = null)
+        public static NamedPipeClientStream CreateClientStream(EndPoint remoteEndPoint, TokenImpersonationLevel? impersonationLevel = TokenImpersonationLevel.Impersonation)
         {
             var namedPipeEndPoint = (NamedPipeEndPoint)remoteEndPoint;
             return new(namedPipeEndPoint.ServerName, namedPipeEndPoint.PipeName,
