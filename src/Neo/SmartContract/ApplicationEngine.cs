@@ -194,7 +194,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        private static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
@@ -218,7 +218,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
