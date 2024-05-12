@@ -32,7 +32,7 @@ namespace Neo.SmartContract
     /// </summary>
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+        protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
