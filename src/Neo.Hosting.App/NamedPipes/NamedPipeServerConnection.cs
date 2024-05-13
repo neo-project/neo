@@ -53,19 +53,19 @@ namespace Neo.Hosting.App.NamedPipes
 
         internal PipeReader Output => Application.Input;
 
-        internal PipeWriter Writer => Transport.Output;
+        internal PipeWriter Writer => _originalTransport.Output;
 
-        internal PipeReader Reader => Transport.Input;
+        internal PipeReader Reader => _originalTransport.Input;
 
         internal IDuplexPipe Application { get; private set; }
-
-        public Channel<PipeMessage> MessageQueue => _messageQueue;
 
         public IDuplexPipe Transport { get; private set; }
 
         public EndPoint LocalEndPoint => _endPoint;
 
         public Exception? ShutdownReason => _shutdownReason;
+
+        public int MessageQueueCount => _messageQueue.Reader.Count;
 
         internal NamedPipeServerConnection(
             NamedPipeServerListener listener,
@@ -123,6 +123,17 @@ namespace Neo.Hosting.App.NamedPipes
 
             Output.CancelPendingRead();
             Reader.CancelPendingRead();
+        }
+
+        public async ValueTask<PipeMessage?> ReadAsync(CancellationToken cancellationToken = default)
+        {
+            while (await _messageQueue.Reader.WaitToReadAsync(cancellationToken))
+            {
+                if (_messageQueue.Reader.TryRead(out var message))
+                    return message;
+            }
+
+            return null;
         }
 
         internal void Start()
@@ -229,11 +240,9 @@ namespace Neo.Hosting.App.NamedPipes
 
             try
             {
-                var reader = Reader;
-
                 while (true)
                 {
-                    var result = await reader.ReadAsync();
+                    var result = await Reader.ReadAsync();
 
                     if (result.IsCanceled)
                         break;
@@ -247,7 +256,7 @@ namespace Neo.Hosting.App.NamedPipes
                             await QueueMessageAsync(segment);
                     }
 
-                    reader.AdvanceTo(buffer.End);
+                    Reader.AdvanceTo(buffer.End);
 
                     if (result.IsCompleted)
                         break;
@@ -265,13 +274,13 @@ namespace Neo.Hosting.App.NamedPipes
 
                 Reader.Complete(unexpectedError);
                 Output.CancelPendingRead();
+
+                _messageQueue.Writer.Complete(unexpectedError);
             }
         }
 
         private async Task QueueMessageAsync(ReadOnlyMemory<byte> buffer)
         {
-            Exception? unexpectedError = null;
-
             try
             {
                 var message = PipeMessage.Create(buffer);
@@ -282,21 +291,17 @@ namespace Neo.Hosting.App.NamedPipes
                         throw new InvalidOperationException("Message queue writer was unexpectedly closed.");
                 }
             }
-            catch (InvalidOperationException ex)
+            catch (IndexOutOfRangeException) // NULL message or Empty message
             {
-                unexpectedError = ex;
-                _logger.LogError(0, ex, $"Unexpected exception in {nameof(NamedPipeServerConnection)}.{nameof(QueueMessageAsync)}.");
+
             }
-            catch (Exception ex) // Normally invalid or corrupt message
+            catch (FormatException ex) // Normally invalid or corrupt message
             {
                 _logger.LogTrace("{Exception}", ex);
             }
-            finally
+            catch (Exception ex)
             {
-                Output.CancelPendingRead();
-                Reader.CancelPendingRead();
-
-                _messageQueue.Writer.Complete(unexpectedError);
+                _logger.LogError(0, ex, $"Unexpected exception in {nameof(NamedPipeServerConnection)}.{nameof(QueueMessageAsync)}.");
             }
         }
 
