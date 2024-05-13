@@ -23,7 +23,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes
 {
     public class TestNamedPipeConnectionListener : UT_SetupTestLogging
     {
-        private static readonly byte[] s_testData = Encoding.UTF8.GetBytes("Hello world");
+        private static readonly IPipeMessage s_testPipeMessage = PipeMessage.Create(1, PipeCommand.Version, new PipeVersion());
 
         public TestNamedPipeConnectionListener(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
@@ -43,23 +43,20 @@ namespace Neo.Hosting.App.Tests.NamedPipes
             var serverConnectionTask = connectionListener.AcceptAsync();
 
             // Client sending data
-            var writeTask = clientConnection.WriteAsync(s_testData);
+            var bytes = s_testPipeMessage.ToArray();
+            var writeTask = clientConnection.WriteAsync(bytes);
 
             var serverConnection = await serverConnectionTask.DefaultTimeout();
             await writeTask.DefaultTimeout();
 
             // Server reading data
-            var readResult = await serverConnection!.Transport.Input.ReadAtLeastAsync(s_testData.Length).DefaultTimeout();
-            serverConnection.Transport.Input.AdvanceTo(readResult.Buffer.End);
+            var readResult = await serverConnection.ReadAsync().DefaultTimeout();
+            Assert.NotNull(readResult);
 
             clientConnection.Close();
 
-            readResult = await serverConnection.Transport.Input.ReadAsync();
-            Assert.True(readResult.IsCompleted);
-
-            // Server completing input and output
-            await serverConnection.Transport.Input.CompleteAsync();
-            await serverConnection.Transport.Output.CompleteAsync();
+            var countResult = serverConnection.MessageQueueCount;
+            Assert.Equal(0, countResult);
 
             // Server disposing connection
             await serverConnection.DisposeAsync();
