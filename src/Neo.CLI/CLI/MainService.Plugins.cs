@@ -90,6 +90,26 @@ namespace Neo.CLI
                     s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
                     s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Could not find Release {pluginVersion}");
 
+            if (jsonRelease == null)
+            {
+                // If the corresponding version of the plugin is not found, get the latest version
+                jsonRelease = json.AsArray()
+                    .OrderByDescending(s => Version.Parse(s["tag_name"]!.GetValue<string>().TrimStart('v')))
+                    .FirstOrDefault();
+
+                if (jsonRelease != null)
+                {
+                    var latestVersion = Version.Parse(jsonRelease["tag_name"]!.GetValue<string>().TrimStart('v'));
+                    if (latestVersion < pluginVersion)
+                    {
+                        // If the latest version is lower than the locally passed version, use https://github.com/neo-project/neo-modules/releases/latest/download to get the latest version
+                        var latestDownloadUrl = $"https://github.com/neo-project/neo-modules/releases/latest/download/{pluginName}.zip";
+                        return await httpClient.GetStreamAsync(latestDownloadUrl);
+                    }
+                }
+
+                throw new Exception($"Could not find Release {pluginVersion}");
+            }
             var jsonAssets = jsonRelease
                 .AsObject()
                 .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
