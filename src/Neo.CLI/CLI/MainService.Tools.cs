@@ -47,7 +47,7 @@ namespace Neo.CLI
                 }
             }
 
-            bool any = false;
+            var any = false;
 
             foreach (var pair in parseFunctions)
             {
@@ -96,7 +96,7 @@ namespace Neo.CLI
         {
             try
             {
-                bool hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
+                var hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
                 hex = hasHexPrefix ? hex[2..] : hex;
                 if (!hasHexPrefix || !IsHex(hex)) return null;
                 return hex.HexToBytes().Reverse().ToArray().ToHexString();
@@ -117,9 +117,8 @@ namespace Neo.CLI
         {
             try
             {
-                byte[] bytearray = Utility.StrictUTF8.GetBytes(strParam);
-                string base64 = Convert.ToBase64String(bytearray.AsSpan());
-                return base64;
+                var bytearray = Utility.StrictUTF8.GetBytes(strParam);
+                return Convert.ToBase64String(bytearray.AsSpan());
             }
             catch
             {
@@ -141,10 +140,8 @@ namespace Neo.CLI
                 {
                     return null;
                 }
-                byte[] bytearray = number.ToByteArray();
-                string base64 = Convert.ToBase64String(bytearray.AsSpan());
-
-                return base64;
+                var bytearray = number.ToByteArray();
+                return Convert.ToBase64String(bytearray.AsSpan());
             }
             catch
             {
@@ -152,7 +149,7 @@ namespace Neo.CLI
             }
         }
 
-        private bool IsHex(string str) => str.Length % 2 == 0 && str.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+        private static bool IsHex(string str) => str.Length % 2 == 0 && str.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
 
         /// <summary>
         /// Fix for Base64 strings containing unicode
@@ -161,7 +158,7 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="str">Base64 strings containing unicode</param>
         /// <returns>Correct Base64 string</returns>
-        public string Base64Fixed(string str)
+        private static string Base64Fixed(string str)
         {
             var sb = new StringBuilder();
             for (var i = 0; i < str.Length; i++)
@@ -201,7 +198,6 @@ namespace Neo.CLI
             try
             {
                 var bigEndScript = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
-
                 return bigEndScript.ToString();
             }
             catch
@@ -221,7 +217,6 @@ namespace Neo.CLI
             try
             {
                 var bigEndScript = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
-
                 return bigEndScript.ToArray().ToHexString();
             }
             catch
@@ -241,9 +236,7 @@ namespace Neo.CLI
             try
             {
                 var script = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
-                string base64 = Convert.ToBase64String(script.ToArray().AsSpan());
-
-                return base64;
+                return Convert.ToBase64String(script.ToArray().AsSpan());
             }
             catch
             {
@@ -275,15 +268,14 @@ namespace Neo.CLI
                     {
                         return null;
                     }
-                    string bigEndScript = littleEndScript.ToArray().ToHexString();
+                    var bigEndScript = littleEndScript.ToArray().ToHexString();
                     if (!UInt160.TryParse(bigEndScript, out scriptHash))
                     {
                         return null;
                     }
                 }
 
-                var hexScript = scriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
-                return hexScript;
+                return scriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
             }
             catch
             {
@@ -301,16 +293,15 @@ namespace Neo.CLI
         {
             try
             {
-                byte[] result = Convert.FromBase64String(bytearray).Reverse().ToArray();
-                string hex = result.ToHexString();
+                var result = Convert.FromBase64String(bytearray).Reverse().ToArray();
+                var hex = result.ToHexString();
 
                 if (!UInt160.TryParse(hex, out var scripthash))
                 {
                     return null;
                 }
 
-                string address = scripthash.ToAddress(NeoSystem.Settings.AddressVersion);
-                return address;
+                return scripthash.ToAddress(NeoSystem.Settings.AddressVersion);
             }
             catch
             {
@@ -328,8 +319,8 @@ namespace Neo.CLI
         {
             try
             {
-                byte[] result = Convert.FromBase64String(bytearray);
-                string utf8String = Utility.StrictUTF8.GetString(result);
+                var result = Convert.FromBase64String(bytearray);
+                var utf8String = Utility.StrictUTF8.GetString(result);
                 return IsPrintable(utf8String) ? utf8String : null;
             }
             catch
@@ -426,88 +417,60 @@ namespace Neo.CLI
         [ParseFunction("Base64 Smart Contract Script Analysis")]
         private string? ScriptsToOpCode(string base64)
         {
-            List<byte> scripts;
+            Script script;
             try
             {
-                scripts = Convert.FromBase64String(base64).ToList();
+                var scriptData = Convert.FromBase64String(base64);
+                script = new Script(scriptData.ToArray(), true);
             }
             catch (Exception)
             {
                 return null;
             }
-            try
-            {
-                _ = new Script(scripts.ToArray(), true);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-            return ScriptsToOpCode(scripts);
+            return ScriptsToOpCode(script);
         }
 
-        private string ScriptsToOpCode(List<byte> scripts)
+        private string ScriptsToOpCode(Script script)
         {
-            //Initialize all OpCodes
-            var OperandSizePrefixTable = new int[256];
-            var OperandSizeTable = new int[256];
-            foreach (FieldInfo field in typeof(OpCode).GetFields(BindingFlags.Public | BindingFlags.Static))
-            {
-                var attribute = field.GetCustomAttribute<OperandSizeAttribute>();
-                if (attribute == null) continue;
-                int index = (int)(OpCode)field.GetValue(null);
-                OperandSizePrefixTable[index] = attribute.SizePrefix;
-                OperandSizeTable[index] = attribute.Size;
-            }
             //Initialize all InteropService
             var dic = new Dictionary<uint, string>();
             ApplicationEngine.Services.ToList().ForEach(p => dic.Add(p.Value.Hash, p.Value.Name));
 
             //Analyzing Scripts
+            var ip = 0;
+            Instruction instruction;
             var result = new List<string>();
-            while (scripts.Count > 0)
+            while ((instruction = script.GetInstruction(ip)) != null)
             {
-                var op = (OpCode)scripts[0];
-                var operandSizePrefix = OperandSizePrefixTable[scripts[0]];
-                var operandSize = OperandSizeTable[scripts[0]];
-                scripts.RemoveAt(0);
+                ip += instruction.Size;
+                if (ip >= script.Length) break;
 
-                var onlyOpCode = true;
-                if (operandSize > 0)
+                var op = instruction.OpCode;
+
+                if (op.ToString().StartsWith("PUSHINT"))
                 {
-                    var operand = scripts.Take(operandSize).ToArray();
-                    if (op.ToString().StartsWith("PUSHINT"))
+                    var operand = instruction.Operand.ToArray();
+                    result.Add($"{op} {new BigInteger(operand)}");
+                }
+                else if (op == OpCode.SYSCALL)
+                {
+                    var operand = instruction.Operand.ToArray();
+                    result.Add($"{op} {dic[BitConverter.ToUInt32(operand)]}");
+                }
+                else
+                {
+                    if (!instruction.Operand.IsEmpty && instruction.Operand.Length > 0)
                     {
-                        result.Add($"{op} {new BigInteger(operand)}");
-                    }
-                    else if (op == OpCode.SYSCALL)
-                    {
-                        result.Add($"{op} {dic[BitConverter.ToUInt32(operand)]}");
+                        var operand = instruction.Operand.ToArray();
+                        var asicii = Encoding.Default.GetString(operand);
+                        asicii = asicii.Any(p => p < '0' || p > 'z') ? operand.ToHexString() : asicii;
+
+                        result.Add($"{op} {(operand.Length == 20 ? new UInt160(operand).ToString() : asicii)}");
                     }
                     else
                     {
-                        result.Add($"{op} {operand.ToHexString()}");
+                        result.Add($"{op}");
                     }
-                    scripts.RemoveRange(0, operandSize);
-                    onlyOpCode = false;
-                }
-                if (operandSizePrefix > 0)
-                {
-                    var bytes = scripts.Take(operandSizePrefix).ToArray();
-                    var number = bytes.Length == 1 ? bytes[0] : (int)new BigInteger(bytes);
-                    scripts.RemoveRange(0, operandSizePrefix);
-                    var operand = scripts.Take(number).ToArray();
-
-                    var asicii = Encoding.Default.GetString(operand);
-                    asicii = asicii.Any(p => p < '0' || p > 'z') ? operand.ToHexString() : asicii;
-
-                    result.Add($"{op} {(number == 20 ? new UInt160(operand).ToString() : asicii)}");
-                    scripts.RemoveRange(0, number);
-                    onlyOpCode = false;
-                }
-                if (onlyOpCode)
-                {
-                    result.Add($"{op}");
                 }
             }
             return Environment.NewLine + string.Join("\r\n", result.ToArray());
@@ -523,7 +486,7 @@ namespace Neo.CLI
         /// Returns false if the string is null, or if it is empty, or if each character cannot be printed;
         /// otherwise, returns true.
         /// </returns>
-        private bool IsPrintable(string value)
+        private static bool IsPrintable(string value)
         {
             return !string.IsNullOrWhiteSpace(value) && value.Any(c => !char.IsControl(c));
         }
