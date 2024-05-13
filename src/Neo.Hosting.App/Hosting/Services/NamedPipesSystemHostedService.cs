@@ -64,7 +64,7 @@ namespace Neo.Hosting.App.Hosting.Services
 
                 _namedPipeListener.Start();
 
-                _ = ProcessMessageQueueAsync();
+                _ = ProcessClientAsync();
             }
             catch
             {
@@ -109,7 +109,7 @@ namespace Neo.Hosting.App.Hosting.Services
             _stoppedCompletionSource.TrySetResult();
         }
 
-        private async Task ProcessMessageQueueAsync()
+        private async Task ProcessClientAsync()
         {
             var stoppingToken = _stopTokenSource.Token;
 
