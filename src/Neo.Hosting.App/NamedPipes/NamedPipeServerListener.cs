@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NamedPipeConnectionListener.cs file belongs to the neo project and is free
+// NamedPipeServerListener.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,13 +11,14 @@
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
+using Microsoft.Extensions.Options;
+using Neo.Hosting.App.Configuration;
 using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
 using System.IO.Pipes;
-using System.Net;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -25,47 +26,73 @@ using PipeOptions = System.IO.Pipelines.PipeOptions;
 
 namespace Neo.Hosting.App.NamedPipes
 {
-    internal sealed class NamedPipeConnectionListener : IAsyncDisposable
+    internal sealed class NamedPipeServerListener : IAsyncDisposable
     {
-        public EndPoint EndPoint => _endPoint;
-
-        private readonly NamedPipeEndPoint _endPoint;
         private readonly NamedPipeTransportOptions _options;
-        private readonly ILogger _logger;
-        private readonly Mutex _mutex;
+        private readonly Channel<NamedPipeServerConnection> _acceptedQueue;
+        private readonly NamedPipeServerStreamPoolPolicy _poolPolicy;
         private readonly ObjectPool<NamedPipeServerStream> _namedPipeServerStreamPool;
+        private readonly MemoryPool<byte> _memoryPool;
+
         private readonly CancellationTokenSource _listeningTokenSource = new();
         private readonly CancellationToken _listeningToken;
-        private readonly Channel<NamedPipeConnection> _acceptedQueue;
-        private readonly MemoryPool<byte> _memoryPool;
+
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _logger;
+        private readonly Mutex _mutex;
+
         private readonly PipeOptions _inputOptions;
         private readonly PipeOptions _outputOptions;
-        private readonly NamedPipeServerStreamPoolPolicy _poolPolicy;
+
         private Task? _completeListeningTask;
         private int _disposed;
 
-        public NamedPipeConnectionListener(
-            ILoggerFactory loggerFactory,
+        public NamedPipeEndPoint LocalEndPoint { get; }
+
+        public NamedPipeServerListener(
             NamedPipeEndPoint endPoint,
-            NamedPipeTransportOptions options,
-            ObjectPoolProvider objectPoolProvider,
-            Mutex mutex)
+            ILoggerFactory loggerFactory,
+            IOptions<NamedPipeTransportOptions> options)
         {
-            _logger = loggerFactory.CreateLogger("NamedPipes");
-            _endPoint = endPoint;
-            _options = options;
-            _memoryPool = options.MemoryPoolFactory();
-            _mutex = mutex;
+            _mutex = new Mutex(false, $"NamedPipe-{endPoint.PipeName}", out var createdNew);
+            if (!createdNew)
+            {
+                _mutex.Dispose();
+                throw new ApplicationException($"Named pipe '{endPoint.PipeName}' is already in use.");
+            }
+
+            LocalEndPoint = endPoint;
+            _loggerFactory = loggerFactory;
+            _logger = _loggerFactory.CreateLogger<NamedPipeServerListener>();
+            _options = options.Value ?? new NamedPipeTransportOptions();
+            _poolPolicy = new NamedPipeServerStreamPoolPolicy(LocalEndPoint, _options);
+            _memoryPool = _options.MemoryPoolFactory();
             _listeningToken = _listeningTokenSource.Token;
-            _poolPolicy = new NamedPipeServerStreamPoolPolicy(endPoint, options);
+
+            var objectPoolProvider = new DefaultObjectPoolProvider();
             _namedPipeServerStreamPool = objectPoolProvider.Create(_poolPolicy);
-            _acceptedQueue = Channel.CreateBounded<NamedPipeConnection>(new BoundedChannelOptions(capacity: 1));
+
+            _acceptedQueue = Channel.CreateBounded<NamedPipeServerConnection>(capacity: 1);
 
             var maxReadBufferSize = _options.MaxReadBufferSize;
             var maxWriteBufferSize = _options.MaxWriteBufferSize;
 
-            _inputOptions = new(_memoryPool, PipeScheduler.ThreadPool, PipeScheduler.Inline, maxReadBufferSize, maxReadBufferSize / 2, useSynchronizationContext: false);
-            _outputOptions = new(_memoryPool, PipeScheduler.Inline, PipeScheduler.ThreadPool, maxWriteBufferSize, maxWriteBufferSize / 2, useSynchronizationContext: false);
+            _inputOptions = new PipeOptions(_memoryPool, PipeScheduler.ThreadPool, PipeScheduler.Inline, maxReadBufferSize, maxReadBufferSize / 2, useSynchronizationContext: false);
+            _outputOptions = new PipeOptions(_memoryPool, PipeScheduler.Inline, PipeScheduler.ThreadPool, maxWriteBufferSize, maxWriteBufferSize / 2, useSynchronizationContext: false);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                _listeningTokenSource.Cancel();
+
+            _listeningTokenSource.Dispose();
+            _mutex.Dispose();
+
+            if (_completeListeningTask is not null)
+                await _completeListeningTask;
+
+            (_namedPipeServerStreamPool as IDisposable)?.Dispose();
         }
 
         internal void ReturnStream(NamedPipeServerStream stream)
@@ -104,6 +131,20 @@ namespace Neo.Hosting.App.NamedPipes
             });
         }
 
+        public async ValueTask<NamedPipeServerConnection?> AcceptAsync(CancellationToken cancellationToken = default)
+        {
+            while (await _acceptedQueue.Reader.WaitToReadAsync(cancellationToken))
+            {
+                if (_acceptedQueue.Reader.TryRead(out var connection))
+                    return connection;
+            }
+
+            return null;
+        }
+
+        public ValueTask UnbindAsync(CancellationToken cancellationToken = default) =>
+            DisposeAsync();
+
         private async Task StartAsync(NamedPipeServerStream nextStream)
         {
             while (true)
@@ -114,7 +155,7 @@ namespace Neo.Hosting.App.NamedPipes
 
                     await stream.WaitForConnectionAsync(_listeningToken);
 
-                    var connection = new NamedPipeConnection(this, stream, _endPoint, _logger, _memoryPool, _inputOptions, _outputOptions);
+                    var connection = new NamedPipeServerConnection(this, LocalEndPoint, stream, _inputOptions, _outputOptions, _logger);
                     connection.Start();
 
                     nextStream = _namedPipeServerStreamPool.Get();
@@ -140,37 +181,5 @@ namespace Neo.Hosting.App.NamedPipes
 
             nextStream.Dispose();
         }
-
-        public async ValueTask<NamedPipeConnection?> AcceptAsync(CancellationToken cancellationToken = default)
-        {
-            while (await _acceptedQueue.Reader.WaitToReadAsync(cancellationToken))
-            {
-                if (_acceptedQueue.Reader.TryRead(out var connection))
-                    return connection;
-            }
-
-            return null;
-        }
-
-        public ValueTask UnbindAsync(CancellationToken cancellationToken = default) =>
-            DisposeAsync();
-
-        #region IAsyncDisposable
-
-        public async ValueTask DisposeAsync()
-        {
-            if (Interlocked.Exchange(ref _disposed, 1) == 0)
-                _listeningTokenSource.Cancel();
-
-            _listeningTokenSource.Dispose();
-            _mutex.Dispose();
-
-            if (_completeListeningTask is not null)
-                await _completeListeningTask;
-
-            (_namedPipeServerStreamPool as IDisposable)?.Dispose();
-        }
-
-        #endregion
     }
 }

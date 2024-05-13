@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Helpers;
+using Neo.Network.P2P;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,12 +22,12 @@ namespace Neo.Hosting.App.Configuration
     {
         public static readonly string ConfigurationSectionName = "ApplicationConfiguration";
 
-        public required StorageOptions Storage { get; set; }
-        public required P2POptions P2P { get; set; }
-        public required ContractOptions Contract { get; set; }
-        public required PluginOptions Plugin { get; set; }
-        public required RemoteOptions Remote { get; set; }
-        public required List<WalletOptions> Wallets { get; set; }
+        public StorageOptions Storage { get; set; } = new();
+        public P2POptions P2P { get; set; } = new();
+        public ContractOptions Contract { get; set; } = new("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
+        public PluginOptions Plugin { get; set; } = new();
+        public RemoteOptions Remote { get; set; } = new();
+        public List<WalletOptions> Wallets { get; set; } = [];
     }
 
     internal sealed class StorageOptions
@@ -37,25 +38,25 @@ namespace Neo.Hosting.App.Configuration
         {
             public static readonly string ConfigurationSectionName = "Archive";
 
-            public required string Path { get; set; }
-            public required string FileName { get; set; }
-            public required bool Verify { get; set; }
+            public string Path { get; set; } = AppContext.BaseDirectory;
+            public string FileName { get; set; } = "chain.0.acc.zip";
         }
 
-        public required string Engine { get; set; }
-        public required string Path { get; set; }
-        public required ArchiveSettings Archive { get; set; }
+        public string Engine { get; set; } = "LevelDBStore";
+        public string Path { get; set; } = "Data_LevelDB_{0:X2}";
+        public bool Verify { get; set; } = true;
+        public ArchiveSettings Archive { get; set; } = new();
     }
 
     internal sealed class P2POptions
     {
         public static readonly string ConfigurationSectionName = "P2P";
 
-        public required string Listen { get; set; }
-        public required ushort Port { get; set; }
-        public required int MinDesiredConnections { get; set; }
-        public required int MaxConnections { get; set; }
-        public required int MaxConnectionsPerAddress { get; set; }
+        public string Listen { get; set; } = "0.0.0.0";
+        public ushort Port { get; set; } = 10333;
+        public int MinDesiredConnections { get; set; } = Peer.DefaultMinDesiredConnections;
+        public int MaxConnections { get; set; } = Peer.DefaultMaxConnections;
+        public int MaxConnectionsPerAddress { get; set; } = 3;
     }
 
     internal sealed class ContractOptions
@@ -68,7 +69,7 @@ namespace Neo.Hosting.App.Configuration
 
         private UInt160 _neoNameService = s_defaultNameServiceScriptHash;
 
-        public required UInt160 NeoNameService
+        public UInt160 NeoNameService
         {
             get => _neoNameService;
             set => _neoNameService = ParseUtility.TryParseUInt160(neoNameService) ?? s_defaultNameServiceScriptHash;
@@ -79,24 +80,25 @@ namespace Neo.Hosting.App.Configuration
     {
         public static readonly string ConfigurationSectionName = "Plugin";
 
-        public required string DownloadUrl { get; set; }
-        public required bool Prerelease { get; set; }
-        public required Version Version { get; set; }
+        public string DownloadUrl { get; set; } = "https://api.github.com/repos/neo-project/neo-modules/releases";
+        public bool Prerelease { get; set; } = false;
+        public Version Version { get; set; } = new(0, 0);
     }
 
     internal sealed class RemoteOptions
     {
         public static readonly string ConfigurationSectionName = "Remote";
 
-        public required string PipeName { get; set; }
+        public string PipeName { get; set; } = default!;
+        public string MaxPipes { get; set; } = default!;
     }
 
     internal sealed class WalletOptions
         (string name, string path, string password, bool isActive)
     {
-        public required string Name { get; set; } = name;
-        public required FileInfo Path { get; set; } = new(path);
-        public required bool IsActive { get; set; } = isActive;
+        public string Name { get; set; } = name;
+        public FileInfo Path { get; set; } = new(path);
+        public bool IsActive { get; set; } = isActive;
 
         public required SecureString Password
         {

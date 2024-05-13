@@ -15,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Hosting.Services;
+using Neo.Hosting.App.NamedPipes;
 using System;
 using System.IO;
 
@@ -30,11 +31,15 @@ namespace Neo.Hosting.App.Extensions
                 try
                 {
                     var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
+                    var namedPipeTransportSection = context.Configuration.GetSection("NamedPipeTransport");
 
+                    services.Configure<NamedPipeTransportOptions>(namedPipeTransportSection);
                     services.Configure<NeoOptions>(context.Configuration);
                     services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
+                    services.AddSingleton<NamedPipeEndPoint>();
+                    services.AddSingleton<NamedPipeServerListener>();
                     services.AddSingleton<NeoSystemHostedService>();
-                    services.AddSingleton<IPCSystemHostedService>();
+                    services.AddSingleton<NamedPipesSystemHostedService>();
                 }
                 catch (InvalidOperationException)
                 {

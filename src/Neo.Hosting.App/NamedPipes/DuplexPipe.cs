@@ -25,6 +25,7 @@ namespace Neo.Hosting.App.NamedPipes
             var input = new Pipe(inputOptions);
             var output = new Pipe(outputOptions);
 
+            // Use Transport for Input and Output for Application
             var transportToApplication = new DuplexPipe(output.Reader, input.Writer);
             var applicationToTransport = new DuplexPipe(input.Reader, output.Writer);
 

@@ -49,7 +49,7 @@ namespace Neo.Hosting.App.CommandLine
                 if (EnvironmentUtility.TryGetServicePipeName(out var pipeName))
                 {
                     _pipeEndPoint = new(pipeName);
-                    var pipeStream = NamedPipeTransportFactory.CreateClientStream(_pipeEndPoint);
+                    var pipeStream = NamedPipeServerFactory.CreateClientStream(_pipeEndPoint);
 
                     context.Console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
                     context.Console.WriteLine($"Connecting to {_pipeEndPoint}...");

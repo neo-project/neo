@@ -80,9 +80,9 @@ namespace Neo.Hosting.App.Providers
                 // Storage
                 ["STORAGE:PATH"] = "Data_LevelDB_{0:X2}",
                 ["STORAGE:ENGINE"] = "LevelDBStore",
+                ["STORAGE:VERIFY"] = bool.TrueString,
                 ["STORAGE:ARCHIVE:PATH"] = AppContext.BaseDirectory,
-                ["STORAGE:ARCHIVE:FILENAME"] = "chain.0.acc.zip",
-                ["STORAGE:ARCHIVE:VERIFY"] = bool.TrueString,
+                ["STORAGE:ARCHIVE:FILENAME"] = "chain.{0}.acc.zip",
 
                 // P2P
                 ["P2P:LISTEN"] = "0.0.0.0",
@@ -100,7 +100,7 @@ namespace Neo.Hosting.App.Providers
                 ["PLUGIN:VERSION"] = $"{Program.ApplicationVersion.ToString(3)}",
             };
 
-        private void AddIfNormalizedKeyMatchesPrefix(IDictionary<string, string?> data, string normalizedKey, string? value)
+        private static void AddIfNormalizedKeyMatchesPrefix(IDictionary<string, string?> data, string normalizedKey, string? value)
         {
             var normalizedPrefix1 = NeoEnvironmentVariableDefaults.PREFIX;
             var normalizedPrefix2 = $"NEO:";

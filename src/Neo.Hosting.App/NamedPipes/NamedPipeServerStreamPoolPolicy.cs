@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.ObjectPool;
+using Neo.Hosting.App.Configuration;
 using System.IO.Pipes;
 using NamedPipeOptions = System.IO.Pipes.PipeOptions;
 

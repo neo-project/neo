@@ -13,7 +13,7 @@ using Neo.Hosting.App.Buffers;
 using System;
 using System.Buffers;
 
-namespace Neo.Hosting.App.NamedPipes
+namespace Neo.Hosting.App.Configuration
 {
     internal sealed class NamedPipeTransportOptions
     {

@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Options;
+using Neo.Hosting.App.Configuration;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
@@ -23,11 +25,8 @@ namespace Neo.Hosting.App.NamedPipes
         public string ServerName { get; } = serverName;
         public string PipeName { get; } = pipeName;
 
-        public NamedPipeEndPoint(
-            string pipeName) : this(pipeName, LocalComputerServerName)
-        {
-
-        }
+        public NamedPipeEndPoint(string pipeName) : this(pipeName, LocalComputerServerName) { }
+        public NamedPipeEndPoint(IOptions<NeoOptions> options) : this(options.Value.Remote.PipeName, LocalComputerServerName) { }
 
         public override string ToString() =>
             $@"\\{ServerName}\pipe\{PipeName}";

@@ -33,7 +33,7 @@ namespace Neo.Hosting.App.Tests.UTHelpers.Logging
         private readonly ConcurrentDictionary<string, UT_XUnitLogger> _loggers = new();
 
         public ILogger CreateLogger(string categoryName) =>
-            _loggers.GetOrAdd(categoryName, name => new UT_XUnitLogger(_testOutputHelper, categoryName));
+            _loggers.GetOrAdd(categoryName, name => new UT_XUnitLogger(_testOutputHelper, name));
 
         public void Dispose()
         {
