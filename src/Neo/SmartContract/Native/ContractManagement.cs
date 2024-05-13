@@ -196,7 +196,6 @@ namespace Neo.SmartContract.Native
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
-
         {
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
