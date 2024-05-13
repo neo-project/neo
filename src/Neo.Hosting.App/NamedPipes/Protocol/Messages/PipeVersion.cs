@@ -45,14 +45,14 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             sizeof(int) +
             sizeof(PlatformID) +
             sizeof(long) +
-            ByteArrayBuffer.GetStringSize(MachineName) +
-            ByteArrayBuffer.GetStringSize(UserName) +
+            Struffer.SizeOf(MachineName) +
+            Struffer.SizeOf(UserName) +
             sizeof(int) +
-            ByteArrayBuffer.GetStringSize(ProcessPath);
+            Struffer.SizeOf(ProcessPath);
 
         public void FromArray(byte[] buffer)
         {
-            var wrapper = new ByteArrayBuffer(buffer);
+            var wrapper = new Struffer(buffer);
 
             VersionNumber = wrapper.Read<int>();
             Platform = wrapper.Read<PlatformID>();
@@ -65,7 +65,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public byte[] ToArray()
         {
-            var wrapper = new ByteArrayBuffer();
+            var wrapper = new Struffer(Size);
 
             wrapper.Write(VersionNumber);
             wrapper.Write(Platform);

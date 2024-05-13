@@ -79,7 +79,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public void FromArray(byte[] buffer)
         {
-            var wrapper = new ByteArrayBuffer(buffer);
+            var wrapper = new Struffer(buffer);
 
             var magic = wrapper.Read<ulong>();
             if (magic != Magic)
@@ -105,7 +105,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public byte[] ToArray()
         {
-            var wrapper = new ByteArrayBuffer();
+            var wrapper = new Struffer(Size);
 
             byte[] payloadBytes = Payload.ToArray();
 

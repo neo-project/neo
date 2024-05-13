@@ -30,12 +30,12 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             string.IsNullOrEmpty(StackTrace);
 
         public int Size =>
-            ByteArrayBuffer.GetStringSize(Message) +
-            ByteArrayBuffer.GetStringSize(StackTrace);
+            Struffer.SizeOf(Message) +
+            Struffer.SizeOf(StackTrace);
 
         public void FromArray(byte[] buffer)
         {
-            var wrapper = new ByteArrayBuffer(buffer);
+            var wrapper = new Struffer(buffer);
 
             Message = wrapper.ReadString();
             StackTrace = wrapper.ReadString();
@@ -43,7 +43,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public byte[] ToArray()
         {
-            var wrapper = new ByteArrayBuffer();
+            var wrapper = new Struffer(Size);
 
             wrapper.Write(Message);
             wrapper.Write(StackTrace);

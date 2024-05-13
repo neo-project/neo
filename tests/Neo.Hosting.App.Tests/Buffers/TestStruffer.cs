@@ -17,68 +17,68 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.Buffers
 {
-    public class TestByteArrayBuffer
+    public class TestStruffer
         (ITestOutputHelper testOutputHelper)
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.ByteArrayBuffer_ReadWrite_Cases), MemberType = typeof(UT_MemberDataCases))]
-        public void ByteArrayBuffer_Write<T>(T value, byte[] expected)
+        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_Cases), MemberType = typeof(UT_MemberDataCases))]
+        public void Struffer_Write<T>(T value, byte[] expected)
             where T : unmanaged
         {
-            var buffer = new ByteArrayBuffer();
+            var buffer = new Struffer();
             buffer.Write(value);
 
             byte[] actual = [.. buffer];
 
-            var className = $"{nameof(ByteArrayBuffer)}";
-            var methodName = nameof(ByteArrayBuffer.Write);
+            var className = $"{nameof(Struffer)}";
+            var methodName = nameof(Struffer.Write);
             _testOutputHelper.LogDebug(className, methodName, actual, expected);
 
             Assert.Equal(expected, actual);
         }
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.ByteArrayBuffer_ReadWrite_Cases), MemberType = typeof(UT_MemberDataCases))]
-        public void ByteArrayBuffer_Read<T>(T expected, byte[] value)
+        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_Cases), MemberType = typeof(UT_MemberDataCases))]
+        public void Struffer_Read<T>(T expected, byte[] value)
             where T : unmanaged
         {
-            var buffer = new ByteArrayBuffer(value);
+            var buffer = new Struffer(value);
             var actual = buffer.Read<T>();
 
-            var className = $"{nameof(ByteArrayBuffer)}";
-            var methodName = nameof(ByteArrayBuffer.Read);
+            var className = $"{nameof(Struffer)}";
+            var methodName = nameof(Struffer.Read);
             _testOutputHelper.LogDebug(className, methodName, actual, expected);
 
             Assert.Equal(expected, actual);
         }
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.ByteArrayBuffer_ReadWrite_String_Cases), MemberType = typeof(UT_MemberDataCases))]
-        public void ByteArrayBuffer_Write_String(string value, byte[] expected)
+        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_String_Cases), MemberType = typeof(UT_MemberDataCases))]
+        public void Struffer_Write_String(string value, byte[] expected)
         {
-            var buffer = new ByteArrayBuffer();
+            var buffer = new Struffer();
             buffer.Write(value);
 
             byte[] actual = [.. buffer];
 
-            var className = $"{nameof(ByteArrayBuffer)}";
-            var methodName = nameof(ByteArrayBuffer.Write);
+            var className = $"{nameof(Struffer)}";
+            var methodName = nameof(Struffer.Write);
             _testOutputHelper.LogDebug(className, methodName, actual, expected);
 
             Assert.Equal(expected, actual);
         }
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.ByteArrayBuffer_ReadWrite_String_Cases), MemberType = typeof(UT_MemberDataCases))]
-        public void ByteArrayBuffer_Read_String(string expected, byte[] value)
+        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_String_Cases), MemberType = typeof(UT_MemberDataCases))]
+        public void Struffer_Read_String(string expected, byte[] value)
         {
-            var buffer = new ByteArrayBuffer(value);
+            var buffer = new Struffer(value);
             var actual = buffer.ReadString();
 
-            var className = $"{nameof(ByteArrayBuffer)}";
-            var methodName = nameof(ByteArrayBuffer.Read);
+            var className = $"{nameof(Struffer)}";
+            var methodName = nameof(Struffer.Read);
             _testOutputHelper.LogDebug(className, methodName, actual, expected);
 
             Assert.Equal(expected, actual);

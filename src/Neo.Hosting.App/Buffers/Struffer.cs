@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// ByteArrayBuffer.cs file belongs to the neo project and is free
+// Struffer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,7 +17,10 @@ using System.Text;
 
 namespace Neo.Hosting.App.Buffers
 {
-    internal sealed class ByteArrayBuffer : IEnumerable<byte>
+    /// <summary>
+    /// Structure byte buffer
+    /// </summary>
+    internal sealed class Struffer : IEnumerable<byte>
     {
         private static readonly UTF8Encoding s_utf8NoBom = new(false, true);
 
@@ -25,21 +28,27 @@ namespace Neo.Hosting.App.Buffers
 
         public int Position { get; set; }
 
-        public ByteArrayBuffer()
+        public Struffer()
         {
             _data = [];
             Position = 0;
         }
 
-        public ByteArrayBuffer(byte[] buffer)
+        public Struffer(byte[] buffer)
         {
             _data = buffer;
         }
 
-        public static int GetStringSize(string value) =>
+        public Struffer(int capacity)
+        {
+            _data = GC.AllocateUninitializedArray<byte>(capacity);
+            Position = 0;
+        }
+
+        public static int SizeOf(string value) =>
             s_utf8NoBom.GetByteCount(value) + sizeof(int);
 
-        public ByteArrayBuffer Write<T>(T value)
+        public Struffer Write<T>(T value)
             where T : unmanaged
         {
             var typeSize = Unsafe.SizeOf<T>();
@@ -53,7 +62,7 @@ namespace Neo.Hosting.App.Buffers
             return this;
         }
 
-        public ByteArrayBuffer Write<T>(T[] values)
+        public Struffer Write<T>(T[] values)
             where T : unmanaged
         {
             Write(values.Length);
@@ -62,7 +71,7 @@ namespace Neo.Hosting.App.Buffers
             return this;
         }
 
-        public ByteArrayBuffer Write(string value)
+        public Struffer Write(string value)
         {
             var strByteCount = s_utf8NoBom.GetByteCount(value);
             Write(strByteCount);
