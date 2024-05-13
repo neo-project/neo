@@ -27,7 +27,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         private static readonly ConcurrentDictionary<PipeCommand, Type> _commandTypes = new();
 
-        public long RequestId { get; private set; }
+        public int RequestId { get; private set; }
         public PipeCommand Command { get; private set; }
 
         public IPipeMessage Payload { get; private set; }
@@ -57,7 +57,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             sizeof(int) +
             Payload.Size;
 
-        public static PipeMessage Create(long requestId, PipeCommand command, IPipeMessage payload) =>
+        public static PipeMessage Create(int requestId, PipeCommand command, IPipeMessage payload) =>
             new()
             {
                 RequestId = requestId,
@@ -72,9 +72,9 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             return message;
         }
 
-        internal static IPipeMessage? CreateMessage(PipeCommand command) =>
+        internal static IPipeMessage? CreatePayload(PipeCommand command) =>
             _commandTypes.TryGetValue(command, out var t)
-                ? (IPipeMessage?)Activator.CreateInstance(t)
+                ? Activator.CreateInstance(t) as IPipeMessage
                 : null;
 
         public void FromArray(byte[] buffer)
@@ -90,16 +90,16 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
                 throw new FormatException($"Version number is incorrect: {version}");
 
             var crc32 = wrapper.Read<uint>();
-            var command = wrapper.Read<PipeCommand>();
-            RequestId = wrapper.Read<long>();
+            RequestId = wrapper.Read<int>();
 
+            var command = wrapper.Read<PipeCommand>();
             var payloadBytes = wrapper.ReadArray<byte>();
 
             if (crc32 != Crc32.Compute(payloadBytes))
                 throw new InvalidDataException("CRC32 mismatch");
 
             Command = command;
-            Payload = CreateMessage(command) ?? throw new InvalidDataException($"Unknown command: {command}");
+            Payload = CreatePayload(command) ?? throw new InvalidDataException($"Unknown command: {command}");
             Payload.FromArray(payloadBytes);
         }
 
