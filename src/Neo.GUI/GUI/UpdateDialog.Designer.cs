@@ -95,7 +95,7 @@ namespace Neo.GUI
             resources.ApplyResources(this.button2, "button2");
             this.button2.Name = "button2";
             this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.Button2_Click);
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // linkLabel2
             // 

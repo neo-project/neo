@@ -50,7 +50,7 @@ namespace Neo.GUI
             Process.Start(download_url);
         }
 
-        private async void Button2_Click(object sender, EventArgs e)
+        private async void button2_Click(object sender, EventArgs e)
         {
             button1.Enabled = false;
             button2.Enabled = false;
