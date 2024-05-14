@@ -440,10 +440,9 @@ namespace Neo.CLI
             var ip = 0;
             Instruction instruction;
             var result = new List<string>();
-            while ((instruction = script.GetInstruction(ip)) != null)
+            while (ip < script.Length && (instruction = script.GetInstruction(ip)) != null)
             {
                 ip += instruction.Size;
-                if (ip >= script.Length) break;
 
                 var op = instruction.OpCode;
 
