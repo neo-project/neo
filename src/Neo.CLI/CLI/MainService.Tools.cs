@@ -461,10 +461,10 @@ namespace Neo.CLI
                     if (!instruction.Operand.IsEmpty && instruction.Operand.Length > 0)
                     {
                         var operand = instruction.Operand.ToArray();
-                        var asicii = Encoding.Default.GetString(operand);
-                        asicii = asicii.Any(p => p < '0' || p > 'z') ? operand.ToHexString() : asicii;
+                        var ascii = Encoding.Default.GetString(operand);
+                        ascii = ascii.Any(p => p < '0' || p > 'z') ? operand.ToHexString() : ascii;
 
-                        result.Add($"{op} {(operand.Length == 20 ? new UInt160(operand).ToString() : asicii)}");
+                        result.Add($"{op} {(operand.Length == 20 ? new UInt160(operand).ToString() : ascii)}");
                     }
                     else
                     {
