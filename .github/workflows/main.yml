@@ -25,11 +25,6 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Install leveldb (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-         brew install leveldb
-
     - name: Check format
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -43,12 +38,13 @@ jobs:
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
-        dotnet test
+        EXCLUDED_TESTS=\"[Neo.Plugins.Storage]*\"
+        dotnet test /p:Exclude=${EXCLUDED_TESTS}
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo apt-get --assume-yes install libleveldb-dev
+        sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
         dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'
         dotnet test ./tests/Neo.ConsoleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
         dotnet test ./tests/Neo.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
