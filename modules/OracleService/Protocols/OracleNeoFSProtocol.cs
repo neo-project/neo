@@ -66,7 +66,7 @@ namespace Neo.Plugins
         /// GetAsync returns neofs object from the provided url.
         /// If Command is not provided, full object is requested.
         /// </summary>
-        /// <param name="uri">URI scheme is "neofs:<Container-ID>/<Object-ID>/<Command>/<offset|length>".</param>
+        /// <param name="uri">URI scheme is "neofs:ContainerID/ObjectID/Command/offset|length".</param>
         /// <param name="host">Client host.</param>
         /// <param name="cancellation">Cancellation token object.</param>
         /// <returns>Returns neofs object.</returns>
