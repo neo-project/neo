@@ -37,10 +37,9 @@ jobs:
 
     - name: Test
       if: matrix.os != 'ubuntu-latest'
-      env:
-        EXCLUDED_TESTS: "[Neo.Plugins.Storage]*"
       run: |
-        dotnet test /p:Exclude="{{ env.EXCLUDED_TESTS }}"
+        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
+        dotnet test
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
