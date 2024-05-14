@@ -83,45 +83,58 @@ namespace Neo.CLI
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl)
+                ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+
+            var pluginVersionString = $"v{pluginVersion.ToString(3)}";
+
             var jsonRelease = json.AsArray()
-                .SingleOrDefault(s =>
-                    s != null &&
-                    s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
-                    s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Could not find Release {pluginVersion}");
+                .FirstOrDefault(s =>
+                    s?["tag_name"]?.GetValue<string>() == pluginVersionString &&
+                    s["prerelease"]?.GetValue<bool>() == prerelease);
 
             if (jsonRelease == null)
             {
-                // If the corresponding version of the plugin is not found, get the latest version
                 jsonRelease = json.AsArray()
-                    .OrderByDescending(s => Version.Parse(s["tag_name"]!.GetValue<string>().TrimStart('v')))
+                    .Where(s => s?["prerelease"]?.GetValue<bool>() == prerelease)
+                    .Select(s =>
+                    {
+                        var tagName = s["tag_name"]?.GetValue<string>();
+                        return Version.TryParse(tagName?[1..], out var version)
+                            ? new { JsonObject = s, Version = version }
+                            : null;
+                    })
+                    .OfType<dynamic>()
+                    .OrderByDescending(s => s.Version)
+                    .Select(s => s.JsonObject)
                     .FirstOrDefault();
 
                 if (jsonRelease != null)
                 {
-                    var latestVersion = Version.Parse(jsonRelease["tag_name"]!.GetValue<string>().TrimStart('v'));
+
+                    var latestVersion = Version.Parse(jsonRelease["tag_name"]!.GetValue<string>()[1..]);
                     if (latestVersion < pluginVersion)
                     {
-                        // If the latest version is lower than the locally passed version, use https://github.com/neo-project/neo-modules/releases/latest/download to get the latest version
-                        var latestDownloadUrl = $"https://github.com/neo-project/neo-modules/releases/latest/download/{pluginName}.zip";
+                        var latestDownloadUrl = $"https://github.com/neo-project/neo-modules/releases/download/v{latestVersion}/{pluginName}.zip";
+                        ConsoleHelper.Info($"Could not find the corresponding version, installing the latest: v{latestVersion}");
                         return await httpClient.GetStreamAsync(latestDownloadUrl);
                     }
                 }
 
                 throw new Exception($"Could not find Release {pluginVersion}");
             }
-            var jsonAssets = jsonRelease
-                .AsObject()
-                .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
+
+            var jsonAssets = jsonRelease["assets"]?.AsArray()
+                ?? throw new Exception("Could not find any Plugins");
 
             var jsonPlugin = jsonAssets
-                .AsArray()
-                .SingleOrDefault(s =>
-                    Path.GetFileNameWithoutExtension(
-                        s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
+                .FirstOrDefault(s =>
+                    Path.GetFileNameWithoutExtension(s?["name"]?.GetValue<string>() ?? string.Empty)
+                        .Equals(pluginName, StringComparison.OrdinalIgnoreCase))
                 ?? throw new Exception($"Could not find {pluginName}");
 
-            var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
+            var downloadUrl = jsonPlugin["browser_download_url"]?.GetValue<string>()
+                ?? throw new Exception("Could not find download URL");
 
             return await httpClient.GetStreamAsync(downloadUrl);
         }
@@ -132,7 +145,7 @@ namespace Neo.CLI
         /// <param name="pluginName">Name of the plugin</param>
         /// <param name="installed">Dependency set</param>
         /// <param name="overWrite">Install by force for `update`</param>
-        private async Task<bool> InstallPluginAsync(
+        public async Task<bool> InstallPluginAsync(
             string pluginName,
             HashSet<string>? installed = null,
             bool overWrite = false)
@@ -144,7 +157,9 @@ namespace Neo.CLI
             try
             {
 
-                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, Settings.Default.Plugins.Prerelease);
+                Version v = new Version(3, 7, 5);
+
+                using var stream = await DownloadPluginAsync(pluginName, v, Settings.Default.Plugins.Prerelease);
 
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
                 var entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
