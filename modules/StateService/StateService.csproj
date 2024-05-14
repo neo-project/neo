@@ -1,16 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<PackageId>Neo.Plugins.StateService</PackageId>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Neo.ConsoleService" Version="1.2.0" ExcludeAssets="runtime"/>
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
-		<ProjectReference Include="..\RpcServer\RpcServer.csproj">
-			<Private>false</Private>
-			<ExcludeAssets>runtime</ExcludeAssets>
-		</ProjectReference>
-	</ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <PackageId>Neo.Plugins.StateService</PackageId>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
 </Project>

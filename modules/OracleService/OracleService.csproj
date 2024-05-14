@@ -1,15 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<PackageId>Neo.Plugins.OracleService</PackageId>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Neo.ConsoleService" Version="1.2.0" ExcludeAssets="runtime" />
-		<PackageReference Include="NeoFS.API" Version="3.5.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\RpcServer\RpcServer.csproj">
-			<Private>false</Private>
-			<ExcludeAssets>runtime</ExcludeAssets>
-		</ProjectReference>
-	</ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <PackageId>Neo.Plugins.OracleService</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NeoFS.API" Version="3.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
 </Project>

@@ -30,14 +30,26 @@ charset = utf-8
 # XML project files
 [*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
 indent_size = 2
+insert_final_newline = false
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
 
 # XML config files
 [*.{props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct}]
 indent_size = 2
+insert_final_newline = false
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
 
 # JSON files
 [*.json]
 indent_size = 2
+insert_final_newline = false
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
 
 # Powershell files
 [*.ps1]
