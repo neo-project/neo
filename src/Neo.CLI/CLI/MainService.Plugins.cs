@@ -94,7 +94,7 @@ namespace Neo.CLI
             {
                 // If the corresponding version of the plugin is not found, get the latest version
                 jsonRelease = json.AsArray()
-                    .OrderByDescending(s => Version.Parse(s["tag_name"]!.GetValue<string>().TrimStart('v')))
+                    .OrderByDescending(s => Version.Parse(s["tag_name"]!.GetValue<string>()?.TrimStart('v')))
                     .FirstOrDefault();
 
                 if (jsonRelease != null)
