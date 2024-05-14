@@ -1,22 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <PackageId>OracleService.Tests</PackageId>
     <RootNamespace>Neo.Plugins</RootNamespace>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Akka.TestKit" Version="1.5.18" />
     <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.18" />
-    <PackageReference Include="coverlet.msbuild" Version="6.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\..\src\OracleService\OracleService.csproj" />
-    <ProjectReference Include="..\..\src\RpcServer\RpcServer.csproj">
+    <ProjectReference Include="..\..\modules\OracleService\OracleService.csproj" />
+    <ProjectReference Include="..\..\modules\RpcServer\RpcServer.csproj">
       <Private>false</Private>
       <ExcludeAssets>runtime</ExcludeAssets>
     </ProjectReference>
@@ -29,9 +29,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.3.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.3.1" />
-  </ItemGroup>
 </Project>
