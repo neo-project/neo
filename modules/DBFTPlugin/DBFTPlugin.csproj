@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Neo.Consensus.DBFT</PackageId>
+    <RootNamespace>Neo.Consensus</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Neo.ConsoleService" Version="1.2.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Neo.Plugins.StatesDumper</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Neo.ConsoleService" Version="1.2.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Neo.Network.RPC.RpcClient</PackageId>
+    <RootNamespace>Neo.Network.RPC</RootNamespace>
+  </PropertyGroup>
+
+</Project>

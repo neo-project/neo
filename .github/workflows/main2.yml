@@ -1,0 +1,92 @@
+name: .NET Core Test and Publish
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  DOTNET_VERSION: 8.0.x
+
+jobs:
+
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Check format
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+    - name: Test
+      run: |
+        sudo apt-get --assume-yes install libleveldb-dev
+        EXCLUDED_TESTS=\"[Neo]*,[Neo.IO]*,[Neo.Json]*,[Neo.VM]*,[Neo.Extensions]*,[Neo.Cryptography.BLS12_381]*\"
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:Exclude=${EXCLUDED_TESTS}
+        dotnet test ./tests/Neo.Network.RPC.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:Exclude=${EXCLUDED_TESTS}
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:Exclude=${EXCLUDED_TESTS}
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:Exclude=${EXCLUDED_TESTS}
+        dotnet test ./tests/Neo.Plugins.Storage.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat='lcov' /p:Exclude=${EXCLUDED_TESTS}
+    - name: Coveralls
+      uses: coverallsapp/github-action@v2.2.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        format: lcov
+        file: ${{ github.workspace }}/TestResults/coverage/coverage.info
+
+  Review:
+    needs: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+  Release:
+    needs: Test
+    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+    - name: Get version
+      id: get_version
+      run: |
+        sudo apt install xmlstarlet
+        find -maxdepth 1 -name Directory.Build.props | xargs xmlstarlet sel -N i=http://schemas.microsoft.com/developer/msbuild/2003 -t -v "concat('::set-output name=version::v',//i:VersionPrefix/text())" | xargs echo
+    - name: Check tag
+      id: check_tag
+      run: curl -s -I ${{ format('https://github.com/{0}/releases/tag/{1}', github.repository, steps.get_version.outputs.version) }} | head -n 1 | cut -d$' ' -f2 | xargs printf "::set-output name=statusCode::%s" | xargs echo
+    - name: Create release
+      if: steps.check_tag.outputs.statusCode == '404'
+      id: create_release
+      uses: actions/create-release@v1
+
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        fetch-depth: 0
+        submodules: recursive
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: ${{ steps.get_version.outputs.version }}
+        prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+    - name: Setup .NET Core
+      if: steps.check_tag.outputs.statusCode == '404'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Publish to NuGet
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack -o out -c Release
+        dotnet nuget push "out/*.nupkg" -s https://api.nuget.org/v3/index.json -k ${NUGET_TOKEN} --skip-duplicate
+      env:
+        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

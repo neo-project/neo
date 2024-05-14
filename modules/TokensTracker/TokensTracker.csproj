@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<PackageId>Neo.Plugins.TokensTracker</PackageId>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\RpcServer\RpcServer.csproj">
+			<Private>false</Private>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</ProjectReference>
+	</ItemGroup>
+</Project>
