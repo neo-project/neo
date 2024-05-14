@@ -35,8 +35,14 @@ jobs:
       run: |
         dotnet publish ./src/Neo.CLI
 
-    - name: Test
-      if: matrix.os != 'ubuntu-latest'
+    - name: Test (windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        $env:EXCLUDED_TESTS=\"[Neo.Plugins.Storage]*\"
+        dotnet test /p:Exclude=$env:EXCLUDED_TESTS
+
+    - name: Test (macos)
+      if: matrix.os == 'macos-latest'
       run: |
         EXCLUDED_TESTS=\"[Neo.Plugins.Storage]*\"
         dotnet test /p:Exclude=${EXCLUDED_TESTS}
