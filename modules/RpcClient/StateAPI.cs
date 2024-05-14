@@ -22,7 +22,7 @@ namespace Neo.Network.RPC
 
         public StateAPI(RpcClient rpc)
         {
-            this.rpcClient = rpc;
+            rpcClient = rpc;
         }
 
         public async Task<RpcStateRoot> GetStateRootAsync(uint index)

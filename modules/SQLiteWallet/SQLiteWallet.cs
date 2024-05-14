@@ -52,28 +52,28 @@ class SQLiteWallet : Wallet
 
     private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings) : base(path, settings)
     {
-        this.salt = LoadStoredData("Salt");
+        salt = LoadStoredData("Salt");
         byte[] passwordHash = LoadStoredData("PasswordHash");
         if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
             throw new CryptographicException();
-        this.iv = LoadStoredData("IV");
-        this.masterKey = Decrypt(LoadStoredData("MasterKey"), passwordKey, iv);
-        this.scrypt = new ScryptParameters
+        iv = LoadStoredData("IV");
+        masterKey = Decrypt(LoadStoredData("MasterKey"), passwordKey, iv);
+        scrypt = new ScryptParameters
             (
             BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptN")),
             BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptR")),
             BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptP"))
             );
-        this.accounts = LoadAccounts();
+        accounts = LoadAccounts();
     }
 
     private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
     {
-        this.iv = new byte[16];
-        this.salt = new byte[20];
-        this.masterKey = new byte[32];
+        iv = new byte[16];
+        salt = new byte[20];
+        masterKey = new byte[32];
         this.scrypt = scrypt;
-        this.accounts = new Dictionary<UInt160, SQLiteWalletAccount>();
+        accounts = new Dictionary<UInt160, SQLiteWalletAccount>();
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
         {
             rng.GetBytes(iv);

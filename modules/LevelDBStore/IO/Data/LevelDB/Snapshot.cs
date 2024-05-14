@@ -20,7 +20,7 @@ namespace Neo.IO.Data.LevelDB
         internal Snapshot(IntPtr db)
         {
             this.db = db;
-            this.handle = Native.leveldb_create_snapshot(db);
+            handle = Native.leveldb_create_snapshot(db);
         }
 
         public void Dispose()

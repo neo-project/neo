@@ -25,10 +25,10 @@ namespace Neo.Plugins
 
         private Settings(IConfigurationSection section)
         {
-            this.Path = section.GetValue("Path", "ApplicationLogs_{0}");
-            this.Network = section.GetValue("Network", 5195086u);
-            this.MaxStackSize = section.GetValue("MaxStackSize", (int)ushort.MaxValue);
-            this.Debug = section.GetValue("Debug", false);
+            Path = section.GetValue("Path", "ApplicationLogs_{0}");
+            Network = section.GetValue("Network", 5195086u);
+            MaxStackSize = section.GetValue("MaxStackSize", (int)ushort.MaxValue);
+            Debug = section.GetValue("Debug", false);
         }
 
         public static void Load(IConfigurationSection section)

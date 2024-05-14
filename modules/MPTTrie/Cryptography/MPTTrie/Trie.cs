@@ -26,9 +26,9 @@ namespace Neo.Cryptography.MPTTrie
         public Trie(ISnapshot store, UInt256 root, bool full_state = false)
         {
             this.store = store ?? throw new ArgumentNullException(nameof(store));
-            this.cache = new Cache(store, Prefix);
+            cache = new Cache(store, Prefix);
             this.root = root is null ? new Node() : Node.NewHash(root);
-            this.full = full_state;
+            full = full_state;
         }
 
         private static byte[] ToNibbles(ReadOnlySpan<byte> path)

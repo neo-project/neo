@@ -26,8 +26,8 @@ namespace Neo.Plugins.Storage
         public Snapshot(RocksDb db)
         {
             this.db = db;
-            this.snapshot = db.CreateSnapshot();
-            this.batch = new WriteBatch();
+            snapshot = db.CreateSnapshot();
+            batch = new WriteBatch();
 
             options = new ReadOptions();
             options.SetFillCache(false);

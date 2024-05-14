@@ -20,7 +20,7 @@ namespace Neo.Cryptography.MPTTrie
         private NodeType type;
         private UInt256 hash;
         public int Reference;
-        public UInt256 Hash => hash ??= new UInt256(Crypto.Hash256(this.ToArrayWithoutReference()));
+        public UInt256 Hash => hash ??= new UInt256(Crypto.Hash256(ToArrayWithoutReference()));
         public NodeType Type => type;
         public bool IsEmpty => type == NodeType.Empty;
         public int Size

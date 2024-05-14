@@ -48,7 +48,7 @@ namespace Neo.Plugins.StateService.Storage
         {
             if (singleton != null) throw new InvalidOperationException(nameof(StateStore));
             this.system = system;
-            this.store = StatePlugin.System.LoadStore(path);
+            store = StatePlugin.System.LoadStore(path);
             singleton = this;
             StatePlugin.System.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
             UpdateCurrentSnapshot();

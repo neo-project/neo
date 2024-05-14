@@ -61,9 +61,9 @@ namespace Neo.Network.RPC.Models
                 Script = json["script"].AsString(),
                 State = json["state"].GetEnum<VMState>(),
                 GasConsumed = long.Parse(json["gasconsumed"].AsString()),
+                Exception = json["exception"]?.AsString(),
+                Session = json["session"]?.AsString()
             };
-            invokeScriptResult.Exception = json["exception"]?.AsString();
-            invokeScriptResult.Session = json["session"]?.AsString();
             try
             {
                 invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => Utility.StackItemFromJson((JObject)p)).ToArray();

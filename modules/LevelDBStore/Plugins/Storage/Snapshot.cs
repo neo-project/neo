@@ -26,9 +26,9 @@ namespace Neo.Plugins.Storage
         public Snapshot(DB db)
         {
             this.db = db;
-            this.snapshot = db.GetSnapshot();
-            this.options = new ReadOptions { FillCache = false, Snapshot = snapshot };
-            this.batch = new WriteBatch();
+            snapshot = db.GetSnapshot();
+            options = new ReadOptions { FillCache = false, Snapshot = snapshot };
+            batch = new WriteBatch();
         }
 
         public void Commit()

@@ -56,7 +56,7 @@ namespace Neo.Network.RPC
         public TransactionManager(Transaction tx, RpcClient rpcClient)
         {
             this.tx = tx;
-            this.context = new ContractParametersContext(null, tx, rpcClient.protocolSettings.Network);
+            context = new ContractParametersContext(null, tx, rpcClient.protocolSettings.Network);
             this.rpcClient = rpcClient;
         }
 

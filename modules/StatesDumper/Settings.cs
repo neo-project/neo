@@ -41,11 +41,11 @@ namespace Neo.Plugins
         private Settings(IConfigurationSection section)
         {
             /// Geting settings for storage changes state dumper
-            this.BlockCacheSize = section.GetValue("BlockCacheSize", 1000u);
-            this.HeightToBegin = section.GetValue("HeightToBegin", 0u);
-            this.HeightToStartRealTimeSyncing = section.GetValue("HeightToStartRealTimeSyncing", -1);
-            this.PersistAction = section.GetValue("PersistAction", PersistActions.StorageChanges);
-            this.Exclude = section.GetSection("Exclude").Exists()
+            BlockCacheSize = section.GetValue("BlockCacheSize", 1000u);
+            HeightToBegin = section.GetValue("HeightToBegin", 0u);
+            HeightToStartRealTimeSyncing = section.GetValue("HeightToStartRealTimeSyncing", -1);
+            PersistAction = section.GetValue("PersistAction", PersistActions.StorageChanges);
+            Exclude = section.GetSection("Exclude").Exists()
                 ? section.GetSection("Exclude").GetChildren().Select(p => int.Parse(p.Value)).ToArray()
                 : new[] { NativeContract.Ledger.Id };
         }

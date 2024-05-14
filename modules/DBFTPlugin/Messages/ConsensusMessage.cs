@@ -32,7 +32,7 @@ namespace Neo.Consensus
         {
             if (!Enum.IsDefined(typeof(ConsensusMessageType), type))
                 throw new ArgumentOutOfRangeException(nameof(type));
-            this.Type = type;
+            Type = type;
         }
 
         public virtual void Deserialize(ref MemoryReader reader)

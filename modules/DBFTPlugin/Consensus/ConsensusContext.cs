@@ -114,8 +114,8 @@ namespace Neo.Consensus
         {
             this.wallet = wallet;
             this.neoSystem = neoSystem;
-            this.dbftSettings = settings;
-            this.store = neoSystem.LoadStore(settings.RecoveryLogs);
+            dbftSettings = settings;
+            store = neoSystem.LoadStore(settings.RecoveryLogs);
         }
 
         public Block CreateBlock()

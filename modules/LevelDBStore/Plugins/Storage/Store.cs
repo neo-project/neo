@@ -21,7 +21,7 @@ namespace Neo.Plugins.Storage
 
         public Store(string path)
         {
-            this.db = DB.Open(path, new Options { CreateIfMissing = true, FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15) });
+            db = DB.Open(path, new Options { CreateIfMissing = true, FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15) });
         }
 
         public void Delete(byte[] key)
