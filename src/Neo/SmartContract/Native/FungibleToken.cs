@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
 
 using Neo.IO;
@@ -72,7 +73,7 @@ namespace Neo.SmartContract.Native
             manifest.SupportedStandards = new[] { "NEP-17" };
         }
 
-        internal async ContractTask MintAsync(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
+        internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -85,7 +86,7 @@ namespace Neo.SmartContract.Native
             await PostTransferAsync(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
 
-        internal async ContractTask BurnAsync(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal async ContractTask Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -130,10 +131,8 @@ namespace Neo.SmartContract.Native
             return storage.GetInteroperable<TState>().Balance;
         }
 
-#pragma warning disable IDE1006 // Naming Styles
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private protected async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
-#pragma warning restore IDE1006 // Naming Styles
         {
             if (from is null) throw new ArgumentNullException(nameof(from));
             if (to is null) throw new ArgumentNullException(nameof(to));
@@ -198,5 +197,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
-
+#pragma warning restore IDE1006 // Naming Styles
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods

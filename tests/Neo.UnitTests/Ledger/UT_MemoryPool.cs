@@ -221,8 +221,8 @@ namespace Neo.UnitTests.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, 70, true);
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
 
             long txFee = 1;
             AddTransactionsWithBalanceVerify(70, txFee, engine.Snapshot);
@@ -240,8 +240,8 @@ namespace Neo.UnitTests.Ledger
 
             ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
             applicationEngine.LoadScript(Array.Empty<byte>());
-            await NativeContract.GAS.BurnAsync(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
-            _ = NativeContract.GAS.MintAsync(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
+            await NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
+            _ = NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
 
             // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
             _unit.UpdatePoolForBlockPersisted(block, applicationEngine.Snapshot);
@@ -249,8 +249,8 @@ namespace Neo.UnitTests.Ledger
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
             // Revert the balance
-            await NativeContract.GAS.BurnAsync(applicationEngine, sender, txFee * 30);
-            _ = NativeContract.GAS.MintAsync(applicationEngine, sender, balance, true);
+            await NativeContract.GAS.Burn(applicationEngine, sender, txFee * 30);
+            _ = NativeContract.GAS.Mint(applicationEngine, sender, balance, true);
         }
 
         [TestMethod]
@@ -262,8 +262,8 @@ namespace Neo.UnitTests.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, 7, true); // balance enough for 7 mempooled txs
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 7, true); // balance enough for 7 mempooled txs
 
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone
             _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed);
@@ -315,8 +315,8 @@ namespace Neo.UnitTests.Ledger
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
             // Cleanup: revert the balance.
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, txFee * 7);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, balance, true);
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, txFee * 7);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, balance, true);
         }
 
         [TestMethod]
@@ -329,9 +329,9 @@ namespace Neo.UnitTests.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
-            _ = NativeContract.GAS.MintAsync(engine, maliciousSender, 100, true); // balance enough for all mempooled txs
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
+            _ = NativeContract.GAS.Mint(engine, maliciousSender, 100, true); // balance enough for all mempooled txs
 
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 
@@ -414,10 +414,10 @@ namespace Neo.UnitTests.Ledger
             _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4, mp7 });
 
             // Cleanup: revert the balance.
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, 100);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, balance, true);
-            await NativeContract.GAS.BurnAsync(engine, maliciousSender, 100);
-            _ = NativeContract.GAS.MintAsync(engine, maliciousSender, balance, true);
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, 100);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, balance, true);
+            await NativeContract.GAS.Burn(engine, maliciousSender, 100);
+            _ = NativeContract.GAS.Mint(engine, maliciousSender, balance, true);
         }
 
         [TestMethod]
@@ -429,8 +429,8 @@ namespace Neo.UnitTests.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
 
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 
