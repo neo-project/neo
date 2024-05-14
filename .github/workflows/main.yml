@@ -38,7 +38,7 @@ jobs:
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
-        $env:EXCLUDED_TESTS=\"[Neo.Plugins.Storage]*\"
+        $env:EXCLUDED_TESTS="[Neo.Plugins.Storage]*"
         dotnet test /p:Exclude=$env:EXCLUDED_TESTS
 
     - name: Test (macos)
