@@ -90,7 +90,7 @@ namespace Neo.Hosting.App.Configuration
         public static readonly string ConfigurationSectionName = "Remote";
 
         public string PipeName { get; set; } = default!;
-        public string MaxPipes { get; set; } = default!;
+        public int MaxPipes { get; set; } = 16;
     }
 
     internal sealed class WalletOptions
