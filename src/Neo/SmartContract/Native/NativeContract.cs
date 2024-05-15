@@ -186,8 +186,11 @@ namespace Neo.SmartContract.Native
             {
                 foreach (ContractMethodMetadata method in methodDescriptors.Where(u
                              =>
+                             // no hardfork is involved
                              u.ActiveIn is null && u.DeprecatedIn is null ||
+                             // deprecated method hardfork is involved
                              u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, index) == false ||
+                             // active method hardfork is involved
                              u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, index))
                          )
                 {
