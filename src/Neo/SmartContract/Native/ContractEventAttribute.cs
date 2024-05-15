@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Native
     {
         public int Order { get; init; }
         public ContractEventDescriptor Descriptor { get; set; }
-        public Hardfork? ActiveIn { get; init; } = null;
+        public Hardfork? ActiveIn { get; internal set; } = null;
 
         public ContractEventAttribute(Hardfork activeIn, int order, string name,
             string arg1Name, ContractParameterType arg1Value) : this(order, name, arg1Name, arg1Value)
