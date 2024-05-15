@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
            "from", ContractParameterType.PublicKey,
            "to", ContractParameterType.PublicKey,
            "amount", ContractParameterType.Integer)]
-        [ContractEvent(Hardfork.HF_Cockatrice,3, name: "CommitteeChanged",
+        [ContractEvent(Hardfork.HF_Cockatrice, 3, name: "CommitteeChanged",
            "old", ContractParameterType.Array,
            "new", ContractParameterType.Array)]
         internal NeoToken() : base()
