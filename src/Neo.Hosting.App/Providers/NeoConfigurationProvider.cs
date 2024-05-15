@@ -11,6 +11,7 @@
 
 using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
+using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Hosting;
 using Neo.Network.P2P;
 using System;
@@ -95,9 +96,13 @@ namespace Neo.Hosting.App.Providers
                 ["CONTRACT:NEONAMESERVICE"] = "0x50ac1c37690cc2cfc594472833cf57505d5f46de",
 
                 // Plugin
-                ["PLUGIN:DOWNLOADURL"] = "https://api.github.com/repos/neo-project/neo-modules/releases",
+                ["PLUGIN:DOWNLOADURL"] = "https://api.github.com/repos/neo-project/neo/releases",
                 ["PLUGIN:PRERELEASE"] = bool.FalseString,
                 ["PLUGIN:VERSION"] = $"{Program.ApplicationVersion.ToString(3)}",
+
+                // Remote
+                ["REMOTE:PIPENAME"] = NamedPipeServerFactory.GetUniquePipeName(),
+                ["REMOTE:MAXPIPES"] = "16",
             };
 
         private static void AddIfNormalizedKeyMatchesPrefix(IDictionary<string, string?> data, string normalizedKey, string? value)
