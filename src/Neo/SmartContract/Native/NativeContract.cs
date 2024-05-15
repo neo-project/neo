@@ -142,36 +142,20 @@ namespace Neo.SmartContract.Native
             List<ContractMethodMetadata> listMethods = new();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                var attribute = member.GetCustomAttribute<ContractMethodAttribute>();
+                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
                 listMethods.Add(new ContractMethodMetadata(member, attribute));
             }
             methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
 
-            // fix the hardfork issue in https://github.com/neo-project/neo/pull/3195
-            var contractEventAttributes = GetType()
-                .BaseType?
-                .GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?
-                .GetCustomAttributes<ContractEventAttribute>()
-                .ToList();
-            if (contractEventAttributes != null)
-            {
-                foreach (var attribute in contractEventAttributes)
-                {
-                    attribute.ActiveIn = Hardfork.HF_Cockatrice;
-                }
-            }
-
             // Reflection to get the events
             eventsDescriptors =
-                GetType().
-                    GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
-                    GetCustomAttributes<ContractEventAttribute>().
-                    // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
-                    Concat(contractEventAttributes).
-                    OrderBy(p => p.Order).
-                    ToList().
-                    AsReadOnly();
+                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                GetCustomAttributes<ContractEventAttribute>().
+                // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
+                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                GetCustomAttributes<ContractEventAttribute>()).
+                OrderBy(p => p.Order).ToList().AsReadOnly();
 
             // Calculate the initializations forks
             usedHardforks =
