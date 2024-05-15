@@ -9,10 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Options;
 using Neo.Hosting.App.CommandLine.Prompt;
+using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Factories;
-using Neo.Hosting.App.Helpers;
 using Neo.Hosting.App.NamedPipes;
 using System;
 using System.CommandLine;
@@ -30,30 +31,39 @@ namespace Neo.Hosting.App.CommandLine
     {
         public ConnectCommand() : base("connect", "Connect to local Neo service")
         {
-            var pipeNameArgument = new Argument<string>("PIPE_NAME", "Name of the named pipe to connect to");
+            var pipeNameOption = new Option<string>(new[] { "--pipe-name", "-pN" }, "Named pipe to connect too");
 
-            AddArgument(pipeNameArgument);
+            AddOption(pipeNameOption);
         }
 
-        public new class Handler : ICommandHandler
+        public new class Handler(
+            IOptions<NeoOptions> options) : ICommandHandler
         {
             private static readonly string s_computerName = Environment.MachineName;
             private static readonly string s_userName = Environment.UserName;
 
+            private readonly IOptions<NeoOptions> _options = options;
+
             private NamedPipeEndPoint? _pipeEndPoint;
+
+            public string? PipeName { get; set; }
 
             public async Task<int> InvokeAsync(InvocationContext context)
             {
                 var stopping = context.GetCancellationToken();
 
-                if (EnvironmentUtility.TryGetServicePipeName(out var pipeName))
+                var pipeName = PipeName ?? _options.Value.Remote.PipeName;
+
+                if (string.IsNullOrWhiteSpace(pipeName))
+                    context.Console.ErrorMessage("Pipe name is required.");
+                else
                 {
                     _pipeEndPoint = new(pipeName);
                     var pipeStream = NamedPipeServerFactory.CreateClientStream(_pipeEndPoint);
 
                     context.Console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
                     context.Console.WriteLine($"Connecting to {_pipeEndPoint}...");
-                    context.Console.ResetTerminalForegroundColor();
+                    context.Console.ResetColor();
 
                     try
                     {
@@ -62,7 +72,7 @@ namespace Neo.Hosting.App.CommandLine
                     }
                     catch (TimeoutException)
                     {
-                        context.Console.WriteLine(string.Empty);
+                        context.Console.WriteLine();
                         context.Console.ErrorMessage($"Failed to connect! Make sure service is running.");
                     }
 
@@ -84,7 +94,7 @@ namespace Neo.Hosting.App.CommandLine
                 console.SetTerminalForegroundColor(ConsoleColor.White);
                 console.Write(":~$ ");
                 console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
-                console.ResetTerminalForegroundColor();
+                console.ResetColor();
             }
 
             public static async Task<int> RunConsolePrompt(InvocationContext context, CancellationToken cancellationToken)
