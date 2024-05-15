@@ -43,9 +43,6 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (Ledger.CurrentIndex(snapshot) + 1 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
-            // Fix hardfork for https://github.com/neo-project/neo/pull/3172
-            if (role == Role.P2PNotary && !ProtocolSettings.Custom.IsHardforkEnabled(Hardfork.HF_Cockatrice, Ledger.CurrentIndex(snapshot)))
-                throw new ArgumentOutOfRangeException(nameof(role));
             byte[] key = CreateStorageKey((byte)role).AddBigEndian(index).ToArray();
             byte[] boundary = CreateStorageKey((byte)role).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
@@ -64,9 +61,6 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
-            // Fix hardfork for https://github.com/neo-project/neo/pull/3172
-            if (role == Role.P2PNotary && !ProtocolSettings.Custom.IsHardforkEnabled(Hardfork.HF_Cockatrice, engine.PersistingBlock.Index))
-                throw new ArgumentOutOfRangeException(nameof(role));
             uint index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Contains(key))
