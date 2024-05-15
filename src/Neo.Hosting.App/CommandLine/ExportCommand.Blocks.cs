@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Hosting.Services;
 using Neo.IO;
@@ -63,23 +62,25 @@ namespace Neo.Hosting.App.CommandLine
 
                 private readonly Progress<uint> _progress;
                 private readonly NeoSystemHostedService _neoSystemHostedService;
+                private readonly ILoggerFactory _loggerFactory;
                 private ILogger? _logger;
 
                 public Handler(
-                    NeoSystemHostedService neoSystemService)
+                    NeoSystemHostedService neoSystemService,
+                    ILoggerFactory loggerFactory)
                 {
                     _neoSystemHostedService = neoSystemService;
                     _progress = new Progress<uint>();
                     _progress.ProgressChanged += WriteBlocksToAccFileProgressChanged;
+
+                    _loggerFactory = loggerFactory;
+                    _logger = _loggerFactory.CreateLogger(File.FullName);
                 }
 
                 public async Task<int> InvokeAsync(InvocationContext context)
                 {
                     var host = context.GetHost();
                     var stoppingToken = context.GetCancellationToken();
-
-                    var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
-                    _logger = loggerFactory.CreateLogger(File.FullName);
 
                     await host.StartAsync(stoppingToken);
                     await _neoSystemHostedService.StartAsync(stoppingToken);
