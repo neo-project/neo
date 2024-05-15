@@ -19,14 +19,6 @@ namespace Neo.Hosting.App.Extensions
     {
         private static readonly bool s_colorsAreSupported = GetColorsAreSupported();
 
-        public static void SetTerminalForegroundRed(this IConsole _)
-        {
-            if (s_colorsAreSupported)
-            {
-                SetTerminalForegroundColor(_, ConsoleColor.Red);
-            }
-        }
-
         public static void SetTerminalForegroundColor(this IConsole _, ConsoleColor consoleColor)
         {
             if (s_colorsAreSupported)
@@ -43,7 +35,7 @@ namespace Neo.Hosting.App.Extensions
             }
         }
 
-        public static void ResetTerminalForegroundColor(this IConsole _)
+        public static void ResetColor(this IConsole _)
         {
             if (s_colorsAreSupported)
             {
@@ -54,39 +46,60 @@ namespace Neo.Hosting.App.Extensions
         public static void Clear(this IConsole _) =>
             Console.Clear();
 
-        public static void ErrorMessage(this IConsole _, Exception exception)
+        public static void WriteLine(this IConsole _) =>
+            Console.WriteLine();
+
+        public static void Write(this IConsole _, string value, params object[] args) =>
+            Console.Write(value, args);
+
+        public static void InfoMessage(this IConsole console, string message)
         {
-            ResetTerminalForegroundColor(_);
-            SetTerminalForegroundRed(_);
+            console.ResetColor();
+            console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
+            console.Write("Info: ");
+            console.SetTerminalForegroundColor(ConsoleColor.White);
+            console.WriteLine(message);
+
+            console.ResetColor();
+        }
+
+        public static void ErrorMessage(this IConsole console, Exception exception)
+        {
+            console.ResetColor();
+            console.SetTerminalForegroundColor(ConsoleColor.Red);
 
             var stackTrace = exception.InnerException?.StackTrace ?? exception.StackTrace;
 
             Console.Error.WriteLine("Exception: ");
             Console.Error.WriteLine("   {0}", exception.InnerException?.Message ?? exception.Message);
             Console.Error.WriteLine("Stack Trace: ");
-            Console.Error.WriteLine("   {0}", stackTrace!.Trim());
+            Console.Error.WriteLine("   {0}", stackTrace?.Trim());
 
-            ResetTerminalForegroundColor(_);
+            console.ResetColor();
         }
 
-        public static void ErrorMessage(this IConsole _, string message)
+        public static void ErrorMessage(this IConsole console, string message)
         {
-            ResetTerminalForegroundColor(_);
-            SetTerminalForegroundRed(_);
+            console.ResetColor();
+            console.SetTerminalForegroundColor(ConsoleColor.Red);
 
             Console.Error.WriteLine($"Error: {message}");
 
-            ResetTerminalForegroundColor(_);
+            console.ResetColor();
         }
 
-        public static SecureString PromptPassword(this IConsole _)
+        public static SecureString PromptPassword(this IConsole console)
         {
             ConsoleKeyInfo userInputKeyInfo;
             var userPassword = new SecureString();
 
-            Console.Write("Enter password: ");
-            Console.ForegroundColor = ConsoleColor.DarkBlue;
-            Console.CursorVisible = false;
+            var isRedirect = Console.IsInputRedirected;
+
+            if (isRedirect == false)
+            {
+                console.Write("Enter password: ");
+                SetTerminalForegroundColor(console, ConsoleColor.DarkYellow);
+            }
 
             while ((userInputKeyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)
             {
@@ -94,20 +107,23 @@ namespace Neo.Hosting.App.Extensions
                     userPassword.Length > 0)
                 {
                     userPassword.RemoveAt(userPassword.Length - 1);
-                    Console.Write("\b \b");
+
+                    if (isRedirect == false)
+                        console.Write("\b \b");
                 }
                 else if (char.IsControl(userInputKeyInfo.KeyChar) == false)
                 {
                     userPassword.AppendChar(userInputKeyInfo.KeyChar);
-                    Console.Write("*");
+
+                    if (isRedirect)
+                        console.Write("**");
                 }
             }
 
             userPassword.MakeReadOnly();
 
-            Console.ResetColor();
-            Console.CursorVisible = true;
-            Console.WriteLine();
+            console.ResetColor();
+            console.WriteLine();
 
             return userPassword;
         }
