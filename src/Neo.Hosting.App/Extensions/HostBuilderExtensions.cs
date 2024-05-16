@@ -28,25 +28,16 @@ namespace Neo.Hosting.App.Extensions
             hostBuilder.ConfigureServices((context, services) =>
             {
                 //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
-                try
-                {
-                    var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
-                    var namedPipeTransportSection = context.Configuration.GetSection("NamedPipeTransport");
+                var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
+                var namedPipeTransportSection = context.Configuration.GetSection("NamedPipeTransport");
 
-                    services.Configure<NamedPipeTransportOptions>(namedPipeTransportSection);
-                    services.Configure<NeoOptions>(context.Configuration);
-                    services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
-                    services.AddSingleton<NamedPipeEndPoint>();
-                    services.AddSingleton<NamedPipeServerListener>();
-                    services.AddSingleton<NeoSystemHostedService>();
-                    services.AddSingleton<NamedPipesSystemHostedService>();
-                }
-                catch (InvalidOperationException)
-                {
-                    throw;
-                }
-
-                byte[] data = [];
+                services.Configure<NamedPipeTransportOptions>(namedPipeTransportSection);
+                services.Configure<NeoOptions>(context.Configuration);
+                services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
+                services.AddSingleton<NamedPipeEndPoint>();
+                services.AddSingleton<NamedPipeServerListener>();
+                services.AddSingleton<NeoSystemHostedService>();
+                services.AddSingleton<NamedPipesSystemHostedService>();
 
                 configure?.Invoke(context, services);
             });

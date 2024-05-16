@@ -13,13 +13,13 @@ namespace Neo.Hosting.App.Host
 {
     internal static class NeoHostingEnvironments
     {
-        public static readonly string LocalNet = "LocalNet";
+        public static readonly string LocalNet = "localnet";
 
-        public static readonly string TestNet = "TestNet";
+        public static readonly string TestNet = "testnet";
 
-        public static readonly string MainNet = "MainNet";
+        public static readonly string MainNet = "mainnet";
 
-        public static readonly string PrivateNet = "PrivateNet";
+        public static readonly string PrivateNet = "privatenet";
 
     }
 }
