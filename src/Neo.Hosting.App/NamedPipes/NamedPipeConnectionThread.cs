@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.NamedPipes
 {
-    internal partial class NamedPipeConnectionThread(
+    internal sealed partial class NamedPipeConnectionThread(
         NamedPipeServerConnection connection,
         ILoggerFactory loggerFactory) : IThreadPoolWorkItem, IAsyncDisposable
     {

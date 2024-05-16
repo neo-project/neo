@@ -28,7 +28,7 @@ namespace Neo.Hosting.App.NamedPipes
 {
     internal sealed class NamedPipeServerListener : IAsyncDisposable
     {
-        private readonly NamedPipeTransportOptions _options;
+        private readonly NamedPipeServerTransportOptions _options;
         private readonly Channel<NamedPipeServerConnection> _acceptedQueue;
         private readonly NamedPipeServerStreamPoolPolicy _poolPolicy;
         private readonly ObjectPool<NamedPipeServerStream> _namedPipeServerStreamPool;
@@ -52,7 +52,7 @@ namespace Neo.Hosting.App.NamedPipes
         public NamedPipeServerListener(
             NamedPipeEndPoint endPoint,
             ILoggerFactory loggerFactory,
-            IOptions<NamedPipeTransportOptions> options)
+            IOptions<NamedPipeServerTransportOptions> options)
         {
             _mutex = new Mutex(false, $"NamedPipe-{endPoint.PipeName}", out var createdNew);
             if (!createdNew)
@@ -64,7 +64,7 @@ namespace Neo.Hosting.App.NamedPipes
             LocalEndPoint = endPoint;
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<NamedPipeServerListener>();
-            _options = options.Value ?? new NamedPipeTransportOptions();
+            _options = options.Value ?? new NamedPipeServerTransportOptions();
             _poolPolicy = new NamedPipeServerStreamPoolPolicy(LocalEndPoint, _options);
             _memoryPool = _options.MemoryPoolFactory();
             _listeningToken = _listeningTokenSource.Token;

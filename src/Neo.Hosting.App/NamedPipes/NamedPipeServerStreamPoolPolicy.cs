@@ -18,10 +18,10 @@ namespace Neo.Hosting.App.NamedPipes
 {
     internal sealed class NamedPipeServerStreamPoolPolicy(
         NamedPipeEndPoint endPoint,
-        NamedPipeTransportOptions options) : IPooledObjectPolicy<NamedPipeServerStream>
+        NamedPipeServerTransportOptions options) : IPooledObjectPolicy<NamedPipeServerStream>
     {
         private readonly NamedPipeEndPoint _endPoint = endPoint;
-        private readonly NamedPipeTransportOptions _options = options;
+        private readonly NamedPipeServerTransportOptions _options = options;
         private bool _hasFirstPipeStarted;
 
         public void SetFirstPipeStarted() =>

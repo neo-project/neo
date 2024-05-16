@@ -22,7 +22,7 @@ using PipeOptions = System.IO.Pipelines.PipeOptions;
 
 namespace Neo.Hosting.App.NamedPipes
 {
-    internal class NamedPipeServerConnection : ITransport
+    internal sealed class NamedPipeServerConnection : ITransport
     {
         internal const int MinAllocBufferSize = 4096;
         internal const int MaxMessageCapacity = 3;

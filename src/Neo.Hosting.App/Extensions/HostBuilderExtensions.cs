@@ -31,7 +31,7 @@ namespace Neo.Hosting.App.Extensions
                 var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
                 var namedPipeTransportSection = context.Configuration.GetSection("NamedPipeTransport");
 
-                services.Configure<NamedPipeTransportOptions>(namedPipeTransportSection);
+                services.Configure<NamedPipeServerTransportOptions>(namedPipeTransportSection);
                 services.Configure<NeoOptions>(context.Configuration);
                 services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
                 services.AddSingleton<NamedPipeEndPoint>();

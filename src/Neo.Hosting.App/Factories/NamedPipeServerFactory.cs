@@ -40,7 +40,7 @@ namespace Neo.Hosting.App.Factories
 
         public static NamedPipeServerListener CreateListener(
             NamedPipeEndPoint endPoint,
-            NamedPipeTransportOptions? options = null,
+            NamedPipeServerTransportOptions? options = null,
             ILoggerFactory? loggerFactory = null)
         {
             if (endPoint.ServerName != LocalComputerServerName)

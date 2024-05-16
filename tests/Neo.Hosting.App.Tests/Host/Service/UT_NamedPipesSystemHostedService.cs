@@ -52,7 +52,6 @@ namespace Neo.Hosting.App.Tests.Host.Service
 
             var buffer = new byte[4096];
             var count = await client.ReadAsync(buffer.AsMemory()).DefaultTimeout();
-            buffer = [.. buffer.AsSpan(0, count)];
 
             await pipeService.StopAsync(default).DefaultTimeout();
 
