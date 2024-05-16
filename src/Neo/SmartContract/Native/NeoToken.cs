@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
            "from", ContractParameterType.PublicKey,
            "to", ContractParameterType.PublicKey,
            "amount", ContractParameterType.Integer)]
-        [ContractEvent(3, name: "CommitteeChanged",
+        [ContractEvent(Hardfork.HF_Cockatrice, 3, name: "CommitteeChanged",
            "old", ContractParameterType.Array,
            "new", ContractParameterType.Array)]
         internal NeoToken() : base()
@@ -203,14 +203,20 @@ namespace Neo.SmartContract.Native
                 cachedCommittee.Clear();
                 cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
 
-                var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
-
-                if (!newCommittee.SequenceEqual(prevCommittee))
+                // Hardfork check for https://github.com/neo-project/neo/pull/3158
+                // New notification will case 3.7.0 and 3.6.0 have different behavior
+                var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.Snapshot);
+                if (engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Cockatrice, index))
                 {
-                    engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) {
-                        new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
-                        new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
-                    });
+                    var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
+
+                    if (!newCommittee.SequenceEqual(prevCommittee))
+                    {
+                        engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) {
+                            new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
+                            new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
+                        });
+                    }
                 }
             }
             return ContractTask.CompletedTask;
