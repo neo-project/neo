@@ -63,7 +63,7 @@ namespace Neo.Hosting.App.CommandLine
                 private readonly Progress<uint> _progress;
                 private readonly NeoSystemHostedService _neoSystemHostedService;
                 private readonly ILoggerFactory _loggerFactory;
-                private ILogger? _logger;
+                private readonly ILogger? _logger;
 
                 public Handler(
                     NeoSystemHostedService neoSystemService,
@@ -74,7 +74,7 @@ namespace Neo.Hosting.App.CommandLine
                     _progress.ProgressChanged += WriteBlocksToAccFileProgressChanged;
 
                     _loggerFactory = loggerFactory;
-                    _logger = _loggerFactory.CreateLogger(File.FullName);
+                    _logger = _loggerFactory.CreateLogger(File?.FullName ?? typeof(ExportCommand).Name);
                 }
 
                 public async Task<int> InvokeAsync(InvocationContext context)
