@@ -144,7 +144,7 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(IConfigurationSection section)
         {
-            return new ProtocolSettings
+            Custom = new ProtocolSettings
             {
                 Network = section.GetValue("Network", Default.Network),
                 AddressVersion = section.GetValue("AddressVersion", Default.AddressVersion),
@@ -164,6 +164,7 @@ namespace Neo
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
                     : Default.Hardforks
             };
+            return Custom;
         }
 
         /// <summary>

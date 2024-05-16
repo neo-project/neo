@@ -23,12 +23,19 @@ namespace Neo.SmartContract.Native
         public long CpuFee { get; init; }
         public long StorageFee { get; init; }
         public Hardfork? ActiveIn { get; init; } = null;
+        public Hardfork? DeprecatedIn { get; init; } = null;
 
         public ContractMethodAttribute() { }
 
         public ContractMethodAttribute(Hardfork activeIn)
         {
             ActiveIn = activeIn;
+        }
+
+        public ContractMethodAttribute(bool isDeprecated, Hardfork deprecatedIn)
+        {
+            if (!isDeprecated) throw new ArgumentException("isDeprecated must be true", nameof(isDeprecated));
+            DeprecatedIn = deprecatedIn;
         }
     }
 }
