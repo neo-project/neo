@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
 {
-    public class TestPipeMessage
+    public class UT_PipeMessage
         (ITestOutputHelper testOutputHelper)
     {
         private static readonly string s_exceptionMessage = "Test";
@@ -61,11 +61,11 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         public void IPipeMessage_ToArray_PipeVersion()
         {
             var date = DateTime.UtcNow;
-            var message1 = PipeMessage.Create(1, PipeCommand.Version, new PipeVersion() { TimeStamp = date });
+            var message1 = PipeMessage.Create(1, PipeCommand.GetVersion, new PipeVersion() { TimeStamp = date });
             var expectedBytes = message1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var message2 = PipeMessage.Create(1, PipeCommand.Version, new PipeVersion() { TimeStamp = date });
+            var message2 = PipeMessage.Create(1, PipeCommand.GetVersion, new PipeVersion() { TimeStamp = date });
             var actualBytes = message2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 

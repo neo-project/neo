@@ -17,13 +17,13 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.Buffers
 {
-    public class TestStruffer
+    public class UT_Struffer
         (ITestOutputHelper testOutputHelper)
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_Cases), MemberType = typeof(UT_MemberDataCases))]
+        [MemberData(nameof(TestMemberDataCases.Struffer_ReadWrite_Cases), MemberType = typeof(TestMemberDataCases))]
         public void Struffer_Write<T>(T value, byte[] expected)
             where T : unmanaged
         {
@@ -40,7 +40,7 @@ namespace Neo.Hosting.App.Tests.Buffers
         }
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_Cases), MemberType = typeof(UT_MemberDataCases))]
+        [MemberData(nameof(TestMemberDataCases.Struffer_ReadWrite_Cases), MemberType = typeof(TestMemberDataCases))]
         public void Struffer_Read<T>(T expected, byte[] value)
             where T : unmanaged
         {
@@ -55,7 +55,7 @@ namespace Neo.Hosting.App.Tests.Buffers
         }
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_String_Cases), MemberType = typeof(UT_MemberDataCases))]
+        [MemberData(nameof(TestMemberDataCases.Struffer_ReadWrite_String_Cases), MemberType = typeof(TestMemberDataCases))]
         public void Struffer_Write_String(string value, byte[] expected)
         {
             var buffer = new Struffer();
@@ -71,7 +71,7 @@ namespace Neo.Hosting.App.Tests.Buffers
         }
 
         [Theory]
-        [MemberData(nameof(UT_MemberDataCases.Struffer_ReadWrite_String_Cases), MemberType = typeof(UT_MemberDataCases))]
+        [MemberData(nameof(TestMemberDataCases.Struffer_ReadWrite_String_Cases), MemberType = typeof(TestMemberDataCases))]
         public void Struffer_Read_String(string expected, byte[] value)
         {
             var buffer = new Struffer(value);

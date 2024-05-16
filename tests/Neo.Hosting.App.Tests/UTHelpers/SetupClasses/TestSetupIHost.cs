@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UT_TestLoggerFixture.cs file belongs to the neo project and is free
+// UT_Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,10 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo;
 using Neo.Hosting;
 using Neo.Hosting.App;
+using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Tests;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Neo.Hosting.App.Tests.UTHelpers.Logging;
@@ -23,31 +25,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Neo.Hosting.App.Tests.UTHelpers.SetupClasses
 {
-    public class UT_SetupTestLogging : IDisposable
+    public class TestSetupIHost
     {
-        private readonly UT_TestTextWriter _logConsole;
+        public IHost Host { get; private init; }
 
-        public ILoggerFactory LoggerFactory { get; }
-
-        public UT_SetupTestLogging(
+        public TestSetupIHost(
             ITestOutputHelper testOutputHelper)
         {
-            _logConsole = new UT_TestTextWriter(testOutputHelper);
-            Console.SetOut(_logConsole);
-
-            LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
-            {
-                builder.AddProvider(new UT_XUnitLoggerProvider(testOutputHelper));
-                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-            });
-        }
-
-        public void Dispose()
-        {
-            _logConsole.Dispose();
+            Host = Program.DefaultNeoHostBuilderFactory(null)
+                .UseNeoServiceConfiguration()
+                .ConfigureLogging(builder =>
+                {
+                    builder.AddProvider(new TestLoggerProvider(testOutputHelper));
+                    builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                })
+                .Build();
         }
     }
 }

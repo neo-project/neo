@@ -26,14 +26,14 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.UTHelpers.Logging
 {
-    public sealed class UT_XUnitLoggerProvider
+    public sealed class TestLoggerProvider
         (ITestOutputHelper testOutputHelper) : ILoggerProvider
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
-        private readonly ConcurrentDictionary<string, UT_XUnitLogger> _loggers = new();
+        private readonly ConcurrentDictionary<string, TestLogger> _loggers = new();
 
         public ILogger CreateLogger(string categoryName) =>
-            _loggers.GetOrAdd(categoryName, name => new UT_XUnitLogger(_testOutputHelper, name));
+            _loggers.GetOrAdd(categoryName, name => new TestLogger(_testOutputHelper, name));
 
         public void Dispose()
         {

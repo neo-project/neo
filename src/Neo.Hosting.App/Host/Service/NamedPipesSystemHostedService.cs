@@ -17,7 +17,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.Hosting.Services
+namespace Neo.Hosting.App.Host.Service
 {
     internal sealed class NamedPipesSystemHostedService : IHostedService, IDisposable
     {
@@ -32,8 +32,6 @@ namespace Neo.Hosting.App.Hosting.Services
         private readonly ILogger _logger;
 
         private readonly NamedPipeServerListener _namedPipeListener;
-
-        private NamedPipeServerConnection? _connection;
 
         private bool _hasStarted;
         private int _stopping;
@@ -64,7 +62,7 @@ namespace Neo.Hosting.App.Hosting.Services
 
                 _namedPipeListener.Start();
 
-                _ = ProcessClientAsync();
+                _ = ProcessClientsAsync();
             }
             catch
             {
@@ -109,7 +107,7 @@ namespace Neo.Hosting.App.Hosting.Services
             _stoppedCompletionSource.TrySetResult();
         }
 
-        private async Task ProcessClientAsync()
+        private async Task ProcessClientsAsync()
         {
             var stoppingToken = _stopTokenSource.Token;
 
@@ -124,18 +122,21 @@ namespace Neo.Hosting.App.Hosting.Services
 
                 while (true)
                 {
-                    _connection = await _namedPipeListener.AcceptAsync(stoppingToken).ConfigureAwait(false);
+                    var connection = await _namedPipeListener.AcceptAsync(stoppingToken).ConfigureAwait(false);
 
-                    if (_connection is null)
+                    if (stoppingToken.IsCancellationRequested)
                         break;
+
+                    if (connection is null)
+                        continue;
+
+                    var threadPoolItem = new NamedPipeConnectionThread(connection, _loggerFactory);
+                    ThreadPool.UnsafeQueueUserWorkItem(threadPoolItem, preferLocal: false);
                 }
             }
             finally
             {
                 _bindSemaphore.Release();
-
-                if (_connection is not null)
-                    await _connection.DisposeAsync();
             }
         }
     }

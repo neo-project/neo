@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Hosting;
+using Neo.Hosting.App.Host;
 using Neo.Hosting.App.NamedPipes;
 using System;
 using System.Diagnostics.CodeAnalysis;

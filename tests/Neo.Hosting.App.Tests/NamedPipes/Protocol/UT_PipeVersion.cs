@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
 {
-    public class TestPipeVersion
+    public class UT_PipeVersion
         (ITestOutputHelper testOutputHelper)
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;

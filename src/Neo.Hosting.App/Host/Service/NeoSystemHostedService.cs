@@ -22,7 +22,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.Hosting.Services
+namespace Neo.Hosting.App.Host.Service
 {
     internal sealed class NeoSystemHostedService(
         ILoggerFactory loggerFactory,

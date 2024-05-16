@@ -18,7 +18,7 @@ using Neo.Hosting.App.Tests.UTHelpers.DataCases;
 
 namespace Neo.Hosting.App.Tests.UTHelpers.DataCases
 {
-    internal static class UT_MemberDataCases
+    internal static class TestMemberDataCases
     {
         public static TheoryData<object, byte[]> Struffer_ReadWrite_Cases =>
             new()

@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
 {
-    public class TestPipeException
+    public class UT_PipeException
         (ITestOutputHelper testOutputHelper)
     {
         private static readonly string s_exceptionMessage = "Hello";

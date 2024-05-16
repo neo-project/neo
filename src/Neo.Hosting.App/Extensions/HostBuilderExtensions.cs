@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Configuration;
-using Neo.Hosting.App.Hosting.Services;
+using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes;
 using System;
 using System.IO;

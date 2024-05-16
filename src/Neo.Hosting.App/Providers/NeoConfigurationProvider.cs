@@ -12,7 +12,7 @@
 using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
 using Neo.Hosting.App.Factories;
-using Neo.Hosting.App.Hosting;
+using Neo.Hosting.App.Host;
 using Neo.Network.P2P;
 using System;
 using System.Collections;

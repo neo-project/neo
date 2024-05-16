@@ -16,12 +16,15 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
     internal enum PipeCommand : byte
     {
         [PipeProtocol(typeof(PipeNullPayload))]
-        Null = 0xee,
+        GetVersion = 0x01,
 
         [PipeProtocol(typeof(PipeVersion))]
-        Version = 0x01,
+        Version = 0x02,
 
         [PipeProtocol(typeof(PipeException))]
-        Exception = 0x02,
+        Exception = 0xc0,
+
+        [PipeProtocol(typeof(PipeNullPayload))]
+        Nack = 0xe0, // NULL ACK
     }
 }

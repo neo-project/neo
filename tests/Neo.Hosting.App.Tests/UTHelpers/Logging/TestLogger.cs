@@ -25,7 +25,7 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.UTHelpers.Logging
 {
-    public sealed class UT_XUnitLogger
+    public sealed class TestLogger
         (ITestOutputHelper testOutputHelper, string categoryName) : ILogger
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;

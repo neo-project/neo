@@ -12,7 +12,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Neo.Hosting.App.Helpers;
-using Neo.Hosting.App.Hosting;
+using Neo.Hosting.App.Host;
 using System;
 
 namespace Neo.Hosting.App.Extensions

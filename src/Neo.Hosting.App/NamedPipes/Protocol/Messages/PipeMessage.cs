@@ -25,7 +25,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public static readonly IPipeMessage Null = new PipeNullPayload();
 
-        private static readonly ConcurrentDictionary<PipeCommand, Type> _commandTypes = new();
+        private static readonly ConcurrentDictionary<PipeCommand, Type> s_commandTypes = new();
 
         public int RequestId { get; private set; }
         public PipeCommand Command { get; private set; }
@@ -35,7 +35,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         public PipeMessage()
         {
             Payload = new PipeNullPayload();
-            Command = PipeCommand.Null;
+            Command = PipeCommand.Nack;
         }
 
         static PipeMessage()
@@ -45,7 +45,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
                 var attr = pipeProtocolField.GetCustomAttribute<PipeProtocolAttribute>();
                 if (attr is null) continue;
 
-                _ = _commandTypes.TryAdd((PipeCommand)pipeProtocolField.GetValue(null)!, attr.Type);
+                _ = s_commandTypes.TryAdd((PipeCommand)pipeProtocolField.GetValue(null)!, attr.Type);
             }
         }
 
@@ -72,8 +72,8 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             return message;
         }
 
-        internal static IPipeMessage? CreatePayload(PipeCommand command) =>
-            _commandTypes.TryGetValue(command, out var t)
+        public static IPipeMessage? CreateEmptyPayload(PipeCommand command) =>
+            s_commandTypes.TryGetValue(command, out var t)
                 ? Activator.CreateInstance(t) as IPipeMessage
                 : null;
 
@@ -99,7 +99,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
                 throw new InvalidDataException("CRC32 mismatch");
 
             Command = command;
-            Payload = CreatePayload(command) ?? throw new InvalidDataException($"Unknown command: {command}");
+            Payload = CreateEmptyPayload(command) ?? throw new InvalidDataException($"Unknown command: {command}");
             Payload.FromArray(payloadBytes);
         }
 
@@ -107,7 +107,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         {
             var wrapper = new Struffer(Size);
 
-            byte[] payloadBytes = Payload.ToArray();
+            var payloadBytes = Payload.ToArray();
 
             wrapper.Write(Magic);
             wrapper.Write(Version);

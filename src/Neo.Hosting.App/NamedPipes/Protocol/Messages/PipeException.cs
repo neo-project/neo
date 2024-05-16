@@ -10,19 +10,31 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Buffers;
+using System;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal sealed class PipeException : IPipeMessage
     {
+        public string Type { get; set; }
+
         public string Message { get; set; }
 
         public string StackTrace { get; set; }
 
         public PipeException()
         {
+            Type = nameof(PipeException);
             Message = string.Empty;
             StackTrace = string.Empty;
+        }
+
+        public PipeException(
+            Exception exception)
+        {
+            Type = exception.GetType().Name;
+            Message = exception.Message;
+            StackTrace = exception.StackTrace ?? string.Empty;
         }
 
         public bool IsEmpty =>
@@ -30,6 +42,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
             string.IsNullOrEmpty(StackTrace);
 
         public int Size =>
+            Struffer.SizeOf(Type) +
             Struffer.SizeOf(Message) +
             Struffer.SizeOf(StackTrace);
 
@@ -37,6 +50,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         {
             var wrapper = new Struffer(buffer);
 
+            Type = wrapper.ReadString();
             Message = wrapper.ReadString();
             StackTrace = wrapper.ReadString();
         }
@@ -45,6 +59,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         {
             var wrapper = new Struffer(Size);
 
+            wrapper.Write(Type);
             wrapper.Write(Message);
             wrapper.Write(StackTrace);
 

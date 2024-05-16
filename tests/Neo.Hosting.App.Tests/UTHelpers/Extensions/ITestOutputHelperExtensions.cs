@@ -22,7 +22,7 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.UTHelpers.Extensions
 {
-    internal static class UT_ITestOutputHelperExtensions
+    internal static class ITestOutputHelperExtensions
     {
         public static void LogDebug<T>(this ITestOutputHelper testOutputHelper, string className, string methodName, T actual, T expected)
         {

@@ -285,7 +285,10 @@ namespace Neo.Hosting.App.NamedPipes
             {
                 var message = PipeMessage.Create(buffer);
 
-                if (message is not null && _messageQueue.Writer.TryWrite(message) == false)
+                if (message is null)
+                    return;
+
+                if (_messageQueue.Writer.TryWrite(message) == false)
                 {
                     if (await _messageQueue.Writer.WaitToWriteAsync(_connectionClosedToken) == false)
                         throw new InvalidOperationException("Message queue writer was unexpectedly closed.");
@@ -293,7 +296,7 @@ namespace Neo.Hosting.App.NamedPipes
             }
             catch (IndexOutOfRangeException) // NULL message or Empty message
             {
-
+                _logger.LogTrace("Received a corrupted message.");
             }
             catch (FormatException ex) // Normally invalid or corrupt message
             {

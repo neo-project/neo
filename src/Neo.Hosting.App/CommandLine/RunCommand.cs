@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Hosting.Services;
+using Neo.Hosting.App.Host.Service;
 using System;
 using System.CommandLine;
 using System.CommandLine.Hosting;

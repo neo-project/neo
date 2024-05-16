@@ -23,7 +23,7 @@ namespace Neo.Hosting.App
 {
     public partial class Program
     {
-        static IHostBuilder DefaultNeoHostBuilderFactory(string[] args) =>
+        internal static IHostBuilder DefaultNeoHostBuilderFactory(string[] args) =>
             new HostBuilder()
             .UseNeoHostConfiguration()
             .UseNeoAppConfiguration()

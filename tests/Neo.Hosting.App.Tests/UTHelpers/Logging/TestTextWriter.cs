@@ -29,7 +29,7 @@ using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.UTHelpers.Logging
 {
-    internal class UT_TestTextWriter
+    internal class TestTextWriter
         (ITestOutputHelper testOutputHelper) : TextWriter
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
