@@ -58,8 +58,8 @@ namespace Neo.UnitTests.SmartContract.Native
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
-            // Notary effect after the fork.
-            List<Role> roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode };//, Role.P2PNotary };
+
+            List<Role> roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
             foreach (var role in roles)
             {
                 var snapshot1 = _snapshot.CreateSnapshot();
