@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Native
             _snapshot = TestBlockchain.GetTestSnapshot();
 
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshot, new Block { Header = new Header() }, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
-            NativeContract.ContractManagement.OnPersist(engine);
+            NativeContract.ContractManagement.OnPersistAsync(engine);
         }
 
         [TestMethod]

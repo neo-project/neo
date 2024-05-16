@@ -42,9 +42,9 @@ namespace Neo.SmartContract
         /// <param name="message">The message of the log.</param>
         public LogEventArgs(IVerifiable container, UInt160 script_hash, string message)
         {
-            this.ScriptContainer = container;
-            this.ScriptHash = script_hash;
-            this.Message = message;
+            ScriptContainer = container;
+            ScriptHash = script_hash;
+            Message = message;
         }
     }
 }

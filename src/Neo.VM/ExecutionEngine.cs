@@ -95,10 +95,10 @@ namespace Neo.VM
         /// <param name="limits">Restrictions on the VM.</param>
         protected ExecutionEngine(JumpTable? jumpTable, ReferenceCounter referenceCounter, ExecutionEngineLimits limits)
         {
-            this.JumpTable = jumpTable ?? JumpTable.Default;
-            this.Limits = limits;
-            this.ReferenceCounter = referenceCounter;
-            this.ResultStack = new EvaluationStack(referenceCounter);
+            JumpTable = jumpTable ?? JumpTable.Default;
+            Limits = limits;
+            ReferenceCounter = referenceCounter;
+            ResultStack = new EvaluationStack(referenceCounter);
         }
 
         public virtual void Dispose()
@@ -135,6 +135,14 @@ namespace Neo.VM
                     ExecutionContext context = CurrentContext!;
                     Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
                     PreExecuteInstruction(instruction);
+#if VMPERF
+                    Console.WriteLine("op:["
+                                      + this.CurrentContext.InstructionPointer.ToString("X04")
+                                      + "]"
+                                      + this.CurrentContext.CurrentInstruction?.OpCode
+                                      + " "
+                                      + this.CurrentContext.EvaluationStack);
+#endif
                     try
                     {
                         JumpTable[instruction.OpCode](this, instruction);

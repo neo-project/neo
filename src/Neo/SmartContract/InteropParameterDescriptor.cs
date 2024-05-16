@@ -82,7 +82,7 @@ namespace Neo.SmartContract
         internal InteropParameterDescriptor(ParameterInfo parameterInfo)
             : this(parameterInfo.ParameterType, parameterInfo.GetCustomAttributes<ValidatorAttribute>(true).ToArray())
         {
-            this.Name = parameterInfo.Name;
+            Name = parameterInfo.Name;
         }
 
         internal InteropParameterDescriptor(Type type, params ValidatorAttribute[] validators)

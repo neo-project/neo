@@ -135,7 +135,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         protected NativeContract()
         {
-            this.Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
+            Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
 
             // Reflection to get the methods
 
@@ -152,6 +152,9 @@ namespace Neo.SmartContract.Native
             eventsDescriptors =
                 GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
                 GetCustomAttributes<ContractEventAttribute>().
+                // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
+                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                GetCustomAttributes<ContractEventAttribute>()).
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
             // Calculate the initializations forks
@@ -263,19 +266,14 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
-        /// <param name="hardfork">Active hardfork</param>
+        /// <param name="hardforks">Active hardforks</param>
         /// <returns>True if the native contract must be initialized</returns>
-        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork? hardfork)
+        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork[] hardforks)
         {
-            // If is not configured, the Genesis is the a initialized block
-            if (index == 0 && ActiveIn is null)
-            {
-                hardfork = null;
-                return true;
-            }
+            var hfs = new List<Hardfork>();
 
-            // If is in the hardfork height, return true
-            foreach (Hardfork hf in usedHardforks)
+            // If is in the hardfork height, add them to return array
+            foreach (var hf in usedHardforks)
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
@@ -285,13 +283,26 @@ namespace Neo.SmartContract.Native
 
                 if (activeIn == index)
                 {
-                    hardfork = hf;
-                    return true;
+                    hfs.Add(hf);
                 }
             }
 
+            // Return all initialize hardforks
+            if (hfs.Count > 0)
+            {
+                hardforks = hfs.ToArray();
+                return true;
+            }
+
+            // If is not configured, the Genesis is an initialization block.
+            if (index == 0 && ActiveIn is null)
+            {
+                hardforks = hfs.ToArray();
+                return true;
+            }
+
             // Initialized not required
-            hardfork = null;
+            hardforks = null;
             return false;
         }
 
@@ -395,17 +406,17 @@ namespace Neo.SmartContract.Native
             return contractsDictionary.ContainsKey(hash);
         }
 
-        internal virtual ContractTask Initialize(ApplicationEngine engine, Hardfork? hardFork)
+        internal virtual ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardFork)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask OnPersist(ApplicationEngine engine)
+        internal virtual ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask PostPersist(ApplicationEngine engine)
+        internal virtual ContractTask PostPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }

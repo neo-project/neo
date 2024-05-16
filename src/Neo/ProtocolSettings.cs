@@ -120,7 +120,7 @@ namespace Neo
             Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
         };
 
-        public static ProtocolSettings? Custom { get; set; }
+        public static ProtocolSettings Custom { get; set; }
 
         /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> at the specified path.
