@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\LevelDBStore\LevelDBStore.csproj" />
-    <ProjectReference Include="..\..\src\RocksDBStore\RocksDBStore.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\RocksDBStore\RocksDBStore.csproj" />
   </ItemGroup>
 
 </Project>

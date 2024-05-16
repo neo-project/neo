@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\RpcServer\RpcServer.csproj" />
   </ItemGroup>
 
 </Project>

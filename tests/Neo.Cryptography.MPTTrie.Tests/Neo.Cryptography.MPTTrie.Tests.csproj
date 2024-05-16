@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MPTTrie\MPTTrie.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\MPTTrie\MPTTrie.csproj" />
   </ItemGroup>
 
 </Project>

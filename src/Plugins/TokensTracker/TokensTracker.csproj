@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neo\Neo.csproj" />
     <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
   </ItemGroup>
 

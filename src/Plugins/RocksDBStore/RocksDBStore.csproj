@@ -2,13 +2,12 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
-    <PackageId>Neo.Plugins.Storage.LevelDBStore</PackageId>
+    <PackageId>Neo.Plugins.Storage.RocksDBStore</PackageId>
     <RootNamespace>Neo.Plugins.Storage</RootNamespace>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neo\Neo.csproj" />
+    <PackageReference Include="rocksdb" Version="8.11.3.46984" />
   </ItemGroup>
 
 </Project>
