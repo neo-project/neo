@@ -184,7 +184,15 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in methodDescriptors.Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, index)))
+                foreach (ContractMethodMetadata method in methodDescriptors.Where(u
+                             =>
+                             // no hardfork is involved
+                             u.ActiveIn is null && u.DeprecatedIn is null ||
+                             // deprecated method hardfork is involved
+                             u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, index) == false ||
+                             // active method hardfork is involved
+                             u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, index))
+                         )
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
@@ -366,6 +374,8 @@ namespace Neo.SmartContract.Native
                 ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
+                if (method.DeprecatedIn is not null && engine.IsHardforkEnabled(method.DeprecatedIn.Value))
+                    throw new InvalidOperationException($"Cannot call this method after hardfork {method.DeprecatedIn}.");
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
