@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <PackageId>Neo.Plugins.StateService</PackageId>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
+    <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\Neo\Neo.csproj" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -26,4 +26,11 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" Visible="false" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="config.json"  Condition="Exists('config.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
 </Project>

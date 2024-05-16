@@ -2,12 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
-    <PackageId>Neo.Plugins.StateService</PackageId>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>Neo.Plugins.OracleService</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
+    <PackageReference Include="NeoFS.API" Version="3.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\Neo\Neo.csproj" />
     <ProjectReference Include="..\RpcServer\RpcServer.csproj">
       <Private>false</Private>
       <ExcludeAssets>runtime</ExcludeAssets>

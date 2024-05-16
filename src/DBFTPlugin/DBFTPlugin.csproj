@@ -6,4 +6,9 @@
     <RootNamespace>Neo.Consensus</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\Neo\Neo.csproj" />
+  </ItemGroup>
+
 </Project>

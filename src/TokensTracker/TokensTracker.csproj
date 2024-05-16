@@ -6,10 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RpcServer\RpcServer.csproj">
-      <Private>false</Private>
-      <ExcludeAssets>runtime</ExcludeAssets>
-    </ProjectReference>
+    <ProjectReference Include="..\Neo\Neo.csproj" />
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
   </ItemGroup>
 
 </Project>
