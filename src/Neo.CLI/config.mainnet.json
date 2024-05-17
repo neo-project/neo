@@ -37,7 +37,7 @@
     "Hardforks": {
       "HF_Aspidochelone": 1730000,
       "HF_Basilisk": 4120000,
-      "HF_Cockatrice": 5420000
+      "HF_Cockatrice": 5450000
     },
     "InitialGasDistribution": 5200000000000000,
     "ValidatorsCount": 7,
