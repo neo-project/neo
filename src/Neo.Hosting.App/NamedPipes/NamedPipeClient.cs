@@ -15,6 +15,7 @@ using Microsoft.Extensions.Options;
 using Neo.Hosting.App.Configuration;
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO.Pipelines;
 using System.IO.Pipes;
 using System.Threading.Tasks;
@@ -62,6 +63,13 @@ namespace Neo.Hosting.App.NamedPipes
         public ValueTask DisposeAsync()
         {
             throw new NotImplementedException();
+        }
+
+        internal void ReturnStream(NamedPipeClientStream stream)
+        {
+            Debug.Assert(stream.IsConnected == false, "Stream should have been successfully disconnected to reach this point.");
+
+            _pool.Return(stream);
         }
     }
 }
