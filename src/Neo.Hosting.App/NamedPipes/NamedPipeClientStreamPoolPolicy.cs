@@ -16,8 +16,8 @@ using NamedPipeOptions = System.IO.Pipes.PipeOptions;
 
 namespace Neo.Hosting.App.NamedPipes
 {
-    internal sealed class NamedPipeClientStreamPoolPolicy
-        (NamedPipeEndPoint endPoint,
+    internal sealed class NamedPipeClientStreamPoolPolicy(
+        NamedPipeEndPoint endPoint,
         NamedPipeClientTransportOptions options) : IPooledObjectPolicy<NamedPipeClientStream>
     {
         private readonly NamedPipeEndPoint _endPoint = endPoint;
