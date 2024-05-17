@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Plugins\RpcServer\RpcServer.csproj" />
-    <ProjectReference Include="..\..\src\RpcClient\RpcClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>
