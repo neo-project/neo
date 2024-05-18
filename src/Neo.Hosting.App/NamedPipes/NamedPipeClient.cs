@@ -71,6 +71,9 @@ namespace Neo.Hosting.App.NamedPipes
         {
             try
             {
+                if (_clientStream.IsConnected)
+                    throw new IOException("The named pipe client is already connected.");
+
                 await _clientStream.ConnectAsync(cancellationToken);
 
                 var connection = new NamedPipeClientConnection(this, LocalEndPoint, _clientStream, _inputOptions, _outputOptions, _logger);
@@ -80,7 +83,7 @@ namespace Neo.Hosting.App.NamedPipes
             }
             catch (IOException ex)
             {
-                _logger.LogDebug(ex, "Named pipe listener received broken pipe while waiting for a connection.");
+                _logger.LogDebug(ex, "Named pipe client received broken pipe while waiting for a connection.");
             }
 
             return null;

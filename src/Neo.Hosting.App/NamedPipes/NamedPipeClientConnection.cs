@@ -131,6 +131,20 @@ namespace Neo.Hosting.App.NamedPipes
             return null;
         }
 
+        public async ValueTask WriteAsync(PipeMessage message, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var memory = message.ToArray().AsMemory();
+
+                await Writer.WriteAsync(memory, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(0, ex, $"Unexpected exception in {nameof(NamedPipeClientConnection)}.{nameof(WriteAsync)}.");
+            }
+        }
+
         internal void Start()
         {
             try
