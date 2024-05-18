@@ -3,8 +3,10 @@
     "LogLevel": {
       "Default": "Information"
     },
-    "Neo": {
-      "LogLevel": "Trace"
+    "NeoFile": {
+      "LogLevel": {
+        "Default": "Error"
+      }
     }
   },
   "ApplicationConfiguration": {

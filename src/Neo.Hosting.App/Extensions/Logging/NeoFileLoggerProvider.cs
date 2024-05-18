@@ -18,7 +18,7 @@ using System.IO;
 
 namespace Neo.Hosting.App.Extensions.Logging
 {
-    [ProviderAlias("Neo")]
+    [ProviderAlias("NeoFile")]
     internal sealed class NeoFileLoggerProvider : ILoggerProvider
     {
         private readonly ConcurrentDictionary<string, NeoFileLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);

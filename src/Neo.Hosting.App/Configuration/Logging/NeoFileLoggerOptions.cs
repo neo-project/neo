@@ -20,8 +20,6 @@ namespace Neo.Hosting.App.Configuration.Logging
         private static readonly char[] s_invalidFileNameChars = Path.GetInvalidFileNameChars();
         private static readonly char[] s_invalidPathChars = Path.GetInvalidPathChars();
 
-        public Microsoft.Extensions.Logging.LogLevel LogLevel { get; set; } = Microsoft.Extensions.Logging.LogLevel.Information;
-
         public string TimestampFormat { get; set; } = "yyyy-MM-dd HH:mm:ss.fff";
         public bool UseUtcTimestamp { get; set; } = true;
 

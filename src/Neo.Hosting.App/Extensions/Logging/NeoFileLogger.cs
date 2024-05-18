@@ -26,13 +26,10 @@ namespace Neo.Hosting.App.Extensions.Logging
             default!;
 
         public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) =>
-            logLevel >= getCurrentConfig().LogLevel;
+            true;
 
         public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            if (IsEnabled(logLevel) == false)
-                return;
-
             var config = getCurrentConfig();
             var dateTime = config.UseUtcTimestamp ? DateTime.UtcNow : DateTime.Now;
 
@@ -40,12 +37,18 @@ namespace Neo.Hosting.App.Extensions.Logging
             var dateTimeString = dateTime.ToString(config.TimestampFormat);
 
             var output = string.Format("[{0}] {1}: {2}[{3}] {4}{5}",
-                dateTimeString, eventId.Name, categoryName, eventId.Id,
+                dateTimeString, logLevel, categoryName, eventId.Id,
                 formatter(state, exception), Environment.NewLine);
 
             var fileName = Path.Combine(config.OutputDirectory, $"{fileNameDateString}{config.OutputFileExtension}");
 
-            File.AppendAllText(fileName, output);
+            try
+            {
+                File.AppendAllText(fileName, output);
+            }
+            catch
+            {
+            }
         }
     }
 }

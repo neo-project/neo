@@ -59,6 +59,9 @@ namespace Neo.Hosting.App
                 logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
                 logging.AddEventSourceLogger();
 
+                // Adds Neo File Logger: outputs to "./logs/"
+                logging.AddNeoFileLogger();
+
                 if (IsRunningAsService == false)
                 {
                     logging.AddSimpleConsole(config =>
@@ -69,9 +72,6 @@ namespace Neo.Hosting.App
                         config.UseUtcTimestamp = true;
                     });
                 }
-
-                // Adds Neo File Logger: outputs to "./logs/"
-                logging.AddNeoFileLogger();
 
                 if (isWindows)
                     logging.AddEventLog();
