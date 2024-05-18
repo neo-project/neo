@@ -83,7 +83,7 @@ namespace Neo.Hosting.App.Providers
                 ["STORAGE:ENGINE"] = "LevelDBStore",
                 ["STORAGE:VERIFY"] = bool.TrueString,
                 ["STORAGE:ARCHIVE:PATH"] = AppContext.BaseDirectory,
-                ["STORAGE:ARCHIVE:FILENAME"] = "chain.{0}.acc.zip",
+                ["STORAGE:ARCHIVE:FILENAME"] = "chain.{0}.acc",
 
                 // P2P
                 ["P2P:LISTEN"] = "0.0.0.0",

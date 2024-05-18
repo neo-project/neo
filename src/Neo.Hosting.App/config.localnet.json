@@ -14,7 +14,7 @@
       "Engine": "MemoryStore",
       "Verify": false,
       "Archive": {
-        "FileName": "chain.{0}.acc.zip"
+        "FileName": "chain.{0}.acc"
       }
     },
     "P2P": {

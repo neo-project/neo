@@ -39,7 +39,7 @@ namespace Neo.Hosting.App.Configuration
             public static readonly string ConfigurationSectionName = "Archive";
 
             public string Path { get; set; } = AppContext.BaseDirectory;
-            public string FileName { get; set; } = "chain.0.acc.zip";
+            public string FileName { get; set; } = "chain.0.acc";
         }
 
         public string Engine { get; set; } = "LevelDBStore";

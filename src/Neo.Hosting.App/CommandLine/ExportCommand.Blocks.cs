@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Host.Service;
 using Neo.IO;
 using Neo.SmartContract.Native;
@@ -31,7 +33,7 @@ namespace Neo.Hosting.App.CommandLine
             {
                 var startOption = new Option<uint>(new[] { "--start", "-s" }, () => 0, "The block height where to begin");
                 var countOption = new Option<uint>(new[] { "--count", "-c" }, () => uint.MaxValue, "The total blocks to be written");
-                var fileOption = new Option<FileInfo>(new[] { "--file", "-f" }, () => new FileInfo("chain.0.acc"), "The output filename");
+                var fileOption = new Option<FileInfo>(new[] { "--file", "-f" }, "The output filename");
 
                 startOption.AddValidator(result =>
                 {
@@ -58,7 +60,7 @@ namespace Neo.Hosting.App.CommandLine
 
                 public uint Start { get; set; }
                 public uint Count { get; set; }
-                public required FileInfo File { get; set; }
+                public FileInfo File { get; set; }
 
                 private readonly Progress<uint> _progress;
                 private readonly NeoSystemHostedService _neoSystemHostedService;
@@ -67,14 +69,19 @@ namespace Neo.Hosting.App.CommandLine
 
                 public Handler(
                     NeoSystemHostedService neoSystemService,
-                    ILoggerFactory loggerFactory)
+                    ILoggerFactory loggerFactory,
+                    IOptions<NeoOptions> options)
                 {
                     _neoSystemHostedService = neoSystemService;
                     _progress = new Progress<uint>();
                     _progress.ProgressChanged += WriteBlocksToAccFileProgressChanged;
 
+                    var neoOptions = options.Value;
+                    var fileName = Path.Combine(neoOptions.Storage.Archive.Path, neoOptions.Storage.Archive.FileName);
+                    File = new FileInfo(fileName);
+
                     _loggerFactory = loggerFactory;
-                    _logger = _loggerFactory.CreateLogger(File?.FullName ?? typeof(ExportCommand).Name);
+                    _logger = _loggerFactory.CreateLogger(File.FullName ?? typeof(ExportCommand).Name);
                 }
 
                 public async Task<int> InvokeAsync(InvocationContext context)
@@ -89,7 +96,7 @@ namespace Neo.Hosting.App.CommandLine
                     var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
                     Count = Math.Min(Count, currentBlockHeight - Start);
 
-                    var writeBlocksToAccFileTask = Task.Factory.StartNew(
+                    var writeBlocksToAccFileTask = Task.Run(
                         () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, stoppingToken),
                         stoppingToken);
 
