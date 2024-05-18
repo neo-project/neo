@@ -17,7 +17,7 @@ namespace Neo.Hosting.App.Configuration
 {
     internal sealed class NamedPipeClientTransportOptions
     {
-        public long MaxReadBufferSize { get; set; } = 64 * 1024;
+        public long MaxReadBufferSize { get; set; } = 1024 * 1024;
         public long MaxWriteBufferSize { get; set; } = 64 * 1024;
         public bool CurrentUserOnly { get; set; } = true;
         internal Func<MemoryPool<byte>> MemoryPoolFactory { get; set; } = () => new PinnedBlockMemoryPool();
