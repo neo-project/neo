@@ -30,7 +30,7 @@ namespace Neo.Hosting.App.Tests.UTHelpers.Logging
         (ITestOutputHelper testOutputHelper) : ILoggerProvider
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
-        private readonly ConcurrentDictionary<string, TestLogger> _loggers = new();
+        private readonly ConcurrentDictionary<string, TestLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
 
         public ILogger CreateLogger(string categoryName) =>
             _loggers.GetOrAdd(categoryName, name => new TestLogger(_testOutputHelper, name));

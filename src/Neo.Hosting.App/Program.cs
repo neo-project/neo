@@ -28,18 +28,16 @@ namespace Neo.Hosting.App
 {
     public sealed partial class Program
     {
-        internal const string DEFAULT_VERSION_STRING = "0.0.0.0";
+        internal const string DEFAULT_VERSION_STRING = "0.0.0";
 
-        internal static int ApplicationVersionNumber { get; }
-        internal static Version ApplicationVersion { get; }
+        internal static int ApplicationVersionNumber =>
+            AssemblyUtility.GetVersionNumber();
+
+        internal static Version ApplicationVersion =>
+            Assembly.GetExecutingAssembly().GetName().Version ?? new Version("0.0.0");
+
         internal static bool IsRunningAsService =>
-            SystemdHelpers.IsSystemdService() && WindowsServiceHelpers.IsWindowsService() && Environment.UserInteractive == false;
-
-        static Program()
-        {
-            ApplicationVersionNumber = AssemblyUtility.GetVersionNumber();
-            ApplicationVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version("0.0.0.0");
-        }
+            (SystemdHelpers.IsSystemdService() || WindowsServiceHelpers.IsWindowsService()) && Environment.UserInteractive == false;
 
         static async Task<int> Main(string[] args)
         {

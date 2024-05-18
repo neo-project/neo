@@ -15,6 +15,7 @@ using Microsoft.Extensions.Diagnostics.Metrics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.Logging.Debug;
 using Microsoft.Extensions.Logging.EventLog;
 using Neo.Hosting.App.Extensions;
 using System;
@@ -44,16 +45,18 @@ namespace Neo.Hosting.App
         {
             services.AddLogging(logging =>
             {
+                logging.ClearProviders();
+
                 var isWindows = OperatingSystem.IsWindows();
                 if (isWindows && hostingContext.HostingEnvironment.IsNeoLocalNet() == false)
                     logging.AddFilter<EventLogLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Warning);
 
 #if DEBUG
-                logging.AddFilter<ConsoleLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Trace);
+                logging.AddFilter<DebugLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Trace);
+                logging.AddDebug();
 #endif
 
                 logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
-                logging.AddDebug();
                 logging.AddEventSourceLogger();
 
                 if (IsRunningAsService == false)
@@ -66,6 +69,9 @@ namespace Neo.Hosting.App
                         config.UseUtcTimestamp = true;
                     });
                 }
+
+                // Adds Neo File Logger: outputs to "./logs/"
+                logging.AddNeoFileLogger();
 
                 if (isWindows)
                     logging.AddEventLog();
