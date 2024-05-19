@@ -31,8 +31,6 @@ namespace Neo.Hosting.App.Extensions.Logging
         {
             _currentConfig = config.CurrentValue;
             _onChangeToken = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
-
-            _currentConfig.OutputDirectory = _currentConfig.OutputDirectory;
         }
 
         public ILogger CreateLogger(string categoryName) =>
