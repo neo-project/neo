@@ -80,6 +80,7 @@ namespace Neo.Wallets
 
         /// <summary>
         /// Calculates the network fee for the specified transaction.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         /// <param name="tx">The transaction to calculate.</param>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -138,9 +139,9 @@ namespace Neo.Wallets
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
-                    maxExecutionCost -= engine.GasConsumed;
+                    maxExecutionCost -= engine.FeeConsumed;
                     if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
-                    networkFee += engine.GasConsumed;
+                    networkFee += engine.FeeConsumed;
                 }
                 else if (IsSignatureContract(witnessScript))
                 {

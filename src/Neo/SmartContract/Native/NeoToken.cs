@@ -295,6 +295,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetRegisterPrice(DataCache snapshot)
         {
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_RegisterPrice)];
         }
 
@@ -327,7 +328,8 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
-            engine.AddGas(GetRegisterPrice(engine.Snapshot));
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+            engine.AddFee(GetRegisterPrice(engine.Snapshot));
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             StorageItem item = engine.Snapshot.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();

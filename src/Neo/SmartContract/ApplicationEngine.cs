@@ -36,6 +36,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
@@ -50,7 +51,9 @@ namespace Neo.SmartContract
         public static event EventHandler<LogEventArgs> Log;
 
         private static Dictionary<uint, InteropDescriptor> services;
-        private readonly long gas_amount;
+        // Total amount of GAS spent to execute.
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
+        private readonly long _feeAmount;
         private Dictionary<Type, object> states;
         private readonly DataCache originalSnapshot;
         private List<NotifyEventArgs> notifications;
@@ -58,6 +61,7 @@ namespace Neo.SmartContract
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         internal readonly uint ExecFeeFactor;
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
 
@@ -105,13 +109,22 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// GAS spent to execute.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
+        [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
         public long GasConsumed { get; private set; } = 0;
 
         /// <summary>
-        /// The remaining GAS that can be spent in order to complete the execution.
+        /// GAS spent to execute.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => gas_amount - GasConsumed;
+        public long FeeConsumed { get; private set; } = 0;
+
+        /// <summary>
+        /// The remaining GAS that can be spent in order to complete the execution.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
+        /// </summary>
+        public long GasLeft => _feeAmount - FeeConsumed;
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -167,7 +180,7 @@ namespace Neo.SmartContract
             originalSnapshot = snapshot;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
-            gas_amount = gas;
+            _feeAmount = gas;
             Diagnostic = diagnostic;
             ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
             StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
@@ -235,13 +248,13 @@ namespace Neo.SmartContract
         #endregion
 
         /// <summary>
-        /// Adds GAS to <see cref="GasConsumed"/> and checks if it has exceeded the maximum limit.
+        /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="gas">The amount of GAS to be added.</param>
-        protected internal void AddGas(long gas)
+        /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
+        protected internal void AddFee(long datoshi)
         {
-            GasConsumed = checked(GasConsumed + gas);
-            if (GasConsumed > gas_amount)
+            FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
+            if (FeeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -555,7 +568,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddGas(descriptor.FixedPrice * ExecFeeFactor);
+            AddFee(descriptor.FixedPrice * ExecFeeFactor);
 
             object[] parameters = new object[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -569,7 +582,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddGas(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
