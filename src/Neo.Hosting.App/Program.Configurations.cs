@@ -60,7 +60,7 @@ namespace Neo.Hosting.App
                 logging.AddEventSourceLogger();
 
                 // Adds Neo File Logger: outputs to "./logs/"
-                logging.AddNeoFileLogger();
+                //logging.AddNeoErrorLogger();
 
                 if (IsRunningAsService == false)
                 {

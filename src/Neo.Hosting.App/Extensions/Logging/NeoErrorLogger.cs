@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NeoFileLogger.cs file belongs to the neo project and is free
+// NeoErrorLogger.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -16,9 +16,9 @@ using System.IO;
 
 namespace Neo.Hosting.App.Extensions.Logging
 {
-    internal sealed class NeoFileLogger(
+    internal sealed class NeoErrorLogger(
         string categoryName,
-        Func<NeoFileLoggerOptions> getCurrentConfig) : ILogger
+        Func<NeoErrorLoggerOptions> getCurrentConfig) : ILogger
     {
         private const string DefaultFileNameDateFormat = "{0:MM.dd.yyyy}";
 
@@ -26,10 +26,13 @@ namespace Neo.Hosting.App.Extensions.Logging
             default!;
 
         public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) =>
-            true;
+            logLevel >= Microsoft.Extensions.Logging.LogLevel.Error;
 
         public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
+            if (IsEnabled(logLevel) == false)
+                return;
+
             var config = getCurrentConfig();
             var dateTime = config.UseUtcTimestamp ? DateTime.UtcNow : DateTime.Now;
 
@@ -39,6 +42,11 @@ namespace Neo.Hosting.App.Extensions.Logging
             var output = string.Format("[{0}] {1}: {2}[{3}] {4}{5}",
                 dateTimeString, logLevel, categoryName, eventId.Id,
                 formatter(state, exception), Environment.NewLine);
+
+            var dirInfo = new DirectoryInfo(config.OutputDirectory);
+
+            if (dirInfo.Exists == false)
+                dirInfo.Create();
 
             var fileName = Path.Combine(config.OutputDirectory, $"{fileNameDateString}{config.OutputFileExtension}");
 

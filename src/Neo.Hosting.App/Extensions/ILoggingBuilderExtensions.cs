@@ -21,20 +21,20 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class ILoggingBuilderExtensions
     {
-        public static ILoggingBuilder AddNeoFileLogger(this ILoggingBuilder builder)
+        public static ILoggingBuilder AddNeoErrorLogger(this ILoggingBuilder builder)
         {
             builder.AddConfiguration();
 
-            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, NeoFileLoggerProvider>());
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, NeoErrorLoggerProvider>());
 
-            LoggerProviderOptions.RegisterProviderOptions<NeoFileLoggerOptions, NeoFileLoggerProvider>(builder.Services);
+            LoggerProviderOptions.RegisterProviderOptions<NeoErrorLoggerOptions, NeoErrorLoggerProvider>(builder.Services);
 
             return builder;
         }
 
-        public static ILoggingBuilder AddNeoFileLogger(this ILoggingBuilder builder, Action<NeoFileLoggerOptions> configure)
+        public static ILoggingBuilder AddNeoErrorLogger(this ILoggingBuilder builder, Action<NeoErrorLoggerOptions> configure)
         {
-            builder.AddNeoFileLogger();
+            builder.AddNeoErrorLogger();
             builder.Services.Configure(configure);
 
             return builder;

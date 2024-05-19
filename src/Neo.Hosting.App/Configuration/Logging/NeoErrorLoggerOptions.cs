@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NeoFileLoggerOptions.cs file belongs to the neo project and is free
+// NeoErrorLoggerOptions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -15,7 +15,7 @@ using System.Linq;
 
 namespace Neo.Hosting.App.Configuration.Logging
 {
-    internal sealed class NeoFileLoggerOptions
+    internal sealed class NeoErrorLoggerOptions
     {
         private static readonly char[] s_invalidFileNameChars = Path.GetInvalidFileNameChars();
         private static readonly char[] s_invalidPathChars = Path.GetInvalidPathChars();
@@ -23,7 +23,7 @@ namespace Neo.Hosting.App.Configuration.Logging
         public string TimestampFormat { get; set; } = "yyyy-MM-dd HH:mm:ss.fff";
         public bool UseUtcTimestamp { get; set; } = true;
 
-        private string _outputDirectory = "logs";
+        private string _outputDirectory = Path.Combine("logs", "error");
         public string OutputDirectory
         {
             get => _outputDirectory;
