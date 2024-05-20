@@ -17,13 +17,14 @@ using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Neo.Hosting.App.Tests.UTHelpers.SetupClasses;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.NamedPipes
 {
     public class UT_NamedPipeConnectionListener : TestSetupLogging
     {
-        private static readonly IPipeMessage s_testPipeMessage = PipeMessage.Create(1, PipeCommand.GetVersion, new PipeVersion());
+        private static readonly IPipeMessage s_testPipeMessage = PipeMessage.Create(1, PipeCommand.GetVersion, PipeMessage.Null);
 
         public UT_NamedPipeConnectionListener(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 

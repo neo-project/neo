@@ -53,9 +53,9 @@ namespace Neo.Hosting.App.NamedPipes
 
         internal PipeReader Output => Application.Input;
 
-        internal PipeWriter Writer => _originalTransport.Output;
+        internal PipeWriter Writer => Transport.Output;
 
-        internal PipeReader Reader => _originalTransport.Input;
+        internal PipeReader Reader => Transport.Input;
 
         internal IDuplexPipe Application { get; private set; }
 
@@ -192,11 +192,9 @@ namespace Neo.Hosting.App.NamedPipes
 
             try
             {
-                var output = Output;
-
                 while (true)
                 {
-                    var result = await output.ReadAsync();
+                    var result = await Output.ReadAsync();
 
                     if (result.IsCanceled)
                         break;
@@ -210,7 +208,7 @@ namespace Neo.Hosting.App.NamedPipes
                             await _serverStream.WriteAsync(segment);
                     }
 
-                    output.AdvanceTo(buffer.End);
+                    Output.AdvanceTo(buffer.End);
 
                     if (result.IsCompleted)
                         break;
@@ -283,6 +281,9 @@ namespace Neo.Hosting.App.NamedPipes
         {
             try
             {
+                if (buffer.IsEmpty)
+                    return;
+
                 var message = PipeMessage.Create(buffer);
 
                 if (message is null)

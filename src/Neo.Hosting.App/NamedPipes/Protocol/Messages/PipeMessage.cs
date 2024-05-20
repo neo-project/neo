@@ -50,12 +50,13 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
         }
 
         public int Size =>
-            sizeof(ulong) +
-            sizeof(byte) +
-            sizeof(uint) +
-            sizeof(PipeCommand) +
-            sizeof(int) +
-            Payload.Size;
+            sizeof(ulong) +         // Magic
+            sizeof(byte) +          // Version
+            sizeof(uint) +          // CRC32
+            sizeof(PipeCommand) +   // Command
+            sizeof(int) +           // RequestId
+            sizeof(int) +           // Payload Size in bytes
+            Payload.Size;           // Payload
 
         public static PipeMessage Create(int requestId, PipeCommand command, IPipeMessage payload) =>
             new()

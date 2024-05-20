@@ -13,6 +13,7 @@ using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Neo.Hosting.App.Tests.UTHelpers.Extensions;
+using System;
 using Xunit.Abstractions;
 
 namespace Neo.Hosting.App.Tests.NamedPipes.Protocol

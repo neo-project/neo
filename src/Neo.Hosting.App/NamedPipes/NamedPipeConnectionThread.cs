@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
-using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using System;
 using System.Threading;
@@ -22,12 +21,8 @@ namespace Neo.Hosting.App.NamedPipes
         NamedPipeServerConnection connection,
         ILoggerFactory loggerFactory) : IThreadPoolWorkItem, IAsyncDisposable
     {
-        internal const int MaxTimeoutSeconds = 15;
-
         private readonly NamedPipeServerConnection _connection = connection;
         private readonly ILogger _logger = loggerFactory.CreateLogger<NamedPipeConnectionThread>();
-
-        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(MaxTimeoutSeconds);
 
         private Exception? _shutdownException;
 
@@ -77,7 +72,7 @@ namespace Neo.Hosting.App.NamedPipes
         {
             var memory = message.ToArray().AsMemory();
 
-            _ = await _connection.Writer.WriteAsync(memory).TimeoutAfter(_timeout);
+            _ = await _connection.Writer.WriteAsync(memory);
         }
     }
 }

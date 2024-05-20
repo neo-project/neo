@@ -40,6 +40,7 @@ namespace Neo.Hosting.App.Tests.UTHelpers.SetupClasses
 
             LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
             {
+                builder.AddDebug();
                 builder.AddProvider(new TestLoggerProvider(testOutputHelper));
                 builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
             });
