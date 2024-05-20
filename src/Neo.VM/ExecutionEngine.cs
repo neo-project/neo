@@ -166,7 +166,7 @@ namespace Neo.VM
         /// Loads the specified context into the invocation stack.
         /// </summary>
         /// <param name="context">The context to load.</param>
-        protected internal virtual void LoadContext(ExecutionContext context)
+        public virtual void LoadContext(ExecutionContext context)
         {
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
                 throw new InvalidOperationException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
