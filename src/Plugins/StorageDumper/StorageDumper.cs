@@ -30,7 +30,7 @@ namespace Neo.Plugins
 
         public override string Description => "Exports Neo-CLI status data";
 
-        public override string ConfigFile => System.IO.Path.Combine(RootPath, "StorageDumper.config");
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "StorageDumper.json");
 
         public StorageDumper()
         {

@@ -60,7 +60,7 @@ namespace Neo.Plugins
 
         public override string Description => "Built-in oracle plugin";
 
-        public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.config");
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.json");
 
         public OracleService()
         {

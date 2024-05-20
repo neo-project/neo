@@ -51,7 +51,7 @@ namespace Neo.Plugins
 
         #region Override Methods
 
-        public override string ConfigFile => Combine(RootPath, "ApplicationLogs.config");
+        public override string ConfigFile => Combine(RootPath, "ApplicationLogs.json");
 
         public override void Dispose()
         {

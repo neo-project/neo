@@ -37,7 +37,7 @@ namespace Neo.Plugins.StateService
         public const string StatePayloadCategory = "StateService";
         public override string Name => "StateService";
         public override string Description => "Enables MPT for the node";
-        public override string ConfigFile => System.IO.Path.Combine(RootPath, "StateService.config");
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "StateService.json");
 
         internal IActorRef Store;
         internal IActorRef Verifier;
