@@ -45,7 +45,7 @@ namespace Neo.Hosting.App
         {
             services.AddLogging(logging =>
             {
-                logging.ClearProviders();
+                logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
 
                 var isWindows = OperatingSystem.IsWindows();
                 if (isWindows && hostingContext.HostingEnvironment.IsNeoLocalNet() == false)
@@ -55,21 +55,18 @@ namespace Neo.Hosting.App
                 logging.AddFilter<DebugLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Trace);
                 logging.AddDebug();
 #endif
-
-                logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
                 logging.AddEventSourceLogger();
 
-                // Adds Neo File Logger: outputs to "./logs/"
-                //logging.AddNeoErrorLogger();
-
                 if (IsRunningAsService == false)
+                    logging.AddCommandLineLogger(); // Neo CommandLine Logger
+                else
                 {
                     logging.AddSimpleConsole(config =>
                     {
                         config.ColorBehavior = LoggerColorBehavior.Enabled;
                         config.SingleLine = true;
                         config.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ";
-                        config.UseUtcTimestamp = true;
+                        config.UseUtcTimestamp = false;
                     });
                 }
 

@@ -17,6 +17,7 @@ using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes;
 using System;
+using System.CommandLine.Hosting;
 using System.IO;
 
 namespace Neo.Hosting.App.Extensions
@@ -27,7 +28,7 @@ namespace Neo.Hosting.App.Extensions
         {
             hostBuilder.ConfigureServices((context, services) =>
             {
-                //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
+                services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
                 var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
                 var namedPipeTransportSection = context.Configuration.GetSection("NamedPipeTransport");
 

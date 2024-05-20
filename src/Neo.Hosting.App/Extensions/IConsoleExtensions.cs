@@ -21,26 +21,17 @@ namespace Neo.Hosting.App.Extensions
 
         public static void SetTerminalForegroundColor(this IConsole _, ConsoleColor consoleColor)
         {
-            if (s_colorsAreSupported)
-            {
-                Console.ForegroundColor = consoleColor;
-            }
+            Console.ForegroundColor = consoleColor;
         }
 
         public static void SetTerminalBackgroundColor(this IConsole _, ConsoleColor consoleColor)
         {
-            if (s_colorsAreSupported)
-            {
-                Console.BackgroundColor = consoleColor;
-            }
+            Console.BackgroundColor = consoleColor;
         }
 
         public static void ResetColor(this IConsole _)
         {
-            if (s_colorsAreSupported)
-            {
-                Console.ResetColor();
-            }
+            Console.ResetColor();
         }
 
         public static void Clear(this IConsole _) =>
@@ -49,42 +40,69 @@ namespace Neo.Hosting.App.Extensions
         public static void WriteLine(this IConsole _) =>
             Console.WriteLine();
 
-        public static void Write(this IConsole _, string value, params object[] args) =>
+        public static void Write(this IConsole console, string value, params object[] args)
+        {
             Console.Write(value, args);
+        }
+
+        public static void WriteLine(this IConsole console, string value, params object[] args)
+        {
+            Console.WriteLine(value, args);
+        }
 
         public static void InfoMessage(this IConsole console, string message)
         {
-            console.ResetColor();
-            console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
+            console.SetTerminalForegroundColor(ConsoleColor.Blue);
             console.Write("Info: ");
-            console.SetTerminalForegroundColor(ConsoleColor.White);
+            console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
             console.WriteLine(message);
+            console.ResetColor();
+        }
 
+        public static void WarningMessage(this IConsole console, string message)
+        {
+            console.SetTerminalForegroundColor(ConsoleColor.Yellow);
+            console.Write("Warning: ");
+            console.SetTerminalForegroundColor(ConsoleColor.DarkYellow);
+            console.WriteLine(message);
+            console.ResetColor();
+        }
+
+        public static void DebugMessage(this IConsole console, string message)
+        {
+            console.SetTerminalForegroundColor(ConsoleColor.Gray);
+            console.WriteLine(message);
+            console.ResetColor();
+        }
+
+        public static void TraceMessage(this IConsole console, string message)
+        {
+            console.SetTerminalForegroundColor(ConsoleColor.DarkGray);
+            console.WriteLine(message);
             console.ResetColor();
         }
 
         public static void ErrorMessage(this IConsole console, Exception exception)
         {
-            console.ResetColor();
-            console.SetTerminalForegroundColor(ConsoleColor.Red);
-
             var stackTrace = exception.InnerException?.StackTrace ?? exception.StackTrace;
 
+            console.SetTerminalForegroundColor(ConsoleColor.Red);
             Console.Error.WriteLine("Exception: ");
+            console.SetTerminalForegroundColor(ConsoleColor.DarkRed);
             Console.Error.WriteLine("   {0}", exception.InnerException?.Message ?? exception.Message);
+            console.SetTerminalForegroundColor(ConsoleColor.Red);
             Console.Error.WriteLine("Stack Trace: ");
+            console.SetTerminalForegroundColor(ConsoleColor.DarkRed);
             Console.Error.WriteLine("   {0}", stackTrace?.Trim());
-
             console.ResetColor();
         }
 
         public static void ErrorMessage(this IConsole console, string message)
         {
-            console.ResetColor();
             console.SetTerminalForegroundColor(ConsoleColor.Red);
-
-            Console.Error.WriteLine($"Error: {message}");
-
+            console.Write("Error: ");
+            console.SetTerminalForegroundColor(ConsoleColor.DarkRed);
+            console.WriteLine(message);
             console.ResetColor();
         }
 
@@ -97,8 +115,9 @@ namespace Neo.Hosting.App.Extensions
 
             if (isRedirect == false)
             {
+                console.SetTerminalForegroundColor(ConsoleColor.White);
                 console.Write("Enter password: ");
-                SetTerminalForegroundColor(console, ConsoleColor.DarkYellow);
+                console.SetTerminalForegroundColor(ConsoleColor.DarkYellow);
             }
 
             while ((userInputKeyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)

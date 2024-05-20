@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.CommandLine
 {
+    using Microsoft.Extensions.Logging;
+
     internal sealed class ConnectCommand : Command
     {
         public ConnectCommand() : base("connect", "Connect to local Neo service")
@@ -37,6 +39,7 @@ namespace Neo.Hosting.App.CommandLine
         }
 
         public new class Handler(
+            ILoggerFactory loggerFactory,
             IOptions<NeoOptions> options) : ICommandHandler
         {
             private static readonly string s_computerName = Environment.MachineName;
@@ -52,31 +55,34 @@ namespace Neo.Hosting.App.CommandLine
             {
                 var stopping = context.GetCancellationToken();
 
+                var console = loggerFactory.CreateLogger("Console");
+
                 var pipeName = PipeName ?? _options.Value.Remote.PipeName;
 
                 if (string.IsNullOrWhiteSpace(pipeName))
-                    context.Console.ErrorMessage("Pipe name is required.");
+                    console.WriteLine("Pipe name is required.");
                 else
                 {
                     _pipeEndPoint = new(pipeName);
                     var pipeStream = NamedPipeServerFactory.CreateClientStream(_pipeEndPoint);
 
-                    context.Console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
-                    context.Console.WriteLine($"Connecting to {_pipeEndPoint}...");
-                    context.Console.ResetColor();
+                    console.WriteLine($"Connecting to {_pipeEndPoint}...");
+
+                    var exitCode = 0;
 
                     try
                     {
                         await pipeStream.ConnectAsync(stopping).DefaultTimeout();
-                        await RunConsolePrompt(context, stopping);
+                        exitCode = await RunConsolePrompt(context, stopping);
                     }
                     catch (TimeoutException)
                     {
-                        context.Console.WriteLine();
-                        context.Console.ErrorMessage($"Failed to connect! Make sure service is running.");
+                        console.WriteLine();
+                        console.LogError("Failed to connect! Make sure service is running.");
+                        exitCode = -1;
                     }
 
-                    return 0;
+                    return exitCode;
                 }
 
                 return -1;
@@ -89,11 +95,11 @@ namespace Neo.Hosting.App.CommandLine
 
             private static void PrintPrompt(IConsole console)
             {
-                console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
+                console.SetTerminalForegroundColor(ConsoleColor.DarkGreen);
                 console.Write($"{s_userName}@{s_computerName}");
-                console.SetTerminalForegroundColor(ConsoleColor.White);
+                console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
                 console.Write(":~$ ");
-                console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
+                console.SetTerminalForegroundColor(ConsoleColor.White);
                 console.ResetColor();
             }
 
@@ -106,6 +112,8 @@ namespace Neo.Hosting.App.CommandLine
                     .UseParseErrorReporting()
                     .Build();
 
+                var exitCode = 0;
+
                 while (cancellationToken.IsCancellationRequested == false)
                 {
                     PrintPrompt(context.Console);
@@ -115,13 +123,13 @@ namespace Neo.Hosting.App.CommandLine
                     if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
                         continue;
 
-                    var exitCode = await parser.InvokeAsync(line, context.Console);
+                    exitCode = await parser.InvokeAsync(line, context.Console);
 
-                    if (exitCode.Is(ExitCode.Exit))
+                    if (exitCode < 0)
                         break;
                 }
 
-                return 0;
+                return exitCode;
             }
         }
     }
