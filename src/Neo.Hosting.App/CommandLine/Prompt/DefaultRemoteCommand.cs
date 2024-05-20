@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Helpers;
+using Neo.Hosting.App.Host.Service;
 using System;
 using System.CommandLine;
 
@@ -19,13 +21,17 @@ namespace Neo.Hosting.App.CommandLine.Prompt
     {
         private static string? s_executablePath;
 
-        public DefaultRemoteCommand() : base(ExecutableName, $"Your are connected to {ExecutablePath}")
+        public DefaultRemoteCommand(
+            ILoggerFactory loggerFactory,
+            NamedPipeClientService clientService) : base(ExecutableName, $"Your are connected to {ExecutablePath}")
         {
             var walletCommand = new WalletCommand();
+            var showCommand = new ShowCommand(loggerFactory, clientService);
             var helpCommand = new HelpCommand();
             var quitCommand = new QuitCommand();
 
             AddCommand(walletCommand);
+            AddCommand(showCommand);
             AddCommand(helpCommand);
             AddCommand(quitCommand);
         }

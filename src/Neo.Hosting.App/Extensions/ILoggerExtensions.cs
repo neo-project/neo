@@ -15,9 +15,9 @@ namespace Neo.Hosting.App.Extensions
 
     internal static class ILoggerExtensions
     {
-        public static void WriteLine(this ILogger logger, string message, params object[] args)
+        public static void WriteLine(this ILogger logger, string format, params object[] args)
         {
-            logger.Log(LogLevel.None, "{Text}", string.Format(message, args));
+            logger.Log(LogLevel.None, "{Text}", string.Format(format, args));
         }
 
         public static void WriteLine(this ILogger logger)

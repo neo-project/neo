@@ -72,7 +72,7 @@ namespace Neo.Hosting.App.NamedPipes
             try
             {
                 if (_clientStream.IsConnected)
-                    throw new IOException("The named pipe client is already connected.");
+                    throw new ApplicationException("The named pipe client is already connected.");
 
                 await _clientStream.ConnectAsync(cancellationToken);
 

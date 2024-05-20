@@ -13,7 +13,6 @@ using Microsoft.Extensions.Options;
 using Neo.Hosting.App.CommandLine.Prompt;
 using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Extensions;
-using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.NamedPipes;
 using System;
 using System.CommandLine;
@@ -28,6 +27,7 @@ using System.Threading.Tasks;
 namespace Neo.Hosting.App.CommandLine
 {
     using Microsoft.Extensions.Logging;
+    using Neo.Hosting.App.Host.Service;
 
     internal sealed class ConnectCommand : Command
     {
@@ -38,14 +38,15 @@ namespace Neo.Hosting.App.CommandLine
             AddOption(pipeNameOption);
         }
 
-        public new class Handler(
+        public new sealed class Handler(
+            NamedPipeClientService clientService,
             ILoggerFactory loggerFactory,
             IOptions<NeoOptions> options) : ICommandHandler
         {
             private static readonly string s_computerName = Environment.MachineName;
             private static readonly string s_userName = Environment.UserName;
 
-            private readonly IOptions<NeoOptions> _options = options;
+            private readonly NeoOptions _options = options.Value;
 
             private NamedPipeEndPoint? _pipeEndPoint;
 
@@ -54,25 +55,21 @@ namespace Neo.Hosting.App.CommandLine
             public async Task<int> InvokeAsync(InvocationContext context)
             {
                 var stopping = context.GetCancellationToken();
-
                 var console = loggerFactory.CreateLogger("Console");
-
-                var pipeName = PipeName ?? _options.Value.Remote.PipeName;
+                var pipeName = PipeName ?? _options.Remote.PipeName;
 
                 if (string.IsNullOrWhiteSpace(pipeName))
                     console.WriteLine("Pipe name is required.");
                 else
                 {
                     _pipeEndPoint = new(pipeName);
-                    var pipeStream = NamedPipeFactory.CreateClientStream(_pipeEndPoint);
-
                     console.WriteLine($"Connecting to {_pipeEndPoint}...");
 
                     var exitCode = 0;
 
                     try
                     {
-                        await pipeStream.ConnectAsync(stopping).DefaultTimeout();
+                        await clientService.ConnectAsync(_pipeEndPoint, stopping).DefaultTimeout();
                         exitCode = await RunConsolePrompt(context, stopping);
                     }
                     catch (TimeoutException)
@@ -103,11 +100,13 @@ namespace Neo.Hosting.App.CommandLine
                 console.ResetColor();
             }
 
-            public static async Task<int> RunConsolePrompt(InvocationContext context, CancellationToken cancellationToken)
+            public async Task<int> RunConsolePrompt(
+                InvocationContext context,
+                CancellationToken cancellationToken)
             {
                 context.Console.Clear();
 
-                var rootCommand = new DefaultRemoteCommand();
+                var rootCommand = new DefaultRemoteCommand(loggerFactory, clientService);
                 var parser = new CommandLineBuilder(rootCommand)
                     .UseParseErrorReporting()
                     .Build();

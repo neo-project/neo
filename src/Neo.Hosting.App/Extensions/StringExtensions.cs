@@ -13,9 +13,9 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class StringExtensions
     {
-        public static string? PadCenter(this string? str, int totalWidth, char paddingChar)
+        public static string PadCenter(this string? str, int totalWidth, char paddingChar)
         {
-            if (str is null) return str;
+            if (str is null) return string.Empty;
 
             if (str.Length >= totalWidth)
                 return str;
