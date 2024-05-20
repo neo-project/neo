@@ -137,7 +137,7 @@ namespace Neo.Hosting.App.NamedPipes
             {
                 var memory = message.ToArray().AsMemory();
 
-                await Writer.WriteAsync(memory, cancellationToken);
+                _ = await Writer.WriteAsync(memory, cancellationToken);
             }
             catch (Exception ex)
             {
