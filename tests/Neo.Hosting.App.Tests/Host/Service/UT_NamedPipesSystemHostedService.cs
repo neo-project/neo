@@ -42,11 +42,11 @@ namespace Neo.Hosting.App.Tests.Host.Service
         [Fact]
         public async Task Test_MessageProcess_GetVersion_From_Server()
         {
-            await using var connectionListener = NamedPipeServerFactory.CreateListener(NamedPipeServerFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
+            await using var connectionListener = NamedPipeFactory.CreateListener(NamedPipeFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
             using var pipeService = new NamedPipeSystemHostedService(connectionListener, loggerFactory: LoggerFactory);
             await pipeService.StartAsync(default).DefaultTimeout();
 
-            var client = NamedPipeServerFactory.CreateClientStream(pipeService.LocalEndPoint);
+            var client = NamedPipeFactory.CreateClientStream(pipeService.LocalEndPoint);
             var message = PipeMessage.Create(1, PipeCommand.GetVersion, PipeMessage.Null);
 
             await client.ConnectAsync().DefaultTimeout();

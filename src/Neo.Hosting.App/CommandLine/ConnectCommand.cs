@@ -64,7 +64,7 @@ namespace Neo.Hosting.App.CommandLine
                 else
                 {
                     _pipeEndPoint = new(pipeName);
-                    var pipeStream = NamedPipeServerFactory.CreateClientStream(_pipeEndPoint);
+                    var pipeStream = NamedPipeFactory.CreateClientStream(_pipeEndPoint);
 
                     console.WriteLine($"Connecting to {_pipeEndPoint}...");
 

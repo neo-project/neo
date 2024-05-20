@@ -28,7 +28,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes
         [Fact]
         public async Task Test_Send_And_Receive_Version_From_Server_And_Client()
         {
-            await using var connectionListener = NamedPipeServerFactory.CreateListener(NamedPipeServerFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
+            await using var connectionListener = NamedPipeFactory.CreateListener(NamedPipeFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
             using var server = new NamedPipeSystemHostedService(connectionListener, loggerFactory: LoggerFactory);
             await using var client = new NamedPipeClient(connectionListener.LocalEndPoint, LoggerFactory, null);
 
