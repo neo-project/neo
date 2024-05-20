@@ -16,6 +16,7 @@ using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.NamedPipes;
 using System;
 using System.IO;
+using System.IO.Pipes;
 using System.Net;
 
 namespace Neo.Hosting.App.Factories
@@ -36,6 +37,9 @@ namespace Neo.Hosting.App.Factories
             ILoggerFactory? loggerFactory = null) =>
             new(endPoint, loggerFactory ?? NullLoggerFactory.Instance, Options.Create(options ?? new()));
 
+        public static NamedPipeClientStream CreateClientStream(NamedPipeEndPoint remoteEndPoint) =>
+            new(remoteEndPoint.ServerName, remoteEndPoint.PipeName, PipeDirection.InOut,
+                PipeOptions.WriteThrough | PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         public static NamedPipeEndPoint CreateEndPoint(string pipeName) =>
             new(pipeName, LocalComputerServerName);
 
