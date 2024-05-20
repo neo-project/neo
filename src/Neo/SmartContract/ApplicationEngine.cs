@@ -384,7 +384,7 @@ namespace Neo.SmartContract
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
 
-        internal override void LoadContext(ExecutionContext context)
+        protected internal override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
