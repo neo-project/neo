@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.Host.Service
 {
-    internal sealed class NamedPipesSystemHostedService : IHostedService, IDisposable
+    internal sealed class NamedPipeSystemHostedService : IHostedService, IDisposable
     {
         public NamedPipeEndPoint LocalEndPoint => _namedPipeListener.LocalEndPoint;
 
@@ -36,7 +36,7 @@ namespace Neo.Hosting.App.Host.Service
         private bool _hasStarted;
         private int _stopping;
 
-        public NamedPipesSystemHostedService(
+        public NamedPipeSystemHostedService(
             NamedPipeServerListener listener,
             ILoggerFactory? loggerFactory = null)
         {
@@ -55,7 +55,7 @@ namespace Neo.Hosting.App.Host.Service
             try
             {
                 if (_hasStarted)
-                    throw new InvalidOperationException($"{nameof(NamedPipesSystemHostedService)} has already been started.");
+                    throw new InvalidOperationException($"{nameof(NamedPipeSystemHostedService)} has already been started.");
 
                 _hasStarted = true;
                 _logger.LogInformation("NamedPipeSystem started.");
@@ -116,7 +116,7 @@ namespace Neo.Hosting.App.Host.Service
             try
             {
                 if (_stopping == 1)
-                    throw new InvalidOperationException($"{nameof(NamedPipesSystemHostedService)} has already been stopped.");
+                    throw new InvalidOperationException($"{nameof(NamedPipeSystemHostedService)} has already been stopped.");
 
                 _logger.LogInformation("Now listening on: {EndPoint}", LocalEndPoint);
 

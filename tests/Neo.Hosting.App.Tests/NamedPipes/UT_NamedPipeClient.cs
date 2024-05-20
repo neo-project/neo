@@ -29,7 +29,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes
         public async Task Test()
         {
             await using var connectionListener = NamedPipeServerFactory.CreateListener(new("NeoTestPipe"), loggerFactory: LoggerFactory);
-            using var server = new NamedPipesSystemHostedService(connectionListener, loggerFactory: LoggerFactory);
+            using var server = new NamedPipeSystemHostedService(connectionListener, loggerFactory: LoggerFactory);
             await using var client = new NamedPipeClient(connectionListener.LocalEndPoint, LoggerFactory, null);
 
             // Server startup

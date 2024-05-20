@@ -29,11 +29,11 @@ namespace Neo.Hosting.App.CommandLine
         public new sealed class Handler : ICommandHandler
         {
             private readonly NeoSystemHostedService _neoSystemHostedService;
-            private readonly NamedPipesSystemHostedService _ipcSystemHostedService;
+            private readonly NamedPipeSystemHostedService _ipcSystemHostedService;
 
             public Handler(
                 NeoSystemHostedService neoSystemHostedService,
-                NamedPipesSystemHostedService promptSystemHostedService)
+                NamedPipeSystemHostedService promptSystemHostedService)
             {
                 _neoSystemHostedService = neoSystemHostedService;
                 _ipcSystemHostedService = promptSystemHostedService;

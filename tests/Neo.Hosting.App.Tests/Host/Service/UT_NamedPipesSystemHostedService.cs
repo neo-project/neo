@@ -41,7 +41,7 @@ namespace Neo.Hosting.App.Tests.Host.Service
         [Fact]
         public async Task Test_MessageProcess_GetVersion_From_Server()
         {
-            var pipeService = Host.Services.GetRequiredService<NamedPipesSystemHostedService>();
+            var pipeService = Host.Services.GetRequiredService<NamedPipeSystemHostedService>();
             await pipeService.StartAsync(default).DefaultTimeout();
 
             var client = NamedPipeServerFactory.CreateClientStream(pipeService.LocalEndPoint);

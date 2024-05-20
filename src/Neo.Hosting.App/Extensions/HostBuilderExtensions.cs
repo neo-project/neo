@@ -38,7 +38,7 @@ namespace Neo.Hosting.App.Extensions
                 services.AddSingleton<NamedPipeEndPoint>();
                 services.AddSingleton<NamedPipeServerListener>();
                 services.AddSingleton<NeoSystemHostedService>();
-                services.AddSingleton<NamedPipesSystemHostedService>();
+                services.AddSingleton<NamedPipeSystemHostedService>();
 
                 configure?.Invoke(context, services);
             });
