@@ -11,7 +11,6 @@
 
 using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
-using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Host;
 using Neo.Network.P2P;
 using System;
@@ -101,7 +100,7 @@ namespace Neo.Hosting.App.Providers
                 ["PLUGIN:VERSION"] = $"{Program.ApplicationVersion.ToString(3)}",
 
                 // Remote
-                ["REMOTE:PIPENAME"] = NamedPipeServerFactory.GetUniquePipeName(),
+                ["REMOTE:PIPENAME"] = $"NEO_SERVICE",
                 ["REMOTE:MAXPIPES"] = "16",
             };
 

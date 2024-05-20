@@ -31,7 +31,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes
         [Fact]
         public async Task BidirectionalStream_ServerReadsDataAndCompletes_GracefullyClosed()
         {
-            await using var connectionListener = NamedPipeServerFactory.CreateListener(new("NeoTestPipe"), loggerFactory: LoggerFactory);
+            await using var connectionListener = NamedPipeServerFactory.CreateListener(NamedPipeServerFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
             var clientConnection = NamedPipeServerFactory.CreateClientStream(connectionListener.LocalEndPoint);
 
             // Server startup

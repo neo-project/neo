@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Extensions;
@@ -28,7 +29,7 @@ using Xunit.Sdk;
 
 namespace Neo.Hosting.App.Tests.Host.Service
 {
-    public class UT_NamedPipesSystemHostedService : TestSetupIHost
+    public class UT_NamedPipesSystemHostedService : TestSetupLogging
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
@@ -41,7 +42,8 @@ namespace Neo.Hosting.App.Tests.Host.Service
         [Fact]
         public async Task Test_MessageProcess_GetVersion_From_Server()
         {
-            var pipeService = Host.Services.GetRequiredService<NamedPipeSystemHostedService>();
+            await using var connectionListener = NamedPipeServerFactory.CreateListener(NamedPipeServerFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
+            using var pipeService = new NamedPipeSystemHostedService(connectionListener, loggerFactory: LoggerFactory);
             await pipeService.StartAsync(default).DefaultTimeout();
 
             var client = NamedPipeServerFactory.CreateClientStream(pipeService.LocalEndPoint);

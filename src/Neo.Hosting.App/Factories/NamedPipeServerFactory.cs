@@ -25,8 +25,8 @@ namespace Neo.Hosting.App.Factories
     {
         public const string LocalComputerServerName = ".";
 
-        public static string GetUniquePipeName() =>
-            Path.GetRandomFileName();
+        public static NamedPipeEndPoint GetUniquePipeName() =>
+            new(Path.GetRandomFileName());
 
         public static bool CanBind(EndPoint endPoint) =>
             endPoint is NamedPipeEndPoint;
