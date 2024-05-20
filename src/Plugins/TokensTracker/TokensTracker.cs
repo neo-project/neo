@@ -35,6 +35,8 @@ namespace Neo.Plugins
 
         public override string Description => "Enquiries balances and transaction history of accounts through RPC";
 
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "TokensTracker.config");
+
         public TokensTracker()
         {
             Blockchain.Committing += OnCommitting;
