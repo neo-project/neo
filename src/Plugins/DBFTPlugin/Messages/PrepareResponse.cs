@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using System;
 using System.IO;
 
 namespace Neo.Consensus
@@ -18,7 +19,9 @@ namespace Neo.Consensus
     {
         public UInt256 PreparationHash;
 
-        public override int Size => base.Size + PreparationHash.Size;
+        // priority or fallback
+        public uint PId;
+        public override int Size => base.Size + PreparationHash.Size + sizeof(uint);
 
         public PrepareResponse() : base(ConsensusMessageType.PrepareResponse) { }
 
@@ -26,12 +29,14 @@ namespace Neo.Consensus
         {
             base.Deserialize(ref reader);
             PreparationHash = reader.ReadSerializable<UInt256>();
+            PId = reader.ReadUInt32();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
             writer.Write(PreparationHash);
+            writer.Write(PId);
         }
     }
 }

@@ -80,19 +80,21 @@ namespace Neo.Consensus
         {
             context.Reset(viewNumber);
             if (viewNumber > 0)
-                Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
-            Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
+                Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPriorityPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
+            uint blockCurrentIndex = context.Block[0].Index;
+            Log($"Initialize: height={blockCurrentIndex} view={viewNumber} index={context.MyIndex} role={(context.IsPriorityPrimary ? (viewNumber > 0 ? "Primary" : "PrimaryP1") : (context.IsFallbackPrimary ? "PrimaryP2" : (context.WatchOnly ? "WatchOnly" : "Backup")))}");
             if (context.WatchOnly) return;
-            if (context.IsPrimary)
+            if (context.IsAPrimary)
             {
                 if (isRecovering)
                 {
-                    ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << (viewNumber + 1)));
+                    ChangeTimer(TimeSpan.FromMilliseconds(context.PrimaryTimerMultiplier * (neoSystem.Settings.MillisecondsPerBlock << (viewNumber + 1))));
                 }
                 else
                 {
-                    TimeSpan span = neoSystem.Settings.TimePerBlock;
-                    if (block_received_index + 1 == context.Block.Index)
+                    // If both Primaries already expired move to Zero or take the difference
+                    TimeSpan span = TimeSpan.FromMilliseconds(context.PrimaryTimerMultiplier * neoSystem.Settings.MillisecondsPerBlock);
+                    if (block_received_index + 1 == blockCurrentIndex)
                     {
                         var diff = TimeProvider.Current.UtcNow - block_received_time;
                         if (diff >= span)
@@ -144,16 +146,20 @@ namespace Neo.Consensus
             started = true;
             if (!dbftSettings.IgnoreRecoveryLogs && context.Load())
             {
-                if (context.Transactions != null)
+                // Check if any preparation was obtained and extract the primary ID
+                var pId = context.RequestSentOrReceived
+                    ? (context.PreparationPayloads[0][context.Block[0].PrimaryIndex] != null ? 0u : 1u)
+                    : 0u;
+                if (context.Transactions[pId] != null)
                 {
                     blockchain.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
                     {
-                        Transactions = context.Transactions.Values
+                        Transactions = context.Transactions[pId].Values
                     }).Wait();
                 }
                 if (context.CommitSent)
                 {
-                    CheckPreparations();
+                    CheckPreparations(pId);
                     return;
                 }
             }
@@ -166,12 +172,15 @@ namespace Neo.Consensus
         private void OnTimer(Timer timer)
         {
             if (context.WatchOnly || context.BlockSent) return;
-            if (timer.Height != context.Block.Index || timer.ViewNumber != context.ViewNumber) return;
-            if (context.IsPrimary && !context.RequestSentOrReceived)
+            if (timer.Height != context.Block[0].Index || timer.ViewNumber != context.ViewNumber) return;
+            if (context.IsAPrimary && !context.RequestSentOrReceived)
             {
-                SendPrepareRequest();
+                if (context.IsPriorityPrimary)
+                    SendPrepareRequest(0);
+                else
+                    SendPrepareRequest(1);
             }
-            else if ((context.IsPrimary && context.RequestSentOrReceived) || context.IsBackup)
+            else if ((context.IsAPrimary && context.RequestSentOrReceived) || context.IsBackup)
             {
                 if (context.CommitSent)
                 {
@@ -183,10 +192,13 @@ namespace Neo.Consensus
                 else
                 {
                     var reason = ChangeViewReason.Timeout;
-
-                    if (context.Block != null && context.TransactionHashes?.Length > context.Transactions?.Count)
+                    if (context.RequestSentOrReceived)
                     {
-                        reason = ChangeViewReason.TxNotFound;
+                        var pId = context.PreparationPayloads[0][context.Block[0].PrimaryIndex] != null ? 0u : 1u;
+                        if (context.Block[pId] != null && context.TransactionHashes[pId]?.Length > context.Transactions[pId]?.Count)
+                        {
+                            reason = ChangeViewReason.TxNotFound;
+                        }
                     }
 
                     RequestChangeView(reason);
@@ -194,25 +206,25 @@ namespace Neo.Consensus
             }
         }
 
-        private void SendPrepareRequest()
+        private void SendPrepareRequest(uint pId)
         {
-            Log($"Sending {nameof(PrepareRequest)}: height={context.Block.Index} view={context.ViewNumber}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+            Log($"Sending {nameof(PrepareRequest)}: height={context.Block[pId].Index} view={context.ViewNumber} Id={pId}");
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest(pId) });
 
             if (context.Validators.Length == 1)
-                CheckPreparations();
+                CheckPreparations(pId);
 
-            if (context.TransactionHashes.Length > 0)
+            if (context.TransactionHashes[pId].Length > 0)
             {
-                foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
+                foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes[pId]))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
-            ChangeTimer(TimeSpan.FromMilliseconds((neoSystem.Settings.MillisecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? neoSystem.Settings.MillisecondsPerBlock : 0)));
+            ChangeTimer(TimeSpan.FromMilliseconds(context.PrimaryTimerMultiplier * ((neoSystem.Settings.MillisecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? neoSystem.Settings.MillisecondsPerBlock : 0))));
         }
 
         private void RequestRecovery()
         {
-            Log($"Sending {nameof(RecoveryRequest)}: height={context.Block.Index} view={context.ViewNumber} nc={context.CountCommitted} nf={context.CountFailed}");
+            Log($"Sending {nameof(RecoveryRequest)}: height={context.Block[0].Index} view={context.ViewNumber} nc={context.CountCommitted} nf={context.CountFailed}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryRequest() });
         }
 
@@ -231,7 +243,7 @@ namespace Neo.Consensus
             }
             else
             {
-                Log($"Sending {nameof(ChangeView)}: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
+                Log($"Sending {nameof(ChangeView)}: height={context.Block[0].Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(reason) });
                 CheckExpectedView(expectedView);
             }
@@ -249,57 +261,71 @@ namespace Neo.Consensus
         {
             if (!context.IsBackup || context.NotAcceptingPayloadsDueToViewChanging || !context.RequestSentOrReceived || context.ResponseSent || context.BlockSent)
                 return;
-            if (context.Transactions.ContainsKey(transaction.Hash)) return;
-            if (!context.TransactionHashes.Contains(transaction.Hash)) return;
+
+            for (uint i = 0; i <= 1; i++)
+                if (context.Transactions[i] is not null && context.Transactions[i].ContainsKey(transaction.Hash))
+                    return;
+
+            bool hashNotRequestedByPrimary = context.TransactionHashes[0] is not null && !context.TransactionHashes[0].Contains(transaction.Hash);
+            bool hashNotRequestedByBackup = context.TransactionHashes[1] is not null && !context.TransactionHashes[1].Contains(transaction.Hash);
+
+            if (hashNotRequestedByPrimary && hashNotRequestedByBackup) return;
+
             AddTransaction(transaction, true);
         }
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (verify)
-            {
-                // At this step we're sure that there's no on-chain transaction that conflicts with
-                // the provided tx because of the previous Blockchain's OnReceive check. Thus, we only
-                // need to check that current context doesn't contain conflicting transactions.
-                VerifyResult result;
-
-                // Firstly, check whether tx has Conlicts attribute with the hash of one of the context's transactions.
-                foreach (var h in tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
+            bool returnValue = false;
+            for (uint i = 0; i <= 1; i++)
+                if (context.TransactionHashes[i] is not null && context.TransactionHashes[i].Contains(tx.Hash))
                 {
-                    if (context.TransactionHashes.Contains(h))
+                    if (verify)
                     {
-                        result = VerifyResult.HasConflicts;
-                        Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                        RequestChangeView(ChangeViewReason.TxInvalid);
-                        return false;
-                    }
-                }
-                // After that, check whether context's transactions have Conflicts attribute with tx's hash.
-                foreach (var pooledTx in context.Transactions.Values)
-                {
-                    if (pooledTx.GetAttributes<Conflicts>().Select(attr => attr.Hash).Contains(tx.Hash))
-                    {
-                        result = VerifyResult.HasConflicts;
-                        Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                        RequestChangeView(ChangeViewReason.TxInvalid);
-                        return false;
-                    }
-                }
+                        // At this step we're sure that there's no on-chain transaction that conflicts with
+                        // the provided tx because of the previous Blockchain's OnReceive check. Thus, we only
+                        // need to check that current context doesn't contain conflicting transactions.
+                        VerifyResult result;
 
-                // We've ensured that there's no conlicting transactions in the context, thus, can safely provide an empty conflicting list
-                // for futher verification.
-                var conflictingTxs = new List<Transaction>();
-                result = tx.Verify(neoSystem.Settings, context.Snapshot, context.VerificationContext, conflictingTxs);
-                if (result != VerifyResult.Succeed)
-                {
-                    Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                    RequestChangeView(result == VerifyResult.PolicyFail ? ChangeViewReason.TxRejectedByPolicy : ChangeViewReason.TxInvalid);
-                    return false;
+                        // Firstly, check whether tx has Conlicts attribute with the hash of one of the context's transactions.
+                        foreach (var h in tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
+                        {
+                            if (context.TransactionHashes[i].Contains(h))
+                            {
+                                result = VerifyResult.HasConflicts;
+                                Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                                RequestChangeView(ChangeViewReason.TxInvalid);
+                                return false;
+                            }
+                        }
+                        // After that, check whether context's transactions have Conflicts attribute with tx's hash.
+                        foreach (var pooledTx in context.Transactions[i].Values)
+                        {
+                            if (pooledTx.GetAttributes<Conflicts>().Select(attr => attr.Hash).Contains(tx.Hash))
+                            {
+                                result = VerifyResult.HasConflicts;
+                                Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                                RequestChangeView(ChangeViewReason.TxInvalid);
+                                return false;
+                            }
+                        }
+
+                        // We've ensured that there's no conlicting transactions in the context, thus, can safely provide an empty conflicting list
+                        // for futher verification.
+                        var conflictingTxs = new List<Transaction>();
+                        result = tx.Verify(neoSystem.Settings, context.Snapshot, context.VerificationContext[i], conflictingTxs);
+                        if (result != VerifyResult.Succeed)
+                        {
+                            Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                            RequestChangeView(result == VerifyResult.PolicyFail ? ChangeViewReason.TxRejectedByPolicy : ChangeViewReason.TxInvalid);
+                            return false;
+                        }
+                    }
+                    context.Transactions[i][tx.Hash] = tx;
+                    context.VerificationContext[i].AddTransaction(tx);
+                    returnValue = returnValue || CheckPrepareResponse(i);
                 }
-            }
-            context.Transactions[tx.Hash] = tx;
-            context.VerificationContext.AddTransaction(tx);
-            return CheckPrepareResponse();
+            return returnValue;
         }
 
         private void ChangeTimer(TimeSpan delay)
@@ -309,7 +335,7 @@ namespace Neo.Consensus
             timer_token.CancelIfNotNull();
             timer_token = Context.System.Scheduler.ScheduleTellOnceCancelable(delay, Self, new Timer
             {
-                Height = context.Block.Index,
+                Height = context.Block[0].Index,
                 ViewNumber = context.ViewNumber
             }, ActorRefs.NoSender);
         }

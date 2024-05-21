@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Commit.cs file belongs to the neo project and is free
+// PreCommit.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,33 +10,31 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System;
 using System.IO;
 
 namespace Neo.Consensus
 {
-    public class Commit : ConsensusMessage
+    public class PreCommit : ConsensusMessage
     {
-        public ReadOnlyMemory<byte> Signature;
+        public UInt256 PreparationHash;
 
         // priority or fallback
         public uint PId;
+        public override int Size => base.Size + PreparationHash.Size + sizeof(uint);
 
-        public override int Size => base.Size + Signature.Length + sizeof(uint);
-
-        public Commit() : base(ConsensusMessageType.Commit) { }
+        public PreCommit() : base(ConsensusMessageType.PreCommit) { }
 
         public override void Deserialize(ref MemoryReader reader)
         {
             base.Deserialize(ref reader);
-            Signature = reader.ReadMemory(64);
+            PreparationHash = reader.ReadSerializable<UInt256>();
             PId = reader.ReadUInt32();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(Signature.Span);
+            writer.Write(PreparationHash);
             writer.Write(PId);
         }
     }

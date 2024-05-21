@@ -45,6 +45,18 @@ namespace Neo.Consensus
             };
         }
 
+        private PreCommitPayloadCompact GetPreCommitPayloadCompact(ExtensiblePayload payload)
+        {
+            PreCommit preCommit = GetMessage<PreCommit>(payload);
+            return new PreCommitPayloadCompact
+            {
+                ViewNumber = preCommit.ViewNumber,
+                ValidatorIndex = preCommit.ValidatorIndex,
+                PreparationHash = preCommit.PreparationHash,
+                InvocationScript = payload.Witness.InvocationScript,
+            };
+        }
+
         private CommitPayloadCompact GetCommitPayloadCompact(ExtensiblePayload payload)
         {
             Commit message = GetMessage<Commit>(payload);
@@ -67,10 +79,19 @@ namespace Neo.Consensus
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte GetPrimaryIndex(byte viewNumber)
+        public byte GetPriorityPrimaryIndex(byte viewNumber)
         {
-            int p = ((int)Block.Index - viewNumber) % Validators.Length;
+            int p = ((int)Block[0].Index - viewNumber) % Validators.Length;
             return p >= 0 ? (byte)p : (byte)(p + Validators.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte GetFallbackPrimaryIndex(byte priorityPrimaryIndex)
+        {
+            if (Validators.Length <= 1) return priorityPrimaryIndex;
+            int p = ((int)Block[0].Index + 1) % (Validators.Length - 1);
+            p = p >= 0 ? (byte)p : (byte)(p + Validators.Length);
+            return p < priorityPrimaryIndex ? (byte)p : (byte)(p + 1);
         }
 
         public UInt160 GetSender(int index)
@@ -81,18 +102,18 @@ namespace Neo.Consensus
         /// <summary>
         /// Return the expected block size
         /// </summary>
-        public int GetExpectedBlockSize()
+        public int GetExpectedBlockSize(uint pId)
         {
-            return GetExpectedBlockSizeWithoutTransactions(Transactions.Count) + // Base size
-                Transactions.Values.Sum(u => u.Size);   // Sum Txs
+            return GetExpectedBlockSizeWithoutTransactions(Transactions[pId].Count) + // Base size
+                Transactions[pId].Values.Sum(u => u.Size);   // Sum Txs
         }
 
         /// <summary>
         /// Return the expected block system fee
         /// </summary>
-        public long GetExpectedBlockSystemFee()
+        public long GetExpectedBlockSystemFee(uint pId)
         {
-            return Transactions.Values.Sum(u => u.SystemFee);  // Sum Txs
+            return Transactions[pId].Values.Sum(u => u.SystemFee);  // Sum Txs
         }
 
         /// <summary>
