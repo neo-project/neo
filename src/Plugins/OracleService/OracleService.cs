@@ -309,7 +309,7 @@ namespace Neo.Plugins
 
                     var txSign = responseTx.Sign(account.GetKey(), system.Settings.Network);
                     var backTxSign = backupTx.Sign(account.GetKey(), system.Settings.Network);
-                    
+
                     AddResponseTxSign(snapshot, requestId, oraclePub, txSign, responseTx, backupTx, backTxSign);
                     tasks.Add(SendResponseSignatureAsync(requestId, txSign, account.GetKey()));
 
