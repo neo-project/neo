@@ -51,14 +51,14 @@ jobs:
         dotnet test ./tests/Neo.Network.RPC.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
         dotnet test ./tests/Neo.Plugins.OracleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
         dotnet test ./tests/Neo.Plugins.RpcServer.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
-        dotnet test ./tests/Neo.Plugins.Storage.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat='coveralls'
+        dotnet test ./tests/Neo.Plugins.Storage.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat='cobertura'
   
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.2.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        format: coveralls
+        format: cobertura
         files: ${{ github.workspace }}/TestResults/coverage/*
 
   PublishPackage:
