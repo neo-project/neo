@@ -29,14 +29,19 @@ namespace Neo.Hosting.App.NamedPipes
         {
             var responseMessage = message.Command switch
             {
-                PipeCommand.GetVersion => OnVersion(message.RequestId),
+                PipeCommand.GetVersion => OnVersion(message),
+                PipeCommand.GetBlock => OnBlock(message),
                 _ => CreateErrorResponse(message.RequestId, new InvalidDataException()),
             };
 
             await WriteAsync(responseMessage);
         }
+        private PipeMessage OnVersion(PipeMessage message) =>
+            PipeMessage.Create(message.RequestId, PipeCommand.Version, new PipeVersion());
 
-        private PipeMessage OnVersion(int requestId) =>
-            PipeMessage.Create(requestId, PipeCommand.Version, new PipeVersion());
+        private PipeMessage OnBlock(PipeMessage message)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

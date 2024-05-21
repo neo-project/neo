@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol
 {
@@ -20,6 +21,12 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 
         [PipeProtocol(typeof(PipeVersion))]
         Version = 0x02,
+
+        [PipeProtocol(typeof(PipeNullPayload))]
+        GetBlock = 0x03,
+
+        [PipeProtocol(typeof(PipeSerializable<Block>))]
+        Block = 0x04,
 
         [PipeProtocol(typeof(PipeException))]
         Exception = 0xc0,

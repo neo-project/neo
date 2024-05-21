@@ -16,6 +16,7 @@ using Neo.Hosting.App.NamedPipes;
 using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.Hosting.App.Tests.UTHelpers.SetupClasses;
+using System;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 
@@ -39,17 +40,20 @@ namespace Neo.Hosting.App.Tests.NamedPipes
             var clientConnection = await client.ConnectAsync().DefaultTimeout();
 
             // Client sending data
-            var versionMessage = PipeMessage.Create(1, PipeCommand.GetVersion, PipeMessage.Null);
+            var requestId = Random.Shared.Next();
+            var versionMessage = PipeMessage.Create(requestId, PipeCommand.GetVersion, PipeMessage.Null);
             await clientConnection.WriteAsync(versionMessage).DefaultTimeout();
 
             // client accepting message
             var message = await clientConnection.ReadAsync().DefaultTimeout();
             Assert.NotNull(message);
+            Assert.IsType<PipeVersion>(message.Payload);
 
             // Server and Client shutdown
             await server.StopAsync(default).DefaultTimeout();
             await clientConnection.DisposeAsync();
 
+            Assert.Equal(requestId, message.RequestId);
             Assert.NotEqual(PipeMessage.Null, message.Payload);
             Assert.Equal(PipeCommand.Version, message.Command);
         }
