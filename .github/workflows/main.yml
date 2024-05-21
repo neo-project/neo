@@ -52,7 +52,7 @@ jobs:
         dotnet test ./tests/Neo.Plugins.OracleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
         dotnet test ./tests/Neo.Plugins.RpcServer.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
         dotnet test ./tests/Neo.Plugins.Storage.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat='lcov'
-        cat /home/runner/work/neo/neo/TestResults/coverage/coverage.info
+        cat ${{ github.workspace }}/TestResults/coverage/coverage.info
   
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
