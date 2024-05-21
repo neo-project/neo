@@ -126,6 +126,7 @@ namespace Neo.Plugins
                 ConsoleHelper.Warning("Please open wallet first!");
                 return;
             }
+
             if (!CheckOracleAvaiblable(system.StoreView, out ECPoint[] oracles))
             {
                 ConsoleHelper.Warning("The oracle service is unavailable");
@@ -308,6 +309,7 @@ namespace Neo.Plugins
 
                     var txSign = responseTx.Sign(account.GetKey(), system.Settings.Network);
                     var backTxSign = backupTx.Sign(account.GetKey(), system.Settings.Network);
+                    
                     AddResponseTxSign(snapshot, requestId, oraclePub, txSign, responseTx, backupTx, backTxSign);
                     tasks.Add(SendResponseSignatureAsync(requestId, txSign, account.GetKey()));
 
