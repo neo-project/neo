@@ -10,5 +10,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <None Update="StorageDumper.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

@@ -17,4 +17,10 @@
     </ProjectReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="OracleService.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

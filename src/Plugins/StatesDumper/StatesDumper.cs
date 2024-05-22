@@ -30,6 +30,8 @@ namespace Neo.Plugins
 
         public override string Description => "Exports Neo-CLI status data";
 
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "StatesDumper.json");
+
         public StatesDumper()
         {
             Blockchain.Committing += OnCommitting;

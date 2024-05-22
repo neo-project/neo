@@ -48,9 +48,9 @@ namespace Neo.Plugins.StateService.Storage
         {
             if (singleton != null) throw new InvalidOperationException(nameof(StateStore));
             this.system = system;
-            store = StatePlugin.System.LoadStore(path);
+            store = StatePlugin._system.LoadStore(path);
             singleton = this;
-            StatePlugin.System.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            StatePlugin._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
             UpdateCurrentSnapshot();
         }
 
@@ -114,7 +114,7 @@ namespace Neo.Plugins.StateService.Storage
             using var state_snapshot = Singleton.GetSnapshot();
             StateRoot local_root = state_snapshot.GetStateRoot(state_root.Index);
             if (local_root is null || local_root.Witness != null) return false;
-            if (!state_root.Verify(StatePlugin.System.Settings, StatePlugin.System.StoreView)) return false;
+            if (!state_root.Verify(StatePlugin._system.Settings, StatePlugin._system.StoreView)) return false;
             if (local_root.RootHash != state_root.RootHash) return false;
             state_snapshot.AddValidatedStateRoot(state_root);
             state_snapshot.Commit();
