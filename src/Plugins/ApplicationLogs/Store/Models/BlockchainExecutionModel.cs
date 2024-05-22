@@ -19,15 +19,15 @@ namespace ApplicationLogs.Store.Models
 {
     public class BlockchainExecutionModel
     {
-        public TriggerType Trigger { get; private init; } = TriggerType.All;
-        public VMState VmState { get; private init; } = VMState.NONE;
-        public string Exception { get; private init; } = string.Empty;
-        public long GasConsumed { get; private init; } = 0L;
-        public StackItem[] Stack { get; private init; } = [];
-        public BlockchainEventModel[] Notifications { get; set; } = [];
-        public ApplicationEngineLogModel[] Logs { get; set; } = [];
+        public required TriggerType Trigger { get; init; }
+        public required VMState VmState { get; init; }
+        public required string Exception { get; init; }
+        public required long GasConsumed { get; init; }
+        public required StackItem[] Stack { get; init; }
+        public required BlockchainEventModel[] Notifications { get; set; }
+        public required ApplicationEngineLogModel[] Logs { get; set; }
 
-        public static BlockchainExecutionModel Create(TriggerType trigger, ExecutionLogState executionLogState, StackItem[] stack) =>
+        public static BlockchainExecutionModel Create(TriggerType trigger, ExecutionLogState executionLogState, params StackItem[] stack) =>
             new()
             {
                 Trigger = trigger,
@@ -35,6 +35,8 @@ namespace ApplicationLogs.Store.Models
                 Exception = executionLogState.Exception ?? string.Empty,
                 GasConsumed = executionLogState.GasConsumed,
                 Stack = stack,
+                Notifications = [],
+                Logs = []
             };
     }
 }
