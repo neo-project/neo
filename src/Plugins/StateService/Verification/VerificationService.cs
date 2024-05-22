@@ -28,7 +28,7 @@ namespace Neo.Plugins.StateService.Verification
         public class BlockPersisted { public uint Index; }
         public const int MaxCachedVerificationProcessCount = 10;
         private class Timer { public uint Index; }
-        private static readonly uint TimeoutMilliseconds = StatePlugin.System.Settings.MillisecondsPerBlock;
+        private static readonly uint TimeoutMilliseconds = StatePlugin._system.Settings.MillisecondsPerBlock;
         private static readonly uint DelayMilliseconds = 3000;
         private readonly Wallet wallet;
         private readonly ConcurrentDictionary<uint, VerificationContext> contexts = new ConcurrentDictionary<uint, VerificationContext>();
@@ -36,14 +36,14 @@ namespace Neo.Plugins.StateService.Verification
         public VerificationService(Wallet wallet)
         {
             this.wallet = wallet;
-            StatePlugin.System.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            StatePlugin._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         private void SendVote(VerificationContext context)
         {
             if (context.VoteMessage is null) return;
             Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay vote, height={context.RootIndex}, retry={context.Retries}");
-            StatePlugin.System.Blockchain.Tell(context.VoteMessage);
+            StatePlugin._system.Blockchain.Tell(context.VoteMessage);
         }
 
         private void OnStateRootVote(Vote vote)
@@ -60,7 +60,7 @@ namespace Neo.Plugins.StateService.Verification
             {
                 if (context.StateRootMessage is null) return;
                 Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay state root, height={context.StateRoot.Index}, root={context.StateRoot.RootHash}");
-                StatePlugin.System.Blockchain.Tell(context.StateRootMessage);
+                StatePlugin._system.Blockchain.Tell(context.StateRootMessage);
             }
         }
 

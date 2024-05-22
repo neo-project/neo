@@ -37,11 +37,12 @@ namespace Neo.Plugins.StateService
         public const string StatePayloadCategory = "StateService";
         public override string Name => "StateService";
         public override string Description => "Enables MPT for the node";
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "StateService.json");
 
         internal IActorRef Store;
         internal IActorRef Verifier;
 
-        internal static NeoSystem System;
+        internal static NeoSystem _system;
         private IWalletProvider walletProvider;
 
         public StatePlugin()
@@ -58,9 +59,9 @@ namespace Neo.Plugins.StateService
         protected override void OnSystemLoaded(NeoSystem system)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
-            System = system;
-            Store = System.ActorSystem.ActorOf(StateStore.Props(this, string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"))));
-            System.ServiceAdded += NeoSystem_ServiceAdded;
+            _system = system;
+            Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"))));
+            _system.ServiceAdded += NeoSystem_ServiceAdded;
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
         }
 
@@ -69,7 +70,7 @@ namespace Neo.Plugins.StateService
             if (service is IWalletProvider)
             {
                 walletProvider = service as IWalletProvider;
-                System.ServiceAdded -= NeoSystem_ServiceAdded;
+                _system.ServiceAdded -= NeoSystem_ServiceAdded;
                 if (Settings.Default.AutoVerify)
                 {
                     walletProvider.WalletChanged += WalletProvider_WalletChanged;
@@ -88,8 +89,8 @@ namespace Neo.Plugins.StateService
             base.Dispose();
             Blockchain.Committing -= OnCommitting;
             Blockchain.Committed -= OnCommitted;
-            if (Store is not null) System.EnsureStopped(Store);
-            if (Verifier is not null) System.EnsureStopped(Verifier);
+            if (Store is not null) _system.EnsureStopped(Store);
+            if (Verifier is not null) _system.EnsureStopped(Verifier);
         }
 
         private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
@@ -107,7 +108,7 @@ namespace Neo.Plugins.StateService
         [ConsoleCommand("start states", Category = "StateService", Description = "Start as a state verifier if wallet is open")]
         private void OnStartVerifyingState()
         {
-            if (System is null || System.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
             Start(walletProvider.GetWallet());
         }
 
@@ -123,13 +124,13 @@ namespace Neo.Plugins.StateService
                 ConsoleHelper.Warning("Please open wallet first!");
                 return;
             }
-            Verifier = System.ActorSystem.ActorOf(VerificationService.Props(wallet));
+            Verifier = _system.ActorSystem.ActorOf(VerificationService.Props(wallet));
         }
 
         [ConsoleCommand("state root", Category = "StateService", Description = "Get state root by index")]
         private void OnGetStateRoot(uint index)
         {
-            if (System is null || System.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
             using var snapshot = StateStore.Singleton.GetSnapshot();
             StateRoot state_root = snapshot.GetStateRoot(index);
             if (state_root is null)
@@ -141,7 +142,7 @@ namespace Neo.Plugins.StateService
         [ConsoleCommand("state height", Category = "StateService", Description = "Get current state root index")]
         private void OnGetStateHeight()
         {
-            if (System is null || System.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
             ConsoleHelper.Info("LocalRootIndex: ",
                 $"{StateStore.Singleton.LocalRootIndex}",
                 " ValidatedRootIndex: ",
@@ -151,7 +152,7 @@ namespace Neo.Plugins.StateService
         [ConsoleCommand("get proof", Category = "StateService", Description = "Get proof of key and contract hash")]
         private void OnGetProof(UInt256 root_hash, UInt160 script_hash, string key)
         {
-            if (System is null || System.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
+            if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
             try
             {
                 ConsoleHelper.Info("Proof: ", GetProof(root_hash, script_hash, Convert.FromBase64String(key)));
