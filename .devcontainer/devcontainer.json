@@ -4,7 +4,7 @@
 	"name": "C# (.NET)",
 	"build": {
 		// Path is relative to the devcontainer.json file.
-		"dockerfile": "Dockerfile"
+		"dockerfile": "devcontainer.dockerfile"
 	},
 	"postCreateCommand": "dotnet build",
 	"customizations": {
