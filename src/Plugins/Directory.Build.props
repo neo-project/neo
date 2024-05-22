@@ -4,8 +4,8 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)/.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
-    <None Include="$(MSBuildThisFileDirectory)/.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>
