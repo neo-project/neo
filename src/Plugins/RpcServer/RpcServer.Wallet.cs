@@ -316,7 +316,7 @@ namespace Neo.Plugins
 
             var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
             Signer[] signers = _params.Count >= 2 ? ((JArray)_params[1]).Select(j => new Signer() { Account = AddressToScriptHash(j.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.None }).ToArray() : Array.Empty<Signer>();
-            (!signers.Any()).True_Or(RpcErrorFactory.BadRequest("No signer."));
+            signers.Any().True_Or(RpcErrorFactory.BadRequest("No signer."));
             Transaction tx = new Transaction
             {
                 Signers = signers,
