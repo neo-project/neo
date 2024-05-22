@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <None Update="OracleService.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

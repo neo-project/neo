@@ -15,7 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="ApplicationLogs.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

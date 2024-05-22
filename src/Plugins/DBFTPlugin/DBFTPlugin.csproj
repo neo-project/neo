@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <None Update="DBFTPlugin.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

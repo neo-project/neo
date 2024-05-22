@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <None Update="StateService.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
