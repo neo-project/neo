@@ -15,8 +15,8 @@ namespace Neo.Plugins.Store.Models
 {
     public class ApplicationEngineLogModel
     {
-        public UInt160 ScriptHash { get; private init; } = new();
-        public string Message { get; private init; } = string.Empty;
+        public required UInt160 ScriptHash { get; init; }
+        public required string Message { get; init; }
 
         public static ApplicationEngineLogModel Create(EngineLogState logEventState) =>
             new()
