@@ -23,6 +23,8 @@ namespace Neo.Plugins
         private static readonly Dictionary<uint, RpcServer> servers = new();
         private static readonly Dictionary<uint, List<object>> handlers = new();
 
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "RpcServer.json");
+
         protected override void Configure()
         {
             settings = new Settings(GetConfiguration());
