@@ -54,7 +54,7 @@ namespace Neo.Plugins
         private OracleStatus status = OracleStatus.Unstarted;
         private IWalletProvider walletProvider;
         private int counter;
-        private NeoSystem system;
+        private NeoSystem _system;
 
         private readonly Dictionary<string, IOracleProtocol> protocols = new Dictionary<string, IOracleProtocol>();
 
@@ -77,8 +77,8 @@ namespace Neo.Plugins
         protected override void OnSystemLoaded(NeoSystem system)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
-            this.system = system;
-            this.system.ServiceAdded += NeoSystem_ServiceAdded;
+            _system = system;
+            _system.ServiceAdded += NeoSystem_ServiceAdded;
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
         }
 
@@ -87,7 +87,7 @@ namespace Neo.Plugins
             if (service is IWalletProvider)
             {
                 walletProvider = service as IWalletProvider;
-                system.ServiceAdded -= NeoSystem_ServiceAdded;
+                _system.ServiceAdded -= NeoSystem_ServiceAdded;
                 if (Settings.Default.AutoStart)
                 {
                     walletProvider.WalletChanged += WalletProvider_WalletChanged;
@@ -127,7 +127,7 @@ namespace Neo.Plugins
                 return;
             }
 
-            if (!CheckOracleAvaiblable(system.StoreView, out ECPoint[] oracles))
+            if (!CheckOracleAvaiblable(_system.StoreView, out ECPoint[] oracles))
             {
                 ConsoleHelper.Warning("The oracle service is unavailable");
                 return;
@@ -231,7 +231,7 @@ namespace Neo.Plugins
 
             finishedCache.ContainsKey(requestId).False_Or(RpcError.OracleRequestFinished);
 
-            using (var snapshot = system.GetSnapshot())
+            using (var snapshot = _system.GetSnapshot())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
@@ -295,8 +295,8 @@ namespace Neo.Plugins
                     }
                 }
                 var response = new OracleResponse() { Id = requestId, Code = code, Result = result };
-                var responseTx = CreateResponseTx(snapshot, request, response, oracleNodes, system.Settings);
-                var backupTx = CreateResponseTx(snapshot, request, new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = requestId, Result = Array.Empty<byte>() }, oracleNodes, system.Settings, true);
+                var responseTx = CreateResponseTx(snapshot, request, response, oracleNodes, _system.Settings);
+                var backupTx = CreateResponseTx(snapshot, request, new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = requestId, Result = Array.Empty<byte>() }, oracleNodes, _system.Settings, true);
 
                 Log($"[{req.OriginalTxid}]-({requestId}) Built response tx[[{responseTx.Hash}]], responseCode:{code}, result:{result.ToHexString()}, validUntilBlock:{responseTx.ValidUntilBlock}, backupTx:{backupTx.Hash}-{backupTx.ValidUntilBlock}");
 
@@ -307,8 +307,8 @@ namespace Neo.Plugins
                     var oraclePub = account.GetKey()?.PublicKey;
                     if (!account.HasKey || account.Lock || !oraclePublicKeys.Contains(oraclePub)) continue;
 
-                    var txSign = responseTx.Sign(account.GetKey(), system.Settings.Network);
-                    var backTxSign = backupTx.Sign(account.GetKey(), system.Settings.Network);
+                    var txSign = responseTx.Sign(account.GetKey(), _system.Settings.Network);
+                    var backTxSign = backupTx.Sign(account.GetKey(), _system.Settings.Network);
 
                     AddResponseTxSign(snapshot, requestId, oraclePub, txSign, responseTx, backupTx, backTxSign);
                     tasks.Add(SendResponseSignatureAsync(requestId, txSign, account.GetKey()));
@@ -323,7 +323,7 @@ namespace Neo.Plugins
         {
             while (!cancelSource.IsCancellationRequested)
             {
-                using (var snapshot = system.GetSnapshot())
+                using (var snapshot = _system.GetSnapshot())
                 {
                     SyncPendingQueue(snapshot);
                     foreach (var (id, request) in NativeContract.Oracle.GetRequests(snapshot))
@@ -477,13 +477,13 @@ namespace Neo.Plugins
             if (responseTx != null)
             {
                 task.Tx = responseTx;
-                var data = task.Tx.GetSignData(system.Settings.Network);
+                var data = task.Tx.GetSignData(_system.Settings.Network);
                 task.Signs.Where(p => !Crypto.VerifySignature(data, p.Value, p.Key)).ForEach(p => task.Signs.Remove(p.Key, out _));
             }
             if (backupTx != null)
             {
                 task.BackupTx = backupTx;
-                var data = task.BackupTx.GetSignData(system.Settings.Network);
+                var data = task.BackupTx.GetSignData(_system.Settings.Network);
                 task.BackupSigns.Where(p => !Crypto.VerifySignature(data, p.Value, p.Key)).ForEach(p => task.BackupSigns.Remove(p.Key, out _));
                 task.BackupSigns.TryAdd(oraclePub, backupSign);
             }
@@ -494,9 +494,9 @@ namespace Neo.Plugins
                 return;
             }
 
-            if (Crypto.VerifySignature(task.Tx.GetSignData(system.Settings.Network), sign, oraclePub))
+            if (Crypto.VerifySignature(task.Tx.GetSignData(_system.Settings.Network), sign, oraclePub))
                 task.Signs.TryAdd(oraclePub, sign);
-            else if (Crypto.VerifySignature(task.BackupTx.GetSignData(system.Settings.Network), sign, oraclePub))
+            else if (Crypto.VerifySignature(task.BackupTx.GetSignData(_system.Settings.Network), sign, oraclePub))
                 task.BackupSigns.TryAdd(oraclePub, sign);
             else
                 throw new RpcException(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
@@ -541,7 +541,7 @@ namespace Neo.Plugins
 
                 Log($"Send response tx: responseTx={tx.Hash}");
 
-                system.Blockchain.Tell(tx);
+                _system.Blockchain.Tell(tx);
                 return true;
             }
             return false;
