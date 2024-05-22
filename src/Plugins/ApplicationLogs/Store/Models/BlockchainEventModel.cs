@@ -17,11 +17,11 @@ namespace ApplicationLogs.Store.Models
 {
     public class BlockchainEventModel
     {
-        public UInt160 ScriptHash { get; private init; } = new();
-        public string EventName { get; private init; } = string.Empty;
-        public StackItem[] State { get; private init; } = [];
+        public required UInt160 ScriptHash { get; init; }
+        public required string EventName { get; init; }
+        public required StackItem[] State { get; init; }
 
-        public static BlockchainEventModel Create(UInt160 scriptHash, string eventName, StackItem[] state) =>
+        public static BlockchainEventModel Create(UInt160 scriptHash, string eventName, params StackItem[] state) =>
             new()
             {
                 ScriptHash = scriptHash,
@@ -29,7 +29,7 @@ namespace ApplicationLogs.Store.Models
                 State = state,
             };
 
-        public static BlockchainEventModel Create(NotifyLogState notifyLogState, StackItem[] state) =>
+        public static BlockchainEventModel Create(NotifyLogState notifyLogState, params StackItem[] state) =>
             new()
             {
                 ScriptHash = notifyLogState.ScriptHash,
@@ -37,7 +37,7 @@ namespace ApplicationLogs.Store.Models
                 State = state,
             };
 
-        public static BlockchainEventModel Create(ContractLogState contractLogState, StackItem[] state) =>
+        public static BlockchainEventModel Create(ContractLogState contractLogState, params StackItem[] state) =>
             new()
             {
                 ScriptHash = contractLogState.ScriptHash,
