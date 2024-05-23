@@ -235,7 +235,7 @@ namespace Neo.CLI
                 maxLength = Math.Max(maxLength, plugins.Max(s => s.Length));
 
                 plugins.Select(s => (s, Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, s, StringComparison.InvariantCultureIgnoreCase))))
-                    .Concat(installedPlugins.Select(u => (u.Name, u)).Where(u => !plugins.Contains(u.Name, StringComparer.InvariantCultureIgnoreCase)))
+                    .Concat(installedPlugins.Select(u => (u.Name, (Plugin?)u)).Where(u => !plugins.Contains(u.Name, StringComparer.InvariantCultureIgnoreCase)))
                     .OrderBy(u => u.Item1)
                     .ForEach((f) =>
                     {
