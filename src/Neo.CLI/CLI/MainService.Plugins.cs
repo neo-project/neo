@@ -228,24 +228,25 @@ namespace Neo.CLI
         {
             try
             {
-                var plugins = GetPluginListAsync().GetAwaiter().GetResult();
-                if (plugins == null) return;
-                plugins
-                .Order()
-                .ForEach(f =>
-                {
-                    var installedPlugin = Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, f, StringComparison.CurrentCultureIgnoreCase));
-                    if (installedPlugin != null)
+                var plugins = GetPluginListAsync().GetAwaiter().GetResult()?.ToArray() ?? Array.Empty<string>();
+                var installedPlugins = Plugin.Plugins.ToList();
+
+                var maxLength = installedPlugins.Count == 0 ? 0 : installedPlugins.Max(s => s.Name.Length);
+                maxLength = Math.Max(maxLength, plugins.Max(s => s.Length));
+
+                plugins.Select(s => (s, Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, s, StringComparison.InvariantCultureIgnoreCase))))
+                    .Concat(installedPlugins.Select(u => (u.Name, u)).Where(u => !plugins.Contains(u.Name, StringComparer.InvariantCultureIgnoreCase)))
+                    .OrderBy(u => u.Item1)
+                    .ForEach((f) =>
                     {
-                        var maxLength = plugins.Select(s => s.Length).OrderDescending().First();
-                        string tabs = string.Empty;
-                        if (f.Length < maxLength)
-                            tabs = "\t";
-                        ConsoleHelper.Info("", $"[Installed]\t {f,6}{tabs}", "  @", $"{installedPlugin.Version.ToString(3)}  {installedPlugin.Description}");
-                    }
-                    else
-                        ConsoleHelper.Info($"[Not Installed]\t {f}");
-                });
+                        if (f.Item2 != null)
+                        {
+                            var tabs = f.Item1.Length < maxLength ? "\t" : string.Empty;
+                            ConsoleHelper.Info("", $"[Installed]\t {f.Item1,6}{tabs}", "  @", $"{f.Item2.Version.ToString(3)}  {f.Item2.Description}");
+                        }
+                        else
+                            ConsoleHelper.Info($"[Not Installed]\t {f.Item1}");
+                    });
             }
             catch (Exception ex)
             {
