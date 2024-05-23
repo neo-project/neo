@@ -28,6 +28,11 @@ namespace Neo.SmartContract.Manifest
         public ContractParameterType ReturnType { get; set; }
 
         /// <summary>
+        /// NEP-25 extended return type
+        /// </summary>
+        public ExtendedType? ExtendedReturnType { get; set; }
+
+        /// <summary>
         /// The position of the method in the contract script.
         /// </summary>
         public int Offset { get; set; }
@@ -45,14 +50,28 @@ namespace Neo.SmartContract.Manifest
             ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
             Offset = (int)@struct[3].GetInteger();
             Safe = @struct[4].GetBoolean();
+            if (@struct.Count >= 6)
+            {
+                ExtendedReturnType = new ExtendedType();
+                ExtendedReturnType.FromStackItem((VM.Types.Array)@struct[5], 0);
+            }
+            else
+            {
+                ExtendedReturnType = null;
+            }
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+            var @struct = (Struct)base.ToStackItem(referenceCounter);
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);
+            if (ExtendedReturnType != null)
+            {
+                var structExtended = new Struct(referenceCounter);
+                @struct.Add(ExtendedReturnType.ToStackItem(referenceCounter, structExtended));
+            }
             return @struct;
         }
 
@@ -69,7 +88,8 @@ namespace Neo.SmartContract.Manifest
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
-                Safe = json["safe"].GetBoolean()
+                Safe = json["safe"].GetBoolean(),
+                ExtendedReturnType = json["extendedreturntype"] != null ? ExtendedType.FromJson((JObject)json["extendedreturntype"]) : null
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
@@ -88,6 +108,10 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
+            if (ExtendedReturnType != null)
+            {
+                json["extendedreturntype"] = ExtendedReturnType.ToString();
+            }
             return json;
         }
     }
