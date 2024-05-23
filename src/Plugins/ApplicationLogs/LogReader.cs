@@ -36,7 +36,7 @@ namespace Neo.Plugins
         #endregion
 
         public override string Name => "ApplicationLogs";
-        public override string Description => "Synchronizes smart contract VM executions and notificatons (NotifyLog) on blockchain.";
+        public override string Description => "Synchronizes smart contract VM executions and notifications (NotifyLog) on blockchain.";
 
         #region Ctor
 
@@ -50,6 +50,8 @@ namespace Neo.Plugins
         #endregion
 
         #region Override Methods
+
+        public override string ConfigFile => Combine(RootPath, "ApplicationLogs.json");
 
         public override void Dispose()
         {

@@ -28,6 +28,8 @@ namespace Neo.Consensus
 
         public override string Description => "Consensus plugin with dBFT algorithm.";
 
+        public override string ConfigFile => System.IO.Path.Combine(RootPath, "DBFTPlugin.json");
+
         public DBFTPlugin()
         {
             RemoteNode.MessageReceived += RemoteNode_MessageReceived;
