@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Native
 
         internal Notary() : base() { }
 
-        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
             {
@@ -54,7 +54,7 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
-        internal override async ContractTask OnPersist(ApplicationEngine engine)
+        internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             long nFees = 0;
             ECPoint[] notaries = null;
@@ -214,7 +214,7 @@ namespace Neo.SmartContract.Native
             var deposit = GetDepositFor(engine.Snapshot, from) ?? throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
             if (Ledger.CurrentIndex(engine.Snapshot) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
             RemoveDepositFor(engine.Snapshot, from);
-            if (!await engine.CallFromNativeContract<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, StackItem.Null))
+            if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, StackItem.Null))
             {
                 throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
             }
