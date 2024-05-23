@@ -234,18 +234,18 @@ namespace Neo.CLI
                 var maxLength = installedPlugins.Count == 0 ? 0 : installedPlugins.Max(s => s.Name.Length);
                 maxLength = Math.Max(maxLength, plugins.Max(s => s.Length));
 
-                plugins.Select(s => (s, Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, s, StringComparison.InvariantCultureIgnoreCase))))
-                    .Concat(installedPlugins.Select(u => (u.Name, (Plugin?)u)).Where(u => !plugins.Contains(u.Name, StringComparer.InvariantCultureIgnoreCase)))
-                    .OrderBy(u => u.Item1)
+                plugins.Select(s => (name: s, installedPlugin: Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, s, StringComparison.InvariantCultureIgnoreCase))))
+                    .Concat(installedPlugins.Select(u => (name: u.Name, installedPlugin: (Plugin?)u)).Where(u => !plugins.Contains(u.name, StringComparer.InvariantCultureIgnoreCase)))
+                    .OrderBy(u => u.name)
                     .ForEach((f) =>
                     {
-                        if (f.Item2 != null)
+                        if (f.installedPlugin != null)
                         {
-                            var tabs = f.Item1.Length < maxLength ? "\t" : string.Empty;
-                            ConsoleHelper.Info("", $"[Installed]\t {f.Item1,6}{tabs}", "  @", $"{f.Item2.Version.ToString(3)}  {f.Item2.Description}");
+                            var tabs = f.name.Length < maxLength ? "\t" : string.Empty;
+                            ConsoleHelper.Info("", $"[Installed]\t {f.name,6}{tabs}", "  @", $"{f.installedPlugin.Version.ToString(3)}  {f.installedPlugin.Description}");
                         }
                         else
-                            ConsoleHelper.Info($"[Not Installed]\t {f.Item1}");
+                            ConsoleHelper.Info($"[Not Installed]\t {f.name}");
                     });
             }
             catch (Exception ex)
