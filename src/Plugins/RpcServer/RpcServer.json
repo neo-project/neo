@@ -1,0 +1,29 @@
+{
+  "PluginConfiguration": {
+    "Servers": [
+      {
+        "Network": 860833102,
+        "BindAddress": "127.0.0.1",
+        "Port": 10332,
+        "SslCert": "",
+        "SslCertPassword": "",
+        "TrustedAuthorities": [],
+        "RpcUser": "",
+        "RpcPass": "",
+        "EnableCors": true,
+        "AllowOrigins": [],
+        "KeepAliveTimeout": 60,
+        "RequestHeadersTimeout": 15,
+        "MaxGasInvoke": 20,
+        "MaxFee": 0.1,
+        "MaxConcurrentConnections": 40,
+        "MaxIteratorResultItems": 100,
+        "MaxStackSize": 65535,
+        "DisabledMethods": [ "openwallet" ],
+        "SessionEnabled": false,
+        "SessionExpirationTime": 60,
+        "FindStoragePageSize": 50
+      }
+    ]
+  }
+}
