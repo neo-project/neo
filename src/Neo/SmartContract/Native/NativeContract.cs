@@ -161,6 +161,7 @@ namespace Neo.SmartContract.Native
             // Calculate the initializations forks
             usedHardforks =
                 methodDescriptors.Select(u => u.ActiveIn)
+                .Concat(methodDescriptors.Select(u => u.DeprecatedIn))
                 .Concat(eventsDescriptors.Select(u => u.ActiveIn))
                 .Concat(new Hardfork?[] { ActiveIn })
                 .Where(u => u is not null)
