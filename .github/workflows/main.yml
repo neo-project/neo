@@ -6,7 +6,9 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 8.0.202
+  DOTNET_VERSION: 8.0.x
+  COVERALL_COLLECT_OUTPUT: "/p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'"
+  COVERALL_MERGE_PATH: "/p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'"
 
 jobs:
 
@@ -27,26 +29,40 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
          dotnet format --verify-no-changes --verbosity diagnostic
+    - name: Build CLI
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet publish ./src/Neo.CLI
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
+        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet test
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
-        find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'
-        dotnet test ./tests/Neo.ConsoleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
-        dotnet test ./tests/Neo.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
-        dotnet test ./tests/Neo.VM.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
-        dotnet test ./tests/Neo.Json.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json' /p:CoverletOutputFormat='lcov'
+        sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
+        
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests ${{ env.COVERALL_COLLECT_OUTPUT }}
+        dotnet test ./tests/Neo.ConsoleService.Tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.UnitTests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.VM.Tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.Json.UnitTests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+
+        # Plugins
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.Network.RPC.Tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.Plugins.Storage.Tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }} /p:CoverletOutputFormat='cobertura'
+
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@v2.2.3
+      uses: coverallsapp/github-action@v2.3.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        format: lcov
-        file: ${{ github.workspace }}/TestResults/coverage/coverage.net8.0.info
+        format: cobertura
+        file: ${{ github.workspace }}/TestResults/coverage/coverage.cobertura.xml
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
@@ -172,6 +188,6 @@ jobs:
     - name: Publish to NuGet
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
-        dotnet nuget push out/*.nupkg -s https://api.nuget.org/v3/index.json -k ${NUGET_TOKEN}
+        dotnet nuget push out/*.nupkg -s https://api.nuget.org/v3/index.json -k ${NUGET_TOKEN} --skip-duplicate
       env:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

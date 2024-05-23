@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <PackageId>Neo.Network.RPC.RpcClient</PackageId>
+    <RootNamespace>Neo.Network.RPC</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Neo\Neo.csproj" />
+  </ItemGroup>
+
+</Project>

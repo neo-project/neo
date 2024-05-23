@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
             return value;
         }
 
-        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
             {
@@ -58,19 +58,19 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
-        private async ContractTask OnDeploy(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
+        private async ContractTask OnDeployAsync(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
         {
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
             if (md is not null)
-                await engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, update);
+                await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
         }
 
-        internal override async ContractTask OnPersist(ApplicationEngine engine)
+        internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out Hardfork? hf))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out var hfs))
                 {
                     ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
                     StorageItem state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
@@ -80,6 +80,13 @@ namespace Neo.SmartContract.Native
                         // Create the contract state
                         engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(contractState));
                         engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
+
+                        // Initialize the native smart contract if it's active starting from the genesis.
+                        // If it's not the case, then hardfork-based initialization will be performed down below.
+                        if (contract.ActiveIn is null)
+                        {
+                            await contract.InitializeAsync(engine, null);
+                        }
                     }
                     else
                     {
@@ -92,7 +99,16 @@ namespace Neo.SmartContract.Native
                         oldContract.Manifest = contractState.Manifest;
                     }
 
-                    await contract.Initialize(engine, hf);
+                    // Initialize native contract for all hardforks that are active starting from the persisting block.
+                    // If the contract is active starting from some non-nil hardfork, then this hardfork is also included into hfs.
+                    if (hfs?.Length > 0)
+                    {
+                        foreach (var hf in hfs)
+                        {
+                            await contract.InitializeAsync(engine, hf);
+                        }
+                    }
+
                     // Emit native contract notification
                     engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
                 }
@@ -232,7 +248,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(key, new StorageItem(contract));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
 
-            await OnDeploy(engine, contract, data, false);
+            await OnDeployAsync(engine, contract, data, false);
 
             return contract;
         }
@@ -275,7 +291,7 @@ namespace Neo.SmartContract.Native
             }
             Helper.Check(new VM.Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
-            return OnDeploy(engine, contract, data, true);
+            return OnDeployAsync(engine, contract, data, true);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]

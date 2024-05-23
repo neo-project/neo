@@ -1,4 +1,4 @@
-// Copyright (C) 2016-2023 The Neo Project.
+// Copyright (C) 2016-2024 The Neo Project.
 // 
 // The neo-gui is free software distributed under the MIT software 
 // license, see the accompanying file LICENSE in the main directory of
@@ -44,8 +44,8 @@ namespace Neo.GUI
             // 
             // textBox1
             // 
-            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox1.Location = new System.Drawing.Point(12, 12);
             this.textBox1.Font = new System.Drawing.Font("Consolas", 11.0f);
@@ -59,7 +59,7 @@ namespace Neo.GUI
             // 
             // textBox2
             // 
-            this.textBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.textBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox2.Location = new System.Drawing.Point(12, 385);
             this.textBox2.Font = new System.Drawing.Font("Consolas", 11.0f);
