@@ -232,7 +232,10 @@ namespace Neo.CLI
                 var installedPlugins = Plugin.Plugins.ToList();
 
                 var maxLength = installedPlugins.Count == 0 ? 0 : installedPlugins.Max(s => s.Name.Length);
-                maxLength = Math.Max(maxLength, plugins.Max(s => s.Length));
+                if (plugins.Length > 0)
+                {
+                    maxLength = Math.Max(maxLength, plugins.Max(s => s.Length));
+                }
 
                 plugins.Select(s => (name: s, installedPlugin: Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, s, StringComparison.InvariantCultureIgnoreCase))))
                     .Concat(installedPlugins.Select(u => (name: u.Name, installedPlugin: (Plugin?)u)).Where(u => !plugins.Contains(u.name, StringComparer.InvariantCultureIgnoreCase)))
