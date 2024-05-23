@@ -228,7 +228,7 @@ namespace Neo.CLI
         {
             try
             {
-                var plugins = GetPluginListAsync().GetAwaiter().GetResult()?.ToArray() ?? Array.Empty<string>();
+                var plugins = GetPluginListAsync().GetAwaiter().GetResult()?.ToArray() ?? [];
                 var installedPlugins = Plugin.Plugins.ToList();
 
                 var maxLength = installedPlugins.Count == 0 ? 0 : installedPlugins.Max(s => s.Name.Length);
