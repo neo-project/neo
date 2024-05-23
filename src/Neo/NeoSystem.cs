@@ -116,7 +116,7 @@ namespace Neo
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageProvider">The storage engine used to create the <see cref="IStoreProvider"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string? storageProvider = null, string? storagePath = null) :
+        public NeoSystem(ProtocolSettings settings, string storageProvider = null, string storagePath = null) :
             this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore))
                 ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath)
         {
@@ -128,17 +128,17 @@ namespace Neo
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageProvider">The <see cref="IStoreProvider"/> to use.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string? storagePath = null)
+        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
-            this.Settings = settings;
-            this.GenesisBlock = CreateGenesisBlock(settings);
+            Settings = settings;
+            GenesisBlock = CreateGenesisBlock(settings);
             this.storageProvider = storageProvider;
-            this.store = storageProvider.GetStore(storagePath);
-            this.MemPool = new MemoryPool(this);
-            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
-            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
-            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
+            store = storageProvider.GetStore(storagePath);
+            MemPool = new MemoryPool(this);
+            Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
+            LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+            TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
             Blockchain.Ask(new Blockchain.Initialize()).Wait();

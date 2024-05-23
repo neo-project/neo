@@ -63,12 +63,12 @@ namespace Neo.SmartContract.Native
            "from", ContractParameterType.PublicKey,
            "to", ContractParameterType.PublicKey,
            "amount", ContractParameterType.Integer)]
-        [ContractEvent(3, name: "CommitteeChanged",
+        [ContractEvent(Hardfork.HF_Cockatrice, 3, name: "CommitteeChanged",
            "old", ContractParameterType.Array,
            "new", ContractParameterType.Array)]
         internal NeoToken() : base()
         {
-            this.TotalAmount = 100000000 * Factor;
+            TotalAmount = 100000000 * Factor;
         }
 
         public override BigInteger TotalSupply(DataCache snapshot)
@@ -93,9 +93,9 @@ namespace Neo.SmartContract.Native
             CheckCandidate(engine.Snapshot, state.VoteTo, candidate);
         }
 
-        private protected override async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected override async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
         {
-            await base.PostTransfer(engine, from, to, amount, data, callOnPayment);
+            await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
             var list = engine.CurrentContext.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
@@ -176,7 +176,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the votes should be recounted; otherwise, <see langword="false"/>.</returns>
         public static bool ShouldRefreshCommittee(uint height, int committeeMembersCount) => height % committeeMembersCount == 0;
 
-        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
             {
@@ -190,7 +190,7 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
-        internal override ContractTask OnPersist(ApplicationEngine engine)
+        internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             // Set next committee
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, engine.ProtocolSettings.CommitteeMembersCount))
@@ -203,20 +203,26 @@ namespace Neo.SmartContract.Native
                 cachedCommittee.Clear();
                 cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
 
-                var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
-
-                if (!newCommittee.SequenceEqual(prevCommittee))
+                // Hardfork check for https://github.com/neo-project/neo/pull/3158
+                // New notification will case 3.7.0 and 3.6.0 have different behavior
+                var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.Snapshot);
+                if (engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Cockatrice, index))
                 {
-                    engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) {
-                        new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
-                        new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
-                    });
+                    var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
+
+                    if (!newCommittee.SequenceEqual(prevCommittee))
+                    {
+                        engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) {
+                            new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
+                            new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
+                        });
+                    }
                 }
             }
             return ContractTask.CompletedTask;
         }
 
-        internal override async ContractTask PostPersist(ApplicationEngine engine)
+        internal override async ContractTask PostPersistAsync(ApplicationEngine engine)
         {
             // Distribute GAS for committee
 

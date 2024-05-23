@@ -32,7 +32,7 @@ namespace Neo.SmartContract
     /// </summary>
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+        protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -162,16 +162,16 @@ namespace Neo.SmartContract
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
-            this.Trigger = trigger;
-            this.ScriptContainer = container;
-            this.originalSnapshot = snapshot;
-            this.PersistingBlock = persistingBlock;
-            this.ProtocolSettings = settings;
-            this.gas_amount = gas;
-            this.Diagnostic = diagnostic;
-            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
-            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
-            this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            Trigger = trigger;
+            ScriptContainer = container;
+            originalSnapshot = snapshot;
+            PersistingBlock = persistingBlock;
+            ProtocolSettings = settings;
+            gas_amount = gas;
+            Diagnostic = diagnostic;
+            ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
+            StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
+            nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
                 fixed (byte* p = nonceData)
@@ -194,7 +194,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        private static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
@@ -218,7 +218,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
@@ -307,7 +307,7 @@ namespace Neo.SmartContract
             return context_new;
         }
 
-        internal ContractTask CallFromNativeContract(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+        internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
@@ -317,7 +317,7 @@ namespace Neo.SmartContract
             return task;
         }
 
-        internal ContractTask<T> CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+        internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
@@ -384,7 +384,7 @@ namespace Neo.SmartContract
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
 
-        internal override void LoadContext(ExecutionContext context)
+        public override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();

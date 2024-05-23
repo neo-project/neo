@@ -140,7 +140,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         protected NativeContract()
         {
-            this.Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
+            Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
 
             // Reflection to get the methods
 
@@ -157,11 +157,15 @@ namespace Neo.SmartContract.Native
             eventsDescriptors =
                 GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
                 GetCustomAttributes<ContractEventAttribute>().
+                // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
+                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                GetCustomAttributes<ContractEventAttribute>()).
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
             // Calculate the initializations forks
             usedHardforks =
                 methodDescriptors.Select(u => u.ActiveIn)
+                .Concat(methodDescriptors.Select(u => u.DeprecatedIn))
                 .Concat(eventsDescriptors.Select(u => u.ActiveIn))
                 .Concat(new Hardfork?[] { ActiveIn })
                 .Where(u => u is not null)
@@ -186,7 +190,15 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in methodDescriptors.Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, index)))
+                foreach (ContractMethodMetadata method in methodDescriptors.Where(u
+                             =>
+                             // no hardfork is involved
+                             u.ActiveIn is null && u.DeprecatedIn is null ||
+                             // deprecated method hardfork is involved
+                             u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, index) == false ||
+                             // active method hardfork is involved
+                             u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, index))
+                         )
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
@@ -268,19 +280,14 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
-        /// <param name="hardfork">Active hardfork</param>
+        /// <param name="hardforks">Active hardforks</param>
         /// <returns>True if the native contract must be initialized</returns>
-        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork? hardfork)
+        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork[] hardforks)
         {
-            // If is not configured, the Genesis is the a initialized block
-            if (index == 0 && ActiveIn is null)
-            {
-                hardfork = null;
-                return true;
-            }
+            var hfs = new List<Hardfork>();
 
-            // If is in the hardfork height, return true
-            foreach (Hardfork hf in usedHardforks)
+            // If is in the hardfork height, add them to return array
+            foreach (var hf in usedHardforks)
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
@@ -290,13 +297,26 @@ namespace Neo.SmartContract.Native
 
                 if (activeIn == index)
                 {
-                    hardfork = hf;
-                    return true;
+                    hfs.Add(hf);
                 }
             }
 
+            // Return all initialize hardforks
+            if (hfs.Count > 0)
+            {
+                hardforks = hfs.ToArray();
+                return true;
+            }
+
+            // If is not configured, the Genesis is an initialization block.
+            if (index == 0 && ActiveIn is null)
+            {
+                hardforks = hfs.ToArray();
+                return true;
+            }
+
             // Initialized not required
-            hardfork = null;
+            hardforks = null;
             return false;
         }
 
@@ -360,6 +380,8 @@ namespace Neo.SmartContract.Native
                 ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
+                if (method.DeprecatedIn is not null && engine.IsHardforkEnabled(method.DeprecatedIn.Value))
+                    throw new InvalidOperationException($"Cannot call this method after hardfork {method.DeprecatedIn}.");
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
@@ -400,17 +422,17 @@ namespace Neo.SmartContract.Native
             return contractsDictionary.ContainsKey(hash);
         }
 
-        internal virtual ContractTask Initialize(ApplicationEngine engine, Hardfork? hardFork)
+        internal virtual ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardFork)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask OnPersist(ApplicationEngine engine)
+        internal virtual ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask PostPersist(ApplicationEngine engine)
+        internal virtual ContractTask PostPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }

@@ -95,10 +95,10 @@ namespace Neo.VM
         /// <param name="limits">Restrictions on the VM.</param>
         protected ExecutionEngine(JumpTable? jumpTable, ReferenceCounter referenceCounter, ExecutionEngineLimits limits)
         {
-            this.JumpTable = jumpTable ?? JumpTable.Default;
-            this.Limits = limits;
-            this.ReferenceCounter = referenceCounter;
-            this.ResultStack = new EvaluationStack(referenceCounter);
+            JumpTable = jumpTable ?? JumpTable.Default;
+            Limits = limits;
+            ReferenceCounter = referenceCounter;
+            ResultStack = new EvaluationStack(referenceCounter);
         }
 
         public virtual void Dispose()
@@ -166,7 +166,7 @@ namespace Neo.VM
         /// Loads the specified context into the invocation stack.
         /// </summary>
         /// <param name="context">The context to load.</param>
-        internal virtual void LoadContext(ExecutionContext context)
+        public virtual void LoadContext(ExecutionContext context)
         {
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
                 throw new InvalidOperationException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
