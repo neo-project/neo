@@ -228,24 +228,28 @@ namespace Neo.CLI
         {
             try
             {
-                var plugins = GetPluginListAsync().GetAwaiter().GetResult();
-                if (plugins == null) return;
-                plugins
-                .Order()
-                .ForEach(f =>
+                var plugins = GetPluginListAsync().GetAwaiter().GetResult()?.ToArray() ?? [];
+                var installedPlugins = Plugin.Plugins.ToList();
+
+                var maxLength = installedPlugins.Count == 0 ? 0 : installedPlugins.Max(s => s.Name.Length);
+                if (plugins.Length > 0)
                 {
-                    var installedPlugin = Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, f, StringComparison.CurrentCultureIgnoreCase));
-                    if (installedPlugin != null)
+                    maxLength = Math.Max(maxLength, plugins.Max(s => s.Length));
+                }
+
+                plugins.Select(s => (name: s, installedPlugin: Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, s, StringComparison.InvariantCultureIgnoreCase))))
+                    .Concat(installedPlugins.Select(u => (name: u.Name, installedPlugin: (Plugin?)u)).Where(u => !plugins.Contains(u.name, StringComparer.InvariantCultureIgnoreCase)))
+                    .OrderBy(u => u.name)
+                    .ForEach((f) =>
                     {
-                        var maxLength = plugins.Select(s => s.Length).OrderDescending().First();
-                        string tabs = string.Empty;
-                        if (f.Length < maxLength)
-                            tabs = "\t";
-                        ConsoleHelper.Info("", $"[Installed]\t {f,6}{tabs}", "  @", $"{installedPlugin.Version.ToString(3)}  {installedPlugin.Description}");
-                    }
-                    else
-                        ConsoleHelper.Info($"[Not Installed]\t {f}");
-                });
+                        if (f.installedPlugin != null)
+                        {
+                            var tabs = f.name.Length < maxLength ? "\t" : string.Empty;
+                            ConsoleHelper.Info("", $"[Installed]\t {f.name,6}{tabs}", "  @", $"{f.installedPlugin.Version.ToString(3)}  {f.installedPlugin.Description}");
+                        }
+                        else
+                            ConsoleHelper.Info($"[Not Installed]\t {f.name}");
+                    });
             }
             catch (Exception ex)
             {
