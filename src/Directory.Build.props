@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <Copyright>2015-2024 The Neo Project</Copyright>
-    <VersionPrefix>3.7.1</VersionPrefix>
+    <VersionPrefix>3.7.4</VersionPrefix>
     <LangVersion>12.0</LangVersion>
     <Authors>The Neo Project</Authors>
     <PackageIcon>neo.png</PackageIcon>
@@ -19,8 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../neo.png" Pack="true" Visible="false" PackagePath=""/>
-    <None Include="../README.md" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>
