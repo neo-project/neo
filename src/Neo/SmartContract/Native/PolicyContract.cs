@@ -64,15 +64,16 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
 
-        internal PolicyContract()
-        {
-        }
+        internal PolicyContract() : base() { }
 
-        internal override ContractTask Initialize(ApplicationEngine engine)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
-            engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+            if (hardfork == ActiveIn)
+            {
+                engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+            }
             return ContractTask.CompletedTask;
         }
 

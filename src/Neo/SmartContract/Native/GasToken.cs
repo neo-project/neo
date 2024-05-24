@@ -26,13 +26,17 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        internal override ContractTask Initialize(ApplicationEngine engine)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
-            UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-            return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+            if (hardfork == ActiveIn)
+            {
+                UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
+                return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+            }
+            return ContractTask.CompletedTask;
         }
 
-        internal override async ContractTask OnPersist(ApplicationEngine engine)
+        internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.PersistingBlock.Transactions)

@@ -1,14 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.14" />
-    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.14" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.20" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.20" />
     <PackageReference Include="Moq" Version="4.20.70" />
   </ItemGroup>
 
@@ -21,6 +20,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.3.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.3.1" />
   </ItemGroup>
 
 </Project>

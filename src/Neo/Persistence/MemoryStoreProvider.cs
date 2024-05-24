@@ -11,7 +11,7 @@
 
 namespace Neo.Persistence
 {
-    internal class MemoryStoreProvider : IStoreProvider
+    public class MemoryStoreProvider : IStoreProvider
     {
         public string Name => nameof(MemoryStore);
         public IStore GetStore(string path) => new MemoryStore();

@@ -32,11 +32,9 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Block = 5;
         private const byte Prefix_Transaction = 11;
 
-        internal LedgerContract()
-        {
-        }
+        internal LedgerContract() : base() { }
 
-        internal override ContractTask OnPersist(ApplicationEngine engine)
+        internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {
@@ -67,7 +65,7 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
-        internal override ContractTask PostPersist(ApplicationEngine engine)
+        internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
             HashIndexState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;

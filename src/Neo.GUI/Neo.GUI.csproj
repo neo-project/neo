@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Copyright>2016-2023 The Neo Project</Copyright>
+    <Copyright>2016-2024 The Neo Project</Copyright>
     <AssemblyTitle>Neo.GUI</AssemblyTitle>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net7.0-windows</TargetFrameworks>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>Neo</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
@@ -15,7 +15,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Include="neo.ico" />
   </ItemGroup>

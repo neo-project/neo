@@ -31,8 +31,8 @@ namespace Neo.Network.P2P
         public TaskSession(VersionPayload version)
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
-            this.IsFullNode = fullNode != null;
-            this.LastBlockIndex = fullNode?.StartHeight ?? 0;
+            IsFullNode = fullNode != null;
+            LastBlockIndex = fullNode?.StartHeight ?? 0;
         }
     }
 }
