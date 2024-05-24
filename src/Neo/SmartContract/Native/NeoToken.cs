@@ -653,7 +653,7 @@ namespace Neo.SmartContract.Native
                 Struct @struct = (Struct)stackItem;
                 Index = (uint)@struct[0].GetInteger();
                 Gas = @struct[1].GetInteger();
-                Gas = @struct[2].GetInteger();
+                PreviousGas = @struct[2].GetInteger();
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
