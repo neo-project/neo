@@ -130,7 +130,7 @@ namespace Neo.CLI
             var jsonPlugin = jsonAssets
                 .FirstOrDefault(s =>
                     Path.GetFileNameWithoutExtension(s?["name"]?.GetValue<string>() ?? string.Empty)
-                        .Equals(pluginName, StringComparison.OrdinalIgnoreCase))
+                        .Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
                 ?? throw new Exception($"Could not find {pluginName}");
 
             var downloadUrl = jsonPlugin["browser_download_url"]?.GetValue<string>()
