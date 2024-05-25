@@ -21,6 +21,12 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed partial class CryptoLib : NativeContract
     {
+        private static readonly Dictionary<NamedCurve, ECCurve> curves = new()
+        {
+            [NamedCurve.secp256k1] = ECCurve.Secp256k1,
+            [NamedCurve.secp256r1] = ECCurve.Secp256r1,
+        };
+
         private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, Hasher Hasher)> s_curves = new()
         {
             [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, Hasher.SHA256),
@@ -85,13 +91,27 @@ namespace Neo.SmartContract.Native
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(CpuFee = 1 << 15)]
+        [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
         public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
         {
             try
             {
                 var ch = s_curves[curveHash];
                 return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.Hasher);
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        // This is for solving the hardfork issue in https://github.com/neo-project/neo/pull/3209
+        [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
+        public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurve curve)
+        {
+            try
+            {
+                return Crypto.VerifySignature(message, signature, pubkey, curves[curve]);
             }
             catch (ArgumentException)
             {

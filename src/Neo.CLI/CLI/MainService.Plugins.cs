@@ -157,9 +157,7 @@ namespace Neo.CLI
             try
             {
 
-                Version v = new Version(3, 7, 5);
-
-                using var stream = await DownloadPluginAsync(pluginName, v, Settings.Default.Plugins.Prerelease);
+                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, Settings.Default.Plugins.Prerelease);
 
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
                 var entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");

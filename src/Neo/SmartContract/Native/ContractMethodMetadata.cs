@@ -36,6 +36,7 @@ namespace Neo.SmartContract.Native
         public CallFlags RequiredCallFlags { get; }
         public ContractMethodDescriptor Descriptor { get; }
         public Hardfork? ActiveIn { get; init; } = null;
+        public Hardfork? DeprecatedIn { get; init; } = null;
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
@@ -60,6 +61,7 @@ namespace Neo.SmartContract.Native
             StorageFee = attribute.StorageFee;
             RequiredCallFlags = attribute.RequiredCallFlags;
             ActiveIn = attribute.ActiveIn;
+            DeprecatedIn = attribute.DeprecatedIn;
             Descriptor = new ContractMethodDescriptor
             {
                 Name = Name,

@@ -4,6 +4,8 @@
 * text eol=lf
 *.cs eol=lf
 *.csproj eol=lf
+*.props eol=lf
+*.json eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.

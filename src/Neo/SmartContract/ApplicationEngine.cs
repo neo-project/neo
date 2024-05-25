@@ -32,7 +32,7 @@ namespace Neo.SmartContract
     /// </summary>
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+        protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -194,7 +194,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        private static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
@@ -218,7 +218,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
         {
             if (engine is ApplicationEngine app)
             {
@@ -384,7 +384,7 @@ namespace Neo.SmartContract
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
 
-        internal override void LoadContext(ExecutionContext context)
+        public override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
