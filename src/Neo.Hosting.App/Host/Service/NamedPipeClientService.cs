@@ -39,13 +39,11 @@ namespace Neo.Hosting.App.Host.Service
         {
             _neoOptions = options.Value;
             _loggerFactory = loggerFactory;
+            _endPoint = new NamedPipeEndPoint(options);
         }
 
-        public Task ConnectAsync(CancellationToken cancellationToken = default)
-        {
-            var endPoint = new NamedPipeEndPoint(_neoOptions.Remote.PipeName);
-            return ConnectAsync(endPoint, cancellationToken);
-        }
+        public Task ConnectAsync(CancellationToken cancellationToken = default) =>
+            ConnectAsync(_endPoint, cancellationToken);
 
         public async Task ConnectAsync(NamedPipeEndPoint endPoint, CancellationToken cancellationToken = default)
         {
