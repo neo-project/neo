@@ -115,7 +115,7 @@ namespace Neo.CLI
                     var latestVersion = Version.Parse(jsonRelease["tag_name"]!.GetValue<string>()[1..]);
                     if (latestVersion < pluginVersion)
                     {
-                        var latestDownloadUrl = $"https://github.com/neo-project/neo-modules/releases/download/v{latestVersion}/{pluginName}.zip";
+                        var latestDownloadUrl = $"https://github.com/neo-project/neo/releases/download/v{latestVersion}/{pluginName}.zip";
                         ConsoleHelper.Info($"Could not find the corresponding version, installing the latest: v{latestVersion}");
                         return await httpClient.GetStreamAsync(latestDownloadUrl);
                     }
