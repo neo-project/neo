@@ -106,7 +106,8 @@ namespace Neo.SmartContract.Native
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
 
-            BigInteger gas = CalculateBonus(engine.Snapshot, state, engine.PersistingBlock.Index);
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+            BigInteger datoshi = CalculateBonus(engine.Snapshot, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
             {
@@ -114,11 +115,11 @@ namespace Neo.SmartContract.Native
                 var latestGasPerVote = engine.Snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
                 state.LastGasPerVote = latestGasPerVote;
             }
-            if (gas == 0) return null;
+            if (datoshi == 0) return null;
             return new GasDistribution
             {
                 Account = account,
-                Amount = gas
+                Amount = datoshi
             };
         }
 
@@ -130,6 +131,7 @@ namespace Neo.SmartContract.Native
             var expectEnd = Ledger.CurrentIndex(snapshot) + 1;
             if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, state.Balance, state.BalanceHeight, end);
             if (state.VoteTo is null) return neoHolderReward;
 
@@ -142,6 +144,7 @@ namespace Neo.SmartContract.Native
 
         private BigInteger CalculateNeoHolderReward(DataCache snapshot, BigInteger value, uint start, uint end)
         {
+            // In the unit of datoshi, 1 GAS = 10^8 datoshi
             BigInteger sum = 0;
             foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
             {

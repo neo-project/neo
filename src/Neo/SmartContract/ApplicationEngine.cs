@@ -167,7 +167,7 @@ namespace Neo.SmartContract
         /// <param name="snapshot">The snapshot used by the engine during execution.</param>
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
         protected unsafe ApplicationEngine(
@@ -385,7 +385,7 @@ namespace Neo.SmartContract
         /// <param name="snapshot">The snapshot used by the engine during execution.</param>
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">The maximum gas used in this execution, in the unit of datoshi. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
@@ -640,7 +640,7 @@ namespace Neo.SmartContract
         /// <param name="persistingBlock">The block being persisted.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="offset">The initial position of the instruction pointer.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
