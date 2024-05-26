@@ -99,7 +99,7 @@ namespace Neo.CLI
                     .Where(s => s?["prerelease"]?.GetValue<bool>() == prerelease)
                     .Select(s =>
                     {
-                        var tagName = s["tag_name"]?.GetValue<string>();
+                        var tagName = s?["tag_name"]?.GetValue<string>();
                         return Version.TryParse(tagName?[1..], out var version)
                             ? new { JsonObject = s, Version = version }
                             : null;
