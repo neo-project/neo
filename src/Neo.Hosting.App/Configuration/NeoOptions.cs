@@ -80,7 +80,7 @@ namespace Neo.Hosting.App.Configuration
     {
         public static readonly string ConfigurationSectionName = "Plugin";
 
-        public string DownloadUrl { get; set; } = "https://api.github.com/repos/neo-project/neo-modules/releases";
+        public string DownloadUrl { get; set; } = "https://api.github.com/repos/neo-project/neo/releases";
         public bool Prerelease { get; set; } = false;
         public Version Version { get; set; } = new(0, 0);
     }
