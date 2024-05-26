@@ -22,9 +22,9 @@ namespace LevelDB
         // pointer to parent so that we can call ReleaseSnapshot(this) when disposed
         public WeakReference Parent;  // as DB
 
-        internal SnapShot(IntPtr Handle, DB parent)
+        internal SnapShot(IntPtr handle, DB parent)
         {
-            this.Handle = Handle;
+            this.Handle = handle;
             Parent = new WeakReference(parent);
         }
 
