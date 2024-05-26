@@ -28,9 +28,9 @@ namespace LevelDB
             Parent = new WeakReference(parent);
         }
 
-        internal SnapShot(IntPtr Handle)
+        internal SnapShot(IntPtr handle)
         {
-            this.Handle = Handle;
+            this.Handle = handle;
             Parent = new WeakReference(null);
         }
 
