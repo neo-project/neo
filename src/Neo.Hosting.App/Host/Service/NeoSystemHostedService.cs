@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.Host.Service
 {
-    internal sealed class NeoSystemHostedService(
+    internal sealed partial class NeoSystemHostedService(
         ILoggerFactory loggerFactory,
         ProtocolSettings protocolSettings,
         IOptions<NeoOptions> neoOptions) : IHostedService, IDisposable

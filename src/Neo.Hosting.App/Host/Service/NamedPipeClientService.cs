@@ -22,25 +22,17 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.Host.Service
 {
-    internal sealed class NamedPipeClientService
+    internal sealed class NamedPipeClientService(
+        ILoggerFactory loggerFactory,
+        IOptions<NeoOptions> options)
     {
         public NamedPipeEndPoint EndPoint => _endPoint;
 
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly NeoOptions _neoOptions;
+        private readonly ILoggerFactory _loggerFactory = loggerFactory;
 
         private NamedPipeClientConnection? _connection;
-        private NamedPipeEndPoint _endPoint;
+        private NamedPipeEndPoint _endPoint = new(options);
         private NamedPipeClient? _client;
-
-        public NamedPipeClientService(
-            ILoggerFactory loggerFactory,
-            IOptions<NeoOptions> options)
-        {
-            _neoOptions = options.Value;
-            _loggerFactory = loggerFactory;
-            _endPoint = new NamedPipeEndPoint(options);
-        }
 
         public Task ConnectAsync(CancellationToken cancellationToken = default) =>
             ConnectAsync(_endPoint, cancellationToken);
