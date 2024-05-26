@@ -20,26 +20,25 @@ namespace LevelDB
     public class SnapShot : LevelDBHandle
     {
         // pointer to parent so that we can call ReleaseSnapshot(this) when disposed
-        public WeakReference Parent;  // as DB
+        public WeakReference _parent;  // as DB
 
-        internal SnapShot(IntPtr Handle, DB parent)
+        internal SnapShot(IntPtr handle, DB parent)
         {
-            this.Handle = Handle;
-            Parent = new WeakReference(parent);
+            Handle = handle;
+            _parent = new WeakReference(parent);
         }
 
-        internal SnapShot(IntPtr Handle)
+        internal SnapShot(IntPtr handle)
         {
-            this.Handle = Handle;
-            Parent = new WeakReference(null);
+            Handle = handle;
+            _parent = new WeakReference(null);
         }
 
         protected override void FreeUnManagedObjects()
         {
-            if (Parent.IsAlive)
+            if (_parent.IsAlive)
             {
-                var parent = Parent.Target as DB;
-                if (parent != null) LevelDBInterop.leveldb_release_snapshot(parent.Handle, Handle);
+                if (_parent.Target is DB parent) LevelDBInterop.leveldb_release_snapshot(parent.Handle, Handle);
             }
         }
     }

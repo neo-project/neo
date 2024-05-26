@@ -127,7 +127,7 @@ namespace LevelDB
         /// </summary>
         public void Put(int key, int[] value, WriteOptions options)
         {
-            LevelDBInterop.leveldb_put(Handle, options.Handle, ref key, (IntPtr)sizeof(int), value, checked((IntPtr)(value.LongLength * 4)), out var error);
+            LevelDBInterop.leveldb_put(Handle, options.Handle, ref key, sizeof(int), value, checked((IntPtr)(value.LongLength * 4)), out var error);
             Throw(error);
         }
 
@@ -268,7 +268,7 @@ namespace LevelDB
         {
 
             IntPtr v;
-            v = LevelDBInterop.leveldb_get(Handle, options.Handle, ref key, (IntPtr)sizeof(int), out var length, out var error);
+            v = LevelDBInterop.leveldb_get(Handle, options.Handle, ref key, sizeof(int), out var length, out var error);
             Throw(error);
 
             if (v != IntPtr.Zero)
@@ -304,7 +304,7 @@ namespace LevelDB
 
         public bool Contains(byte[] key, ReadOptions options)
         {
-            var value = LevelDBInterop.leveldb_get(Handle, options.Handle, key, (IntPtr)key.Length, out _, out var error);
+            var value = LevelDBInterop.leveldb_get(Handle, options.Handle, key, key.Length, out _, out var error);
             Throw(error);
 
             if (value != IntPtr.Zero)

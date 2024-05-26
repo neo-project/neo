@@ -21,10 +21,10 @@ namespace LevelDB
     {
         private readonly Encoding _encoding;
 
-        internal Iterator(IntPtr Handle, Encoding encoding)
+        internal Iterator(IntPtr handle, Encoding encoding)
         {
             _encoding = encoding;
-            this.Handle = Handle;
+            Handle = handle;
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace LevelDB
         /// <returns>This method returns true iff the iterator is valid.</returns>
         public bool IsValid()
         {
-            return (int)LevelDBInterop.leveldb_iter_valid(Handle) != 0;
+            return LevelDBInterop.leveldb_iter_valid(Handle) != 0;
         }
 
         /// <summary>
@@ -118,8 +118,7 @@ namespace LevelDB
         /// </summary>
         public int KeyAsInt()
         {
-            int length;
-            var key = LevelDBInterop.leveldb_iter_key(Handle, out length);
+            var key = LevelDBInterop.leveldb_iter_key(Handle, out var length);
             Throw();
 
             if (length != 4) throw new Exception("Key is not an integer");
@@ -142,8 +141,7 @@ namespace LevelDB
         /// </summary>
         public byte[] Key()
         {
-            int length;
-            var key = LevelDBInterop.leveldb_iter_key(Handle, out length);
+            var key = LevelDBInterop.leveldb_iter_key(Handle, out var length);
             Throw();
 
             var bytes = new byte[length];
@@ -157,8 +155,7 @@ namespace LevelDB
         /// </summary>
         public int[] ValueAsInts()
         {
-            int length;
-            var value = LevelDBInterop.leveldb_iter_value(Handle, out length);
+            var value = LevelDBInterop.leveldb_iter_value(Handle, out var length);
             Throw();
 
             var bytes = new int[length / 4];
@@ -181,8 +178,7 @@ namespace LevelDB
         /// </summary>
         public byte[] Value()
         {
-            int length;
-            var value = LevelDBInterop.leveldb_iter_value(Handle, out length);
+            var value = LevelDBInterop.leveldb_iter_value(Handle, out var length);
             Throw();
 
             var bytes = new byte[length];
@@ -203,8 +199,7 @@ namespace LevelDB
         /// </summary>
         void Throw(Func<string, Exception> exception)
         {
-            IntPtr error;
-            LevelDBInterop.leveldb_iter_get_error(Handle, out error);
+            LevelDBInterop.leveldb_iter_get_error(Handle, out var error);
             if (error != IntPtr.Zero) throw exception(Marshal.PtrToStringAnsi(error));
         }
 

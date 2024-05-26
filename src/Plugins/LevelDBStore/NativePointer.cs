@@ -55,8 +55,8 @@ namespace LevelDB.NativePointer
             return new Ptr<U>(p._addr);
         }
 
-        public void Inc() { Advance((IntPtr)1); }
-        public void Dec() { Advance((IntPtr)(-1)); }
+        public void Inc() { Advance(1); }
+        public void Dec() { Advance(-1); }
 
         public void Advance(IntPtr d)
         {
