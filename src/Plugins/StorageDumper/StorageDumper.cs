@@ -24,6 +24,9 @@ namespace Neo.Plugins
         private readonly Dictionary<uint, NeoSystem> systems = new Dictionary<uint, NeoSystem>();
 
         private StreamWriter _writer;
+        /// <summary>
+        /// _currentBlock stores the last cached item
+        /// </summary>
         private JObject _currentBlock;
         private string _lastCreateDirectory;
 
@@ -93,7 +96,7 @@ namespace Neo.Plugins
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (blockIndex >= Settings.Default.HeightToBegin)
             {
-                JArray array = new JArray();
+                JArray stateChangeArray = new JArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
@@ -106,7 +109,6 @@ namespace Neo.Plugins
                             state["state"] = "Added";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
-                            // Here we have a new trackable.Key and trackable.Item
                             break;
                         case TrackState.Changed:
                             state["state"] = "Changed";
@@ -118,13 +120,13 @@ namespace Neo.Plugins
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             break;
                     }
-                    array.Add(state);
+                    stateChangeArray.Add(state);
                 }
 
                 JObject bs_item = new JObject();
                 bs_item["block"] = blockIndex;
-                bs_item["size"] = array.Count;
-                bs_item["storage"] = array;
+                bs_item["size"] = stateChangeArray.Count;
+                bs_item["storage"] = stateChangeArray;
                 _currentBlock = bs_item;
             }
         }
@@ -174,9 +176,7 @@ namespace Neo.Plugins
 
         private string GetDirectoryPath(uint network, uint blockIndex)
         {
-            //Default Parameter
-            uint storagePerFolder = 100000;
-            uint folder = (blockIndex / storagePerFolder) * storagePerFolder;
+            uint folder = (blockIndex / Settings.Default.StoragePerFolder) * Settings.Default.StoragePerFolder;
             return $"./StorageDumper_{network}/BlockStorage_{folder}";
         }
 
