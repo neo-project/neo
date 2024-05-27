@@ -46,8 +46,8 @@ namespace Neo.CLI
             UInt160 hash = SmartContract.Helper.GetContractHash(tx.Sender, nef.CheckSum, manifest.Name);
 
             ConsoleHelper.Info("Contract hash: ", $"{hash}");
-            ConsoleHelper.Info("Gas consumed: ", $"{new BigDecimal((BigInteger)tx.SystemFee, NativeContract.GAS.Decimals)}");
-            ConsoleHelper.Info("Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}");
+            ConsoleHelper.Info("Gas consumed: ", $"{new BigDecimal((BigInteger)tx.SystemFee, NativeContract.GAS.Decimals)} GAS");
+            ConsoleHelper.Info("Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)} GAS");
             ConsoleHelper.Info("Total fee: ", $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
             if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes()) // Add this in case just want to get hash but not relay
             {
@@ -108,8 +108,8 @@ namespace Neo.CLI
             {
                 ConsoleHelper.Info("Contract hash: ", $"{scriptHash}");
                 ConsoleHelper.Info("Updated times: ", $"{contract.UpdateCounter}");
-                ConsoleHelper.Info("Gas consumed: ", $"{new BigDecimal((BigInteger)tx.SystemFee, NativeContract.GAS.Decimals)}");
-                ConsoleHelper.Info("Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}");
+                ConsoleHelper.Info("Gas consumed: ", $"{new BigDecimal((BigInteger)tx.SystemFee, NativeContract.GAS.Decimals)} GAS");
+                ConsoleHelper.Info("Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)} GAS");
                 ConsoleHelper.Info("Total fee: ", $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
                 if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes()) // Add this in case just want to get hash but not relay
                 {
@@ -127,11 +127,12 @@ namespace Neo.CLI
         /// <param name="contractParameters">Contract parameters</param>
         /// <param name="sender">Transaction's sender</param>
         /// <param name="signerAccounts">Signer's accounts</param>
-        /// <param name="maxGas">Max fee for running the script</param>
+        /// <param name="maxGas">Max fee for running the script, in the unit of GAS</param>
         [ConsoleCommand("invoke", Category = "Contract Commands")]
         private void OnInvokeCommand(UInt160 scriptHash, string operation, JArray? contractParameters = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
         {
-            var gas = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
+            var datoshi = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
             Signer[] signers = Array.Empty<Signer>();
             if (!NoWallet())
             {
@@ -163,12 +164,12 @@ namespace Neo.CLI
                 Witnesses = Array.Empty<Witness>(),
             };
 
-            if (!OnInvokeWithResult(scriptHash, operation, out _, tx, contractParameters, gas: (long)gas.Value)) return;
+            if (!OnInvokeWithResult(scriptHash, operation, out _, tx, contractParameters, datoshi: (long)datoshi.Value)) return;
 
             if (NoWallet()) return;
             try
             {
-                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, tx.Script, sender, signers, maxGas: (long)gas.Value);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, tx.Script, sender, signers, maxGas: (long)datoshi.Value);
             }
             catch (InvalidOperationException e)
             {
@@ -176,7 +177,7 @@ namespace Neo.CLI
                 return;
             }
             ConsoleHelper.Info("Network fee: ",
-                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
+                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)} GAS\t",
                 "Total fee: ",
                 $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
             if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())

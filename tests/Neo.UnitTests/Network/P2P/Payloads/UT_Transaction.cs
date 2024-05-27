@@ -187,7 +187,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                verificationGas += engine.GasConsumed;
+                verificationGas += engine.FeeConsumed;
             }
 
             var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
@@ -263,7 +263,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                verificationGas += engine.GasConsumed;
+                verificationGas += engine.FeeConsumed;
             }
 
             // ------------------
@@ -368,7 +368,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                verificationGas += engine.GasConsumed;
+                verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
             var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
@@ -448,7 +448,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                verificationGas += engine.GasConsumed;
+                verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
             var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
@@ -531,7 +531,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                verificationGas += engine.GasConsumed;
+                verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
             var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
@@ -661,7 +661,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                verificationGas += engine.GasConsumed;
+                verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
             var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
@@ -818,7 +818,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 "00" + // version
                 "04030201" + // nonce
                 "00e1f50500000000" + // system fee (1 GAS)
-                "0100000000000000" + // network fee (1 satoshi)
+                "0100000000000000" + // network fee (1 datoshi)
                 "04030201" + // timelimit
                 "01000000000000000000000000000000000000000000" + // empty signer
                 "00" + // no attributes
@@ -1050,7 +1050,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                verificationGas += engine.GasConsumed;
+                verificationGas += engine.FeeConsumed;
             }
             // get sizeGas
             var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
