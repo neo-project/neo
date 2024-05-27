@@ -32,7 +32,6 @@ namespace Neo.Plugins
 
         public static Settings? Default { get; private set; }
 
-
         private Settings(IConfigurationSection section)
         {
             /// Geting settings for storage changes state dumper
