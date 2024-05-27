@@ -21,13 +21,23 @@ namespace Neo.UnitTests.Extensions
 {
     public static class NativeContractExtensions
     {
-        public static ContractState DeployContract(this DataCache snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long gas = 200_00000000)
+        /// <summary>
+        /// Deploy a contract to the blockchain.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used for deploying the contract.</param>
+        /// <param name="sender">The address of the contract deployer.</param>
+        /// <param name="nefFile">The <see cref="NefFile"/> file of the contract to be deployed.</param>
+        /// <param name="manifest">The manifest of the contract to be deployed.</param>
+        /// <param name="datoshi">The gas fee to spend for deploying the contract in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static ContractState DeployContract(this DataCache snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long datoshi = 200_00000000)
         {
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } }, Attributes = System.Array.Empty<TransactionAttribute>() } : null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: gas);
+                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } }, Attributes = System.Array.Empty<TransactionAttribute>() } : null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: datoshi);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)

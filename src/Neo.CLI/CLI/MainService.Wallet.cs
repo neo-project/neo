@@ -626,7 +626,7 @@ namespace Neo.CLI
             {
                 var snapshot = NeoSystem.StoreView;
                 AssetDescriptor descriptor = new(snapshot, NeoSystem.Settings, NativeContract.GAS.Hash);
-                string extracFee = ConsoleHelper.ReadUserInput("This tx is not in mempool, please input extra fee manually");
+                string extracFee = ConsoleHelper.ReadUserInput("This tx is not in mempool, please input extra fee (datoshi) manually");
                 if (!BigDecimal.TryParse(extracFee, descriptor.Decimals, out BigDecimal decimalExtraFee) || decimalExtraFee.Sign <= 0)
                 {
                     ConsoleHelper.Error("Incorrect Amount Format");
@@ -636,7 +636,7 @@ namespace Neo.CLI
             };
 
             ConsoleHelper.Info("Network fee: ",
-                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
+                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)} GAS\t",
                 "Total fee: ",
                 $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
             if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())
