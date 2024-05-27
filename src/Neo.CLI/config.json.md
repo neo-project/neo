@@ -17,7 +17,7 @@ This README provides an explanation for each field in the JSON configuration fil
 - **Path**: Path to the data storage directory. `{0}` is a placeholder for the network ID.
 
 ### P2P
-- **Port**: Port number for the P2P network. Default is `10333`.
+- **Port**: Port number for the P2P network. MainNet is `10333`, TestNet is `20333`.
 - **MinDesiredConnections**: Minimum number of desired P2P connections. Default is `10`.
 - **MaxConnections**: Maximum number of P2P connections. Default is `40`.
 - **MaxConnectionsPerAddress**: Maximum number of connections allowed per address. Default is `3`.
