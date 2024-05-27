@@ -515,8 +515,8 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="script">script</param>
         /// <param name="account">sender</param>
-        /// <param name="gas">Max fee for running the script</param>
-        private void SendTransaction(byte[] script, UInt160? account = null, long gas = TestModeGas)
+        /// <param name="datoshi">Max fee for running the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        private void SendTransaction(byte[] script, UInt160? account = null, long datoshi = TestModeGas)
         {
             if (NoWallet()) return;
 
@@ -533,10 +533,10 @@ namespace Neo.CLI
 
             try
             {
-                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
+                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: datoshi);
                 ConsoleHelper.Info("Invoking script with: ", $"'{Convert.ToBase64String(tx.Script.Span)}'");
 
-                using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: gas))
+                using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: datoshi))
                 {
                     PrintExecutionOutput(engine, true);
                     if (engine.State == VMState.FAULT) return;
@@ -564,9 +564,9 @@ namespace Neo.CLI
         /// <param name="verifiable">Transaction</param>
         /// <param name="contractParameters">Contract parameters</param>
         /// <param name="showStack">Show result stack if it is true</param>
-        /// <param name="gas">Max fee for running the script</param>
+        /// <param name="datoshi">Max fee for running the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
         /// <returns>Return true if it was successful</returns>
-        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long gas = TestModeGas)
+        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long datoshi = TestModeGas)
         {
             List<ContractParameter> parameters = new();
 
@@ -612,7 +612,7 @@ namespace Neo.CLI
                 tx.Script = script;
             }
 
-            using ApplicationEngine engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: gas);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: datoshi);
             PrintExecutionOutput(engine, showStack);
             result = engine.State == VMState.FAULT ? StackItem.Null : engine.ResultStack.Peek();
             return engine.State != VMState.FAULT;
@@ -621,7 +621,7 @@ namespace Neo.CLI
         private void PrintExecutionOutput(ApplicationEngine engine, bool showStack = true)
         {
             ConsoleHelper.Info("VM State: ", engine.State.ToString());
-            ConsoleHelper.Info("Gas Consumed: ", new BigDecimal((BigInteger)engine.GasConsumed, NativeContract.GAS.Decimals).ToString());
+            ConsoleHelper.Info("Gas Consumed: ", new BigDecimal((BigInteger)engine.FeeConsumed, NativeContract.GAS.Decimals).ToString());
 
             if (showStack)
                 ConsoleHelper.Info("Result Stack: ", new JArray(engine.ResultStack.Select(p => p.ToJson())).ToString());

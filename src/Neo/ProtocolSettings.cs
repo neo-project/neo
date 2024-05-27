@@ -93,6 +93,7 @@ namespace Neo
 
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
+        /// In the unit of datoshi, 1 GAS = 1e8 datoshi
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
 
