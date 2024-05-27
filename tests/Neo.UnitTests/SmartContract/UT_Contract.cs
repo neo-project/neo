@@ -170,7 +170,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.GasConsumed.Should().Be(fee);
+                engine.FeeConsumed.Should().Be(fee);
             }
         }
 
@@ -198,7 +198,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.GasConsumed.Should().Be(fee);
+                engine.FeeConsumed.Should().Be(fee);
             }
         }
     }

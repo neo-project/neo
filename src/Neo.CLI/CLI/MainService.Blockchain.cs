@@ -137,9 +137,9 @@ namespace Neo.CLI
                 ConsoleHelper.Info("", "            Nonce: ", $"{tx.Transaction.Nonce}");
                 ConsoleHelper.Info("", "           Sender: ", $"{tx.Transaction.Sender}");
                 ConsoleHelper.Info("", "  ValidUntilBlock: ", $"{tx.Transaction.ValidUntilBlock}");
-                ConsoleHelper.Info("", "       FeePerByte: ", $"{tx.Transaction.FeePerByte}");
-                ConsoleHelper.Info("", "       NetworkFee: ", $"{tx.Transaction.NetworkFee}");
-                ConsoleHelper.Info("", "        SystemFee: ", $"{tx.Transaction.SystemFee}");
+                ConsoleHelper.Info("", "       FeePerByte: ", $"{tx.Transaction.FeePerByte} datoshi");
+                ConsoleHelper.Info("", "       NetworkFee: ", $"{tx.Transaction.NetworkFee} datoshi");
+                ConsoleHelper.Info("", "        SystemFee: ", $"{tx.Transaction.SystemFee} datoshi");
                 ConsoleHelper.Info("", "           Script: ", $"{Convert.ToBase64String(tx.Transaction.Script.Span)}");
                 ConsoleHelper.Info("", "          Version: ", $"{tx.Transaction.Version}");
                 ConsoleHelper.Info("", "       BlockIndex: ", $"{block.Index}");
