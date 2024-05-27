@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
         /// Gets the price for an Oracle request.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The price for an Oracle request.</returns>
+        /// <returns>The price for an Oracle request, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetPrice(DataCache snapshot)
         {
@@ -184,7 +184,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
+        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
         {
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
@@ -193,10 +193,10 @@ namespace Neo.SmartContract.Native
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 
-            engine.AddGas(GetPrice(engine.Snapshot));
+            engine.AddFee(GetPrice(engine.Snapshot));
 
             //Mint gas for the response
-            engine.AddGas(gasForResponse);
+            engine.AddFee(gasForResponse);
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id

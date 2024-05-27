@@ -62,7 +62,7 @@ namespace Neo.Ledger
                 Transaction = engine.ScriptContainer as Transaction;
                 Trigger = engine.Trigger;
                 VMState = engine.State;
-                GasConsumed = engine.GasConsumed;
+                GasConsumed = engine.FeeConsumed;
                 Exception = engine.FaultException;
                 Stack = engine.ResultStack.ToArray();
                 Notifications = engine.Notifications.ToArray();
