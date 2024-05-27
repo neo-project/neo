@@ -26,7 +26,7 @@ namespace Neo.Plugins
         public readonly Dictionary<Guid, IIterator> Iterators = new();
         public DateTime StartTime;
 
-        public Session(NeoSystem system, byte[] script, Signer[] signers, Witness[] witnesses, long gas, Diagnostic diagnostic)
+        public Session(NeoSystem system, byte[] script, Signer[] signers, Witness[] witnesses, long datoshi, Diagnostic diagnostic)
         {
             Random random = new();
             Snapshot = system.GetSnapshot();
@@ -40,7 +40,7 @@ namespace Neo.Plugins
                 Script = script,
                 Witnesses = witnesses
             };
-            Engine = ApplicationEngine.Run(script, Snapshot, container: tx, settings: system.Settings, gas: gas, diagnostic: diagnostic);
+            Engine = ApplicationEngine.Run(script, Snapshot, container: tx, settings: system.Settings, gas: datoshi, diagnostic: diagnostic);
             ResetExpiration();
         }
 

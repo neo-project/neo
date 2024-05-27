@@ -46,7 +46,9 @@ namespace Neo.Network.P2P.Payloads
 
         private byte version;
         private uint nonce;
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         private long sysfee;
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         private long netfee;
         private uint validUntilBlock;
         private Signer[] _signers;
@@ -372,26 +374,26 @@ namespace Neo.Network.P2P.Payloads
                     return VerifyResult.InvalidAttribute;
                 else
                     attributesFee += attribute.CalculateNetworkFee(snapshot, this);
-            long net_fee = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
-            if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            long netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
+            if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
-            if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;
+            if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(witnesses[i].VerificationScript.Span))
-                    net_fee -= execFeeFactor * SignatureContractCost();
+                    netFeeDatoshi -= execFeeFactor * SignatureContractCost();
                 else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n))
                 {
-                    net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
+                    netFeeDatoshi -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
                 else
                 {
-                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
+                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], netFeeDatoshi, out long fee))
                         return VerifyResult.Invalid;
-                    net_fee -= fee;
+                    netFeeDatoshi -= fee;
                 }
-                if (net_fee < 0) return VerifyResult.InsufficientFunds;
+                if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
             }
             return VerifyResult.Succeed;
         }

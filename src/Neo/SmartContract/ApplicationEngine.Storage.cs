@@ -194,7 +194,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddGas(newDataSize * StoragePrice);
+            AddFee(newDataSize * StoragePrice);
 
             item.Value = value;
         }
