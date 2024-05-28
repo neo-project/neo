@@ -144,7 +144,7 @@ namespace Neo.Plugins
             status = OracleStatus.Running;
             timer = new Timer(OnTimer, null, RefreshIntervalMilliSeconds, Timeout.Infinite);
             ConsoleHelper.Info($"Oracle started");
-            ProcessRequestsAsync();
+            _ = ProcessRequestsAsync();
         }
 
         [ConsoleCommand("stop oracle", Category = "Oracle", Description = "Stop oracle service")]
@@ -178,7 +178,7 @@ namespace Neo.Plugins
                 OnStop();
         }
 
-        private async void OnTimer(object state)
+        private async Task OnTimerAsync(object state)
         {
             try
             {
@@ -319,7 +319,7 @@ namespace Neo.Plugins
             }
         }
 
-        private async void ProcessRequestsAsync()
+        private async Task ProcessRequestsAsync()
         {
             while (!cancelSource.IsCancellationRequested)
             {

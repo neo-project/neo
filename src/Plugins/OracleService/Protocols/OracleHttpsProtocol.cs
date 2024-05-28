@@ -88,7 +88,7 @@ namespace Neo.Plugins
                 return (OracleResponseCode.ResponseTooLarge, null);
 
             byte[] buffer = new byte[OracleResponse.MaxResultSize + 1];
-            var stream = message.Content.ReadAsStream(cancellation);
+            var stream = await message.Content.ReadAsStreamAsync(cancellation);
             var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellation);
 
             if (read > OracleResponse.MaxResultSize)
