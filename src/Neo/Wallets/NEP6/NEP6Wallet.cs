@@ -11,6 +11,9 @@
 
 using Neo.Json;
 using Neo.SmartContract;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Pkcs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -224,26 +227,62 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(X509Certificate2 cert)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            // Export the certificate and private key as PFX data
+            var pfxData = cert.Export(X509ContentType.Pkcs12, (string)null);
+
+            // Load the certificate and private key using BouncyCastle
+            Pkcs12Store store;
+            using (var ms = new MemoryStream(pfxData))
             {
-                throw new PlatformNotSupportedException("Importing certificates is not supported on macOS.");
+                var builder = new Pkcs12StoreBuilder();
+                store = builder.Build();
+                store.Load(ms, []);
             }
-            KeyPair key;
-            using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
+
+            string alias = null;
+            foreach (var a in store.Aliases)
             {
-                key = new KeyPair(ecdsa.ExportParameters(true).D);
+                if (store.IsKeyEntry(a))
+                {
+                    alias = a;
+                    break;
+                }
             }
-            NEP6Contract contract = new()
+
+            if (alias == null)
+            {
+                throw new Exception("No private key found in the PFX file.");
+            }
+
+            // Get the private key
+            var keyEntry = store.GetKey(alias);
+            var privateKey = keyEntry.Key;
+
+            // Ensure the private key is EC type and get the D parameter
+            if (privateKey is not ECPrivateKeyParameters ecPrivateKeyParameters)
+            {
+                throw new InvalidOperationException("Private key is not an EC private key.");
+            }
+
+            // Convert the BouncyCastle private key to a byte array
+            var privateKeyBytes = ecPrivateKeyParameters.D.ToByteArrayUnsigned();
+
+            // Use the private key bytes to create a KeyPair (replace KeyPair with your actual implementation)
+            var key = new KeyPair(privateKeyBytes);
+
+            var contract = new NEP6Contract
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature },
-                ParameterNames = new[] { "signature" },
+                ParameterList = [ContractParameterType.Signature],
+                ParameterNames = ["signature"],
                 Deployed = false
             };
-            NEP6Account account = new(this, contract.ScriptHash, key, password)
+
+            var account = new NEP6Account(this, contract.ScriptHash, key, password)
             {
                 Contract = contract
             };
+
             AddAccount(account);
             return account;
         }

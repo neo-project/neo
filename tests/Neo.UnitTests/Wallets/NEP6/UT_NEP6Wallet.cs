@@ -303,11 +303,6 @@ namespace Neo.UnitTests.Wallets.NEP6
             X509Certificate2 cert = NewCertificate();
             Assert.IsNotNull(cert);
             Assert.AreEqual(true, cert.HasPrivateKey);
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                Assert.ThrowsException<PlatformNotSupportedException>(() => uut.Import(cert));
-                return;
-            }
             WalletAccount account = uut.Import(cert);
             Assert.IsNotNull(account);
         }
