@@ -19,7 +19,6 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Contract = Neo.SmartContract.Contract;
