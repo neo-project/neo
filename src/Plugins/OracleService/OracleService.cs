@@ -430,7 +430,7 @@ namespace Neo.Plugins
             ContractMethodDescriptor md = oracleContract.Manifest.Abi.GetMethod("verify", -1);
             engine.LoadContract(oracleContract, md, CallFlags.None);
             if (engine.Execute() != VMState.HALT) return null;
-            tx.NetworkFee += engine.GasConsumed;
+            tx.NetworkFee += engine.FeeConsumed;
 
             var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
