@@ -119,15 +119,13 @@ namespace Neo.Plugins
         {
             if (int.TryParse(_params[0].AsString(), out int contractId))
             {
-                var contracts = NativeContract.ContractManagement.GetContractById(system.StoreView, contractId);
-                return contracts?.ToJson().NotNull_Or(RpcError.UnknownContract);
+                var contractState = NativeContract.ContractManagement.GetContractById(system.StoreView, contractId);
+                return contractState.NotNull_Or(RpcError.UnknownContract).ToJson();
             }
-            else
-            {
-                UInt160 script_hash = ToScriptHash(_params[0].AsString());
-                ContractState contract = NativeContract.ContractManagement.GetContract(system.StoreView, script_hash);
-                return contract?.ToJson().NotNull_Or(RpcError.UnknownContract);
-            }
+
+            var scriptHash = ToScriptHash(_params[0].AsString());
+            var contract = NativeContract.ContractManagement.GetContract(system.StoreView, scriptHash);
+            return contract.NotNull_Or(RpcError.UnknownContract).ToJson();
         }
 
         private static UInt160 ToScriptHash(string keyword)
