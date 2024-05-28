@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NamedPipeConnectionThread.Messages.cs file belongs to the neo project and is free
+// NamedPipeServerConnectionThread.Messages.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.NamedPipes
 {
-    internal partial class NamedPipeConnectionThread
+    internal partial class NamedPipeServerConnectionThread
     {
         private PipeMessage CreateErrorResponse(int requestId, Exception exception)
         {
@@ -41,7 +41,8 @@ namespace Neo.Hosting.App.NamedPipes
 
         private PipeMessage OnBlock(PipeMessage message)
         {
-            throw new NotImplementedException();
+            var blockRequest = message.Payload as Pipe
+            _neoSystemService.GetBlock()
         }
     }
 }

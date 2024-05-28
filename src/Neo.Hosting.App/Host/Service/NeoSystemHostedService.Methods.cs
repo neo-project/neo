@@ -9,9 +9,21 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
+
 namespace Neo.Hosting.App.Host.Service
 {
     internal partial class NeoSystemHostedService
     {
+
+        public Block GetBlock(uint index) =>
+            NativeContract.Ledger.GetBlock(_store, index);
+
+        public Block GetBlock(UInt256 hash) =>
+            NativeContract.Ledger.GetBlock(_store, hash);
+
+        public Block GetCurrentHeight() =>
+            NativeContract.Ledger.GetBlock(_store, NativeContract.Ledger.CurrentHash(_store));
     }
 }

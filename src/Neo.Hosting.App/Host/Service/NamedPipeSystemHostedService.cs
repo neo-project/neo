@@ -130,7 +130,7 @@ namespace Neo.Hosting.App.Host.Service
                     if (connection is null)
                         continue;
 
-                    var threadPoolItem = new NamedPipeConnectionThread(connection, _loggerFactory);
+                    var threadPoolItem = new NamedPipeServerConnectionThread(connection, _loggerFactory);
                     ThreadPool.UnsafeQueueUserWorkItem(threadPoolItem, preferLocal: false);
                 }
             }

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NamedPipeConnectionThread.cs file belongs to the neo project and is free
+// NamedPipeServerConnectionThread.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using System;
 using System.Threading;
@@ -17,12 +18,15 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.NamedPipes
 {
-    internal sealed partial class NamedPipeConnectionThread(
+    internal sealed partial class NamedPipeServerConnectionThread(
+        NeoSystemHostedService neoSystemService,
         NamedPipeServerConnection connection,
         ILoggerFactory loggerFactory) : IThreadPoolWorkItem, IAsyncDisposable
     {
+        private readonly ILogger _logger = loggerFactory.CreateLogger<NamedPipeServerConnectionThread>();
+
+        private readonly NeoSystemHostedService _neoSystemService = neoSystemService;
         private readonly NamedPipeServerConnection _connection = connection;
-        private readonly ILogger _logger = loggerFactory.CreateLogger<NamedPipeConnectionThread>();
 
         private Exception? _shutdownException;
 

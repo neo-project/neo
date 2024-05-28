@@ -27,7 +27,7 @@ namespace Neo.Hosting.App.Host.Service
     internal sealed partial class NeoSystemHostedService(
         ILoggerFactory loggerFactory,
         ProtocolSettings protocolSettings,
-        IOptions<NeoOptions> neoOptions) : IHostedService, IDisposable
+        IOptions<NeoOptions> neoOptions) : IHostedService, IAsyncDisposable
     {
         public IPEndPoint? EndPoint
         {
@@ -49,17 +49,44 @@ namespace Neo.Hosting.App.Host.Service
         private readonly ILogger _logger = loggerFactory.CreateLogger(LoggerCategoryDefaults.NeoSystem);
 
         private NeoSystem? _neoSystem;
+        private DataCache? _store;
 
         private bool _hasStarted;
         private int _stopping;
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            StopAsync(new CancellationToken(true)).GetAwaiter().GetResult();
+            if (Interlocked.Exchange(ref _stopping, 1) == 1)
+            {
+                await _stoppedTcs.Task.ConfigureAwait(false);
+                return;
+            }
+
+            _stopCts.Cancel();
+
+#pragma warning disable CA2016 // Don't use cancellationToken when acquiring the semaphore. Dispose calls this with a pre-canceled token.
+            await _neoSystemStoppedSemaphore.WaitAsync().ConfigureAwait(false);
+#pragma warning restore CA2016
+
+            try
+            {
+                await StopAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _stoppedTcs.TrySetException(ex);
+                throw;
+            }
+            finally
+            {
+                _stopCts.Dispose();
+                _neoSystemStoppedSemaphore.Release();
+            }
+
+            _stoppedTcs.TrySetResult();
         }
 
-        [MemberNotNullWhen(true, nameof(_neoSystem), nameof(NeoSystem))]
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -90,13 +117,13 @@ namespace Neo.Hosting.App.Host.Service
                     throw new DllNotFoundException($"Plugin '{Path.Combine(Plugin.PluginsDirectory, $"{_neoOptions.Storage.Engine}.dll")}' can't be found.");
 
                 _neoSystem = new(_protocolSettings, _neoOptions.Storage.Engine, storagePath);
-                _logger.LogInformation("NeoSystem started.");
+                _logger.LogInformation("{NeoSystem} started.", LoggerCategoryDefaults.NeoSystem);
 
-                return Task.CompletedTask;
+                _store = _neoSystem.StoreView;
             }
             catch
             {
-                Dispose();
+                await StopAsync(cancellationToken);
                 throw;
             }
         }
@@ -118,38 +145,21 @@ namespace Neo.Hosting.App.Host.Service
             return true;
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("NeoSystem is shutting down...");
+            if (_hasStarted == false)
+                return Task.CompletedTask;
 
-            if (Interlocked.Exchange(ref _stopping, 1) == 1)
-            {
-                await _stoppedTcs.Task.ConfigureAwait(false);
-                return;
-            }
+            _logger.LogInformation("{NeoSystem} is shutting down...", LoggerCategoryDefaults.NeoSystem);
 
-            _stopCts.Cancel();
+            _neoSystem?.Dispose();
 
-#pragma warning disable CA2016 // Don't use cancellationToken when acquiring the semaphore. Dispose calls this with a pre-canceled token.
-            await _neoSystemStoppedSemaphore.WaitAsync().ConfigureAwait(false);
-#pragma warning restore CA2016
+            _neoSystem = null;
+            _store = null;
 
-            try
-            {
-                _neoSystem?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                _stoppedTcs.TrySetException(ex);
-                throw;
-            }
-            finally
-            {
-                _stopCts.Dispose();
-                _neoSystemStoppedSemaphore.Release();
-            }
+            _hasStarted = false;
 
-            _stoppedTcs.TrySetResult();
+            return Task.CompletedTask;
         }
     }
 }
