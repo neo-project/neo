@@ -12,6 +12,7 @@
 using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
+using Neo.Network.P2P.Payloads;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -42,7 +43,13 @@ namespace Neo.Hosting.App.NamedPipes
 
         private PipeMessage OnBlock(PipeMessage message)
         {
-            throw new NotImplementedException();
+            if (message.Payload is not PipeUnmanagedPayload<uint> blockIndex)
+                return CreateErrorResponse(message.RequestId, new InvalidDataException());
+
+            var block = _neoSystemService.GetBlock(blockIndex.Value);
+            var payload = new PipeSerializablePayload<Block>() { Value = block };
+
+            return PipeMessage.Create(message.RequestId, PipeCommand.Block, payload);
         }
     }
 }

@@ -30,22 +30,28 @@ using Xunit.Sdk;
 
 namespace Neo.Hosting.App.Tests.Host.Service
 {
-    public class UT_NamedPipesSystemHostedService : TestSetupLogging
+    public class UT_NamedPipesSystemHostedService : TestSetupLogging, IDisposable
     {
         private readonly ITestOutputHelper _testOutputHelper;
+        private readonly NeoSystemHostedService _neoSystemService;
 
         public UT_NamedPipesSystemHostedService(
             ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
             _testOutputHelper = testOutputHelper;
+            _neoSystemService = new NeoSystemHostedService(LoggerFactory, ProtocolSettings.Default, Options.Create(new NeoOptions()));
+        }
+
+        public void Dispose()
+        {
+            _neoSystemService.DisposeAsync().AsTask().Wait();
         }
 
         [Fact]
         public async Task Test_MessageProcess_GetVersion_From_Server()
         {
             await using var connectionListener = NamedPipeFactory.CreateListener(NamedPipeFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
-            await using var neoSystemService = new NeoSystemHostedService(LoggerFactory, ProtocolSettings.Default, Options.Create(new NeoOptions()));
-            using var pipeService = new NamedPipeSystemHostedService(neoSystemService, connectionListener, loggerFactory: LoggerFactory);
+            using var pipeService = new NamedPipeSystemHostedService(_neoSystemService, connectionListener, loggerFactory: LoggerFactory);
             await pipeService.StartAsync(default).DefaultTimeout();
 
             var client = NamedPipeFactory.CreateClientStream(pipeService.LocalEndPoint);
