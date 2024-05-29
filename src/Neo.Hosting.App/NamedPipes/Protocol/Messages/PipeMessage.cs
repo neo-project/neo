@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Hosting.App.Buffers;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
 using System;
 using System.Collections.Concurrent;
 using System.IO;

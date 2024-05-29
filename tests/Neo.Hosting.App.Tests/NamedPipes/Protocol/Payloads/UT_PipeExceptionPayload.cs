@@ -9,15 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
+using Neo.Hosting;
+using Neo.Hosting.App;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
+using Neo.Hosting.App.Tests;
+using Neo.Hosting.App.Tests.NamedPipes;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Neo.Hosting.App.Tests.UTHelpers.Extensions;
 using System;
 using Xunit.Abstractions;
 
-namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
+namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
 {
-    public class UT_PipeException
+    public class UT_PipeExceptionPayload
         (ITestOutputHelper testOutputHelper)
     {
         private static readonly string s_exceptionMessage = "Hello";
@@ -28,7 +36,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public void IPipeMessage_FromArray_Data()
         {
-            var exception1 = new PipeException()
+            var exception1 = new PipeExceptionPayload()
             {
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
@@ -36,14 +44,14 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var expectedBytes = exception1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var exception2 = new PipeException();
+            var exception2 = new PipeExceptionPayload();
             exception2.FromArray(expectedBytes);
 
             var actualBytes = exception2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeException);
-            var methodName = nameof(PipeException.FromArray);
+            var className = nameof(PipeExceptionPayload);
+            var methodName = nameof(PipeExceptionPayload.FromArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -55,7 +63,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public void IPipeMessage_ToArray_Data()
         {
-            var exception1 = new PipeException()
+            var exception1 = new PipeExceptionPayload()
             {
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
@@ -63,7 +71,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var expectedBytes = exception1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var exception2 = new PipeException()
+            var exception2 = new PipeExceptionPayload()
             {
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
@@ -72,8 +80,8 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
-            var className = nameof(PipeException);
-            var methodName = nameof(PipeException.ToArray);
+            var className = nameof(PipeExceptionPayload);
+            var methodName = nameof(PipeExceptionPayload.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytesWithoutHeader);

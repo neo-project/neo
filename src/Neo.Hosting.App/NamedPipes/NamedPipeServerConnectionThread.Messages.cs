@@ -11,6 +11,7 @@
 
 using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace Neo.Hosting.App.NamedPipes
     {
         private PipeMessage CreateErrorResponse(int requestId, Exception exception)
         {
-            var error = new PipeException(exception);
+            var error = new PipeExceptionPayload(exception);
             return PipeMessage.Create(requestId, PipeCommand.Exception, error);
         }
 
@@ -37,7 +38,7 @@ namespace Neo.Hosting.App.NamedPipes
             await WriteAsync(responseMessage);
         }
         private PipeMessage OnVersion(PipeMessage message) =>
-            PipeMessage.Create(message.RequestId, PipeCommand.Version, new PipeVersion());
+            PipeMessage.Create(message.RequestId, PipeCommand.Version, new PipeVersionPayload());
 
         private PipeMessage OnBlock(PipeMessage message)
         {

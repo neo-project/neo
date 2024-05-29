@@ -15,6 +15,7 @@ using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.NamedPipes;
 using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
 using System;
 using System.IO;
 using System.Threading;
@@ -44,7 +45,7 @@ namespace Neo.Hosting.App.Host.Service
             _connection = await _client.ConnectAsync(cancellationToken);
         }
 
-        public async Task<PipeVersion?> GetVersionAsync(CancellationToken cancellationToken = default)
+        public async Task<PipeVersionPayload?> GetVersionAsync(CancellationToken cancellationToken = default)
         {
             if (_connection is null)
                 return null;
@@ -58,7 +59,7 @@ namespace Neo.Hosting.App.Host.Service
             if (response is not null && response.RequestId != requestId)
                 throw new IOException("Invalid response");
 
-            return response?.Payload as PipeVersion;
+            return response?.Payload as PipeVersionPayload;
         }
     }
 }

@@ -10,11 +10,12 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Buffers;
+using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.IO;
 
-namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
+namespace Neo.Hosting.App.NamedPipes.Protocol.Payloads
 {
-    internal class PipeSerializable<T> : IPipeMessage
+    internal class PipeSerializablePayload<T> : IPipeMessage
         where T : ISerializable, new()
     {
         public T? Value { get; set; }

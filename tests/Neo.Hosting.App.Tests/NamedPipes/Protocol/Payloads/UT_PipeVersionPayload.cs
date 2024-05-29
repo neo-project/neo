@@ -9,15 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
+using Neo.Hosting;
+using Neo.Hosting.App;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
+using Neo.Hosting.App.Tests;
+using Neo.Hosting.App.Tests.NamedPipes;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Neo.Hosting.App.Tests.UTHelpers.Extensions;
 using System;
 using Xunit.Abstractions;
 
-namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
+namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
 {
-    public class UT_PipeVersion
+    public class UT_PipeVersionPayload
         (ITestOutputHelper testOutputHelper)
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
@@ -25,18 +33,18 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public void IPipeMessage_FromArray()
         {
-            var version1 = new PipeVersion();
+            var version1 = new PipeVersionPayload();
             var expectedBytes = version1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var version2 = new PipeVersion();
+            var version2 = new PipeVersionPayload();
             version2.FromArray(expectedBytes);
 
             var actualBytes = version2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeVersion);
-            var methodName = nameof(PipeVersion.FromArray);
+            var className = nameof(PipeVersionPayload);
+            var methodName = nameof(PipeVersionPayload.FromArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -53,22 +61,22 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         public void IPipeMessage_ToArray_Stream()
         {
             var date = DateTime.UtcNow;
-            var version1 = new PipeVersion()
+            var version1 = new PipeVersionPayload()
             {
                 TimeStamp = date,
             };
             var expectedBytes = version1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var version2 = new PipeVersion()
+            var version2 = new PipeVersionPayload()
             {
                 TimeStamp = date,
             };
             var actualBytes = version2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeVersion);
-            var methodName = nameof(PipeVersion.ToArray);
+            var className = nameof(PipeVersionPayload);
+            var methodName = nameof(PipeVersionPayload.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);

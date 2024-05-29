@@ -10,11 +10,12 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Buffers;
+using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using System;
 
-namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
+namespace Neo.Hosting.App.NamedPipes.Protocol.Payloads
 {
-    internal sealed class PipeException : IPipeMessage
+    internal sealed class PipeExceptionPayload : IPipeMessage
     {
         public string Type { get; set; }
 
@@ -22,14 +23,14 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public string StackTrace { get; set; }
 
-        public PipeException()
+        public PipeExceptionPayload()
         {
-            Type = nameof(PipeException);
+            Type = nameof(PipeExceptionPayload);
             Message = string.Empty;
             StackTrace = string.Empty;
         }
 
-        public PipeException(
+        public PipeExceptionPayload(
             Exception exception)
         {
             Type = exception.GetType().Name;

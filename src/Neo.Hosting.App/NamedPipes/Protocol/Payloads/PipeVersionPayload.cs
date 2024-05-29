@@ -10,11 +10,12 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Buffers;
+using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using System;
 
-namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
+namespace Neo.Hosting.App.NamedPipes.Protocol.Payloads
 {
-    internal sealed class PipeVersion : IPipeMessage
+    internal sealed class PipeVersionPayload : IPipeMessage
     {
         public int VersionNumber { get; set; }
 
@@ -30,7 +31,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 
         public string ProcessPath { get; set; }
 
-        public PipeVersion()
+        public PipeVersionPayload()
         {
             VersionNumber = Program.ApplicationVersionNumber;
             Platform = Environment.OSVersion.Platform;

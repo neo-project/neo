@@ -9,14 +9,22 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
+using Neo.Hosting;
+using Neo.Hosting.App;
 using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
+using Neo.Hosting.App.Tests;
+using Neo.Hosting.App.Tests.NamedPipes;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol.Messages;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Neo.Hosting.App.Tests.UTHelpers.Extensions;
 using System;
 using Xunit.Abstractions;
 
-namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
+namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Messages
 {
     public class UT_PipeMessage
         (ITestOutputHelper testOutputHelper)
@@ -29,7 +37,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         [Fact]
         public void IPipeMessage_FromArray_PipeVersion()
         {
-            var message1 = PipeMessage.Create(1, PipeCommand.Version, new PipeVersion());
+            var message1 = PipeMessage.Create(1, PipeCommand.Version, new PipeVersionPayload());
             var expectedBytes = message1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
@@ -39,12 +47,12 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var actualBytes = message2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = $"{nameof(PipeMessage)}<{nameof(PipeVersion)}>";
+            var className = $"{nameof(PipeMessage)}<{nameof(PipeVersionPayload)}>";
             var methodName = nameof(PipeMessage.FromArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
-            var versionResult1 = message1.Payload as PipeVersion;
-            var versionResult2 = message2.Payload as PipeVersion;
+            var versionResult1 = message1.Payload as PipeVersionPayload;
+            var versionResult2 = message2.Payload as PipeVersionPayload;
 
             Assert.Equal(expectedBytes, actualBytes);
             Assert.NotNull(versionResult1);
@@ -62,20 +70,20 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
         public void IPipeMessage_ToArray_PipeVersion()
         {
             var date = DateTime.UtcNow;
-            var message1 = PipeMessage.Create(1, PipeCommand.GetVersion, new PipeVersion() { TimeStamp = date });
+            var message1 = PipeMessage.Create(1, PipeCommand.GetVersion, new PipeVersionPayload() { TimeStamp = date });
             var expectedBytes = message1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var message2 = PipeMessage.Create(1, PipeCommand.GetVersion, new PipeVersion() { TimeStamp = date });
+            var message2 = PipeMessage.Create(1, PipeCommand.GetVersion, new PipeVersionPayload() { TimeStamp = date });
             var actualBytes = message2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = $"{nameof(PipeMessage)}<{nameof(PipeVersion)}>";
+            var className = $"{nameof(PipeMessage)}<{nameof(PipeVersionPayload)}>";
             var methodName = nameof(PipeMessage.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
-            var versionResult1 = message1.Payload as PipeVersion;
-            var versionResult2 = message2.Payload as PipeVersion;
+            var versionResult1 = message1.Payload as PipeVersionPayload;
+            var versionResult2 = message2.Payload as PipeVersionPayload;
 
             Assert.Equal(expectedBytes, actualBytes);
             Assert.NotNull(versionResult1);

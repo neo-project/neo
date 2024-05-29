@@ -9,9 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using System.IO;
 
-namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
+namespace Neo.Hosting.App.NamedPipes.Protocol.Payloads
 {
     internal sealed class PipeNullPayload : IPipeMessage
     {

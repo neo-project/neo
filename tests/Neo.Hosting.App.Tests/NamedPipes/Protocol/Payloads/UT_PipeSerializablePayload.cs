@@ -9,7 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
+using Neo.Hosting;
+using Neo.Hosting.App;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
+using Neo.Hosting.App.Tests;
+using Neo.Hosting.App.Tests.NamedPipes;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol;
+using Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads;
 using Neo.Hosting.App.Tests.UTHelpers.Extensions;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -20,9 +28,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 
-namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
+namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
 {
-    public class UT_PipeSerializable
+    public class UT_PipeSerializablePayload
         (ITestOutputHelper testOutputHelper)
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
@@ -34,14 +42,14 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var expectedBytes = block1.ToArray();
             var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            var block2 = new PipeSerializable<Block>();
+            var block2 = new PipeSerializablePayload<Block>();
             block2.FromArray(expectedBytes);
 
             var actualBytes = block2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeSerializable<Block>);
-            var methodName = nameof(PipeSerializable<Block>.ToArray);
+            var className = nameof(PipeSerializablePayload<Block>);
+            var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytes);
@@ -61,14 +69,14 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol
             var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
-            var className = nameof(PipeSerializable<Block>);
-            var methodName = nameof(PipeSerializable<Block>.ToArray);
+            var className = nameof(PipeSerializablePayload<Block>);
+            var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
             Assert.Equal(expectedBytes, actualBytesWithoutHeader);
         }
 
-        private static PipeSerializable<Block> CreateEmptyPipeBlock() =>
+        private static PipeSerializablePayload<Block> CreateEmptyPipeBlock() =>
             new()
             {
                 Value = new Block()

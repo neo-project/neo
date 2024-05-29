@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol
@@ -19,16 +19,16 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
         [PipeProtocol(typeof(PipeNullPayload))]
         GetVersion = 0x01,
 
-        [PipeProtocol(typeof(PipeVersion))]
+        [PipeProtocol(typeof(PipeVersionPayload))]
         Version = 0x02,
 
-        [PipeProtocol(typeof(PipeNullPayload))]
+        [PipeProtocol(typeof(PipeUnmanagedPayload<uint>))]
         GetBlock = 0x03,
 
-        [PipeProtocol(typeof(PipeSerializable<Block>))]
+        [PipeProtocol(typeof(PipeSerializablePayload<Block>))]
         Block = 0x04,
 
-        [PipeProtocol(typeof(PipeException))]
+        [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xc0,
 
         [PipeProtocol(typeof(PipeNullPayload))]

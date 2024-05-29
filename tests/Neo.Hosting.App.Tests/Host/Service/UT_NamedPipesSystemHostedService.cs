@@ -18,6 +18,7 @@ using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
 using Neo.Hosting.App.Tests.UTHelpers.SetupClasses;
 using System;
 using System.Collections.Generic;
@@ -60,7 +61,7 @@ namespace Neo.Hosting.App.Tests.Host.Service
 
             message.FromArray(buffer);
 
-            var payload = message.Payload as PipeVersion;
+            var payload = message.Payload as PipeVersionPayload;
 
             Assert.True(count <= buffer.Length);
             Assert.Equal(PipeCommand.Version, message.Command);

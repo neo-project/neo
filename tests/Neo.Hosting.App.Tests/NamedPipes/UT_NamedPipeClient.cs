@@ -17,6 +17,7 @@ using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes;
 using Neo.Hosting.App.NamedPipes.Protocol;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
+using Neo.Hosting.App.NamedPipes.Protocol.Payloads;
 using Neo.Hosting.App.Tests.UTHelpers.SetupClasses;
 using System;
 using System.Threading.Tasks;
@@ -50,7 +51,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes
             // client accepting message
             var message = await clientConnection.ReadAsync().DefaultTimeout();
             Assert.NotNull(message);
-            Assert.IsType<PipeVersion>(message.Payload);
+            Assert.IsType<PipeVersionPayload>(message.Payload);
 
             // Server and Client shutdown
             await server.StopAsync(default).DefaultTimeout();
