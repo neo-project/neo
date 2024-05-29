@@ -20,6 +20,7 @@ namespace Neo.SmartContract
     {
         /// <summary>
         /// The price of System.Crypto.CheckSig.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const long CheckSigPrice = 1 << 15;
 
@@ -66,7 +67,7 @@ namespace Neo.SmartContract
             byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
-            AddGas(CheckSigPrice * n * ExecFeeFactor);
+            AddFee(CheckSigPrice * n * ExecFeeFactor);
             try
             {
                 for (int i = 0, j = 0; i < m && j < n;)
