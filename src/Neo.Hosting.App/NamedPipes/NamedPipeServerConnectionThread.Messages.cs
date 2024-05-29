@@ -41,8 +41,7 @@ namespace Neo.Hosting.App.NamedPipes
 
         private PipeMessage OnBlock(PipeMessage message)
         {
-            var blockRequest = message.Payload as Pipe
-            _neoSystemService.GetBlock()
+            throw new NotImplementedException();
         }
     }
 }

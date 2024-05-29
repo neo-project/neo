@@ -31,15 +31,18 @@ namespace Neo.Hosting.App.Host.Service
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
 
+        private readonly NeoSystemHostedService _neoSystemService;
         private readonly NamedPipeServerListener _namedPipeListener;
 
         private bool _hasStarted;
         private int _stopping;
 
         public NamedPipeSystemHostedService(
+            NeoSystemHostedService neoSystemService,
             NamedPipeServerListener listener,
             ILoggerFactory? loggerFactory = null)
         {
+            _neoSystemService = neoSystemService;
             _namedPipeListener = listener;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _logger = _loggerFactory.CreateLogger(LoggerCategoryDefaults.RemoteManagement);
@@ -130,7 +133,7 @@ namespace Neo.Hosting.App.Host.Service
                     if (connection is null)
                         continue;
 
-                    var threadPoolItem = new NamedPipeServerConnectionThread(connection, _loggerFactory);
+                    var threadPoolItem = new NamedPipeServerConnectionThread(_neoSystemService, connection, _loggerFactory);
                     ThreadPool.UnsafeQueueUserWorkItem(threadPoolItem, preferLocal: false);
                 }
             }

@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Options;
+using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Host.Service;
@@ -30,7 +32,8 @@ namespace Neo.Hosting.App.Tests.NamedPipes
         public async Task Test_Send_And_Receive_Version_From_Server_And_Client()
         {
             await using var connectionListener = NamedPipeFactory.CreateListener(NamedPipeFactory.GetUniquePipeName(), loggerFactory: LoggerFactory);
-            using var server = new NamedPipeSystemHostedService(connectionListener, loggerFactory: LoggerFactory);
+            await using var neoSystemService = new NeoSystemHostedService(LoggerFactory, ProtocolSettings.Default, Options.Create(new NeoOptions()));
+            using var server = new NamedPipeSystemHostedService(neoSystemService, connectionListener, loggerFactory: LoggerFactory);
             await using var client = new NamedPipeClient(connectionListener.LocalEndPoint, LoggerFactory, null);
 
             // Server startup
