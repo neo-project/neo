@@ -142,7 +142,7 @@ namespace Neo.Plugins
             protocols["https"] = new OracleHttpsProtocol();
             protocols["neofs"] = new OracleNeoFSProtocol(wallet, oracles);
             status = OracleStatus.Running;
-            timer = new Timer(OnTimer, null, RefreshIntervalMilliSeconds, Timeout.Infinite);
+            timer = new Timer(OnTimerAsync, null, RefreshIntervalMilliSeconds, Timeout.Infinite);
             ConsoleHelper.Info($"Oracle started");
             _ = ProcessRequestsAsync();
         }
@@ -178,7 +178,11 @@ namespace Neo.Plugins
                 OnStop();
         }
 
-        private async Task OnTimerAsync(object state)
+#pragma warning disable VSTHRD100 // Avoid async void methods
+#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
+        private async void OnTimerAsync(object state)
+#pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
+#pragma warning restore VSTHRD100 // Avoid async void methods
         {
             try
             {
