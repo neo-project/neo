@@ -100,8 +100,7 @@ namespace Neo.Hosting.App.Providers
                 ["PLUGIN:VERSION"] = $"{Program.ApplicationVersion.ToString(3)}",
 
                 // Remote
-                ["REMOTE:PIPENAME"] = $"NEO_SERVICE",
-                ["REMOTE:MAXPIPES"] = "16",
+                ["NAMEDPIPE:NAME"] = $"NEO_SERVICE",
             };
 
         private static void AddIfNormalizedKeyMatchesPrefix(IDictionary<string, string?> data, string normalizedKey, string? value)

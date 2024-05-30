@@ -56,7 +56,7 @@ namespace Neo.Hosting.App.CommandLine
             {
                 var stopping = context.GetCancellationToken();
                 var console = loggerFactory.CreateLogger("Console");
-                var pipeName = PipeName ?? _options.Remote.PipeName;
+                var pipeName = PipeName ?? _options.NamedPipe.Name;
 
                 if (string.IsNullOrWhiteSpace(pipeName))
                     console.WriteLine("Pipe name is required.");

@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Configuration;
+using Neo.Hosting.App.Host;
 using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes;
 using System;
@@ -29,12 +30,15 @@ namespace Neo.Hosting.App.Extensions
             hostBuilder.ConfigureServices((context, services) =>
             {
                 services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
-                var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
-                var namedPipeTransportSection = context.Configuration.GetSection("NamedPipeTransport");
+                var protocolSettingsSection = context.Configuration.GetSection("ProtocolConfiguration");
 
-                services.Configure<NamedPipeServerTransportOptions>(namedPipeTransportSection);
                 services.Configure<NeoOptions>(context.Configuration);
-                services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
+
+                if (protocolSettingsSection.Exists())
+                    services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
+                else
+                    services.AddSingleton(NeoProtocolSettingsDefaults.MainNet);
+
                 services.AddSingleton<NamedPipeEndPoint>();
                 services.AddSingleton<NamedPipeServerListener>();
                 services.AddSingleton<NeoSystemHostedService>();
@@ -74,7 +78,7 @@ namespace Neo.Hosting.App.Extensions
                     manager.AddJsonFile(jsonConfigFileName, optional: false);
 
                     IConfigurationBuilder builder = manager;
-                    var appConfigSection = manager.GetSection(NeoOptions.ConfigurationSectionName);
+                    var appConfigSection = manager.GetSection(NeoJsonSectionNameDefaults.Application);
 
                     builder.Add(new NeoConfigurationSource(appConfigSection.Exists() ? appConfigSection : null));
 

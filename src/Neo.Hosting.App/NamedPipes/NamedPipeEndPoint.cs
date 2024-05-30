@@ -26,8 +26,8 @@ namespace Neo.Hosting.App.NamedPipes
         public string PipeName { get; } = pipeName;
 
         public NamedPipeEndPoint(string pipeName) : this(pipeName, LocalComputerServerName) { }
-        public NamedPipeEndPoint(IOptions<NeoOptions> options) : this(options.Value.Remote.PipeName, LocalComputerServerName) { }
-        public NamedPipeEndPoint(RemoteOptions options) : this(options.PipeName, LocalComputerServerName) { }
+        public NamedPipeEndPoint(IOptions<NeoOptions> options) : this(options.Value.NamedPipe.Name, LocalComputerServerName) { }
+        public NamedPipeEndPoint(NamedPipeOptions options) : this(options.Name, LocalComputerServerName) { }
 
         public override string ToString() =>
             $@"\\{ServerName}\pipe\{PipeName}";

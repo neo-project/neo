@@ -20,24 +20,18 @@ namespace Neo.Hosting.App.Configuration
 {
     internal sealed class NeoOptions
     {
-        public static readonly string ConfigurationSectionName = "ApplicationConfiguration";
-
         public StorageOptions Storage { get; set; } = new();
         public P2POptions P2P { get; set; } = new();
         public ContractOptions Contract { get; set; } = new("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
         public PluginOptions Plugin { get; set; } = new();
-        public RemoteOptions Remote { get; set; } = new();
+        public NamedPipeOptions NamedPipe { get; set; } = new();
         public List<WalletOptions> Wallets { get; set; } = [];
     }
 
     internal sealed class StorageOptions
     {
-        public static readonly string ConfigurationSectionName = "Storage";
-
         public class ArchiveSettings
         {
-            public static readonly string ConfigurationSectionName = "Archive";
-
             public string Path { get; set; } = AppContext.BaseDirectory;
             public string FileName { get; set; } = "chain.0.acc";
         }
@@ -50,8 +44,6 @@ namespace Neo.Hosting.App.Configuration
 
     internal sealed class P2POptions
     {
-        public static readonly string ConfigurationSectionName = "P2P";
-
         public string Listen { get; set; } = "0.0.0.0";
         public ushort Port { get; set; } = 10333;
         public int MinDesiredConnections { get; set; } = Peer.DefaultMinDesiredConnections;
@@ -62,8 +54,6 @@ namespace Neo.Hosting.App.Configuration
     internal sealed class ContractOptions
         (string neoNameService)
     {
-        public static readonly string ConfigurationSectionName = "Contract";
-
         private static readonly string s_defualtNameServiceString = "0x50ac1c37690cc2cfc594472833cf57505d5f46de";
         private static readonly UInt160 s_defaultNameServiceScriptHash = UInt160.Parse(s_defualtNameServiceString);
 
@@ -78,19 +68,14 @@ namespace Neo.Hosting.App.Configuration
 
     internal sealed class PluginOptions
     {
-        public static readonly string ConfigurationSectionName = "Plugin";
-
         public string DownloadUrl { get; set; } = "https://api.github.com/repos/neo-project/neo/releases";
         public bool Prerelease { get; set; } = false;
         public Version Version { get; set; } = new(0, 0);
     }
 
-    internal sealed class RemoteOptions
+    internal sealed class NamedPipeOptions
     {
-        public static readonly string ConfigurationSectionName = "Remote";
-
-        public string PipeName { get; set; } = default!;
-        public int MaxPipes { get; set; } = 16;
+        public string Name { get; set; } = default!;
     }
 
     internal sealed class WalletOptions

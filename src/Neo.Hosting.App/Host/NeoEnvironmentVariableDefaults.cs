@@ -14,7 +14,7 @@ namespace Neo.Hosting.App.Host
     internal static class NeoEnvironmentVariableDefaults
     {
         public const string PREFIX = "NEO_";
-        public static readonly string PipeName = $"{PREFIX}_REMOTE__PIPENAME";
+        public static readonly string PipeName = $"{PREFIX}_NAMEDPIPE__NAME";
         public static readonly string Environment = $"{PREFIX}ENVIRONMENT";
     }
 }
