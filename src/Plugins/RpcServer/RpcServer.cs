@@ -29,7 +29,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public partial class RpcServer : IDisposable
     {

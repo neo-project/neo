@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using System;
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public static class Result
     {

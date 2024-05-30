@@ -14,7 +14,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract;
 
-namespace ApplicationLogs.Store.States
+namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class ContractLogState : NotifyLogState, IEquatable<ContractLogState>
     {

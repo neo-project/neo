@@ -9,11 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using ApplicationLogs.Store.States;
-using Neo;
+using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.VM.Types;
 
-namespace ApplicationLogs.Store.Models
+namespace Neo.Plugins.ApplicationLogs.Store.Models
 {
     public class BlockchainEventModel
     {

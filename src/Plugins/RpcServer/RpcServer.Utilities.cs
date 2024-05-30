@@ -13,7 +13,7 @@ using Neo.Json;
 using Neo.Wallets;
 using System.Linq;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {

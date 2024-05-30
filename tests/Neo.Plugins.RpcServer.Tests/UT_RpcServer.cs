@@ -10,11 +10,37 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Neo.Ledger;
+using Neo.Persistence;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
     [TestClass]
-    public class UT_RpcServer
+    public partial class UT_RpcServer
     {
+        private Mock<NeoSystem> _mockSystem;
+        private Mock<SnapshotCache> _mockSnapshot;
+        private Mock<MemoryPool> _mockMemPool;
+        private RpcServer _rpcServer;
+
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            // Set up the mock system
+            _mockSystem = new Mock<NeoSystem>(TestProtocolSettings.Default, new TestBlockchain.StoreProvider());
+
+            // Set up the mock snapshot
+            _mockSnapshot = new Mock<SnapshotCache>();
+            _mockSystem.Setup(s => s.GetSnapshot()).Returns(_mockSnapshot.Object);
+
+            // Set up the mock memory pool
+            _mockMemPool = new Mock<MemoryPool>(_mockSystem.Object);
+            _mockSystem.SetupGet(s => s.MemPool).Returns(_mockMemPool.Object);
+
+            // Initialize the RpcServer with the mock system
+            _rpcServer = new RpcServer(_mockSystem.Object, new RpcServerSettings());
+        }
     }
 }

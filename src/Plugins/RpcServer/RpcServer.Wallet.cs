@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
