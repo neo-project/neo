@@ -51,7 +51,7 @@ namespace Neo.Plugins.RpcServer
             Initialize_SmartContract();
         }
 
-        private bool CheckAuth(HttpContext context)
+        internal bool CheckAuth(HttpContext context)
         {
             if (string.IsNullOrEmpty(settings.RpcUser)) return true;
 

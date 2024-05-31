@@ -9,38 +9,53 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
 using Neo.Persistence;
+using System;
+using System.Text;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
     [TestClass]
     public partial class UT_RpcServer
     {
-        private Mock<NeoSystem> _mockSystem;
-        private Mock<SnapshotCache> _mockSnapshot;
-        private Mock<MemoryPool> _mockMemPool;
+        private Mock<MockNeoSystem> _systemMock;
+        private SnapshotCache _snapshotCache;
+        private MemoryPool _memoryPool;
+        private RpcServerSettings _settings;
         private RpcServer _rpcServer;
 
-
         [TestInitialize]
-        public void Initialize()
+        public void TestSetup()
         {
-            // Set up the mock system
-            _mockSystem = new Mock<NeoSystem>(TestProtocolSettings.Default, new TestBlockchain.StoreProvider());
+            // Mock IReadOnlyStore
+            var mockStore = new Mock<IReadOnlyStore>();
 
-            // Set up the mock snapshot
-            _mockSnapshot = new Mock<SnapshotCache>();
-            _mockSystem.Setup(s => s.GetSnapshot()).Returns(_mockSnapshot.Object);
+            // Initialize SnapshotCache with the mock IReadOnlyStore
+            _snapshotCache = new SnapshotCache(mockStore.Object);
 
-            // Set up the mock memory pool
-            _mockMemPool = new Mock<MemoryPool>(_mockSystem.Object);
-            _mockSystem.SetupGet(s => s.MemPool).Returns(_mockMemPool.Object);
+            // Initialize NeoSystem
+            var neoSystem = new NeoSystem(TestProtocolSettings.Default, new TestBlockchain.StoreProvider());
 
-            // Initialize the RpcServer with the mock system
-            _rpcServer = new RpcServer(_mockSystem.Object, new RpcServerSettings());
+            // Initialize MemoryPool with the NeoSystem
+            _memoryPool = new MemoryPool(neoSystem);
+
+            // Set up the mock system with the correct constructor arguments
+            _systemMock = new Mock<MockNeoSystem>(_snapshotCache, _memoryPool);
+
+            _rpcServer = new RpcServer(_systemMock.Object, RpcServerSettings.Default);
+        }
+
+        [TestMethod]
+        public void TestCheckAuth_ValidCredentials_ReturnsTrue()
+        {
+            var context = new DefaultHttpContext();
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+            var result = _rpcServer.CheckAuth(context);
+            Assert.IsTrue(result);
         }
     }
 }

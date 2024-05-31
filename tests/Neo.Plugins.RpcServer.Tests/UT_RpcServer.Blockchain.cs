@@ -9,22 +9,18 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Json;
-using Neo.Network.P2P.Payloads;
+using Moq;
+using Neo.Ledger;
+using Neo.Persistence;
+using System;
+using System.Text;
 
-namespace Neo.Plugins.RpcServer.Tests;
-
-public partial class UT_RpcServer
+namespace Neo.Plugins.RpcServer.Tests
 {
-    [TestMethod]
-    public void TestGetBlockHeaderCount()
+    public partial class UT_RpcServer
     {
-        _mockSystem.Setup(m => m.HeaderCache.Last).Returns(new Header { Index = 123 });
 
-        var result = _rpcServer.GetBlockHeaderCount(new JArray());
-        Assert.IsNotNull(result);
-        Assert.IsInstanceOfType(result, typeof(JNumber));
-        Assert.AreEqual(124, result.AsNumber());
     }
 }

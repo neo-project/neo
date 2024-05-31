@@ -14,11 +14,17 @@ using Neo.Persistence;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
-    public class MockNeoSystem(SnapshotCache snapshotCache, MemoryPool memoryPool)
-        : NeoSystem(TestProtocolSettings.Default, new TestBlockchain.StoreProvider())
+    public class MockNeoSystem : NeoSystem
     {
-        public SnapshotCache SnapshotCache { get; } = snapshotCache;
-        public MemoryPool MemoryPool { get; } = memoryPool;
+        public SnapshotCache SnapshotCache { get; }
+        public MemoryPool MemoryPool { get; }
+
+        public MockNeoSystem(SnapshotCache snapshotCache, MemoryPool memoryPool)
+            : base(TestProtocolSettings.Default, new TestBlockchain.StoreProvider())
+        {
+            SnapshotCache = snapshotCache;
+            MemoryPool = memoryPool;
+        }
 
         public override SnapshotCache GetSnapshot()
         {
