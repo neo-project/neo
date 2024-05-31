@@ -26,7 +26,7 @@ namespace Neo.Plugins.RpcServer.Tests
             MemoryPool = memoryPool;
         }
 
-        public override SnapshotCache GetSnapshot()
+        public SnapshotCache GetSnapshot()
         {
             return SnapshotCache;
         }

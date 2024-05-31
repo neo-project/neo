@@ -276,7 +276,7 @@ namespace Neo
         /// Gets a snapshot of the blockchain storage.
         /// </summary>
         /// <returns></returns>
-        public virtual SnapshotCache GetSnapshot()
+        public SnapshotCache GetSnapshot()
         {
             return new SnapshotCache(store.GetSnapshot());
         }
