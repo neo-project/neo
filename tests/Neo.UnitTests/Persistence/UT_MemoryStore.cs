@@ -56,16 +56,16 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
-        public void NeoSystemTest()
+        public void NeoSystemStoreViewTest()
         {
             var neoSystem = new NeoSystem(TestProtocolSettings.Default, new MemoryStoreProvider());
             Assert.IsNotNull(neoSystem.StoreView);
-            var snapshot = neoSystem.StoreView;
-            var key = new StorageKey( Encoding.UTF8.GetBytes("testKey"));
-            var value =new StorageItem( Encoding.UTF8.GetBytes("testValue"));
-            snapshot.Add(key, value);
-            snapshot.Commit();
-            var result = snapshot.TryGet(key);
+            var store = neoSystem.StoreView;
+            var key = new StorageKey(Encoding.UTF8.GetBytes("testKey"));
+            var value = new StorageItem(Encoding.UTF8.GetBytes("testValue"));
+            store.Add(key, value);
+            store.Commit();
+            var result = store.TryGet(key);
             Assert.AreEqual("testValue", Encoding.UTF8.GetString(result.Value.ToArray()));
         }
 
