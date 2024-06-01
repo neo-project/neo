@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
@@ -61,7 +61,7 @@ namespace Neo.Plugins
         }
 
         [RpcMethod]
-        protected virtual JToken GetBlockHeaderCount(JArray _params)
+        internal virtual JToken GetBlockHeaderCount(JArray _params)
         {
             return (system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(system.StoreView)) + 1;
         }

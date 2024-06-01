@@ -19,7 +19,7 @@ using System;
 using System.Linq;
 using static Neo.Ledger.Blockchain;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {

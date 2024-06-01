@@ -26,7 +26,7 @@ using System.Linq;
 using System.Threading;
 using Array = System.Array;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {

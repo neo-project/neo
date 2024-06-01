@@ -27,6 +27,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neo.SmartContract.Testing" />
     <InternalsVisibleTo Include="Neo.SmartContract.TestEngine" />
+    <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
   </ItemGroup>
 
 </Project>

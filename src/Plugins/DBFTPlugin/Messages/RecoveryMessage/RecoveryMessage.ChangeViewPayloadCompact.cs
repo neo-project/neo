@@ -13,7 +13,7 @@ using Neo.IO;
 using System;
 using System.IO;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Messages
 {
     partial class RecoveryMessage
     {

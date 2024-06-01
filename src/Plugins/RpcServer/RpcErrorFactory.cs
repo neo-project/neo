@@ -11,7 +11,7 @@
 
 using Neo.Cryptography.ECC;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public static class RpcErrorFactory
     {

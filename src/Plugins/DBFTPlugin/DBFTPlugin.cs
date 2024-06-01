@@ -14,9 +14,10 @@ using Neo.ConsoleService;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
+using Neo.Plugins.DBFTPlugin.Consensus;
 using Neo.Wallets;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin
 {
     public class DBFTPlugin : Plugin
     {

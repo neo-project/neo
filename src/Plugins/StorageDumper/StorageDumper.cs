@@ -17,7 +17,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.StorageDumper
 {
     public class StorageDumper : Plugin
     {

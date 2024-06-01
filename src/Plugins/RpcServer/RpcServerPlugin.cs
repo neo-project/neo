@@ -12,7 +12,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public class RpcServerPlugin : Plugin
     {
@@ -55,18 +55,18 @@ namespace Neo.Plugins
                 $"Example: \"AllowOrigins\": [\"http://{s.BindAddress}:{s.Port}\"]", LogLevel.Info);
             }
 
-            RpcServer server = new(system, s);
+            RpcServer rpcRpcServer = new(system, s);
 
             if (handlers.Remove(s.Network, out var list))
             {
                 foreach (var handler in list)
                 {
-                    server.RegisterMethods(handler);
+                    rpcRpcServer.RegisterMethods(handler);
                 }
             }
 
-            server.StartRpcServer();
-            servers.TryAdd(s.Network, server);
+            rpcRpcServer.StartRpcServer();
+            servers.TryAdd(s.Network, rpcRpcServer);
         }
 
         public static void RegisterMethods(object handler, uint network)
