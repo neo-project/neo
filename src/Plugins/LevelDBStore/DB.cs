@@ -28,7 +28,6 @@ namespace LevelDB
         public readonly static Encoding DefaultEncoding = s_uTF8;
 
         private readonly Cache _cache;
-        private readonly Logger _infoLog;
         private readonly Comparator _comparator;
         private readonly Encoding _encoding;
 
@@ -64,7 +63,6 @@ namespace LevelDB
         public DB(string name, Encoding encoding, Options options)
         {
             _cache = options.Cache;
-            _infoLog = options.InfoLog;
             _comparator = options.Comparator;
             Handle = LevelDBInterop.leveldb_open(options.Handle, name, out var error);
             _encoding = encoding;
@@ -381,8 +379,8 @@ namespace LevelDB
         ///
         /// Valid property names include:
         ///
-        ///  "leveldb.num-files-at-level<N>" - return the number of files at level <N>,
-        ///     where <N> is an ASCII representation of a level number (e.g. "0").
+        ///  "leveldb.num-files-at-level<N>" - return the number of files at level </N>,
+        ///     where <N> is an ASCII representation of a level number (e.g. "0")</N>.
         ///  "leveldb.stats" - returns a multi-line string that describes statistics
         ///     about the internal operation of the DB.
         /// </summary>
@@ -436,8 +434,6 @@ namespace LevelDB
             _cache?.Dispose();
 
             _comparator?.Dispose();
-
-            _infoLog?.Dispose();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
