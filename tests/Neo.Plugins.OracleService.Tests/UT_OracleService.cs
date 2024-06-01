@@ -16,7 +16,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins.Tests
+namespace Neo.Plugins.OracleService.Tests
 {
     [TestClass]
     public class UT_OracleService : TestKit

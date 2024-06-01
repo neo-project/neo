@@ -15,6 +15,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -24,7 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     public partial class ConsensusContext : IDisposable, ISerializable
     {

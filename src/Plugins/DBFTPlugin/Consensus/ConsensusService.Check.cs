@@ -13,10 +13,12 @@ using Akka.Actor;
 using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
 using System;
 using System.Linq;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusService
     {

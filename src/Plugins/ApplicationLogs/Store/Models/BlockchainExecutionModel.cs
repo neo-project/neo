@@ -9,13 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using ApplicationLogs.Store.States;
-using Neo.Plugins.Store.Models;
+using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 
-namespace ApplicationLogs.Store.Models
+namespace Neo.Plugins.ApplicationLogs.Store.Models
 {
     public class BlockchainExecutionModel
     {
