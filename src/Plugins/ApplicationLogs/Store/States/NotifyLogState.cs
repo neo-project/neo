@@ -13,7 +13,7 @@ using Neo;
 using Neo.IO;
 using Neo.SmartContract;
 
-namespace ApplicationLogs.Store.States
+namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class NotifyLogState : ISerializable, IEquatable<NotifyLogState>
     {

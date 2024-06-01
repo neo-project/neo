@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
@@ -383,7 +383,7 @@ namespace Neo.Plugins
             json["script"] = Convert.ToBase64String(invocationScript);
             json["state"] = engine.Execute();
             // Gas consumed in the unit of datoshi, 1 GAS = 1e8 datoshi
-            json["gasconsumed"] = engine.GasConsumed.ToString();
+            json["gasconsumed"] = engine.FeeConsumed.ToString();
             json["exception"] = GetExceptionMessage(engine.FaultException);
             try
             {

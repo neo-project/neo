@@ -11,7 +11,7 @@
 
 using Neo.Json;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public class RpcError
     {

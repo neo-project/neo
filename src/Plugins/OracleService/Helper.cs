@@ -12,7 +12,7 @@
 using System.Linq;
 using System.Net;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService
 {
     static class Helper
     {
