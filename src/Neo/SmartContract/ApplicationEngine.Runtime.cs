@@ -305,6 +305,7 @@ namespace Neo.SmartContract
         protected internal BigInteger GetRandom()
         {
             byte[] buffer;
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             long price;
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
@@ -316,7 +317,7 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddGas(price * ExecFeeFactor);
+            AddFee(price * ExecFeeFactor);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -420,12 +421,12 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.BurnGas.
         /// Burning GAS to benefit the NEO ecosystem.
         /// </summary>
-        /// <param name="gas">The amount of GAS to burn.</param>
-        protected internal void BurnGas(long gas)
+        /// <param name="datoshi">The amount of GAS to burn, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        protected internal void BurnGas(long datoshi)
         {
-            if (gas <= 0)
+            if (datoshi <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
-            AddGas(gas);
+            AddFee(datoshi);
         }
 
         /// <summary>
