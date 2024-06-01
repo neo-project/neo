@@ -63,15 +63,18 @@ namespace Neo.Hosting.App.CommandLine
                 public FileInfo File { get; set; }
 
                 private readonly Progress<uint> _progress;
+                private readonly NeoSystem _neoSystem;
                 private readonly NeoSystemHostedService _neoSystemHostedService;
                 private readonly ILoggerFactory _loggerFactory;
                 private readonly ILogger? _logger;
 
                 public Handler(
+                    NeoSystem neoSystem,
                     NeoSystemHostedService neoSystemService,
                     ILoggerFactory loggerFactory,
                     IOptions<NeoOptions> options)
                 {
+                    _neoSystem = neoSystem;
                     _neoSystemHostedService = neoSystemService;
                     _progress = new Progress<uint>();
                     _progress.ProgressChanged += WriteBlocksToAccFileProgressChanged;
@@ -92,12 +95,11 @@ namespace Neo.Hosting.App.CommandLine
                     await host.StartAsync(stoppingToken);
                     await _neoSystemHostedService.StartAsync(stoppingToken);
 
-                    var neoSystem = _neoSystemHostedService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
-                    var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+                    var currentBlockHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
                     Count = Math.Min(Count, currentBlockHeight - Start);
 
                     var writeBlocksToAccFileTask = Task.Run(
-                        () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, stoppingToken),
+                        () => WriteBlocksToAccFile(_neoSystem, Start, Count, File.FullName, true, stoppingToken),
                         stoppingToken);
 
                     await writeBlocksToAccFileTask;

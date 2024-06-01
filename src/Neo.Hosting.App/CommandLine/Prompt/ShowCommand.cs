@@ -19,12 +19,16 @@ namespace Neo.Hosting.App.CommandLine.Prompt
     {
         public ShowCommand(
             ILoggerFactory loggerFactory,
-            NamedPipeClientService clientService) : base("show", "Show information about service")
+            NamedPipeClientService clientService) : base("show", "Show information")
         {
             var versionCommand = new VersionCommand(loggerFactory, clientService);
             var blockCommand = new BlockCommand();
+            var transactionCommand = new TransactionCommand();
+            var contractCommand = new ContractCommand();
 
             AddCommand(blockCommand);
+            AddCommand(contractCommand);
+            AddCommand(transactionCommand);
             AddCommand(versionCommand);
         }
     }

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// ShowCommand.Block.cs file belongs to the neo project and is free
+// ShowCommand.Contract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -18,18 +18,18 @@ namespace Neo.Hosting.App.CommandLine.Prompt
 {
     internal partial class ShowCommand
     {
-        internal sealed class BlockCommand : Command
+        internal sealed class ContractCommand : Command
         {
-            public BlockCommand() : base("block", "Show block")
+            public ContractCommand() : base("contract", "Show contract")
             {
-                var indexOrHashArgument = new Argument<string>("INDEX_OR_HASH", "Index or Hash256 of the block");
+                var nameOrHashArgument = new Argument<string>("NAME_OR_HASH160", "Contract name or 160-bit hash (hex)");
 
-                AddArgument(indexOrHashArgument);
+                AddArgument(nameOrHashArgument);
 
                 this.SetHandler(async context => await new Handler().InvokeAsync(context));
             }
 
-            public new sealed class Handler : ICommandHandler
+            internal sealed new class Handler : ICommandHandler
             {
                 public Task<int> InvokeAsync(InvocationContext context)
                 {
