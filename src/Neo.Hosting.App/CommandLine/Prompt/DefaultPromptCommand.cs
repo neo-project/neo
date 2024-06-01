@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// DefaultRemoteCommand.cs file belongs to the neo project and is free
+// DefaultPromptCommand.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,20 +17,22 @@ using System.CommandLine;
 
 namespace Neo.Hosting.App.CommandLine.Prompt
 {
-    internal sealed class DefaultRemoteCommand : Command
+    internal sealed class DefaultPromptCommand : Command
     {
         private static string? s_executablePath;
 
-        public DefaultRemoteCommand(
+        public DefaultPromptCommand(
             ILoggerFactory loggerFactory,
             NamedPipeClientService clientService) : base(ExecutableName, $"Your are connected to {ExecutablePath}")
         {
-            var walletCommand = new WalletCommand();
-            var showCommand = new ShowCommand(loggerFactory, clientService);
+            var exportCommand = new ExportCommand();
             var helpCommand = new HelpCommand();
             var quitCommand = new QuitCommand();
+            var showCommand = new ShowCommand(loggerFactory, clientService);
+            var walletCommand = new WalletCommand();
 
             AddCommand(walletCommand);
+            AddCommand(exportCommand);
             AddCommand(showCommand);
             AddCommand(helpCommand);
             AddCommand(quitCommand);

@@ -20,9 +20,9 @@ namespace Neo.Hosting.App.CommandLine.Prompt
 {
     internal partial class WalletCommand
     {
-        internal sealed class WalletOpenCommand : Command
+        internal sealed class OpenCommand : Command
         {
-            public WalletOpenCommand() : base("open", "Open a wallet to manage or use")
+            public OpenCommand() : base("open", "Open a wallet to manage or use")
             {
                 var walletPathArgument = new Argument<FileInfo>("JSON_FILE", "Path to the json file");
 

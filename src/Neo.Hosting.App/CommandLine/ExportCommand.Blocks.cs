@@ -31,9 +31,9 @@ namespace Neo.Hosting.App.CommandLine
         {
             public BlocksExportCommand() : base("blocks", "Export blocks to an offline archive file")
             {
-                var startOption = new Option<uint>(new[] { "--start", "-s" }, () => 0, "The block height where to begin");
-                var countOption = new Option<uint>(new[] { "--count", "-c" }, () => uint.MaxValue, "The total blocks to be written");
-                var fileOption = new Option<FileInfo>(new[] { "--file", "-f" }, "The output filename");
+                var startOption = new Option<uint>(["--start", "-s"], () => 0, "Starting height index of the block.");
+                var countOption = new Option<uint>(["--count", "-c"], () => uint.MaxValue, "Total blocks to be written");
+                var fileOption = new Option<FileInfo>(["--file", "-f"], "Output filename");
 
                 startOption.AddValidator(result =>
                 {

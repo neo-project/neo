@@ -106,7 +106,7 @@ namespace Neo.Hosting.App.CommandLine
             {
                 context.Console.Clear();
 
-                var rootCommand = new DefaultRemoteCommand(loggerFactory, clientService);
+                var rootCommand = new DefaultPromptCommand(loggerFactory, clientService);
                 var parser = new CommandLineBuilder(rootCommand)
                     .UseParseErrorReporting()
                     .Build();

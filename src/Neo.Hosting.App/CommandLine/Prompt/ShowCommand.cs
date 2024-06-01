@@ -15,14 +15,16 @@ using System.CommandLine;
 
 namespace Neo.Hosting.App.CommandLine.Prompt
 {
-    internal sealed class ShowCommand : Command
+    internal sealed partial class ShowCommand : Command
     {
         public ShowCommand(
             ILoggerFactory loggerFactory,
             NamedPipeClientService clientService) : base("show", "Show information about service")
         {
-            var versionCommand = new ShowVersionCommand(loggerFactory, clientService);
+            var versionCommand = new VersionCommand(loggerFactory, clientService);
+            var blockCommand = new BlockCommand();
 
+            AddCommand(blockCommand);
             AddCommand(versionCommand);
         }
     }

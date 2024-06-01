@@ -19,49 +19,52 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.CommandLine.Prompt
 {
-    internal sealed class ShowVersionCommand : Command
+    internal sealed partial class ShowCommand
     {
-        public ShowVersionCommand(
-            ILoggerFactory loggerFactory,
-            NamedPipeClientService clientService) : base("version", "Show version information")
+        internal sealed class VersionCommand : Command
         {
-            this.SetHandler(context => new Handler(loggerFactory, clientService).InvokeAsync(context));
-        }
-
-        public new sealed class Handler(
-            ILoggerFactory loggerFactory,
-            NamedPipeClientService clientService) : ICommandHandler
-        {
-            public async Task<int> InvokeAsync(InvocationContext context)
+            public VersionCommand(
+                ILoggerFactory loggerFactory,
+                NamedPipeClientService clientService) : base("version", "Show version information")
             {
-                var stopping = context.GetCancellationToken();
-                var logger = loggerFactory.CreateLogger("Console");
+                this.SetHandler(async context => await new Handler(loggerFactory, clientService).InvokeAsync(context));
+            }
 
-                var version = await clientService.GetVersionAsync(stopping);
-
-                if (version is null)
+            public new sealed class Handler(
+                ILoggerFactory loggerFactory,
+                NamedPipeClientService clientService) : ICommandHandler
+            {
+                public async Task<int> InvokeAsync(InvocationContext context)
                 {
-                    logger.LogError("Failed to get version information");
+                    var stopping = context.GetCancellationToken();
+                    var logger = loggerFactory.CreateLogger("Console");
+
+                    var version = await clientService.GetVersionAsync(stopping);
+
+                    if (version is null)
+                    {
+                        logger.LogError("Failed to get version information");
+                        return 0;
+                    }
+
+                    logger.WriteLine(nameof(Version).PadCenter(21, '-'));
+                    logger.WriteLine("   Process Id: {0}", version.ProcessId);
+                    logger.WriteLine(" Process Path: {0}", version.ProcessPath);
+                    logger.WriteLine("      Version: {0}", version.VersionNumber);
+                    logger.WriteLine(" Machine Name: {0}", version.MachineName);
+                    logger.WriteLine("     Platform: {0}", version.Platform);
+                    logger.WriteLine("    User Name: {0}", version.UserName);
+                    logger.WriteLine(" Current Time: {0}", version.TimeStamp);
+                    logger.WriteLine();
+
+
                     return 0;
                 }
 
-                logger.WriteLine(nameof(Version).PadCenter(21, '-'));
-                logger.WriteLine("   Process Id: {0}", version.ProcessId);
-                logger.WriteLine(" Process Path: {0}", version.ProcessPath);
-                logger.WriteLine("      Version: {0}", version.VersionNumber);
-                logger.WriteLine(" Machine Name: {0}", version.MachineName);
-                logger.WriteLine("     Platform: {0}", version.Platform);
-                logger.WriteLine("    User Name: {0}", version.UserName);
-                logger.WriteLine(" Current Time: {0}", version.TimeStamp);
-                logger.WriteLine();
-
-
-                return 0;
-            }
-
-            public int Invoke(InvocationContext context)
-            {
-                throw new NotImplementedException();
+                public int Invoke(InvocationContext context)
+                {
+                    throw new NotImplementedException();
+                }
             }
         }
     }
