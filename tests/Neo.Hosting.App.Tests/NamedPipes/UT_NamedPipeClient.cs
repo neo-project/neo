@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Factories;
+using Neo.Hosting.App.Host;
 using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes;
 using Neo.Hosting.App.NamedPipes.Protocol;
@@ -22,6 +23,7 @@ using Neo.Hosting.App.Tests.UTHelpers.Default;
 using Neo.Hosting.App.Tests.UTHelpers.SetupClasses;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
@@ -30,17 +32,20 @@ namespace Neo.Hosting.App.Tests.NamedPipes
 {
     public class UT_NamedPipeClient : TestSetupLogging, IDisposable
     {
+        private readonly NeoSystem _neoSystem;
         private readonly NeoSystemHostedService _neoSystemService;
 
         public UT_NamedPipeClient(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
-            _neoSystemService = new NeoSystemHostedService(LoggerFactory, TestProtocolSettings.Default, Options.Create(TestNeoOptions.Default));
+            _neoSystem = new NeoSystem(NeoProtocolSettingsDefaults.MainNet, NeoDefaults.StoreProviderName, Path.GetRandomFileName());
+            _neoSystemService = new NeoSystemHostedService(_neoSystem, LoggerFactory, TestProtocolSettings.Default, Options.Create(TestNeoOptions.Default));
             _neoSystemService.StartAsync(new CancellationToken()).Wait();
         }
 
         public void Dispose()
         {
             _neoSystemService.DisposeAsync().AsTask().Wait();
+            _neoSystem.Dispose();
         }
 
         [Fact]

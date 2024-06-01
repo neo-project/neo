@@ -37,7 +37,7 @@ namespace Neo.Hosting.App
             Assembly.GetExecutingAssembly().GetName().Version ?? new Version("0.0.0");
 
         internal static bool IsRunningAsService =>
-            (SystemdHelpers.IsSystemdService() || WindowsServiceHelpers.IsWindowsService()) && Environment.UserInteractive == false;
+            (SystemdHelpers.IsSystemdService() || WindowsServiceHelpers.IsWindowsService()) || Environment.UserInteractive == false;
 
         static async Task<int> Main(string[] args)
         {
@@ -48,7 +48,8 @@ namespace Neo.Hosting.App
             var parser = new CommandLineBuilder(rootCommand)
                 .UseInternalHost(DefaultNeoHostBuilderFactory, builder =>
                 {
-                    builder.UseNeoServiceConfiguration();
+                    builder.UseNeoServices();
+                    builder.UseNeoSystem();
                     builder.UseCommandHandler<DefaultRootCommand, EmptyHandler>();
                     builder.UseCommandHandler<ExportCommand, EmptyHandler>();
                     builder.UseCommandHandler<RunCommand, RunCommand.Handler>();

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Helpers;
+using Neo.Hosting.App.Host;
 using Neo.Network.P2P;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,7 @@ namespace Neo.Hosting.App.Configuration
             public string FileName { get; set; } = "chain.0.acc";
         }
 
-        public string Engine { get; set; } = "LevelDBStore";
+        public string Engine { get; set; } = NeoDefaults.StoreProviderName;
         public string Path { get; set; } = "Data_LevelDB_{0:X2}";
         public bool Verify { get; set; } = true;
         public ArchiveSettings Archive { get; set; } = new();

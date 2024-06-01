@@ -79,7 +79,7 @@ namespace Neo.Hosting.App.Providers
             {
                 // Storage
                 ["STORAGE:PATH"] = "Data_LevelDB_{0:X2}",
-                ["STORAGE:ENGINE"] = "LevelDBStore",
+                ["STORAGE:ENGINE"] = NeoDefaults.StoreProviderName,
                 ["STORAGE:VERIFY"] = bool.TrueString,
                 ["STORAGE:ARCHIVE:PATH"] = AppContext.BaseDirectory,
                 ["STORAGE:ARCHIVE:FILENAME"] = "chain.{0}.acc",

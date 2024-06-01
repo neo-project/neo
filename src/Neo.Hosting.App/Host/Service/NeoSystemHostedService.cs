@@ -14,10 +14,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Neo.Hosting.App.Configuration;
 using Neo.Persistence;
-using Neo.Plugins;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +23,7 @@ using System.Threading.Tasks;
 namespace Neo.Hosting.App.Host.Service
 {
     internal sealed partial class NeoSystemHostedService(
+        NeoSystem neoSystem,
         ILoggerFactory loggerFactory,
         ProtocolSettings protocolSettings,
         IOptions<NeoOptions> neoOptions) : IHostedService, IAsyncDisposable
@@ -35,9 +34,6 @@ namespace Neo.Hosting.App.Host.Service
             private set;
         }
 
-        public NeoSystem NeoSystem => _neoSystem ??
-            throw new InvalidOperationException($"{nameof(NeoSystemHostedService)} needs to be started.");
-
         private readonly ProtocolSettings _protocolSettings = protocolSettings;
         private readonly NeoOptions _neoOptions = neoOptions.Value;
 
@@ -46,10 +42,10 @@ namespace Neo.Hosting.App.Host.Service
 
         private readonly SemaphoreSlim _neoSystemStoppedSemaphore = new(1);
 
-        private readonly ILogger _logger = loggerFactory.CreateLogger(LoggerCategoryDefaults.NeoSystem);
+        private readonly ILogger _logger = loggerFactory.CreateLogger(LoggerCategoryDefaults.NeoSystemService);
 
-        private NeoSystem? _neoSystem;
-        private DataCache? _store;
+        private readonly NeoSystem _neoSystem = neoSystem;
+        private readonly DataCache _store = neoSystem.StoreView;
 
         private bool _hasStarted;
         private int _stopping;
@@ -95,31 +91,7 @@ namespace Neo.Hosting.App.Host.Service
 
                 _hasStarted = true;
 
-                // Force Neo plugins to load
-                Plugin.LoadPlugins();
-                _logger.LogInformation("Plugin root path: {PluginsDirectory}", Plugin.PluginsDirectory);
-
-                foreach (var plugins in Plugin.Plugins)
-                    _logger.LogInformation("Loaded plugin: {Plugin}", plugins.Name);
-
-                string? storagePath = null;
-                if (string.IsNullOrEmpty(_neoOptions.Storage.Path) == false)
-                {
-                    storagePath = string.Format(_neoOptions.Storage.Path, _protocolSettings.Network);
-                    if (Directory.Exists(storagePath) == false)
-                    {
-                        if (Path.IsPathFullyQualified(storagePath) == false)
-                            storagePath = Path.Combine(AppContext.BaseDirectory, storagePath);
-                    }
-                }
-
-                if (StoreFactory.GetStoreProvider(_neoOptions.Storage.Engine) is null)
-                    throw new DllNotFoundException($"Plugin '{Path.Combine(Plugin.PluginsDirectory, $"{_neoOptions.Storage.Engine}.dll")}' can't be found.");
-
-                _neoSystem = new(_protocolSettings, _neoOptions.Storage.Engine, storagePath);
-                _logger.LogInformation("{NeoSystem} started.", LoggerCategoryDefaults.NeoSystem);
-
-                _store = _neoSystem.StoreView;
+                _logger.LogInformation("{NeoSystem} started.", LoggerCategoryDefaults.NeoSystemService);
             }
             catch
             {
@@ -150,12 +122,7 @@ namespace Neo.Hosting.App.Host.Service
             if (_hasStarted == false)
                 return Task.CompletedTask;
 
-            _logger.LogInformation("{NeoSystem} is shutting down...", LoggerCategoryDefaults.NeoSystem);
-
-            _neoSystem?.Dispose();
-
-            _neoSystem = null;
-            _store = null;
+            _logger.LogInformation("{NeoSystem} is shutting down...", LoggerCategoryDefaults.NeoSystemService);
 
             _hasStarted = false;
 

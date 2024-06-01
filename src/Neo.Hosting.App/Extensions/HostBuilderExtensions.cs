@@ -17,6 +17,7 @@ using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Host;
 using Neo.Hosting.App.Host.Service;
 using Neo.Hosting.App.NamedPipes;
+using Neo.Plugins;
 using System;
 using System.CommandLine.Hosting;
 using System.IO;
@@ -25,19 +26,49 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class HostBuilderExtensions
     {
-        public static IHostBuilder UseNeoServiceConfiguration(this IHostBuilder hostBuilder, Action<HostBuilderContext, IServiceCollection>? configure = null)
+        public static IHostBuilder UseNeoSystem(this IHostBuilder hostBuilder)
+        {
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                var protocolSettingsSection = context.Configuration.GetSection("ProtocolConfiguration");
+                var protocolSettings = NeoProtocolSettingsDefaults.MainNet;
+
+                if (protocolSettingsSection.Exists() == false)
+                    services.AddSingleton(protocolSettings);
+                else
+                {
+                    protocolSettings = ProtocolSettings.Load(protocolSettingsSection);
+                    services.AddSingleton(protocolSettings);
+
+                }
+
+                Plugin.LoadPlugins();
+
+                var storageOptions = context.Configuration.Get<StorageOptions>();
+
+                string? storagePath = null;
+                if (string.IsNullOrEmpty(storageOptions?.Path) == false)
+                {
+                    storagePath = string.Format(storageOptions.Path, protocolSettings.Network);
+                    if (Directory.Exists(storagePath) == false)
+                    {
+                        if (Path.IsPathFullyQualified(storagePath) == false)
+                            storagePath = Path.Combine(AppContext.BaseDirectory, storagePath);
+                    }
+                }
+
+                services.AddSingleton(new NeoSystem(protocolSettings, storageOptions?.Engine ?? NeoDefaults.StoreProviderName, storagePath));
+            });
+
+            return hostBuilder;
+        }
+
+        public static IHostBuilder UseNeoServices(this IHostBuilder hostBuilder, Action<HostBuilderContext, IServiceCollection>? configure = null)
         {
             hostBuilder.ConfigureServices((context, services) =>
             {
                 services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
-                var protocolSettingsSection = context.Configuration.GetSection("ProtocolConfiguration");
-
                 services.Configure<NeoOptions>(context.Configuration);
-
-                if (protocolSettingsSection.Exists())
-                    services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
-                else
-                    services.AddSingleton(NeoProtocolSettingsDefaults.MainNet);
 
                 services.AddSingleton<NamedPipeEndPoint>();
                 services.AddSingleton<NamedPipeServerListener>();

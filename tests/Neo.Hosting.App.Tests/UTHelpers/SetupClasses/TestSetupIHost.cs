@@ -21,6 +21,7 @@ using Neo.Hosting.App.Tests.UTHelpers.Logging;
 using Neo.Hosting.App.Tests.UTHelpers.SetupClasses;
 using System;
 using System.Collections.Generic;
+using System.CommandLine.Invocation;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,7 +38,8 @@ namespace Neo.Hosting.App.Tests.UTHelpers.SetupClasses
             ITestOutputHelper testOutputHelper)
         {
             Host = Program.DefaultNeoHostBuilderFactory(null)
-                .UseNeoServiceConfiguration()
+                .UseNeoSystem()
+                .UseNeoServices()
                 .ConfigureLogging(builder =>
                 {
                     builder.AddProvider(new TestLoggerProvider(testOutputHelper));
