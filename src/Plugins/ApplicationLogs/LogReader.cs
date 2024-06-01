@@ -9,21 +9,21 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using ApplicationLogs.Store;
-using ApplicationLogs.Store.Models;
 using Neo.ConsoleService;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.ApplicationLogs.Store;
+using Neo.Plugins.ApplicationLogs.Store.Models;
+using Neo.Plugins.RpcServer;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System.Numerics;
 using static System.IO.Path;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.ApplicationLogs
 {
     public class LogReader : Plugin
     {

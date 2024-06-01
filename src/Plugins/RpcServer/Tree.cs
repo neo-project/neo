@@ -12,7 +12,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     class Tree<T>
     {

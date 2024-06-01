@@ -11,7 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.ApplicationLogs
 {
     internal class Settings
     {

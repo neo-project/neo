@@ -17,6 +17,7 @@ using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.RpcServer;
 using Neo.Plugins.StateService.Network;
 using Neo.Plugins.StateService.Storage;
 using Neo.Plugins.StateService.Verification;

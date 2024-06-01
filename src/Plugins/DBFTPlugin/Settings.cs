@@ -11,7 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin
 {
     public class Settings
     {
