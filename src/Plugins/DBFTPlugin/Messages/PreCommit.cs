@@ -11,8 +11,9 @@
 
 using Neo.IO;
 using System.IO;
+using Neo.Plugins.DBFTPlugin.Types;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Messages
 {
     public class PreCommit : ConsensusMessage
     {
