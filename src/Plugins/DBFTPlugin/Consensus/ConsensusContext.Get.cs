@@ -44,10 +44,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             };
         }
 
-        private PreCommitPayloadCompact RecoveryMessage.GetPreCommitPayloadCompact(ExtensiblePayload payload)
+        private RecoveryMessage.PreCommitPayloadCompact GetPreCommitPayloadCompact(ExtensiblePayload payload)
         {
             PreCommit preCommit = GetMessage<PreCommit>(payload);
-            return new PreCommitPayloadCompact
+            return new RecoveryMessage.PreCommitPayloadCompact
             {
                 ViewNumber = preCommit.ViewNumber,
                 ValidatorIndex = preCommit.ValidatorIndex,
@@ -56,7 +56,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             };
         }
 
-        private CommitPayloadCompact RecoveryMessage.GetCommitPayloadCompact(ExtensiblePayload payload)
+        private RecoveryMessage.CommitPayloadCompact GetCommitPayloadCompact(ExtensiblePayload payload)
         {
             Commit message = GetMessage<Commit>(payload);
             return new RecoveryMessage.CommitPayloadCompact
