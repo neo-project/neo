@@ -12,7 +12,7 @@
 using Neo;
 using Neo.IO;
 
-namespace ApplicationLogs.Store.States
+namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class BlockLogState : ISerializable, IEquatable<BlockLogState>
     {

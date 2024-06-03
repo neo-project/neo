@@ -11,12 +11,14 @@
 
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Consensus;
+using Neo.Plugins.DBFTPlugin.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Messages
 {
     public partial class RecoveryMessage : ConsensusMessage
     {

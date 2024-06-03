@@ -26,7 +26,7 @@ using System.Linq;
 using System.Threading;
 using Array = System.Array;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
@@ -75,7 +75,8 @@ namespace Neo.Plugins
             {
                 json["script"] = Convert.ToBase64String(script);
                 json["state"] = session.Engine.State;
-                json["gasconsumed"] = session.Engine.GasConsumed.ToString();
+                // Gas consumed in the unit of datoshi, 1 GAS = 10^8 datoshi
+                json["gasconsumed"] = session.Engine.FeeConsumed.ToString();
                 json["exception"] = GetExceptionMessage(session.Engine.FaultException);
                 json["notifications"] = new JArray(session.Engine.Notifications.Select(n =>
                 {

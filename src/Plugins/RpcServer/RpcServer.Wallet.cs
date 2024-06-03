@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
@@ -95,14 +95,15 @@ namespace Neo.Plugins
         protected virtual JToken GetWalletUnclaimedGas(JArray _params)
         {
             CheckWallet();
-            BigInteger gas = BigInteger.Zero;
+            // Datoshi is the smallest unit of GAS, 1 GAS = 10^8 Datoshi
+            BigInteger datoshi = BigInteger.Zero;
             using (var snapshot = system.GetSnapshot())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 foreach (UInt160 account in wallet.GetAccounts().Select(p => p.ScriptHash))
-                    gas += NativeContract.NEO.UnclaimedGas(snapshot, account, height);
+                    datoshi += NativeContract.NEO.UnclaimedGas(snapshot, account, height);
             }
-            return gas.ToString();
+            return datoshi.ToString();
         }
 
         [RpcMethod]
@@ -381,7 +382,8 @@ namespace Neo.Plugins
             JObject json = new();
             json["script"] = Convert.ToBase64String(invocationScript);
             json["state"] = engine.Execute();
-            json["gasconsumed"] = engine.GasConsumed.ToString();
+            // Gas consumed in the unit of datoshi, 1 GAS = 1e8 datoshi
+            json["gasconsumed"] = engine.FeeConsumed.ToString();
             json["exception"] = GetExceptionMessage(engine.FaultException);
             try
             {

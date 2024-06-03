@@ -10,13 +10,12 @@
 // modifications are permitted.
 
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.SmartContract;
-using Neo.Wallets;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using static Neo.Consensus.RecoveryMessage;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusContext
     {
@@ -33,10 +32,10 @@ namespace Neo.Consensus
             return (T)GetMessage(payload);
         }
 
-        private ChangeViewPayloadCompact GetChangeViewPayloadCompact(ExtensiblePayload payload)
+        private RecoveryMessage.ChangeViewPayloadCompact GetChangeViewPayloadCompact(ExtensiblePayload payload)
         {
             ChangeView message = GetMessage<ChangeView>(payload);
-            return new ChangeViewPayloadCompact
+            return new RecoveryMessage.ChangeViewPayloadCompact
             {
                 ValidatorIndex = message.ValidatorIndex,
                 OriginalViewNumber = message.ViewNumber,
@@ -45,7 +44,7 @@ namespace Neo.Consensus
             };
         }
 
-        private PreCommitPayloadCompact GetPreCommitPayloadCompact(ExtensiblePayload payload)
+        private PreCommitPayloadCompact RecoveryMessage.GetPreCommitPayloadCompact(ExtensiblePayload payload)
         {
             PreCommit preCommit = GetMessage<PreCommit>(payload);
             return new PreCommitPayloadCompact
@@ -57,10 +56,10 @@ namespace Neo.Consensus
             };
         }
 
-        private CommitPayloadCompact GetCommitPayloadCompact(ExtensiblePayload payload)
+        private CommitPayloadCompact RecoveryMessage.GetCommitPayloadCompact(ExtensiblePayload payload)
         {
             Commit message = GetMessage<Commit>(payload);
-            return new CommitPayloadCompact
+            return new RecoveryMessage.CommitPayloadCompact
             {
                 ViewNumber = message.ViewNumber,
                 ValidatorIndex = message.ValidatorIndex,
@@ -69,9 +68,9 @@ namespace Neo.Consensus
             };
         }
 
-        private PreparationPayloadCompact GetPreparationPayloadCompact(ExtensiblePayload payload)
+        private RecoveryMessage.PreparationPayloadCompact GetPreparationPayloadCompact(ExtensiblePayload payload)
         {
-            return new PreparationPayloadCompact
+            return new RecoveryMessage.PreparationPayloadCompact
             {
                 ValidatorIndex = GetMessage(payload).ValidatorIndex,
                 InvocationScript = payload.Witness.InvocationScript

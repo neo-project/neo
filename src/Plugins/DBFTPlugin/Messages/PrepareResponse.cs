@@ -10,10 +10,10 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System;
+using Neo.Plugins.DBFTPlugin.Types;
 using System.IO;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Messages
 {
     public class PrepareResponse : ConsensusMessage
     {

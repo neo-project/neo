@@ -14,13 +14,15 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Neo.Ledger.Blockchain;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusService : UntypedActor
     {

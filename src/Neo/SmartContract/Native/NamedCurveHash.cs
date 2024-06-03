@@ -13,7 +13,6 @@ namespace Neo.SmartContract.Native
 {
     /// <summary>
     /// Represents a pair of the named curve used in ECDSA and a hash algorithm used to hash message.
-    /// This is a compatible extension of an obsolete <see cref="NamedCurve"/> enum.
     /// </summary>
     public enum NamedCurveHash : byte
     {

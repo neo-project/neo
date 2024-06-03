@@ -9,18 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using ApplicationLogs.Store.Models;
-using ApplicationLogs.Store.States;
-using Neo;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins.Store.Models;
-using Neo.Plugins.Store.States;
+using Neo.Plugins.ApplicationLogs.Store.Models;
+using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.SmartContract;
 using Neo.VM.Types;
 
-namespace ApplicationLogs.Store
+namespace Neo.Plugins.ApplicationLogs.Store
 {
     public sealed class NeoStore : IDisposable
     {

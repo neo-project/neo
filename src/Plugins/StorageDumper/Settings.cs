@@ -12,7 +12,7 @@
 using Microsoft.Extensions.Configuration;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.StorageDumper
 {
     internal class Settings
     {
@@ -24,18 +24,22 @@ namespace Neo.Plugins
         /// Height to begin storage dump
         /// </summary>
         public uint HeightToBegin { get; }
-
+        /// <summary>
+        /// Default number of items per folder
+        /// </summary>
+        public uint StoragePerFolder { get; }
         public IReadOnlyList<int> Exclude { get; }
 
         public static Settings? Default { get; private set; }
 
         private Settings(IConfigurationSection section)
         {
-            /// Geting settings for storage changes state dumper
+            // Geting settings for storage changes state dumper
             BlockCacheSize = section.GetValue("BlockCacheSize", 1000u);
             HeightToBegin = section.GetValue("HeightToBegin", 0u);
+            StoragePerFolder = section.GetValue("StoragePerFolder", 100000u);
             Exclude = section.GetSection("Exclude").Exists()
-                ? section.GetSection("Exclude").GetChildren().Select(p => int.Parse(p.Value)).ToArray()
+                ? section.GetSection("Exclude").GetChildren().Select(p => int.Parse(p.Value!)).ToArray()
                 : new[] { NativeContract.Ledger.Id };
         }
 

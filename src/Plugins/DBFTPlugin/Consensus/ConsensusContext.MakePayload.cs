@@ -11,15 +11,16 @@
 
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
-using static Neo.Consensus.RecoveryMessage;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusContext
     {
@@ -170,7 +171,7 @@ namespace Neo.Consensus
                 PreCommitMessages = PreCommitPayloads[pId].Where(p => p != null).Select(p => GetPreCommitPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex),
                 CommitMessages = CommitSent
                     ? CommitPayloads[pId].Where(p => p != null).Select(p => GetCommitPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex)
-                    : new Dictionary<byte, CommitPayloadCompact>()
+                    : new Dictionary<byte, RecoveryMessage.CommitPayloadCompact>()
             });
         }
 
