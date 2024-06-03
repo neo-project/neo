@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System.IO;
 using Neo.Plugins.DBFTPlugin.Types;
+using System.IO;
 
 namespace Neo.Plugins.DBFTPlugin.Messages
 {
