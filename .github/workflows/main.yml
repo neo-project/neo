@@ -57,7 +57,7 @@ jobs:
         dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
         dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
         dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.Tests
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
 
         # Plugins
         dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
