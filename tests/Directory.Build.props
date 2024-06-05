@@ -8,7 +8,6 @@
     <IsTestProject>true</IsTestProject>
     <WarningLevel>0</WarningLevel>
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutput>$(SolutionDir)bin/TestResults/coverage</CoverletOutput>
     <CoverletOutputFormat>cobertura</CoverletOutputFormat>
   </PropertyGroup>
 
