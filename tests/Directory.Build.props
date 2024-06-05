@@ -8,7 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <WarningLevel>0</WarningLevel>
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <CoverletOutputFormat>lcov</CoverletOutputFormat>
   </PropertyGroup>
 
   <ItemGroup>
