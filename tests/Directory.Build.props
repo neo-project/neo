@@ -8,7 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <WarningLevel>0</WarningLevel>
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutput>$(SolutionDir)TestResults</CoverletOutput>
+    <CoverletOutput>TestResults/</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
   </PropertyGroup>
 

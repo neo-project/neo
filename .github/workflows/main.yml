@@ -74,16 +74,16 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         format: lcov
         files: |
-          bin/tests/Neo.Cryptography.BLS12_381/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.ConsoleService/TestResults/coverage/coverage.lcov
-          bin/tests/Neo/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.VM/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.Json/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.Cryptography.MPTTrie/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.Network.RPC/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.Plugins.OracleService/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.Plugins.RpcServer/TestResults/coverage/coverage.lcov
-          bin/tests/Neo.Plugins.Storage/TestResults/coverage/coverage.lcov
+          tests/Neo.Cryptography.BLS12_381/TestResults/coverage.lcov
+          tests/Neo.ConsoleService/TestResults/coverage.lcov
+          tests/Neo/TestResults/coverage.lcov
+          tests/Neo.VM/TestResults/coverage.lcov
+          tests/Neo.Json/TestResults/coverage.lcov
+          tests/Neo.Cryptography.MPTTrie/TestResults/coverage.lcov
+          tests/Neo.Network.RPC/TestResults/coverage.lcov
+          tests/Neo.Plugins.OracleService/TestResults/coverage.lcov
+          tests/Neo.Plugins.RpcServer/TestResults/coverage.lcov
+          tests/Neo.Plugins.Storage/TestResults/coverage.lcov
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
