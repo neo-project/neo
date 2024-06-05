@@ -68,6 +68,7 @@ jobs:
         dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
         dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
 
+        ls -l ${{ env.COVERALL_MERGE_PATH }}
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.3.0
