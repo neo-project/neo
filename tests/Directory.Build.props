@@ -7,6 +7,10 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <WarningLevel>0</WarningLevel>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutput>$(SolutionDir)/TestResults/coverage</CoverletOutput>
+    <MergeWith>$(CoverletOutput)/coverage.json</MergeWith>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
   </PropertyGroup>
 
   <ItemGroup>
