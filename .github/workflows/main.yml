@@ -7,8 +7,6 @@ on:
 
 env:
   DOTNET_VERSION: 8.0.x
-  COVERALL_COLLECT_OUTPUT: -p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'
-  COVERALL_MERGE_PATH: -p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.lcov'
 
 jobs:
 
@@ -55,27 +53,37 @@ jobs:
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
 
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }}
-        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
-        dotnet test ./tests/Neo.UnitTests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
-        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381
+        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService
+        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo
+        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json
 
         # Plugins
-        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
-        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
-        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
-        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
-        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie
+        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer
+        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage
 
         ls -l ${{ env.COVERALL_MERGE_PATH }}
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.3.0
-      with:
+      with: 
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        format: cobertura
-        file: ${{ github.workspace }}/TestResults/coverage/coverage.lcov
+        format: lcov
+        files: |
+          bin/tests/Neo.Cryptography.BLS12_381/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.ConsoleService/TestResults/coverage/coverage.lcov
+          bin/tests/Neo/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.VM/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.Json/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.Cryptography.MPTTrie/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.Network.RPC/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.Plugins.OracleService/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.Plugins.RpcServer/TestResults/coverage/coverage.lcov
+          bin/tests/Neo.Plugins.Storage/TestResults/coverage/coverage.lcov
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
