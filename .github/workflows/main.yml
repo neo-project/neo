@@ -44,7 +44,7 @@ jobs:
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
         dotnet test
-        ls -l ${{ github.workspace }}/TestResults/coverage/
+        ls -l ${{ github.workspace }}/TestResults
 
         #dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./tests ${{ env.COVERALL_COLLECT_OUTPUT }}
         #dotnet test ./tests/Neo.ConsoleService.Tests --output ./tests ${{ env.COVERALL_COLLECT_OUTPUT }} ${{ env.COVERALL_MERGE_PATH }}
