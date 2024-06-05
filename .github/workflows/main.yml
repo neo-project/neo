@@ -74,16 +74,16 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         format: lcov
         files: |
-          tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
-          tests/Neo.ConsoleService.Tests/TestResults/coverage.info
-          tests/Neo.UnitTests/TestResults/coverage.info
-          tests/Neo.VM.Tests/TestResults/coverage.info
-          tests/Neo.Json.Tests/TestResults/coverage.info
-          tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
-          tests/Neo.Network.RPC.Tests/TestResults/coverage.info
-          tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
-          tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
-          tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Json.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
