@@ -53,26 +53,25 @@ jobs:
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
 
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381
-        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService
-        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo
-        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests
+        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
+        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
+        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.Tests
 
         # Plugins
-        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie
-        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC
-        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService
-        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer
-        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
+        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
+        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
 
-        ls -l ${{ env.COVERALL_MERGE_PATH }}
+        sudo chown ${{ github.actor }}:user ${{ github.workspace }}/tests/
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.3.0
       with: 
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        format: lcov
         files: |
           ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
