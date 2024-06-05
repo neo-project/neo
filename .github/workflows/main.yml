@@ -69,7 +69,7 @@ jobs:
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.3.0
-      with: 
+      with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         files:
           ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
