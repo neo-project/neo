@@ -428,7 +428,7 @@ namespace Neo.Plugins.OracleService
 
             var oracleContract = NativeContract.ContractManagement.GetContract(snapshot, NativeContract.Oracle.Hash);
             var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings);
-            ContractMethodDescriptor md = oracleContract.Manifest.Abi.GetMethod("verify", -1);
+            ContractMethodDescriptor md = oracleContract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
             engine.LoadContract(oracleContract, md, CallFlags.None);
             if (engine.Execute() != VMState.HALT) return null;
             tx.NetworkFee += engine.FeeConsumed;
