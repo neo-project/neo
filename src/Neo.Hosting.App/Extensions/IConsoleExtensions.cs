@@ -106,6 +106,36 @@ namespace Neo.Hosting.App.Extensions
             console.ResetColor();
         }
 
+        public static ConsoleInput PromptConfirm(this IConsole console, string format, params object[] args)
+        {
+            var isRedirect = Console.IsInputRedirected;
+
+            if (isRedirect == false)
+            {
+                console.SetTerminalForegroundColor(ConsoleColor.Blue);
+                console.Write(format, args);
+                console.SetTerminalForegroundColor(ConsoleColor.Yellow);
+                console.Write("  [Y]es / [N]o / [C]ancel :  ");
+                console.ResetColor();
+            }
+
+            var answer = console.ReadLine();
+
+            if (answer == null)
+                return ConsoleInput.Empty;
+            else if (answer.Equals("yes", StringComparison.InvariantCultureIgnoreCase) ||
+                answer.Equals("y", StringComparison.InvariantCultureIgnoreCase))
+                return ConsoleInput.Yes;
+            else if (answer.Equals("no", StringComparison.InvariantCultureIgnoreCase) ||
+                answer.Equals("n", StringComparison.InvariantCultureIgnoreCase))
+                return ConsoleInput.No;
+            else if (answer.Equals("cancel", StringComparison.InvariantCultureIgnoreCase) ||
+                answer.Equals("c", StringComparison.InvariantCultureIgnoreCase))
+                return ConsoleInput.Cancel;
+            else
+                return console.PromptConfirm(format, args);
+        }
+
         public static SecureString PromptPassword(this IConsole console)
         {
             ConsoleKeyInfo userInputKeyInfo;
@@ -134,7 +164,7 @@ namespace Neo.Hosting.App.Extensions
                 {
                     userPassword.AppendChar(userInputKeyInfo.KeyChar);
 
-                    if (isRedirect)
+                    if (isRedirect == false)
                         console.Write("**");
                 }
             }
