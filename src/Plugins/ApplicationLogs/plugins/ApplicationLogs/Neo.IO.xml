@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Neo.IO</name>
+    </assembly>
+    <members>
+        <member name="T:Neo.IO.ISerializable">
+            <summary>
+            Represents NEO objects that can be serialized.
+            </summary>
+        </member>
+        <member name="P:Neo.IO.ISerializable.Size">
+            <summary>
+            The size of the object in bytes after serialization.
+            </summary>
+        </member>
+        <member name="M:Neo.IO.ISerializable.Serialize(System.IO.BinaryWriter)">
+            <summary>
+            Serializes the object using the specified <see cref="T:System.IO.BinaryWriter"/>.
+            </summary>
+            <param name="writer">The <see cref="T:System.IO.BinaryWriter"/> for writing data.</param>
+        </member>
+        <member name="M:Neo.IO.ISerializable.Deserialize(Neo.IO.MemoryReader@)">
+            <summary>
+            Deserializes the object using the specified <see cref="T:Neo.IO.MemoryReader"/>.
+            </summary>
+            <param name="reader">The <see cref="T:Neo.IO.MemoryReader"/> for reading data.</param>
+        </member>
+    </members>
+</doc>

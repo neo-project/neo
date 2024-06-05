@@ -1,0 +1,292 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Neo.ConsoleService</name>
+    </assembly>
+    <members>
+        <member name="M:Neo.ConsoleService.CommandQuoteToken.#ctor(System.Int32,System.Char)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="offset">Offset</param>
+            <param name="value">Value</param>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandQuoteToken.Parse(System.String,System.Int32@)">
+            <summary>
+            Parse command line quotes
+            </summary>
+            <param name="commandLine">Command line</param>
+            <param name="index">Index</param>
+            <returns>CommandQuoteToken</returns>
+        </member>
+        <member name="P:Neo.ConsoleService.CommandSpaceToken.Count">
+            <summary>
+            Count
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandSpaceToken.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="offset">Offset</param>
+            <param name="count">Count</param>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandSpaceToken.Parse(System.String,System.Int32@)">
+            <summary>
+            Parse command line spaces
+            </summary>
+            <param name="commandLine">Command line</param>
+            <param name="index">Index</param>
+            <returns>CommandSpaceToken</returns>
+        </member>
+        <member name="P:Neo.ConsoleService.CommandStringToken.RequireQuotes">
+            <summary>
+            Require quotes
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandStringToken.#ctor(System.Int32,System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="offset">Offset</param>
+            <param name="value">Value</param>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandStringToken.Parse(System.String,System.Int32@,Neo.ConsoleService.CommandQuoteToken)">
+            <summary>
+            Parse command line spaces
+            </summary>
+            <param name="commandLine">Command line</param>
+            <param name="index">Index</param>
+            <param name="quote">Quote (could be null)</param>
+            <returns>CommandSpaceToken</returns>
+        </member>
+        <member name="P:Neo.ConsoleService.CommandToken.Offset">
+            <summary>
+            Offset
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.CommandToken.Type">
+            <summary>
+            Type
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.CommandToken.Value">
+            <summary>
+            Value
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandToken.#ctor(Neo.ConsoleService.CommandTokenType,System.Int32)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="type">Type</param>
+            <param name="offset">Offset</param>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandToken.Parse(System.String)">
+            <summary>
+            Parse command line
+            </summary>
+            <param name="commandLine">Command line</param>
+            <returns></returns>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandToken.ToArguments(System.Collections.Generic.IEnumerable{Neo.ConsoleService.CommandToken},System.Boolean)">
+            <summary>
+            Create string arguments
+            </summary>
+            <param name="tokens">Tokens</param>
+            <param name="removeEscape">Remove escape</param>
+            <returns>Arguments</returns>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandToken.ToString(System.Collections.Generic.IEnumerable{Neo.ConsoleService.CommandToken})">
+            <summary>
+            Create a string from token list
+            </summary>
+            <param name="tokens">Tokens</param>
+            <returns>String</returns>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandToken.Trim(System.Collections.Generic.List{Neo.ConsoleService.CommandToken})">
+            <summary>
+            Trim
+            </summary>
+            <param name="args">Args</param>
+        </member>
+        <member name="M:Neo.ConsoleService.CommandToken.ReadString(System.Collections.Generic.List{Neo.ConsoleService.CommandToken},System.Boolean)">
+            <summary>
+            Read String
+            </summary>
+            <param name="args">Args</param>
+            <param name="consumeAll">Consume all if not quoted</param>
+            <returns>String</returns>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleColorSet.#ctor">
+            <summary>
+            Create a new color set with the current console colors
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleColorSet.#ctor(System.ConsoleColor)">
+            <summary>
+            Create a new color set
+            </summary>
+            <param name="foreground">Foreground color</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleColorSet.#ctor(System.ConsoleColor,System.ConsoleColor)">
+            <summary>
+            Create a new color set
+            </summary>
+            <param name="foreground">Foreground color</param>
+            <param name="background">Background color</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleColorSet.Apply">
+            <summary>
+            Apply the current set
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandAttribute.Verbs">
+            <summary>
+            Verbs
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandAttribute.Category">
+            <summary>
+            Category
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandAttribute.Description">
+            <summary>
+            Description
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleCommandAttribute.#ctor(System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="verbs">Verbs</param>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandMethod.Verbs">
+            <summary>
+            Verbs
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandMethod.Key">
+            <summary>
+            Key
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandMethod.HelpCategory">
+            <summary>
+            Help category
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandMethod.HelpMessage">
+            <summary>
+            Help message
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandMethod.Instance">
+            <summary>
+            Instance
+            </summary>
+        </member>
+        <member name="P:Neo.ConsoleService.ConsoleCommandMethod.Method">
+            <summary>
+            Method
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleCommandMethod.#ctor(System.Object,System.Reflection.MethodInfo,Neo.ConsoleService.ConsoleCommandAttribute)">
+            <summary>
+            Set instance command
+            </summary>
+            <param name="instance">Instance</param>
+            <param name="method">Method</param>
+            <param name="attribute">Attribute</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleCommandMethod.IsThisCommand(Neo.ConsoleService.CommandToken[],System.Int32@)">
+            <summary>
+            Is this command
+            </summary>
+            <param name="tokens">Tokens</param>
+            <param name="consumedArgs">Consumed Arguments</param>
+            <returns>True if is this command</returns>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleHelper.Info(System.String[])">
+            <summary>
+            Info handles message in the format of "[tag]:[message]",
+            avoid using Info if the `tag` is too long
+            </summary>
+            <param name="values">The log message in pairs of (tag, message)</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleHelper.Warning(System.String)">
+            <summary>
+            Use warning if something unexpected happens
+            or the execution result is not correct.
+            Also use warning if you just want to remind
+            user of doing something.
+            </summary>
+            <param name="msg">Warning message</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleHelper.Error(System.String)">
+            <summary>
+            Use Error if the verification or input format check fails
+            or exception that breaks the execution of interactive
+            command throws.
+            </summary>
+            <param name="msg">Error message</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.OnHelpCommand(System.String)">
+            <summary>
+            Process "help" command
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.OnClear">
+            <summary>
+            Process "clear" command
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.OnVersion">
+            <summary>
+            Process "version" command
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.OnExit">
+            <summary>
+            Process "exit" command
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.#ctor">
+            <summary>
+            Constructor
+            </summary>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.RegisterCommandHandler``1(System.Func{System.Collections.Generic.List{Neo.ConsoleService.CommandToken},System.Boolean,System.Object})">
+            <summary>
+            Register command handler
+            </summary>
+            <typeparam name="TRet">Return type</typeparam>
+            <param name="handler">Handler</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.RegisterCommandHandler``2(System.Boolean,System.Func{``0,System.Object})">
+            <summary>
+            Register command handler
+            </summary>
+            <typeparam name="T">Base type</typeparam>
+            <typeparam name="TRet">Return type</typeparam>
+            <param name="canConsumeAll">Can consume all</param>
+            <param name="handler">Handler</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.RegisterCommandHandler``2(System.Func{``0,System.Object})">
+            <summary>
+            Register command handler
+            </summary>
+            <typeparam name="T">Base type</typeparam>
+            <typeparam name="TRet">Return type</typeparam>
+            <param name="handler">Handler</param>
+        </member>
+        <member name="M:Neo.ConsoleService.ConsoleServiceBase.RegisterCommand(System.Object,System.String)">
+            <summary>
+            Register commands
+            </summary>
+            <param name="instance">Instance</param>
+            <param name="name">Name</param>
+        </member>
+    </members>
+</doc>

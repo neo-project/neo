@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Neo\Neo.csproj" />
+    <ProjectReference Include="../../Neo/Neo.csproj" />
   </ItemGroup>
 
 </Project>
