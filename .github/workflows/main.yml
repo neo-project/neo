@@ -72,15 +72,15 @@ jobs:
       with: 
         github-token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Json.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.Json.Tests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info \
+          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info \
           ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
 
   PublishPackage:
