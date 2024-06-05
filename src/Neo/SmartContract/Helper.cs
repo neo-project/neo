@@ -332,7 +332,7 @@ namespace Neo.SmartContract
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
                     engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }
