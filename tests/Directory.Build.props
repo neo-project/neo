@@ -8,8 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <WarningLevel>0</WarningLevel>
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutput>$(SolutionDir)TestResults/coverage</CoverletOutput>
-    <MergeWith>$(SolutionDir)TestResults/coverage/coverage.json</MergeWith>
+    <CoverletOutput>$(SolutionDir)bin/TestResults/coverage</CoverletOutput>
     <CoverletOutputFormat>cobertura</CoverletOutputFormat>
   </PropertyGroup>
 
