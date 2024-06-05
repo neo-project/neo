@@ -206,6 +206,10 @@ namespace Neo.Network.RPC
                 {
                     Hash = UInt256.Parse(json["hash"].AsString())
                 },
+                TransactionAttributeType.NotaryAssisted => new NotaryAssisted()
+                {
+                    NKeys = (byte)json["nkeys"].AsNumber()
+                },
                 _ => throw new FormatException(),
             };
         }
