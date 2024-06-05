@@ -20,10 +20,12 @@ namespace Neo.Hosting.App.CommandLine.Prompt
             var deployCommand = new DeployCommand();
             var updateCommand = new UpdateCommand();
             var invokeCommand = new InvokeCommand();
+            var destroyCommand = new DestroyCommand();
 
             AddCommand(deployCommand);
             AddCommand(updateCommand);
             AddCommand(invokeCommand);
+            AddCommand(destroyCommand);
         }
     }
 }
