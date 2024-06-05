@@ -38,7 +38,7 @@ jobs:
       if: matrix.os != 'ubuntu-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
-        dotnet test ./neo.sln --output ./tests
+        dotnet test
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
