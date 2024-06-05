@@ -76,7 +76,7 @@ jobs:
           ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Json.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Json.UnitTests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
