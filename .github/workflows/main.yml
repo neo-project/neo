@@ -32,7 +32,7 @@ jobs:
     - name: Build CLI
       if: matrix.os == 'ubuntu-latest'
       run: |
-        dotnet publish ./src/Neo.CLI
+        dotnet build ./src/Neo.CLI
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
