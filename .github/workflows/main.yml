@@ -76,7 +76,7 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         format: cobertura
-        file: ${{ github.workspace }}/bin/TestResults/coverage/coverage.cobertura.xml
+        file: ${{ github.workspace }}/bin/TestResults/coverage.cobertura.xml
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
