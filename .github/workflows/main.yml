@@ -8,7 +8,7 @@ on:
 env:
   DOTNET_VERSION: 8.0.x
   COVERALL_COLLECT_OUTPUT: -p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'
-  COVERALL_MERGE_PATH: -p:MergeWith='${{ github.workspace }}/TestResults/coverage.cobertura.xml'
+  COVERALL_MERGE_PATH: -p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.cobertura.xml'
 
 jobs:
 
