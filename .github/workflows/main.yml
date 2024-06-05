@@ -74,16 +74,16 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         format: lcov
         files: |
-          tests/Neo.Cryptography.BLS12_381/TestResults/coverage.lcov
-          tests/Neo.ConsoleService/TestResults/coverage.lcov
-          tests/Neo/TestResults/coverage.lcov
-          tests/Neo.VM/TestResults/coverage.lcov
-          tests/Neo.Json/TestResults/coverage.lcov
-          tests/Neo.Cryptography.MPTTrie/TestResults/coverage.lcov
-          tests/Neo.Network.RPC/TestResults/coverage.lcov
-          tests/Neo.Plugins.OracleService/TestResults/coverage.lcov
-          tests/Neo.Plugins.RpcServer/TestResults/coverage.lcov
-          tests/Neo.Plugins.Storage/TestResults/coverage.lcov
+          tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.lcov
+          tests/Neo.ConsoleService.Tests/TestResults/coverage.lcov
+          tests/Neo.UnitTests/TestResults/coverage.lcov
+          tests/Neo.VM.Tests/TestResults/coverage.lcov
+          tests/Neo.Json.Tests/TestResults/coverage.lcov
+          tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.lcov
+          tests/Neo.Network.RPC.Tests/TestResults/coverage.lcov
+          tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.lcov
+          tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.lcov
+          tests/Neo.Plugins.Storage.Tests/TestResults/coverage.lcov
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
