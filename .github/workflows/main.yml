@@ -7,7 +7,7 @@ on:
 
 env:
   DOTNET_VERSION: 8.0.x
-  COVERALL_MERGE_PATH: "-p:MergeWith='${{ github.workspace }}/bin/TestResults/coverage/coverage.json'"
+  COVERALL_MERGE_PATH: "-p:MergeWith='${{ github.workspace }}/bin/TestResults/coverage.cobertura.xml'"
 
 jobs:
 
