@@ -25,11 +25,15 @@ namespace Neo.Hosting.App.CommandLine.Prompt
             var blockCommand = new BlockCommand();
             var transactionCommand = new TransactionCommand();
             var contractCommand = new ContractCommand();
+            var poolCommand = new PoolCommand();
+            var stateCommand = new StateCommand();
 
             AddCommand(blockCommand);
             AddCommand(contractCommand);
             AddCommand(transactionCommand);
             AddCommand(versionCommand);
+            AddCommand(poolCommand);
+            AddCommand(stateCommand);
         }
     }
 }
