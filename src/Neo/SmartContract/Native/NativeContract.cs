@@ -35,7 +35,7 @@ namespace Neo.SmartContract.Native
                 public byte[] Script { get; set; }
             }
 
-            internal Dictionary<int, CacheEntry> NativeContracts { get; set; } = new Dictionary<int, CacheEntry>();
+            internal Dictionary<int, CacheEntry> NativeContracts { get; set; } = new();
 
             public CacheEntry GetAllowedMethods(NativeContract native, ApplicationEngine engine)
             {
@@ -48,12 +48,12 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public delegate bool IsHardforkEnabledDelegate(Hardfork hf, uint index);
-        private static readonly List<NativeContract> contractsList = new();
-        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
-        private readonly ImmutableHashSet<Hardfork> usedHardforks;
-        private readonly ReadOnlyCollection<ContractMethodMetadata> methodDescriptors;
-        private readonly ReadOnlyCollection<ContractEventAttribute> eventsDescriptors;
+        public delegate bool IsHardforkEnabledDelegate(Hardfork hf, uint blockHeight);
+        private static readonly List<NativeContract> s_contractsList = [];
+        private static readonly Dictionary<UInt160, NativeContract> s_contractsDictionary = new();
+        private readonly ImmutableHashSet<Hardfork> _usedHardforks;
+        private readonly ReadOnlyCollection<ContractMethodMetadata> _methodDescriptors;
+        private readonly ReadOnlyCollection<ContractEventAttribute> _eventsDescriptors;
         private static int id_counter = 0;
 
         #region Named Native Contracts
@@ -108,7 +108,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets all native contracts.
         /// </summary>
-        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = s_contractsList;
 
         /// <summary>
         /// The name of the native contract.
@@ -139,17 +139,17 @@ namespace Neo.SmartContract.Native
 
             // Reflection to get the methods
 
-            List<ContractMethodMetadata> listMethods = new();
+            List<ContractMethodMetadata> listMethods = [];
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
                 listMethods.Add(new ContractMethodMetadata(member, attribute));
             }
-            methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
+            _methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
 
             // Reflection to get the events
-            eventsDescriptors =
+            _eventsDescriptors =
                 GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
                 GetCustomAttributes<ContractEventAttribute>().
                 // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
@@ -158,26 +158,25 @@ namespace Neo.SmartContract.Native
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
             // Calculate the initializations forks
-            usedHardforks =
-                methodDescriptors.Select(u => u.ActiveIn)
-                .Concat(methodDescriptors.Select(u => u.DeprecatedIn))
-                .Concat(eventsDescriptors.Select(u => u.ActiveIn))
-                .Concat(new Hardfork?[] { ActiveIn })
-                .Where(u => u is not null)
-                .OrderBy(u => (byte)u)
-                .Cast<Hardfork>().ToImmutableHashSet();
-
-            contractsList.Add(this);
-            contractsDictionary.Add(Hash, this);
+            _usedHardforks =
+                _methodDescriptors.Select(u => u.ActiveIn)
+                    .Concat(_methodDescriptors.Select(u => u.DeprecatedIn))
+                    .Concat(_eventsDescriptors != null ? _eventsDescriptors.Select(u => u.ActiveIn) : [])
+                    .Concat(new Hardfork?[] { ActiveIn })
+                    .Where(u => u is not null)
+                    .OrderBy(u => (byte)u)
+                    .Cast<Hardfork>().ToImmutableHashSet();
+            s_contractsList.Add(this);
+            s_contractsDictionary.Add(Hash, this);
         }
 
         /// <summary>
         /// The allowed methods and his offsets.
         /// </summary>
         /// <param name="hfChecker">Hardfork checker</param>
-        /// <param name="index">Block index</param>
+        /// <param name="blockHeight">Block height. Used to check the hardforks and active methods.</param>
         /// <returns>The <see cref="NativeContractsCache"/>.</returns>
-        private NativeContractsCache.CacheEntry GetAllowedMethods(IsHardforkEnabledDelegate hfChecker, uint index)
+        private NativeContractsCache.CacheEntry GetAllowedMethods(IsHardforkEnabledDelegate hfChecker, uint blockHeight)
         {
             Dictionary<int, ContractMethodMetadata> methods = new();
 
@@ -185,14 +184,14 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in methodDescriptors.Where(u
+                foreach (ContractMethodMetadata method in _methodDescriptors.Where(u
                              =>
                              // no hardfork is involved
                              u.ActiveIn is null && u.DeprecatedIn is null ||
                              // deprecated method hardfork is involved
-                             u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, index) == false ||
+                             u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, blockHeight) == false ||
                              // active method hardfork is involved
-                             u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, index))
+                             u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, blockHeight))
                          )
                 {
                     method.Descriptor.Offset = sb.Length;
@@ -204,35 +203,35 @@ namespace Neo.SmartContract.Native
                 script = sb.ToArray();
             }
 
-            return new NativeContractsCache.CacheEntry() { Methods = methods, Script = script };
+            return new NativeContractsCache.CacheEntry { Methods = methods, Script = script };
         }
 
         /// <summary>
         /// The <see cref="ContractState"/> of the native contract.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
-        /// <param name="index">Block index</param>
+        /// <param name="blockHeight">Block index</param>
         /// <returns>The <see cref="ContractState"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContractState GetContractState(ProtocolSettings settings, uint index) => GetContractState(settings.IsHardforkEnabled, index);
+        public ContractState GetContractState(ProtocolSettings settings, uint blockHeight) => GetContractState(settings.IsHardforkEnabled, blockHeight);
 
         /// <summary>
         /// The <see cref="ContractState"/> of the native contract.
         /// </summary>
         /// <param name="hfChecker">Hardfork checker</param>
-        /// <param name="index">Block index</param>
+        /// <param name="blockHeight">Block height. Used to check hardforks and active methods.</param>
         /// <returns>The <see cref="ContractState"/>.</returns>
-        public ContractState GetContractState(IsHardforkEnabledDelegate hfChecker, uint index)
+        public ContractState GetContractState(IsHardforkEnabledDelegate hfChecker, uint blockHeight)
         {
             // Get allowed methods and nef script
-            var allowedMethods = GetAllowedMethods(hfChecker, index);
+            var allowedMethods = GetAllowedMethods(hfChecker, blockHeight);
 
             // Compose nef file
             var nef = new NefFile()
             {
                 Compiler = "neo-core-v3.0",
                 Source = string.Empty,
-                Tokens = Array.Empty<MethodToken>(),
+                Tokens = [],
                 Script = allowedMethods.Script
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
@@ -241,17 +240,17 @@ namespace Neo.SmartContract.Native
             var manifest = new ContractManifest()
             {
                 Name = Name,
-                Groups = Array.Empty<ContractGroup>(),
-                SupportedStandards = Array.Empty<string>(),
-                Abi = new ContractAbi()
+                Groups = [],
+                SupportedStandards = [],
+                Abi = new ContractAbi
                 {
-                    Events = eventsDescriptors
-                        .Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, index))
+                    Events = _eventsDescriptors
+                        .Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, blockHeight))
                         .Select(p => p.Descriptor).ToArray(),
                     Methods = allowedMethods.Methods.Values
                         .Select(p => p.Descriptor).ToArray()
                 },
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Permissions = [ContractPermission.DefaultPermission],
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
                 Extra = null
             };
@@ -282,7 +281,7 @@ namespace Neo.SmartContract.Native
             var hfs = new List<Hardfork>();
 
             // If is in the hardfork height, add them to return array
-            foreach (var hf in usedHardforks)
+            foreach (var hf in _usedHardforks)
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
@@ -319,9 +318,9 @@ namespace Neo.SmartContract.Native
         /// Is the native contract active
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
-        /// <param name="index">Block index</param>
+        /// <param name="blockHeight">Block height</param>
         /// <returns>True if the native contract is active</returns>
-        internal bool IsActive(ProtocolSettings settings, uint index)
+        internal bool IsActive(ProtocolSettings settings, uint blockHeight)
         {
             if (ActiveIn is null) return true;
 
@@ -331,7 +330,7 @@ namespace Neo.SmartContract.Native
                 activeIn = 0;
             }
 
-            return activeIn <= index;
+            return activeIn <= blockHeight;
         }
 
         /// <summary>
@@ -357,7 +356,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The native contract with the specified hash.</returns>
         public static NativeContract GetContract(UInt160 hash)
         {
-            contractsDictionary.TryGetValue(hash, out var contract);
+            s_contractsDictionary.TryGetValue(hash, out var contract);
             return contract;
         }
 
@@ -415,7 +414,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the contract is native; otherwise, <see langword="false"/>.</returns>
         public static bool IsNative(UInt160 hash)
         {
-            return contractsDictionary.ContainsKey(hash);
+            return s_contractsDictionary.ContainsKey(hash);
         }
 
         internal virtual ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardFork)
