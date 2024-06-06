@@ -385,7 +385,7 @@ namespace Neo.CLI
                     "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" + Environment.NewLine +
                     "Press any key to exit.");
                 Console.ReadKey();
-                Environment.Exit(1);
+                Environment.Exit(-1);
             }
             NeoSystem.AddService(this);
 
