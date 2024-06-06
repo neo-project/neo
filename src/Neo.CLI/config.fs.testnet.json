@@ -24,7 +24,8 @@
       "NeoNameService": "0xfb08ccf30ab534a871b7b092a49fe70c154ed678"
     },
     "Plugins": {
-      "DownloadUrl": "https://api.github.com/repos/neo-project/neo-modules/releases"
+      "DownloadUrl": "https://api.github.com/repos/neo-project/neo/releases",
+      "CustomUrls": []
     }
   },
   "ProtocolConfiguration": {

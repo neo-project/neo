@@ -83,27 +83,56 @@ namespace Neo.CLI
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
-            var jsonRelease = json.AsArray()
-                .SingleOrDefault(s =>
-                    s != null &&
-                    s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
-                    s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Could not find Release {pluginVersion}");
+            var urls = new List<Uri> { Settings.Default.Plugins.DownloadUrl };
+            urls.AddRange(Settings.Default.Plugins.CustomUrls);
 
-            var jsonAssets = jsonRelease
-                .AsObject()
-                .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
+            foreach (var url in urls)
+            {
+                try
+                {
+                    var json = await httpClient.GetFromJsonAsync<JsonArray>(url);
+                    if (json == null)
+                    {
+                        ConsoleHelper.Warning($"Failed to retrieve plugins from {url}");
+                        continue;
+                    }
 
-            var jsonPlugin = jsonAssets
-                .AsArray()
-                .SingleOrDefault(s =>
-                    Path.GetFileNameWithoutExtension(
-                        s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
-                ?? throw new Exception($"Could not find {pluginName}");
+                    var jsonRelease = json.AsArray()
+                        .SingleOrDefault(s =>
+                            s != null &&
+                            s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
+                            s["prerelease"]!.GetValue<bool>() == prerelease);
 
-            var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
+                    if (jsonRelease != null)
+                    {
+                        var jsonAssets = jsonRelease
+                            .AsObject()
+                            .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
 
-            return await httpClient.GetStreamAsync(downloadUrl);
+                        var jsonPlugin = jsonAssets
+                            .AsArray()
+                            .SingleOrDefault(s =>
+                                Path.GetFileNameWithoutExtension(
+                                    s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
+                            ?? throw new Exception($"Could not find {pluginName}");
+
+                        var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
+
+                        return await httpClient.GetStreamAsync(downloadUrl);
+                    }
+
+                    if (url == Settings.Default.Plugins.DownloadUrl)
+                    {
+                        ConsoleHelper.Warning($"Plugin not found in default URL: {url}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ConsoleHelper.Warning($"Failed to retrieve plugins from {url}. Error: {ex.Message}");
+                }
+            }
+
+            throw new Exception($"Could not find {pluginName} in any provided URLs.");
         }
 
         /// <summary>
@@ -123,7 +152,6 @@ namespace Neo.CLI
 
             try
             {
-
                 using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, Settings.Default.Plugins.Prerelease);
 
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
@@ -264,13 +292,38 @@ namespace Neo.CLI
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
-            return json.AsArray()
-                .Where(w =>
-                    w != null &&
-                    w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
-                .SelectMany(s => s!["assets"]!.AsArray())
-                .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()));
+            var urls = new List<Uri> { Settings.Default.Plugins.DownloadUrl };
+            urls.AddRange(Settings.Default.Plugins.CustomUrls);
+
+            var pluginNames = new HashSet<string>();
+
+            foreach (var url in urls)
+            {
+                try
+                {
+                    var json = await httpClient.GetFromJsonAsync<JsonArray>(url);
+                    if (json == null)
+                    {
+                        ConsoleHelper.Warning($"Failed to retrieve plugins from {url}");
+                        continue;
+                    }
+
+                    var plugins = json.AsArray()
+                        .Where(w =>
+                            w != null &&
+                            w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
+                        .SelectMany(s => s!["assets"]!.AsArray())
+                        .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()));
+
+                    pluginNames.UnionWith(plugins);
+                }
+                catch (Exception ex)
+                {
+                    ConsoleHelper.Warning($"Failed to retrieve plugins from {url}. Error: {ex.Message}");
+                }
+            }
+
+            return pluginNames;
         }
     }
 }
