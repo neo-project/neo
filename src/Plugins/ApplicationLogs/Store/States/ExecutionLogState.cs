@@ -13,7 +13,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.VM;
 
-namespace ApplicationLogs.Store.States
+namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class ExecutionLogState : ISerializable, IEquatable<ExecutionLogState>
     {

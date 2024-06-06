@@ -20,6 +20,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.RpcServer;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -34,7 +35,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService
 {
     public class OracleService : Plugin
     {
@@ -431,10 +432,10 @@ namespace Neo.Plugins
 
             var oracleContract = NativeContract.ContractManagement.GetContract(snapshot, NativeContract.Oracle.Hash);
             var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings);
-            ContractMethodDescriptor md = oracleContract.Manifest.Abi.GetMethod("verify", -1);
+            ContractMethodDescriptor md = oracleContract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
             engine.LoadContract(oracleContract, md, CallFlags.None);
             if (engine.Execute() != VMState.HALT) return null;
-            tx.NetworkFee += engine.GasConsumed;
+            tx.NetworkFee += engine.FeeConsumed;
 
             var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             var networkFee = executionFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);

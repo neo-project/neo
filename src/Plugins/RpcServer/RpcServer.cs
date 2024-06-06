@@ -29,7 +29,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public partial class RpcServer : IDisposable
     {
@@ -51,7 +51,7 @@ namespace Neo.Plugins
             Initialize_SmartContract();
         }
 
-        private bool CheckAuth(HttpContext context)
+        internal bool CheckAuth(HttpContext context)
         {
             if (string.IsNullOrEmpty(settings.RpcUser)) return true;
 

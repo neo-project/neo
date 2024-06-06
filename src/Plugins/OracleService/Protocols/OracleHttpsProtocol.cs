@@ -20,7 +20,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService
 {
     class OracleHttpsProtocol : IOracleProtocol
     {

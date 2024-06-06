@@ -253,7 +253,9 @@ namespace Neo.SmartContract
         /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
         protected internal void AddFee(long datoshi)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
+#pragma warning restore CS0618 // Type or member is obsolete
             if (FeeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
@@ -434,7 +436,7 @@ namespace Neo.SmartContract
                 });
 
             // Call initialization
-            var init = contract.Manifest.Abi.GetMethod("_initialize", 0);
+            var init = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Initialize, ContractBasicMethod.InitializePCount);
             if (init != null)
             {
                 LoadContext(context.Clone(init.Offset));

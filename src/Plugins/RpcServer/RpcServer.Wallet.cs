@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
@@ -356,7 +356,7 @@ namespace Neo.Plugins
         {
             using var snapshot = system.GetSnapshot();
             var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash).NotNull_Or(RpcError.UnknownContract);
-            var md = contract.Manifest.Abi.GetMethod("verify", -1).NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash));
+            var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount).NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash));
             (md.ReturnType == ContractParameterType.Boolean).True_Or(RpcErrorFactory.InvalidContractVerification("The verify method doesn't return boolean value."));
             Transaction tx = new()
             {
@@ -383,7 +383,7 @@ namespace Neo.Plugins
             json["script"] = Convert.ToBase64String(invocationScript);
             json["state"] = engine.Execute();
             // Gas consumed in the unit of datoshi, 1 GAS = 1e8 datoshi
-            json["gasconsumed"] = engine.GasConsumed.ToString();
+            json["gasconsumed"] = engine.FeeConsumed.ToString();
             json["exception"] = GetExceptionMessage(engine.FaultException);
             try
             {

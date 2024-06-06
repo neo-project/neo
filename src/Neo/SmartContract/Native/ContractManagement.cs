@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Native
 
         private async ContractTask OnDeployAsync(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
         {
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
             if (md is not null)
                 await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
