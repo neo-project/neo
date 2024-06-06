@@ -161,8 +161,8 @@ namespace Neo.SmartContract.Native
             _usedHardforks =
                 _methodDescriptors.Select(u => u.ActiveIn)
                     .Concat(_methodDescriptors.Select(u => u.DeprecatedIn))
-                    .Concat(_eventsDescriptors != null ? _eventsDescriptors.Select(u => u.ActiveIn) : [])
-                    .Concat(new Hardfork?[] { ActiveIn })
+                    .Concat(_eventsDescriptors.Select(u => u.ActiveIn))
+                    .Concat([ActiveIn])
                     .Where(u => u is not null)
                     .OrderBy(u => (byte)u)
                     .Cast<Hardfork>().ToImmutableHashSet();
