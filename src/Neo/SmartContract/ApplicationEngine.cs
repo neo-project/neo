@@ -436,7 +436,7 @@ namespace Neo.SmartContract
                 });
 
             // Call initialization
-            var init = contract.Manifest.Abi.GetMethod("_initialize", 0);
+            var init = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Initialize, ContractBasicMethod.InitializePCount);
             if (init != null)
             {
                 LoadContext(context.Clone(init.Offset));
