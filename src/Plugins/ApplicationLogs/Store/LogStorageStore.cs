@@ -160,13 +160,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
             }
-            catch (Exception ex)
+            catch
             {
-                var detailedException = ex.Message;
-                if (detailedException.Length > 1024)
-                    detailedException = string.Concat(detailedException.AsSpan(0, 1021), "...");
-                ByteString exceptionRecord = new(Encoding.UTF8.GetBytes(detailedException));
-                _snapshot.Put(key, BinarySerializer.Serialize(exceptionRecord, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
+                _snapshot.Put(key, BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
             }
             return id;
         }
