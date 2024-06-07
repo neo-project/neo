@@ -11,9 +11,11 @@
 
 using Neo.VM.StronglyConnectedComponents;
 using Neo.VM.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM
 {
@@ -115,7 +117,7 @@ namespace Neo.VM
                             tracked_items.Remove(item);
                             if (item is CompoundType compound)
                             {
-                                references_count -= compound.SubItemsCount;
+                                DecreaseCounter(compound.SubItemsCount);
                                 foreach (StackItem subitem in compound.SubItems)
                                 {
                                     if (component.Contains(subitem)) continue;
@@ -136,7 +138,7 @@ namespace Neo.VM
 
         internal void RemoveReference(StackItem item, CompoundType parent)
         {
-            references_count--;
+            DecreaseCounter();
             if (!NeedTrack(item)) return;
             cached_components = null;
             item.ObjectReferences![parent].References--;
@@ -146,10 +148,17 @@ namespace Neo.VM
 
         internal void RemoveStackReference(StackItem item)
         {
-            references_count--;
+            DecreaseCounter();
             if (!NeedTrack(item)) return;
             if (--item.StackReferences == 0)
                 zero_referred.Add(item);
+        }
+
+        private void DecreaseCounter(int count = 1)
+        {
+            references_count-=count;
+            if(references_count<0) throw new InvalidOperationException("Reference counter is negative.");
+
         }
     }
 }
