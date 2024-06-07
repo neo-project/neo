@@ -75,7 +75,7 @@ namespace Neo.SmartContract
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter, ApplicationEngine engine)
         {
-            if (!engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
+            if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {
                 return new Array(referenceCounter)
                 {
