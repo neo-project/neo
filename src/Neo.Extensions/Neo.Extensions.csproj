@@ -3,7 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
+    <PackageId>Neo.Extensions</PackageId>
     <PackageTags>NEO;Blockchain;Extensions</PackageTags>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
