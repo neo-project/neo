@@ -32,11 +32,6 @@ This README provides an explanation for each field in the JSON configuration fil
 
 ### Plugins
 - **DownloadUrl**: URL to download plugins, typically from the Neo project's GitHub releases. Default is `https://api.github.com/repos/neo-project/neo/releases`.
-- **CustomUrls**: List of custom URLs for downloading plugins.
-
-<div style="border: 1px solid #f8d7da; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px;">
-  <strong>Warning:</strong> Plugin from the `DownloadUrl` will be installed if different plugins with the same name exist in different urls.
-</div>
 
 ## ProtocolConfiguration
 

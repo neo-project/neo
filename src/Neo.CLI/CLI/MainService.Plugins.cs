@@ -32,8 +32,9 @@ namespace Neo.CLI
         /// Process "install" command
         /// </summary>
         /// <param name="pluginName">Plugin name</param>
+        /// <param name="downloadUrl">Custom plugins download url, this is optional.</param>
         [ConsoleCommand("install", Category = "Plugin Commands")]
-        private void OnInstallCommand(string pluginName)
+        private void OnInstallCommand(string pluginName, string? downloadUrl = null)
         {
             if (PluginExists(pluginName))
             {
@@ -41,7 +42,7 @@ namespace Neo.CLI
                 return;
             }
 
-            var result = InstallPluginAsync(pluginName).GetAwaiter().GetResult();
+            var result = InstallPluginAsync(pluginName, downloadUrl).GetAwaiter().GetResult();
             if (result)
             {
                 var asmName = Assembly.GetExecutingAssembly().GetName().Name;
@@ -74,75 +75,49 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="pluginName">name of the plugin</param>
         /// <param name="pluginVersion"></param>
+        /// <param name="customDownloadUrl">Custom plugin download url.</param>
         /// <param name="prerelease"></param>
         /// <returns>Downloaded content</returns>
-        private static async Task<Stream> DownloadPluginAsync(string pluginName, Version pluginVersion, bool prerelease = false)
+        private static async Task<Stream> DownloadPluginAsync(string pluginName, Version pluginVersion, string? customDownloadUrl = null, bool prerelease = false)
         {
             using var httpClient = new HttpClient();
 
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
+            var url = customDownloadUrl == null ? Settings.Default.Plugins.DownloadUrl : new Uri(customDownloadUrl);
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(url) ?? throw new HttpRequestException($"Failed: {url}");
+            var jsonRelease = json.AsArray()
+                .SingleOrDefault(s =>
+                    s != null &&
+                    s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
+                    s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Could not find Release {pluginVersion}");
 
-            var urls = new List<Uri> { Settings.Default.Plugins.DownloadUrl };
-            urls.AddRange(Settings.Default.Plugins.CustomUrls);
+            var jsonAssets = jsonRelease
+                .AsObject()
+                .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
 
-            foreach (var url in urls)
-            {
-                try
-                {
-                    var json = await httpClient.GetFromJsonAsync<JsonArray>(url);
-                    if (json == null)
-                    {
-                        ConsoleHelper.Warning($"Failed to retrieve plugins from {url}");
-                        continue;
-                    }
+            var jsonPlugin = jsonAssets
+                .AsArray()
+                .SingleOrDefault(s =>
+                    Path.GetFileNameWithoutExtension(
+                        s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
+                ?? throw new Exception($"Could not find {pluginName}");
 
-                    var jsonRelease = json.AsArray()
-                        .SingleOrDefault(s =>
-                            s != null &&
-                            s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
-                            s["prerelease"]!.GetValue<bool>() == prerelease);
+            var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
 
-                    if (jsonRelease != null)
-                    {
-                        var jsonAssets = jsonRelease
-                            .AsObject()
-                            .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
-
-                        var jsonPlugin = jsonAssets
-                            .AsArray()
-                            .SingleOrDefault(s =>
-                                Path.GetFileNameWithoutExtension(
-                                    s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
-                            ?? throw new Exception($"Could not find {pluginName}");
-
-                        var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
-
-                        return await httpClient.GetStreamAsync(downloadUrl);
-                    }
-
-                    if (url == Settings.Default.Plugins.DownloadUrl)
-                    {
-                        ConsoleHelper.Warning($"Plugin not found in default URL: {url}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ConsoleHelper.Warning($"Failed to retrieve plugins from {url}. Error: {ex.Message}");
-                }
-            }
-
-            throw new Exception($"Could not find {pluginName} in any provided URLs.");
+            return await httpClient.GetStreamAsync(downloadUrl);
         }
 
         /// <summary>
         /// Install plugin from stream
         /// </summary>
         /// <param name="pluginName">Name of the plugin</param>
+        /// <param name="downloadUrl">Custom plugins download url.</param>
         /// <param name="installed">Dependency set</param>
         /// <param name="overWrite">Install by force for `update`</param>
         private async Task<bool> InstallPluginAsync(
             string pluginName,
+            string? downloadUrl = null,
             HashSet<string>? installed = null,
             bool overWrite = false)
         {
@@ -152,14 +127,15 @@ namespace Neo.CLI
 
             try
             {
-                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, Settings.Default.Plugins.Prerelease);
+
+                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, downloadUrl, Settings.Default.Plugins.Prerelease);
 
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
                 var entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
                 if (entry is not null)
                 {
                     await using var es = entry.Open();
-                    await InstallDependenciesAsync(es, installed);
+                    await InstallDependenciesAsync(es, installed, downloadUrl);
                 }
                 zip.ExtractToDirectory("./", true);
                 return true;
@@ -176,7 +152,8 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="config">plugin config path in temp</param>
         /// <param name="installed">Dependency set</param>
-        private async Task InstallDependenciesAsync(Stream config, HashSet<string> installed)
+        /// <param name="downloadUrl">Custom plugin download url.</param>
+        private async Task InstallDependenciesAsync(Stream config, HashSet<string> installed, string? downloadUrl = null)
         {
             var dependency = new ConfigurationBuilder()
                 .AddJsonStream(config)
@@ -190,7 +167,7 @@ namespace Neo.CLI
             foreach (var plugin in dependencies.Where(p => p is not null && !PluginExists(p)))
             {
                 ConsoleHelper.Info($"Installing dependency: {plugin}");
-                await InstallPluginAsync(plugin!, installed);
+                await InstallPluginAsync(plugin!, downloadUrl, installed);
             }
         }
 
@@ -292,38 +269,13 @@ namespace Neo.CLI
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
-            var urls = new List<Uri> { Settings.Default.Plugins.DownloadUrl };
-            urls.AddRange(Settings.Default.Plugins.CustomUrls);
-
-            var pluginNames = new HashSet<string>();
-
-            foreach (var url in urls)
-            {
-                try
-                {
-                    var json = await httpClient.GetFromJsonAsync<JsonArray>(url);
-                    if (json == null)
-                    {
-                        ConsoleHelper.Warning($"Failed to retrieve plugins from {url}");
-                        continue;
-                    }
-
-                    var plugins = json.AsArray()
-                        .Where(w =>
-                            w != null &&
-                            w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
-                        .SelectMany(s => s!["assets"]!.AsArray())
-                        .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()));
-
-                    pluginNames.UnionWith(plugins);
-                }
-                catch (Exception ex)
-                {
-                    ConsoleHelper.Warning($"Failed to retrieve plugins from {url}. Error: {ex.Message}");
-                }
-            }
-
-            return pluginNames;
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+            return json.AsArray()
+                .Where(w =>
+                    w != null &&
+                    w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
+                .SelectMany(s => s!["assets"]!.AsArray())
+                .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()));
         }
     }
 }
