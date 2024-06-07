@@ -160,20 +160,13 @@ namespace Neo.Plugins.ApplicationLogs.Store
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
             }
-            catch (NotSupportedException ex) // Ref. https://github.com/neo-project/neo/issues/3296
-            {
-                var message = ex.Message.Length > 1024 ? string.Concat(ex.Message.AsSpan(0, 1021), "...") : ex.Message;
-                _snapshot.Put(key, Encoding.UTF8.GetBytes("Not Supported Exception: " + message));
-            }
-            catch (FormatException ex)
-            {
-                var message = ex.Message.Length > 1024 ? string.Concat(ex.Message.AsSpan(0, 1021), "...") : ex.Message;
-                _snapshot.Put(key, Encoding.UTF8.GetBytes("Format Exception: " + message));
-            }
             catch (Exception ex)
             {
-                var message = ex.Message.Length > 1024 ? string.Concat(ex.Message.AsSpan(0, 1021), "...") : ex.Message;
-                _snapshot.Put(key, Encoding.UTF8.GetBytes("Exception: " + message));
+                var detailedException = ex.Message;
+                if (detailedException.Length > 1024)
+                    detailedException = string.Concat(detailedException.AsSpan(0, 1021), "...");
+                ByteString exceptionRecord = new(Encoding.UTF8.GetBytes(detailedException));
+                _snapshot.Put(key, BinarySerializer.Serialize(exceptionRecord, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
             }
             return id;
         }
