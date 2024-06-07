@@ -375,7 +375,18 @@ namespace Neo.CLI
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
-            NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            try
+            {
+                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            }
+            catch (DllNotFoundException)
+            {
+                ConsoleHelper.Error("DLL not found, please install Microsoft Visual C++ Redistributable." + Environment.NewLine +
+                    "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" + Environment.NewLine +
+                    "Press any key to exit.");
+                Console.ReadKey();
+                Environment.Exit(-1);
+            }
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
