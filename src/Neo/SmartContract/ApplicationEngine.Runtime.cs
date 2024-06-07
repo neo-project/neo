@@ -417,9 +417,8 @@ namespace Neo.SmartContract
             Array notifyArray = new(ReferenceCounter);
             foreach (var notify in array)
             {
-                notifyArray.Add(notify.ToStackItem(ReferenceCounter));
+                notifyArray.Add(notify.ToStackItem(ReferenceCounter, this));
             }
-
             return notifyArray;
         }
 
