@@ -4,6 +4,7 @@
     <PackageId>Neo.Plugins.ApplicationLogs</PackageId>
     <RootNamespace>Neo.Plugins</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
   
   <ItemGroup>
