@@ -3,7 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>Neo</PackageId>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +29,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neo.SmartContract.Testing" />
     <InternalsVisibleTo Include="Neo.SmartContract.TestEngine" />
+    <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
   </ItemGroup>
 
 </Project>

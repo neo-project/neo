@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public class RpcException : Exception
     {

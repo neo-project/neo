@@ -12,7 +12,7 @@
 using Microsoft.Extensions.Configuration;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.StorageDumper
 {
     internal class Settings
     {

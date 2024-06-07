@@ -13,7 +13,7 @@ using Neo.IO;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService.Tests
 {
     public static class TestUtils
     {

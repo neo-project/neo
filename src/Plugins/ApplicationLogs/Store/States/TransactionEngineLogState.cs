@@ -11,7 +11,7 @@
 
 using Neo.IO;
 
-namespace Neo.Plugins.Store.States
+namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class TransactionEngineLogState : ISerializable, IEquatable<TransactionEngineLogState>
     {
