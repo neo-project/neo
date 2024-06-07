@@ -15,7 +15,6 @@ using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Text;
 
 namespace Neo.Plugins.ApplicationLogs.Store
 {
