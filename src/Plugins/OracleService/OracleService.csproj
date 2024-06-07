@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>Neo.Plugins.OracleService</PackageId>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

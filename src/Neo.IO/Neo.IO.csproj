@@ -4,7 +4,9 @@
     <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
+    <PackageId>Neo.IO</PackageId>
     <PackageTags>NEO;Blockchain;IO</PackageTags>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
