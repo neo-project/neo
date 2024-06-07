@@ -156,8 +156,8 @@ namespace Neo.VM
 
         private void DecreaseCounter(int count = 1)
         {
-            references_count-=count;
-            if(references_count<0) throw new InvalidOperationException("Reference counter is negative.");
+            references_count -= count;
+            if (references_count < 0) throw new InvalidOperationException("Reference counter is negative.");
 
         }
     }
