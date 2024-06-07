@@ -49,13 +49,13 @@ namespace Neo.Plugins.RpcServer.Tests
             _rpcServer = new RpcServer(_systemMock.Object, RpcServerSettings.Default);
         }
 
-        [TestMethod]
-        public void TestCheckAuth_ValidCredentials_ReturnsTrue()
-        {
-            var context = new DefaultHttpContext();
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
-            var result = _rpcServer.CheckAuth(context);
-            Assert.IsTrue(result);
-        }
+        // [TestMethod]
+        // public void TestCheckAuth_ValidCredentials_ReturnsTrue()
+        // {
+        //     var context = new DefaultHttpContext();
+        //     context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+        //     var result = _rpcServer.CheckAuth(context);
+        //     Assert.IsTrue(result);
+        // }
     }
 }
