@@ -274,7 +274,7 @@ namespace Neo.Test
             referenceCounter.AddStackReference(copyArray);
             Assert.AreEqual(2, referenceCounter.Count);
             referenceCounter.RemoveStackReference(copyArray);
-            Assert.ThrowsException<InvalidOperationException>(()=> referenceCounter.CheckZeroReferred());
+            Assert.ThrowsException<InvalidOperationException>(() => referenceCounter.CheckZeroReferred());
         }
     }
 }
