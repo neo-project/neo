@@ -15,6 +15,7 @@ using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Text;
 
 namespace Neo.Plugins.ApplicationLogs.Store
 {
@@ -159,9 +160,20 @@ namespace Neo.Plugins.ApplicationLogs.Store
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
             }
-            catch // Ref. https://github.com/neo-project/neo/issues/3296
+            catch (NotSupportedException ex) // Ref. https://github.com/neo-project/neo/issues/3296
             {
-                _snapshot.Put(key, BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
+                var message = ex.Message.Length > 1024 ? string.Concat(ex.Message.AsSpan(0, 1021), "...") : ex.Message;
+                _snapshot.Put(key, Encoding.UTF8.GetBytes("Not Supported Exception: " + message));
+            }
+            catch (FormatException ex)
+            {
+                var message = ex.Message.Length > 1024 ? string.Concat(ex.Message.AsSpan(0, 1021), "...") : ex.Message;
+                _snapshot.Put(key, Encoding.UTF8.GetBytes("Format Exception: " + message));
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message.Length > 1024 ? string.Concat(ex.Message.AsSpan(0, 1021), "...") : ex.Message;
+                _snapshot.Put(key, Encoding.UTF8.GetBytes("Exception: " + message));
             }
             return id;
         }
