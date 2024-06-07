@@ -69,7 +69,7 @@ namespace Neo.SmartContract
             {
                 ScriptHash.ToArray(),
                 EventName,
-                State
+                State.OnStack ? State : State.DeepCopy(true)
             };
         }
     }
