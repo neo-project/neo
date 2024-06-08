@@ -11,7 +11,7 @@
     <Product>Neo.GUI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
-    <BaseOutputPath>$(SolutionDir)/bin/$(AssemblyTitle)</BaseOutputPath>
+    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
