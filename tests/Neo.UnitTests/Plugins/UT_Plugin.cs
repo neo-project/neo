@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
 
-          Blockchain.InvokeCommitted(null,null);
+            Blockchain.InvokeCommitted(null, null);
         }
     }
 }
