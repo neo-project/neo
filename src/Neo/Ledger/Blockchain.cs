@@ -16,6 +16,7 @@ using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -468,16 +469,74 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                Committing?.Invoke(system, block, snapshot, all_application_executed);
+                InvokeCommitting(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
-            Committed?.Invoke(system, block);
+            InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             if (system.HeaderCache.TryRemoveFirst(out Header header))
                 Debug.Assert(header.Index == block.Index);
+        }
+
+        private void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        {
+            var handlers = Committing?.GetInvocationList();
+            if (handlers == null) return;
+
+            foreach (var @delegate in handlers)
+            {
+                var handler = (CommittingHandler)@delegate;
+                try
+                {
+                    handler(system, block, snapshot, applicationExecutedList);
+                }
+                catch (Exception ex)
+                {
+                    if (handler.Target is Plugin)
+                    {
+                        // Log the exception and continue with the next handler
+                        Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
+                    }
+                    else
+                    {
+                        // Rethrow the exception if the handler is not from a plugin
+                        Console.WriteLine($"Exception in committing handler: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private void InvokeCommitted(NeoSystem system, Block block)
+        {
+            var handlers = Committed?.GetInvocationList();
+            if (handlers == null) return;
+
+            foreach (var @delegate in handlers)
+            {
+                var handler = (CommittedHandler)@delegate;
+                try
+                {
+                    handler(system, block);
+                }
+                catch (Exception ex)
+                {
+                    if (handler.Target is Plugin)
+                    {
+                        // Log the exception and continue with the next handler
+                        Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
+                    }
+                    else
+                    {
+                        // Rethrow the exception if the handler is not from a plugin
+                        Console.WriteLine($"Exception in committed handler: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
         }
 
         /// <summary>

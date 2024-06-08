@@ -229,7 +229,15 @@ namespace Neo.Plugins
         /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
         public static bool SendMessage(object message)
         {
-            return Plugins.Any(plugin => plugin.OnMessage(message));
+            try
+            {
+                return Plugins.Any(plugin => plugin.OnMessage(message));
+            }
+            catch (Exception ex)
+            {
+                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                return false;
+            }
         }
     }
 }
