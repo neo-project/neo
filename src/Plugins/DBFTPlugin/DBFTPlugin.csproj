@@ -4,6 +4,7 @@
     <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>Neo.Consensus.DBFT</PackageId>
     <RootNamespace>Neo.Consensus</RootNamespace>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
