@@ -3,7 +3,6 @@
 
   <PropertyGroup>
     <Copyright>2015-2024 The Neo Project</Copyright>
-    <VersionPrefix>3.7.4</VersionPrefix>
     <LangVersion>12.0</LangVersion>
     <Authors>The Neo Project</Authors>
     <PackageIcon>neo.png</PackageIcon>
