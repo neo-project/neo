@@ -66,11 +66,11 @@ jobs:
 
   build-neo-cli:
     needs: [build-leveldb]
-    name: Build TarBalls (${{ matrix.runtime }})
+    name: Build & Publish TarBalls (${{ matrix.runtime }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        runtime: [linux-x64, linux-arm64, win-x64, win-arm64]
+        runtime: [linux-x64, linux-arm64, win-x64, win-arm64, osx-x64, osx-arm64]
 
     steps:
     - name: Set Application Version (Environment Variable)
@@ -89,16 +89,16 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: .NET Publish (neo-cli)
-      working-directory: ./neo
       run: |
         dotnet publish ./src/Neo.CLI \
-        --version-suffix ${{ env.APP_VERSION }}
+        --version-suffix ${{ matrix.runtime }} \
         --framework net8.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --runtime ${{ matrix.runtime }} \
         --self-contained true \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }} \
         --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
         -p:RuntimeIdentifier=${{ matrix.runtime }} \
         -p:SelfContained=true \
         -p:IncludeNativeLibrariesForSelfExtract=false \
@@ -111,11 +111,20 @@ jobs:
 
     - name: .NET Build (LevelDBStore)
       run: |
-        dotnet build ./src/Plugins/LevelDBStore/LevelDBStore.csproj \
+        dotnet build ./src/Plugins/LevelDBStore \
+        --version-suffix ${{ matrix.runtime }} \
         --framework net8.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
-        --verbosity normal
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }}
+
+    - name: Remove files (junk)
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
+      run: |
+        rm -v Neo*
+        rm -v *.pdb
+        rm -v *.xml
 
     - name: Remove Xml Comment Files
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
@@ -149,19 +158,40 @@ jobs:
     - name: Create Tarball File (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.v${{ env.APP_VERSION }}.tar.gz .
+      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz .
+
+    - name: Create Tarball File (osx)
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz .
 
     - name: Create Zip File (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.v${{ env.APP_VERSION }}.zip -r *
+      run: zip ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.zip -r *
 
-    - name: Create Checksum Files
+    - name: Create Checksum Files (linux)
+      if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.DIST_PATH }}
       env:
-        FILENAME: neo-cli-${{ matrix.runtime }}.v${{ env.APP_VERSION }}
+        FILENAME: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}
       run: |
           sha256sum ${{ env.FILENAME }}.tar.gz > ${{ env.FILENAME }}.sha256
+
+    - name: Create Checksum Files (osx)
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
+      working-directory: ${{ env.DIST_PATH }}
+      env:
+        FILENAME: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}
+      run: |
+          sha256sum ${{ env.FILENAME }}.tar.xz > ${{ env.FILENAME }}.sha256
+
+    - name: Create Checksum Files (win)
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      working-directory: ${{ env.DIST_PATH }}
+      env:
+        FILENAME: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}
+      run: |
           sha256sum ${{ env.FILENAME }}.zip > ${{ env.FILENAME }}.sha256
 
     - name: Output/Distribution Directory Contents
@@ -176,8 +206,19 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.v${{ env.APP_VERSION }}.tar.gz
-          asset_name: neo-cli-${{ matrix.runtime }}.v${{ env.APP_VERSION }}.tar.gz
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz
+          asset_content_type: application/x-gtar
+
+    - name: Upload Tarball File (osx)
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
           asset_content_type: application/x-gtar
 
     - name: Upload Zip File (win)
@@ -187,91 +228,22 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.v${{ env.APP_VERSION }}.zip
-          asset_name: neo-cli-${{ matrix.runtime }}.v${{ env.APP_VERSION }}.zip
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.zip
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.zip
           asset_content_type: application/zip
 
-  # codesign-macos:
-  #   name: Build TarBalls (${{ matrix.runtime }})
-  #   runs-on: macos-latest
-  #   strategy:
-  #     matrix:
-  #       runtime: [osx-x64, osx-arm64]
-
-  #   steps:
-  #   - name: Set Application Version (Environment Variable)
-  #     run: |
-  #       APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
-  #       echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-
-  #   - name: Checkout Repository Code
-  #     uses: actions/checkout@v4
-  #     with:
-  #       fetch-depth: 0
-
-  #   - name: Setup .NET
-  #     uses: actions/setup-dotnet@v4
-  #     with:
-  #       dotnet-version: ${{ env.DOTNET_VERSION }}
-
-  #   - name: .NET Publish (neo-cli)
-  #     working-directory: ./neo
-  #     run: |
-  #       dotnet publish ./src/Neo.CLI \
-  #       --version-suffix ${{ env.APP_VERSION }}
-  #       --framework net8.0 \
-  #       --configuration ${{ env.CONFIGURATION }} \
-  #       --runtime ${{ matrix.runtime }} \
-  #       --self-contained true \
-  #       --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }} \
-  #       --verbosity normal \
-  #       -p:RuntimeIdentifier=${{ matrix.runtime }} \
-  #       -p:SelfContained=true \
-  #       -p:IncludeNativeLibrariesForSelfExtract=false \
-  #       -p:PublishTrimmed=false \
-  #       -p:PublishSingleFile=true \
-  #       -p:PublishReadyToRun=true \
-  #       -p:EnableCompressionInSingleFile=true \
-  #       -p:DebugType=embedded \
-  #       -p:ServerGarbageCollection=true
-
-  #   - name: .NET Build (LevelDBStore)
-  #     working-directory: ./neo-modules
-  #     run: |
-  #       dotnet build ./src/Plugins/LevelDBStore/LevelDBStore.csproj \
-  #       --framework net8.0 \
-  #       --configuration ${{ env.CONFIGURATION }} \
-  #       --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
-  #       --verbosity normal
-
-  #   - name: Remove Xml Comment Files
-  #     working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-  #     run: rm -v *.xml
-
-  #   - name: CodeSign (neo-cli)
-  #     working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-  #     run: codesign --force --deep -s - neo-cli
-
-  #   - name: Create Distribution Directory
-  #     run: mkdir -p ${{ env.DIST_PATH }}
-
-  #   - name: Create Tarball File
-  #     working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-  #     run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}-${{ github.event.inputs.version }}.tar.xz .
-
-  #   - name: Output/Distribution Directory Contents
-  #     run: |
-  #       ls -la ${{ env.DIST_PATH }}
-  #       ls -la ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-
-  #   - name: Cache Distribution
-  #     uses: actions/cache/save@v3
-  #     with:
-  #       path: ${{ env.DIST_PATH }}/*
-  #       key: ${{ matrix.runtime }}
+    - name: Upload Checksum File (all)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
+          asset_content_type: text/plain
 
   cleanup:
-    needs: [release-neo-cli]
+    needs: [build-neo-cli]
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup
