@@ -73,6 +73,7 @@ namespace Neo.UnitTests.Plugins
             // Call the InvokeCommitted method and ensure no exception is thrown
             try
             {
+                Blockchain.InvokeCommitting(null, null,null,null);
                 Blockchain.InvokeCommitted(null, null);
             }
             catch (Exception ex)
