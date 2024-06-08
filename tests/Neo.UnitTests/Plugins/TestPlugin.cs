@@ -10,13 +10,22 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins;
+using System;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests.Plugins
 {
     public class TestPlugin : Plugin
     {
-        public TestPlugin() : base() { }
+        public TestPlugin() : base()
+        {
+            Blockchain.Committing += OnCommitting;
+            Blockchain.Committed += OnCommitted;
+        }
 
         protected override void Configure() { }
 
@@ -36,5 +45,15 @@ namespace Neo.UnitTests.Plugins
         }
 
         protected override bool OnMessage(object message) => true;
+
+        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void OnCommitted(NeoSystem system, Block block)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

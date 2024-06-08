@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Ledger;
 using Neo.Plugins;
 using System;
 
@@ -62,6 +63,14 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
             pp.TestGetConfiguration().Key.Should().Be("PluginConfiguration");
+        }
+
+        [TestMethod]
+        public void TestOnException()
+        {
+            var pp = new TestPlugin();
+
+          Blockchain.InvokeCommitted(null,null);
         }
     }
 }

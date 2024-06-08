@@ -481,7 +481,7 @@ namespace Neo.Ledger
                 Debug.Assert(header.Index == block.Index);
         }
 
-        private void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        internal static void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             var handlers = Committing?.GetInvocationList();
             if (handlers == null) return;
@@ -510,7 +510,7 @@ namespace Neo.Ledger
             }
         }
 
-        private void InvokeCommitted(NeoSystem system, Block block)
+        internal static void InvokeCommitted(NeoSystem system, Block block)
         {
             var handlers = Committed?.GetInvocationList();
             if (handlers == null) return;
