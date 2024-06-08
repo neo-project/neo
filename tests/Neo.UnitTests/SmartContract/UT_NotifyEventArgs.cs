@@ -13,6 +13,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.VM.Types;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -26,6 +27,30 @@ namespace Neo.UnitTests.SmartContract
             UInt160 script_hash = new byte[] { 0x00 }.ToScriptHash();
             NotifyEventArgs args = new NotifyEventArgs(container, script_hash, "Test", null);
             args.ScriptContainer.Should().Be(container);
+        }
+
+
+        [TestMethod]
+        public void TestIssue3300() // https://github.com/neo-project/neo/issues/3300
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            var ns = new Array(engine.ReferenceCounter);
+            for (var i = 0; i < 500; i++)
+            {
+                ns.Add("");
+            };
+
+            var hash = UInt160.Parse("0x179ab5d297fd34ecd48643894242fc3527f42853");
+            engine.SendNotification(hash, "Test", ns);
+            // This should have being 0, but we have optimized the vm to not clean the reference counter
+            // unless it is necessary, so the reference counter will be 1000.
+            // Same reason why its 1504 instead of 504.
+            Assert.AreEqual(1000, engine.ReferenceCounter.Count);
+            // This will make a deepcopy for the notification, along with the 500 state items.
+            engine.GetNotifications(hash);
+            // With the fix of issue 3300, the reference counter calculates not only
+            // the notifaction items, but also the subitems of the notification state.
+            Assert.AreEqual(1504, engine.ReferenceCounter.Count);
         }
     }
 }
