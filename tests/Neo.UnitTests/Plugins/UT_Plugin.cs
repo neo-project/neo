@@ -70,7 +70,15 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
 
-            Blockchain.InvokeCommitted(null, null);
+            // Call the InvokeCommitted method and ensure no exception is thrown
+            try
+            {
+                Blockchain.InvokeCommitted(null, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"InvokeCommitted threw an exception: {ex.Message}");
+            }
         }
     }
 }
