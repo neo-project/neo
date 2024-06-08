@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Plugins
         [TestMethod]
         public void TestOnException()
         {
-            var pp = new TestPlugin();
+            _ = new TestPlugin();
 
             // Call the InvokeCommitted method and ensure no exception is thrown
             try
@@ -80,6 +80,15 @@ namespace Neo.UnitTests.Plugins
             {
                 Assert.Fail($"InvokeCommitted threw an exception: {ex.Message}");
             }
+
+            _ = new TestNonPlugin();
+
+            // Call the InvokeCommitted method and ensure exception is thrown
+            Assert.ThrowsException<NotImplementedException>(() =>
+            {
+                Blockchain.InvokeCommitting(null, null, null, null);
+                Blockchain.InvokeCommitted(null, null);
+            });
         }
     }
 }

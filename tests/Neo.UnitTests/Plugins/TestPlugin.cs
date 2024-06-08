@@ -19,6 +19,25 @@ using System.Collections.Generic;
 
 namespace Neo.UnitTests.Plugins
 {
+    public class TestNonPlugin
+    {
+        public TestNonPlugin() : base()
+        {
+            Blockchain.Committing += OnCommitting;
+            Blockchain.Committed += OnCommitted;
+        }
+
+        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void OnCommitted(NeoSystem system, Block block)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class TestPlugin : Plugin
     {
         public TestPlugin() : base()
