@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Neo.Wallets.SQLite</RootNamespace>
+    <PackageId>Neo.Wallets.SQLite</PackageId>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.5" />
+  </ItemGroup>
+
+</Project>

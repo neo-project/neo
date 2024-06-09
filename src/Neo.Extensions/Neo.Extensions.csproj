@@ -3,11 +3,13 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
+    <PackageId>Neo.Extensions</PackageId>
     <PackageTags>NEO;Blockchain;Extensions</PackageTags>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.18" />
+    <PackageReference Include="Akka" Version="1.5.20" />
   </ItemGroup>
 
   <ItemGroup>

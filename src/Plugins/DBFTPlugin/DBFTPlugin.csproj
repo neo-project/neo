@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <PackageId>Neo.Consensus.DBFT</PackageId>
+    <RootNamespace>Neo.Consensus</RootNamespace>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="DBFTPlugin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

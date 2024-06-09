@@ -10,7 +10,27 @@ env:
 
 jobs:
 
+  Format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Check Format (*.cs)
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+
+    - name: Build (Neo.CLI)
+      run: |
+        dotnet build ./src/Neo.CLI \
+        --output ./out/Neo.CLI
+
   Test:
+    needs: [Format]
     timeout-minutes: 15
     strategy:
       matrix:
@@ -23,37 +43,49 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Check format
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-         dotnet format --verify-no-changes --verbosity diagnostic
-    - name: Build CLI
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        dotnet publish ./src/Neo.CLI
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
+        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet test
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'
-        dotnet test ./tests/Neo.ConsoleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
-        dotnet test ./tests/Neo.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
-        dotnet test ./tests/Neo.VM.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json'
-        dotnet test ./tests/Neo.Json.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat='lcov'
+        sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
+
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests
+        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
+        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
+        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
+
+        # Plugins
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
+        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
+        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
+
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@v2.2.3
+      uses: coverallsapp/github-action@v2.3.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        format: lcov
-        file: ${{ github.workspace }}/TestResults/coverage/coverage.info
+        files:
+          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Json.UnitTests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-    needs: Test
+    needs: [Test]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -102,7 +134,7 @@ jobs:
 
   Release:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-    needs: Test
+    needs: [Test]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout

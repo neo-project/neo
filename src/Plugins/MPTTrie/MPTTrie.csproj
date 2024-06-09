@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <PackageId>Neo.Cryptography.MPT</PackageId>
+    <RootNamespace>Neo.Cryptography</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
+  </PropertyGroup>
+
+</Project>
