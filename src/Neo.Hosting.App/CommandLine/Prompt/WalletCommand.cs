@@ -17,8 +17,15 @@ namespace Neo.Hosting.App.CommandLine.Prompt
     {
         public WalletCommand() : base("wallet", "Use or manage wallet(s)")
         {
-            var walletOpenCommand = new OpenCommand();
-            AddCommand(walletOpenCommand);
+            var openCommand = new OpenCommand();
+            var closeCommand = new CloseCommand();
+            var createCommand = new CreateCommand();
+            var addressCommand = new AddressCommand();
+
+            AddCommand(openCommand);
+            AddCommand(closeCommand);
+            AddCommand(createCommand);
+            AddCommand(addressCommand);
         }
     }
 }
