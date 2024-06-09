@@ -505,18 +505,15 @@ namespace Neo.Ledger
                 {
                     handlerAction(handler);
                 }
+                catch (Exception ex) when (handler.Target is Plugin)
+                {
+                    // Log the exception and continue with the next handler
+                    // Isolate the plugin exception
+                    Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
+                }
                 catch (Exception ex)
                 {
-                    if (handler.Target is Plugin)
-                    {
-                        // Log the exception and continue with the next handler
-                        // Isolate the plugin exception
-                        Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
-                    }
-                    else
-                    {
-                        exceptions.Add(ex);
-                    }
+                    exceptions.Add(ex);
                 }
             })).ToList();
 
