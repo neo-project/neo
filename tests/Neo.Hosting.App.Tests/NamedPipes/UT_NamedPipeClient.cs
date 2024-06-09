@@ -32,21 +32,17 @@ namespace Neo.Hosting.App.Tests.NamedPipes
 {
     public class UT_NamedPipeClient : TestSetupLogging, IDisposable
     {
-        private readonly NeoSystem _neoSystem;
         private readonly NeoSystemHostedService _neoSystemService;
 
         public UT_NamedPipeClient(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
-            _neoSystem = new NeoSystem(NeoProtocolSettingsDefaults.MainNet, NeoDefaults.StoreProviderName, Path.GetRandomFileName());
-            _neoSystemService = new NeoSystemHostedService(_neoSystem, LoggerFactory, TestProtocolSettings.Default, Options.Create(TestNeoOptions.Default));
+            _neoSystemService = new NeoSystemHostedService(TestBlockchain.TheNeoSystem, LoggerFactory, TestProtocolSettings.Default, Options.Create(TestNeoOptions.Default));
             _neoSystemService.StartAsync(new CancellationToken()).Wait();
         }
 
         public void Dispose()
         {
-            Task.Delay(10).Wait();
             _neoSystemService.DisposeAsync().AsTask().Wait();
-            _neoSystem.Dispose();
         }
 
         [Fact]
