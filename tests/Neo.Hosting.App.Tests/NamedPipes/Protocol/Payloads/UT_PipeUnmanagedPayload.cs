@@ -40,7 +40,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
             var actualBytes = actual.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeUnmanagedPayload<int>);
+            var className = $"{nameof(PipeUnmanagedPayload<int>)}<int>";
             var methodName = nameof(PipeUnmanagedPayload<int>.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 

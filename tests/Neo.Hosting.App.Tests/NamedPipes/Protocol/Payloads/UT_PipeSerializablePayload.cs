@@ -48,7 +48,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
             var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
-            var className = nameof(PipeSerializablePayload<Block>);
+            var className = $"{nameof(PipeSerializablePayload<Block>)}<{nameof(Block)}>";
             var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
@@ -68,7 +68,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
             var actualBytes = block2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeSerializablePayload<Block>);
+            var className = $"{nameof(PipeSerializablePayload<Block>)}<{nameof(Block)}>";
             var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
@@ -89,7 +89,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
             var actualBytes = block2.ToArray();
             var actualHexString = Convert.ToHexString(actualBytes);
 
-            var className = nameof(PipeSerializablePayload<Block>);
+            var className = $"{nameof(PipeSerializablePayload<Block>)}<{nameof(Block)}>";
             var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
@@ -110,7 +110,7 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
             var actualBytesWithoutHeader = actualBytes;
             var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
 
-            var className = nameof(PipeSerializablePayload<Block>);
+            var className = $"{nameof(PipeSerializablePayload<Block>)}<{nameof(Block)}>";
             var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
             _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
 
