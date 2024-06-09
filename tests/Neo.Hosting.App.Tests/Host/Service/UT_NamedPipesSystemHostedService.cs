@@ -48,7 +48,7 @@ namespace Neo.Hosting.App.Tests.Host.Service
 
         public void Dispose()
         {
-            Task.Delay(3).Wait();
+            Task.Delay(10).Wait();
             _neoSystemService.DisposeAsync().AsTask().Wait();
             _neoSystem.Dispose();
         }
