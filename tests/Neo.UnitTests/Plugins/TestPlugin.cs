@@ -19,7 +19,16 @@ using System.Collections.Generic;
 
 namespace Neo.UnitTests.Plugins
 {
-    public class TestNonPlugin
+
+    internal class TestPluginSettings(IConfigurationSection section) : PluginSettings(section)
+    {
+        public static TestPluginSettings Default { get; private set; }
+        public static void Load(IConfigurationSection section)
+        {
+            Default = new TestPluginSettings(section);
+        }
+    }
+    internal class TestNonPlugin
     {
         public TestNonPlugin()
         {
@@ -39,15 +48,22 @@ namespace Neo.UnitTests.Plugins
     }
 
 
-    public class TestPlugin : Plugin
+    internal class TestPlugin : Plugin
     {
-        public TestPlugin() : base()
+        private readonly bool _stopOnUnhandledException;
+        protected internal override bool StopOnUnhandledException => _stopOnUnhandledException && TestPluginSettings.Default.StopOnUnhandledException;
+
+        public TestPlugin(bool stopOnUnhandledException = true) : base()
         {
             Blockchain.Committing += OnCommitting;
             Blockchain.Committed += OnCommitted;
+            _stopOnUnhandledException = stopOnUnhandledException;
         }
 
-        protected override void Configure() { }
+        protected override void Configure()
+        {
+            TestPluginSettings.Load(GetConfiguration());
+        }
 
         public void LogMessage(string message)
         {

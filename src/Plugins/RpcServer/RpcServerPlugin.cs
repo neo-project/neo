@@ -24,6 +24,7 @@ namespace Neo.Plugins.RpcServer
         private static readonly Dictionary<uint, List<object>> handlers = new();
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "RpcServer.json");
+        protected override bool StopOnUnhandledException => settings.StopOnUnhandledException;
 
         protected override void Configure()
         {

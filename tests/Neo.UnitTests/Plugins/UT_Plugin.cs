@@ -69,6 +69,7 @@ namespace Neo.UnitTests.Plugins
         [TestMethod]
         public async Task TestOnException()
         {
+            _ = new TestPlugin();
             // Ensure no exception is thrown
             try
             {
@@ -94,5 +95,62 @@ namespace Neo.UnitTests.Plugins
                 await Blockchain.InvokeCommittedAsync(null, null);
             });
         }
+
+        [TestMethod]
+        public async Task TestOnPluginStopped()
+        {
+            var pp = new TestPlugin();
+            Assert.AreEqual(false, pp.IsStopped);
+            // Ensure no exception is thrown
+            try
+            {
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+                await Blockchain.InvokeCommittedAsync(null, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+            }
+
+            Assert.AreEqual(true, pp.IsStopped);
+        }
+
+        [TestMethod]
+        public async Task TestOnPluginStopOnException()
+        {
+            // pp will stop on exception.
+            var pp = new TestPlugin();
+            Assert.AreEqual(false, pp.IsStopped);
+            // Ensure no exception is thrown
+            try
+            {
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+                await Blockchain.InvokeCommittedAsync(null, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+            }
+
+            Assert.AreEqual(true, pp.IsStopped);
+
+            // pp2 will not stop on exception.
+            var pp2 = new TestPlugin(false);
+            Assert.AreEqual(false, pp2.IsStopped);
+            // Ensure no exception is thrown
+            try
+            {
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+                await Blockchain.InvokeCommittedAsync(null, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+            }
+
+            Assert.AreEqual(false, pp2.IsStopped);
+
+        }
+
     }
 }

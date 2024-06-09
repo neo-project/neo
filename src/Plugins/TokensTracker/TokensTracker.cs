@@ -29,8 +29,10 @@ namespace Neo.Plugins
         private uint _network;
         private string[] _enabledTrackers;
         private IStore _db;
+        private bool _stopOnUnhandledException;
         private NeoSystem neoSystem;
         private readonly List<TrackerBase> trackers = new();
+        protected override bool StopOnUnhandledException => _stopOnUnhandledException;
 
         public override string Description => "Enquiries balances and transaction history of accounts through RPC";
 
@@ -56,6 +58,7 @@ namespace Neo.Plugins
             _maxResults = config.GetValue("MaxResults", 1000u);
             _network = config.GetValue("Network", 860833102u);
             _enabledTrackers = config.GetSection("EnabledTrackers").GetChildren().Select(p => p.Value).ToArray();
+            _stopOnUnhandledException = config.GetValue("StopOnUnhandledException", true);
         }
 
         protected override void OnSystemLoaded(NeoSystem system)

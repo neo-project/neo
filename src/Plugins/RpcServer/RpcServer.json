@@ -1,5 +1,6 @@
 {
   "PluginConfiguration": {
+    "StopOnUnhandledException": false,
     "Servers": [
       {
         "Network": 860833102,

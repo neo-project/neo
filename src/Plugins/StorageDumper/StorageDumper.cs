@@ -29,7 +29,7 @@ namespace Neo.Plugins.StorageDumper
         /// </summary>
         private JObject? _currentBlock;
         private string? _lastCreateDirectory;
-
+        protected override bool StopOnUnhandledException => Settings.Default != null && Settings.Default.StopOnUnhandledException;
 
         public override string Description => "Exports Neo-CLI status data";
 

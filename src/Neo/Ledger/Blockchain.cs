@@ -503,20 +503,26 @@ namespace Neo.Ledger
             {
                 try
                 {
+                    // skip stopped plugin.
+                    if (handler.Target is Plugin { IsStopped: true })
+                    {
+                        return;
+                    }
+
                     handlerAction(handler);
+                }
+                catch (Exception ex) when (handler.Target is Plugin plugin)
+                {
+                    // Log the exception and continue with the next handler
+                    // Isolate the plugin exception
+                    //Stop plugin on exception
+                    if (plugin.StopOnUnhandledException)
+                        plugin.IsStopped = true;
+                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
                 }
                 catch (Exception ex)
                 {
-                    if (handler.Target is Plugin)
-                    {
-                        // Log the exception and continue with the next handler
-                        // Isolate the plugin exception
-                        Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
-                    }
-                    else
-                    {
-                        exceptions.Add(ex);
-                    }
+                    exceptions.Add(ex);
                 }
             })).ToList();
 

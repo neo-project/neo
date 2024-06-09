@@ -31,6 +31,8 @@ namespace Neo.Plugins.DBFTPlugin
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "DBFTPlugin.json");
 
+        protected override bool StopOnUnhandledException => settings.StopOnUnhandledException;
+
         public DBFTPlugin()
         {
             RemoteNode.MessageReceived += RemoteNode_MessageReceived;
