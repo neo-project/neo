@@ -81,7 +81,7 @@ namespace Neo.Plugins.RollbackService
         /// Command to rollback the ledger to a specified block height.
         /// </summary>
         /// <param name="target">The target block height to rollback to.</param>
-        [ConsoleCommand("fallback ledger", Category = "Blockchain Commands")]
+        [ConsoleCommand("rollback ledger", Category = "Blockchain Commands")]
         private void OnBlockFallbackCommand(uint targetHeight)
         {
             var height = NativeContract.Ledger.CurrentIndex(_system.StoreView);
