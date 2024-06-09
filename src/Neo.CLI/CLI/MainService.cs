@@ -33,6 +33,7 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -377,15 +378,36 @@ namespace Neo.CLI
             CustomApplicationSettings(options, Settings.Default);
             try
             {
-                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
+                    string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             }
-            catch (DllNotFoundException)
+            catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
             {
-                ConsoleHelper.Error("DLL not found, please install Microsoft Visual C++ Redistributable." + Environment.NewLine +
-                    "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" + Environment.NewLine +
-                    "Press any key to exit.");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    ConsoleHelper.Error("DLL not found, please install Microsoft Visual C++ Redistributable." +
+                                        Environment.NewLine +
+                                        "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" +
+                                        Environment.NewLine +
+                                        "Press any key to exit.");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    ConsoleHelper.Error("DLL not found, please get libleveldb.dylib." +
+                                        Environment.NewLine +
+                                        "For AppleSilicon https://github.com/neo-project/neo/releases/download/v3.7.4/neo-cli-osx-arm64.zip" +
+                                        Environment.NewLine +
+                                        "For Intel https://github.com/neo-project/neo/releases/download/v3.7.4/neo-cli-osx-x64.zip" +
+                                        Environment.NewLine +
+                                        "Press any key to exit.");
+                }
+
                 Console.ReadKey();
                 Environment.Exit(-1);
+            }
+            catch (DllNotFoundException ex)
+            {
+
             }
             NeoSystem.AddService(this);
 
