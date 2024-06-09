@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <PackageId>Neo.Plugins.RpcServer</PackageId>
+    <PackageId>Neo.Plugins.RollbackService</PackageId>
     <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
   </PropertyGroup>
 
@@ -11,13 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="RpcServer.json">
+    <None Update="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
   </ItemGroup>
 
   <ItemGroup>
