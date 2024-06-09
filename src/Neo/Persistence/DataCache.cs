@@ -477,11 +477,17 @@ namespace Neo.Persistence
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
+        /// <param name="useInternal">Get from the cache or directly from storage.</param>
         /// <returns>The cached data. Or <see langword="null"/> if it is neither in the cache nor in the underlying storage.</returns>
-        public StorageItem TryGet(StorageKey key)
+        public StorageItem TryGet(StorageKey key, bool useInternal = false)
         {
             lock (dictionary)
             {
+                if (useInternal)
+                {
+                    return TryGetInternal(key);
+                }
+
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
