@@ -385,11 +385,21 @@ namespace Neo.CLI
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    ConsoleHelper.Error("DLL not found, please install Microsoft Visual C++ Redistributable." +
-                                        Environment.NewLine +
-                                        "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" +
-                                        Environment.NewLine +
-                                        "Press any key to exit.");
+                    if (File.Exists("libleveldb.dll"))
+                    {
+                        ConsoleHelper.Error("Dependency DLL not found, please install Microsoft Visual C++ Redistributable." +
+                                            Environment.NewLine +
+                                            "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" +
+                                            Environment.NewLine +
+                                            "Press any key to exit.");
+                    }
+                    else
+                    {
+                        ConsoleHelper.Error("DLL not found, please get libleveldb.dll." +
+                                            Environment.NewLine +
+                                            "Press any key to exit.");
+                    }
+
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
