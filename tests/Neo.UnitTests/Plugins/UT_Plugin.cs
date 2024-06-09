@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Plugins;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Plugins
@@ -22,6 +23,51 @@ namespace Neo.UnitTests.Plugins
     public class UT_Plugin
     {
         private static readonly object locker = new();
+
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            ClearEventHandlers();
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            ClearEventHandlers();
+        }
+
+        private static void ClearEventHandlers()
+        {
+            ClearEventHandler("Committing");
+            ClearEventHandler("Committed");
+        }
+
+        private static void ClearEventHandler(string eventName)
+        {
+            var eventInfo = typeof(Blockchain).GetEvent(eventName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            if (eventInfo == null)
+            {
+                return;
+            }
+
+            var fields = typeof(Blockchain).GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            foreach (var field in fields)
+            {
+                if (field.FieldType == typeof(MulticastDelegate) || field.FieldType.BaseType == typeof(MulticastDelegate))
+                {
+                    var eventDelegate = (MulticastDelegate)field.GetValue(null);
+                    if (eventDelegate != null && field.Name.Contains(eventName))
+                    {
+                        foreach (var handler in eventDelegate.GetInvocationList())
+                        {
+                            eventInfo.RemoveEventHandler(null, handler);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
 
         [TestMethod]
         public void TestGetConfigFile()
@@ -149,8 +195,6 @@ namespace Neo.UnitTests.Plugins
             }
 
             Assert.AreEqual(false, pp2.IsStopped);
-
         }
-
     }
 }
