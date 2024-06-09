@@ -5,7 +5,7 @@
     "Network": 860833102,
     "AutoVerify": false,
     "MaxFindResultItems": 100,
-    "StopOnUnhandledException": true
+    "UnhandledExceptionPolicy": "StopPlugin"
   },
   "Dependency": [
     "RpcServer"

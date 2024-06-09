@@ -72,11 +72,11 @@ namespace Neo.Plugins
         /// If the plugin should be stopped when an exception is thrown.
         /// Default is <see langword="true"/>.
         /// </summary>
-        protected internal virtual bool StopOnUnhandledException { get; init; } = true;
+        protected internal virtual UnhandledExceptionPolicy ExceptionPolicy { get; init; } = UnhandledExceptionPolicy.StopNode;
 
         /// <summary>
         /// The plugin will be stopped if an exception is thrown.
-        /// But it also depends on <see cref="StopOnUnhandledException"/>.
+        /// But it also depends on <see cref="UnhandledExceptionPolicy"/>.
         /// </summary>
         internal bool IsStopped { get; set; }
 
@@ -257,8 +257,18 @@ namespace Neo.Plugins
                     }
                     catch (Exception ex)
                     {
-                        if (plugin.StopOnUnhandledException)
-                            plugin.IsStopped = true;
+                        switch (plugin.ExceptionPolicy)
+                        {
+                            case UnhandledExceptionPolicy.StopNode:
+                                throw;
+                            case UnhandledExceptionPolicy.StopPlugin:
+                                plugin.IsStopped = true;
+                                break;
+                            case UnhandledExceptionPolicy.Ignore:
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
                         Utility.Log(nameof(Plugin), LogLevel.Error, ex);
                         return false;
                     }

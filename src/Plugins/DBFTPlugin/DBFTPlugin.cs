@@ -31,7 +31,7 @@ namespace Neo.Plugins.DBFTPlugin
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "DBFTPlugin.json");
 
-        protected override bool StopOnUnhandledException => settings.StopOnUnhandledException;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => settings.ExceptionPolicy;
 
         public DBFTPlugin()
         {

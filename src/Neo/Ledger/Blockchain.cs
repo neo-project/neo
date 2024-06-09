@@ -513,11 +513,22 @@ namespace Neo.Ledger
                 }
                 catch (Exception ex) when (handler.Target is Plugin plugin)
                 {
-                    // Log the exception and continue with the next handler
-                    // Isolate the plugin exception
-                    //Stop plugin on exception
-                    if (plugin.StopOnUnhandledException)
-                        plugin.IsStopped = true;
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case UnhandledExceptionPolicy.StopNode:
+                            exceptions.Add(ex);
+                            throw;
+                        case UnhandledExceptionPolicy.StopPlugin:
+                            //Stop plugin on exception
+                            plugin.IsStopped = true;
+                            break;
+                        case UnhandledExceptionPolicy.Ignore:
+                            // Log the exception and continue with the next handler
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
                     Utility.Log(nameof(plugin), LogLevel.Error, ex);
                 }
                 catch (Exception ex)

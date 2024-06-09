@@ -68,7 +68,6 @@ namespace Neo.UnitTests.Plugins
             }
         }
 
-
         [TestMethod]
         public void TestGetConfigFile()
         {
@@ -181,7 +180,7 @@ namespace Neo.UnitTests.Plugins
             Assert.AreEqual(true, pp.IsStopped);
 
             // pp2 will not stop on exception.
-            var pp2 = new TestPlugin(false);
+            var pp2 = new TestPlugin(UnhandledExceptionPolicy.Ignore);
             Assert.AreEqual(false, pp2.IsStopped);
             // Ensure no exception is thrown
             try
@@ -195,6 +194,25 @@ namespace Neo.UnitTests.Plugins
             }
 
             Assert.AreEqual(false, pp2.IsStopped);
+        }
+
+        [TestMethod]
+        public async Task TestOnNodeStopOnPluginException()
+        {
+            // node will stop on pp exception.
+            var pp = new TestPlugin(UnhandledExceptionPolicy.StopNode);
+            Assert.AreEqual(false, pp.IsStopped);
+            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
+            {
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+            });
+
+            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
+            {
+                await Blockchain.InvokeCommittedAsync(null, null);
+            });
+
+            Assert.AreEqual(false, pp.IsStopped);
         }
     }
 }

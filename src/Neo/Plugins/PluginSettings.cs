@@ -10,10 +10,25 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Org.BouncyCastle.Security;
+using System;
 
 namespace Neo.Plugins;
 
 public abstract class PluginSettings(IConfigurationSection section)
 {
-    public bool StopOnUnhandledException { get; } = section.GetValue("StopOnUnhandledException", true);
+    public UnhandledExceptionPolicy ExceptionPolicy
+    {
+        get
+        {
+            var policyString = section.GetValue("UnhandledExceptionPolicy", "StopNode");
+            if (Enum.TryParse(policyString, out UnhandledExceptionPolicy policy))
+            {
+
+                return policy;
+            }
+
+            throw new InvalidParameterException($"{policyString} is not a valid UnhandledExceptionPolicy");
+        }
+    }
 }

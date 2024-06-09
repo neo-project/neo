@@ -4,6 +4,6 @@
     "HeightToBegin": 0,
     "StoragePerFolder": 100000,
     "Exclude": [ -4 ],
-    "StopOnUnhandledException": false
+    "UnhandledExceptionPolicy": "Ignore"
   }
 }

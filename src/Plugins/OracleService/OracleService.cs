@@ -61,7 +61,7 @@ namespace Neo.Plugins.OracleService
 
         public override string Description => "Built-in oracle plugin";
 
-        protected override bool StopOnUnhandledException => Settings.Default.StopOnUnhandledException;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.json");
 
