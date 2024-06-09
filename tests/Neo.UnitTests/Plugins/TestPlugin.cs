@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Plugins
 {
     public class TestNonPlugin
     {
-        public TestNonPlugin() : base()
+        public TestNonPlugin()
         {
             Blockchain.Committing += OnCommitting;
             Blockchain.Committed += OnCommitted;
@@ -29,14 +29,15 @@ namespace Neo.UnitTests.Plugins
 
         private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Test exception from OnCommitting");
         }
 
         private void OnCommitted(NeoSystem system, Block block)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Test exception from OnCommitted");
         }
     }
+
 
     public class TestPlugin : Plugin
     {

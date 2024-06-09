@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
+using Akka.Util.Internal;
 using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -21,10 +22,12 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -469,10 +472,10 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                InvokeCommitting(system, block, snapshot, all_application_executed);
+                _ = InvokeCommittingAsync(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
-            InvokeCommitted(system, block);
+            _ = InvokeCommittedAsync(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
@@ -481,63 +484,47 @@ namespace Neo.Ledger
                 Debug.Assert(header.Index == block.Index);
         }
 
-        internal static void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        internal static async Task InvokeCommittingAsync(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
-            var handlers = Committing?.GetInvocationList();
+            await InvokeHandlersAsync(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
+        }
+
+        internal static async Task InvokeCommittedAsync(NeoSystem system, Block block)
+        {
+            await InvokeHandlersAsync(Committed?.GetInvocationList(), h => ((CommittedHandler)h)(system, block));
+        }
+
+        private static async Task InvokeHandlersAsync(Delegate[] handlers, Action<Delegate> handlerAction)
+        {
             if (handlers == null) return;
 
-            foreach (var @delegate in handlers)
+            var exceptions = new ConcurrentBag<Exception>();
+            var tasks = handlers.Select(handler => Task.Run(() =>
             {
-                var handler = (CommittingHandler)@delegate;
                 try
                 {
-                    handler(system, block, snapshot, applicationExecutedList);
+                    handlerAction(handler);
                 }
                 catch (Exception ex)
                 {
                     if (handler.Target is Plugin)
                     {
                         // Log the exception and continue with the next handler
+                        // Isolate the plugin exception
                         Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
                     }
                     else
                     {
-                        // Rethrow the exception if the handler is not from a plugin
-                        Console.WriteLine($"Exception in committing handler: {ex.Message}");
-                        throw;
+                        exceptions.Add(ex);
                     }
                 }
-            }
+            })).ToList();
+
+            await Task.WhenAll(tasks);
+
+            exceptions.ForEach(e => throw e);
         }
 
-        internal static void InvokeCommitted(NeoSystem system, Block block)
-        {
-            var handlers = Committed?.GetInvocationList();
-            if (handlers == null) return;
-
-            foreach (var @delegate in handlers)
-            {
-                var handler = (CommittedHandler)@delegate;
-                try
-                {
-                    handler(system, block);
-                }
-                catch (Exception ex)
-                {
-                    if (handler.Target is Plugin)
-                    {
-                        // Log the exception and continue with the next handler
-                        Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
-                    }
-                    else
-                    {
-                        // Rethrow the exception if the handler is not from a plugin
-                        Console.WriteLine($"Exception in committed handler: {ex.Message}");
-                        throw;
-                    }
-                }
-            }
-        }
 
         /// <summary>
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.

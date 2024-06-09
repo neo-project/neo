@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Plugins;
 using System;
+using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Plugins
 {
@@ -66,28 +67,31 @@ namespace Neo.UnitTests.Plugins
         }
 
         [TestMethod]
-        public void TestOnException()
+        public async Task TestOnException()
         {
-            _ = new TestPlugin();
-
-            // Call the InvokeCommitted method and ensure no exception is thrown
+            // Ensure no exception is thrown
             try
             {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+                await Blockchain.InvokeCommittedAsync(null, null);
             }
             catch (Exception ex)
             {
-                Assert.Fail($"InvokeCommitted threw an exception: {ex.Message}");
+                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
             }
 
+            // Register TestNonPlugin that throws exceptions
             _ = new TestNonPlugin();
 
-            // Call the InvokeCommitted method and ensure exception is thrown
-            Assert.ThrowsException<NotImplementedException>(() =>
+            // Ensure exception is thrown
+            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
             {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+            });
+
+            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
+            {
+                await Blockchain.InvokeCommittedAsync(null, null);
             });
         }
     }
