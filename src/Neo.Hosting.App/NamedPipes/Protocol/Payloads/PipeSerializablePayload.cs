@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Buffers;
+using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.IO;
 
@@ -21,7 +22,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Payloads
         public T? Value { get; set; }
 
         public int Size =>
-            sizeof(int) +   // Array length
+            sizeof(int) +         // Array length
             Value?.Size ?? 0;     // Block size in bytes
 
         public void FromArray(byte[] buffer)
@@ -30,16 +31,22 @@ namespace Neo.Hosting.App.NamedPipes.Protocol.Payloads
 
             var blockBytes = wrapper.ReadArray<byte>();
 
-            Value = blockBytes.AsSerializable<T>();
+            Value = blockBytes.TryCatch(t => t.AsSerializable<T>(), default);
         }
 
         public byte[] ToArray()
         {
-            var wrapper = new Struffer(Size);
+            try
+            {
+                var wrapper = new Struffer(Size);
 
-            wrapper.Write(Value?.ToArray() ?? []);
+                wrapper.Write(Value?.ToArray() ?? []);
 
-            return [.. wrapper];
+                return [.. wrapper];
+            }
+            catch { }
+
+            return [0, 0, 0, 0];
         }
     }
 }

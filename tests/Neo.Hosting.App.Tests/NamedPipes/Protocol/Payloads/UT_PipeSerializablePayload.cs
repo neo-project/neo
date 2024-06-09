@@ -20,6 +20,7 @@ using Neo.Hosting.App.Tests.NamedPipes.Protocol;
 using Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads;
 using Neo.Hosting.App.Tests.UTHelpers.Extensions;
 using Neo.Network.P2P.Payloads;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +35,46 @@ namespace Neo.Hosting.App.Tests.NamedPipes.Protocol.Payloads
         (ITestOutputHelper testOutputHelper)
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
+
+        [Fact]
+        public void IPipeMessage_ToArray_Null()
+        {
+            var block1 = new PipeSerializablePayload<Block>() { Value = null };
+            var expectedBytes = block1.ToArray();
+            var expectedHexString = Convert.ToHexString(expectedBytes);
+
+            var block2 = new PipeSerializablePayload<Block>() { Value = null };
+            var actualBytes = block2.ToArray();
+            var actualBytesWithoutHeader = actualBytes;
+            var actualHexString = Convert.ToHexString(actualBytesWithoutHeader);
+
+            var className = nameof(PipeSerializablePayload<Block>);
+            var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
+            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
+
+            Assert.Equal(expectedBytes, actualBytesWithoutHeader);
+        }
+
+        [Fact]
+        public void IPipeMessage_FromArray_Null()
+        {
+            var block1 = new PipeSerializablePayload<Block>() { Value = null };
+            var expectedBytes = block1.ToArray();
+            var expectedHexString = Convert.ToHexString(expectedBytes);
+
+            var block2 = new PipeSerializablePayload<Block>();
+            block2.FromArray(expectedBytes);
+
+            var actualBytes = block2.ToArray();
+            var actualHexString = Convert.ToHexString(actualBytes);
+
+            var className = nameof(PipeSerializablePayload<Block>);
+            var methodName = nameof(PipeSerializablePayload<Block>.ToArray);
+            _testOutputHelper.LogDebug(className, methodName, actualHexString, expectedHexString);
+
+            Assert.Equal(expectedBytes, actualBytes);
+            Assert.Null(block2.Value);
+        }
 
         [Fact]
         public void IPipeMessage_FromArray_Data()

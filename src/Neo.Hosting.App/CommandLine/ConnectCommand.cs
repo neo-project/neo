@@ -33,7 +33,7 @@ namespace Neo.Hosting.App.CommandLine
     {
         public ConnectCommand() : base("connect", "Connect to local Neo service")
         {
-            var pipeNameOption = new Option<string>(new[] { "--pipe-name", "-pN" }, "Named pipe to connect too");
+            var pipeNameOption = new Option<string>(["--pipe-name", "-pN"], "Named pipe to connect too");
 
             AddOption(pipeNameOption);
         }
