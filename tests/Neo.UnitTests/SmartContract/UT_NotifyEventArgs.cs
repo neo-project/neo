@@ -13,6 +13,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.VM.Types;
 
 namespace Neo.UnitTests.SmartContract
@@ -34,6 +35,14 @@ namespace Neo.UnitTests.SmartContract
         public void TestIssue3300() // https://github.com/neo-project/neo/issues/3300
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            using (var script = new ScriptBuilder())
+            {
+                // Build call script calling disallowed method.
+                script.Emit(OpCode.NOP);
+                // Mock executing state to be a contract-based.
+                engine.LoadScript(script.ToArray());
+            }
+
             var ns = new Array(engine.ReferenceCounter);
             for (var i = 0; i < 500; i++)
             {

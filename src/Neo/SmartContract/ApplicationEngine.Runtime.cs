@@ -398,10 +398,7 @@ namespace Neo.SmartContract
             Notify?.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
-            if (CurrentContext != null)
-            {
-                CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
-            }
+            CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
         }
 
         /// <summary>
