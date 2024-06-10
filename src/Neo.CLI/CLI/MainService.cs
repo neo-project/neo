@@ -397,7 +397,7 @@ namespace Neo.CLI
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    DisplayError("DLL not found, please get libleveldb.dylib.",
+                    DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
                         "From https://github.com/neo-project/neo/releases");
                 }
                 else
