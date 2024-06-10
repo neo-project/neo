@@ -28,6 +28,12 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
         [PipeProtocol(typeof(PipeSerializablePayload<Block>))]
         Block = 0x04,
 
+        [PipeProtocol(typeof(PipeSerializablePayload<UInt256>))]
+        GetTransaction = 0x05,
+
+        [PipeProtocol(typeof(PipeSerializablePayload<Transaction>))]
+        Transaction = 0x06,
+
         [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xc0,
 

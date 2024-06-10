@@ -33,6 +33,7 @@ namespace Neo.Hosting.App.NamedPipes
             {
                 PipeCommand.GetVersion => OnVersion(message),
                 PipeCommand.GetBlock => OnBlock(message),
+                PipeCommand.GetTransaction => OnTransaction(message),
                 _ => CreateErrorResponse(message.RequestId, new InvalidDataException()),
             };
 
@@ -50,6 +51,17 @@ namespace Neo.Hosting.App.NamedPipes
             var payload = new PipeSerializablePayload<Block>() { Value = block };
 
             return PipeMessage.Create(message.RequestId, PipeCommand.Block, payload);
+        }
+
+        private PipeMessage OnTransaction(PipeMessage message)
+        {
+            if (message.Payload is not PipeSerializablePayload<UInt256> transactionHash)
+                return CreateErrorResponse(message.RequestId, new InvalidDataException());
+
+            var transaction = _neoSystemService.GetTransaction(transactionHash.Value);
+            var payload = new PipeSerializablePayload<Transaction>() { Value = transaction };
+
+            return PipeMessage.Create(message.RequestId, PipeCommand.Transaction, payload);
         }
     }
 }

@@ -25,5 +25,8 @@ namespace Neo.Hosting.App.Host.Service
 
         public Block GetCurrentHeight() =>
             NativeContract.Ledger.GetBlock(_store, NativeContract.Ledger.CurrentHash(_store));
+
+        public Transaction GetTransaction(UInt256? txHash) =>
+            NativeContract.Ledger.GetTransaction(_store, txHash);
     }
 }

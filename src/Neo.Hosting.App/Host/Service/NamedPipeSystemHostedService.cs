@@ -78,13 +78,13 @@ namespace Neo.Hosting.App.Host.Service
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("NamedPipeSystem is shutting down...");
-
             if (Interlocked.Exchange(ref _stopping, 1) == 1)
             {
                 await _stoppedCompletionSource.Task.ConfigureAwait(false);
                 return;
             }
+
+            _logger.LogInformation("NamedPipeSystem is shutting down...");
 
             _stopTokenSource.Cancel();
 
