@@ -405,9 +405,7 @@ namespace Neo.CLI
                 {
                     ConsoleHelper.Error("DLL not found, please get libleveldb.dylib." +
                                         Environment.NewLine +
-                                        "For AppleSilicon https://github.com/neo-project/neo/releases/download/v3.7.4/neo-cli-osx-arm64.zip" +
-                                        Environment.NewLine +
-                                        "For Intel https://github.com/neo-project/neo/releases/download/v3.7.4/neo-cli-osx-x64.zip" +
+                                        "From https://github.com/neo-project/neo/releases" +
                                         Environment.NewLine +
                                         "Press any key to exit.");
                 }
