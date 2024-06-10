@@ -28,7 +28,15 @@ jobs:
       run: |
         dotnet build ./src/Neo.CLI \
         --output ./out/Neo.CLI
-
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get install libleveldb-dev expect
+        find ./out -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g'
+        
+    - name: Run tests with expect
+      run: expect ./.github/workflows/test-neo-cli.expect
+      
   Test:
     needs: [Format]
     timeout-minutes: 15
