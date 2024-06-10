@@ -381,42 +381,22 @@ namespace Neo.CLI
                 NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
                     string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             }
-            catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
+            catch (DllNotFoundException ex)
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    if (File.Exists("libleveldb.dll"))
-                    {
-                        ConsoleHelper.Error("Dependency DLL not found, please install Microsoft Visual C++ Redistributable." +
-                                            Environment.NewLine +
-                                            "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" +
-                                            Environment.NewLine +
-                                            "Press any key to exit.");
-                    }
-                    else
-                    {
-                        ConsoleHelper.Error("DLL not found, please get libleveldb.dll." +
-                                            Environment.NewLine +
-                                            "Press any key to exit.");
-                    }
+                var message = ex.Message.Contains("libleveldb") ? "LevelDB dependency DLL not found." : "Neo CLI is broken.";
+                var additionalInfo = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? File.Exists("libleveldb.dll")
+                        ? "Please install Microsoft Visual C++ Redistributable.\nSee https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist"
+                        : "Please get libleveldb.dll."
+                    : RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                        ? "Please get libleveldb.dylib.\nFrom https://github.com/neo-project/neo/releases"
+                        : "Please reinstall Neo CLI.\nFrom https://github.com/neo-project/neo/releases";
 
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    ConsoleHelper.Error("DLL not found, please get libleveldb.dylib." +
-                                        Environment.NewLine +
-                                        "From https://github.com/neo-project/neo/releases" +
-                                        Environment.NewLine +
-                                        "Press any key to exit.");
-                }
-
+                ConsoleHelper.Error($"{message}\n{additionalInfo}\nPress any key to exit.");
                 Console.ReadKey();
                 Environment.Exit(-1);
             }
-            catch (DllNotFoundException)
-            {
 
-            }
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
