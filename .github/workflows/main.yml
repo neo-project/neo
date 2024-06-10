@@ -24,6 +24,11 @@ jobs:
     - name: Check Format (*.cs)
       run: dotnet format --verify-no-changes --verbosity diagnostic
 
+  Build-Test-Neo-Cli:
+    needs: [Format]
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:    
     - name: Build (Neo.CLI)
       run: |
         dotnet build ./src/Neo.CLI \
