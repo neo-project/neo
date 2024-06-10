@@ -415,7 +415,7 @@ namespace Neo.CLI
                 Console.ReadKey();
                 Environment.Exit(-1);
             }
-            catch (DllNotFoundException ex)
+            catch (DllNotFoundException)
             {
 
             }
