@@ -406,8 +406,6 @@ namespace Neo.CLI
                         "From https://github.com/neo-project/neo/releases");
                 }
 
-                Console.ReadKey();
-                Environment.Exit(-1);
             }
             catch (DllNotFoundException)
             {
@@ -490,11 +488,13 @@ namespace Neo.CLI
 
             return;
 
-            void DisplayError(string primaryMessage, string secondaryMessage = null)
+            void DisplayError(string primaryMessage, string? secondaryMessage = null)
             {
                 ConsoleHelper.Error(primaryMessage + Environment.NewLine +
                                     (secondaryMessage != null ? secondaryMessage + Environment.NewLine : "") +
                                     "Press any key to exit.");
+                Console.ReadKey();
+                Environment.Exit(-1);
             }
         }
 
