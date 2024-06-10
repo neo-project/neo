@@ -6,7 +6,7 @@ set timeout 10
 
 
 # Start neo-cli
-spawn dotnet /workspaces/neo-cris/src/Neo.CLI/neo-cli.dll
+spawn dotnet out/neo-cli.dll
 
 # Expect the main input prompt
 expect {
