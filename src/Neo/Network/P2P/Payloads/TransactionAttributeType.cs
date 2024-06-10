@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads
         Conflicts = 0x21,
 
         /// <summary>
-        /// Indicates that the transaction uses notary request service with <see cref="NotaryAssisted.NKeys" number of keys/>.
+        /// Indicates that the transaction uses notary request service with <see cref="NotaryAssisted.NKeys"/> number of keys.
         /// </summary>
         [ReflectionCache(typeof(NotaryAssisted))]
         NotaryAssisted = 0x22
