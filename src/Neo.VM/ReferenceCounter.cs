@@ -118,9 +118,9 @@ namespace Neo.VM
                                 foreach (StackItem subitem in compound.SubItems)
                                 {
                                     if (component.Contains(subitem)) continue;
+                                    references_count--;
                                     if (!NeedTrack(subitem)) continue;
                                     subitem.ObjectReferences!.Remove(compound);
-                                    references_count--;
                                 }
                             }
                             item.Cleanup();
