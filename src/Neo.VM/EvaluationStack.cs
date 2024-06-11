@@ -169,10 +169,11 @@ namespace Neo.VM
 
         private static void CheckCompoundType(CompoundType rootItem, int maxItems = 2048)
         {
-            if (rootItem is null) throw new ArgumentNullException();
+            if (rootItem is null)
+                throw new ArgumentNullException();
 
             var stack = new Stack<CompoundType>();
-            var visited = new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
+            var visited = new HashSet<CompoundType>(ReferenceEqualityComparer.Instance);
             int itemCount = 0;
 
             // Initialize the stack and visited set with the root item
@@ -198,9 +199,7 @@ namespace Neo.VM
                     {
                         // Check for cycle dependency
                         if (!visited.Add(compoundSubItem))
-                        {
                             continue;
-                        }
 
                         // Add the subItem to the stack and increment the itemCount
                         stack.Push(compoundSubItem);
@@ -208,9 +207,7 @@ namespace Neo.VM
 
                         // Check if the itemCount exceeds the maximum allowed items
                         if (itemCount > maxItems)
-                        {
                             throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
-                        }
                     }
                 }
             }
