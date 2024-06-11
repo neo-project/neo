@@ -110,6 +110,8 @@ namespace Neo.VM
         {
             innerList.Add(item);
             referenceCounter.AddStackReference(item);
+            if (item is CompoundType compoundType)
+                CheckCompoundType(compoundType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -163,6 +165,31 @@ namespace Neo.VM
         public override string ToString()
         {
             return $"[{string.Join(", ", innerList.Select(p => $"{p.Type}({p})"))}]";
+        }
+
+        private static void CheckCompoundType(CompoundType rootItem)
+        {
+            ArgumentNullException.ThrowIfNull(rootItem);
+            var stack = new Stack<CompoundType>();
+            stack.Push(rootItem);
+
+            while (stack.Count > 0)
+            {
+                var currentCompound = stack.Pop();
+
+                foreach (var subItem in currentCompound.SubItems)
+                {
+                    if (!subItem.OnStack)
+                    {
+                        throw new InvalidOperationException("Invalid stackitem being pushed.");
+                    }
+
+                    if (subItem is CompoundType compoundSubItem)
+                    {
+                        stack.Push(compoundSubItem);
+                    }
+                }
+            }
         }
     }
 }
