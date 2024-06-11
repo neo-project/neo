@@ -157,6 +157,9 @@ namespace Neo.VM
                 }
                 catch (Exception e)
                 {
+#if VMPERF
+                    Console.WriteLine(e);
+#endif
                     OnFault(e);
                 }
             }
