@@ -16,6 +16,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Test
 {
@@ -219,6 +220,23 @@ namespace Neo.Test
             var stack = new EvaluationStack(new ReferenceCounter());
             stack.Insert(0, "4CC95219999D421243C8161E3FC0F4290C067845".FromHexString());
             Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
+        }
+
+
+        [TestMethod]
+        public void TestPushCompoundItemWithOffStackSubItems()
+        {
+            var referenceCounter = new ReferenceCounter();
+            var evaluationStack = new EvaluationStack(referenceCounter);
+            var array = new Array(referenceCounter);
+            referenceCounter.AddStackReference(array);
+            for (var i = 0; i < 100; i++)
+            {
+                var item = new Integer(i);
+                array.Add(item);
+            }
+
+            Assert.ThrowsException<InvalidOperationException>(() => evaluationStack.Push(array));
         }
     }
 }

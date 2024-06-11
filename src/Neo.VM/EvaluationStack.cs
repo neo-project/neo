@@ -169,7 +169,7 @@ namespace Neo.VM
 
         private static void CheckCompoundType(CompoundType rootItem)
         {
-            ArgumentNullException.ThrowIfNull(rootItem);
+            if (rootItem is null) throw new ArgumentNullException();
             var stack = new Stack<CompoundType>();
             stack.Push(rootItem);
 
