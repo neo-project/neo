@@ -115,12 +115,12 @@ namespace Neo.VM
                             tracked_items.Remove(item);
                             if (item is CompoundType compound)
                             {
-                                references_count -= compound.SubItemsCount;
                                 foreach (StackItem subitem in compound.SubItems)
                                 {
                                     if (component.Contains(subitem)) continue;
                                     if (!NeedTrack(subitem)) continue;
                                     subitem.ObjectReferences!.Remove(compound);
+                                    references_count--;
                                 }
                             }
                             item.Cleanup();
