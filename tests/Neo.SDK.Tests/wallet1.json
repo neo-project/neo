@@ -1,0 +1,30 @@
+{
+  "name": "wallet1",
+  "version": "1.0",
+  "scrypt": {
+    "n": 16384,
+    "r": 8,
+    "p": 8
+  },
+  "accounts": [
+    {
+      "address": "NM2ZMTS83QAunnxQd91UbgZZtVDG2YsdAJ",
+      "label": null,
+      "isDefault": false,
+      "lock": false,
+      "key": "6PYMtjw28NGAJbMmMWA7oT3yHukLNt4yFSb5Z5D5MFn51DXeB3Pjz8qAYy",
+      "contract": {
+        "script": "DCED9Q7CjUQd3eqyBCQZx/H0lqDOEGnzxkcQbHxI7k8N1c9BVuezJw==",
+        "parameters": [
+          {
+            "name": "signature",
+            "type": "Signature"
+          }
+        ],
+        "deployed": false
+      },
+      "extra": null
+    }
+  ],
+  "extra": null
+}
