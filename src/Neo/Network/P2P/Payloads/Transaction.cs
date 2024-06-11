@@ -370,10 +370,13 @@ namespace Neo.Network.P2P.Payloads
             if (!(context?.CheckTransaction(this, conflictsList, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             long attributesFee = 0;
             foreach (TransactionAttribute attribute in Attributes)
+            {
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.InvalidAttribute;
-                else
-                    attributesFee += attribute.CalculateNetworkFee(snapshot, this);
+                if (attribute.Type == TransactionAttributeType.NotaryAssisted && !settings.IsHardforkEnabled(Hardfork.HF_Domovoi, height))
+                    return VerifyResult.InvalidAttribute;
+                attributesFee += attribute.CalculateNetworkFee(snapshot, this);
+            }
             long netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 

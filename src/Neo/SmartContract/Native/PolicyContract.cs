@@ -79,6 +79,9 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+            }
+            if (hardfork == Hardfork.HF_Domovoi)
+            {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_AttributeFee).Add((byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
             }
             return ContractTask.CompletedTask;
@@ -118,15 +121,41 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute.
+        /// Gets the fee for attribute before Domovoi hardfork.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
+        /// <returns>The fee for attribute.</returns>
+        [ContractMethod(Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
+        public uint GetAttributeFeeV0(DataCache snapshot, byte attributeType)
+        {
+            return GetAttributeFee(snapshot, attributeType, false);
+        }
+
+        /// <summary>
+        /// Gets the fee for attribute after Domovoi hardfork.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(true, Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetAttributeFee(DataCache snapshot, byte attributeType)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
+            return GetAttributeFee(snapshot, attributeType, true);
+        }
+
+        /// <summary>
+        /// Generic handler for GetAttributeFeeV0 and GetAttributeFeeV1 that
+        /// gets the fee for attribute.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="attributeType">Attribute type</param>
+        /// <param name="allowNotaryAssisted">Whether to support <see cref="TransactionAttributeType.NotaryAssisted"/> attribute type.</param>
+        /// <returns>The fee for attribute.</returns>
+        private uint GetAttributeFee(DataCache snapshot, byte attributeType, bool allowNotaryAssisted)
+        {
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+                throw new InvalidOperationException();
             StorageItem entry = snapshot.TryGet(CreateStorageKey(Prefix_AttributeFee).Add(attributeType));
             if (entry == null) return DefaultAttributeFee;
 
@@ -145,10 +174,45 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value)
+        /// <summary>
+        /// Sets the fee for attribute before Domovoi hardfork.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
+        /// <param name="value">Attribute fee value</param>
+        /// <returns>The fee for attribute.</returns>
+        [ContractMethod(Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        private void SetAttributeFeeV0(ApplicationEngine engine, byte attributeType, uint value)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
+            SetAttributeFee(engine, attributeType, value, false);
+        }
+
+        /// <summary>
+        /// Sets the fee for attribute after Domovoi hardfork.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
+        /// <param name="value">Attribute fee value</param>
+        /// <returns>The fee for attribute.</returns>
+        [ContractMethod(true, Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        private void SetAttributeFeeV1(ApplicationEngine engine, byte attributeType, uint value)
+        {
+            SetAttributeFee(engine, attributeType, value, true);
+        }
+
+        /// <summary>
+        /// Generic handler for SetAttributeFeeV0 and SetAttributeFeeV1 that
+        /// gets the fee for attribute.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="attributeType">Attribute type</param>
+        /// <param name="value">Attribute fee value</param>
+        /// <param name="allowNotaryAssisted">Whether to support <see cref="TransactionAttributeType.NotaryAssisted"/> attribute type.</param>
+        /// <returns>The fee for attribute.</returns>
+        private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value, bool allowNotaryAssisted)
+        {
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+                throw new InvalidOperationException();
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
