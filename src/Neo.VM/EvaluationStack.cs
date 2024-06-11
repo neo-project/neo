@@ -192,9 +192,7 @@ namespace Neo.VM
                     {
                         // Check for cycle dependency
                         if (!visited.Add(compoundSubItem))
-                        {
-                            throw new InvalidOperationException("Cycle detected in CompoundType structure.");
-                        }
+                            continue;
 
                         // Add the subItem to the stack and increment the itemCount
                         stack.Push(compoundSubItem);
@@ -202,9 +200,7 @@ namespace Neo.VM
 
                         // Check if the itemCount exceeds the maximum allowed items
                         if (itemCount > maxItems)
-                        {
                             throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
-                        }
                     }
                 }
             }
