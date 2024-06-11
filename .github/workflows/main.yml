@@ -42,14 +42,14 @@ jobs:
         
     - name: Install dependencies
       run: |
-        sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev expect
+        sudo apt-get install libleveldb-dev expect
         find ./out -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g'
         
     - name: Run tests with expect
       run: expect ./src/Neo.CLI/Scripts/test-neo-cli.expect
       
   Test:
-    needs: [Format, Build-Test-Neo-Cli]
+    needs: [Format]
     timeout-minutes: 15
     strategy:
       matrix:
@@ -70,6 +70,8 @@ jobs:
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
+
         dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests
         dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
         dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
