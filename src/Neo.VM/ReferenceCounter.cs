@@ -12,8 +12,10 @@
 using Neo.VM.StronglyConnectedComponents;
 using Neo.VM.Types;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM
 {
@@ -115,7 +117,7 @@ namespace Neo.VM
                             tracked_items.Remove(item);
                             if (item is CompoundType compound)
                             {
-                                references_count -= compound.SubItemsCount;
+                                DecrementReferences(compound.SubItemsCount);
                                 foreach (StackItem subitem in compound.SubItems)
                                 {
                                     if (component.Contains(subitem)) continue;
@@ -136,7 +138,7 @@ namespace Neo.VM
 
         internal void RemoveReference(StackItem item, CompoundType parent)
         {
-            references_count--;
+            DecrementReferences();
             if (!NeedTrack(item)) return;
             cached_components = null;
             item.ObjectReferences![parent].References--;
@@ -146,10 +148,18 @@ namespace Neo.VM
 
         internal void RemoveStackReference(StackItem item)
         {
-            references_count--;
+            DecrementReferences();
             if (!NeedTrack(item)) return;
             if (--item.StackReferences == 0)
                 zero_referred.Add(item);
+        }
+
+        private void DecrementReferences(int count = 1)
+        {
+            references_count -= count;
+            // Negative counter means critical bug exists in the system
+            // Need to stop the process and halt the network immediately.
+            if (references_count < 0) Process.GetCurrentProcess().Kill();
         }
     }
 }
