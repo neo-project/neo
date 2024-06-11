@@ -172,7 +172,7 @@ namespace Neo.VM
             if (rootItem is null) throw new ArgumentNullException();
 
             var stack = new Stack<CompoundType>();
-            var visited = new HashSet<CompoundType>();
+            var visited = new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
             int itemCount = 0;
 
             // Initialize the stack and visited set with the root item
@@ -186,8 +186,9 @@ namespace Neo.VM
 
                 foreach (var subItem in currentCompound.SubItems)
                 {
-                    // Check if the subItem is not on the stack
-                    if (!subItem.OnStack)
+                    if (subItem.StackReferences <= 0 &&
+                        !subItem.ObjectReferences?.Values
+                            .Any(p => p is { References: > 0, Item.OnStack: true }) == true)
                     {
                         throw new InvalidOperationException("Invalid stackitem being pushed.");
                     }
@@ -198,7 +199,7 @@ namespace Neo.VM
                         // Check for cycle dependency
                         if (!visited.Add(compoundSubItem))
                         {
-                            throw new InvalidOperationException("Cycle detected in CompoundType structure.");
+                            continue;
                         }
 
                         // Add the subItem to the stack and increment the itemCount
