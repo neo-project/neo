@@ -21,12 +21,6 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed partial class CryptoLib : NativeContract
     {
-        private static readonly Dictionary<NamedCurve, ECCurve> curves = new()
-        {
-            [NamedCurve.secp256k1] = ECCurve.Secp256k1,
-            [NamedCurve.secp256r1] = ECCurve.Secp256r1,
-        };
-
         private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, Hasher Hasher)> s_curves = new()
         {
             [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, Hasher.SHA256),
@@ -106,12 +100,15 @@ namespace Neo.SmartContract.Native
         }
 
         // This is for solving the hardfork issue in https://github.com/neo-project/neo/pull/3209
-        [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
-        public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurve curve)
+        [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15, Name = "verifyWithECDsa")]
+        public static bool VerifyWithECDsaV0(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curve)
         {
+            if (curve != NamedCurveHash.secp256k1SHA256 && curve != NamedCurveHash.secp256r1SHA256)
+                throw new ArgumentOutOfRangeException(nameof(curve));
+
             try
             {
-                return Crypto.VerifySignature(message, signature, pubkey, curves[curve]);
+                return Crypto.VerifySignature(message, signature, pubkey, s_curves[curve].Curve);
             }
             catch (ArgumentException)
             {

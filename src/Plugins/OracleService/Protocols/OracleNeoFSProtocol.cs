@@ -24,7 +24,7 @@ using System.Web;
 using Object = Neo.FileStorage.API.Object.Object;
 using Range = Neo.FileStorage.API.Object.Range;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService
 {
     class OracleNeoFSProtocol : IOracleProtocol
     {

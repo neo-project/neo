@@ -9,17 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using ApplicationLogs.Store.States;
-using Neo;
 using Neo.IO;
 using Neo.Persistence;
-using Neo.Plugins;
-using Neo.Plugins.Store.States;
+using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 
-namespace ApplicationLogs.Store
+namespace Neo.Plugins.ApplicationLogs.Store
 {
     public sealed class LogStorageStore : IDisposable
     {
@@ -162,7 +159,7 @@ namespace ApplicationLogs.Store
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(stackItem, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
             }
-            catch (NotSupportedException)
+            catch
             {
                 _snapshot.Put(key, BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default with { MaxItemSize = (uint)Settings.Default.MaxStackSize }));
             }

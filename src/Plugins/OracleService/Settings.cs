@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService
 {
     class HttpsSettings
     {

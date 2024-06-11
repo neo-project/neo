@@ -16,7 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     class Settings
     {
@@ -44,7 +44,9 @@ namespace Neo.Plugins
         public string[] AllowOrigins { get; init; }
         public int KeepAliveTimeout { get; init; }
         public uint RequestHeadersTimeout { get; init; }
+        // In the unit of datoshi, 1 GAS = 10^8 datoshi
         public long MaxGasInvoke { get; init; }
+        // In the unit of datoshi, 1 GAS = 10^8 datoshi
         public long MaxFee { get; init; }
         public int MaxIteratorResultItems { get; init; }
         public int MaxStackSize { get; init; }

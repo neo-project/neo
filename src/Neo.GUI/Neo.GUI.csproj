@@ -10,6 +10,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Product>Neo.GUI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
+    <GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
+    <BaseOutputPath>$(SolutionDir)/bin/$(AssemblyTitle)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

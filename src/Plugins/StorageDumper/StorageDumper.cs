@@ -17,15 +17,18 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.StorageDumper
 {
     public class StorageDumper : Plugin
     {
         private readonly Dictionary<uint, NeoSystem> systems = new Dictionary<uint, NeoSystem>();
 
-        private StreamWriter _writer;
-        private JObject _currentBlock;
-        private string _lastCreateDirectory;
+        private StreamWriter? _writer;
+        /// <summary>
+        /// _currentBlock stores the last cached item
+        /// </summary>
+        private JObject? _currentBlock;
+        private string? _lastCreateDirectory;
 
 
         public override string Description => "Exports Neo-CLI status data";
@@ -70,7 +73,7 @@ namespace Neo.Plugins
                 prefix = BitConverter.GetBytes(contract.Id);
             }
             var states = systems[network].StoreView.Find(prefix);
-            JArray array = new JArray(states.Where(p => !Settings.Default.Exclude.Contains(p.Key.Id)).Select(p => new JObject
+            JArray array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
                 ["value"] = Convert.ToBase64String(p.Value.ToArray())
@@ -91,9 +94,9 @@ namespace Neo.Plugins
         private void OnPersistStorage(uint network, DataCache snapshot)
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (blockIndex >= Settings.Default.HeightToBegin)
+            if (blockIndex >= Settings.Default!.HeightToBegin)
             {
-                JArray array = new JArray();
+                JArray stateChangeArray = new JArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
@@ -106,7 +109,6 @@ namespace Neo.Plugins
                             state["state"] = "Added";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
-                            // Here we have a new trackable.Key and trackable.Item
                             break;
                         case TrackState.Changed:
                             state["state"] = "Changed";
@@ -118,13 +120,13 @@ namespace Neo.Plugins
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             break;
                     }
-                    array.Add(state);
+                    stateChangeArray.Add(state);
                 }
 
                 JObject bs_item = new JObject();
                 bs_item["block"] = blockIndex;
-                bs_item["size"] = array.Count;
-                bs_item["storage"] = array;
+                bs_item["size"] = stateChangeArray.Count;
+                bs_item["storage"] = stateChangeArray;
                 _currentBlock = bs_item;
             }
         }
@@ -137,7 +139,7 @@ namespace Neo.Plugins
 
         void OnCommitStorage(uint network, DataCache snapshot)
         {
-            if (_currentBlock != null)
+            if (_currentBlock != null && _writer != null)
             {
                 _writer.WriteLine(_currentBlock.ToString());
                 _writer.Flush();
@@ -148,10 +150,10 @@ namespace Neo.Plugins
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (_writer == null
-                || blockIndex % Settings.Default.BlockCacheSize == 0)
+                || blockIndex % Settings.Default!.BlockCacheSize == 0)
             {
                 string path = GetOrCreateDirectory(network, blockIndex);
-                var filepart = (blockIndex / Settings.Default.BlockCacheSize) * Settings.Default.BlockCacheSize;
+                var filepart = (blockIndex / Settings.Default!.BlockCacheSize) * Settings.Default.BlockCacheSize;
                 path = $"{path}/dump-block-{filepart}.dump";
                 if (_writer != null)
                 {
@@ -174,9 +176,7 @@ namespace Neo.Plugins
 
         private string GetDirectoryPath(uint network, uint blockIndex)
         {
-            //Default Parameter
-            uint storagePerFolder = 100000;
-            uint folder = (blockIndex / storagePerFolder) * storagePerFolder;
+            uint folder = (blockIndex / Settings.Default!.StoragePerFolder) * Settings.Default.StoragePerFolder;
             return $"./StorageDumper_{network}/BlockStorage_{folder}";
         }
 

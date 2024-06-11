@@ -10,10 +10,11 @@
 // modifications are permitted.
 
 using Neo.IO;
+using Neo.Plugins.DBFTPlugin.Types;
 using System;
 using System.IO;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Messages
 {
     public abstract class ConsensusMessage : ISerializable
     {

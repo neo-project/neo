@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class RpcMethodAttribute : Attribute

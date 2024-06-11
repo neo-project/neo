@@ -14,7 +14,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System.Linq;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     static class Utility
     {

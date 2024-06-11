@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Native
 
         private async ContractTask OnDeployAsync(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
         {
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
             if (md is not null)
                 await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
@@ -118,11 +118,12 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private long GetMinimumDeploymentFee(DataCache snapshot)
         {
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value)
+        private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value/* In the unit of datoshi, 1 datoshi = 1e-8 GAS*/)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
@@ -218,7 +219,7 @@ namespace Neo.SmartContract.Native
             if (manifest.Length == 0)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
-            engine.AddGas(Math.Max(
+            engine.AddFee(Math.Max(
                 engine.StoragePrice * (nefFile.Length + manifest.Length),
                 GetMinimumDeploymentFee(engine.Snapshot)
                 ));
@@ -264,7 +265,7 @@ namespace Neo.SmartContract.Native
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
-            engine.AddGas(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
+            engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
             var contract = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>(false);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");

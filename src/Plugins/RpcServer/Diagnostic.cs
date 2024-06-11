@@ -12,7 +12,7 @@
 using Neo.SmartContract;
 using Neo.VM;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     class Diagnostic : IDiagnostic
     {

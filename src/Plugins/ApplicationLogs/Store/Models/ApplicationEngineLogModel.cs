@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Plugins.Store.States;
+using Neo.Plugins.ApplicationLogs.Store.States;
 
-namespace Neo.Plugins.Store.Models
+namespace Neo.Plugins.ApplicationLogs.Store.Models
 {
     public class ApplicationEngineLogModel
     {
