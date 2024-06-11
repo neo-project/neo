@@ -28,7 +28,15 @@ jobs:
     needs: [Format]
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    steps:    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
     - name: Build (Neo.CLI)
       run: dotnet build ./src/Neo.CLI --output ./out/Neo.CLI
         
