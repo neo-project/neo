@@ -204,6 +204,78 @@ jobs:
         dotnet pack ./src/Neo.Cryptography.BLS12_381 \
         --configuration Release \
         --output ./out
+    - name : Pack (ApplicationLogs)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/ApplicationLogs \
+        --configuration Release \
+        --output ./out
+    - name : Pack (DBFTPlugin)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/DBFTPlugin \
+        --configuration Release \
+        --output ./out
+    - name : Pack (LevelDBStore)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/LevelDBStore \
+        --configuration Release \
+        --output ./out
+    - name : Pack (MPTTrie)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/MPTTrie \
+        --configuration Release \
+        --output ./out
+    - name : Pack (OracleService)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/OracleService \
+        --configuration Release \
+        --output ./out
+    - name : Pack (RocksDBStore)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/RocksDBStore \
+        --configuration Release \
+        --output ./out
+    - name : Pack (RpcClient)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/RpcClient \
+        --configuration Release \
+        --output ./out
+    - name : Pack (RpcServer)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/RpcServer \
+        --configuration Release \
+        --output ./out
+    - name : Pack (SQLiteWallet)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/SQLiteWallet \
+        --configuration Release \
+        --output ./out
+    - name : Pack (StateService)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/StateService \
+        --configuration Release \
+        --output ./out
+    - name : Pack (StorageDumper)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/StorageDumper \
+        --configuration Release \
+        --output ./out
+    - name : Pack (TokensTracker)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Plugins/TokensTracker \
+        --configuration Release \
+        --output ./out
     - name: Publish to NuGet
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
