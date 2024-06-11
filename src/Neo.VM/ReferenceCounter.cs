@@ -159,7 +159,7 @@ namespace Neo.VM
             references_count -= count;
             // Negative counter means critical bug exists in the system
             // Need to stop the process and halt the network immediately.
-            if (references_count < 0) Process.GetCurrentProcess().Kill();
+            if (references_count < 0) Environment.Exit(1);
         }
     }
 }
