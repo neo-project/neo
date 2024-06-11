@@ -21,7 +21,7 @@ public abstract class PluginSettings(IConfigurationSection section)
     {
         get
         {
-            var policyString = section.GetValue("UnhandledExceptionPolicy", nameof(UnhandledExceptionPolicy.StopNode));
+            var policyString = section.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
             if (Enum.TryParse(policyString, out UnhandledExceptionPolicy policy))
             {
                 return policy;
