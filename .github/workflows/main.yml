@@ -31,22 +31,22 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-        
+        dotnet-version: ${{ env.DOTNET_VERSION }} 
+
     - name: Build (Neo.CLI)
-      run: dotnet build ./src/Neo.CLI --output ./out/Neo.CLI
-        
+      run: dotnet build ./src/Neo.CLI --output ./out/Neo.CLI  
+
     - name: Install dependencies
       run: |
         sudo apt-get install libleveldb-dev expect
-        find ./out -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g'
-        
+        find ./out -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
+
     - name: Run tests with expect
-      run: expect ./src/Neo.CLI/Scripts/test-neo-cli.expect
+      run: expect ./.github/workflows/test-neo-cli.expect
       
   Test:
     needs: [Format]
@@ -58,15 +58,18 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet test
+
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -158,14 +161,17 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
     - name: Get version
       id: get_version
       run: |
         sudo apt install xmlstarlet
         find src -name Directory.Build.props | xargs xmlstarlet sel -N i=http://schemas.microsoft.com/developer/msbuild/2003 -t -v "concat('::set-output name=version::v',//i:VersionPrefix/text())" | xargs echo
+
     - name: Check tag
       id: check_tag
       run: curl -s -I ${{ format('https://github.com/{0}/releases/tag/{1}', github.repository, steps.get_version.outputs.version) }} | head -n 1 | cut -d$' ' -f2 | xargs printf "::set-output name=statusCode::%s" | xargs echo
+
     - name: Create release
       if: steps.check_tag.outputs.statusCode == '404'
       id: create_release
@@ -176,53 +182,62 @@ jobs:
         tag_name: ${{ steps.get_version.outputs.version }}
         release_name: ${{ steps.get_version.outputs.version }}
         prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+
     - name: Setup .NET
       if: steps.check_tag.outputs.statusCode == '404'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+
     - name : Pack (Neo)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo \
         --configuration Release \
         --output ./out
+
     - name : Pack (Neo.IO)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.IO \
         --configuration Release \
         --output ./out
+
     - name : Pack (Neo.Extensions)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.Extensions \
         --configuration Release \
         --output ./out
+
     - name : Pack (Neo.Json)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.Json \
         --configuration Release \
         --output ./out
+
     - name : Pack (Neo.VM)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.VM \
         --configuration Release \
         --output ./out
+
     - name : Pack (Neo.ConsoleService)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.ConsoleService \
         --configuration Release \
         --output ./out
+
     - name : Pack (Neo.Cryptography.BLS12_381)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.Cryptography.BLS12_381 \
         --configuration Release \
         --output ./out
+        
     - name: Publish to NuGet
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
