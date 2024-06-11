@@ -407,14 +407,19 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
-        protected internal NotifyEventArgs[] GetNotifications(UInt160 hash)
+        protected internal Array GetNotifications(UInt160 hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
                 notifications = notifications.Where(p => p.ScriptHash == hash);
-            NotifyEventArgs[] array = notifications.ToArray();
+            var array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
-            return array;
+            Array notifyArray = new(ReferenceCounter);
+            foreach (var notify in array)
+            {
+                notifyArray.Add(notify.ToStackItem(ReferenceCounter, this));
+            }
+            return notifyArray;
         }
 
         /// <summary>
