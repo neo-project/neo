@@ -16,6 +16,6 @@ namespace Neo
         HF_Aspidochelone,
         HF_Basilisk,
         HF_Cockatrice,
-        HF_Domovoi //  from https://github.com/neo-project/neo/pull/3290/files
+        HF_Domovoi
     }
 }
