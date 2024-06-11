@@ -187,12 +187,6 @@ namespace Neo.VM
 
                 foreach (var subItem in currentCompound.SubItems)
                 {
-                    // Check if the subItem is not on the stack
-                    if (!subItem.OnStack)
-                    {
-                        throw new InvalidOperationException("Invalid stackitem being pushed.");
-                    }
-
                     // If the subItem is a CompoundType, process it
                     if (subItem is CompoundType compoundSubItem)
                     {
