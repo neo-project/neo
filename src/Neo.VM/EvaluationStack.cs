@@ -169,10 +169,11 @@ namespace Neo.VM
 
         private static void CheckCompoundType(CompoundType rootItem, int maxItems = 2048)
         {
-            if (rootItem is null) throw new ArgumentNullException();
+            if (rootItem is null)
+                throw new ArgumentNullException();
 
             var stack = new Stack<CompoundType>();
-            var visited = new HashSet<CompoundType>();
+            var visited = new HashSet<CompoundType>(ReferenceEqualityComparer.Instance);
             int itemCount = 0;
 
             // Initialize the stack and visited set with the root item
