@@ -11,8 +11,8 @@
 
 using Neo.VM.StronglyConnectedComponents;
 using Neo.VM.Types;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Buffer = Neo.VM.Types.Buffer;
