@@ -167,11 +167,18 @@ namespace Neo.VM
             return $"[{string.Join(", ", innerList.Select(p => $"{p.Type}({p})"))}]";
         }
 
-        private static void CheckCompoundType(CompoundType rootItem)
+        private static void CheckCompoundType(CompoundType rootItem, int maxItems = 2048)
         {
             if (rootItem is null) throw new ArgumentNullException();
+
             var stack = new Stack<CompoundType>();
+            var visited = new HashSet<CompoundType>();
+            int itemCount = 0;
+
+            // Initialize the stack and visited set with the root item
             stack.Push(rootItem);
+            visited.Add(rootItem);
+            itemCount++;
 
             while (stack.Count > 0)
             {
@@ -179,14 +186,30 @@ namespace Neo.VM
 
                 foreach (var subItem in currentCompound.SubItems)
                 {
+                    // Check if the subItem is not on the stack
                     if (!subItem.OnStack)
                     {
                         throw new InvalidOperationException("Invalid stackitem being pushed.");
                     }
 
+                    // If the subItem is a CompoundType, process it
                     if (subItem is CompoundType compoundSubItem)
                     {
+                        // Check for cycle dependency
+                        if (!visited.Add(compoundSubItem))
+                        {
+                            throw new InvalidOperationException("Cycle detected in CompoundType structure.");
+                        }
+
+                        // Add the subItem to the stack and increment the itemCount
                         stack.Push(compoundSubItem);
+                        itemCount++;
+
+                        // Check if the itemCount exceeds the maximum allowed items
+                        if (itemCount > maxItems)
+                        {
+                            throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
+                        }
                     }
                 }
             }
