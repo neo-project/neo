@@ -135,14 +135,14 @@ namespace Neo.VM
                     ExecutionContext context = CurrentContext!;
                     Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
                     PreExecuteInstruction(instruction);
-// #if VMPERF
+#if VMPERF
                     Console.WriteLine("op:["
-                                      + this.CurrentContext.InstructionPointer.ToString("X04")
+                                      + CurrentContext.InstructionPointer.ToString("X04")
                                       + "]"
-                                      + this.CurrentContext.CurrentInstruction?.OpCode
+                                      + CurrentContext.CurrentInstruction?.OpCode
                                       + " "
-                                      + this.CurrentContext.EvaluationStack);
-// #endif
+                                      + CurrentContext.EvaluationStack);
+#endif
                     try
                     {
                         JumpTable[instruction.OpCode](this, instruction);
