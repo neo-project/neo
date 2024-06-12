@@ -271,14 +271,18 @@ namespace Neo.SmartContract
             if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
 
+            ExecutionContext currentContext = CurrentContext;
+            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
             if (method.Safe)
             {
                 flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
             }
             else
             {
-                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
-                if (currentContract?.CanCall(contract, method.Name) == false)
+                var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
+                ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
+                : NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
 
@@ -291,8 +295,6 @@ namespace Neo.SmartContract
                 invocationCounter[contract.Hash] = 1;
             }
 
-            ExecutionContext currentContext = CurrentContext;
-            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
