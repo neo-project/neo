@@ -171,67 +171,8 @@ namespace Neo.VM
         {
             if (rootItem is null)
                 throw new ArgumentNullException();
-            var checker = new CompoundTypeChecker(maxItems: 2048);
+            var checker = new CompoundTypeReferenceCountChecker(maxItems: 2048);
             checker.CheckCompoundType(rootItem);
-        }
-    }
-
-    internal class CompoundTypeChecker(int maxItems = 2048)
-    {
-        public void CheckCompoundType(CompoundType rootItem)
-        {
-            if (rootItem is null) throw new ArgumentNullException(nameof(rootItem));
-
-            var visited = new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
-            var itemCount = TraverseCompoundType(rootItem, visited, 0);
-
-            if (itemCount > maxItems)
-            {
-                throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
-            }
-        }
-
-        private int TraverseCompoundType(CompoundType rootItem, HashSet<StackItem> visited, int itemCount)
-        {
-            var stack = new Stack<CompoundType>();
-            stack.Push(rootItem);
-            visited.Add(rootItem);
-            itemCount++;
-
-            while (stack.Count > 0)
-            {
-                var currentCompound = stack.Pop();
-
-                foreach (var subItem in currentCompound.SubItems)
-                {
-                    if (subItem.ReferenceCount <= 0)
-                    {
-                        throw new InvalidOperationException("Invalid stackitem being pushed.");
-                    }
-
-                    // If the subItem is a CompoundType, process it
-                    if (subItem is CompoundType compoundSubItem)
-                    {
-                        // Check if this subItem has been visited already
-                        if (!visited.Add(compoundSubItem))
-                        {
-                            continue;
-                        }
-
-                        // Add the subItem to the stack and increment the itemCount
-                        stack.Push(compoundSubItem);
-                        itemCount++;
-
-                        // Check if the itemCount exceeds the maximum allowed items
-                        if (itemCount > maxItems)
-                        {
-                            throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
-                        }
-                    }
-                }
-            }
-
-            return itemCount;
         }
     }
 }
