@@ -171,12 +171,29 @@ namespace Neo.VM
         {
             if (rootItem is null)
                 throw new ArgumentNullException();
+            var checker = new CompoundTypeChecker(maxItems: 2048);
+            checker.CheckCompoundType(rootItem);
+        }
+    }
 
+    internal class CompoundTypeChecker(int maxItems = 2048)
+    {
+        public void CheckCompoundType(CompoundType rootItem)
+        {
+            if (rootItem is null) throw new ArgumentNullException(nameof(rootItem));
+
+            var visited = new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
+            var itemCount = TraverseCompoundType(rootItem, visited, 0);
+
+            if (itemCount > maxItems)
+            {
+                throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
+            }
+        }
+
+        private int TraverseCompoundType(CompoundType rootItem, HashSet<StackItem> visited, int itemCount)
+        {
             var stack = new Stack<CompoundType>();
-            var visited = new HashSet<CompoundType>(ReferenceEqualityComparer.Instance);
-            int itemCount = 0;
-
-            // Initialize the stack and visited set with the root item
             stack.Push(rootItem);
             visited.Add(rootItem);
             itemCount++;
@@ -197,9 +214,11 @@ namespace Neo.VM
                     // If the subItem is a CompoundType, process it
                     if (subItem is CompoundType compoundSubItem)
                     {
-                        // Check for cycle dependency
+                        // Check if this subItem has been visited already
                         if (!visited.Add(compoundSubItem))
+                        {
                             continue;
+                        }
 
                         // Add the subItem to the stack and increment the itemCount
                         stack.Push(compoundSubItem);
@@ -207,10 +226,14 @@ namespace Neo.VM
 
                         // Check if the itemCount exceeds the maximum allowed items
                         if (itemCount > maxItems)
+                        {
                             throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
+                        }
                     }
                 }
             }
+
+            return itemCount;
         }
     }
 }
