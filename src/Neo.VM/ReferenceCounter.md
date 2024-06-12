@@ -29,7 +29,24 @@ Circular references occur when objects reference each other, preventing their re
 
 ### Tarjan's Algorithm
 
-Tarjan's algorithm is used for detecting strongly connected components (SCCs) in a graph. `ReferenceCounter` uses Tarjan's algorithm to detect circular references in the object reference graph and clean up these circularly referenced objects. The algorithm operates in O(V + E) time complexity, where V is the number of vertices and E is the number of edges.
+Tarjan's algorithm is a graph theory algorithm for finding strongly connected components (SCCs) in a directed graph. An SCC is a maximal subgraph where every vertex is reachable from every other vertex in the subgraph. In the context of `ReferenceCounter`, Tarjan's algorithm is used to detect circular references, allowing for efficient memory management and cleanup of objects that are no longer reachable.
+
+#### How Tarjan's Algorithm Works
+
+1. **Initialization**:
+    - Each node (object) in the graph is initially unvisited. The algorithm uses a stack to keep track of the current path and arrays (or lists) to store the discovery time (`DFN`) and the lowest point reachable (`LowLink`) for each node.
+
+2. **Depth-First Search (DFS)**:
+    - Starting from an unvisited node, the algorithm performs a DFS. Each node visited is assigned a discovery time and a `LowLink` value, both initially set to the node's discovery time.
+
+3. **Update LowLink**:
+    - For each node, the algorithm updates the `LowLink` value based on the nodes reachable from its descendants. If a descendant node points back to an ancestor in the current path (stack), the `LowLink` value of the current node is updated to the minimum of its own `LowLink` and the descendant's `LowLink`.
+
+4. **Identify SCCs**:
+    - When a node's `LowLink` value is equal to its discovery time, it indicates the root of an SCC. The algorithm then pops nodes from the stack until it reaches the current node, forming an SCC.
+
+5. **Cleanup**:
+    - Once SCCs are identified, nodes that have no remaining references are cleaned up, preventing memory leaks caused by circular references.
 
 ## Features
 
@@ -110,27 +127,6 @@ internal void RemoveStackReference(StackItem item)
         zero_referred.Add(item);
 }
 ```
-
-### Tarjan's Algorithm
-
-Tarjan's algorithm is a graph theory algorithm for finding strongly connected components (SCCs) in a directed graph. An SCC is a maximal subgraph where every vertex is reachable from every other vertex in the subgraph. In the context of `ReferenceCounter`, Tarjan's algorithm is used to detect circular references, allowing for efficient memory management and cleanup of objects that are no longer reachable.
-
-#### How Tarjan's Algorithm Works
-
-1. **Initialization**:
-    - Each node (object) in the graph is initially unvisited. The algorithm uses a stack to keep track of the current path and arrays (or lists) to store the discovery time (`DFN`) and the lowest point reachable (`LowLink`) for each node.
-
-2. **Depth-First Search (DFS)**:
-    - Starting from an unvisited node, the algorithm performs a DFS. Each node visited is assigned a discovery time and a `LowLink` value, both initially set to the node's discovery time.
-
-3. **Update LowLink**:
-    - For each node, the algorithm updates the `LowLink` value based on the nodes reachable from its descendants. If a descendant node points back to an ancestor in the current path (stack), the `LowLink` value of the current node is updated to the minimum of its own `LowLink` and the descendant's `LowLink`.
-
-4. **Identify SCCs**:
-    - When a node's `LowLink` value is equal to its discovery time, it indicates the root of an SCC. The algorithm then pops nodes from the stack until it reaches the current node, forming an SCC.
-
-5. **Cleanup**:
-    - Once SCCs are identified, nodes that have no remaining references are cleaned up, preventing memory leaks caused by circular references.
 
 #### Tarjan's Algorithm in `ReferenceCounter`
 
