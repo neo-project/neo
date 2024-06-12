@@ -24,11 +24,15 @@ namespace Neo.VM.Types
             public ObjectReferenceEntry(StackItem item) => Item = item;
         }
 
-        internal int StackReferences = 0;
-        internal Dictionary<CompoundType, ObjectReferenceEntry>? ObjectReferences;
-        internal int DFN = -1;
-        internal int LowLink = 0;
-        internal bool OnStack = false;
+        /// <summary>
+        /// Indicates how many reference this item has being added to the reference counter.
+        /// </summary>
+        internal int ReferenceCount { get; set; } = 0;
+        internal int StackReferences { get; set; } = 0;
+        internal Dictionary<CompoundType, ObjectReferenceEntry>? ObjectReferences { get; set; }
+        internal int DFN { get; set; } = -1;
+        internal int LowLink { get; set; } = 0;
+        internal bool OnStack { get; set; } = false;
 
         internal IEnumerable<StackItem> Successors => ObjectReferences?.Values.Where(p => p.References > 0).Select(p => p.Item) ?? System.Array.Empty<StackItem>();
 
