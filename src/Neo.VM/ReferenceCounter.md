@@ -1,4 +1,4 @@
-﻿# ReferenceCounter
+# ReferenceCounter
 
 `ReferenceCounter` is a reference counting manager for use in a virtual machine (VM). It is designed to track and manage the reference counts of objects to ensure they are correctly cleaned up when no longer referenced, thereby preventing memory leaks.
 
@@ -20,46 +20,9 @@ Reference counting is a memory management technique used to track the number of 
 - **Decrement Reference Count**: Decrease the reference count when a reference is removed.
 - **Cleanup Object**: Cleanup the object when its reference count drops to zero.
 
-### Circular References
+### What is Tracked
 
-Circular references occur when objects reference each other, preventing their reference counts from dropping to zero, which can lead to memory leaks. `ReferenceCounter` addresses circular references using the following methods:
-
-1. **Mark and Sweep**: Detect and clean up strongly connected components when circular references are identified using algorithms like Tarjan's algorithm.
-2. **Recursive Reference Management**: Recursively manage the reference counts of nested objects to ensure all reference relationships are correctly handled.
-
-### Tarjan's Algorithm
-
-Tarjan's algorithm is a graph theory algorithm for finding strongly connected components (SCCs) in a directed graph. An SCC is a maximal subgraph where every vertex is reachable from every other vertex in the subgraph. In the context of `ReferenceCounter`, Tarjan's algorithm is used to detect circular references, allowing for efficient memory management and cleanup of objects that are no longer reachable.
-
-#### How Tarjan's Algorithm Works
-
-1. **Initialization**:
-    - Each node (object) in the graph is initially unvisited. The algorithm uses a stack to keep track of the current path and arrays (or lists) to store the discovery time (`DFN`) and the lowest point reachable (`LowLink`) for each node.
-
-2. **Depth-First Search (DFS)**:
-    - Starting from an unvisited node, the algorithm performs a DFS. Each node visited is assigned a discovery time and a `LowLink` value, both initially set to the node's discovery time.
-
-3. **Update LowLink**:
-    - For each node, the algorithm updates the `LowLink` value based on the nodes reachable from its descendants. If a descendant node points back to an ancestor in the current path (stack), the `LowLink` value of the current node is updated to the minimum of its own `LowLink` and the descendant's `LowLink`.
-
-4. **Identify SCCs**:
-    - When a node's `LowLink` value is equal to its discovery time, it indicates the root of an SCC. The algorithm then pops nodes from the stack until it reaches the current node, forming an SCC.
-
-5. **Cleanup**:
-    - Once SCCs are identified, nodes that have no remaining references are cleaned up, preventing memory leaks caused by circular references.
-
-## Features
-
-`ReferenceCounter` provides the following features:
-
-1. **Increment Reference Count**: Increment the reference count of objects.
-2. **Decrement Reference Count**: Decrement the reference count of objects.
-3. **Check Zero-Referenced Objects**: Detect and clean up objects with a reference count of zero.
-4. **Manage Nested References**: Recursively manage the reference counts of nested objects, supporting nested arrays of arbitrary depth.
-
-## Usage
-
-### Reference Count Management
+In the Neo VM, the `ReferenceCounter` class is used to count references to objects to track and manage `StackItem` references. The `reference_count` calculates the total number of current references, including stack references and object references. Specifically, the `reference_count` increases or decreases in the following situations:
 
 #### Increment Reference
 
@@ -128,7 +91,35 @@ internal void RemoveStackReference(StackItem item)
 }
 ```
 
-#### Tarjan's Algorithm in `ReferenceCounter`
+### Circular References
+
+Circular references occur when objects reference each other, preventing their reference counts from dropping to zero, which can lead to memory leaks. `ReferenceCounter` addresses circular references using the following methods:
+
+1. **Mark and Sweep**: Detect and clean up strongly connected components when circular references are identified using algorithms like Tarjan's algorithm.
+2. **Recursive Reference Management**: Recursively manage the reference counts of nested objects to ensure all reference relationships are correctly handled.
+
+### Tarjan's Algorithm
+
+Tarjan's algorithm is a graph theory algorithm for finding strongly connected components (SCCs) in a directed graph. An SCC is a maximal subgraph where every vertex is reachable from every other vertex in the subgraph. In the context of `ReferenceCounter`, Tarjan's algorithm is used to detect circular references, allowing for efficient memory management and cleanup of objects that are no longer reachable.
+
+#### How Tarjan's Algorithm Works
+
+1. **Initialization**:
+    - Each node (object) in the graph is initially unvisited. The algorithm uses a stack to keep track of the current path and arrays (or lists) to store the discovery time (`DFN`) and the lowest point reachable (`LowLink`) for each node.
+
+2. **Depth-First Search (DFS)**:
+    - Starting from an unvisited node, the algorithm performs a DFS. Each node visited is assigned a discovery time and a `LowLink` value, both initially set to the node's discovery time.
+
+3. **Update LowLink**:
+    - For each node, the algorithm updates the `LowLink` value based on the nodes reachable from its descendants. If a descendant node points back to an ancestor in the current path (stack), the `LowLink` value of the current node is updated to the minimum of its own `LowLink` and the descendant's `LowLink`.
+
+4. **Identify SCCs**:
+    - When a node's `LowLink` value is equal to its discovery time, it indicates the root of an SCC. The algorithm then pops nodes from the stack until it reaches the current node, forming an SCC.
+
+5. **Cleanup**:
+    - Once SCCs are identified, nodes that have no remaining references are cleaned up, preventing memory leaks caused by circular references.
+
+### Tarjan's Algorithm in `ReferenceCounter`
 
 The `CheckZeroReferred` method in `ReferenceCounter` uses Tarjan's algorithm to detect and handle circular references. Here’s a detailed breakdown of the algorithm as used in `CheckZeroReferred`:
 
@@ -231,6 +222,8 @@ internal int CheckZeroReferred()
 4. **Process Each SCC**:
     - It iterates through each SCC (component) in the cached components list. For each component, it checks if any item is still on the stack by looking at its `StackReferences` or if any of its parent items are on the stack.
 
+
+
 5. **Mark Items as On Stack**:
     - If any item in the component is still on the stack, it marks all items in the component as on the stack and moves to the next component.
 
@@ -239,3 +232,12 @@ internal int CheckZeroReferred()
 
 7. **Return Reference Count**:
     - Finally, it returns the current total reference count.
+
+## Features
+
+`ReferenceCounter` provides the following features:
+
+1. **Increment Reference Count**: Increment the reference count of objects.
+2. **Decrement Reference Count**: Decrement the reference count of objects.
+3. **Check Zero-Referenced Objects**: Detect and clean up objects with a reference count of zero.
+4. **Manage Nested References**: Recursively manage the reference counts of nested objects, supporting nested arrays of arbitrary depth.
