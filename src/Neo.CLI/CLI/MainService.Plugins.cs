@@ -83,25 +83,58 @@ namespace Neo.CLI
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
-            var jsonRelease = json.AsArray()
-                .SingleOrDefault(s =>
-                    s != null &&
-                    s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
-                    s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Could not find Release {pluginVersion}");
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl)
+                ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
 
-            var jsonAssets = jsonRelease
-                .AsObject()
-                .SingleOrDefault(s => s.Key == "assets").Value ?? throw new Exception("Could not find any Plugins");
+            var pluginVersionString = $"v{pluginVersion.ToString(3)}";
+
+            var jsonRelease = json.AsArray()
+                .FirstOrDefault(s =>
+                    s?["tag_name"]?.GetValue<string>() == pluginVersionString &&
+                    s["prerelease"]?.GetValue<bool>() == prerelease);
+
+            if (jsonRelease == null)
+            {
+                jsonRelease = json.AsArray()
+                    .Where(s => s?["prerelease"]?.GetValue<bool>() == prerelease)
+                    .Select(s =>
+                    {
+                        var tagName = s?["tag_name"]?.GetValue<string>();
+                        return Version.TryParse(tagName?[1..], out var version)
+                            ? new { JsonObject = s, Version = version }
+                            : null;
+                    })
+                    .OfType<dynamic>()
+                    .OrderByDescending(s => s.Version)
+                    .Select(s => s.JsonObject)
+                    .FirstOrDefault();
+
+                if (jsonRelease != null)
+                {
+
+                    var latestVersion = Version.Parse(jsonRelease["tag_name"]!.GetValue<string>()[1..]);
+                    if (latestVersion < pluginVersion)
+                    {
+                        var latestDownloadUrl = $"https://github.com/neo-project/neo/releases/download/v{latestVersion}/{pluginName}.zip";
+                        ConsoleHelper.Info($"Could not find the corresponding version, installing the latest: v{latestVersion}");
+                        return await httpClient.GetStreamAsync(latestDownloadUrl);
+                    }
+                }
+
+                throw new Exception($"Could not find Release {pluginVersion}");
+            }
+
+            var jsonAssets = jsonRelease["assets"]?.AsArray()
+                ?? throw new Exception("Could not find any Plugins");
 
             var jsonPlugin = jsonAssets
-                .AsArray()
-                .SingleOrDefault(s =>
-                    Path.GetFileNameWithoutExtension(
-                        s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
+                .FirstOrDefault(s =>
+                    Path.GetFileNameWithoutExtension(s?["name"]?.GetValue<string>() ?? string.Empty)
+                        .Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
                 ?? throw new Exception($"Could not find {pluginName}");
 
-            var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
+            var downloadUrl = jsonPlugin["browser_download_url"]?.GetValue<string>()
+                ?? throw new Exception("Could not find download URL");
 
             return await httpClient.GetStreamAsync(downloadUrl);
         }
@@ -112,7 +145,7 @@ namespace Neo.CLI
         /// <param name="pluginName">Name of the plugin</param>
         /// <param name="installed">Dependency set</param>
         /// <param name="overWrite">Install by force for `update`</param>
-        private async Task<bool> InstallPluginAsync(
+        public async Task<bool> InstallPluginAsync(
             string pluginName,
             HashSet<string>? installed = null,
             bool overWrite = false)
@@ -228,28 +261,24 @@ namespace Neo.CLI
         {
             try
             {
-                var plugins = GetPluginListAsync().GetAwaiter().GetResult()?.ToArray() ?? [];
-                var installedPlugins = Plugin.Plugins.ToList();
-
-                var maxLength = installedPlugins.Count == 0 ? 0 : installedPlugins.Max(s => s.Name.Length);
-                if (plugins.Length > 0)
+                var plugins = GetPluginListAsync().GetAwaiter().GetResult();
+                if (plugins == null) return;
+                plugins
+                .Order()
+                .ForEach(f =>
                 {
-                    maxLength = Math.Max(maxLength, plugins.Max(s => s.Length));
-                }
-
-                plugins.Select(s => (name: s, installedPlugin: Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, s, StringComparison.InvariantCultureIgnoreCase))))
-                    .Concat(installedPlugins.Select(u => (name: u.Name, installedPlugin: (Plugin?)u)).Where(u => !plugins.Contains(u.name, StringComparer.InvariantCultureIgnoreCase)))
-                    .OrderBy(u => u.name)
-                    .ForEach((f) =>
+                    var installedPlugin = Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, f, StringComparison.CurrentCultureIgnoreCase));
+                    if (installedPlugin != null)
                     {
-                        if (f.installedPlugin != null)
-                        {
-                            var tabs = f.name.Length < maxLength ? "\t" : string.Empty;
-                            ConsoleHelper.Info("", $"[Installed]\t {f.name,6}{tabs}", "  @", $"{f.installedPlugin.Version.ToString(3)}  {f.installedPlugin.Description}");
-                        }
-                        else
-                            ConsoleHelper.Info($"[Not Installed]\t {f.name}");
-                    });
+                        var maxLength = plugins.Select(s => s.Length).OrderDescending().First();
+                        string tabs = string.Empty;
+                        if (f.Length < maxLength)
+                            tabs = "\t";
+                        ConsoleHelper.Info("", $"[Installed]\t {f,6}{tabs}", "  @", $"{installedPlugin.Version.ToString(3)}  {installedPlugin.Description}");
+                    }
+                    else
+                        ConsoleHelper.Info($"[Not Installed]\t {f}");
+                });
             }
             catch (Exception ex)
             {
