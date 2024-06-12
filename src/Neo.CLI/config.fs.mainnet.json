@@ -39,7 +39,8 @@
     "Hardforks": {
       "HF_Aspidochelone": 3000000,
       "HF_Basilisk": 4500000,
-      "HF_Cockatrice": 5800000
+      "HF_Cockatrice": 5800000,
+      "HF_Domovoi": 5800000
     },
     "StandbyCommittee": [
       "026fa34ec057d74c2fdf1a18e336d0bd597ea401a0b2ad57340d5c220d09f44086",

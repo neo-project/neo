@@ -52,7 +52,7 @@ jobs:
         file: ${{ github.workspace }}/TestResults/coverage/coverage.info
 
   PublishPackage:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    if: github.ref == 'refs/heads/v3.7.5' && startsWith(github.repository, 'neo-project/')
     needs: Test
     runs-on: ubuntu-latest
     steps:
@@ -101,7 +101,7 @@ jobs:
             --no-service-endpoint;
 
   Release:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    if: github.ref == 'refs/heads/v3.7.5' && startsWith(github.repository, 'neo-project/')
     needs: Test
     runs-on: ubuntu-latest
     steps:
