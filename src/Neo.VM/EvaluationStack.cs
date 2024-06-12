@@ -204,9 +204,7 @@ namespace Neo.VM
 
                 foreach (var subItem in currentCompound.SubItems)
                 {
-                    if (subItem.StackReferences <= 0 &&
-                        !subItem.ObjectReferences?.Values
-                            .Any(p => p is { References: > 0, Item.OnStack: true }) == true)
+                    if (subItem.ReferenceCount <= 0)
                     {
                         throw new InvalidOperationException("Invalid stackitem being pushed.");
                     }
