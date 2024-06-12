@@ -222,8 +222,6 @@ internal int CheckZeroReferred()
 4. **Process Each SCC**:
     - It iterates through each SCC (component) in the cached components list. For each component, it checks if any item is still on the stack by looking at its `StackReferences` or if any of its parent items are on the stack.
 
-
-
 5. **Mark Items as On Stack**:
     - If any item in the component is still on the stack, it marks all items in the component as on the stack and moves to the next component.
 
