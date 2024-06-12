@@ -142,36 +142,5 @@ namespace Neo.VM.Types
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             _array.Reverse();
         }
-
-        private bool ContainsCycle(StackItem item)
-        {
-            var visited = new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
-            var stack = new Stack<StackItem>();
-
-            stack.Push(item);
-            visited.Add(this);
-
-            while (stack.Count > 0)
-            {
-                var current = stack.Pop();
-
-                if (current == this)
-                    return true;
-
-                if (current is Array array)
-                {
-                    foreach (var subItem in array._array)
-                    {
-                        if (!visited.Contains(subItem))
-                        {
-                            visited.Add(subItem);
-                            stack.Push(subItem);
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
     }
 }
