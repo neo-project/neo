@@ -235,7 +235,7 @@ namespace Neo.Test
             }
 
             arr.Add(arr2);
-            Assert.ThrowsException<InvalidOperationException>(()=>stack.Push(arr));
+            Assert.ThrowsException<InvalidOperationException>(() => stack.Push(arr));
         }
 
     }
