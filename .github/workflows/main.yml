@@ -46,7 +46,7 @@ jobs:
         find ./out -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
 
     - name: Run tests with expect
-      run: expect ./src/Neo.CLI/Scripts/test-neo-cli.expect
+      run: expect ./scripts/Neo.CLI/test-neo-cli.expect
       
   Test:
     needs: [Format]
