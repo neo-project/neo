@@ -221,5 +221,22 @@ namespace Neo.Test
             stack.Insert(0, "4CC95219999D421243C8161E3FC0F4290C067845".FromHexString());
             Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
         }
+
+        [TestMethod]
+        public void TestInvalidReferenceStackItem()
+        {
+            var stack = new EvaluationStack(new ReferenceCounter());
+            var arr = new Array();
+            var arr2 = new Array();
+
+            for (var i = 0; i < 10; i++)
+            {
+                arr2.Add(i);
+            }
+
+            arr.Add(arr2);
+            Assert.ThrowsException<InvalidOperationException>(()=>stack.Push(arr));
+        }
+
     }
 }
