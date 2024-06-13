@@ -118,8 +118,8 @@ namespace Neo.VM
                                 foreach (StackItem subitem in compound.SubItems)
                                 {
                                     if (component.Contains(subitem)) continue;
-                                    references_count--;
                                     if (!NeedTrack(subitem)) continue;
+                                    references_count--;
                                     subitem.ObjectReferences!.Remove(compound);
                                 }
                             }
