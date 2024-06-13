@@ -22,5 +22,9 @@ public interface ICommittingHandler
     /// This is the handler of Committing event from <see cref="Blockchain"/>
     /// Triggered when a new block is committing, and the state is still in the cache.
     /// </summary>
+    /// <param name="system">The <see cref="NeoSystem"/> instance associated with the event.</param>
+    /// <param name="block">The block that is being committed.</param>
+    /// <param name="snapshot">The current data snapshot.</param>
+    /// <param name="applicationExecutedList">A list of executed applications associated with the block.</param>
     void Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
 }

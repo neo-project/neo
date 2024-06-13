@@ -17,5 +17,7 @@ public interface IServiceAddedHandler
     /// The handler of ServiceAdded event from the <see cref="NeoSystem"/>.
     /// Triggered when a service is added to the <see cref="NeoSystem"/>.
     /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="service">The service added.</param>
     void NeoSystem_ServiceAdded_Handler(object sender, object service);
 }

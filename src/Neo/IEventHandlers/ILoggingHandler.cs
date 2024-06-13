@@ -17,5 +17,8 @@ public interface ILoggingHandler
     /// The handler of Logging event from <see cref="Utility"/>
     /// Triggered when a new log is added by calling <see cref="Utility.Log"/>
     /// </summary>
+    /// <param name="source">The source of the log. Used to identify the producer of the log.</param>
+    /// <param name="level">The level of the log.</param>
+    /// <param name="message">The message of the log.</param>
     void Utility_Logging_Handler(string source, LogLevel level, object message);
 }

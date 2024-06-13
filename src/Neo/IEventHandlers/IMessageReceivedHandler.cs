@@ -19,5 +19,7 @@ public interface IMessageReceivedHandler
     /// The handler of MessageReceived event from <see cref="RemoteNode"/>
     /// Triggered when a new message is received from a peer <see cref="RemoteNode"/>
     /// </summary>
+    /// <param name="system">The <see cref="NeoSystem"/> object</param>
+    /// <param name="message"> The current node received <see cref="Message"/> from a peer <see cref="RemoteNode"/></param>
     bool RemoteNode_MessageReceived_Handler(NeoSystem system, Message message);
 }
