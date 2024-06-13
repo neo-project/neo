@@ -26,7 +26,7 @@ namespace Neo.VM
         private readonly List<StackItem> innerList = new();
         private readonly ReferenceCounter referenceCounter;
 
-        protected internal ReferenceCounter ReferenceCounter => referenceCounter;
+        internal ReferenceCounter ReferenceCounter => referenceCounter;
 
         internal EvaluationStack(ReferenceCounter referenceCounter)
         {
