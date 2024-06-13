@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.IEventHandlers;
