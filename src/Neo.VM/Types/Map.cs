@@ -54,7 +54,15 @@ namespace Neo.VM.Types
                         ReferenceCounter.RemoveReference(old_value, this);
                     else
                         ReferenceCounter.AddReference(key, this);
-                    ReferenceCounter.AddReference(value, this);
+                    if (value is CompoundType { ReferenceCounter: null } compoundType)
+                    {
+                        compoundType.ReferenceCounter = ReferenceCounter;
+                        ReferenceCounter?.AddReference(value.DeepCopy(), this);
+                    }
+                    else
+                    {
+                        ReferenceCounter?.AddReference(value, this);
+                    }
                 }
                 dictionary[key] = value;
             }

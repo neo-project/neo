@@ -35,7 +35,15 @@ namespace Neo.VM.Types
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
                 ReferenceCounter?.RemoveReference(_array[index], this);
                 _array[index] = value;
-                ReferenceCounter?.AddReference(value, this);
+                if (value is CompoundType { ReferenceCounter: null } compoundType)
+                {
+                    compoundType.ReferenceCounter = ReferenceCounter;
+                    ReferenceCounter?.AddReference(value.DeepCopy(), this);
+                }
+                else
+                {
+                    ReferenceCounter?.AddReference(value, this);
+                }
             }
         }
 
@@ -71,8 +79,11 @@ namespace Neo.VM.Types
                 _ => new List<StackItem>(items)
             };
             if (referenceCounter != null)
-                foreach (StackItem item in _array)
-                    referenceCounter.AddReference(item, this);
+                foreach (var item in _array)
+                {
+                    ReferenceCounter?.AddReference(
+                        item is CompoundType { ReferenceCounter: null } ? item.DeepCopy() : item, this);
+                }
         }
 
         /// <summary>
@@ -83,7 +94,15 @@ namespace Neo.VM.Types
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             _array.Add(item);
-            ReferenceCounter?.AddReference(item, this);
+            if (item is CompoundType { ReferenceCounter: null } compoundType)
+            {
+                compoundType.ReferenceCounter = ReferenceCounter;
+                ReferenceCounter?.AddReference(item.DeepCopy(), this);
+            }
+            else
+            {
+                ReferenceCounter?.AddReference(item, this);
+            }
         }
 
         public override void Clear()
