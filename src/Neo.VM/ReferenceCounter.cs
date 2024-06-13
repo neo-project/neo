@@ -47,7 +47,6 @@ namespace Neo.VM
         internal void AddReference(StackItem item, CompoundType parent)
         {
             references_count++;
-            item.ReferenceCount++;
             if (!NeedTrack(item)) return;
             cached_components = null;
             tracked_items.Add(item);
@@ -63,7 +62,6 @@ namespace Neo.VM
         internal void AddStackReference(StackItem item, int count = 1)
         {
             references_count += count;
-            item.ReferenceCount += count;
             if (!NeedTrack(item)) return;
             if (tracked_items.Add(item))
                 cached_components?.AddLast(new HashSet<StackItem>(ReferenceEqualityComparer.Instance) { item });
@@ -140,7 +138,6 @@ namespace Neo.VM
         internal void RemoveReference(StackItem item, CompoundType parent)
         {
             references_count--;
-            item.ReferenceCount--;
             if (!NeedTrack(item)) return;
             cached_components = null;
             item.ObjectReferences![parent].References--;
@@ -151,7 +148,6 @@ namespace Neo.VM
         internal void RemoveStackReference(StackItem item)
         {
             references_count--;
-            item.ReferenceCount--;
             if (!NeedTrack(item)) return;
             if (--item.StackReferences == 0)
                 zero_referred.Add(item);

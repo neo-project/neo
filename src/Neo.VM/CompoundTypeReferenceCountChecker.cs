@@ -43,23 +43,25 @@ internal class CompoundTypeReferenceCountChecker(int maxItems = 2048)
 
             foreach (var subItem in currentCompound.SubItems)
             {
-                // An item added to the stack must have a reference count higher than 0
-                if (subItem.ReferenceCount <= 0)
+                // if a compound type item has reference counter assigned
+                // Then its subitem is referred.
+                if (subItem is CompoundType compoundType)
                 {
-                    throw new InvalidOperationException("Invalid stackitem being pushed.");
-                }
+                    // If a compound type has no reference counter
+                    // Then this compound type is problematic
+                    if (compoundType.ReferenceCounter == null)
+                    {
+                        throw new InvalidOperationException("Invalid stackitem being pushed.");
+                    }
 
-                // If the subItem is a CompoundType, process it
-                if (subItem is CompoundType compoundSubItem)
-                {
                     // Check if this subItem has been visited already
-                    if (!visited.Add(compoundSubItem))
+                    if (!visited.Add(compoundType))
                     {
                         continue;
                     }
 
                     // Add the subItem to the stack and increment the itemCount
-                    stack.Push(compoundSubItem);
+                    stack.Push(compoundType);
                     itemCount++;
 
                     // Check if the itemCount exceeds the maximum allowed items
@@ -67,6 +69,7 @@ internal class CompoundTypeReferenceCountChecker(int maxItems = 2048)
                     {
                         throw new InvalidOperationException($"Exceeded maximum of {maxItems} items.");
                     }
+
                 }
             }
         }
