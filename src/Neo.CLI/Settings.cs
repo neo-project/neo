@@ -165,7 +165,7 @@ namespace Neo
 
     public class PluginsSettings
     {
-        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
+        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo/releases");
         public bool Prerelease { get; init; } = false;
         public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
 
