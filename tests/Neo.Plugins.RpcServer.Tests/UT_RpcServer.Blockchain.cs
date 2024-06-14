@@ -32,13 +32,19 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestGetBestBlockHash()
         {
-            var key = new KeyBuilder(5, 12);
+            var key = new KeyBuilder(-4, 12);
+            var c = key.ToArray();
             // Arrange
             var expectedHash = UInt256.Zero;
             var state = new HashIndexState { Hash = UInt256.Zero, Index = 100 };
             var item = new StorageItem(state);
 
-            _neoSystem.StoreView.Add(key, item);
+            var v = _neoSystem.StoreView;
+            var b = v.GetAndChange(key, () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            b.Hash = UInt256.Zero;
+            b.Index = 100;
+            v.Commit();
+            b = v.GetAndChange(key, () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
             var result = _rpcServer.GetBestBlockHash([]);
 
             // Assert

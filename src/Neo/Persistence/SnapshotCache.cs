@@ -37,11 +37,19 @@ namespace Neo.Persistence
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {
+            if (store is MemoryStore memoryStore)
+            {
+                memoryStore.Put(key.ToArray(), value.ToArray());
+            }
             snapshot?.Put(key.ToArray(), value.ToArray());
         }
 
         protected override void DeleteInternal(StorageKey key)
         {
+            if (store is MemoryStore memoryStore)
+            {
+                memoryStore.Delete(key.ToArray());
+            }
             snapshot?.Delete(key.ToArray());
         }
 
@@ -82,6 +90,10 @@ namespace Neo.Persistence
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
+            if (store is MemoryStore memoryStore)
+            {
+                memoryStore.Put(key.ToArray(), value.ToArray());
+            }
             snapshot?.Put(key.ToArray(), value.ToArray());
         }
     }

@@ -23,8 +23,8 @@ namespace Neo.Plugins.RpcServer.Tests
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             var protocolSettings = TestProtocolSettings.Default;
-            var neoSystem = new NeoSystem(protocolSettings, _memoryStoreProvider);
-            _rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
+            _neoSystem = new NeoSystem(protocolSettings, _memoryStoreProvider);
+            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default);
         }
 
         [TestCleanup]
