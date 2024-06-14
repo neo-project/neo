@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <PackageId>Neo.IO</PackageId>
     <PackageTags>NEO;Blockchain;IO</PackageTags>
-    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
+    <OutputPath>../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
