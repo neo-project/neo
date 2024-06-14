@@ -15,7 +15,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.IO
 {
-    internal class ByteArrayComparer : IComparer<byte[]>
+    public class ByteArrayComparer : IComparer<byte[]>
     {
         public static readonly ByteArrayComparer Default = new(1);
         public static readonly ByteArrayComparer Reverse = new(-1);

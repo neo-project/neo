@@ -12,15 +12,17 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.IO;
+using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Text;
-using Neo.Json;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -30,14 +32,14 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestGetBestBlockHash()
         {
+            var key = new KeyBuilder(5, 12);
             // Arrange
-            var expectedHash = UInt256.Parse("0x0");
+            var expectedHash = UInt256.Zero;
+            var state = new HashIndexState { Hash = UInt256.Zero, Index = 100 };
+            var item = new StorageItem(state);
 
-            _iSnapshotMock.Setup(s => s.TryGet(new byte[]{0x00, 0x00, 0x00})).Returns([0x00]);
-            NativeContract.Ledger.CurrentHash(_neoSystem.StoreView);
-
-            // Act
-            var result = _rpcServer.GetBestBlockHash(new JArray());
+            _neoSystem.StoreView.Add(key, item);
+            var result = _rpcServer.GetBestBlockHash([]);
 
             // Assert
             Assert.AreEqual(expectedHash.ToString(), result.AsString());
