@@ -25,7 +25,7 @@ namespace Neo.Plugins.RpcServer
     partial class RpcServer
     {
         [RpcMethod]
-        protected virtual JToken GetBestBlockHash(JArray _params)
+        protected internal virtual JToken GetBestBlockHash(JArray _params)
         {
             return NativeContract.Ledger.CurrentHash(system.StoreView).ToString();
         }

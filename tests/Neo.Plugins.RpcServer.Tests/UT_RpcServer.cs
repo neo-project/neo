@@ -1,20 +1,10 @@
-// Copyright (C) 2015-2024 The Neo Project.
-//
-// UT_RpcServer.cs file belongs to the neo project and is free
-// software distributed under the MIT software license, see the
-// accompanying file LICENSE in the main directory of the
-// repository or http://www.opensource.org/licenses/mit-license.php
-// for more details.
-//
-// Redistribution and use in source and binary forms with or without
-// modifications are permitted.
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
 using Neo.Persistence;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -22,40 +12,54 @@ namespace Neo.Plugins.RpcServer.Tests
     [TestClass]
     public partial class UT_RpcServer
     {
-        private Mock<MockNeoSystem> _systemMock;
-        private SnapshotCache _snapshotCache;
-        private MemoryPool _memoryPool;
-        private RpcServerSettings _settings;
+        private NeoSystem _neoSystem;
         private RpcServer _rpcServer;
+        private Mock<ISnapshot> _iSnapshotMock;
 
         [TestInitialize]
         public void TestSetup()
         {
-            // Mock IReadOnlyStore
-            var mockStore = new Mock<IReadOnlyStore>();
+            // Mock IStore and ISnapshot
+            var mockStore = new Mock<IStore>();
 
-            // Initialize SnapshotCache with the mock IReadOnlyStore
-            _snapshotCache = new SnapshotCache(mockStore.Object);
+            // Setup mock behaviors for ISnapshot
+            _iSnapshotMock.Setup(snapshot => snapshot.TryGet(It.IsAny<byte[]>()))
+                        .Returns((byte[] key) => null); // Return null or appropriate value
+            _iSnapshotMock.Setup(snapshot => snapshot.Seek(It.IsAny<byte[]>(), It.IsAny<SeekDirection>()))
+                        .Returns(new List<(byte[], byte[])>()); // Return an empty list or appropriate values
 
-            // Initialize NeoSystem
-            var neoSystem = new NeoSystem(TestProtocolSettings.Default, new TestBlockchain.StoreProvider());
+            // Setup mock behaviors for IStore
+            mockStore.Setup(store => store.GetSnapshot()).Returns(_iSnapshotMock.Object);
+            mockStore.Setup(store => store.Put(It.IsAny<byte[]>(), It.IsAny<byte[]>()));
+            mockStore.Setup(store => store.Delete(It.IsAny<byte[]>()));
+            mockStore.Setup(store => store.Contains(It.IsAny<byte[]>())).Returns(false); // Return appropriate value
 
-            // Initialize MemoryPool with the NeoSystem
-            _memoryPool = new MemoryPool(neoSystem);
+            // Mock IStoreProvider
+            var mockStoreProvider = new Mock<IStoreProvider>();
+            mockStoreProvider.Setup(provider => provider.GetStore(It.IsAny<string>())).Returns(mockStore.Object);
 
-            // Set up the mock system with the correct constructor arguments
-            _systemMock = new Mock<MockNeoSystem>(_snapshotCache, _memoryPool);
+            // Initialize NeoSystem with the mocked store provider
+            var protocolSettings = TestProtocolSettings.Default;
+            var neoSystem = new NeoSystem(protocolSettings, mockStoreProvider.Object);
 
-            _rpcServer = new RpcServer(_systemMock.Object, RpcServerSettings.Default);
+            // Initialize RpcServer with the actual NeoSystem and default settings
+            _rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
         }
 
         [TestMethod]
         public void TestCheckAuth_ValidCredentials_ReturnsTrue()
         {
+            // Arrange
             var context = new DefaultHttpContext();
             context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+
+            // Act
             var result = _rpcServer.CheckAuth(context);
+
+            // Assert
             Assert.IsTrue(result);
         }
+
+
     }
 }
