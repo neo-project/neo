@@ -24,12 +24,26 @@ namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
+
+        /// <summary>
+        /// Gets the hash of the best (most recent) block.
+        /// </summary>
+        /// <param name="_params">An empty array; no parameters are required.</param>
+        /// <returns>The hash of the best block as a JToken.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBestBlockHash(JArray _params)
         {
             return NativeContract.Ledger.CurrentHash(system.StoreView).ToString();
         }
 
+        /// <summary>
+        /// Gets a block by its hash or index.
+        /// </summary>
+        /// <param name="_params">
+        /// An array containing the block hash or index as the first element,
+        /// and an optional boolean indicating whether to return verbose information.
+        /// </param>
+        /// <returns>The block data as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetBlock(JArray _params)
         {
@@ -60,18 +74,33 @@ namespace Neo.Plugins.RpcServer
             return Convert.ToBase64String(block.ToArray());
         }
 
+        /// <summary>
+        /// Gets the number of block headers in the blockchain.
+        /// </summary>
+        /// <param name="_params">An empty array; no parameters are required.</param>
+        /// <returns>The count of block headers as a JToken.</returns>
         [RpcMethod]
         internal virtual JToken GetBlockHeaderCount(JArray _params)
         {
             return (system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(system.StoreView)) + 1;
         }
 
+        /// <summary>
+        /// Gets the number of blocks in the blockchain.
+        /// </summary>
+        /// <param name="_params">An empty array; no parameters are required.</param>
+        /// <returns>The count of blocks as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetBlockCount(JArray _params)
         {
             return NativeContract.Ledger.CurrentIndex(system.StoreView) + 1;
         }
 
+        /// <summary>
+        /// Gets the hash of the block at the specified height.
+        /// </summary>
+        /// <param name="_params">An array containing the block height as the first element.</param>
+        /// <returns>The hash of the block at the specified height as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetBlockHash(JArray _params)
         {
@@ -84,6 +113,14 @@ namespace Neo.Plugins.RpcServer
             throw new RpcException(RpcError.UnknownHeight);
         }
 
+        /// <summary>
+        /// Gets a block header by its hash or index.
+        /// </summary>
+        /// <param name="_params">
+        /// An array containing the block header hash or index as the first element,
+        /// and an optional boolean indicating whether to return verbose information.
+        /// </param>
+        /// <returns>The block header data as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetBlockHeader(JArray _params)
         {
@@ -114,6 +151,11 @@ namespace Neo.Plugins.RpcServer
             return Convert.ToBase64String(header.ToArray());
         }
 
+        /// <summary>
+        /// Gets the state of a contract by its ID or script hash.
+        /// </summary>
+        /// <param name="_params">An array containing the contract ID or script hash as the first element.</param>
+        /// <returns>The contract state as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetContractState(JArray _params)
         {
@@ -128,6 +170,7 @@ namespace Neo.Plugins.RpcServer
             return contract.NotNull_Or(RpcError.UnknownContract).ToJson();
         }
 
+
         private static UInt160 ToScriptHash(string keyword)
         {
             foreach (var native in NativeContract.Contracts)
@@ -139,6 +182,11 @@ namespace Neo.Plugins.RpcServer
             return UInt160.Parse(keyword);
         }
 
+        /// <summary>
+        /// Gets the current memory pool transactions.
+        /// </summary>
+        /// <param name="_params">An array containing an optional boolean indicating whether to include unverified transactions.</param>
+        /// <returns>The memory pool transactions as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetRawMemPool(JArray _params)
         {
@@ -156,6 +204,14 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Gets a transaction by its hash.
+        /// </summary>
+        /// <param name="_params">
+        /// An array containing the transaction hash as the first element,
+        /// and an optional boolean indicating whether to return verbose information.
+        /// </param>
+        /// <returns>The transaction data as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetRawTransaction(JArray _params)
         {
@@ -179,6 +235,14 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Gets the storage item by contract ID or script hash and key.
+        /// </summary>
+        /// <param name="_params">
+        /// An array containing the contract ID or script hash as the first element,
+        /// and the storage key as the second element.
+        /// </param>
+        /// <returns>The storage item as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetStorage(JArray _params)
         {
@@ -198,6 +262,15 @@ namespace Neo.Plugins.RpcServer
             return Convert.ToBase64String(item.Value.Span);
         }
 
+        /// <summary>
+        /// Finds storage items by contract ID or script hash and prefix.
+        /// </summary>
+        /// <param name="_params">
+        /// An array containing the contract ID or script hash as the first element,
+        /// the storage key prefix as the second element,
+        /// and an optional start index as the third element.
+        /// </param>
+        /// <returns>The found storage items <see cref="StorageItem"/> as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected virtual JToken FindStorage(JArray _params)
         {
@@ -247,6 +320,11 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Gets the height of a transaction by its hash.
+        /// </summary>
+        /// <param name="_params">An array containing the transaction hash as the first element.</param>
+        /// <returns>The height of the transaction as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected virtual JToken GetTransactionHeight(JArray _params)
         {
@@ -256,6 +334,11 @@ namespace Neo.Plugins.RpcServer
             throw new RpcException(RpcError.UnknownTransaction);
         }
 
+        /// <summary>
+        /// Gets the next block validators.
+        /// </summary>
+        /// <param name="_params">An empty array; no parameters are required.</param>
+        /// <returns>The next block validators as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected virtual JToken GetNextBlockValidators(JArray _params)
         {
@@ -270,6 +353,11 @@ namespace Neo.Plugins.RpcServer
             }).ToArray();
         }
 
+        /// <summary>
+        /// Gets the list of candidates for the next block validators.
+        /// </summary>
+        /// <param name="_params">An empty array; no parameters are required.</param>
+        /// <returns>The candidates public key list as a JToken.</returns>
         [RpcMethod]
         protected virtual JToken GetCandidates(JArray _params)
         {
@@ -322,12 +410,22 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Gets the list of committee members.
+        /// </summary>
+        /// <param name="_params">An empty array; no parameters are required.</param>
+        /// <returns>The committee members publickeys as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected virtual JToken GetCommittee(JArray _params)
         {
             return new JArray(NativeContract.NEO.GetCommittee(system.StoreView).Select(p => (JToken)p.ToString()));
         }
 
+        /// <summary>
+        /// Gets the list of native contracts.
+        /// </summary>
+        /// <param name="_params">An empty array; no parameters are required.</param>
+        /// <returns>The native contract states <see cref="ContractState"/> as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected virtual JToken GetNativeContracts(JArray _params)
         {
