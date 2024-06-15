@@ -10,7 +10,7 @@
     <Product>Neo.CLI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
-    <BaseOutputPath>$(SolutionDir)/bin/$(AssemblyTitle)</BaseOutputPath>
+    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
