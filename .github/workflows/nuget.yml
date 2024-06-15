@@ -1,0 +1,48 @@
+name: Release (nuget)
+
+# Trigger the workflow on a release event when a new release is published
+on:
+  release:
+    types: [published]
+
+# Define environment variables
+env:
+  DOTNET_VERSION: 8.0.x
+  CONFIGURATION: Release
+
+jobs:
+  nuget-release:
+    runs-on: ubuntu-latest
+    steps:
+    # Step to set the application version from the release tag
+    - name: Set Application Version (Environment Variable)
+      run: |
+        APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Pack NuGet Packages
+      run: |
+        dotnet pack ./neo.sln \
+        --configuration Release \
+        --output ./sbin
+        --verbosity normal \                        # Normal verbosity level
+        -p:VersionPrefix=${{ env.APP_VERSION }}     # Set the version prefix to the application version
+
+    - name: Publish to NuGet.org
+      run: |
+        dotnet nuget push ./sbin/*.nupkg \
+        --source https://api.nuget.org/v3/index.json
+        --api-key ${NUGET_TOKEN}
+        --skip-duplicate
+      env:
+        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
