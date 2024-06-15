@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [windows-latest]
         arch: [x64, arm64]
 
     steps:
@@ -167,35 +167,10 @@ jobs:
         enableCrossOsArchive: true
         fail-on-cache-miss: true
 
-    # Get cached LevelDB distribution for OSX x64 if applicable
-    - if: ${{ startsWith(matrix.runtime, 'osx-x64') }}
-      name: Get Distribution Caches (win-arm64)
-      uses: actions/cache@v4
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-macos-latest-x64
-        enableCrossOsArchive: true
-        fail-on-cache-miss: true
-
-    # Get cached LevelDB distribution for OSX arm64 if applicable
-    - if: ${{ startsWith(matrix.runtime, 'osx-arm64') }}
-      name: Get Distribution Caches (win-arm64)
-      uses: actions/cache@v4
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-macos-latest-arm64
-        enableCrossOsArchive: true
-        fail-on-cache-miss: true
-
     # Copy LevelDB files to the output directory for Windows
     - if: ${{ startsWith(matrix.runtime, 'win') }}
       name: Copy Files (leveldb) (win)
       run: cp -v ./leveldb/build/Release/leveldb.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
-
-    # Copy LevelDB files to the output directory for MacOS
-    - if: ${{ startsWith(matrix.runtime, 'osx') }}
-      name: Copy Files (leveldb) (win)
-      run: cp -v ./leveldb/build/Release/leveldb.dylib ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dylib
 
     # Create the distribution directory
     - name: Create Distribution Directory
