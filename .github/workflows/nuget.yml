@@ -36,13 +36,11 @@ jobs:
         --configuration Release \
         --output ./sbin
         --verbosity normal \                        # Normal verbosity level
-        -p:VersionPrefix=${{ env.APP_VERSION }}     # Set the version prefix to the application version
+        -p:VersionPrefix=${{ env.APP_VERSION }}     # Set the version prefix from tag_name
 
     - name: Publish to NuGet.org
       run: |
         dotnet nuget push ./sbin/*.nupkg \
         --source https://api.nuget.org/v3/index.json
-        --api-key ${NUGET_TOKEN}
+        --api-key ${{ secrets.NUGET_TOKEN }}
         --skip-duplicate
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
