@@ -32,8 +32,9 @@ namespace Neo.CLI
         /// Process "install" command
         /// </summary>
         /// <param name="pluginName">Plugin name</param>
+        /// <param name="downloadUrl">Custom plugins download url, this is optional.</param>
         [ConsoleCommand("install", Category = "Plugin Commands")]
-        private void OnInstallCommand(string pluginName)
+        private void OnInstallCommand(string pluginName, string? downloadUrl = null)
         {
             if (PluginExists(pluginName))
             {
@@ -41,7 +42,7 @@ namespace Neo.CLI
                 return;
             }
 
-            var result = InstallPluginAsync(pluginName).GetAwaiter().GetResult();
+            var result = InstallPluginAsync(pluginName, downloadUrl).GetAwaiter().GetResult();
             if (result)
             {
                 var asmName = Assembly.GetExecutingAssembly().GetName().Name;
@@ -74,16 +75,17 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="pluginName">name of the plugin</param>
         /// <param name="pluginVersion"></param>
+        /// <param name="customDownloadUrl">Custom plugin download url.</param>
         /// <param name="prerelease"></param>
         /// <returns>Downloaded content</returns>
-        private static async Task<Stream> DownloadPluginAsync(string pluginName, Version pluginVersion, bool prerelease = false)
+        private static async Task<Stream> DownloadPluginAsync(string pluginName, Version pluginVersion, string? customDownloadUrl = null, bool prerelease = false)
         {
             using var httpClient = new HttpClient();
 
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
-
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+            var url = customDownloadUrl == null ? Settings.Default.Plugins.DownloadUrl : new Uri(customDownloadUrl);
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(url) ?? throw new HttpRequestException($"Failed: {url}");
             var jsonRelease = json.AsArray()
                 .SingleOrDefault(s =>
                     s != null &&
@@ -110,10 +112,12 @@ namespace Neo.CLI
         /// Install plugin from stream
         /// </summary>
         /// <param name="pluginName">Name of the plugin</param>
+        /// <param name="downloadUrl">Custom plugins download url.</param>
         /// <param name="installed">Dependency set</param>
         /// <param name="overWrite">Install by force for `update`</param>
         private async Task<bool> InstallPluginAsync(
             string pluginName,
+            string? downloadUrl = null,
             HashSet<string>? installed = null,
             bool overWrite = false)
         {
@@ -124,14 +128,14 @@ namespace Neo.CLI
             try
             {
 
-                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, Settings.Default.Plugins.Prerelease);
+                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, downloadUrl, Settings.Default.Plugins.Prerelease);
 
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
                 var entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
                 if (entry is not null)
                 {
                     await using var es = entry.Open();
-                    await InstallDependenciesAsync(es, installed);
+                    await InstallDependenciesAsync(es, installed, downloadUrl);
                 }
                 zip.ExtractToDirectory("./", true);
                 return true;
@@ -148,7 +152,8 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="config">plugin config path in temp</param>
         /// <param name="installed">Dependency set</param>
-        private async Task InstallDependenciesAsync(Stream config, HashSet<string> installed)
+        /// <param name="downloadUrl">Custom plugin download url.</param>
+        private async Task InstallDependenciesAsync(Stream config, HashSet<string> installed, string? downloadUrl = null)
         {
             var dependency = new ConfigurationBuilder()
                 .AddJsonStream(config)
@@ -162,7 +167,7 @@ namespace Neo.CLI
             foreach (var plugin in dependencies.Where(p => p is not null && !PluginExists(p)))
             {
                 ConsoleHelper.Info($"Installing dependency: {plugin}");
-                await InstallPluginAsync(plugin!, installed);
+                await InstallPluginAsync(plugin!, downloadUrl, installed);
             }
         }
 

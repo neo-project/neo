@@ -5,7 +5,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <PackageId>Neo.VM</PackageId>
-    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
+    <OutputPath>../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
