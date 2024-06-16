@@ -59,6 +59,8 @@ namespace Neo.Plugins.RpcServer
             }
             else
             {
+                // TODO: check for the format of the parameter
+                // FormatException => RpcError.InvalidParams
                 UInt256 hash = UInt256.Parse(key.AsString());
                 block = NativeContract.Ledger.GetBlock(snapshot, hash);
             }
@@ -160,6 +162,8 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetContractState(JArray _params)
         {
+            // TODO: need check the format of the parameter
+            // FormatException from int.TryParse => RpcError.InvalidParams
             if (int.TryParse(_params[0].AsString(), out int contractId))
             {
                 var contractState = NativeContract.ContractManagement.GetContractById(system.StoreView, contractId);
@@ -248,6 +252,8 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken GetStorage(JArray _params)
         {
             using var snapshot = system.GetSnapshot();
+            // TODO: check for the format of the parameter
+            // FormatException => RpcError.InvalidParams
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
                 UInt160 hash = UInt160.Parse(_params[0].AsString());
@@ -276,8 +282,12 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken FindStorage(JArray _params)
         {
             using var snapshot = system.GetSnapshot();
+            // TODO: check for the format of the parameter
+            // FormatException => RpcError.InvalidParams
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
+                // TODO: check for the format of the parameter
+                // FormatException => RpcError.InvalidParams
                 UInt160 hash = UInt160.Parse(_params[0].AsString());
                 ContractState contract = NativeContract.ContractManagement.GetContract(snapshot, hash).NotNull_Or(RpcError.UnknownContract);
                 id = contract.Id;

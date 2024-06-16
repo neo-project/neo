@@ -81,46 +81,6 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
-        public void TestGetBlockByUnKnownIndex()
-        {
-            var snapshot = _neoSystem.GetSnapshot();
-            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
-            TestUtils.BlocksAdd(snapshot, block.Hash, block);
-            snapshot.Commit();
-
-            var parameters = new JArray(int.MaxValue, false);
-            try
-            {
-                _rpcServer.GetBlock(parameters);
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.UnknownBlock.Code, ex.HResult);
-            }
-        }
-
-        [TestMethod]
-        public void TestGetBlockByUnKnownHash()
-        {
-            var snapshot = _neoSystem.GetSnapshot();
-            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
-            TestUtils.BlocksAdd(snapshot, block.Hash, block);
-            snapshot.Commit();
-
-            var parameters = new JArray(TestUtils.RandomUInt256().ToString(), false);
-            try
-            {
-                _rpcServer.GetBlock(parameters);
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.UnknownBlock.Code, ex.HResult);
-            }
-        }
-
-        [TestMethod]
         public void TestGetBlockCount()
         {
             var expectedCount = 1;
@@ -146,16 +106,6 @@ namespace Neo.Plugins.RpcServer.Tests
             var expectedHash = block.Hash.ToString();
             var result = _rpcServer.GetBlockHash(new JArray(block.Index));
             Assert.AreEqual(expectedHash, result.AsString());
-        }
-
-        [TestMethod]
-        public void TestGetBlockHashInvalidIndex()
-        {
-            var snapshot = _neoSystem.GetSnapshot();
-            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
-            TestUtils.BlocksAdd(snapshot, block.Hash, block);
-            snapshot.Commit();
-            Assert.ThrowsException<RpcException>(() => _rpcServer.GetBlockHash(new JArray(block.Index + 1)));
         }
 
         [TestMethod]
@@ -359,6 +309,56 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestGetBlockByUnKnownIndex()
+        {
+            var snapshot = _neoSystem.GetSnapshot();
+            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
+            TestUtils.BlocksAdd(snapshot, block.Hash, block);
+            snapshot.Commit();
+
+            var parameters = new JArray(int.MaxValue, false);
+            try
+            {
+                _rpcServer.GetBlock(parameters);
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.UnknownBlock.Code, ex.HResult);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetBlockByUnKnownHash()
+        {
+            var snapshot = _neoSystem.GetSnapshot();
+            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
+            TestUtils.BlocksAdd(snapshot, block.Hash, block);
+            snapshot.Commit();
+
+            var parameters = new JArray(TestUtils.RandomUInt256().ToString(), false);
+            try
+            {
+                _rpcServer.GetBlock(parameters);
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.UnknownBlock.Code, ex.HResult);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetBlockHashInvalidIndex()
+        {
+            var snapshot = _neoSystem.GetSnapshot();
+            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
+            TestUtils.BlocksAdd(snapshot, block.Hash, block);
+            snapshot.Commit();
+            Assert.ThrowsException<RpcException>(() => _rpcServer.GetBlockHash(new JArray(block.Index + 1)));
+        }
+
+        [TestMethod]
         public void TestGetContractStateUnknownContract()
         {
             var snapshot = _neoSystem.GetSnapshot();
@@ -441,5 +441,180 @@ namespace Neo.Plugins.RpcServer.Tests
             }
         }
 
+        [TestMethod]
+        public void TestGetBlockInvalidParams()
+        {
+            try
+            {
+                _rpcServer.GetBlock(new JArray("invalid_hash", false));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+            catch (FormatException)
+            {
+            }
+            catch
+            {
+                Assert.Fail("Unexpected exception");
+            }
+        }
+
+        [TestMethod]
+        public void TestGetBlockHashInvalidParams()
+        {
+            try
+            {
+                _rpcServer.GetBlockHash(new JArray("invalid_index"));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetBlockHeaderInvalidParams()
+        {
+            try
+            {
+                _rpcServer.GetBlockHeader(new JArray("invalid_hash", true));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+            catch (FormatException)
+            {
+            }
+            catch
+            {
+                Assert.Fail("Unexpected exception");
+            }
+        }
+
+        [TestMethod]
+        public void TestGetContractStateInvalidParams()
+        {
+            try
+            {
+                _rpcServer.GetContractState(new JArray("invalid_hash"));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+            catch (FormatException)
+            {
+            }
+            catch
+            {
+                Assert.Fail("Unexpected exception");
+            }
+        }
+
+        [TestMethod]
+        public void TestGetStorageInvalidParams()
+        {
+            try
+            {
+                _rpcServer.GetStorage(new JArray("invalid_hash", "invalid_key"));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+            catch (FormatException)
+            {
+            }
+            catch
+            {
+                Assert.Fail("Unexpected exception");
+            }
+        }
+
+        [TestMethod]
+        public void TestFindStorageInvalidParams()
+        {
+            try
+            {
+                _rpcServer.FindStorage(new JArray("invalid_hash", "invalid_prefix", "invalid_start"));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+            catch (FormatException)
+            {
+            }
+            catch
+            {
+                Assert.Fail("Unexpected exception");
+            }
+        }
+
+        [TestMethod]
+        public void TestGetTransactionHeightInvalidParams()
+        {
+            try
+            {
+                _rpcServer.GetTransactionHeight(new JArray("invalid_hash"));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetRawTransactionInvalidParams()
+        {
+            try
+            {
+                _rpcServer.GetRawTransaction(new JArray("invalid_hash", true));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            }
+        }
+
+        [TestMethod]
+        public void TestInternalServerError()
+        {
+            _memoryStore.Reset();
+            try
+            {
+                _rpcServer.GetCandidates(new JArray());
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.InternalServerError.Code, ex.HResult);
+            }
+        }
+
+        [TestMethod]
+        public void TestUnknownHeight()
+        {
+            try
+            {
+                _rpcServer.GetBlockHash(new JArray(int.MaxValue));
+                Assert.Fail("Expected RpcException was not thrown.");
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(RpcError.UnknownHeight.Code, ex.HResult);
+            }
+        }
     }
 }
