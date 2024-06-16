@@ -138,6 +138,8 @@ namespace Neo.Plugins.RpcServer
             }
             else
             {
+                // TODO: check for the format of the parameter
+                // UInt256.Parse FormatException => RpcError.InvalidParams
                 UInt256 hash = UInt256.Parse(key.AsString());
                 header = NativeContract.Ledger.GetHeader(snapshot, hash).NotNull_Or(RpcError.UnknownBlock);
             }
@@ -162,14 +164,14 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetContractState(JArray _params)
         {
-            // TODO: need check the format of the parameter
-            // FormatException from int.TryParse => RpcError.InvalidParams
             if (int.TryParse(_params[0].AsString(), out int contractId))
             {
                 var contractState = NativeContract.ContractManagement.GetContractById(system.StoreView, contractId);
                 return contractState.NotNull_Or(RpcError.UnknownContract).ToJson();
             }
 
+            // TODO: need check the format of the parameter
+            // FormatException from ToScriptHash => RpcError.InvalidParams
             var scriptHash = ToScriptHash(_params[0].AsString());
             var contract = NativeContract.ContractManagement.GetContract(system.StoreView, scriptHash);
             return contract.NotNull_Or(RpcError.UnknownContract).ToJson();
@@ -252,10 +254,10 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken GetStorage(JArray _params)
         {
             using var snapshot = system.GetSnapshot();
-            // TODO: check for the format of the parameter
-            // FormatException => RpcError.InvalidParams
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
+                // TODO: check for the format of the parameter
+                //  UInt160.Parse FormatException => RpcError.InvalidParams
                 UInt160 hash = UInt160.Parse(_params[0].AsString());
                 ContractState contract = NativeContract.ContractManagement.GetContract(snapshot, hash).NotNull_Or(RpcError.UnknownContract);
                 id = contract.Id;
@@ -282,8 +284,6 @@ namespace Neo.Plugins.RpcServer
         protected internal virtual JToken FindStorage(JArray _params)
         {
             using var snapshot = system.GetSnapshot();
-            // TODO: check for the format of the parameter
-            // FormatException => RpcError.InvalidParams
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
                 // TODO: check for the format of the parameter
