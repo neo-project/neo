@@ -182,7 +182,7 @@ namespace Neo.UnitTests
             };
         }
 
-        internal static ContractState GetContract(string method = "test", int parametersCount = 0)
+        public static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
             NefFile nef = new()
             {
@@ -235,6 +235,15 @@ namespace Neo.UnitTests
                 Id = id,
                 Key = keyValue
             };
+        }
+
+        public static void StorageItemAdd(DataCache snapshot, int id, byte[] keyValue, byte[] value)
+        {
+            snapshot.Add(new StorageKey
+            {
+                Id = id,
+                Key = keyValue
+            }, new StorageItem(value));
         }
 
         public static Transaction CreateRandomHashTransaction()
