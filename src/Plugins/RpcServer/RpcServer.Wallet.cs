@@ -85,7 +85,7 @@ namespace Neo.Plugins.RpcServer
         protected virtual JToken GetWalletBalance(JArray _params)
         {
             CheckWallet();
-            UInt160 asset_id = UInt160.Parse(_params[0].AsString());
+            UInt160 asset_id = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
             JObject json = new();
             json["balance"] = wallet.GetAvailable(system.StoreView, asset_id).Value.ToString();
             return json;
@@ -193,7 +193,7 @@ namespace Neo.Plugins.RpcServer
         protected virtual JToken SendFrom(JArray _params)
         {
             CheckWallet();
-            UInt160 assetId = UInt160.Parse(_params[0].AsString());
+            UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
             UInt160 from = AddressToScriptHash(_params[1].AsString(), system.Settings.AddressVersion);
             UInt160 to = AddressToScriptHash(_params[2].AsString(), system.Settings.AddressVersion);
             using var snapshot = system.GetSnapshot();
