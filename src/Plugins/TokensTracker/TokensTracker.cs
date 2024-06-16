@@ -59,7 +59,7 @@ namespace Neo.Plugins
             _maxResults = config.GetValue("MaxResults", 1000u);
             _network = config.GetValue("Network", 860833102u);
             _enabledTrackers = config.GetSection("EnabledTrackers").GetChildren().Select(p => p.Value).ToArray();
-            var policyString = config.GetValue("UnhandledExceptionPolicy", "StopNode");
+            var policyString = config.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
             if (Enum.TryParse(policyString, out UnhandledExceptionPolicy policy))
             {
                 _exceptionPolicy = policy;
