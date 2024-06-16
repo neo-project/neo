@@ -12,18 +12,22 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
+using Akka.Util.Internal;
 using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -468,10 +472,10 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                Committing?.Invoke(system, block, snapshot, all_application_executed);
+                _ = InvokeCommittingAsync(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
-            Committed?.Invoke(system, block);
+            _ = InvokeCommittedAsync(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
@@ -479,6 +483,45 @@ namespace Neo.Ledger
             if (system.HeaderCache.TryRemoveFirst(out Header header))
                 Debug.Assert(header.Index == block.Index);
         }
+
+        internal static async Task InvokeCommittingAsync(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        {
+            await InvokeHandlersAsync(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
+        }
+
+        internal static async Task InvokeCommittedAsync(NeoSystem system, Block block)
+        {
+            await InvokeHandlersAsync(Committed?.GetInvocationList(), h => ((CommittedHandler)h)(system, block));
+        }
+
+        private static async Task InvokeHandlersAsync(Delegate[] handlers, Action<Delegate> handlerAction)
+        {
+            if (handlers == null) return;
+
+            var exceptions = new ConcurrentBag<Exception>();
+            var tasks = handlers.Select(handler => Task.Run(() =>
+            {
+                try
+                {
+                    handlerAction(handler);
+                }
+                catch (Exception ex) when (handler.Target is Plugin)
+                {
+                    // Log the exception and continue with the next handler
+                    // Isolate the plugin exception
+                    Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
+            })).ToList();
+
+            await Task.WhenAll(tasks);
+
+            exceptions.ForEach(e => throw e);
+        }
+
 
         /// <summary>
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.

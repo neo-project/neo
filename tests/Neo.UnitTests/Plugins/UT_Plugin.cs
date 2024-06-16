@@ -11,8 +11,10 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Ledger;
 using Neo.Plugins;
 using System;
+using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Plugins
 {
@@ -62,6 +64,35 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
             pp.TestGetConfiguration().Key.Should().Be("PluginConfiguration");
+        }
+
+        [TestMethod]
+        public async Task TestOnException()
+        {
+            // Ensure no exception is thrown
+            try
+            {
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+                await Blockchain.InvokeCommittedAsync(null, null);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
+            }
+
+            // Register TestNonPlugin that throws exceptions
+            _ = new TestNonPlugin();
+
+            // Ensure exception is thrown
+            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
+            {
+                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+            });
+
+            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
+            {
+                await Blockchain.InvokeCommittedAsync(null, null);
+            });
         }
     }
 }
