@@ -24,7 +24,6 @@ namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
-
         /// <summary>
         /// Gets the hash of the best (most recent) block.
         /// </summary>
@@ -174,7 +173,6 @@ namespace Neo.Plugins.RpcServer
             var contract = NativeContract.ContractManagement.GetContract(system.StoreView, scriptHash);
             return contract.NotNull_Or(RpcError.UnknownContract).ToJson();
         }
-
 
         private static UInt160 ToScriptHash(string keyword)
         {
