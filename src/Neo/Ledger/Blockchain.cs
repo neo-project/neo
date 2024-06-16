@@ -541,6 +541,7 @@ namespace Neo.Ledger
 
             exceptions.ForEach(e => throw e);
         }
+
         /// <summary>
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.
         /// </summary>
