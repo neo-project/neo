@@ -45,7 +45,7 @@ namespace Neo.Plugins.RpcServer
         /// </param>
         /// <returns>The block data as a JToken.</returns>
         [RpcMethod]
-        protected virtual JToken GetBlock(JArray _params)
+        protected internal virtual JToken GetBlock(JArray _params)
         {
             JToken key = Result.Ok_Or(() => _params[0], RpcError.InvalidParams.WithData($"Invalid Block Hash or Index: {_params[0]}"));
             bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
