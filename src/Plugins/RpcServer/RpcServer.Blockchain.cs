@@ -29,7 +29,7 @@ namespace Neo.Plugins.RpcServer
         /// Gets the hash of the best (most recent) block.
         /// </summary>
         /// <param name="_params">An empty array; no parameters are required.</param>
-        /// <returns>The hash of the best block as a JToken.</returns>
+        /// <returns>The hash of the best block as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBestBlockHash(JArray _params)
         {
@@ -43,7 +43,8 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the block hash or index as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The block data as a JToken.</returns>
+        /// <returns>The block data as a <see cref="JToken"/>. If the second item of <see cref="_params"/> is true, then
+        /// block data is json format, otherwise, the return type is byte array.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlock(JArray _params)
         {
@@ -78,7 +79,7 @@ namespace Neo.Plugins.RpcServer
         /// Gets the number of block headers in the blockchain.
         /// </summary>
         /// <param name="_params">An empty array; no parameters are required.</param>
-        /// <returns>The count of block headers as a JToken.</returns>
+        /// <returns>The count of block headers as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         internal virtual JToken GetBlockHeaderCount(JArray _params)
         {
@@ -89,7 +90,7 @@ namespace Neo.Plugins.RpcServer
         /// Gets the number of blocks in the blockchain.
         /// </summary>
         /// <param name="_params">An empty array; no parameters are required.</param>
-        /// <returns>The count of blocks as a JToken.</returns>
+        /// <returns>The count of blocks as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlockCount(JArray _params)
         {
@@ -100,7 +101,7 @@ namespace Neo.Plugins.RpcServer
         /// Gets the hash of the block at the specified height.
         /// </summary>
         /// <param name="_params">An array containing the block height as the first element.</param>
-        /// <returns>The hash of the block at the specified height as a JToken.</returns>
+        /// <returns>The hash of the block at the specified height as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlockHash(JArray _params)
         {
@@ -120,7 +121,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the block header hash or index as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The block header data as a JToken.</returns>
+        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of <see cref="_params"/> is true, otherwise base64string.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlockHeader(JArray _params)
         {
@@ -155,7 +156,7 @@ namespace Neo.Plugins.RpcServer
         /// Gets the state of a contract by its ID or script hash.
         /// </summary>
         /// <param name="_params">An array containing the contract ID or script hash as the first element.</param>
-        /// <returns>The contract state as a JToken.</returns>
+        /// <returns>The contract state in json format as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected internal virtual JToken GetContractState(JArray _params)
         {
@@ -186,7 +187,7 @@ namespace Neo.Plugins.RpcServer
         /// Gets the current memory pool transactions.
         /// </summary>
         /// <param name="_params">An array containing an optional boolean indicating whether to include unverified transactions.</param>
-        /// <returns>The memory pool transactions as a JToken.</returns>
+        /// <returns>The memory pool transactions in json format as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected internal virtual JToken GetRawMemPool(JArray _params)
         {
@@ -211,7 +212,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the transaction hash as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The transaction data as a JToken.</returns>
+        /// <returns>The transaction data as a <see cref="JToken"/>. In json format if the second item of <see cref="_params"/> is true, otherwise base64string. </returns>
         [RpcMethod]
         protected internal virtual JToken GetRawTransaction(JArray _params)
         {
@@ -242,7 +243,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the contract ID or script hash as the first element,
         /// and the storage key as the second element.
         /// </param>
-        /// <returns>The storage item as a JToken.</returns>
+        /// <returns>The storage item as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected internal virtual JToken GetStorage(JArray _params)
         {
