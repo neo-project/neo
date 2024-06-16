@@ -43,7 +43,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the block hash or index as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The block data as a <see cref="JToken"/>. If the second item of <see cref="_params"/> is true, then
+        /// <returns>The block data as a <see cref="JToken"/>. If the second item of _params is true, then
         /// block data is json format, otherwise, the return type is byte array.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlock(JArray _params)
@@ -123,7 +123,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the block header hash or index as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of <see cref="_params"/> is true, otherwise base64string.</returns>
+        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise base64string.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlockHeader(JArray _params)
         {
@@ -216,7 +216,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the transaction hash as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The transaction data as a <see cref="JToken"/>. In json format if the second item of <see cref="_params"/> is true, otherwise base64string. </returns>
+        /// <returns>The transaction data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise base64string. </returns>
         [RpcMethod]
         protected internal virtual JToken GetRawTransaction(JArray _params)
         {
