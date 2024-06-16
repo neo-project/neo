@@ -70,7 +70,5 @@ namespace Neo.Plugins.RpcServer.Tests
             // Assert
             Assert.IsTrue(result);
         }
-
-
     }
 }
