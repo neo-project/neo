@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <PackageId>Neo.Plugins.StorageDumper</PackageId>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -11,7 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Update="StorageDumper.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

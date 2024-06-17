@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <PackageId>Neo.Plugins.StateService</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
