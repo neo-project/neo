@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.IEventHandlers;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -25,7 +26,7 @@ using static System.IO.Path;
 
 namespace Neo.Plugins.ApplicationLogs
 {
-    public class LogReader : Plugin
+    public class LogReader : Plugin, ICommittingHandler, ICommittedHandler, ILogHandler
     {
         #region Globals
 
@@ -43,8 +44,8 @@ namespace Neo.Plugins.ApplicationLogs
         public LogReader()
         {
             _logEvents = new();
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         #endregion
@@ -55,10 +56,10 @@ namespace Neo.Plugins.ApplicationLogs
 
         public override void Dispose()
         {
-            Blockchain.Committing -= OnCommitting;
-            Blockchain.Committed -= OnCommitted;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Settings.Default.Debug)
-                ApplicationEngine.Log -= OnApplicationEngineLog;
+                ApplicationEngine.Log -= ((ILogHandler)this).ApplicationEngine_Log_Handler;
             GC.SuppressFinalize(this);
         }
 
@@ -78,7 +79,7 @@ namespace Neo.Plugins.ApplicationLogs
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
 
             if (Settings.Default.Debug)
-                ApplicationEngine.Log += OnApplicationEngineLog;
+                ApplicationEngine.Log += ((ILogHandler)this).ApplicationEngine_Log_Handler;
         }
 
         #endregion
@@ -195,7 +196,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         #region Blockchain Events
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network)
                 return;
@@ -216,7 +217,7 @@ namespace Neo.Plugins.ApplicationLogs
             }
         }
 
-        private void OnCommitted(NeoSystem system, Block block)
+        void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
             if (system.Settings.Network != Settings.Default.Network)
                 return;
@@ -225,7 +226,7 @@ namespace Neo.Plugins.ApplicationLogs
             _neostore.CommitBlockLog();
         }
 
-        private void OnApplicationEngineLog(object sender, LogEventArgs e)
+        void ILogHandler.ApplicationEngine_Log_Handler(object sender, LogEventArgs e)
         {
             if (Settings.Default.Debug == false)
                 return;
