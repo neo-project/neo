@@ -19,8 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(SolutionDir)/.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
-    <None Include="$(SolutionDir)/.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="..\..\.neo\neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="..\..\.neo\README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>
