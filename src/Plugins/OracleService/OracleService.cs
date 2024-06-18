@@ -14,6 +14,7 @@ using Akka.Util.Internal;
 using Neo.ConsoleService;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.IEventHandlers;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -37,7 +38,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Plugins.OracleService
 {
-    public class OracleService : Plugin
+    public class OracleService : Plugin, ICommittingHandler, IServiceAddedHandler, IWalletChangedHandler
     {
         private const int RefreshIntervalMilliSeconds = 1000 * 60 * 3;
 
@@ -65,7 +66,7 @@ namespace Neo.Plugins.OracleService
 
         public OracleService()
         {
-            Blockchain.Committing += OnCommitting;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
         }
 
         protected override void Configure()
@@ -79,32 +80,33 @@ namespace Neo.Plugins.OracleService
         {
             if (system.Settings.Network != Settings.Default.Network) return;
             _system = system;
-            _system.ServiceAdded += NeoSystem_ServiceAdded;
+            _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
         }
 
-        private void NeoSystem_ServiceAdded(object sender, object service)
+
+        void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)
         {
             if (service is IWalletProvider)
             {
                 walletProvider = service as IWalletProvider;
-                _system.ServiceAdded -= NeoSystem_ServiceAdded;
+                _system.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
                 if (Settings.Default.AutoStart)
                 {
-                    walletProvider.WalletChanged += WalletProvider_WalletChanged;
+                    walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
                 }
             }
         }
 
-        private void WalletProvider_WalletChanged(object sender, Wallet wallet)
+        void IWalletChangedHandler.IWalletProvider_WalletChanged_Handler(object sender, Wallet wallet)
         {
-            walletProvider.WalletChanged -= WalletProvider_WalletChanged;
+            walletProvider.WalletChanged -= ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
             Start(wallet);
         }
 
         public override void Dispose()
         {
-            Blockchain.Committing -= OnCommitting;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
             OnStop();
             while (status != OracleStatus.Stopped)
                 Thread.Sleep(100);
@@ -166,7 +168,7 @@ namespace Neo.Plugins.OracleService
             ConsoleHelper.Info($"Oracle status: ", $"{status}");
         }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
 
