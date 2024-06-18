@@ -105,6 +105,19 @@ jobs:
           ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
 
+  DevContainer-LocalEnv:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout (GitHub)
+      uses: actions/checkout@v4
+
+    - name: Build and run dev container task
+      uses: devcontainers/ci@v0.4
+      with:
+         # try with dotnet test - this is duplicated but at the end of the CI for now
+         runCmd: dotnet test
+          
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
     needs: [Test]
