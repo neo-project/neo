@@ -5,7 +5,7 @@
     "MaxResults": 1000,
     "Network": 860833102,
     "EnabledTrackers": [ "NEP-11", "NEP-17" ],
-    "UnhandledExceptionPolicy": "Ignore"
+    "UnhandledExceptionPolicy": "StopPlugin"
   },
   "Dependency": [
     "RpcServer"
