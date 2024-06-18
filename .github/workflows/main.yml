@@ -115,8 +115,8 @@ jobs:
     - name: Build and run dev container task
       uses: devcontainers/ci@v0.3
       with:
-         # try with dotnet test - this is duplicated but at the end of the CI for now
-         runCmd: dotnet test
+         # try with dotnet build for neo-cli - this is duplicated but running "locally"
+         runCmd: dotnet build ./src/Neo.CLI --output ./out/Neo.CLI 
           
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
