@@ -503,13 +503,33 @@ namespace Neo.Ledger
             {
                 try
                 {
+                    // skip stopped plugin.
+                    if (handler.Target is Plugin { IsStopped: true })
+                    {
+                        return;
+                    }
+
                     handlerAction(handler);
                 }
-                catch (Exception ex) when (handler.Target is Plugin)
+                catch (Exception ex) when (handler.Target is Plugin plugin)
                 {
-                    // Log the exception and continue with the next handler
-                    // Isolate the plugin exception
-                    Utility.Log(nameof(handler.Target), LogLevel.Error, ex);
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case UnhandledExceptionPolicy.StopNode:
+                            exceptions.Add(ex);
+                            throw;
+                        case UnhandledExceptionPolicy.StopPlugin:
+                            //Stop plugin on exception
+                            plugin.IsStopped = true;
+                            break;
+                        case UnhandledExceptionPolicy.Ignore:
+                            // Log the exception and continue with the next handler
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
+                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
                 }
                 catch (Exception ex)
                 {
@@ -521,7 +541,6 @@ namespace Neo.Ledger
 
             exceptions.ForEach(e => throw e);
         }
-
 
         /// <summary>
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.

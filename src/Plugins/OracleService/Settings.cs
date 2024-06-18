@@ -37,7 +37,7 @@ namespace Neo.Plugins.OracleService
         }
     }
 
-    class Settings
+    class Settings : PluginSettings
     {
         public uint Network { get; }
         public Uri[] Nodes { get; }
@@ -51,7 +51,7 @@ namespace Neo.Plugins.OracleService
 
         public static Settings Default { get; private set; }
 
-        private Settings(IConfigurationSection section)
+        private Settings(IConfigurationSection section) : base(section)
         {
             Network = section.GetValue("Network", 5195086u);
             Nodes = section.GetSection("Nodes").GetChildren().Select(p => new Uri(p.Get<string>(), UriKind.Absolute)).ToArray();

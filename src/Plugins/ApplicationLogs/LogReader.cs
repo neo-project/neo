@@ -37,6 +37,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         public override string Name => "ApplicationLogs";
         public override string Description => "Synchronizes smart contract VM executions and notifications (NotifyLog) on blockchain.";
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
 
         #region Ctor
 

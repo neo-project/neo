@@ -40,6 +40,8 @@ namespace Neo.Plugins.StateService
         public override string Description => "Enables MPT for the node";
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "StateService.json");
 
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
+
         internal IActorRef Store;
         internal IActorRef Verifier;
 
