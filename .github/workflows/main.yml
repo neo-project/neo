@@ -113,7 +113,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Build and run dev container task
-      uses: devcontainers/ci@v0.4
+      uses: devcontainers/ci@v0.3
       with:
          # try with dotnet test - this is duplicated but at the end of the CI for now
          runCmd: dotnet test
