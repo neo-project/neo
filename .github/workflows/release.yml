@@ -14,7 +14,7 @@ env:
 
 jobs:
   build-leveldb:
-    name: Build leveldb (windows-latest)
+    name: Build leveldb win-${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -105,34 +105,34 @@ jobs:
     - name: .NET Publish (neo-cli)
       run: |
         dotnet publish ./src/Neo.CLI \
-        --version-suffix ${{ matrix.runtime }} \                    # Append runtime identifier to version
-        --framework net8.0 \                                        # Target .NET 8.0 framework
-        --configuration ${{ env.CONFIGURATION }} \                  # Use Release configuration
-        --runtime ${{ matrix.runtime }} \                           # Specify runtime identifier (e.g., win-x64, linux-arm64)
-        --self-contained true \                                     # Include the .NET runtime with the application
-        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }} \     # Output path for the published application
-        --verbosity normal \                                        # Normal verbosity level
-        -p:VersionPrefix=${{ env.APP_VERSION }} \                   # Set the version prefix to the application version
-        -p:RuntimeIdentifier=${{ matrix.runtime }} \                # Set the runtime identifier property
-        -p:SelfContained=true \                                     # Ensure the application is self-contained
-        -p:IncludeNativeLibrariesForSelfExtract=false \             # Do not include native libraries for self-extraction
-        -p:PublishTrimmed=false \                                   # Do not trim unused code
-        -p:PublishSingleFile=true \                                 # Publish as a single file
-        -p:PublishReadyToRun=true \                                 # Enable ReadyToRun compilation
-        -p:EnableCompressionInSingleFile=true \                     # Enable compression in the single file
-        -p:DebugType=embedded \                                     # Embed debug information
-        -p:ServerGarbageCollection=true                             # Enable server garbage collection
+        --version-suffix ${{ matrix.runtime }} \
+        --framework net8.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --runtime ${{ matrix.runtime }} \
+        --self-contained true \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }} \
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:RuntimeIdentifier=${{ matrix.runtime }} \
+        -p:SelfContained=true \
+        -p:IncludeNativeLibrariesForSelfExtract=false \
+        -p:PublishTrimmed=false \
+        -p:PublishSingleFile=true \
+        -p:PublishReadyToRun=true \
+        -p:EnableCompressionInSingleFile=true \
+        -p:DebugType=embedded \
+        -p:ServerGarbageCollection=true
 
     # Build the LevelDBStore plugin
     - name: .NET Build (LevelDBStore)
       run: |
         dotnet build ./src/Plugins/LevelDBStore \
-        --version-suffix ${{ matrix.runtime }} \                                        # Append runtime identifier to version
-        --framework net8.0 \                                                            # Target .NET 8.0 framework
-        --configuration ${{ env.CONFIGURATION }} \                                      # Use Release configuration
-        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \    # Output path for the built plugin
-        --verbosity normal \                                                            # Normal verbosity level
-        -p:VersionPrefix=${{ env.APP_VERSION }}                                         # Set the version prefix to the application version
+        --version-suffix ${{ matrix.runtime }} \
+        --framework net8.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }}
 
     # Remove unnecessary files from the LevelDBStore plugin output
     - name: Remove files (junk)
