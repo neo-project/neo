@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.MPTTrie;
+using Neo.IEventHandlers;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -33,7 +34,7 @@ using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.StateService
 {
-    public class StatePlugin : Plugin
+    public class StatePlugin : Plugin, ICommittingHandler, ICommittedHandler, IWalletChangedHandler, IServiceAddedHandler
     {
         public const string StatePayloadCategory = "StateService";
         public override string Name => "StateService";
@@ -50,8 +51,8 @@ namespace Neo.Plugins.StateService
 
         public StatePlugin()
         {
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
@@ -64,45 +65,45 @@ namespace Neo.Plugins.StateService
             if (system.Settings.Network != Settings.Default.Network) return;
             _system = system;
             Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"))));
-            _system.ServiceAdded += NeoSystem_ServiceAdded;
+            _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
         }
 
-        private void NeoSystem_ServiceAdded(object sender, object service)
+        void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)
         {
             if (service is IWalletProvider)
             {
                 walletProvider = service as IWalletProvider;
-                _system.ServiceAdded -= NeoSystem_ServiceAdded;
+                _system.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
                 if (Settings.Default.AutoVerify)
                 {
-                    walletProvider.WalletChanged += WalletProvider_WalletChanged;
+                    walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
                 }
             }
         }
 
-        private void WalletProvider_WalletChanged(object sender, Wallet wallet)
+        void IWalletChangedHandler.IWalletProvider_WalletChanged_Handler(object sender, Wallet wallet)
         {
-            walletProvider.WalletChanged -= WalletProvider_WalletChanged;
+            walletProvider.WalletChanged -= ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
             Start(wallet);
         }
 
         public override void Dispose()
         {
             base.Dispose();
-            Blockchain.Committing -= OnCommitting;
-            Blockchain.Committed -= OnCommitted;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Store is not null) _system.EnsureStopped(Store);
             if (Verifier is not null) _system.EnsureStopped(Verifier);
         }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, snapshot.GetChangeSet().Where(p => p.State != TrackState.None).Where(p => p.Key.Id != NativeContract.Ledger.Id).ToList());
         }
 
-        private void OnCommitted(NeoSystem system, Block block)
+        void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
             StateStore.Singleton.UpdateLocalStateRoot(block.Index);

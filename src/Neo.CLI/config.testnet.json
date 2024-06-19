@@ -24,7 +24,7 @@
       "NeoNameService": "0x50ac1c37690cc2cfc594472833cf57505d5f46de"
     },
     "Plugins": {
-      "DownloadUrl": "https://api.github.com/repos/neo-project/neo-modules/releases"
+      "DownloadUrl": "https://api.github.com/repos/neo-project/neo/releases"
     }
   },
   "ProtocolConfiguration": {
@@ -37,7 +37,8 @@
     "Hardforks": {
       "HF_Aspidochelone": 210000,
       "HF_Basilisk": 2680000,
-      "HF_Cockatrice": 3967000
+      "HF_Cockatrice": 3967000,
+      "HF_Domovoi": 4144000
     },
     "InitialGasDistribution": 5200000000000000,
     "ValidatorsCount": 7,

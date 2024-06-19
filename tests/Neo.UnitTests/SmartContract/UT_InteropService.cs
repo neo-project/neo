@@ -71,6 +71,14 @@ namespace Neo.UnitTests.SmartContract
                         }
                     }
                 };
+                contract.Manifest.Permissions = new ContractPermission[]
+                {
+                    new ContractPermission
+                    {
+                        Contract = ContractPermissionDescriptor.Create(scriptHash2),
+                        Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                    }
+                };
                 snapshot.AddContract(scriptHash2, contract);
             }
 
@@ -132,6 +140,14 @@ namespace Neo.UnitTests.SmartContract
                                     Name = "testEvent1",
                                     Parameters = System.Array.Empty<ContractParameterDefinition>()
                                 }
+                            }
+                        },
+                        Permissions = new ContractPermission[]
+                        {
+                            new ContractPermission
+                            {
+                                Contract = ContractPermissionDescriptor.Create(scriptHash2),
+                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
                             }
                         }
                     }
@@ -201,6 +217,14 @@ namespace Neo.UnitTests.SmartContract
                                     Name = "testEvent1",
                                     Parameters = System.Array.Empty<ContractParameterDefinition>()
                                 }
+                            }
+                        },
+                        Permissions = new ContractPermission[]
+                        {
+                            new ContractPermission
+                            {
+                                Contract = ContractPermissionDescriptor.Create(scriptHash2),
+                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
                             }
                         }
                     }
@@ -642,7 +666,7 @@ namespace Neo.UnitTests.SmartContract
             var args = new VM.Types.Array { 0, 1 };
             var state = TestUtils.GetContract(method, args.Count);
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
             engine.LoadScript(new byte[] { 0x01 });
             engine.Snapshot.AddContract(state.Hash, state);
 

@@ -11,15 +11,15 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
+using Neo.IEventHandlers;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Plugins;
 using Neo.Plugins.DBFTPlugin.Consensus;
 using Neo.Wallets;
 
 namespace Neo.Plugins.DBFTPlugin
 {
-    public class DBFTPlugin : Plugin
+    public class DBFTPlugin : Plugin, IServiceAddedHandler, IMessageReceivedHandler, IWalletChangedHandler
     {
         private IWalletProvider walletProvider;
         private IActorRef consensus;
@@ -35,7 +35,7 @@ namespace Neo.Plugins.DBFTPlugin
 
         public DBFTPlugin()
         {
-            RemoteNode.MessageReceived += RemoteNode_MessageReceived;
+            RemoteNode.MessageReceived += ((IMessageReceivedHandler)this).RemoteNode_MessageReceived_Handler;
         }
 
         public DBFTPlugin(Settings settings) : this()
@@ -45,7 +45,7 @@ namespace Neo.Plugins.DBFTPlugin
 
         public override void Dispose()
         {
-            RemoteNode.MessageReceived -= RemoteNode_MessageReceived;
+            RemoteNode.MessageReceived -= ((IMessageReceivedHandler)this).RemoteNode_MessageReceived_Handler;
         }
 
         protected override void Configure()
@@ -57,23 +57,23 @@ namespace Neo.Plugins.DBFTPlugin
         {
             if (system.Settings.Network != settings.Network) return;
             neoSystem = system;
-            neoSystem.ServiceAdded += NeoSystem_ServiceAdded;
+            neoSystem.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
         }
 
-        private void NeoSystem_ServiceAdded(object sender, object service)
+        void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)
         {
             if (service is not IWalletProvider provider) return;
             walletProvider = provider;
-            neoSystem.ServiceAdded -= NeoSystem_ServiceAdded;
+            neoSystem.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
             if (settings.AutoStart)
             {
-                walletProvider.WalletChanged += WalletProvider_WalletChanged;
+                walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
             }
         }
 
-        private void WalletProvider_WalletChanged(object sender, Wallet wallet)
+        void IWalletChangedHandler.IWalletProvider_WalletChanged_Handler(object sender, Wallet wallet)
         {
-            walletProvider.WalletChanged -= WalletProvider_WalletChanged;
+            walletProvider.WalletChanged -= ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
             Start(wallet);
         }
 
@@ -91,7 +91,7 @@ namespace Neo.Plugins.DBFTPlugin
             consensus.Tell(new ConsensusService.Start());
         }
 
-        private bool RemoteNode_MessageReceived(NeoSystem system, Message message)
+        bool IMessageReceivedHandler.RemoteNode_MessageReceived_Handler(NeoSystem system, Message message)
         {
             if (message.Command == MessageCommand.Transaction)
             {

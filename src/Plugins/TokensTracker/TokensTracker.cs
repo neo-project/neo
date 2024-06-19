@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Neo.IEventHandlers;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -22,7 +23,7 @@ using static System.IO.Path;
 
 namespace Neo.Plugins
 {
-    public class TokensTracker : Plugin
+    public class TokensTracker : Plugin, ICommittingHandler, ICommittedHandler
     {
         private string _dbPath;
         private bool _shouldTrackHistory;
@@ -41,14 +42,14 @@ namespace Neo.Plugins
 
         public TokensTracker()
         {
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         public override void Dispose()
         {
-            Blockchain.Committing -= OnCommitting;
-            Blockchain.Committed -= OnCommitted;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
@@ -88,7 +89,7 @@ namespace Neo.Plugins
             }
         }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != _network) return;
             // Start freshly with a new DBCache for each block.
@@ -99,7 +100,7 @@ namespace Neo.Plugins
             }
         }
 
-        private void OnCommitted(NeoSystem system, Block block)
+        void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
             if (system.Settings.Network != _network) return;
             foreach (var tracker in trackers)

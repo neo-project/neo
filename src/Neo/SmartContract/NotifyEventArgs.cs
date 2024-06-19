@@ -66,11 +66,31 @@ namespace Neo.SmartContract
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State
+                };
+        }
+
+        public StackItem ToStackItem(ReferenceCounter referenceCounter, ApplicationEngine engine)
+        {
+            if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {
-                ScriptHash.ToArray(),
-                EventName,
-                State
-            };
+                return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State.OnStack ? State : State.DeepCopy(true)
+                };
+            }
+
+            return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State
+                };
         }
     }
 }
