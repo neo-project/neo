@@ -58,9 +58,7 @@ namespace Neo.Plugins.RpcServer
             }
             else
             {
-                // TODO: check for the format of the parameter
-                // FormatException => RpcError.InvalidParams
-                UInt256 hash = UInt256.Parse(key.AsString());
+                UInt256 hash = Result.Ok_Or(() => UInt256.Parse(key.AsString()), RpcError.InvalidParams.WithData($"Invalid block hash {_params[0]}"));
                 block = NativeContract.Ledger.GetBlock(snapshot, hash);
             }
             block.NotNull_Or(RpcError.UnknownBlock);
@@ -137,9 +135,7 @@ namespace Neo.Plugins.RpcServer
             }
             else
             {
-                // TODO: check for the format of the parameter
-                // UInt256.Parse FormatException => RpcError.InvalidParams
-                UInt256 hash = UInt256.Parse(key.AsString());
+                UInt256 hash = Result.Ok_Or(() => UInt256.Parse(key.AsString()), RpcError.InvalidParams.WithData($"Invalid block hash {_params[0]}"));
                 header = NativeContract.Ledger.GetHeader(snapshot, hash).NotNull_Or(RpcError.UnknownBlock);
             }
             if (verbose)
@@ -169,9 +165,7 @@ namespace Neo.Plugins.RpcServer
                 return contractState.NotNull_Or(RpcError.UnknownContract).ToJson();
             }
 
-            // TODO: need check the format of the parameter
-            // FormatException from ToScriptHash => RpcError.InvalidParams
-            var scriptHash = ToScriptHash(_params[0].AsString());
+            var scriptHash = Result.Ok_Or(() => ToScriptHash(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid contract hash {_params[0]}"));
             var contract = NativeContract.ContractManagement.GetContract(system.StoreView, scriptHash);
             return contract.NotNull_Or(RpcError.UnknownContract).ToJson();
         }
@@ -254,9 +248,7 @@ namespace Neo.Plugins.RpcServer
             using var snapshot = system.GetSnapshot();
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
-                // TODO: check for the format of the parameter
-                //  UInt160.Parse FormatException => RpcError.InvalidParams
-                UInt160 hash = UInt160.Parse(_params[0].AsString());
+                UInt160 hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid contract hash {_params[0]}"));
                 ContractState contract = NativeContract.ContractManagement.GetContract(snapshot, hash).NotNull_Or(RpcError.UnknownContract);
                 id = contract.Id;
             }
@@ -284,14 +276,12 @@ namespace Neo.Plugins.RpcServer
             using var snapshot = system.GetSnapshot();
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
-                // TODO: check for the format of the parameter
-                // FormatException => RpcError.InvalidParams
-                UInt160 hash = UInt160.Parse(_params[0].AsString());
+                UInt160 hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid contract hash {_params[0]}"));
                 ContractState contract = NativeContract.ContractManagement.GetContract(snapshot, hash).NotNull_Or(RpcError.UnknownContract);
                 id = contract.Id;
             }
 
-            byte[] prefix = Convert.FromBase64String(_params[1].AsString());
+            byte[] prefix = Result.Ok_Or(() => Convert.FromBase64String(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid Base64 string{_params[1]}"));
             byte[] prefix_key = StorageKey.CreateSearchPrefix(id, prefix);
 
             if (!int.TryParse(_params[2].AsString(), out int start))
