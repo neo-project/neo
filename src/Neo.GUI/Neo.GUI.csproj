@@ -12,6 +12,7 @@
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
     <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>

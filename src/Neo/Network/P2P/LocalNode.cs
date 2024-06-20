@@ -78,7 +78,7 @@ namespace Neo.Network.P2P
         {
             Random rand = new();
             Nonce = (uint)rand.Next();
-            UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetVersion()}/";
+            UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)}/";
         }
 
         /// <summary>
