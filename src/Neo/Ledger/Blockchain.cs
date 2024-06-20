@@ -526,7 +526,7 @@ namespace Neo.Ledger
                             // Log the exception and continue with the next handler
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException();
+                            throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
                     }
 
                     Utility.Log(nameof(plugin), LogLevel.Error, ex);

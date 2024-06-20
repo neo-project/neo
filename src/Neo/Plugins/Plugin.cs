@@ -267,7 +267,7 @@ namespace Neo.Plugins
                             case UnhandledExceptionPolicy.Ignore:
                                 break;
                             default:
-                                throw new ArgumentOutOfRangeException();
+                                throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
                         }
                         Utility.Log(nameof(Plugin), LogLevel.Error, ex);
                         return false;
