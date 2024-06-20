@@ -7,6 +7,7 @@
     <AssemblyName>neo-cmd</AssemblyName>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
