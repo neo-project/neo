@@ -72,7 +72,7 @@ jobs:
     - name: OSX Tests
       if: matrix.os == 'macos-latest'
       run: |
-       brew install leveldb
+       dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
        dotnet test
 
     - name: Test for coverall
