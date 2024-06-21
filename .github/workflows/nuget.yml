@@ -19,8 +19,6 @@ jobs:
       run: |
         APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
         echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-        mkdir -p ./bin/runtimes/win-arm64/native
-        mkdir -p ./bin/runtimes/win-x64/native
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -33,18 +31,22 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: LevelDb (win-x64)
-      working-directory: ./bin/runtimes/win-x64/native
       run: |
-        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-x64.zip -O
+        mkdir -vp ./bin/runtimes/win-x64/native
+        mkdir -vp ./bin/runtimes/win-arm64/native
+        cd ./bin/runtimes/win-x64/native
+        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-x64.zip
         unzip libleveldb-win-x64.zip
         mv -v ./libleveldb-win-x64/libleveldb.dll .
+        ls -la
 
     - name: LevelDb (win-arm64)
-      working-directory: ./bin/runtimes/win-arm64/native
       run: |
-        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-arm64.zip -O
+        cd ./bin/runtimes/win-arm64/native
+        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-arm64.zip
         unzip libleveldb-win-arm64.zip
         mv -v ./libleveldb-win-arm64/libleveldb.dll .
+        ls -la
 
     - name: Pack NuGet Packages
       run: |
