@@ -33,6 +33,7 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -375,8 +376,43 @@ namespace Neo.CLI
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
+            try
+            {
+                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
+                    string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            }
+            catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    if (File.Exists("libleveldb.dll"))
+                    {
+                        DisplayError("Dependency DLL not found, please install Microsoft Visual C++ Redistributable.",
+                            "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
+                    }
+                    else
+                    {
+                        DisplayError("DLL not found, please get libleveldb.dll.");
+                    }
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
+                        "brew install leveldb");
+                }
+                else
+                {
+                    DisplayError("Neo CLI is broken, please reinstall it.",
+                        "From https://github.com/neo-project/neo/releases");
+                }
 
-            NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            }
+            catch (DllNotFoundException)
+            {
+                DisplayError("Neo CLI is broken, please reinstall it.",
+                    "From https://github.com/neo-project/neo/releases");
+            }
+
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
@@ -451,6 +487,15 @@ namespace Neo.CLI
             }
 
             return;
+
+            void DisplayError(string primaryMessage, string? secondaryMessage = null)
+            {
+                ConsoleHelper.Error(primaryMessage + Environment.NewLine +
+                                    (secondaryMessage != null ? secondaryMessage + Environment.NewLine : "") +
+                                    "Press any key to exit.");
+                Console.ReadKey();
+                Environment.Exit(-1);
+            }
         }
 
         public void Stop()
