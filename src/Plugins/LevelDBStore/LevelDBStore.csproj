@@ -9,18 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="runtimes\linux-arm64\native\libleveldb.so" Pack="true" PackagePath="runtimes/linux-amd64/native/libleveldb.so">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="runtimes\linux-x64\native\libleveldb.so" Pack="true" PackagePath="runtimes/linux-x64/native/libleveldb.so">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="runtimes\osx-arm64\native\libleveldb.dylib" Pack="true" PackagePath="runtimes/osx-arm64/native/libleveldb.dylib">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="runtimes\osx-x64\native\libleveldb.dylib" Pack="true" PackagePath="runtimes/osx-x64/native/libleveldb.dylib">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="runtimes\win-arm64\native\leveldb.dll" Pack="true" PackagePath="runtimes/win-arm64/native/leveldb.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
