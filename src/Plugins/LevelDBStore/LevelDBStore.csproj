@@ -9,11 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="runtimes/win-arm64/native/leveldb.dll" Pack="true" PackagePath="runtimes/win-arm64/native/leveldb.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="runtimes/win-x64/native/leveldb.dll" Pack="true" PackagePath="runtimes/win-x64/native/leveldb.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Include="$(SolutionDir)bin/runtimes/win-arm64/native/leveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-arm64/native/leveldb.dll" />
+    <None Include="$(SolutionDir)bin/runtimes/win-x64/native/leveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-x64/native/leveldb.dll" />
   </ItemGroup>
 </Project>
