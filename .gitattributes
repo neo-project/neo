@@ -49,9 +49,6 @@
 *.gif binary
 *.ico binary
 *.zip binary
-*.dll binary
-*.so binary
-*.dylib binary
 
 ###############################################################################
 # diff behavior for common document formats
