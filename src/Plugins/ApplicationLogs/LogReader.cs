@@ -273,8 +273,9 @@ namespace Neo.Plugins.ApplicationLogs
                     ConsoleHelper.Info("  ScriptHash: ", $"{notifyItem.ScriptHash}");
                     ConsoleHelper.Info("  Event Name: ", $"{notifyItem.EventName}");
                     ConsoleHelper.Info("  State Parameters:");
-                    for (int i = 0; i < notifyItem.State.Length; i++)
-                        ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, i)}: ", $"{notifyItem.State[i].ToJson()}");
+                    var ncount = (uint)notifyItem.State.Length;
+                    for (var i = 0; i < ncount; i++)
+                        ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, ncount, i)}: ", $"{notifyItem.State[i].ToJson()}");
                 }
             }
             if (Settings.Default.Debug)
@@ -302,18 +303,21 @@ namespace Neo.Plugins.ApplicationLogs
                 ConsoleHelper.Info();
                 ConsoleHelper.Info("  Event Name:  ", $"{notifyItem.EventName}");
                 ConsoleHelper.Info("  State Parameters:");
-                for (int i = 0; i < notifyItem.State.Length; i++)
-                    ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, i)}: ", $"{notifyItem.State[i].ToJson()}");
+                var ncount = (uint)notifyItem.State.Length;
+                for (var i = 0; i < ncount; i++)
+                    ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, ncount, i)}: ", $"{notifyItem.State[i].ToJson()}");
                 ConsoleHelper.Info("--------------------------------");
             }
         }
 
-        private string GetMethodParameterName(UInt160 scriptHash, string methodName, int parameterIndex)
+        private string GetMethodParameterName(UInt160 scriptHash, string methodName, uint ncount, int parameterIndex)
         {
             var contract = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scriptHash);
             if (contract == null)
                 return $"{parameterIndex}";
-            var contractEvent = contract.Manifest.Abi.Events.SingleOrDefault(s => s.Name == methodName);
+            var contractEvent = contract.Manifest.Abi.Events.SingleOrDefault(s => s.Name == methodName && (uint)s.Parameters.Length == ncount);
+            if (contractEvent == null)
+                return $"{parameterIndex}";
             return contractEvent.Parameters[parameterIndex].Name;
         }
 
