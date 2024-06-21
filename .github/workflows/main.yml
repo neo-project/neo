@@ -67,7 +67,7 @@ jobs:
     - name: Test
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet test
+        dotnet test --blame-crash
 
     - name: OSX Tests
       if: matrix.os == 'macos-latest'
