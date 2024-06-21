@@ -33,7 +33,8 @@ namespace Neo.Plugins
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
-        public static readonly string PluginsDirectory = Combine(GetDirectoryName(System.AppContext.BaseDirectory), "Plugins");
+        public static readonly string PluginsDirectory =
+            Combine(GetDirectoryName(System.AppContext.BaseDirectory), "Plugins");
 
         private static readonly FileSystemWatcher configWatcher;
 
@@ -67,6 +68,18 @@ namespace Neo.Plugins
         /// </summary>
         public virtual Version Version => GetType().Assembly.GetName().Version;
 
+        /// <summary>
+        /// If the plugin should be stopped when an exception is thrown.
+        /// Default is <see langword="true"/>.
+        /// </summary>
+        protected internal virtual UnhandledExceptionPolicy ExceptionPolicy { get; init; } = UnhandledExceptionPolicy.StopNode;
+
+        /// <summary>
+        /// The plugin will be stopped if an exception is thrown.
+        /// But it also depends on <see cref="UnhandledExceptionPolicy"/>.
+        /// </summary>
+        internal bool IsStopped { get; set; }
+
         static Plugin()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
@@ -74,7 +87,8 @@ namespace Neo.Plugins
             {
                 EnableRaisingEvents = true,
                 IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime |
+                               NotifyFilters.LastWrite | NotifyFilters.Size,
             };
             configWatcher.Changed += ConfigWatcher_Changed;
             configWatcher.Created += ConfigWatcher_Changed;
@@ -106,7 +120,8 @@ namespace Neo.Plugins
             {
                 case ".json":
                 case ".dll":
-                    Utility.Log(nameof(Plugin), LogLevel.Warning, $"File {e.Name} is {e.ChangeType}, please restart node.");
+                    Utility.Log(nameof(Plugin), LogLevel.Warning,
+                        $"File {e.Name} is {e.ChangeType}, please restart node.");
                     break;
             }
         }
@@ -119,7 +134,8 @@ namespace Neo.Plugins
             AssemblyName an = new(args.Name);
 
             Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
-                                AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
+                                AppDomain.CurrentDomain.GetAssemblies()
+                                    .FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
             string filename = an.Name + ".dll";
@@ -150,7 +166,8 @@ namespace Neo.Plugins
         /// <returns>The content of the configuration file read.</returns>
         protected IConfigurationSection GetConfiguration()
         {
-            return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
+            return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build()
+                .GetSection("PluginConfiguration");
         }
 
         private static void LoadPlugin(Assembly assembly)
@@ -187,6 +204,7 @@ namespace Neo.Plugins
                     catch { }
                 }
             }
+
             foreach (Assembly assembly in assemblies)
             {
                 LoadPlugin(assembly);
@@ -229,7 +247,33 @@ namespace Neo.Plugins
         /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
         public static bool SendMessage(object message)
         {
-            return Plugins.Any(plugin => plugin.OnMessage(message));
+
+            return Plugins.Any(plugin =>
+                {
+                    try
+                    {
+                        return !plugin.IsStopped &&
+                               plugin.OnMessage(message);
+                    }
+                    catch (Exception ex)
+                    {
+                        switch (plugin.ExceptionPolicy)
+                        {
+                            case UnhandledExceptionPolicy.StopNode:
+                                throw;
+                            case UnhandledExceptionPolicy.StopPlugin:
+                                plugin.IsStopped = true;
+                                break;
+                            case UnhandledExceptionPolicy.Ignore:
+                                break;
+                            default:
+                                throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
+                        }
+                        Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                        return false;
+                    }
+                }
+            );
         }
     }
 }

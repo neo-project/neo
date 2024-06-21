@@ -16,6 +16,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
 using Neo.Plugins.Trackers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using static System.IO.Path;
@@ -30,8 +31,10 @@ namespace Neo.Plugins
         private uint _network;
         private string[] _enabledTrackers;
         private IStore _db;
+        private UnhandledExceptionPolicy _exceptionPolicy;
         private NeoSystem neoSystem;
         private readonly List<TrackerBase> trackers = new();
+        protected override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
 
         public override string Description => "Enquiries balances and transaction history of accounts through RPC";
 
@@ -57,6 +60,11 @@ namespace Neo.Plugins
             _maxResults = config.GetValue("MaxResults", 1000u);
             _network = config.GetValue("Network", 860833102u);
             _enabledTrackers = config.GetSection("EnabledTrackers").GetChildren().Select(p => p.Value).ToArray();
+            var policyString = config.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
+            if (Enum.TryParse(policyString, out UnhandledExceptionPolicy policy))
+            {
+                _exceptionPolicy = policy;
+            }
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
