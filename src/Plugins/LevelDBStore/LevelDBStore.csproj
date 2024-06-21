@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(SolutionDir)bin/runtimes/win-arm64/native/leveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-arm64/native/leveldb.dll" />
-    <None Include="$(SolutionDir)bin/runtimes/win-x64/native/leveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-x64/native/leveldb.dll" />
+    <None Include="$(SolutionDir)bin/runtimes/win-arm64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-arm64/native/leveldb.dll" />
+    <None Include="$(SolutionDir)bin/runtimes/win-x64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-x64/native/leveldb.dll" />
   </ItemGroup>
 </Project>
