@@ -12,6 +12,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Test
 {
@@ -239,6 +241,41 @@ namespace Neo.Test
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
+        }
+
+        [TestMethod]
+        public void TestNegativeReferenceCounter()
+        {
+            var referenceCounter = new ReferenceCounter();
+            var array = new Array(referenceCounter) { OnStack = true };
+            referenceCounter.AddStackReference(array);
+            for (var i = 0; i < 100; i++)
+            {
+                var item = new Integer(i) { OnStack = true };
+                array.Add(item);
+            }
+
+            Assert.AreEqual(101, referenceCounter.Count);
+            referenceCounter.CheckZeroReferred();
+            Assert.AreEqual(101, referenceCounter.Count);
+            var copyArray = array.DeepCopy(true);
+            Assert.AreEqual(201, referenceCounter.Count);
+            referenceCounter.CheckZeroReferred(); // Deepcopied value will be removed from the reference counter.
+            Assert.AreEqual(201, referenceCounter.Count);
+            // If we add the deepcopied value again, the reference counter will increase by only 1.
+            referenceCounter.AddStackReference(copyArray);
+            Assert.AreEqual(202, referenceCounter.Count);
+            referenceCounter.RemoveStackReference(copyArray);
+            // Removing the deepcopied value will decrease the reference counter by 101.
+            referenceCounter.CheckZeroReferred();
+            Assert.AreEqual(201, referenceCounter.Count);
+
+            // Bellow will trigger the negative reference counter exception
+            referenceCounter.AddStackReference(copyArray);
+            Assert.AreEqual(202, referenceCounter.Count);
+            referenceCounter.RemoveStackReference(copyArray);
+            referenceCounter.CheckZeroReferred();
+            Assert.AreEqual(201, referenceCounter.Count);
         }
     }
 }
