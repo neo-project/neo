@@ -183,10 +183,12 @@ jobs:
       run: tar -czvf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz .
 
     # Create a tarball file for macOS distributions
-    - name: Create Tarball File (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz .
+    - name: Cache Distribution
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/*
+        key: leveldb-${{ matrix.os }}-${{ matrix.arch }}
+        enableCrossOsArchive: true
 
     # Create a zip file for Windows distributions
     - name: Create Zip File (win)
@@ -202,15 +204,6 @@ jobs:
         FILENAME: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}
       run: |
           sha256sum ${{ env.FILENAME }}.tar.gz > ${{ env.FILENAME }}.sha256
-
-    # Create checksum files for macOS distributions
-    - name: Create Checksum Files (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
-      working-directory: ${{ env.DIST_PATH }}
-      env:
-        FILENAME: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}
-      run: |
-          sha256sum ${{ env.FILENAME }}.tar.xz > ${{ env.FILENAME }}.sha256
 
     # Create checksum files for Windows distributions
     - name: Create Checksum Files (win)
@@ -239,18 +232,6 @@ jobs:
           asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz
           asset_content_type: application/x-gtar
 
-    # Upload tarball files for macOS distributions
-    - name: Upload Tarball File (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
-      uses: actions/upload-release-asset@latest
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
-          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
-          asset_content_type: application/x-gtar
-
     # Upload zip files for Windows distributions
     - name: Upload Zip File (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
@@ -274,9 +255,75 @@ jobs:
           asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
           asset_content_type: text/plain
 
+  code-sign:
+    needs: [build-neo-cli]
+    name: CodeSign & Publish (neo-cli) ${{ matrix.arch }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+
+    steps:
+    # Step to set the application version from the release tag
+    - name: Set Application Version (Environment Variable)
+      run: |
+        APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+    - name: Get Distribution Caches (win-${{ matrix.arch}})
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}/*
+        key: neo-macos-latest-${{ matrix.arch }}
+        enableCrossOsArchive: true
+        fail-on-cache-miss: true
+
+    - name: Sign (neo-cli)
+      working-directory: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}
+      run: codesign --force --deep -s - neo-cli
+
+    # Create a tarball file for macOS distributions
+    - name: Create Tarball File (osx)
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
+      working-directory: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.tar.xz .
+
+    # Create checksum files for macOS distributions
+    - name: Create Checksum Files (osx)
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
+      working-directory: ${{ env.DIST_PATH }}
+      env:
+        FILENAME: neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}
+      run: |
+          sha256sum ${{ env.FILENAME }}.tar.xz > ${{ env.FILENAME }}.sha256
+
+    # Upload tarball files for macOS distributions
+    - name: Upload Tarball File (osx)
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
+          asset_content_type: application/x-gtar
+
+      # Upload checksum files for all distributions
+    - name: Upload Checksum File (all)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
+          asset_content_type: text/plain
+
   cleanup:
     needs: [build-neo-cli]
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       # Cleanup step to delete old caches
       - name: Cleanup
@@ -291,7 +338,7 @@ jobs:
           echo "Deleting caches..."
           for cacheKey in $cacheKeysForPR
           do
-              if [ "$cacheKey" != "leveldb-windows-x64" ] && [ "$cacheKey" != "leveldb-windows-arm64" ]
+              if [ "$cacheKey" != "leveldb-windows-latest-x64" ] && [ "$cacheKey" != "leveldb-windows-latest-arm64" ]
               then
                 gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
               fi
