@@ -52,13 +52,13 @@ jobs:
       run: |
         dotnet pack ./neo.sln \
         --configuration Release \
-        --output ./bin \
+        --output ./bin/nuget \
         --verbosity normal \
         -p:VersionPrefix=${{ env.APP_VERSION }}
 
     - name: Publish to NuGet.org
       run: |
-        dotnet nuget push ./bin/*.nupkg \
+        dotnet nuget push ./bin/nuget/*.nupkg \
         --source https://api.nuget.org/v3/index.json \
         --api-key ${{ secrets.NUGET_TOKEN }} \
         --skip-duplicate
