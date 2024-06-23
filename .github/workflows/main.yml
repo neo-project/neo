@@ -65,12 +65,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Test
-      if: matrix.os == 'windows-latest'
-      run: |
-        dotnet test --blame-crash
-
-    - name: OSX Tests
-      if: matrix.os == 'macos-latest'
+      if: matrix.os != 'ubuntu-latest'
       run: |
        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
        dotnet test

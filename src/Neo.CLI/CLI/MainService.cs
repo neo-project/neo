@@ -392,18 +392,19 @@ namespace Neo.CLI
                     }
                     else
                     {
-                        DisplayError("DLL not found, please get libleveldb.dll.");
+                        DisplayError("DLL not found, please get libleveldb.dll.",
+                            "See https://github.com/neo-ngd/leveldb/releases");
                     }
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
-                        "brew install leveldb");
+                        "brew install leveldb or See https://github.com/neo-ngd/leveldb/releases");
                 }
                 else
                 {
                     DisplayError("Neo CLI is broken, please reinstall it.",
-                        "From https://github.com/neo-project/neo/releases");
+                        "See https://github.com/neo-ngd/leveldb/releases");
                 }
 
             }
