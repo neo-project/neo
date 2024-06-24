@@ -28,8 +28,6 @@ jobs:
         imageName: ghcr.io/${{ github.repository_owner }}/neo-cli
         imageTag: dev
         runCmd: |
-          sudo apt-get update
-          sudo apt-get install -y screen
           dotnet publish ./src/Neo.CLI \
             --framework ${{ env.DOTNET_FRAMEWORK }} \
             --configuration Release \
