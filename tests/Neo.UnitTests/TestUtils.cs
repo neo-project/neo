@@ -24,6 +24,7 @@ using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -136,15 +137,14 @@ namespace Neo.UnitTests
 
         public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
         {
-            var tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
-                {
-                    new TransferOutput()
+            var tx = wallet.MakeTransaction(snapshot, [
+                    new TransferOutput
                     {
                         AssetId = NativeContract.GAS.Hash,
                         ScriptHash = account,
-                        Value = new BigDecimal(BigInteger.One,8)
+                        Value = new BigDecimal(BigInteger.One, 8)
                     }
-                },
+                ],
                 account);
 
             tx.Nonce = nonce;
@@ -159,6 +159,28 @@ namespace Neo.UnitTests
             return tx;
         }
 
+        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce, UInt256[] conflicts)
+        {
+            var tx = wallet.MakeTransaction(snapshot, [
+                    new TransferOutput
+                    {
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = account,
+                        Value = new BigDecimal(BigInteger.One, 8)
+                    }
+                ],
+                account);
+            tx.Attributes = conflicts.Select(conflict => new Conflicts { Hash = conflict }).ToArray();
+            tx.Nonce = nonce;
+
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
+            Assert.IsNull(data.GetSignatures(tx.Sender));
+            Assert.IsTrue(wallet.Sign(data));
+            Assert.IsTrue(data.Completed);
+            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
+            tx.Witnesses = data.GetWitnesses();
+            return tx;
+        }
 
         public static Transaction GetTransaction(UInt160 sender)
         {
@@ -264,6 +286,16 @@ namespace Neo.UnitTests
                     }
                 }
             };
+        }
+
+        public static void FillMemoryPool(NeoSystem system, NEP6Wallet wallet, WalletAccount account)
+        {
+            var snapshot = system.GetSnapshot();
+            for (int i = 0; i < system.Settings.MemoryPoolMaxTransactions; i++)
+            {
+                var tx = CreateValidTx(snapshot, wallet, account);
+                system.MemPool.TryAdd(tx, snapshot);
+            }
         }
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable

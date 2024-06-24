@@ -11,6 +11,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -31,16 +32,16 @@ namespace Neo.Plugins.RpcServer.Tests
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
+        private MemoryPool _memoryPool;
 
         [TestInitialize]
         public void TestSetup()
         {
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
-            var protocolSettings = TestProtocolSettings.Default;
-            _neoSystem = new NeoSystem(protocolSettings, _memoryStoreProvider);
+            _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
             _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default);
-            _walletAccount = _wallet.CreateAccount();
+            _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var snapshot = _neoSystem.GetSnapshot();
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
@@ -51,6 +52,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestCleanup]
         public void TestCleanup()
         {
+            _neoSystem.MemPool.Clear();
             _memoryStore.Reset();
             var snapshot = _neoSystem.GetSnapshot();
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);

@@ -61,5 +61,31 @@ namespace Neo.UnitTests
             InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
             Hardforks = ProtocolSettings.Default.Hardforks
         };
+
+        public static readonly ProtocolSettings SoleNode = new()
+        {
+            Network = 0x334F454Eu,
+            AddressVersion = ProtocolSettings.Default.AddressVersion,
+            StandbyCommittee =
+            [
+                //Validators
+                ECPoint.Parse("0278ed78c917797b637a7ed6e7a9d94e8c408444c41ee4c0a0f310a256b9271eda", ECCurve.Secp256r1)
+            ],
+            ValidatorsCount = 1,
+            SeedList =
+            [
+                "seed1.neo.org:10333",
+                "seed2.neo.org:10333",
+                "seed3.neo.org:10333",
+                "seed4.neo.org:10333",
+                "seed5.neo.org:10333"
+            ],
+            MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
+            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
+            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
+            MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
+            InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
+            Hardforks = ProtocolSettings.Default.Hardforks
+        };
     }
 }
