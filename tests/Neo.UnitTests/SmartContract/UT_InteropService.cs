@@ -775,5 +775,87 @@ namespace Neo.UnitTests.SmartContract
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
+
+        [TestMethod]
+        public void TestVerifyWithECDsaV0()
+        {
+            var privateKey = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(privateKey);
+            var publicKeyR1 = new KeyPair(privateKey).PublicKey.ToArray();
+            var publicKeyK1 = (Neo.Cryptography.ECC.ECCurve.Secp256k1.G * privateKey).ToArray();
+            var hexMessage = "Hello, world!"u8.ToArray();
+            var signatureR1 = Crypto.Sign(hexMessage, privateKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
+            var signatureK1 = Crypto.Sign(hexMessage, privateKey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
+
+            var result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
+            result.Should().BeTrue();
+            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
+            result.Should().BeTrue();
+            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[0], NamedCurveHash.secp256k1SHA256);
+            result.Should().BeFalse();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
+        }
+
+        [TestMethod]
+        public void TestSha256()
+        {
+            var input = "Hello, world!"u8.ToArray();
+            var actualHash = CryptoLib.Sha256(input);
+            var expectedHash = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3";
+            actualHash.ToHexString().Should().Be(expectedHash);
+        }
+
+        [TestMethod]
+        public void TestRIPEMD160()
+        {
+            var input = "Hello, world!"u8.ToArray();
+            var actualHash = CryptoLib.RIPEMD160(input);
+            var expectedHash = "58262d1fbdbe4530d8865d3518c6d6e41002610f";
+            actualHash.ToHexString().Should().Be(expectedHash);
+        }
+
+        [TestMethod]
+        public void TestMurmur32()
+        {
+            var input = "Hello, world!"u8.ToArray();
+            var actualHash = CryptoLib.Murmur32(input, 0);
+            var expectedHash = "433e36c0";
+            actualHash.ToHexString().Should().Be(expectedHash);
+        }
+
+        [TestMethod]
+        public void TestGetBlockHash()
+        {
+            var snapshot = GetEngine(true, true).Snapshot;
+            var hash = LedgerContract.Ledger.GetBlockHash(snapshot, 0);
+            var hash2 = LedgerContract.Ledger.GetBlock(snapshot, 0).Hash;
+            var hash3 = LedgerContract.Ledger.GetHeader(snapshot, 0).Hash;
+            hash.ToString().Should().Be(hash2.ToString());
+            hash.ToString().Should().Be(hash3.ToString());
+            hash.ToString().Should().Be("0x1f4d1defa46faa5e7b9b8d3f79a06bec777d7c26c4aa5f6f5899a291daa87c15");
+            LedgerContract.Ledger.ContainsBlock(snapshot, hash).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestGetCandidateVote()
+        {
+            var snapshot = GetEngine(true, true).Snapshot;
+            var vote = LedgerContract.NEO.GetCandidateVote(snapshot, new ECPoint());
+            vote.Should().Be(-1);
+        }
+
+        [TestMethod]
+        public void TestContractPermissionDescriptorEquals()
+        {
+            var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
+            descriptor1.Equals(null).Should().BeFalse();
+            var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+            descriptor1.Equals(descriptor2).Should().BeFalse();
+            var descriptor3 = ContractPermissionDescriptor.Create(hash: null);
+            descriptor1.Equals(descriptor3).Should().BeTrue();
+            var descriptor4 = ContractPermissionDescriptor.Create(group: null);
+            descriptor1.Equals(descriptor4).Should().BeTrue();
+        }
     }
 }
