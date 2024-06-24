@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.TestKit.Xunit2;
+using Akka.Util.Internal;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
@@ -505,6 +506,41 @@ namespace Neo.UnitTests.SmartContract
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Hash.Should().Be(state.Hash);
+        }
+
+        [TestMethod]
+        public void TestBlockchain_GetContractById()
+        {
+            var engine = GetEngine(true, true);
+            var contract = NativeContract.ContractManagement.GetContractById(engine.Snapshot, -1);
+            contract.Id.Should().Be(-1);
+            contract.Manifest.Name.Should().Be(nameof(ContractManagement));
+        }
+
+        [TestMethod]
+        public void TestBlockchain_HasMethod()
+        {
+            var engine = GetEngine(true, true);
+            NativeContract.ContractManagement.HasMethod(engine.Snapshot, NativeContract.NEO.Hash, "symbol", 0).Should().Be(true);
+            NativeContract.ContractManagement.HasMethod(engine.Snapshot, NativeContract.NEO.Hash, "transfer", 4).Should().Be(true);
+        }
+
+        [TestMethod]
+        public void TestBlockchain_ListContracts()
+        {
+            var engine = GetEngine(true, true);
+            var list = NativeContract.ContractManagement.ListContracts(engine.Snapshot);
+            list.ForEach(p => p.Id.Should().BeLessThan(0));
+
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            var state = TestUtils.GetContract();
+            snapshot.AddContract(state.Hash, state);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            engine.LoadScript(new byte[] { 0x01 });
+            NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Hash.Should().Be(state.Hash);
+
+            var list2 = NativeContract.ContractManagement.ListContracts(engine.Snapshot);
+            list2.Count().Should().Be(list.Count() + 1);
         }
 
         [TestMethod]
