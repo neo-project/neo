@@ -6,7 +6,7 @@
     // Path is relative to the devcontainer.json file.
     "dockerfile": "devcontainer.dockerfile"
   },
-  "postCreateCommand": "dotnet workload update",
+  "postCreateCommand": "sudo dotnet workload update",
   "customizations": {
     "vscode": {
       "extensions": [
