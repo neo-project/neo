@@ -80,7 +80,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
             }
-            if (hardfork == Hardfork.HF_Domovoi)
+            if (hardfork == Hardfork.HF_Echidna)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_AttributeFee).Add((byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
             }
@@ -121,24 +121,24 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute before Domovoi hardfork.
+        /// Gets the fee for attribute before Echidna hardfork.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
         public uint GetAttributeFeeV0(DataCache snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, false);
         }
 
         /// <summary>
-        /// Gets the fee for attribute after Domovoi hardfork.
+        /// Gets the fee for attribute after Echidna hardfork.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetAttributeFee(DataCache snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, true);
@@ -175,26 +175,26 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Sets the fee for attribute before Domovoi hardfork.
+        /// Sets the fee for attribute before Echidna hardfork.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
         private void SetAttributeFeeV0(ApplicationEngine engine, byte attributeType, uint value)
         {
             SetAttributeFee(engine, attributeType, value, false);
         }
 
         /// <summary>
-        /// Sets the fee for attribute after Domovoi hardfork.
+        /// Sets the fee for attribute after Echidna hardfork.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Domovoi, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
         private void SetAttributeFeeV1(ApplicationEngine engine, byte attributeType, uint value)
         {
             SetAttributeFee(engine, attributeType, value, true);

@@ -371,9 +371,9 @@ namespace Neo.Network.P2P.Payloads
             long attributesFee = 0;
             foreach (TransactionAttribute attribute in Attributes)
             {
-                if (!attribute.Verify(snapshot, this))
+                if (attribute.Type == TransactionAttributeType.NotaryAssisted && !settings.IsHardforkEnabled(Hardfork.HF_Echidna, height))
                     return VerifyResult.InvalidAttribute;
-                if (attribute.Type == TransactionAttributeType.NotaryAssisted && !settings.IsHardforkEnabled(Hardfork.HF_Domovoi, height))
+                if (!attribute.Verify(snapshot, this))
                     return VerifyResult.InvalidAttribute;
                 attributesFee += attribute.CalculateNetworkFee(snapshot, this);
             }
