@@ -73,7 +73,7 @@ jobs:
     - name: Test (OSX)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install leveldb
+        sudo port install leveldb
         dotnet test
 
     - name: Test for coverall
