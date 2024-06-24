@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.IEventHandlers;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -19,7 +20,7 @@ using Neo.SmartContract.Native;
 
 namespace Neo.Plugins.StorageDumper
 {
-    public class StorageDumper : Plugin
+    public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
         private readonly Dictionary<uint, NeoSystem> systems = new Dictionary<uint, NeoSystem>();
 
@@ -29,7 +30,7 @@ namespace Neo.Plugins.StorageDumper
         /// </summary>
         private JObject? _currentBlock;
         private string? _lastCreateDirectory;
-
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
         public override string Description => "Exports Neo-CLI status data";
 
@@ -37,14 +38,14 @@ namespace Neo.Plugins.StorageDumper
 
         public StorageDumper()
         {
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         public override void Dispose()
         {
-            Blockchain.Committing -= OnCommitting;
-            Blockchain.Committed -= OnCommitted;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
@@ -85,7 +86,7 @@ namespace Neo.Plugins.StorageDumper
                 $"{path}");
         }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             InitFileWriter(system.Settings.Network, snapshot);
             OnPersistStorage(system.Settings.Network, snapshot);
@@ -132,7 +133,7 @@ namespace Neo.Plugins.StorageDumper
         }
 
 
-        private void OnCommitted(NeoSystem system, Block block)
+        void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
             OnCommitStorage(system.Settings.Network, system.StoreView);
         }
