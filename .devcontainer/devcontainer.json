@@ -1,17 +1,17 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
 {
-	"name": "C# (.NET)",
-	"build": {
-		// Path is relative to the devcontainer.json file.
-		"dockerfile": "devcontainer.dockerfile"
-	},
-	"postCreateCommand": "dotnet build",
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"ms-dotnettools.csdevkit"
-			]
-		}
-	}
+  "name": "C# (.NET)",
+  "build": {
+    // Path is relative to the devcontainer.json file.
+    "dockerfile": "devcontainer.dockerfile"
+  },
+  "postCreateCommand": "dotnet workload update",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit"
+      ]
+    }
+  }
 }
