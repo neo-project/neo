@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Json;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System;
@@ -51,6 +53,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestContractManifestFromJson()
         {
             Assert.ThrowsException<FormatException>(() => ContractManifest.FromJson(new Json.JObject()));
+            var jsonFiles = System.IO.Directory.GetFiles(System.IO.Path.Combine("SmartContract", "Manifest", "TestFile"));
+            foreach (var item in jsonFiles)
+            {
+                var json = JObject.Parse(System.IO.File.ReadAllText(item)) as JObject;
+                var manifest = ContractManifest.FromJson(json);
+                manifest.ToJson().ToString().Should().Be(json.ToString());
+            }
         }
     }
 }

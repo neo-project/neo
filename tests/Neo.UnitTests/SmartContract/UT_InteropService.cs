@@ -855,7 +855,11 @@ namespace Neo.UnitTests.SmartContract
             var descriptor3 = ContractPermissionDescriptor.Create(hash: null);
             descriptor1.Equals(descriptor3).Should().BeTrue();
             var descriptor4 = ContractPermissionDescriptor.Create(group: null);
+            var descriptor5 = ContractPermissionDescriptor.Create(group: new ECPoint());
             descriptor1.Equals(descriptor4).Should().BeTrue();
+            descriptor2.Equals(descriptor3).Should().BeFalse();
+            descriptor5.Equals(descriptor3).Should().BeFalse();
+            descriptor5.Equals(descriptor5).Should().BeTrue();
         }
     }
 }

@@ -130,7 +130,7 @@ namespace Neo.SmartContract.Manifest
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
             if (json["features"] is not JObject features || features.Count != 0)
                 throw new FormatException();
-            if (manifest.SupportedStandards.Any(p => string.IsNullOrEmpty(p)))
+            if (manifest.SupportedStandards.Any(string.IsNullOrEmpty))
                 throw new FormatException();
             _ = manifest.SupportedStandards.ToDictionary(p => p);
             _ = manifest.Permissions.ToDictionary(p => p.Contract);
