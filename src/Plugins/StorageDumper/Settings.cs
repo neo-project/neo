@@ -14,7 +14,7 @@ using Neo.SmartContract.Native;
 
 namespace Neo.Plugins.StorageDumper
 {
-    internal class Settings
+    internal class Settings : PluginSettings
     {
         /// <summary>
         /// Amount of storages states (heights) to be dump in a given json file
@@ -32,7 +32,7 @@ namespace Neo.Plugins.StorageDumper
 
         public static Settings? Default { get; private set; }
 
-        private Settings(IConfigurationSection section)
+        private Settings(IConfigurationSection section) : base(section)
         {
             // Geting settings for storage changes state dumper
             BlockCacheSize = section.GetValue("BlockCacheSize", 1000u);
