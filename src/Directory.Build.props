@@ -16,6 +16,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <VersionPrefix>3.7.5</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>
