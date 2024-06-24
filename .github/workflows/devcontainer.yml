@@ -37,3 +37,5 @@ jobs:
             --output ${{ env.NEO_INSTALL_PATH }} \
             --verbosity normal \
             --version-suffix dev
+          sudo ln -s ${{ env.NEO_INSTALL_PATH }}/neo-cli /usr/bin/neo-cli
+          sudo chmod a+rwx /usr/bin/neo-cli
