@@ -149,7 +149,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 Assert.Equal(expectedEventName, actualState.EventName);
                 Assert.NotNull(actualState.StackItemIds);
                 Assert.Single(actualState.StackItemIds);
-                Assert.Equal(Guid.Empty, actualState.StackItemIds[0]);
+                Assert.Equal(expectedItemGuid, actualState.StackItemIds[0]);
             }
         }
     }
