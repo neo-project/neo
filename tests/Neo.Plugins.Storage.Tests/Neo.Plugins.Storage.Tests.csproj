@@ -16,10 +16,4 @@
     <ProjectReference Include="..\..\src\Plugins\RocksDBStore\RocksDBStore.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="libleveldb.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
