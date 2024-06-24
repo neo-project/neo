@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
+using System;
 using System.Security.Cryptography;
 
 namespace Neo.UnitTests.SmartContract.Manifest
@@ -33,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
-        public void TestFromAndToJson()
+        public void TestContractPermissionDescriptorFromAndToJson()
         {
             byte[] privateKey = new byte[32];
             RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -43,6 +44,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractPermissionDescriptor result = ContractPermissionDescriptor.FromJson(temp.ToJson());
             Assert.AreEqual(null, result.Hash);
             Assert.AreEqual(result.Group, result.Group);
+            Assert.ThrowsException<FormatException>(() => ContractPermissionDescriptor.FromJson(string.Empty));
+        }
+
+        [TestMethod]
+        public void TestContractManifestFromJson()
+        {
+            Assert.ThrowsException<FormatException>(() => ContractManifest.FromJson(new Json.JObject()));
         }
     }
 }

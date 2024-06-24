@@ -110,16 +110,21 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The converted manifest.</returns>
         public static ContractManifest FromJson(JObject json)
         {
-            ContractManifest manifest = new()
+            ContractManifest manifest = new();
+            try
             {
-                Name = json["name"].GetString(),
-                Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson((JObject)u)).ToArray(),
-                SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.GetString()).ToArray(),
-                Abi = ContractAbi.FromJson((JObject)json["abi"]),
-                Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson((JObject)u)).ToArray(),
-                Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u)),
-                Extra = (JObject)json["extra"]
-            };
+                manifest.Name = json["name"]?.GetString();
+                manifest.Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson((JObject)u)).ToArray();
+                manifest.SupportedStandards = ((JArray)json["supportedstandards"])?.Select(u => u.GetString()).ToArray();
+                manifest.Abi = ContractAbi.FromJson((JObject)json["abi"]);
+                manifest.Permissions = ((JArray)json["permissions"])?.Select(u => ContractPermission.FromJson((JObject)u)).ToArray();
+                manifest.Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u));
+                manifest.Extra = (JObject)json["extra"];
+            }
+            catch (FormatException)
+            {
+                throw;
+            }
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException();
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
