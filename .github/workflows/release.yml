@@ -76,7 +76,7 @@ jobs:
 
   build-neo-cli:
     needs: [build-leveldb]
-    name: Build & Publish TarBalls (${{ matrix.runtime }})
+    name: ${{ matrix.runtime }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -187,7 +187,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/*
-        key: leveldb-${{ matrix.os }}-${{ matrix.arch }}
+        key: neo-${{ matrix.runtime }}
         enableCrossOsArchive: true
 
     # Create a zip file for Windows distributions
@@ -246,6 +246,7 @@ jobs:
 
     # Upload checksum files for all distributions
     - name: Upload Checksum File (all)
+      if: ${{ startsWith(matrix.runtime, 'osx') == false }}
       uses: actions/upload-release-asset@latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -274,7 +275,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}/*
-        key: neo-macos-latest-${{ matrix.arch }}
+        key: neo-osx-${{ matrix.arch }}
         enableCrossOsArchive: true
         fail-on-cache-miss: true
 
@@ -282,31 +283,32 @@ jobs:
       working-directory: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}
       run: codesign --force --deep -s - neo-cli
 
+    # Create the distribution directory
+    - name: Create Distribution Directory
+      run: mkdir -p ${{ env.DIST_PATH }}
+
     # Create a tarball file for macOS distributions
     - name: Create Tarball File (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
       working-directory: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}
       run: tar -cJf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.tar.xz .
 
     # Create checksum files for macOS distributions
     - name: Create Checksum Files (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
       working-directory: ${{ env.DIST_PATH }}
       env:
         FILENAME: neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}
       run: |
-          sha256sum ${{ env.FILENAME }}.tar.xz > ${{ env.FILENAME }}.sha256
+          shasum -a 256 ${{ env.FILENAME }}.tar.xz > ${{ env.FILENAME }}.sha256
 
     # Upload tarball files for macOS distributions
     - name: Upload Tarball File (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
       uses: actions/upload-release-asset@latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
-          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.xz
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.tar.xz
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.tar.xz
           asset_content_type: application/x-gtar
 
       # Upload checksum files for all distributions
@@ -316,14 +318,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
-          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.sha256
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.sha256
           asset_content_type: text/plain
 
   cleanup:
-    needs: [build-neo-cli]
+    needs: [build-neo-cli, code-sign]
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       # Cleanup step to delete old caches
       - name: Cleanup
@@ -338,10 +339,7 @@ jobs:
           echo "Deleting caches..."
           for cacheKey in $cacheKeysForPR
           do
-              if [ "$cacheKey" != "leveldb-windows-latest-x64" ] && [ "$cacheKey" != "leveldb-windows-latest-arm64" ]
-              then
-                gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
-              fi
+            gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
           done
           echo "Done"
         env:
