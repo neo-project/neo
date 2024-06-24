@@ -37,4 +37,3 @@ jobs:
             --output ${{ env.NEO_INSTALL_PATH }} \
             --verbosity normal \
             --version-suffix dev
-          screen -dmS neo ${{ env.NEO_INSTALL_PATH }}/neo-cli
