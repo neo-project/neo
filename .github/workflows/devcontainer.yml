@@ -2,7 +2,10 @@ name: Build & Publish (devcontainer)
 
 on:
   push:
-    branches: [master]
+
+env:
+  DOTNET_FRAMEWORK: net8.0
+  NEO_INSTALL_PATH: /opt/neo-cli
 
 jobs:
   build:
@@ -13,13 +16,24 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@v4
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build & Publish (devcontainer)
+    - name: Build and run Dev Container task
       uses: devcontainers/ci@v0.3
       with:
-        imageName: ghcr.io/${{ github.repository_owner }}/neo
+        imageName: ghcr.io/${{ github.repository_owner }}/neo-cli
+        imageTag: dev
+        runCmd: |
+          sudo apt-get update
+          sudo apt-get install -y screen
+          dotnet publish ./src/Neo.CLI \
+            --framework ${{ env.DOTNET_FRAMEWORK }} \
+            --configuration Release \
+            --output ${{ env.NEO_INSTALL_PATH }} \
+            --verbosity normal \
+            --version-suffix dev
+          screen -dmS neo ${{ env.NEO_INSTALL_PATH }}/neo-cli
