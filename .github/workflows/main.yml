@@ -64,17 +64,10 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Test (Windows)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Test
+      if: matrix.os != 'ubuntu-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
-        dotnet test
-
-    - name: Test (OSX)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install leveldb
-        brew info leveldb
         dotnet test
 
     - name: Test for coverall
