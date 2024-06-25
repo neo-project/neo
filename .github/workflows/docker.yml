@@ -5,7 +5,8 @@ on:
     types: [published]
 
 env:
-  DIST_DIR: .neo/builds/neo-cli-docker
+  DOTNET_VERSION: 8.0.x
+  DIST_DIR: ./dist
 
 jobs:
   neo-cli-build:
@@ -20,15 +21,19 @@ jobs:
     - name: Checkout (GitHub)
       uses: actions/checkout@v4
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
     - name: Build (neo-cli)
       run: |
         dotnet publish ./src/Neo.CLI \
-          --version-suffix linux-x64 \
           --framework net8.0 \
           --configuration Release \
           --runtime linux-x64 \
           --self-contained true \
-          --output ${{ env.DIST_DIR }}/dist \
+          --output ${{ env.DIST_DIR }} \
           --verbosity normal \
           -p:VersionPrefix=${{ env.APP_VERSION }} \
           -p:RuntimeIdentifier=linux-x64 \
@@ -44,38 +49,29 @@ jobs:
     - name: Build (LevelDbStore)
       run: |
         dotnet build ./src/Plugins/LevelDBStore \
-          --version-suffix linux-x64 \
           --framework net8.0 \
           --configuration Release \
-          --output ${{ env.DIST_DIR }}/dist/Plugins/LevelDBStore \
+          --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \
           --verbosity normal \
           -p:VersionPrefix=${{ env.APP_VERSION }}
 
     - name: Remove (junk)
       run: |
-        rm -v ${{ env.DIST_DIR }}/dist/Plugins/LevelDBStore/Neo*
-        rm -v ${{ env.DIST_DIR }}/dist/Plugins/LevelDBStore/*.pdb
-        rm -v ${{ env.DIST_DIR }}/dist/Plugins/LevelDBStore/*.xml
-        rm -v ${{ env.DIST_DIR }}/dist/*.xml
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.pdb
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.xml
+        rm -v ${{ env.DIST_DIR }}/*.xml
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+    - name: Docker Login
+      run: |
+        docker login ghcr.io \
+          --username ${{ github.repository_owner }} \
+          --password ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and Push
-      uses: docker/build-push-action@v6
-      with:
-        platforms: linux/amd64
-        push: true
-        tags: |
-          ghcr.io/${{ github.repository_owner }}/neo-cli:latest
-          ghcr.io/${{ github.repository_owner }}/neo-cli:${{ env.APP_VERSION }}
+    - name: Docker Build
+      run: |
+        docker build . \
+          --file ./.neo/docker/neo-cli/Dockerfile \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:latest \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:${{ env.APP_VERSION }} \
+          --push

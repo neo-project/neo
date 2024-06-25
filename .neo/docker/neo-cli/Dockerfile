@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM debian:stable-slim
 
 # Install the apt-get packages
 RUN apt-get update
