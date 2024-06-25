@@ -115,7 +115,7 @@ jobs:
       uses: actions/delete-package-versions@v4
       with:
         package-name: Neo
-        package-type: docker
+        package-type: container
         min-versions-to-keep: 1
         delete-only-pre-release-versions: "true"
         token: "${{ secrets.GITHUB_TOKEN }}"
