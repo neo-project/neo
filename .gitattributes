@@ -50,10 +50,6 @@
 *.ico binary
 *.zip binary
 
-# Zip files
-*.zip binary
-*.barc binary
-
 ###############################################################################
 # diff behavior for common document formats
 # 
