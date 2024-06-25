@@ -34,7 +34,7 @@ namespace Neo.Cryptography
         /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>
         public static byte[] Base58CheckDecode(this string input)
         {
-            if (input is null) throw new ArgumentNullException(nameof(input));
+            if (string.IsNullOrEmpty(input)) throw new ArgumentException(nameof(input));
             byte[] buffer = Decode(input);
             if (buffer.Length < 4) throw new FormatException();
             byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
