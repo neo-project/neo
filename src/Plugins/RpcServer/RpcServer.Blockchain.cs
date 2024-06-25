@@ -43,7 +43,7 @@ namespace Neo.Plugins.RpcServer
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
         /// <returns>The block data as a <see cref="JToken"/>. If the second item of _params is true, then
-        /// block data is json format, otherwise, the return type is byte array.</returns>
+        /// block data is json format, otherwise, the return type is Base64-encoded byte array.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlock(JArray _params)
         {
