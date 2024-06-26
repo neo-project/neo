@@ -110,7 +110,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken GetVersion(JArray _params)
+        protected internal virtual JToken GetVersion(JArray _params)
         {
             JObject json = new();
             json["tcpport"] = localNode.ListenerTcpPort;
@@ -150,7 +150,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken SendRawTransaction(JArray _params)
+        protected internal virtual JToken SendRawTransaction(JArray _params)
         {
             Transaction tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()).AsSerializable<Transaction>(), RpcError.InvalidParams.WithData($"Invalid Transaction Format: {_params[0]}"));
             RelayResult reason = system.Blockchain.Ask<RelayResult>(tx).Result;
@@ -158,7 +158,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken SubmitBlock(JArray _params)
+        protected internal virtual JToken SubmitBlock(JArray _params)
         {
             Block block = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()).AsSerializable<Block>(), RpcError.InvalidParams.WithData($"Invalid Block Format: {_params[0]}"));
             RelayResult reason = system.Blockchain.Ask<RelayResult>(block).Result;

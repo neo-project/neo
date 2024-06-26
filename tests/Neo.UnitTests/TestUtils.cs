@@ -10,24 +10,43 @@
 // modifications are permitted.
 
 using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.UnitTests
 {
-    public static class TestUtils
+    public static partial class TestUtils
     {
         public static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
+
+        public static UInt256 RandomUInt256()
+        {
+            byte[] data = new byte[32];
+            TestRandom.NextBytes(data);
+            return new UInt256(data);
+        }
+
+        public static UInt160 RandomUInt160()
+        {
+            byte[] data = new byte[20];
+            TestRandom.NextBytes(data);
+            return new UInt160(data);
+        }
 
         public static ContractManifest CreateDefaultManifest()
         {
@@ -111,6 +130,58 @@ namespace Neo.UnitTests
             return new NEP6Wallet(null, password, TestProtocolSettings.Default, wallet);
         }
 
+        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, WalletAccount account)
+        {
+            return CreateValidTx(snapshot, wallet, account.ScriptHash, (uint)new Random().Next());
+        }
+
+        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
+        {
+            var tx = wallet.MakeTransaction(snapshot, [
+                    new TransferOutput
+                    {
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = account,
+                        Value = new BigDecimal(BigInteger.One, 8)
+                    }
+                ],
+                account);
+
+            tx.Nonce = nonce;
+
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
+            Assert.IsNull(data.GetSignatures(tx.Sender));
+            Assert.IsTrue(wallet.Sign(data));
+            Assert.IsTrue(data.Completed);
+            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count());
+
+            tx.Witnesses = data.GetWitnesses();
+            return tx;
+        }
+
+        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce, UInt256[] conflicts)
+        {
+            var tx = wallet.MakeTransaction(snapshot, [
+                    new TransferOutput
+                    {
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = account,
+                        Value = new BigDecimal(BigInteger.One, 8)
+                    }
+                ],
+                account);
+            tx.Attributes = conflicts.Select(conflict => new Conflicts { Hash = conflict }).ToArray();
+            tx.Nonce = nonce;
+
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
+            Assert.IsNull(data.GetSignatures(tx.Sender));
+            Assert.IsTrue(wallet.Sign(data));
+            Assert.IsTrue(data.Completed);
+            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
+            tx.Witnesses = data.GetWitnesses();
+            return tx;
+        }
+
         public static Transaction GetTransaction(UInt160 sender)
         {
             return new Transaction
@@ -133,7 +204,7 @@ namespace Neo.UnitTests
             };
         }
 
-        internal static ContractState GetContract(string method = "test", int parametersCount = 0)
+        public static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
             NefFile nef = new()
             {
@@ -188,50 +259,13 @@ namespace Neo.UnitTests
             };
         }
 
-        /// <summary>
-        /// Test Util function SetupHeaderWithValues
-        /// </summary>
-        /// <param name="header">The header to be assigned</param>
-        /// <param name="val256">PrevHash</param>
-        /// <param name="merkRootVal">MerkleRoot</param>
-        /// <param name="val160">NextConsensus</param>
-        /// <param name="timestampVal">Timestamp</param>
-        /// <param name="indexVal">Index</param>
-        /// <param name="nonceVal">Nonce</param>
-        /// <param name="scriptVal">Witness</param>
-        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal)
+        public static void StorageItemAdd(DataCache snapshot, int id, byte[] keyValue, byte[] value)
         {
-            header.PrevHash = val256;
-            header.MerkleRoot = merkRootVal = UInt256.Parse("0x6226416a0e5aca42b5566f5a19ab467692688ba9d47986f6981a7f747bba2772");
-            header.Timestamp = timestampVal = new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc).ToTimestampMS(); // GMT: Sunday, June 1, 1980 12:00:01.001 AM
-            header.Index = indexVal = 0;
-            header.Nonce = nonceVal = 0;
-            header.NextConsensus = val160 = UInt160.Zero;
-            header.Witness = scriptVal = new Witness
+            snapshot.Add(new StorageKey
             {
-                InvocationScript = new byte[0],
-                VerificationScript = new[] { (byte)OpCode.PUSH1 }
-            };
-        }
-
-        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
-        {
-            Header header = new Header();
-            SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out nonceVal, out indexVal, out scriptVal);
-
-            transactionsVal = new Transaction[numberOfTransactions];
-            if (numberOfTransactions > 0)
-            {
-                for (int i = 0; i < numberOfTransactions; i++)
-                {
-                    transactionsVal[i] = GetTransaction(UInt160.Zero);
-                }
-            }
-
-            block.Header = header;
-            block.Transactions = transactionsVal;
-
-            header.MerkleRoot = merkRootVal = MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray());
+                Id = id,
+                Key = keyValue
+            }, new StorageItem(value));
         }
 
         public static Transaction CreateRandomHashTransaction()
@@ -252,6 +286,15 @@ namespace Neo.UnitTests
                     }
                 }
             };
+        }
+
+        public static void FillMemoryPool(DataCache snapshot, NeoSystem system, NEP6Wallet wallet, WalletAccount account)
+        {
+            for (int i = 0; i < system.Settings.MemoryPoolMaxTransactions; i++)
+            {
+                var tx = CreateValidTx(snapshot, wallet, account);
+                system.MemPool.TryAdd(tx, snapshot);
+            }
         }
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable

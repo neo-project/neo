@@ -15,12 +15,12 @@ namespace Neo.UnitTests
 {
     public static class TestProtocolSettings
     {
-        public static ProtocolSettings Default = new()
+        public static readonly ProtocolSettings Default = new()
         {
             Network = 0x334F454Eu,
             AddressVersion = ProtocolSettings.Default.AddressVersion,
-            StandbyCommittee = new[]
-            {
+            StandbyCommittee =
+            [
                 //Validators
                 ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1),
                 ECPoint.Parse("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093", ECCurve.Secp256r1),
@@ -44,16 +44,42 @@ namespace Neo.UnitTests
                 ECPoint.Parse("0226933336f1b75baa42d42b71d9091508b638046d19abd67f4e119bf64a7cfb4d", ECCurve.Secp256r1),
                 ECPoint.Parse("03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc", ECCurve.Secp256r1),
                 ECPoint.Parse("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a", ECCurve.Secp256r1)
-            },
+            ],
             ValidatorsCount = 7,
-            SeedList = new[]
-            {
+            SeedList =
+            [
                 "seed1.neo.org:10333",
                 "seed2.neo.org:10333",
                 "seed3.neo.org:10333",
                 "seed4.neo.org:10333",
                 "seed5.neo.org:10333"
-            },
+            ],
+            MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
+            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
+            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
+            MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
+            InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
+            Hardforks = ProtocolSettings.Default.Hardforks
+        };
+
+        public static readonly ProtocolSettings SoleNode = new()
+        {
+            Network = 0x334F454Eu,
+            AddressVersion = ProtocolSettings.Default.AddressVersion,
+            StandbyCommittee =
+            [
+                //Validators
+                ECPoint.Parse("0278ed78c917797b637a7ed6e7a9d94e8c408444c41ee4c0a0f310a256b9271eda", ECCurve.Secp256r1)
+            ],
+            ValidatorsCount = 1,
+            SeedList =
+            [
+                "seed1.neo.org:10333",
+                "seed2.neo.org:10333",
+                "seed3.neo.org:10333",
+                "seed4.neo.org:10333",
+                "seed5.neo.org:10333"
+            ],
             MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
             MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
             MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
