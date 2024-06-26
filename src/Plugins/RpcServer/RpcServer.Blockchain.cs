@@ -152,7 +152,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         /// <summary>
-        /// Gets the state of a contract by its ID or script hash.
+        /// Gets the state of a contract by its ID or script hash or (only for native contracts) by case-insensitive name.
         /// </summary>
         /// <param name="_params">An array containing the contract ID or script hash as the first element.</param>
         /// <returns>The contract state in json format as a <see cref="JToken"/>.</returns>
