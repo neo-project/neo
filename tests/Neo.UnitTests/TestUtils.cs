@@ -288,9 +288,8 @@ namespace Neo.UnitTests
             };
         }
 
-        public static void FillMemoryPool(NeoSystem system, NEP6Wallet wallet, WalletAccount account)
+        public static void FillMemoryPool(DataCache snapshot, NeoSystem system, NEP6Wallet wallet, WalletAccount account)
         {
-            var snapshot = system.GetSnapshot();
             for (int i = 0; i < system.Settings.MemoryPoolMaxTransactions; i++)
             {
                 var tx = CreateValidTx(snapshot, wallet, account);

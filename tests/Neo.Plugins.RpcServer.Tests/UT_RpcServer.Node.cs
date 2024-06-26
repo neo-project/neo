@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using System;
@@ -191,7 +192,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestSendRawTransaction_MemoryPoolFull()
         {
             var snapshot = _neoSystem.GetSnapshot();
-            TestUtils.FillMemoryPool(_neoSystem, _wallet, _walletAccount);
+            TestUtils.FillMemoryPool(snapshot, _neoSystem, _wallet, _walletAccount);
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             var txString = Convert.ToBase64String(tx.ToArray());
 
@@ -250,12 +251,13 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var snapshot = _neoSystem.GetSnapshot();
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 1);
+            block.Header.Witness = new Witness();
             var blockString = Convert.ToBase64String(block.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
                 _rpcServer.SubmitBlock(new JArray(blockString)),
                 "Should throw RpcException for invalid block");
-            Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
+            Assert.AreEqual(RpcError.VerificationFailed.Code, exception.HResult);
         }
 
         #endregion

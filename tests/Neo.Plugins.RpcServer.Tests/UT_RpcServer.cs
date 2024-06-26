@@ -32,7 +32,6 @@ namespace Neo.Plugins.RpcServer.Tests
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
-        private MemoryPool _memoryPool;
 
         [TestInitialize]
         public void TestSetup()
