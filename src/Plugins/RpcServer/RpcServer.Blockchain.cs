@@ -120,7 +120,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the block header hash or index as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise base64string.</returns>
+        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise Base64-encoded byte array.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlockHeader(JArray _params)
         {
