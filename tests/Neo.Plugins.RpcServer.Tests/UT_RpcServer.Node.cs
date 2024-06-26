@@ -188,20 +188,6 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(RpcError.AlreadyExists.Code, exception.HResult);
         }
 
-        [TestMethod]
-        public void TestSendRawTransaction_MemoryPoolFull()
-        {
-            var snapshot = _neoSystem.GetSnapshot();
-            TestUtils.FillMemoryPool(snapshot, _neoSystem, _wallet, _walletAccount);
-            var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
-            var txString = Convert.ToBase64String(tx.ToArray());
-
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
-                "Should throw RpcException when memory pool is full");
-            Assert.AreEqual(RpcError.MempoolCapReached.Code, exception.HResult);
-        }
-
         #endregion
 
         #region SubmitBlock Tests

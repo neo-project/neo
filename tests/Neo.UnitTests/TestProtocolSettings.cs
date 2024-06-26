@@ -81,8 +81,8 @@ namespace Neo.UnitTests
                 "seed5.neo.org:10333"
             ],
             MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
-            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock / 100,
-            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions / 10_000,
+            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
+            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
             MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
             InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
             Hardforks = ProtocolSettings.Default.Hardforks
