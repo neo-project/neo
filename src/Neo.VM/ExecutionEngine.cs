@@ -235,6 +235,13 @@ namespace Neo.VM
         protected virtual void OnFault(Exception ex)
         {
             State = VMState.FAULT;
+
+#if VMPERF
+            if (ex != null)
+            {
+                Console.Error.WriteLine(ex);
+            }
+#endif
         }
 
         /// <summary>
