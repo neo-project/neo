@@ -1,0 +1,214 @@
+name: Release (nuget)
+
+# Trigger the workflow on a release event when a new release is published
+on:
+  release:
+    types: [published]
+
+# Define environment variables
+env:
+  DOTNET_VERSION: 8.0.x
+  CONFIGURATION: Release
+  DIST_DIR: /tmp/dist
+  FRAMEWORK_DIR: net8.0
+
+jobs:
+  plugins-release:
+    runs-on: ubuntu-latest
+    steps:
+    # Step to set the application version from the release tag
+    - name: Set Application Version (Environment Variable)
+      run: |
+        APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Build (Plugins)
+      run: |
+        dotnet build ./neo.sln \
+        --configuration ${{ env.CONFIGURATION }}
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }}
+
+    - name: Make Directory (dist)
+      run: |
+        mkdir -vp ${{ env.DIST_DIR }}
+
+    - name: Build Plugin Directories
+      run: |
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs
+        cp -vp ./bin/Neo.Plugins.ApplicationLogs/${{ env.FRAMEWORK_DIR }}/ApplicationLogs* ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs
+        zip ${{ env.DIST_DIR }}/ApplicationLogs.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Consensus.DBFT
+        cp -vp ./bin/Neo.Consensus.DBFT/${{ env.FRAMEWORK_DIR }}/DBFTPlugin* ${{ env.DIST_DIR }}/Neo.Consensus.DBFT
+        zip ${{ env.DIST_DIR }}/DBFTPlugin.zip -r ${{ env.DIST_DIR }}/Neo.Consensus.DBFT/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.LevelDBStore
+        cp -vp ./bin/Neo.Plugins.LevelDBStore/${{ env.FRAMEWORK_DIR }}/LevelDBStore* ${{ env.DIST_DIR }}/Neo.Plugins.LevelDBStore
+        zip ${{ env.DIST_DIR }}/LevelDBStore.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.LevelDBStore/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Cryptography.MPT
+        cp -vp ./bin/Neo.Cryptography.MPT/${{ env.FRAMEWORK_DIR }}/MPTTrie* ${{ env.DIST_DIR }}/Neo.Cryptography.MPT
+        zip ${{ env.DIST_DIR }}/MPTTrie.zip -r ${{ env.DIST_DIR }}/Neo.Cryptography.MPT/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.OracleService
+        cp -vp ./bin/Neo.Plugins.OracleService/${{ env.FRAMEWORK_DIR }}/OracleService* ${{ env.DIST_DIR }}/Neo.Plugins.OracleService
+        zip ${{ env.DIST_DIR }}/OracleService.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.OracleService/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.RocksDBStore
+        cp -vp ./bin/Neo.Plugins.RocksDBStore/${{ env.FRAMEWORK_DIR }}/RocksDBStore* ${{ env.DIST_DIR }}/Neo.Plugins.RocksDBStore
+        zip ${{ env.DIST_DIR }}/RocksDBStore.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.RocksDBStore/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient
+        cp -vp ./bin/Neo.Network.RPC.RpcClient/${{ env.FRAMEWORK_DIR }}/RpcClient* ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient
+        zip ${{ env.DIST_DIR }}/RpcClient.zip -r ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer
+        cp -vp ./bin/Neo.Plugins.RpcServer/${{ env.FRAMEWORK_DIR }}/RpcServer* ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer
+        zip ${{ env.DIST_DIR }}/RpcServer.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Wallets.SQLite
+        cp -vp ./bin/Neo.Wallets.SQLite/${{ env.FRAMEWORK_DIR }}/SQLiteWallet* ${{ env.DIST_DIR }}/Neo.Wallets.SQLite
+        zip ${{ env.DIST_DIR }}/SQLiteWallet.zip -r ${{ env.DIST_DIR }}/Neo.Wallets.SQLite/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.StateService
+        cp -vp ./bin/Neo.Plugins.StateService/${{ env.FRAMEWORK_DIR }}/StateService* ${{ env.DIST_DIR }}/Neo.Plugins.StateService
+        zip ${{ env.DIST_DIR }}/StateService.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.StateService/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper
+        cp -vp ./bin/Neo.Plugins.StorageDumper/${{ env.FRAMEWORK_DIR }}/StorageDumper* ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper
+        zip ${{ env.DIST_DIR }}/StorageDumper.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper/*
+
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker
+        cp -vp ./bin/Neo.Plugins.TokensTracker/${{ env.FRAMEWORK_DIR }}/TokensTracker* ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker
+        zip ${{ env.DIST_DIR }}/TokensTracker.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker/*
+
+    - name: Upload Zip File (ApplicationLogs)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/ApplicationLogs.zip
+          asset_name: ApplicationLogs.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (DBFTPlugin)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/DBFTPlugin.zip
+          asset_name: DBFTPlugin.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (LevelDBStore)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/LevelDBStore.zip
+          asset_name: LevelDBStore.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (MPTTrie)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/MPTTrie.zip
+          asset_name: MPTTrie.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (OracleService)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/OracleService.zip
+          asset_name: OracleService.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (RocksDBStore)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/RocksDBStore.zip
+          asset_name: RocksDBStore.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (RpcClient)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/RpcClient.zip
+          asset_name: RpcClient.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (RpcServer)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/RpcServer.zip
+          asset_name: RpcServer.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (SQLiteWallet)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/SQLiteWallet.zip
+          asset_name: SQLiteWallet.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (StateService)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/StateService.zip
+          asset_name: StateService.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (StorageDumper)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/StorageDumper.zip
+          asset_name: StorageDumper.zip
+          asset_content_type: application/zip
+
+    - name: Upload Zip File (TokensTracker)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_DIR }}/TokensTracker.zip
+          asset_name: TokensTracker.zip
+          asset_content_type: application/zip
