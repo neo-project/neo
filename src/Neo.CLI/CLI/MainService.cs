@@ -132,10 +132,10 @@ namespace Neo.CLI
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
 
-            var cliV = Assembly.GetAssembly(typeof(Program))!.GetVersion();
-            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetVersion();
-            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetVersion();
-            Console.WriteLine($"{ServiceName} v{cliV}  -  NEO v{neoV}  -  NEO-VM v{vmV}");
+            var cliV = Assembly.GetAssembly(typeof(Program))!.GetName().Version;
+            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetName().Version;
+            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetName().Version;
+            Console.WriteLine($"{ServiceName} v{cliV?.ToString(3)}  -  NEO v{neoV?.ToString(3)}  -  NEO-VM v{vmV?.ToString(3)}");
             Console.WriteLine();
 
             base.RunConsole();

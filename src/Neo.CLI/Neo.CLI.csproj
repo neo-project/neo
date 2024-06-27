@@ -11,6 +11,7 @@
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
     <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
