@@ -1,4 +1,4 @@
-name: Release (nuget)
+name: Release (plugins)
 
 # Trigger the workflow on a release event when a new release is published
 on:
@@ -35,7 +35,7 @@ jobs:
     - name: Build (Plugins)
       run: |
         dotnet build ./neo.sln \
-        --configuration ${{ env.CONFIGURATION }}
+        --configuration ${{ env.CONFIGURATION }} \
         --verbosity normal \
         -p:VersionPrefix=${{ env.APP_VERSION }}
 
@@ -46,52 +46,64 @@ jobs:
     - name: Build Plugin Directories
       run: |
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs
-        cp -vp ./bin/Neo.Plugins.ApplicationLogs/${{ env.FRAMEWORK_DIR }}/ApplicationLogs* ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs
-        zip ${{ env.DIST_DIR }}/ApplicationLogs.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.ApplicationLogs/${{ env.FRAMEWORK_DIR }}/ApplicationLogs* ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.ApplicationLogs
+        zip ${{ env.DIST_DIR }}/ApplicationLogs.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Consensus.DBFT
-        cp -vp ./bin/Neo.Consensus.DBFT/${{ env.FRAMEWORK_DIR }}/DBFTPlugin* ${{ env.DIST_DIR }}/Neo.Consensus.DBFT
-        zip ${{ env.DIST_DIR }}/DBFTPlugin.zip -r ${{ env.DIST_DIR }}/Neo.Consensus.DBFT/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Consensus.DBFT/${{ env.FRAMEWORK_DIR }}/DBFTPlugin* ${{ env.DIST_DIR }}/Neo.Consensus.DBFT
+        cd ${{ env.DIST_DIR }}/Neo.Consensus.DBFT
+        zip ${{ env.DIST_DIR }}/DBFTPlugin.zip -r *
 
-        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.LevelDBStore
-        cp -vp ./bin/Neo.Plugins.LevelDBStore/${{ env.FRAMEWORK_DIR }}/LevelDBStore* ${{ env.DIST_DIR }}/Neo.Plugins.LevelDBStore
-        zip ${{ env.DIST_DIR }}/LevelDBStore.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.LevelDBStore/*
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.Storage.LevelDBStore
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.Storage.LevelDBStore/${{ env.FRAMEWORK_DIR }}/LevelDBStore* ${{ env.DIST_DIR }}/Neo.Plugins.Storage.LevelDBStore
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.Storage.LevelDBStore
+        zip ${{ env.DIST_DIR }}/LevelDBStore.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Cryptography.MPT
-        cp -vp ./bin/Neo.Cryptography.MPT/${{ env.FRAMEWORK_DIR }}/MPTTrie* ${{ env.DIST_DIR }}/Neo.Cryptography.MPT
-        zip ${{ env.DIST_DIR }}/MPTTrie.zip -r ${{ env.DIST_DIR }}/Neo.Cryptography.MPT/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Cryptography.MPT/${{ env.FRAMEWORK_DIR }}/MPTTrie* ${{ env.DIST_DIR }}/Neo.Cryptography.MPT
+        cd ${{ env.DIST_DIR }}/Neo.Cryptography.MPT
+        zip ${{ env.DIST_DIR }}/MPTTrie.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.OracleService
-        cp -vp ./bin/Neo.Plugins.OracleService/${{ env.FRAMEWORK_DIR }}/OracleService* ${{ env.DIST_DIR }}/Neo.Plugins.OracleService
-        zip ${{ env.DIST_DIR }}/OracleService.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.OracleService/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.OracleService/${{ env.FRAMEWORK_DIR }}/OracleService* ${{ env.DIST_DIR }}/Neo.Plugins.OracleService
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.OracleService
+        zip ${{ env.DIST_DIR }}/OracleService.zip -r *
 
-        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.RocksDBStore
-        cp -vp ./bin/Neo.Plugins.RocksDBStore/${{ env.FRAMEWORK_DIR }}/RocksDBStore* ${{ env.DIST_DIR }}/Neo.Plugins.RocksDBStore
-        zip ${{ env.DIST_DIR }}/RocksDBStore.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.RocksDBStore/*
+        mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.Storage.RocksDBStore
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.Storage.RocksDBStore/${{ env.FRAMEWORK_DIR }}/RocksDBStore* ${{ env.DIST_DIR }}/Neo.Plugins.Storage.RocksDBStore
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.Storage.RocksDBStore
+        zip ${{ env.DIST_DIR }}/RocksDBStore.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient
-        cp -vp ./bin/Neo.Network.RPC.RpcClient/${{ env.FRAMEWORK_DIR }}/RpcClient* ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient
-        zip ${{ env.DIST_DIR }}/RpcClient.zip -r ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Network.RPC.RpcClient/${{ env.FRAMEWORK_DIR }}/RpcClient* ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient
+        cd ${{ env.DIST_DIR }}/Neo.Network.RPC.RpcClient
+        zip ${{ env.DIST_DIR }}/RpcClient.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer
-        cp -vp ./bin/Neo.Plugins.RpcServer/${{ env.FRAMEWORK_DIR }}/RpcServer* ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer
-        zip ${{ env.DIST_DIR }}/RpcServer.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.RpcServer/${{ env.FRAMEWORK_DIR }}/RpcServer* ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.RpcServer
+        zip ${{ env.DIST_DIR }}/RpcServer.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Wallets.SQLite
-        cp -vp ./bin/Neo.Wallets.SQLite/${{ env.FRAMEWORK_DIR }}/SQLiteWallet* ${{ env.DIST_DIR }}/Neo.Wallets.SQLite
-        zip ${{ env.DIST_DIR }}/SQLiteWallet.zip -r ${{ env.DIST_DIR }}/Neo.Wallets.SQLite/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Wallets.SQLite/${{ env.FRAMEWORK_DIR }}/SQLiteWallet* ${{ env.DIST_DIR }}/Neo.Wallets.SQLite
+        cd ${{ env.DIST_DIR }}/Neo.Wallets.SQLite
+        zip ${{ env.DIST_DIR }}/SQLiteWallet.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.StateService
-        cp -vp ./bin/Neo.Plugins.StateService/${{ env.FRAMEWORK_DIR }}/StateService* ${{ env.DIST_DIR }}/Neo.Plugins.StateService
-        zip ${{ env.DIST_DIR }}/StateService.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.StateService/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.StateService/${{ env.FRAMEWORK_DIR }}/StateService* ${{ env.DIST_DIR }}/Neo.Plugins.StateService
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.StateService
+        zip ${{ env.DIST_DIR }}/StateService.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper
-        cp -vp ./bin/Neo.Plugins.StorageDumper/${{ env.FRAMEWORK_DIR }}/StorageDumper* ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper
-        zip ${{ env.DIST_DIR }}/StorageDumper.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.StorageDumper/${{ env.FRAMEWORK_DIR }}/StorageDumper* ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.StorageDumper
+        zip ${{ env.DIST_DIR }}/StorageDumper.zip -r *
 
         mkdir -vp ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker
-        cp -vp ./bin/Neo.Plugins.TokensTracker/${{ env.FRAMEWORK_DIR }}/TokensTracker* ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker
-        zip ${{ env.DIST_DIR }}/TokensTracker.zip -r ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker/*
+        cp -vp ${{ github.workspace }}/bin/Neo.Plugins.TokensTracker/${{ env.FRAMEWORK_DIR }}/TokensTracker* ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker
+        cd ${{ env.DIST_DIR }}/Neo.Plugins.TokensTracker
+        zip ${{ env.DIST_DIR }}/TokensTracker.zip -r *
 
     - name: Upload Zip File (ApplicationLogs)
       uses: actions/upload-release-asset@latest
