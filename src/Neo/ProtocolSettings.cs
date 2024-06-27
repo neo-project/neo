@@ -97,6 +97,8 @@ namespace Neo
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
 
+        public MemoryPoolSettings MemPoolSettings { get; init; }
+
         private IReadOnlyList<ECPoint> _standbyValidators;
         /// <summary>
         /// The public keys of the standby validators.
@@ -118,6 +120,7 @@ namespace Neo
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
+            MemPoolSettings = new MemoryPoolSettings(),
             Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
         };
 
@@ -161,6 +164,12 @@ namespace Neo
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
+                MemPoolSettings = new MemoryPoolSettings
+                {
+                    EnableSmartThrottler = section.GetSection("MemoryPoolSettings").GetValue("EnableSmartThrottler", Default.MemPoolSettings.EnableSmartThrottler),
+                    MaxTransactionsPerSecond = section.GetSection("MemoryPoolSettings").GetValue("MaxTransactionsPerSecond", Default.MemPoolSettings.MaxTransactionsPerSecond),
+                    MaxTransactionsPerSender = section.GetSection("MemoryPoolSettings").GetValue("MaxTransactionsPerSender", Default.MemPoolSettings.MaxTransactionsPerSender)
+                },
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
                     : Default.Hardforks
@@ -234,6 +243,13 @@ namespace Neo
 
             // If the hardfork isn't specified in the configuration, return false.
             return false;
+        }
+
+        public class MemoryPoolSettings
+        {
+            public bool EnableSmartThrottler { get; init; } = true;
+            public int MaxTransactionsPerSecond { get; init; } = 512;
+            public int MaxTransactionsPerSender { get; init; } = 100;
         }
     }
 }

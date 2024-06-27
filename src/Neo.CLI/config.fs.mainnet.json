@@ -36,6 +36,11 @@
     "MaxTraceableBlocks": 2102400,
     "InitialGasDistribution": 5200000000000000,
     "ValidatorsCount": 7,
+    "MemoryPool": {
+      "EnableSmartThrottler": true,
+      "MaxTransactionsPerSecond": 512,
+      "MaxTransactionsPerSender": 100
+    },
     "Hardforks": {
       "HF_Aspidochelone": 3000000,
       "HF_Basilisk": 4500000,
