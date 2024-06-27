@@ -59,6 +59,7 @@ namespace Neo.UnitTests
             MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
             MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
             InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
+            MemPoolSettings = ProtocolSettings.Default.MemPoolSettings,
             Hardforks = ProtocolSettings.Default.Hardforks
         };
     }
