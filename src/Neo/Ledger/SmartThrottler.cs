@@ -122,7 +122,7 @@ public class SmartThrottler
         if (_recentBlockTimes.Count > 0)
         {
             var avgBlockTime = _recentBlockTimes.Average(t => (double)t);
-            load += (avgBlockTime < _system.Settings.MillisecondsPerBlock?1:0) * 30; // Cap at 30 points
+            load += (avgBlockTime < _system.Settings.MillisecondsPerBlock ? 1 : 0) * 30; // Cap at 30 points
         }
 
         // 3. Current block transaction count or unconfirmed transaction growth rate (40% weight)
