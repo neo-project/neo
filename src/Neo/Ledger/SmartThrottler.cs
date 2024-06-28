@@ -67,21 +67,7 @@ public class SmartThrottler
         }
 
         // Check if we've hit the tx limit and it's not high priority
-        var b = !IsHighPriorityTransaction(tx);
-        if ((_transactionsThisSecond >= _maxTransactionsPerSecond) && b)
-
-            /* Unmerged change from project 'Neo(net8.0)'
-            Before:
-                            return false;
-
-                        _transactionsThisSecond++;
-                        return true;
-            After:
-                        return false;
-
-                    _transactionsThisSecond++;
-                    return true;
-            */
+        if ((_transactionsThisSecond >= _maxTransactionsPerSecond) && !IsHighPriorityTransaction(tx))
             return false;
 
         _transactionsThisSecond++;
