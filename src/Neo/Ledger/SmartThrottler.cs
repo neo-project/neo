@@ -9,9 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Network.P2P.Payloads;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -46,7 +47,7 @@ public class SmartThrottler
         _system = system;
         _maxTransactionsPerSecond = (uint)system.Settings.MemPoolSettings.MaxTransactionsPerSecond;
         _lastResetTime = TimeProvider.Current.UtcNow;
-        _lastBlockTimestamp = TimeProvider.Current.UtcNow.ToTimestampMS();
+        _lastBlockTimestamp = _lastResetTime.ToTimestampMS();
         _averageFee = CalculateAverageFee(null);
     }
 
@@ -97,7 +98,7 @@ public class SmartThrottler
     /// <summary>
     /// Adjusts throttling parameters based on current network conditions
     /// </summary>
-    private void AdjustThrottling(Block block)
+    private void AdjustThrottling(Block? block)
     {
         var memoryPoolUtilization = (double)_memoryPool.Count / _system.Settings.MemoryPoolMaxTransactions;
         var networkLoad = EstimateNetworkLoad(block);
@@ -109,7 +110,7 @@ public class SmartThrottler
     /// Estimates current network load
     /// </summary>
     /// <returns>An integer between 0 and 100 representing the estimated network load</returns>
-    private int EstimateNetworkLoad(Block block)
+    private int EstimateNetworkLoad(Block? block)
     {
         var load = 0;
 
@@ -143,7 +144,7 @@ public class SmartThrottler
     /// <summary>
     /// Calculates optimal transactions per second
     /// </summary>
-    private uint CalculateOptimalTps(double memoryPoolUtilization, int networkLoad, Block block)
+    private uint CalculateOptimalTps(double memoryPoolUtilization, int networkLoad, Block? block)
     {
         var baseTps = _system.Settings.MemPoolSettings.MaxTransactionsPerSecond;
         var utilizationFactor = 1 - memoryPoolUtilization;
@@ -172,7 +173,7 @@ public class SmartThrottler
     /// <summary>
     /// Calculates average fee of transactions in memory pool and new block (if provided)
     /// </summary>
-    private long CalculateAverageFee(Block block)
+    private long CalculateAverageFee(Block? block)
     {
         var transactions = _memoryPool.GetSortedVerifiedTransactions().ToList();
         if (block != null)
