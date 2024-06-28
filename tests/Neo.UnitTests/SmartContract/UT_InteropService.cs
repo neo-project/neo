@@ -476,7 +476,7 @@ namespace Neo.UnitTests.SmartContract
                 BlockIndex = 0,
                 Transaction = TestUtils.CreateRandomHashTransaction()
             };
-            UT_SmartContractHelper.TransactionAdd(engine.Snapshot, state);
+            TestUtils.TransactionAdd(engine.Snapshot, state);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Ledger.Hash, "getTransactionHeight", state.Transaction.Hash);
