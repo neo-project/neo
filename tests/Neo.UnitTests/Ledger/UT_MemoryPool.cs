@@ -688,7 +688,6 @@ namespace Neo.UnitTests.Ledger
             _unit.UnVerifiedCount.Should().Be(0);
         }
 
-
         [TestMethod]
         public async Task TestReVerifyTopUnverifiedTransactionsWithSmartThrottler()
         {
@@ -744,7 +743,6 @@ namespace Neo.UnitTests.Ledger
             // Third second resets the throttler,
             // the number of transactions should be 120 + 30 = 150
             _unit.VerifiedCount.Should().Be(150);
-
         }
 
         [TestMethod]
