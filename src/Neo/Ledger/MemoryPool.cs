@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
 using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -27,8 +28,8 @@ namespace Neo.Ledger
     /// </summary>
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
-        public event EventHandler<Transaction> TransactionAdded;
-        public event EventHandler<TransactionRemovedEventArgs> TransactionRemoved;
+        public event EventHandler<Transaction>? TransactionAdded;
+        public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
 
         // Allow a reverified transaction to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
@@ -157,14 +158,14 @@ namespace Neo.Ledger
         /// <param name="hash">The hash of the <see cref="Transaction"/> to get.</param>
         /// <param name="tx">When this method returns, contains the <see cref="Transaction"/> associated with the specified hash, if the hash is found; otherwise, <see langword="null"/>.</param>
         /// <returns><see langword="true"/> if the <see cref="MemoryPool"/> contains a <see cref="Transaction"/> with the specified hash; otherwise, <see langword="false"/>.</returns>
-        public bool TryGetValue(UInt256 hash, out Transaction tx)
+        public bool TryGetValue(UInt256 hash, out Transaction? tx)
         {
             _txRwLock.EnterReadLock();
             try
             {
-                bool ret = _unsortedTransactions.TryGetValue(hash, out PoolItem item)
+                var ret = _unsortedTransactions.TryGetValue(hash, out var item)
                            || _unverifiedTransactions.TryGetValue(hash, out item);
-                tx = ret ? item.Tx : null;
+                tx = ret ? item!.Tx : null;
                 return ret;
             }
             finally
@@ -247,13 +248,13 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static PoolItem GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
-            SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem> sortedPool)
+        private static PoolItem? GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
+            SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem>? sortedPool)
         {
-            PoolItem minItem = unverifiedTxSorted.Min;
+            var minItem = unverifiedTxSorted.Min;
             sortedPool = minItem != null ? unverifiedTxSorted : null;
 
-            PoolItem verifiedMin = verifiedTxSorted.Min;
+            var verifiedMin = verifiedTxSorted.Min;
             if (verifiedMin == null) return minItem;
 
             if (minItem != null && verifiedMin.CompareTo(minItem) >= 0)
@@ -265,7 +266,7 @@ namespace Neo.Ledger
             return minItem;
         }
 
-        private PoolItem GetLowestFeeTransaction(out Dictionary<UInt256, PoolItem> unsortedTxPool, out SortedSet<PoolItem> sortedPool)
+        private PoolItem? GetLowestFeeTransaction(out Dictionary<UInt256, PoolItem> unsortedTxPool, out SortedSet<PoolItem>? sortedPool)
         {
             sortedPool = null;
 
@@ -286,7 +287,10 @@ namespace Neo.Ledger
         {
             if (Count < Capacity) return true;
 
-            return GetLowestFeeTransaction(out _, out _).CompareTo(tx) <= 0;
+            var item = GetLowestFeeTransaction(out _, out _);
+            if (item == null) return false;
+
+            return item.CompareTo(tx) <= 0;
         }
 
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
@@ -295,7 +299,7 @@ namespace Neo.Ledger
 
             if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
 
-            List<Transaction> removedTransactions = null;
+            List<Transaction>? removedTransactions = null;
             _txRwLock.EnterWriteLock();
             try
             {
@@ -368,7 +372,7 @@ namespace Neo.Ledger
             // Step 2: check if unsorted transactions were in `tx`'s Conflicts attributes.
             foreach (var hash in tx.GetAttributes<Conflicts>().Select(p => p.Hash))
             {
-                if (_unsortedTransactions.TryGetValue(hash, out PoolItem unsortedTx))
+                if (_unsortedTransactions.TryGetValue(hash, out var unsortedTx))
                 {
                     if (!tx.Signers.Select(p => p.Account).Intersect(unsortedTx.Tx.Signers.Select(p => p.Account)).Any()) return false;
                     conflictsFeeSum += unsortedTx.Tx.NetworkFee;
@@ -390,7 +394,8 @@ namespace Neo.Ledger
             List<Transaction> removedTransactions = new();
             do
             {
-                PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
+                var minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
+                if (minItem == null || sortedPool == null) break;
 
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
@@ -407,7 +412,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryRemoveVerified(UInt256 hash, out PoolItem item)
+        private bool TryRemoveVerified(UInt256 hash, out PoolItem? item)
         {
             if (!_unsortedTransactions.TryGetValue(hash, out item))
                 return false;
@@ -425,7 +430,7 @@ namespace Neo.Ledger
         {
             foreach (var h in item.Tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
             {
-                if (_conflicts.TryGetValue(h, out HashSet<UInt256> conflicts))
+                if (_conflicts.TryGetValue(h, out var conflicts))
                 {
                     conflicts.Remove(item.Tx.Hash);
                     if (conflicts.Count() == 0)
@@ -437,7 +442,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool TryRemoveUnVerified(UInt256 hash, out PoolItem item)
+        internal bool TryRemoveUnVerified(UInt256 hash, out PoolItem? item)
         {
             if (!_unverifiedTransactions.TryGetValue(hash, out item))
                 return false;
