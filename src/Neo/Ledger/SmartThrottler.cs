@@ -116,18 +116,17 @@ public class SmartThrottler
 
         // 1. Memory pool utilization (30% weight)
         var memPoolUtilization = (double)_memoryPool.Count / _system.Settings.MemoryPoolMaxTransactions;
-        load += (int)(memPoolUtilization * 30);
+        load += (int)(memPoolUtilization * 30); // Cap at 30 points
 
         // 2. Recent block times (30% weight)
         if (_recentBlockTimes.Count > 0)
         {
             var avgBlockTime = _recentBlockTimes.Average(t => (double)t);
-            var blockTimeRatio = avgBlockTime / _system.Settings.MillisecondsPerBlock;
-            load += (int)(Math.Min(blockTimeRatio, 2) * 30); // Cap at 60 points
+            load += (avgBlockTime < _system.Settings.MillisecondsPerBlock?1:0) * 30; // Cap at 30 points
         }
 
         // 3. Current block transaction count or unconfirmed transaction growth rate (40% weight)
-        if (block != null)
+        if (block != null) // Cap at 40 points
         {
             var blockTxRatio = (double)block.Transactions.Length / _system.Settings.MaxTransactionsPerBlock;
             load += (int)(Math.Min(blockTxRatio, 1) * 40);
@@ -138,7 +137,7 @@ public class SmartThrottler
             load += (int)(Math.Min(txGrowthRate, 1) * 40);
         }
 
-        return Math.Min(load, 100); // Ensure load doesn't exceed 100
+        return load;
     }
 
     /// <summary>
