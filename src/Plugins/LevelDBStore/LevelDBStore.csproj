@@ -11,5 +11,9 @@
   <ItemGroup>
     <None Include="$(SolutionDir)bin/runtimes/win-arm64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-arm64/native/leveldb.dll" />
     <None Include="$(SolutionDir)bin/runtimes/win-x64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/win-x64/native/leveldb.dll" />
+    <None Include="$(SolutionDir)bin/runtimes/linux-x64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/linux-x64/native/leveldb.so" />
+    <None Include="$(SolutionDir)bin/runtimes/linux-arm64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/linux-arm64/native/leveldb.so" />
+    <None Include="$(SolutionDir)bin/runtimes/osx-x64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/osx-x64/native/leveldb.dylib" />
+    <None Include="$(SolutionDir)bin/runtimes/osx-arm64/native/libleveldb.dll" Pack="true" Visible="false" PackagePath="runtimes/osx-arm64/native/leveldb.dylib" />
   </ItemGroup>
 </Project>
