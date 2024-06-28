@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
 
-            UT_SmartContractHelper.BlocksAdd(snapshot, uut.Hash, new TrimmedBlock()
+            TestUtils.BlocksAdd(snapshot, uut.Hash, new TrimmedBlock()
             {
                 Header = new Header
                 {
