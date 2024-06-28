@@ -167,7 +167,7 @@ public class SmartThrottler
     private bool IsHighPriorityTransaction(Transaction tx)
     {
         // High priority: fee > 3x average
-        return tx.NetworkFee + tx.SystemFee > _averageFee * 3;
+        return tx.NetworkFee + tx.SystemFee > _averageFee * 3 || tx.GetAttribute<HighPriorityAttribute>() != null;
     }
 
     /// <summary>
