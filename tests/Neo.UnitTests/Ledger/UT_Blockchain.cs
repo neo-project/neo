@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Ledger
 
             // Make transaction
 
-            var tx = CreateValidTx(snapshot, walletA, acc.ScriptHash, 0);
+            var tx = TestUtils.CreateValidTx(snapshot, walletA, acc.ScriptHash, 0);
 
             senderProbe.Send(system.Blockchain, tx);
             senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
@@ -91,30 +91,6 @@ namespace Neo.UnitTests.Ledger
             };
         }
 
-        private static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
-        {
-            var tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
-                {
-                    new TransferOutput()
-                    {
-                        AssetId = NativeContract.GAS.Hash,
-                        ScriptHash = account,
-                        Value = new BigDecimal(BigInteger.One,8)
-                    }
-                },
-                account);
-
-            tx.Nonce = nonce;
-
-            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            Assert.IsNull(data.GetSignatures(tx.Sender));
-            Assert.IsTrue(wallet.Sign(data));
-            Assert.IsTrue(data.Completed);
-            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count());
-
-            tx.Witnesses = data.GetWitnesses();
-            return tx;
-        }
 
         [TestMethod]
         public void TestMaliciousOnChainConflict()
@@ -141,9 +117,9 @@ namespace Neo.UnitTests.Ledger
             // Create transactions:
             //    tx1 conflicts with tx2 and has the same sender (thus, it's a valid conflict and must prevent tx2 from entering the chain);
             //    tx2 conflicts with tx3 and has different sender (thus, this conflict is invalid and must not prevent tx3 from entering the chain).
-            var tx1 = CreateValidTx(snapshot, walletA, accA.ScriptHash, 0);
-            var tx2 = CreateValidTx(snapshot, walletA, accA.ScriptHash, 1);
-            var tx3 = CreateValidTx(snapshot, walletB, accB.ScriptHash, 2);
+            var tx1 = TestUtils.CreateValidTx(snapshot, walletA, accA.ScriptHash, 0);
+            var tx2 = TestUtils.CreateValidTx(snapshot, walletA, accA.ScriptHash, 1);
+            var tx3 = TestUtils.CreateValidTx(snapshot, walletB, accB.ScriptHash, 2);
 
             tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash }, new Conflicts() { Hash = tx3.Hash } };
 
