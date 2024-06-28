@@ -70,10 +70,10 @@ jobs:
 
     - name: Build
       run: |
-        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/win-x64/native
-        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/win-arm64/native
-        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/osx-x64/native
-        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/osx-arm64/native
+        mkdir ./src/Plugins/LevelDBStore/runtimes/win-x64/native
+        mkdir ./src/Plugins/LevelDBStore/runtimes/win-arm64/native
+        mkdir ./src/Plugins/LevelDBStore/runtimes/osx-x64/native
+        mkdir ./src/Plugins/LevelDBStore/runtimes/osx-arm64/native
 
         wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-x64.zip
         unzip libleveldb-win-x64.zip
