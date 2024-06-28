@@ -27,9 +27,6 @@ public class SmartThrottler
     private uint _maxTransactionsPerSecond;
     private int _transactionsThisSecond;
     private DateTime _lastResetTime;
-    private readonly object _lock = new();
-    private readonly ConcurrentDictionary<UInt160, int> _senderTransactionCount = new();
-    private readonly int _maxTransactionsPerSender;
     private long _averageFee;
 
     // Fields for network load estimation
@@ -49,7 +46,6 @@ public class SmartThrottler
         _system = system;
         _maxTransactionsPerSecond = (uint)system.Settings.MemPoolSettings.MaxTransactionsPerSecond;
         _lastResetTime = TimeProvider.Current.UtcNow;
-        _maxTransactionsPerSender = system.Settings.MemPoolSettings.MaxTransactionsPerSender;
         _lastBlockTimestamp = TimeProvider.Current.UtcNow.ToTimestampMS();
         _averageFee = CalculateAverageFee(null);
     }
@@ -61,29 +57,35 @@ public class SmartThrottler
     /// <returns>True if the transaction should be accepted, false otherwise</returns>
     public bool ShouldAcceptTransaction(Transaction tx)
     {
-        lock (_lock)
+        var now = TimeProvider.Current.UtcNow;
+        if (now - _lastResetTime >= TimeSpan.FromSeconds(1))
         {
-            var now = TimeProvider.Current.UtcNow;
-            if (now - _lastResetTime >= TimeSpan.FromSeconds(1))
-            {
-                _transactionsThisSecond = 0;
-                _lastResetTime = now;
-                AdjustThrottling(null);
-                _averageFee = CalculateAverageFee(null);
-            }
-
-            // Check if we've hit the tx limit and it's not high priority
-            if (_transactionsThisSecond >= _maxTransactionsPerSecond && !IsHighPriorityTransaction(tx))
-                return false;
-
-            // Check if sender has reached their tx limit
-            if (!CheckSenderLimit(tx.Sender))
-                return false;
-
-            _transactionsThisSecond++;
-            _senderTransactionCount.AddOrUpdate(tx.Sender, 1, (_, count) => count + 1);
-            return true;
+            _transactionsThisSecond = 0;
+            _lastResetTime = now;
+            AdjustThrottling(null);
+            _averageFee = CalculateAverageFee(null);
         }
+
+        // Check if we've hit the tx limit and it's not high priority
+        var b = !IsHighPriorityTransaction(tx);
+        if ((_transactionsThisSecond >= _maxTransactionsPerSecond) && b)
+
+            /* Unmerged change from project 'Neo(net8.0)'
+            Before:
+                            return false;
+
+                        _transactionsThisSecond++;
+                        return true;
+            After:
+                        return false;
+
+                    _transactionsThisSecond++;
+                    return true;
+            */
+            return false;
+
+        _transactionsThisSecond++;
+        return true;
     }
 
     /// <summary>
@@ -92,32 +94,18 @@ public class SmartThrottler
     /// <param name="block">The newly added block</param>
     public void UpdateNetworkState(Block block)
     {
-        lock (_lock)
-        {
-            var currentTime = TimeProvider.Current.UtcNow.ToTimestampMS();
-            var blockTime = currentTime - _lastBlockTimestamp;
+        var currentTime = TimeProvider.Current.UtcNow.ToTimestampMS();
+        var blockTime = currentTime - _lastBlockTimestamp;
 
-            _recentBlockTimes.Enqueue(blockTime);
-            if (_recentBlockTimes.Count > BlockTimeWindowSize)
-                _recentBlockTimes.Dequeue();
+        _recentBlockTimes.Enqueue(blockTime);
+        if (_recentBlockTimes.Count > BlockTimeWindowSize)
+            _recentBlockTimes.Dequeue();
 
-            _lastBlockTimestamp = currentTime;
-            _unconfirmedTxCount = _memoryPool.Count;
-            _averageFee = CalculateAverageFee(block);
+        _lastBlockTimestamp = currentTime;
+        _unconfirmedTxCount = _memoryPool.Count;
+        _averageFee = CalculateAverageFee(block);
 
-            AdjustThrottling(block);
-
-            // 不再调用 ResetAfterNewBlock()
-        }
-    }
-
-    /// <summary>
-    /// Removes a transaction from throttler tracking
-    /// </summary>
-    /// <param name="tx">The transaction being removed</param>
-    public void RemoveTransaction(Transaction tx)
-    {
-        _senderTransactionCount.AddOrUpdate(tx.Sender, 0, (_, count) => Math.Max(0, count - 1));
+        AdjustThrottling(block);
     }
 
     /// <summary>
@@ -171,7 +159,7 @@ public class SmartThrottler
     /// </summary>
     private uint CalculateOptimalTps(double memoryPoolUtilization, int networkLoad, Block block)
     {
-        var baseTps = _system.Settings.MaxTransactionsPerBlock * 4;
+        var baseTps = _system.Settings.MemPoolSettings.MaxTransactionsPerSecond;
         var utilizationFactor = 1 - memoryPoolUtilization;
         var loadFactor = 1 - (networkLoad / 100.0);
 
@@ -193,14 +181,6 @@ public class SmartThrottler
     {
         // High priority: fee > 3x average
         return tx.NetworkFee + tx.SystemFee > _averageFee * 3;
-    }
-
-    /// <summary>
-    /// Checks if sender has reached their transaction limit
-    /// </summary>
-    private bool CheckSenderLimit(UInt160 sender)
-    {
-        return _senderTransactionCount.GetOrAdd(sender, 0) < _maxTransactionsPerSender;
     }
 
     /// <summary>

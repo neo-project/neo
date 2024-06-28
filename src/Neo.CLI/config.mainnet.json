@@ -36,8 +36,7 @@
     "MaxTraceableBlocks": 2102400,
     "MemoryPool": {
       "EnableSmartThrottler": true,
-      "MaxTransactionsPerSecond": 512,
-      "MaxTransactionsPerSender": 100
+      "MaxTransactionsPerSecond": 512
     },
     "Hardforks": {
       "HF_Aspidochelone": 1730000,

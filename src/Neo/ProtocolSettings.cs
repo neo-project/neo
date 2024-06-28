@@ -168,7 +168,6 @@ namespace Neo
                 {
                     EnableSmartThrottler = section.GetSection("MemoryPoolSettings").GetValue("EnableSmartThrottler", Default.MemPoolSettings.EnableSmartThrottler),
                     MaxTransactionsPerSecond = section.GetSection("MemoryPoolSettings").GetValue("MaxTransactionsPerSecond", Default.MemPoolSettings.MaxTransactionsPerSecond),
-                    MaxTransactionsPerSender = section.GetSection("MemoryPoolSettings").GetValue("MaxTransactionsPerSender", Default.MemPoolSettings.MaxTransactionsPerSender)
                 },
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
@@ -249,7 +248,6 @@ namespace Neo
         {
             public bool EnableSmartThrottler { get; init; } = true;
             public int MaxTransactionsPerSecond { get; init; } = 512;
-            public int MaxTransactionsPerSender { get; init; } = 100;
         }
     }
 }

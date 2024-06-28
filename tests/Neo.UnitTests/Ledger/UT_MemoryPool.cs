@@ -690,9 +690,17 @@ namespace Neo.UnitTests.Ledger
 
 
         [TestMethod]
-        public void TestReVerifyTopUnverifiedTransactionsWithSmartThrottler()
+        public async Task TestReVerifyTopUnverifiedTransactionsWithSmartThrottler()
         {
-            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 600 }, storageProvider: (string)null));
+            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with
+            {
+                MemoryPoolMaxTransactions = 500,
+                MaxTransactionsPerBlock = 50,
+                MemPoolSettings = new ProtocolSettings.MemoryPoolSettings
+                {
+                    MaxTransactionsPerSecond = 60,
+                },
+            }, storageProvider: (string)null));
 
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
@@ -705,10 +713,38 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(4);
 
-            AddTransactions(511); // Max per block currently is 512
+            AddTransactions(70);
+            await Task.Delay(1000);
             // Smart throttler is enabled by default
             // it will limit the number of transactions form the same sender
-            _unit.VerifiedCount.Should().Be(96);
+            // First second there is no transaction in the memorypool,
+            // thus can not and need not be throttled
+            _unit.VerifiedCount.Should().Be(70);
+
+            AddTransactions(30);
+            await Task.Delay(200);
+            AddTransactions(30);
+            await Task.Delay(200);
+            AddTransactions(30);
+            await Task.Delay(200);
+            AddTransactions(30);
+            await Task.Delay(200);
+            AddTransactions(30);
+            await Task.Delay(200);
+
+            // Smart throttler is enabled by default
+            // it will limit the number of transactions form the same sender
+            // Second second, the number of transactions should be 70 + MaxTransactionPerSecond
+            // Which is 70 + 50 = 120
+            _unit.VerifiedCount.Should().Be(120);
+
+            AddTransactions(30);
+            // Smart throttler is enabled by default
+            // it will limit the number of transactions form the same sender
+            // Third second resets the throttler,
+            // the number of transactions should be 120 + 30 = 150
+            _unit.VerifiedCount.Should().Be(150);
+
         }
 
         [TestMethod]

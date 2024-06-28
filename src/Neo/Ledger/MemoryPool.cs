@@ -402,7 +402,6 @@ namespace Neo.Ledger
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
 
-                _throttler?.RemoveTransaction(minItem.Tx);
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
                 removedTransactions.Add(minItem.Tx);
@@ -425,7 +424,6 @@ namespace Neo.Ledger
 
             _unsortedTransactions.Remove(hash);
             _sortedTransactions.Remove(item);
-            _throttler?.RemoveTransaction(item.Tx);
 
             RemoveConflictsOfVerified(item);
 
@@ -456,7 +454,6 @@ namespace Neo.Ledger
 
             _unverifiedTransactions.Remove(hash);
             _unverifiedSortedTransactions.Remove(item);
-            _throttler?.RemoveTransaction(item.Tx);
             return true;
         }
 

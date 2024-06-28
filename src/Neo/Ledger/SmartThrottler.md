@@ -7,7 +7,6 @@ The SmartThrottler is designed to protect the blockchain from potential attacks 
 ## 2. Key Features
 
 - Dynamic adjustment of transaction acceptance rate
-- Per-sender transaction limits
 - Priority handling for high-fee transactions
 - Multi-factor network load estimation
 - Adaptive response to new block additions
@@ -52,15 +51,12 @@ Each sender is capped at 10 transactions in the memory pool. This prevents any s
 
 1. Initialization: Set up initial parameters.
 2. Transaction Acceptance:
-    - Check and reset per-second counter if needed
     - Evaluate network conditions
     - Apply throttling rules
     - Update counters for accepted transactions
 3. Network State Updates:
     - Recalculate average fees
     - Adjust throttling parameters
-4. Transaction Removal:
-    - Update sender transaction counts
 
 ## 5. Key Algorithms
 

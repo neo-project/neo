@@ -38,8 +38,7 @@
     "ValidatorsCount": 7,
     "MemoryPool": {
       "EnableSmartThrottler": true,
-      "MaxTransactionsPerSecond": 512,
-      "MaxTransactionsPerSender": 100
+      "MaxTransactionsPerSecond": 512
     },
     "StandbyCommittee": [
       "02082828ec6efc92e5e7790da851be72d2091a961c1ac9a1772acbf181ac56b831",

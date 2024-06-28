@@ -56,7 +56,6 @@ This README provides an explanation for each field in the JSON configuration fil
 ### MemoryPoolSettings
 - **SmartThrottler**: Boolean flag to enable or disable the smart throttler. Default is `true`.
 - **MaxTransactionsPerSecond**: Maximum number of transactions can be added to the memory pool per second. Default is `512`. Work only when `SmartThrottler` is `true`.
-- **MaxTransactionsPerSender**: Maximum number of transactions that can be added to the memory pool per sender. Default is `100`. Work only when `SmartThrottler` is `true`.
 
 ### Hardforks
 - **HF_Aspidochelone**: Block height for the Aspidochelone hard fork. MainNet is `1730000`, TestNet is `210000`.
