@@ -64,10 +64,38 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
+    - name: macos Installs
+      if: matrix.os == 'macos-latest'
+      run: brew install leveldb
+
+    - name: Build
+      run: |
+        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/win-x64/native
+        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/win-arm64/native
+        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/osx-x64/native
+        mkdir -vp ./src/Plugins/LevelDBStore/runtimes/osx-arm64/native
+
+        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-x64.zip
+        unzip libleveldb-win-x64.zip
+        cp -vp libleveldb-win-x64/libleveldb.dll ./src/Plugins/LevelDBStore/runtimes/win-x64/native/libleveldb.dll
+
+        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-arm64.zip
+        unzip libleveldb-win-arm64.zip
+        cp -vp libleveldb-win-arm64/libleveldb.dll ./src/Plugins/LevelDBStore/runtimes/win-arm64/native/libleveldb.dll
+
+        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-osx-x64.zip
+        unzip libleveldb-osx-x64.zip
+        cp -vp libleveldb-osx-x64/libleveldb.dylib ./src/Plugins/LevelDBStore/runtimes/osx-x64/native/libleveldb.dylib
+
+        wget https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-osx-arm64.zip
+        unzip libleveldb-osx-arm64.zip
+        cp -vp libleveldb-osx-arm64/libleveldb.dylib ./src/Plugins/LevelDBStore/runtimes/osx-arm64/native/libleveldb.dylib
+
+        dotnet build
+
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
-        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet test
 
     - name: Test for coverall
