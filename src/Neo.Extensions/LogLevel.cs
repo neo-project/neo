@@ -41,6 +41,11 @@ namespace Neo
         /// <summary>
         /// The fatal log level.
         /// </summary>
-        Fatal = Error + 1
+        Fatal = Error + 1,
+
+        /// <summary>
+        /// The trace log level.
+        /// </summary>
+        Trace = Fatal + 1,
     }
 }
