@@ -15,6 +15,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Host;
+using Neo.Hosting.App.Host.Service;
+using Neo.Hosting.App.NamedPipes;
 using Neo.Plugins;
 using System;
 using System.CommandLine.Hosting;
@@ -68,11 +70,11 @@ namespace Neo.Hosting.App.Extensions
                 services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
                 services.Configure<NeoOptions>(context.Configuration);
 
-                //services.AddSingleton<NamedPipeEndPoint>();
-                //services.AddSingleton<NamedPipeServerListener>();
-                //services.AddSingleton<NeoSystemHostedService>();
-                //services.AddSingleton<NamedPipeSystemHostedService>();
-                //services.AddSingleton<NamedPipeClientService>();
+                services.AddSingleton<NamedPipeEndPoint>();
+                services.AddSingleton<NamedPipeServerListener>();
+                services.AddSingleton<NeoSystemHostedService>();
+                services.AddSingleton<NamedPipeSystemHostedService>();
+                services.AddSingleton<NamedPipeClientService>();
 
                 configure?.Invoke(context, services);
             });

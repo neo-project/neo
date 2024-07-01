@@ -10,11 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using System;
 using System.IO.Pipelines;
 using System.IO.Pipes;
 using System.Net;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using PipeOptions = System.IO.Pipelines.PipeOptions;
 
@@ -29,7 +31,7 @@ namespace Neo.Hosting.App.NamedPipes
         private readonly CancellationToken _connectionClosedToken = default;
 
         private readonly NamedPipeServerStream _serverStream;
-        //private readonly Channel<PipeMessage> _messageQueue;
+        private readonly Channel<PipeMessage> _messageQueue;
         private readonly NamedPipeServerListener _listener;
         private readonly NamedPipeEndPoint _endPoint;
 
@@ -39,7 +41,7 @@ namespace Neo.Hosting.App.NamedPipes
 
         private Task _receivingTask = Task.CompletedTask;
         private Task _sendingTask = Task.CompletedTask;
-        //private Task _processMessageTask = Task.CompletedTask;
+        private Task _processMessageTask = Task.CompletedTask;
 
         private Exception? _shutdownReason;
 
@@ -63,7 +65,7 @@ namespace Neo.Hosting.App.NamedPipes
 
         public Exception? ShutdownReason => _shutdownReason;
 
-        //public int MessageQueueCount => _messageQueue.Reader.Count;
+        public int MessageQueueCount => _messageQueue.Reader.Count;
 
         internal NamedPipeServerConnection(
             NamedPipeServerListener listener,
@@ -79,12 +81,12 @@ namespace Neo.Hosting.App.NamedPipes
             _logger = logger;
 
             _connectionClosedToken = _connectionClosedTokenSource.Token;
-            //_messageQueue = Channel.CreateBounded<PipeMessage>(
-            //    new BoundedChannelOptions(MaxMessageCapacity)
-            //    {
-            //        SingleReader = true,
-            //        FullMode = BoundedChannelFullMode.Wait,
-            //    });
+            _messageQueue = Channel.CreateBounded<PipeMessage>(
+                new BoundedChannelOptions(MaxMessageCapacity)
+                {
+                    SingleReader = true,
+                    FullMode = BoundedChannelFullMode.Wait,
+                });
 
             var pair = DuplexPipe.CreateConnectionPair(inputOptions, outputOptions);
 
@@ -123,16 +125,16 @@ namespace Neo.Hosting.App.NamedPipes
             Reader.CancelPendingRead();
         }
 
-        //public async ValueTask<PipeMessage?> ReadAsync(CancellationToken cancellationToken = default)
-        //{
-        //    while (await _messageQueue.Reader.WaitToReadAsync(cancellationToken))
-        //    {
-        //        if (_messageQueue.Reader.TryRead(out var message))
-        //            return message;
-        //    }
+        public async ValueTask<PipeMessage?> ReadAsync(CancellationToken cancellationToken = default)
+        {
+            while (await _messageQueue.Reader.WaitToReadAsync(cancellationToken))
+            {
+                if (_messageQueue.Reader.TryRead(out var message))
+                    return message;
+            }
 
-        //    return null;
-        //}
+            return null;
+        }
 
         internal void Start()
         {
@@ -140,7 +142,7 @@ namespace Neo.Hosting.App.NamedPipes
             {
                 _receivingTask = DoReceiveAsync();
                 _sendingTask = DoSendAsync();
-                //_processMessageTask = ProcessMessagesAsync();
+                _processMessageTask = ProcessMessagesAsync();
             }
             catch (Exception ex)
             {
@@ -230,82 +232,82 @@ namespace Neo.Hosting.App.NamedPipes
             }
         }
 
-        //private async Task ProcessMessagesAsync()
-        //{
-        //    Exception? unexpectedError = null;
+        private async Task ProcessMessagesAsync()
+        {
+            Exception? unexpectedError = null;
 
-        //    try
-        //    {
-        //        while (true)
-        //        {
-        //            var result = await Reader.ReadAsync();
+            try
+            {
+                while (true)
+                {
+                    var result = await Reader.ReadAsync();
 
-        //            if (result.IsCanceled)
-        //                break;
+                    if (result.IsCanceled)
+                        break;
 
-        //            var buffer = result.Buffer;
-        //            if (buffer.IsSingleSegment)
-        //                await QueueMessageAsync(buffer.First);
-        //            else
-        //            {
-        //                foreach (var segment in buffer)
-        //                    await QueueMessageAsync(segment);
-        //            }
+                    var buffer = result.Buffer;
+                    if (buffer.IsSingleSegment)
+                        await QueueMessageAsync(buffer.First);
+                    else
+                    {
+                        foreach (var segment in buffer)
+                            await QueueMessageAsync(segment);
+                    }
 
-        //            Reader.AdvanceTo(buffer.End);
+                    Reader.AdvanceTo(buffer.End);
 
-        //            if (result.IsCompleted)
-        //                break;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        unexpectedError = ex;
+                    if (result.IsCompleted)
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                unexpectedError = ex;
 
-        //        _logger.LogError(0, ex, $"Unexpected exception in {nameof(NamedPipeServerConnection)}.{nameof(ProcessMessagesAsync)}.");
-        //    }
-        //    finally
-        //    {
-        //        Shutdown(unexpectedError);
+                _logger.LogError(0, ex, $"Unexpected exception in {nameof(NamedPipeServerConnection)}.{nameof(ProcessMessagesAsync)}.");
+            }
+            finally
+            {
+                Shutdown(unexpectedError);
 
-        //        Reader.Complete(unexpectedError);
-        //        Output.CancelPendingRead();
+                Reader.Complete(unexpectedError);
+                Output.CancelPendingRead();
 
-        //        //_messageQueue.Writer.Complete(unexpectedError);
-        //    }
-        //}
+                _messageQueue.Writer.Complete(unexpectedError);
+            }
+        }
 
-        //private async Task QueueMessageAsync(ReadOnlyMemory<byte> buffer)
-        //{
-        //    try
-        //    {
-        //        if (buffer.IsEmpty)
-        //            return;
+        private async Task QueueMessageAsync(ReadOnlyMemory<byte> buffer)
+        {
+            try
+            {
+                if (buffer.IsEmpty)
+                    return;
 
-        //        var message = PipeMessage.Create(buffer);
+                var message = PipeMessage.Create(buffer);
 
-        //        if (message is null)
-        //            return;
+                if (message is null)
+                    return;
 
-        //        if (_messageQueue.Writer.TryWrite(message) == false)
-        //        {
-        //            if (await _messageQueue.Writer.WaitToWriteAsync(_connectionClosedToken) == false)
-        //                throw new InvalidOperationException("Message queue writer was unexpectedly closed.");
-        //        }
-        //    }
-        //    catch (IndexOutOfRangeException) // NULL message or Empty message
-        //    {
-        //        _logger.LogTrace("Received a corrupted message.");
-        //    }
-        //    catch (FormatException ex) // Normally invalid or corrupt message
-        //    {
-        //        _logger.LogTrace("{Exception}", ex);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(0, ex, $"Unexpected exception in {nameof(NamedPipeServerConnection)}.{nameof(QueueMessageAsync)}.");
-        //    }
-        //}
+                if (_messageQueue.Writer.TryWrite(message) == false)
+                {
+                    if (await _messageQueue.Writer.WaitToWriteAsync(_connectionClosedToken) == false)
+                        throw new InvalidOperationException("Message queue writer was unexpectedly closed.");
+                }
+            }
+            catch (IndexOutOfRangeException) // NULL message or Empty message
+            {
+                _logger.LogTrace("Received a corrupted message.");
+            }
+            catch (FormatException ex) // Normally invalid or corrupt message
+            {
+                _logger.LogTrace("{Exception}", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(0, ex, $"Unexpected exception in {nameof(NamedPipeServerConnection)}.{nameof(QueueMessageAsync)}.");
+            }
+        }
 
         private void Shutdown(Exception? shutdownReason)
         {
