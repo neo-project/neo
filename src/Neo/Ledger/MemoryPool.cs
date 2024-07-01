@@ -43,6 +43,8 @@ namespace Neo.Ledger
 
         private readonly NeoSystem _system;
 
+        private readonly SmartThrottler? _throttler;
+
         //
         /// <summary>
         /// Guarantees consistency of the pool data structures.
@@ -129,6 +131,8 @@ namespace Neo.Ledger
             Capacity = system.Settings.MemoryPoolMaxTransactions;
             MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
             MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
+            if (_system.Settings.MemPoolSettings.EnableSmartThrottler)
+                _throttler = new SmartThrottler(this, system);
         }
 
         /// <summary>
@@ -296,6 +300,11 @@ namespace Neo.Ledger
 
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
+            if (_throttler != null && !_throttler.ShouldAcceptTransaction(tx))
+            {
+                return VerifyResult.OutOfMemory;
+            }
+
             var poolItem = new PoolItem(tx);
 
             if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
@@ -514,6 +523,7 @@ namespace Neo.Ledger
 
                 // Add all the previously verified transactions back to the unverified transactions and clear mempool conflicts list.
                 InvalidateVerifiedTransactions();
+                _throttler?.UpdateNetworkState(block);
             }
             finally
             {
