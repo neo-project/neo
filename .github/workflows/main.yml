@@ -80,6 +80,7 @@ jobs:
         dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
         dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
         dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
+        dotnet test ./tests/Neo.Hosting.App.Tests --output ./bin/tests/Neo.Hosting.App.Tests
 
         # Plugins
         dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
@@ -104,6 +105,7 @@ jobs:
           ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Hosting.App.Tests/TestResults/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
