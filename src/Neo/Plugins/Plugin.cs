@@ -189,7 +189,24 @@ namespace Neo.Plugins
             }
         }
 
-        internal static void LoadPlugins()
+        public static void LoadPlugins(string[] pluginNames)
+        {
+            if (!Directory.Exists(PluginsDirectory)) return;
+            foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
+            {
+                foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
+                {
+                    try
+                    {
+                        if (pluginNames.Contains(GetFileNameWithoutExtension(filename), StringComparer.InvariantCultureIgnoreCase))
+                            LoadPlugin(Assembly.Load(File.ReadAllBytes(filename)));
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        public static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
             List<Assembly> assemblies = new();

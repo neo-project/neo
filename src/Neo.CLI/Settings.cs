@@ -13,7 +13,6 @@ using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -170,6 +169,8 @@ namespace Neo
         public bool Prerelease { get; init; } = false;
         public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
 
+        public string[] LoadDlls { get; init; } = [];
+
         public PluginsSettings(IConfigurationSection section)
         {
             if (section.Exists())
@@ -179,6 +180,7 @@ namespace Neo
                 Prerelease = section.GetValue(nameof(Prerelease), Prerelease);
                 Version = section.GetValue(nameof(Version), Version)!;
 #endif
+                LoadDlls = section.GetSection(nameof(LoadDlls)).Get<string[]>() ?? [];
             }
         }
 
