@@ -3,7 +3,6 @@
     "BlockCacheSize": 1000,
     "HeightToBegin": 0,
     "StoragePerFolder": 100000,
-    "Exclude": [ -4 ],
-    "UnhandledExceptionPolicy": "Ignore"
+    "Exclude": [ -4 ]
   }
 }

@@ -3,8 +3,7 @@
     "Path": "ApplicationLogs_{0}",
     "Network": 860833102,
     "MaxStackSize": 65535,
-    "Debug": false,
-    "UnhandledExceptionPolicy": "StopPlugin"
+    "Debug": false
   },
   "Dependency": [
     "RpcServer"

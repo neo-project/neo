@@ -5,7 +5,6 @@
     "AutoStart": false,
     "Network": 860833102,
     "MaxBlockSize": 2097152,
-    "MaxBlockSystemFee": 150000000000,
-    "UnhandledExceptionPolicy": "StopNode"
+    "MaxBlockSystemFee": 150000000000
   }
 }
