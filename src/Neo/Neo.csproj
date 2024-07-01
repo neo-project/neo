@@ -30,6 +30,8 @@
     <InternalsVisibleTo Include="Neo.SmartContract.Testing" />
     <InternalsVisibleTo Include="Neo.SmartContract.TestEngine" />
     <InternalsVisibleTo Include="Neo.Plugins.RpcServer.Tests" />
+    <InternalsVisibleTo Include="neo-cmd" />
+    <InternalsVisibleTo Include="Neo.Hosting.App.Tests" />
   </ItemGroup>
 
 </Project>
