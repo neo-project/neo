@@ -164,10 +164,10 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                var ret = _unsortedTransactions.TryGetValue(hash, out var item)
-                           || _unverifiedTransactions.TryGetValue(hash, out item);
-                tx = ret ? item!.Tx : null;
-                return ret;
+                _ = _unsortedTransactions.TryGetValue(hash, out var item)
+                    || _unverifiedTransactions.TryGetValue(hash, out item);
+                tx = item?.Tx;
+                return tx != null;
             }
             finally
             {
