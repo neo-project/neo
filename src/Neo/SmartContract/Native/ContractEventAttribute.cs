@@ -66,6 +66,13 @@ namespace Neo.SmartContract.Native
             ActiveIn = activeIn;
         }
 
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value,
+            string arg2Name, ContractParameterType arg2Value, Hardfork deprecatedIn) : this(activeIn, order, name, arg1Name, arg1Value, arg2Name, arg2Value)
+        {
+            DeprecatedIn = deprecatedIn;
+        }
+
         public ContractEventAttribute(int order, string name,
             string arg1Name, ContractParameterType arg1Value,
             string arg2Name, ContractParameterType arg2Value)
@@ -89,6 +96,14 @@ namespace Neo.SmartContract.Native
                 ]
             };
         }
+
+        public ContractEventAttribute(int order, string name,
+           string arg1Name, ContractParameterType arg1Value,
+           string arg2Name, ContractParameterType arg2Value, Hardfork deprecatedIn) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value)
+        {
+            DeprecatedIn = deprecatedIn;
+        }
+
 
         public ContractEventAttribute(Hardfork activeIn, int order, string name,
             string arg1Name, ContractParameterType arg1Value,

@@ -208,7 +208,7 @@ namespace Neo.SmartContract.Native
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContractState GetContractState(ProtocolSettings settings, uint blockHeight) => GetContractState(settings.IsHardforkEnabled, blockHeight);
 
-        private static bool IsActive(IHardforkActivable u, IsHardforkEnabledDelegate hfChecker, uint blockHeight)
+        internal static bool IsActive(IHardforkActivable u, IsHardforkEnabledDelegate hfChecker, uint blockHeight)
         {
             return  // no hardfork is involved
                     u.ActiveIn is null && u.DeprecatedIn is null ||
