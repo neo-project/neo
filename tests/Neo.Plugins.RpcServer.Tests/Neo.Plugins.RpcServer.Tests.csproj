@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Neo.Plugins.RpcServer.Tests</RootNamespace>
     <AssemblyName>Neo.Plugins.RpcServer.Tests</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
     <ProjectReference Include="..\..\src\Plugins\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\Neo.UnitTests\Neo.UnitTests.csproj" />
   </ItemGroup>
 
 </Project>
