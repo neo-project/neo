@@ -57,18 +57,18 @@ namespace Neo.Hosting.App
 #endif
                 logging.AddEventSourceLogger();
 
-                //if (IsRunningAsService == false)
-                //    logging.AddCommandLineLogger(); // Neo CommandLine Logger
-                //else
-                //{
-                logging.AddSimpleConsole(config =>
+                if (IsRunningAsService == false)
+                    logging.AddCommandLineLogger(); // Neo CommandLine Logger
+                else
                 {
-                    config.ColorBehavior = LoggerColorBehavior.Enabled;
-                    config.SingleLine = true;
-                    config.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ";
-                    config.UseUtcTimestamp = false;
-                });
-                //}
+                    logging.AddSimpleConsole(config =>
+                    {
+                        config.ColorBehavior = LoggerColorBehavior.Enabled;
+                        config.SingleLine = true;
+                        config.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ";
+                        config.UseUtcTimestamp = false;
+                    });
+                }
 
                 if (isWindows)
                     logging.AddEventLog();

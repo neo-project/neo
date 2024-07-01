@@ -51,10 +51,10 @@ namespace Neo.Hosting.App
                     builder.UseNeoServices();
                     builder.UseNeoSystem();
                     builder.UseCommandHandler<DefaultRootCommand, EmptyHandler>();
-                    //builder.UseCommandHandler<ExportCommand, EmptyHandler>();
-                    //builder.UseCommandHandler<RunCommand, RunCommand.Handler>();
-                    //builder.UseCommandHandler<ConnectCommand, ConnectCommand.Handler>();
-                    //builder.UseCommandHandler<ExportCommand.BlocksExportCommand, ExportCommand.BlocksExportCommand.Handler>();
+                    builder.UseCommandHandler<ExportCommand, EmptyHandler>();
+                    builder.UseCommandHandler<RunCommand, RunCommand.Handler>();
+                    builder.UseCommandHandler<ConnectCommand, ConnectCommand.Handler>();
+                    builder.UseCommandHandler<ExportCommand.BlocksExportCommand, ExportCommand.BlocksExportCommand.Handler>();
                     builder.UseSystemd();
                     builder.UseWindowsService();
                 })

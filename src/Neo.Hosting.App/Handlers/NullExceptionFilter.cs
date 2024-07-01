@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Hosting.App.Extensions;
 using System;
+using System.CommandLine;
 using System.CommandLine.Invocation;
 
 namespace Neo.Hosting.App.Handlers
@@ -21,8 +23,8 @@ namespace Neo.Hosting.App.Handlers
 #if DEBUG
             if (exception is not OperationCanceledException)
             {
-                //context.Console.WriteLine(string.Empty);
-                //context.Console.ErrorMessage(exception);
+                context.Console.WriteLine(string.Empty);
+                context.Console.ErrorMessage(exception);
             }
 #endif
 

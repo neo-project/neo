@@ -22,13 +22,13 @@ namespace Neo.Hosting.App.CommandLine
 
         public DefaultRootCommand() : base(ExecutableName, "NEO Blockchain CommandLine Tool")
         {
-            //var exportCommand = new ExportCommand();
-            //var runCommand = new RunCommand();
-            //var connectCommand = new ConnectCommand();
+            var exportCommand = new ExportCommand();
+            var runCommand = new RunCommand();
+            var connectCommand = new ConnectCommand();
 
-            //AddCommand(exportCommand);
-            //AddCommand(runCommand);
-            //AddCommand(connectCommand);
+            AddCommand(exportCommand);
+            AddCommand(runCommand);
+            AddCommand(connectCommand);
         }
 
         public static string ExecutableName =>

@@ -103,7 +103,7 @@ namespace Neo.Hosting.App.NamedPipes
             {
                 await _receivingTask;
                 await _sendingTask;
-                //await _processMessageTask;
+                await _processMessageTask;
             }
             catch (Exception ex)
             {

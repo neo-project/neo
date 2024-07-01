@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Host;
+using Neo.Hosting.App.NamedPipes;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -69,18 +70,18 @@ namespace Neo.Hosting.App.Helpers
             return true;
         }
 
-        //public static NamedPipeEndPoint AddOrGetServicePipeName()
-        //{
-        //    if (TryGetServicePipeName(out var pipeName))
-        //        return new(pipeName);
-        //    else
-        //    {
-        //        var endPoint = new NamedPipeEndPoint(Path.GetRandomFileName());
+        public static NamedPipeEndPoint AddOrGetServicePipeName()
+        {
+            if (TryGetServicePipeName(out var pipeName))
+                return new(pipeName);
+            else
+            {
+                var endPoint = new NamedPipeEndPoint(Path.GetRandomFileName());
 
-        //        Environment.SetEnvironmentVariable(NeoEnvironmentVariableDefaults.PipeName, endPoint.PipeName, EnvironmentVariableTarget.User);
+                Environment.SetEnvironmentVariable(NeoEnvironmentVariableDefaults.PipeName, endPoint.PipeName, EnvironmentVariableTarget.User);
 
-        //        return endPoint;
-        //    }
-        //}
+                return endPoint;
+            }
+        }
     }
 }
