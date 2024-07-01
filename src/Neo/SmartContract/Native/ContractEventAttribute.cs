@@ -17,16 +17,23 @@ namespace Neo.SmartContract.Native
 {
     [DebuggerDisplay("{Descriptor.Name}")]
     [AttributeUsage(AttributeTargets.Constructor, AllowMultiple = true)]
-    internal class ContractEventAttribute : Attribute
+    internal class ContractEventAttribute : Attribute, IHardforkActivable
     {
         public int Order { get; init; }
         public ContractEventDescriptor Descriptor { get; set; }
         public Hardfork? ActiveIn { get; init; } = null;
+        public Hardfork? DeprecatedIn { get; init; } = null;
 
         public ContractEventAttribute(Hardfork activeIn, int order, string name,
             string arg1Name, ContractParameterType arg1Value) : this(order, name, arg1Name, arg1Value)
         {
             ActiveIn = activeIn;
+        }
+
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value, Hardfork deprecatedIn) : this(activeIn, order, name, arg1Name, arg1Value)
+        {
+            DeprecatedIn = deprecatedIn;
         }
 
         public ContractEventAttribute(int order, string name, string arg1Name, ContractParameterType arg1Value)
@@ -35,15 +42,21 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
                         Type = arg1Value
                     }
-                }
+                ]
             };
+        }
+
+        public ContractEventAttribute(int order, string name, string arg1Name, ContractParameterType arg1Value, Hardfork deprecatedIn)
+            : this(order, name, arg1Name, arg1Value)
+        {
+            DeprecatedIn = deprecatedIn;
         }
 
         public ContractEventAttribute(Hardfork activeIn, int order, string name,
@@ -51,6 +64,13 @@ namespace Neo.SmartContract.Native
             string arg2Name, ContractParameterType arg2Value) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value)
         {
             ActiveIn = activeIn;
+        }
+
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value,
+            string arg2Name, ContractParameterType arg2Value, Hardfork deprecatedIn) : this(activeIn, order, name, arg1Name, arg1Value, arg2Name, arg2Value)
+        {
+            DeprecatedIn = deprecatedIn;
         }
 
         public ContractEventAttribute(int order, string name,
@@ -61,8 +81,8 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
@@ -73,9 +93,17 @@ namespace Neo.SmartContract.Native
                         Name = arg2Name,
                         Type = arg2Value
                     }
-                }
+                ]
             };
         }
+
+        public ContractEventAttribute(int order, string name,
+           string arg1Name, ContractParameterType arg1Value,
+           string arg2Name, ContractParameterType arg2Value, Hardfork deprecatedIn) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value)
+        {
+            DeprecatedIn = deprecatedIn;
+        }
+
 
         public ContractEventAttribute(Hardfork activeIn, int order, string name,
             string arg1Name, ContractParameterType arg1Value,
@@ -95,8 +123,8 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
@@ -112,7 +140,7 @@ namespace Neo.SmartContract.Native
                         Name = arg3Name,
                         Type = arg3Value
                     }
-                }
+                ]
             };
         }
 
@@ -136,8 +164,8 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
@@ -158,7 +186,7 @@ namespace Neo.SmartContract.Native
                         Name = arg4Name,
                         Type = arg4Value
                     }
-                }
+                ]
             };
         }
     }
