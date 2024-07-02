@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Benchmarks.cs file belongs to the neo project and is free
+// Benchmarks.POC.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,18 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using BenchmarkDotNet.Attributes;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using System.Diagnostics;
 
-namespace Neo;
+namespace Neo.Benchmark;
 
-static class Benchmarks
+public class Benchmarks_PoCs
 {
     private static readonly ProtocolSettings protocol = ProtocolSettings.Load("config.json");
     private static readonly NeoSystem system = new(protocol, (string)null);
 
+    [Benchmark]
     public static void NeoIssue2725()
     {
         // https://github.com/neo-project/neo/issues/2725

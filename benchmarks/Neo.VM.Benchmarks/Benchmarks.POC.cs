@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Benchmarks.cs file belongs to the neo project and is free
+// Benchmarks.POC.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,12 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using BenchmarkDotNet.Attributes;
 using System.Diagnostics;
 
-namespace Neo.VM
+namespace Neo.VM.Benchmark
 {
-    public static class Benchmarks
+    public class Benchmarks_PoCs
     {
+        [Benchmark]
         public static void NeoIssue2528()
         {
             // https://github.com/neo-project/neo/issues/2528
@@ -47,6 +49,7 @@ namespace Neo.VM
             Run(nameof(NeoIssue2528), "VwEAwkpKAfsHdwARwG8AnXcAbwAl9////xHAzwJwlAAAdwAQzm8AnXcAbwAl9////0U=");
         }
 
+        [Benchmark]
         public static void NeoVMIssue418()
         {
             // https://github.com/neo-project/neo-vm/issues/418
@@ -81,6 +84,7 @@ namespace Neo.VM
             Run(nameof(NeoVMIssue418), "whBNEcARTRHAVgEB/gGdYBFNEU0SwFMSwFhKJPNFUUU=");
         }
 
+        [Benchmark]
         public static void NeoIssue2723()
         {
             // L00: INITSSLOT 1
