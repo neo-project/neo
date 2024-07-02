@@ -114,7 +114,8 @@ namespace Neo.SmartContract.Manifest
             if (this == other) return true;
             if (IsWildcard == other.IsWildcard) return true;
             if (IsHash) return Hash.Equals(other.Hash);
-            else return Group.Equals(other.Group);
+            if (IsGroup) return Group.Equals(other.Group);
+            return false;
         }
 
         public override int GetHashCode()

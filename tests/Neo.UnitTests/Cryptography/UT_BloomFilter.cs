@@ -39,6 +39,8 @@ namespace Neo.UnitTests.Cryptography
             uint nTweak = 123456;
             Action action = () => new BloomFilter(m, n, nTweak);
             action.Should().Throw<ArgumentOutOfRangeException>();
+            action = () => new BloomFilter(m, n, nTweak, new byte[] { 0, 1, 2, 3, 4 });
+            action.Should().Throw<ArgumentOutOfRangeException>();
 
             m = 7;
             n = -10;

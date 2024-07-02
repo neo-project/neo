@@ -13,7 +13,10 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -21,6 +24,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     public class UT_Block
     {
         Block uut;
+        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
+        {
+            var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
+            var snapshot = hasSnapshot ? TestBlockchain.GetTestSnapshot() : null;
+            var block = hasBlock ? new Block { Header = new Header() } : null;
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
+            if (addScript) engine.LoadScript(new byte[] { 0x01 });
+            return engine;
+        }
 
         [TestInitialize]
         public void TestSetup()
@@ -136,6 +148,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Equals_SameObj()
         {
             uut.Equals(uut).Should().BeTrue();
+            var obj = uut as object;
+            uut.Equals(obj).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestGetHashCode()
+        {
+            var snapshot = GetEngine(true, true).Snapshot;
+            NativeContract.Ledger.GetBlock(snapshot, 0).GetHashCode().Should().Be(-626492395);
         }
 
         [TestMethod]

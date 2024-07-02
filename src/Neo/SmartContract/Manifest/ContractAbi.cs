@@ -62,10 +62,10 @@ namespace Neo.SmartContract.Manifest
         {
             ContractAbi abi = new()
             {
-                Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson((JObject)u)).ToArray(),
-                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson((JObject)u)).ToArray()
+                Methods = ((JArray)json?["methods"])?.Select(u => ContractMethodDescriptor.FromJson((JObject)u)).ToArray(),
+                Events = ((JArray)json?["events"])?.Select(u => ContractEventDescriptor.FromJson((JObject)u)).ToArray()
             };
-            if (abi.Methods.Length == 0) throw new FormatException();
+            if (abi.Methods == null || abi.Methods.Length == 0) throw new FormatException();
             return abi;
         }
 

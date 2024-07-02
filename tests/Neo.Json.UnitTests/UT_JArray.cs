@@ -254,5 +254,18 @@ namespace Neo.Json.UnitTests
             var s = jArray.AsString();
             Assert.AreEqual(s, "{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}");
         }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var jArray = new JArray
+            {
+                alice,
+                bob,
+            };
+            var a = jArray.AsString();
+            var b = jArray.Clone().AsString();
+            a.Should().Be(b);
+        }
     }
 }
