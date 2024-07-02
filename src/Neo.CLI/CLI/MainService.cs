@@ -378,6 +378,11 @@ namespace Neo.CLI
             CustomApplicationSettings(options, Settings.Default);
             try
             {
+                if (Settings.Default.Plugins.LoadDlls.Length > 0)
+                    Plugin.LoadPlugins(Settings.Default.Plugins.LoadDlls);
+                else
+                    Plugin.LoadPlugins();
+
                 NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
                     string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             }
