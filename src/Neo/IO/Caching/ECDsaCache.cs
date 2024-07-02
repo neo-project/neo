@@ -14,7 +14,8 @@ using System.Security.Cryptography;
 
 namespace Neo.IO.Caching
 {
-    record ECDsaCacheItem(Cryptography.ECC.ECPoint key, ECDsa value);
+    record ECDsaCacheItem(Cryptography.ECC.ECPoint Key, ECDsa Value);
+
     internal class ECDsaCache : FIFOCache<Cryptography.ECC.ECPoint, ECDsaCacheItem>
     {
         public ECDsaCache(int max_capacity = 20000) : base(max_capacity, EqualityComparer<Cryptography.ECC.ECPoint>.Default)
@@ -23,7 +24,7 @@ namespace Neo.IO.Caching
 
         protected override Cryptography.ECC.ECPoint GetKeyForItem(ECDsaCacheItem item)
         {
-            return item.key;
+            return item.Key;
         }
     }
 }
