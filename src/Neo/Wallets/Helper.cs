@@ -18,6 +18,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using static Neo.SmartContract.Helper;
 
@@ -144,7 +145,7 @@ namespace Neo.Wallets
                                     script.EmitPush(true);
                                     break;
                                 case ContractParameterType.Integer:
-                                    script.Emit(OpCode.PUSHINT256, new byte[32]);
+                                    script.Emit(OpCode.PUSHINT256, new byte[Integer.MaxSize]);
                                     break;
                                 case ContractParameterType.Hash160:
                                     script.EmitPush(new byte[UInt160.Length]);
@@ -153,10 +154,10 @@ namespace Neo.Wallets
                                     script.EmitPush(new byte[UInt256.Length]);
                                     break;
                                 case ContractParameterType.PublicKey:
-                                    script.EmitPush(new byte[ECCurve.Secp256r1.ExpectedECPointLength]);
+                                    script.EmitPush(new byte[33]);
                                     break;
                                 case ContractParameterType.Array:
-                                    script.Emit(OpCode.PUSHINT256, new byte[32]);
+                                    script.Emit(OpCode.PUSHINT256, new byte[Integer.MaxSize]);
                                     script.Emit(OpCode.NEWARRAY);
                                     break;
                                 case ContractParameterType.Map:
