@@ -69,11 +69,11 @@ namespace Neo.UnitTests.Ledger
                 Transaction = tx2,
                 BlockIndex = 1
             };
-            UT_SmartContractHelper.TransactionAdd(snapshot, state1, state2);
+            TestUtils.TransactionAdd(snapshot, state1, state2);
 
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
-            UT_SmartContractHelper.BlocksAdd(snapshot, tblock.Hash, tblock);
+            TestUtils.BlocksAdd(snapshot, tblock.Hash, tblock);
 
             Block block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
 

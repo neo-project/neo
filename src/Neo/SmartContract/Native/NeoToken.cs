@@ -421,7 +421,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        private (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
+        internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
             return GetCandidatesInternal(snapshot)
                 .Select(p => (p.PublicKey, p.State.Votes))
