@@ -16,6 +16,7 @@ namespace Neo
         HF_Aspidochelone,
         HF_Basilisk,
         HF_Cockatrice,
-        HF_Domovoi
+        HF_Domovoi,
+        HF_Echidna,
     }
 }
