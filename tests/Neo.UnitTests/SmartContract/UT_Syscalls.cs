@@ -84,7 +84,7 @@ namespace Neo.UnitTests.SmartContract
             var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
             height.Index = block.Index + TestProtocolSettings.Default.MaxTraceableBlocks;
 
-            UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, block);
+            TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
             {
                 BlockIndex = block.Index,
