@@ -31,16 +31,39 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterType Type { get; set; }
 
+        /// <summary>
+        /// NEP-25 extended type
+        /// </summary>
+        public ExtendedType? ExtendedType { get; set; }
+
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Name = @struct[0].GetString();
             Type = (ContractParameterType)(byte)@struct[1].GetInteger();
+
+            if (@struct.Count >= 3)
+            {
+                ExtendedType = new ExtendedType();
+                ExtendedType.FromStackItem((VM.Types.Array)@struct[5], 0);
+            }
+            else
+            {
+                ExtendedType = null;
+            }
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter) { Name, (byte)Type };
+            var @struct = new Struct(referenceCounter) { Name, (byte)Type };
+
+            if (ExtendedType != null)
+            {
+                var structExtended = new Struct(referenceCounter);
+                @struct.Add(ExtendedType.ToStackItem(referenceCounter, structExtended));
+            }
+
+            return @struct;
         }
 
         /// <summary>
@@ -50,10 +73,11 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The converted parameter.</returns>
         public static ContractParameterDefinition FromJson(JObject json)
         {
-            ContractParameterDefinition parameter = new()
+            var parameter = new ContractParameterDefinition()
             {
                 Name = json["name"].GetString(),
-                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
+                Type = Enum.Parse<ContractParameterType>(json["type"].GetString()),
+                ExtendedType = json["extendedtype"] != null ? ExtendedType.FromJson((JObject)json["extendedtype"]) : null,
             };
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException();
@@ -71,6 +95,10 @@ namespace Neo.SmartContract.Manifest
             var json = new JObject();
             json["name"] = Name;
             json["type"] = Type.ToString();
+            if (ExtendedType != null)
+            {
+                json["extendedtype"] = ExtendedType.ToString();
+            }
             return json;
         }
     }
