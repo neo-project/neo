@@ -78,6 +78,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokensTracker", "src\Plugin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RpcClient", "src\Plugins\RpcClient\RpcClient.csproj", "{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RollbackServer", "src\Plugins\RollbackService\RollbackServer.csproj", "{651CD479-1AF3-4E1A-8994-19FF2CB766F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -216,6 +218,10 @@ Global
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{651CD479-1AF3-4E1A-8994-19FF2CB766F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{651CD479-1AF3-4E1A-8994-19FF2CB766F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{651CD479-1AF3-4E1A-8994-19FF2CB766F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{651CD479-1AF3-4E1A-8994-19FF2CB766F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -255,6 +261,7 @@ Global
 		{FF76D8A4-356B-461A-8471-BC1B83E57BBC} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{5E4947F3-05D3-4806-B0F3-30DAC71B5986} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0} = {C2DC830A-327A-42A7-807D-295216D30DBB}
+		{651CD479-1AF3-4E1A-8994-19FF2CB766F4} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}

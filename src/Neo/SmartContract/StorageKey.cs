@@ -34,7 +34,7 @@ namespace Neo.SmartContract
 
         public StorageKey() { }
 
-        internal StorageKey(byte[] cache)
+        public StorageKey(byte[] cache)
         {
             this.cache = cache;
             Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
