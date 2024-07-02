@@ -178,8 +178,6 @@ namespace Neo.Wallets
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     _ = engine.Execute(); // https://github.com/neo-project/neo/issues/2805
-                    //if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
-                    //if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
                     maxExecutionCost -= engine.FeeConsumed;
                     if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
