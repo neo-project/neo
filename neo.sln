@@ -78,6 +78,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokensTracker", "src\Plugin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RpcClient", "src\Plugins\RpcClient\RpcClient.csproj", "{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RestServer", "src\Plugins\RestServer\RestServer.csproj", "{111264B9-A342-4AFF-B959-C82561299F9B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{B753DC70-E313-4B73-B8F0-45D54126DE92}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rest-server", "rest-server", "{40AB8866-F8A1-4DD4-868D-35F2B06ADEAB}"
+	ProjectSection(SolutionItems) = preProject
+		docs\RestServer\Addons.md = docs\RestServer\Addons.md
+		docs\RestServer\ConfigFile.md = docs\RestServer\ConfigFile.md
+		docs\RestServer\README.md = docs\RestServer\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -216,6 +227,10 @@ Global
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{111264B9-A342-4AFF-B959-C82561299F9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{111264B9-A342-4AFF-B959-C82561299F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{111264B9-A342-4AFF-B959-C82561299F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{111264B9-A342-4AFF-B959-C82561299F9B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -255,6 +270,8 @@ Global
 		{FF76D8A4-356B-461A-8471-BC1B83E57BBC} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{5E4947F3-05D3-4806-B0F3-30DAC71B5986} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0} = {C2DC830A-327A-42A7-807D-295216D30DBB}
+		{111264B9-A342-4AFF-B959-C82561299F9B} = {C2DC830A-327A-42A7-807D-295216D30DBB}
+		{40AB8866-F8A1-4DD4-868D-35F2B06ADEAB} = {B753DC70-E313-4B73-B8F0-45D54126DE92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}

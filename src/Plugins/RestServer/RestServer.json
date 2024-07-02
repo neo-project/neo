@@ -1,0 +1,24 @@
+{
+  "PluginConfiguration": {
+    "Network": 860833102,
+    "BindAddress": "127.0.0.1",
+    "Port": 10339,
+    "KeepAliveTimeout": 120,
+    "SslCertFile": "",
+    "SslCertPassword": "",
+    "TrustedAuthorities": [], // Example: "aec13cdd5ea6a3998aec14ac331ad96bedbb770f" (Thumbprint)
+    "EnableBasicAuthentication": false,
+    "RestUser": "",
+    "RestPass": "",
+    "EnableCors": true,
+    "AllowOrigins": [], // Example: "http://www.example.com"
+    "DisableControllers": [],
+    "EnableCompression": true,
+    "CompressionLevel": "SmallestSize", // "Fastest" or "Optimal" or "NoCompression" or "SmallestSize"
+    "EnableForwardedHeaders": false,
+    "EnableSwagger": true,
+    "MaxPageSize": 50,
+    "MaxConcurrentConnections": 40,
+    "MaxGasInvoke": 200000000
+  }
+}
