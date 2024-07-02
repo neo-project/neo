@@ -170,8 +170,8 @@ namespace Neo.Wallets
                     }
 
                     // Empty verification and non-empty invocation scripts
-                    var invSize = invocationScript?.GetVarSize() ?? Array.Empty<byte>().GetVarSize();
-                    size += Array.Empty<byte>().GetVarSize() + invSize;
+                    var invSize = invocationScript?.GetVarSize() ?? System.Array.Empty<byte>().GetVarSize();
+                    size += System.Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings, gas: maxExecutionCost);
