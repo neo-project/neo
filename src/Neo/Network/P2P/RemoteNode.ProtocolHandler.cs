@@ -30,9 +30,9 @@ namespace Neo.Network.P2P
     partial class RemoteNode
     {
         private class Timer { }
-        private class PendingKnownHashesCollection : KeyedCollectionSlim<UInt256, (UInt256, DateTime)>
+        private class PendingKnownHashesCollection : KeyedCollectionSlim<UInt256, Tuple<UInt256, DateTime>>
         {
-            protected override UInt256 GetKeyForItem((UInt256, DateTime) item)
+            protected override UInt256 GetKeyForItem(Tuple<UInt256, DateTime> item)
             {
                 return item.Item1;
             }
@@ -354,7 +354,7 @@ namespace Neo.Network.P2P
             }
             if (hashes.Length == 0) return;
             foreach (UInt256 hash in hashes)
-                pendingKnownHashes.Add((hash, TimeProvider.Current.UtcNow));
+                pendingKnownHashes.Add(Tuple.Create(hash, TimeProvider.Current.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
 
