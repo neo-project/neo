@@ -51,15 +51,15 @@ namespace Neo.Test
                         // Actions
 
                         if (step.Actions != null) foreach (var run in step.Actions)
+                        {
+                            switch (run)
                             {
-                                switch (run)
-                                {
-                                    case VMUTActionType.Execute: debugger.Execute(); break;
-                                    case VMUTActionType.StepInto: debugger.StepInto(); break;
-                                    case VMUTActionType.StepOut: debugger.StepOut(); break;
-                                    case VMUTActionType.StepOver: debugger.StepOver(); break;
-                                }
+                                case VMUTActionType.Execute: debugger.Execute(); break;
+                                case VMUTActionType.StepInto: debugger.StepInto(); break;
+                                case VMUTActionType.StepOut: debugger.StepOut(); break;
+                                case VMUTActionType.StepOver: debugger.StepOver(); break;
                             }
+                        }
 
                         // Review results
 
