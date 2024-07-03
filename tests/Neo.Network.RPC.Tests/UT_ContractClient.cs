@@ -32,7 +32,7 @@ namespace Neo.Network.RPC.Tests
         {
             keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
-            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, []);
         }
 
         [TestMethod]
@@ -53,15 +53,15 @@ namespace Neo.Network.RPC.Tests
             byte[] script;
             var manifest = new ContractManifest()
             {
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Permissions = [ContractPermission.DefaultPermission],
                 Abi = new ContractAbi()
                 {
-                    Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
+                    Events = [],
+                    Methods = []
                 },
-                Groups = new ContractGroup[0],
+                Groups = [],
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
-                SupportedStandards = new string[] { "NEP-10" },
+                SupportedStandards = ["NEP-10"],
                 Extra = null,
             };
             using (ScriptBuilder sb = new ScriptBuilder())

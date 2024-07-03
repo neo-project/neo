@@ -201,7 +201,7 @@ namespace Neo.Network.P2P.Payloads
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             TransactionAttribute[] attributes = new TransactionAttribute[count];
-            HashSet<TransactionAttributeType> hashset = new();
+            HashSet<TransactionAttributeType> hashset = [];
             for (int i = 0; i < count; i++)
             {
                 TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(ref reader);
@@ -217,7 +217,7 @@ namespace Neo.Network.P2P.Payloads
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             if (count == 0) throw new FormatException();
             Signer[] signers = new Signer[count];
-            HashSet<UInt160> hashset = new();
+            HashSet<UInt160> hashset = [];
             for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
@@ -281,7 +281,7 @@ namespace Neo.Network.P2P.Payloads
             _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => p.ToArray());
             if (_attributesCache.TryGetValue(typeof(T), out var result))
                 return result.OfType<T>();
-            return Enumerable.Empty<T>();
+            return [];
         }
 
         public override int GetHashCode()

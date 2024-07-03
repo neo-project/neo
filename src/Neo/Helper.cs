@@ -148,7 +148,7 @@ namespace Neo
         public static byte[] HexToBytes(this string value)
         {
             if (value == null || value.Length == 0)
-                return Array.Empty<byte>();
+                return [];
             if (value.Length % 2 == 1)
                 throw new FormatException();
             byte[] result = new byte[value.Length / 2];
@@ -224,7 +224,7 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToByteArrayStandard(this BigInteger i)
         {
-            if (i.IsZero) return Array.Empty<byte>();
+            if (i.IsZero) return [];
             return i.ToByteArray();
         }
 

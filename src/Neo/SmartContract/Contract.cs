@@ -73,7 +73,7 @@ namespace Neo.SmartContract
         {
             return new Contract
             {
-                Script = Array.Empty<byte>(),
+                Script = [],
                 _scriptHash = scriptHash,
                 ParameterList = parameterList
             };
@@ -125,7 +125,7 @@ namespace Neo.SmartContract
             return new Contract
             {
                 Script = CreateSignatureRedeemScript(publicKey),
-                ParameterList = new[] { ContractParameterType.Signature }
+                ParameterList = [ContractParameterType.Signature]
             };
         }
 

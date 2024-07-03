@@ -140,7 +140,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                return new[] { Witness };
+                return [Witness];
             }
             set
             {
@@ -190,10 +190,10 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
-            if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
+            if (prevHash == UInt256.Zero) return [Witness.ScriptHash];
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) throw new InvalidOperationException();
-            return new[] { prev.Header.nextConsensus };
+            return [prev.Header.nextConsensus];
         }
 
         public void Serialize(BinaryWriter writer)

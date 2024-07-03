@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Key_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32 };
+            byte[] val = [0x42, 0x32];
             StorageKey uut = new() { Key = val };
             uut.Key.Length.Should().Be(2);
             uut.Key.Span[0].Should().Be(val[0]);

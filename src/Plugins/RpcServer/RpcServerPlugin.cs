@@ -79,7 +79,7 @@ namespace Neo.Plugins.RpcServer
             }
             if (!handlers.TryGetValue(network, out var list))
             {
-                list = new List<object>();
+                list = [];
                 handlers.Add(network, list);
             }
             list.Add(handler);

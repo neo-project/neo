@@ -136,7 +136,7 @@ namespace Neo.UnitTests.SmartContract
                     NextConsensus = UInt160.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Hashes = new UInt256[1] { UInt256.Zero },
+                Hashes = [UInt256.Zero],
             });
             TestUtils.BlocksDelete(snapshot1, index1);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshot1, 100));
@@ -153,7 +153,7 @@ namespace Neo.UnitTests.SmartContract
                     NextConsensus = UInt160.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Hashes = new UInt256[1] { UInt256.Zero },
+                Hashes = [UInt256.Zero],
             };
             TestUtils.BlocksAdd(snapshot2, index2, block2);
             Header header2 = new() { PrevHash = index2, Witness = new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } };
@@ -174,7 +174,7 @@ namespace Neo.UnitTests.SmartContract
                     NextConsensus = UInt160.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Hashes = new UInt256[1] { UInt256.Zero },
+                Hashes = [UInt256.Zero],
             };
             TestUtils.BlocksAdd(snapshot3, index3, block3);
             Header header3 = new()
@@ -205,7 +205,8 @@ namespace Neo.UnitTests.SmartContract
             snapshot3.AddContract(contract.Hash, contract);
             var tx = new Nep17NativeContractExtensions.ManualWitness(contract.Hash)
             {
-                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
+                Witnesses = [new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                ]
             };
 
             Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, TestProtocolSettings.Default, snapshot3, 1000));

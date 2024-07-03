@@ -38,7 +38,7 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();
+            if (keyOrPrefix == null) keyOrPrefix = [];
 
             using var it = db.NewIterator();
             if (direction == SeekDirection.Forward)
@@ -51,7 +51,7 @@ namespace Neo.Plugins.Storage
 
         public bool Contains(byte[] key)
         {
-            return db.Get(key, Array.Empty<byte>(), 0, 0) >= 0;
+            return db.Get(key, [], 0, 0) >= 0;
         }
 
         public byte[] TryGet(byte[] key)

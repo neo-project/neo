@@ -36,7 +36,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             JObject alice = new JObject();
             alice["name"] = "alice";
             alice["age"] = 30;
-            JArray jarray = new JArray { alice };
+            JArray jarray = [alice];
             WildcardContainer<string> r = WildcardContainer<string>.FromJson(jarray, u => u.AsString());
             r[0].Should().Be("{\"name\":\"alice\",\"age\":30}");
 
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestGetCount()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             container.Count.Should().Be(2);
 
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestGetItem()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             container[0].Should().Be("hello");
             container[1].Should().Be("world");
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             IEnumerator<string> enumerator = container.GetEnumerator();
             enumerator.Should().Be(rs.GetEnumerator());
 
-            s = new string[] { "hello", "world" };
+            s = ["hello", "world"];
             container = WildcardContainer<string>.Create(s);
             enumerator = container.GetEnumerator();
             foreach (string _ in s)
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestIEnumerableGetEnumerator()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             IEnumerable enumerable = container;
             var enumerator = enumerable.GetEnumerator();

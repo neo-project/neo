@@ -65,10 +65,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
 
-            uut.Transactions = new[]
-            {
+            uut.Transactions =
+            [
                 TestUtils.GetTransaction(UInt160.Zero)
-            };
+            ];
 
             uut.Size.Should().Be(167); // 159 + nonce
         }
@@ -79,12 +79,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
 
-            uut.Transactions = new[]
-            {
+            uut.Transactions =
+            [
                 TestUtils.GetTransaction(UInt160.Zero),
                 TestUtils.GetTransaction(UInt160.Zero),
                 TestUtils.GetTransaction(UInt160.Zero)
-            };
+            ];
 
             uut.Size.Should().Be(273); // 265 + nonce
         }

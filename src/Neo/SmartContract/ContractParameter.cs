@@ -162,7 +162,7 @@ namespace Neo.SmartContract
                         break;
                     case ContractParameterType.Array:
                         if (context is null)
-                            context = new HashSet<ContractParameter>();
+                            context = [];
                         else if (context.Contains(parameter))
                             throw new InvalidOperationException();
                         context.Add(parameter);
@@ -170,7 +170,7 @@ namespace Neo.SmartContract
                         break;
                     case ContractParameterType.Map:
                         if (context is null)
-                            context = new HashSet<ContractParameter>();
+                            context = [];
                         else if (context.Contains(parameter))
                             throw new InvalidOperationException();
                         context.Add(parameter);
@@ -200,7 +200,7 @@ namespace Neo.SmartContract
                 case byte[] data:
                     return data.ToHexString();
                 case IList<ContractParameter> data:
-                    if (context is null) context = new HashSet<ContractParameter>();
+                    if (context is null) context = [];
                     if (context.Contains(parameter))
                     {
                         return "(array)";
@@ -221,7 +221,7 @@ namespace Neo.SmartContract
                         return sb.ToString();
                     }
                 case IList<KeyValuePair<ContractParameter, ContractParameter>> data:
-                    if (context is null) context = new HashSet<ContractParameter>();
+                    if (context is null) context = [];
                     if (context.Contains(parameter))
                     {
                         return "(map)";

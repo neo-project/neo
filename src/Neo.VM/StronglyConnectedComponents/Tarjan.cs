@@ -18,7 +18,7 @@ namespace Neo.VM.StronglyConnectedComponents
     class Tarjan
     {
         private readonly IEnumerable<T> vertexs;
-        private readonly LinkedList<HashSet<T>> components = new();
+        private readonly LinkedList<HashSet<T>> components = [];
         private readonly Stack<T> stack = new();
         private int index = 0;
 

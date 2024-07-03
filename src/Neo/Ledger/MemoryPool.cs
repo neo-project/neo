@@ -64,7 +64,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
-        private readonly SortedSet<PoolItem> _sortedTransactions = new();
+        private readonly SortedSet<PoolItem> _sortedTransactions = [];
 
         /// <summary>
         /// Store the unverified transactions currently in the pool.
@@ -74,7 +74,7 @@ namespace Neo.Ledger
         /// (_unsortedTransactions, and _sortedTransactions) after each block.
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unverifiedTransactions = new();
-        private readonly SortedSet<PoolItem> _unverifiedSortedTransactions = new();
+        private readonly SortedSet<PoolItem> _unverifiedSortedTransactions = [];
 
         // Internal methods to aid in unit testing
         internal int SortedTxCount => _sortedTransactions.Count;
@@ -321,7 +321,7 @@ namespace Neo.Ledger
                 {
                     if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                     {
-                        pooled = new HashSet<UInt256>();
+                        pooled = [];
                     }
                     pooled.Add(tx.Hash);
                     _conflicts.AddOrSet(attr.Hash, pooled);
@@ -357,7 +357,7 @@ namespace Neo.Ledger
         /// <returns>True if transaction fits the pool, otherwise false.</returns>
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
-            conflictsList = new();
+            conflictsList = [];
             long conflictsFeeSum = 0;
             // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
             if (_conflicts.TryGetValue(tx.Hash, out var conflicting))
@@ -392,7 +392,7 @@ namespace Neo.Ledger
 
         private List<Transaction> RemoveOverCapacity()
         {
-            List<Transaction> removedTransactions = new();
+            List<Transaction> removedTransactions = [];
             do
             {
                 var minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
@@ -554,7 +554,7 @@ namespace Neo.Ledger
         {
             DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new(count);
-            List<PoolItem> invalidItems = new();
+            List<PoolItem> invalidItems = [];
 
             _txRwLock.EnterWriteLock();
             try
@@ -573,7 +573,7 @@ namespace Neo.Ledger
                             {
                                 if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                                 {
-                                    pooled = new HashSet<UInt256>();
+                                    pooled = [];
                                 }
                                 pooled.Add(item.Tx.Hash);
                                 _conflicts.AddOrSet(attr.Hash, pooled);

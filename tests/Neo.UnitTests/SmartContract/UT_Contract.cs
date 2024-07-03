@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestCreate()
         {
             byte[] script = new byte[32];
-            ContractParameterType[] parameterList = new ContractParameterType[] { ContractParameterType.Signature };
+            ContractParameterType[] parameterList = [ContractParameterType.Signature];
             Contract contract = Contract.Create(parameterList, script);
             Assert.AreEqual(contract.Script, script);
             Assert.AreEqual(1, contract.ParameterList.Length);
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract
 
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = [], Attributes = [] }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
@@ -194,7 +194,7 @@ namespace Neo.UnitTests.SmartContract
 
             long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = [], Attributes = [] }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();

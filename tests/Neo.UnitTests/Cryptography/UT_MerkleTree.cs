@@ -32,16 +32,16 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestBuildAndDepthFirstSearch()
         {
-            byte[] array1 = { 0x01 };
+            byte[] array1 = [0x01];
             var hash1 = GetByteArrayHash(array1);
 
-            byte[] array2 = { 0x02 };
+            byte[] array2 = [0x02];
             var hash2 = GetByteArrayHash(array2);
 
-            byte[] array3 = { 0x03 };
+            byte[] array3 = [0x03];
             var hash3 = GetByteArrayHash(array3);
 
-            UInt256[] hashes = { hash1, hash2, hash3 };
+            UInt256[] hashes = [hash1, hash2, hash3];
             MerkleTree tree = new MerkleTree(hashes);
             var hashArray = tree.ToHashArray();
             hashArray[0].Should().Be(hash1);
@@ -59,19 +59,19 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestTrim()
         {
-            byte[] array1 = { 0x01 };
+            byte[] array1 = [0x01];
             var hash1 = GetByteArrayHash(array1);
 
-            byte[] array2 = { 0x02 };
+            byte[] array2 = [0x02];
             var hash2 = GetByteArrayHash(array2);
 
-            byte[] array3 = { 0x03 };
+            byte[] array3 = [0x03];
             var hash3 = GetByteArrayHash(array3);
 
-            UInt256[] hashes = { hash1, hash2, hash3 };
+            UInt256[] hashes = [hash1, hash2, hash3];
             MerkleTree tree = new MerkleTree(hashes);
 
-            bool[] boolArray = { false, false, false };
+            bool[] boolArray = [false, false, false];
             BitArray bitArray = new BitArray(boolArray);
             tree.Trim(bitArray);
             var hashArray = tree.ToHashArray();

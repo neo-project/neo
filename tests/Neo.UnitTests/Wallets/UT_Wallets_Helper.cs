@@ -24,7 +24,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestToScriptHash()
         {
-            byte[] array = { 0x01 };
+            byte[] array = [0x01];
             UInt160 scriptHash = new UInt160(Crypto.Hash160(array));
             "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion).Should().Be(scriptHash);
 

@@ -44,7 +44,7 @@ namespace Neo.Persistence
         }
 
         private readonly Dictionary<StorageKey, Trackable> dictionary = new();
-        private readonly HashSet<StorageKey> changeSet = new();
+        private readonly HashSet<StorageKey> changeSet = [];
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -124,7 +124,7 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
-            LinkedList<StorageKey> deletedItem = new();
+            LinkedList<StorageKey> deletedItem = [];
             foreach (Trackable trackable in GetChangeSet())
                 switch (trackable.State)
                 {
@@ -431,9 +431,9 @@ namespace Neo.Persistence
                     ))
                     .OrderBy(p => p.KeyBytes, comparer)
                     .ToArray();
-                cachedKeySet = new HashSet<StorageKey>(dictionary.Keys);
+                cachedKeySet = [..dictionary.Keys];
             }
-            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
+            var uncached = SeekInternal(keyOrPrefix ?? [], direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
                 (

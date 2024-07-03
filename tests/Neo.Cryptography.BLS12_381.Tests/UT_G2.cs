@@ -25,23 +25,21 @@ public class UT_G2
         Assert.IsTrue(G2Projective.Identity.IsOnCurve);
         Assert.IsTrue(G2Projective.Generator.IsOnCurve);
 
-        var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        var z = new Fp2(Fp.FromRawUnchecked([
             0xba7a_fa1f_9a6f_e250,
             0xfa0f_5b59_5eaf_e731,
             0x3bdc_4776_94c3_06e7,
             0x2149_be4b_3949_fa24,
             0x64aa_6e06_49b2_078c,
             0x12b1_08ac_3364_3c3e
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0x1253_25df_3d35_b5a8,
             0xdc46_9ef5_555d_7fe3,
             0x02d7_16d2_4431_06a9,
             0x05a1_db59_a6ff_37d0,
             0x7cf7_784e_5300_bb8f,
             0x16a8_8922_c7a5_e844
-        }));
+        ]));
 
         var gen = G2Affine.Generator;
         var test = new G2Projective(gen.X * z, gen.Y * z, z);
@@ -73,23 +71,21 @@ public class UT_G2
         Assert.AreEqual(b, b);
         Assert.AreNotEqual(a, b);
 
-        var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        var z = new Fp2(Fp.FromRawUnchecked([
             0xba7a_fa1f_9a6f_e250,
             0xfa0f_5b59_5eaf_e731,
             0x3bdc_4776_94c3_06e7,
             0x2149_be4b_3949_fa24,
             0x64aa_6e06_49b2_078c,
             0x12b1_08ac_3364_3c3e
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0x1253_25df_3d35_b5a8,
             0xdc46_9ef5_555d_7fe3,
             0x02d7_16d2_4431_06a9,
             0x05a1_db59_a6ff_37d0,
             0x7cf7_784e_5300_bb8f,
             0x16a8_8922_c7a5_e844
-        }));
+        ]));
 
         var c = new G2Projective(a.X * z, a.Y * z, in z);
         Assert.IsTrue(c.IsOnCurve);
@@ -141,23 +137,21 @@ public class UT_G2
         Assert.IsTrue(new G2Affine(b).IsOnCurve);
         Assert.IsTrue(new G2Affine(b).IsIdentity);
 
-        var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        var z = new Fp2(Fp.FromRawUnchecked([
             0xba7a_fa1f_9a6f_e250,
             0xfa0f_5b59_5eaf_e731,
             0x3bdc_4776_94c3_06e7,
             0x2149_be4b_3949_fa24,
             0x64aa_6e06_49b2_078c,
             0x12b1_08ac_3364_3c3e
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0x1253_25df_3d35_b5a8,
             0xdc46_9ef5_555d_7fe3,
             0x02d7_16d2_4431_06a9,
             0x05a1_db59_a6ff_37d0,
             0x7cf7_784e_5300_bb8f,
             0x16a8_8922_c7a5_e844
-        }));
+        ]));
 
         var c = new G2Projective(a.X * z, a.Y * z, in z);
 
@@ -189,39 +183,35 @@ public class UT_G2
             Assert.IsFalse(tmp.IsIdentity);
             Assert.IsTrue(tmp.IsOnCurve);
 
-            Assert.AreEqual(new G2Affine(tmp), new G2Affine(new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            Assert.AreEqual(new G2Affine(tmp), new G2Affine(new Fp2(Fp.FromRawUnchecked([
                 0xe9d9_e2da_9620_f98b,
                 0x54f1_1993_46b9_7f36,
                 0x3db3_b820_376b_ed27,
                 0xcfdb_31c9_b0b6_4f4c,
                 0x41d7_c127_8635_4493,
                 0x0571_0794_c255_c064
-            }), Fp.FromRawUnchecked(new ulong[]
-            {
+            ]), Fp.FromRawUnchecked([
                 0xd6c1_d3ca_6ea0_d06e,
                 0xda0c_bd90_5595_489f,
                 0x4f53_52d4_3479_221d,
                 0x8ade_5d73_6f8c_97e0,
                 0x48cc_8433_925e_f70e,
                 0x08d7_ea71_ea91_ef81
-            })), new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            ])), new Fp2(Fp.FromRawUnchecked([
                 0x15ba_26eb_4b0d_186f,
                 0x0d08_6d64_b7e9_e01e,
                 0xc8b8_48dd_652f_4c78,
                 0xeecf_46a6_123b_ae4f,
                 0x255e_8dd8_b6dc_812a,
                 0x1641_42af_21dc_f93f
-            }), Fp.FromRawUnchecked(new ulong[]
-            {
+            ]), Fp.FromRawUnchecked([
                 0xf9b4_a1a8_9598_4db4,
                 0xd417_b114_cccf_f748,
                 0x6856_301f_c89f_086e,
                 0x41c7_7787_8931_e3da,
                 0x3556_b155_066a_2105,
                 0x00ac_f7d3_25cb_89cf
-            }))));
+            ]))));
         }
     }
 
@@ -239,23 +229,21 @@ public class UT_G2
             var a = G2Projective.Identity;
             var b = G2Projective.Generator;
             {
-                var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-                {
+                var z = new Fp2(Fp.FromRawUnchecked([
                     0xba7a_fa1f_9a6f_e250,
                     0xfa0f_5b59_5eaf_e731,
                     0x3bdc_4776_94c3_06e7,
                     0x2149_be4b_3949_fa24,
                     0x64aa_6e06_49b2_078c,
                     0x12b1_08ac_3364_3c3e
-                }), Fp.FromRawUnchecked(new ulong[]
-                {
+                ]), Fp.FromRawUnchecked([
                     0x1253_25df_3d35_b5a8,
                     0xdc46_9ef5_555d_7fe3,
                     0x02d7_16d2_4431_06a9,
                     0x05a1_db59_a6ff_37d0,
                     0x7cf7_784e_5300_bb8f,
                     0x16a8_8922_c7a5_e844
-                }));
+                ]));
 
                 b = new G2Projective(b.X * z, b.Y * z, in z);
             }
@@ -268,23 +256,21 @@ public class UT_G2
             var a = G2Projective.Identity;
             var b = G2Projective.Generator;
             {
-                var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-                {
+                var z = new Fp2(Fp.FromRawUnchecked([
                     0xba7a_fa1f_9a6f_e250,
                     0xfa0f_5b59_5eaf_e731,
                     0x3bdc_4776_94c3_06e7,
                     0x2149_be4b_3949_fa24,
                     0x64aa_6e06_49b2_078c,
                     0x12b1_08ac_3364_3c3e
-                }), Fp.FromRawUnchecked(new ulong[]
-                {
+                ]), Fp.FromRawUnchecked([
                     0x1253_25df_3d35_b5a8,
                     0xdc46_9ef5_555d_7fe3,
                     0x02d7_16d2_4431_06a9,
                     0x05a1_db59_a6ff_37d0,
                     0x7cf7_784e_5300_bb8f,
                     0x16a8_8922_c7a5_e844
-                }));
+                ]));
 
                 b = new G2Projective(b.X * z, b.Y * z, in z);
             }
@@ -312,15 +298,14 @@ public class UT_G2
 
         // Degenerate case
         {
-            var beta = new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            var beta = new Fp2(Fp.FromRawUnchecked([
                 0xcd03_c9e4_8671_f071,
                 0x5dab_2246_1fcd_a5d2,
                 0x5870_42af_d385_1b95,
                 0x8eb6_0ebe_01ba_cb9e,
                 0x03f9_7d6e_83d0_50d2,
                 0x18f0_2065_5463_8741
-            }), Fp.Zero);
+            ]), Fp.Zero);
             beta = beta.Square();
             var a = G2Projective.Generator.Double().Double();
             var b = new G2Projective(a.X * beta, -a.Y, in a.Z);
@@ -330,39 +315,35 @@ public class UT_G2
             var c = a + b;
             Assert.AreEqual(
             new G2Affine(c),
-            new G2Affine(new G2Projective(new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            new G2Affine(new G2Projective(new Fp2(Fp.FromRawUnchecked([
                 0x705a_bc79_9ca7_73d3,
                 0xfe13_2292_c1d4_bf08,
                 0xf37e_ce3e_07b2_b466,
                 0x887e_1c43_f447_e301,
                 0x1e09_70d0_33bc_77e8,
                 0x1985_c81e_20a6_93f2
-            }), Fp.FromRawUnchecked(new ulong[]
-            {
+            ]), Fp.FromRawUnchecked([
                 0x1d79_b25d_b36a_b924,
                 0x2394_8e4d_5296_39d3,
                 0x471b_a7fb_0d00_6297,
                 0x2c36_d4b4_465d_c4c0,
                 0x82bb_c3cf_ec67_f538,
                 0x051d_2728_b67b_f952
-            })), new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            ])), new Fp2(Fp.FromRawUnchecked([
                 0x41b1_bbf6_576c_0abf,
                 0xb6cc_9371_3f7a_0f9a,
                 0x6b65_b43e_48f3_f01f,
                 0xfb7a_4cfc_af81_be4f,
                 0x3e32_dadc_6ec2_2cb6,
                 0x0bb0_fc49_d798_07e3
-            }), Fp.FromRawUnchecked(new ulong[]
-            {
+            ]), Fp.FromRawUnchecked([
                 0x7d13_9778_8f5f_2ddf,
                 0xab29_0714_4ff0_d8e8,
                 0x5b75_73e0_cdb9_1f92,
                 0x4cb8_932d_d31d_af28,
                 0x62bb_fac6_db05_2a54,
                 0x11f9_5c16_d14c_3bbe
-            })), Fp2.One)));
+            ])), Fp2.One)));
             Assert.IsFalse(c.IsIdentity);
             Assert.IsTrue(c.IsOnCurve);
         }
@@ -382,23 +363,21 @@ public class UT_G2
             var a = G2Affine.Identity;
             var b = G2Projective.Generator;
             {
-                var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-                {
+                var z = new Fp2(Fp.FromRawUnchecked([
                     0xba7a_fa1f_9a6f_e250,
                     0xfa0f_5b59_5eaf_e731,
                     0x3bdc_4776_94c3_06e7,
                     0x2149_be4b_3949_fa24,
                     0x64aa_6e06_49b2_078c,
                     0x12b1_08ac_3364_3c3e
-                }), Fp.FromRawUnchecked(new ulong[]
-                {
+                ]), Fp.FromRawUnchecked([
                     0x1253_25df_3d35_b5a8,
                     0xdc46_9ef5_555d_7fe3,
                     0x02d7_16d2_4431_06a9,
                     0x05a1_db59_a6ff_37d0,
                     0x7cf7_784e_5300_bb8f,
                     0x16a8_8922_c7a5_e844
-                }));
+                ]));
 
                 b = new G2Projective(b.X * z, b.Y * z, in z);
             }
@@ -411,23 +390,21 @@ public class UT_G2
             var a = G2Affine.Identity;
             var b = G2Projective.Generator;
             {
-                var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-                {
+                var z = new Fp2(Fp.FromRawUnchecked([
                     0xba7a_fa1f_9a6f_e250,
                     0xfa0f_5b59_5eaf_e731,
                     0x3bdc_4776_94c3_06e7,
                     0x2149_be4b_3949_fa24,
                     0x64aa_6e06_49b2_078c,
                     0x12b1_08ac_3364_3c3e
-                }), Fp.FromRawUnchecked(new ulong[]
-                {
+                ]), Fp.FromRawUnchecked([
                     0x1253_25df_3d35_b5a8,
                     0xdc46_9ef5_555d_7fe3,
                     0x02d7_16d2_4431_06a9,
                     0x05a1_db59_a6ff_37d0,
                     0x7cf7_784e_5300_bb8f,
                     0x16a8_8922_c7a5_e844
-                }));
+                ]));
 
                 b = new G2Projective(b.X * z, b.Y * z, in z);
             }
@@ -455,15 +432,14 @@ public class UT_G2
 
         // Degenerate case
         {
-            var beta = new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            var beta = new Fp2(Fp.FromRawUnchecked([
                 0xcd03_c9e4_8671_f071,
                 0x5dab_2246_1fcd_a5d2,
                 0x5870_42af_d385_1b95,
                 0x8eb6_0ebe_01ba_cb9e,
                 0x03f9_7d6e_83d0_50d2,
                 0x18f0_2065_5463_8741
-            }), Fp.Zero);
+            ]), Fp.Zero);
             beta = beta.Square();
             var _a = G2Projective.Generator.Double().Double();
             var b = new G2Projective(_a.X * beta, -_a.Y, in _a.Z);
@@ -472,39 +448,35 @@ public class UT_G2
             Assert.IsTrue((b.IsOnCurve));
 
             var c = a + b;
-            Assert.AreEqual(new G2Affine(new G2Projective(new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            Assert.AreEqual(new G2Affine(new G2Projective(new Fp2(Fp.FromRawUnchecked([
                 0x705a_bc79_9ca7_73d3,
                 0xfe13_2292_c1d4_bf08,
                 0xf37e_ce3e_07b2_b466,
                 0x887e_1c43_f447_e301,
                 0x1e09_70d0_33bc_77e8,
                 0x1985_c81e_20a6_93f2
-            }), Fp.FromRawUnchecked(new ulong[]
-            {
+            ]), Fp.FromRawUnchecked([
                 0x1d79_b25d_b36a_b924,
                 0x2394_8e4d_5296_39d3,
                 0x471b_a7fb_0d00_6297,
                 0x2c36_d4b4_465d_c4c0,
                 0x82bb_c3cf_ec67_f538,
                 0x051d_2728_b67b_f952
-            })), new Fp2(Fp.FromRawUnchecked(new ulong[]
-            {
+            ])), new Fp2(Fp.FromRawUnchecked([
                 0x41b1_bbf6_576c_0abf,
                 0xb6cc_9371_3f7a_0f9a,
                 0x6b65_b43e_48f3_f01f,
                 0xfb7a_4cfc_af81_be4f,
                 0x3e32_dadc_6ec2_2cb6,
                 0x0bb0_fc49_d798_07e3
-            }), Fp.FromRawUnchecked(new ulong[]
-            {
+            ]), Fp.FromRawUnchecked([
                 0x7d13_9778_8f5f_2ddf,
                 0xab29_0714_4ff0_d8e8,
                 0x5b75_73e0_cdb9_1f92,
                 0x4cb8_932d_d31d_af28,
                 0x62bb_fac6_db05_2a54,
                 0x11f9_5c16_d14c_3bbe
-            })), Fp2.One)), new G2Affine(c));
+            ])), Fp2.One)), new G2Affine(c));
             Assert.IsFalse(c.IsIdentity);
             Assert.IsTrue(c.IsOnCurve);
         }
@@ -575,40 +547,36 @@ public class UT_G2
     [TestMethod]
     public void TestIsTorsionFree()
     {
-        var a = new G2Affine(new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
-            0x89f5_50c8_13db_6431,
+        var a = new G2Affine(new Fp2(Fp.FromRawUnchecked([
+                0x89f5_50c8_13db_6431,
             0xa50b_e8c4_56cd_8a1a,
             0xa45b_3741_14ca_e851,
             0xbb61_90f5_bf7f_ff63,
             0x970c_a02c_3ba8_0bc7,
             0x02b8_5d24_e840_fbac
-        }),
-        Fp.FromRawUnchecked(new ulong[]
-        {
-            0x6888_bc53_d707_16dc,
+            ]),
+        Fp.FromRawUnchecked([
+                0x6888_bc53_d707_16dc,
             0x3dea_6b41_1768_2d70,
             0xd8f5_f930_500c_a354,
             0x6b5e_cb65_56f5_c155,
             0xc96b_ef04_3477_8ab0,
             0x0508_1505_5150_06ad
-        })), new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        ])), new Fp2(Fp.FromRawUnchecked([
             0x3cf1_ea0d_434b_0f40,
             0x1a0d_c610_e603_e333,
             0x7f89_9561_60c7_2fa0,
             0x25ee_03de_cf64_31c5,
             0xeee8_e206_ec0f_e137,
             0x0975_92b2_26df_ef28
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0x71e8_bb5f_2924_7367,
             0xa5fe_049e_2118_31ce,
             0x0ce6_b354_502a_3896,
             0x93b0_1200_0997_314e,
             0x6759_f3b6_aa5b_42ac,
             0x1569_44c4_dfe9_2bbb
-        })));
+        ])));
         Assert.IsFalse(a.IsTorsionFree);
 
         Assert.IsTrue(G2Affine.Identity.IsTorsionFree);
@@ -633,58 +601,52 @@ public class UT_G2
     {
         var generator = G2Projective.Generator;
 
-        var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        var z = new Fp2(Fp.FromRawUnchecked([
             0x0ef2ddffab187c0a,
             0x2424522b7d5ecbfc,
             0xc6f341a3398054f4,
             0x5523ddf409502df0,
             0xd55c0b5a88e0dd97,
             0x066428d704923e52
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0x538bbe0c95b4878d,
             0xad04a50379522881,
             0x6d5c05bf5c12fb64,
             0x4ce4a069a2d34787,
             0x59ea6c8d0dffaeaf,
             0x0d42a083a75bd6f3
-        }));
+        ]));
 
         // `point` is a random point in the curve
-        var point = new G2Projective(new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        var point = new G2Projective(new Fp2(Fp.FromRawUnchecked([
             0xee4c8cb7c047eaf2,
             0x44ca22eee036b604,
             0x33b3affb2aefe101,
             0x15d3e45bbafaeb02,
             0x7bfc2154cd7419a4,
             0x0a2d0c2b756e5edc
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0xfc224361029a8777,
             0x4cbf2baab8740924,
             0xc5008c6ec6592c89,
             0xecc2c57b472a9c2d,
             0x8613eafd9d81ffb1,
             0x10fe54daa2d3d495
-        })) * z, new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        ])) * z, new Fp2(Fp.FromRawUnchecked([
             0x7de7edc43953b75c,
             0x58be1d2de35e87dc,
             0x5731d30b0e337b40,
             0xbe93b60cfeaae4c9,
             0x8b22c203764bedca,
             0x01616c8d1033b771
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0xea126fe476b5733b,
             0x85cee68b5dae1652,
             0x98247779f7272b04,
             0xa649c8b468c6e808,
             0xb5b9a62dff0c4e45,
             0x1555b67fc7bbe73d
-        })), z.Square() * z);
+        ])), z.Square() * z);
         Assert.IsTrue(point.IsOnCurve);
 
         // psi2(P) = psi(psi(P))
@@ -704,58 +666,52 @@ public class UT_G2
     [TestMethod]
     public void TestClearCofactor()
     {
-        var z = new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        var z = new Fp2(Fp.FromRawUnchecked([
             0x0ef2ddffab187c0a,
             0x2424522b7d5ecbfc,
             0xc6f341a3398054f4,
             0x5523ddf409502df0,
             0xd55c0b5a88e0dd97,
             0x066428d704923e52
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0x538bbe0c95b4878d,
             0xad04a50379522881,
             0x6d5c05bf5c12fb64,
             0x4ce4a069a2d34787,
             0x59ea6c8d0dffaeaf,
             0x0d42a083a75bd6f3
-        }));
+        ]));
 
         // `point` is a random point in the curve
-        var point = new G2Projective(new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        var point = new G2Projective(new Fp2(Fp.FromRawUnchecked([
             0xee4c8cb7c047eaf2,
             0x44ca22eee036b604,
             0x33b3affb2aefe101,
             0x15d3e45bbafaeb02,
             0x7bfc2154cd7419a4,
             0x0a2d0c2b756e5edc
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0xfc224361029a8777,
             0x4cbf2baab8740924,
             0xc5008c6ec6592c89,
             0xecc2c57b472a9c2d,
             0x8613eafd9d81ffb1,
             0x10fe54daa2d3d495
-        })) * z, new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        ])) * z, new Fp2(Fp.FromRawUnchecked([
             0x7de7edc43953b75c,
             0x58be1d2de35e87dc,
             0x5731d30b0e337b40,
             0xbe93b60cfeaae4c9,
             0x8b22c203764bedca,
             0x01616c8d1033b771
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
+        ]), Fp.FromRawUnchecked([
             0xea126fe476b5733b,
             0x85cee68b5dae1652,
             0x98247779f7272b04,
             0xa649c8b468c6e808,
             0xb5b9a62dff0c4e45,
             0x1555b67fc7bbe73d
-        })), z.Square() * z);
+        ])), z.Square() * z);
 
         Assert.IsTrue(point.IsOnCurve);
         Assert.IsFalse(new G2Affine(point).IsTorsionFree);
@@ -774,11 +730,11 @@ public class UT_G2
         // test the effect on q-torsion points multiplying by h_eff modulo |Scalar|
         // h_eff % q = 0x2b116900400069009a40200040001ffff
         byte[] h_eff_modq =
-        {
+        [
             0xff, 0xff, 0x01, 0x00, 0x04, 0x00, 0x02, 0xa4, 0x09, 0x90, 0x06, 0x00, 0x04, 0x90, 0x16,
             0xb1, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00
-        };
+        ];
         Assert.AreEqual(generator * h_eff_modq, generator.ClearCofactor());
         Assert.AreEqual(cleared_point * h_eff_modq, cleared_point.ClearCofactor());
     }

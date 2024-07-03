@@ -33,7 +33,7 @@ namespace Neo.UnitTests.VMT
         public void TestEmit()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.Emit(new OpCode[] { OpCode.PUSH0 });
+            sb.Emit([OpCode.PUSH0]);
             CollectionAssert.AreEqual(new[] { (byte)OpCode.PUSH0 }, sb.ToArray());
         }
 
@@ -93,7 +93,7 @@ namespace Neo.UnitTests.VMT
 
             CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<VM.Types.Array>().Select(u => u.GetInteger()).ToArray());
 
-            expected = new BigInteger[] { };
+            expected = [];
             sb = new ScriptBuilder();
             sb.CreateArray(expected);
 
@@ -624,7 +624,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParaMeter2VMArray()
         {
-            VM.Types.Array item = new VM.Types.Array();
+            VM.Types.Array item = [];
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.Array, parameter.Type);
             Assert.AreEqual(0, ((List<ContractParameter>)parameter.Value).Count);

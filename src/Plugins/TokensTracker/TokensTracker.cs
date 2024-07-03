@@ -33,7 +33,7 @@ namespace Neo.Plugins
         private IStore _db;
         private UnhandledExceptionPolicy _exceptionPolicy;
         private NeoSystem neoSystem;
-        private readonly List<TrackerBase> trackers = new();
+        private readonly List<TrackerBase> trackers = [];
         protected override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
 
         public override string Description => "Enquiries balances and transaction history of accounts through RPC";

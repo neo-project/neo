@@ -68,13 +68,13 @@ namespace Neo.CLI
         [ConsoleCommand("update", Category = "Contract Commands")]
         private void OnUpdateCommand(UInt160 scriptHash, string filePath, string manifestPath, UInt160 sender, UInt160[]? signerAccounts = null, JObject? data = null)
         {
-            Signer[] signers = Array.Empty<Signer>();
+            Signer[] signers = [];
 
             if (NoWallet()) return;
             if (sender != null)
             {
                 if (signerAccounts == null)
-                    signerAccounts = new[] { sender };
+                    signerAccounts = [sender];
                 else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
                 {
                     var signersList = signerAccounts.ToList();
@@ -133,7 +133,7 @@ namespace Neo.CLI
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             var datoshi = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
-            Signer[] signers = Array.Empty<Signer>();
+            Signer[] signers = [];
             if (!NoWallet())
             {
                 if (sender == null)
@@ -142,7 +142,7 @@ namespace Neo.CLI
                 if (sender != null)
                 {
                     if (signerAccounts == null)
-                        signerAccounts = new UInt160[1] { sender };
+                        signerAccounts = [sender];
                     else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
                     {
                         var signersList = signerAccounts.ToList();
@@ -160,8 +160,8 @@ namespace Neo.CLI
             Transaction tx = new Transaction
             {
                 Signers = signers,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Witnesses = Array.Empty<Witness>(),
+                Attributes = [],
+                Witnesses = [],
             };
 
             if (!OnInvokeWithResult(scriptHash, operation, out _, tx, contractParameters, datoshi: (long)datoshi.Value)) return;

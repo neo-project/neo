@@ -16,13 +16,12 @@ namespace Neo.Cryptography.BLS12_381.Tests;
 [TestClass]
 public class UT_Scalar
 {
-    private static readonly Scalar LARGEST = new(new ulong[]
-    {
+    private static readonly Scalar LARGEST = new([
         0xffff_ffff_0000_0000,
         0x53bd_a402_fffe_5bfe,
         0x3339_d808_09a1_d805,
         0x73ed_a753_299d_7d48
-    });
+    ]);
 
     [TestMethod]
     public void TestInv()
@@ -166,13 +165,12 @@ public class UT_Scalar
     [TestMethod]
     public void TestFromBytesWideMaximum()
     {
-        Assert.AreEqual(new Scalar(new ulong[]
-        {
+        Assert.AreEqual(new Scalar([
             0xc62c_1805_439b_73b1,
             0xc2b9_551e_8ced_218e,
             0xda44_ec81_daf9_a422,
             0x5605_aa60_1c16_2e79
-        }), Scalar.FromBytesWide(Enumerable.Repeat<byte>(0xff, 64).ToArray()));
+        ]), Scalar.FromBytesWide(Enumerable.Repeat<byte>(0xff, 64).ToArray()));
     }
 
     [TestMethod]
@@ -190,16 +188,15 @@ public class UT_Scalar
         var tmp = LARGEST;
         tmp += LARGEST;
 
-        Assert.AreEqual(new Scalar(new ulong[]
-        {
+        Assert.AreEqual(new Scalar([
             0xffff_fffe_ffff_ffff,
             0x53bd_a402_fffe_5bfe,
             0x3339_d808_09a1_d805,
             0x73ed_a753_299d_7d48
-        }), tmp);
+        ]), tmp);
 
         tmp = LARGEST;
-        tmp += new Scalar(new ulong[] { 1, 0, 0, 0 });
+        tmp += new Scalar([1, 0, 0, 0]);
 
         Assert.AreEqual(Scalar.Zero, tmp);
     }
@@ -209,11 +206,11 @@ public class UT_Scalar
     {
         var tmp = -LARGEST;
 
-        Assert.AreEqual(new Scalar(new ulong[] { 1, 0, 0, 0 }), tmp);
+        Assert.AreEqual(new Scalar([1, 0, 0, 0]), tmp);
 
         tmp = -Scalar.Zero;
         Assert.AreEqual(Scalar.Zero, tmp);
-        tmp = -new Scalar(new ulong[] { 1, 0, 0, 0 });
+        tmp = -new Scalar([1, 0, 0, 0]);
         Assert.AreEqual(LARGEST, tmp);
     }
 
@@ -320,12 +317,12 @@ public class UT_Scalar
     public void TestInvertIsPow()
     {
         ulong[] q_minus_2 =
-        {
+        [
             0xffff_fffe_ffff_ffff,
             0x53bd_a402_fffe_5bfe,
             0x3339_d808_09a1_d805,
             0x73ed_a753_299d_7d48
-        };
+        ];
 
         var r1 = R;
         var r2 = R;
@@ -351,13 +348,12 @@ public class UT_Scalar
     {
         Assert.AreEqual(Scalar.Zero.Sqrt(), Scalar.Zero);
 
-        var square = new Scalar(new ulong[]
-        {
+        var square = new Scalar([
             0x46cd_85a5_f273_077e,
             0x1d30_c47d_d68f_c735,
             0x77f6_56f6_0bec_a0eb,
             0x494a_a01b_df32_468d
-        });
+        ]);
 
         var none_count = 0;
 

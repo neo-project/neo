@@ -120,7 +120,7 @@ namespace Neo.CLI
                 }
             }
 
-            List<string> addresses = new List<string>();
+            List<string> addresses = [];
             using (var percent = new ConsolePercent(0, count))
             {
                 Parallel.For(0, count, (i) =>
@@ -198,7 +198,7 @@ namespace Neo.CLI
             else
             {
                 var account = CurrentWallet.GetAccount(scriptHash);
-                keys = account?.HasKey != true ? Array.Empty<KeyPair>() : new[] { account.GetKey() };
+                keys = account?.HasKey != true ? [] : new[] { account.GetKey() };
             }
             if (path == null)
                 foreach (KeyPair key in keys)
@@ -522,8 +522,7 @@ namespace Neo.CLI
             }
             try
             {
-                tx = CurrentWallet.MakeTransaction(snapshot, new[]
-                {
+                tx = CurrentWallet.MakeTransaction(snapshot, [
                     new TransferOutput
                     {
                         AssetId = asset,
@@ -531,13 +530,13 @@ namespace Neo.CLI
                         ScriptHash = to,
                         Data = data
                     }
-                }, from: from, cosigners: signerAccounts?.Select(p => new Signer
+                ], from: from, cosigners: signerAccounts?.Select(p => new Signer
                 {
                     // default access for transfers should be valid only for first invocation
                     Scopes = WitnessScope.CalledByEntry,
                     Account = p
                 })
-                .ToArray() ?? Array.Empty<Signer>());
+                .ToArray() ?? []);
             }
             catch (Exception e)
             {
@@ -581,11 +580,11 @@ namespace Neo.CLI
             }
 
             var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
-            Signer[] signers = Array.Empty<Signer>();
+            Signer[] signers = [];
             if (sender != null)
             {
                 if (signerAccounts == null)
-                    signerAccounts = new UInt160[1] { sender };
+                    signerAccounts = [sender];
                 else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
                 {
                     var signersList = signerAccounts.ToList();
@@ -603,7 +602,7 @@ namespace Neo.CLI
             {
                 Signers = signers,
                 Attributes = conflict,
-                Witnesses = Array.Empty<Witness>(),
+                Witnesses = [],
             };
 
             try

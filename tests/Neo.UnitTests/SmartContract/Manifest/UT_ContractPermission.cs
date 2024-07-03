@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             random.NextBytes(privateKey3);
             ECPoint publicKey3 = ECCurve.Secp256r1.G * privateKey3;
             ContractManifest contractManifest3 = TestUtils.CreateDefaultManifest();
-            contractManifest3.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey3 } };
+            contractManifest3.Groups = [new ContractGroup() { PubKey = publicKey3 }];
             ContractPermission contractPermission3 = ContractPermission.DefaultPermission;
             contractPermission3.Contract = ContractPermissionDescriptor.Create(publicKey3);
             Assert.AreEqual(true, contractPermission3.IsAllowed(new ContractState() { Hash = UInt160.Zero, Manifest = contractManifest3 }, "AAA"));
@@ -80,7 +80,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             random.NextBytes(privateKey42);
             ECPoint publicKey42 = ECCurve.Secp256r1.G * privateKey42;
             ContractManifest contractManifest4 = TestUtils.CreateDefaultManifest();
-            contractManifest4.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey42 } };
+            contractManifest4.Groups = [new ContractGroup() { PubKey = publicKey42 }];
             ContractPermission contractPermission4 = ContractPermission.DefaultPermission;
             contractPermission4.Contract = ContractPermissionDescriptor.Create(publicKey41);
             Assert.AreEqual(false, contractPermission4.IsAllowed(new ContractState() { Hash = UInt160.Zero, Manifest = contractManifest4 }, "AAA"));

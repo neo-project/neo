@@ -15,7 +15,7 @@ namespace Neo.Plugins.RpcServer
 {
     class TreeNode<T>
     {
-        private readonly List<TreeNode<T>> children = new();
+        private readonly List<TreeNode<T>> children = [];
 
         public T Item { get; }
         public TreeNode<T> Parent { get; }

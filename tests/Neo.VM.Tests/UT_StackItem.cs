@@ -189,8 +189,8 @@ namespace Neo.Test
         [TestMethod]
         public void TestDeepCopy()
         {
-            Array a = new()
-            {
+            Array a =
+            [
                 true,
                 1,
                 new byte[] { 1 },
@@ -198,7 +198,7 @@ namespace Neo.Test
                 new Buffer(new byte[] { 1 }),
                 new Map { [0] = 1, [2] = 3 },
                 new Struct { 1, 2, 3 }
-            };
+            ];
             a.Add(a);
             Array aa = (Array)a.DeepCopy();
             Assert.AreNotEqual(a, aa);

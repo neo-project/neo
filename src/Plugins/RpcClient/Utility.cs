@@ -259,12 +259,12 @@ namespace Neo.Network.RPC
                 case StackItemType.Integer:
                     return BigInteger.Parse(json["value"].AsString());
                 case StackItemType.Array:
-                    Array array = new();
+                    Array array = [];
                     foreach (JObject item in (JArray)json["value"])
                         array.Add(StackItemFromJson(item));
                     return array;
                 case StackItemType.Struct:
-                    Struct @struct = new();
+                    Struct @struct = [];
                     foreach (JObject item in (JArray)json["value"])
                         @struct.Add(StackItemFromJson(item));
                     return @struct;

@@ -56,7 +56,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestResolveExtension()
         {
-            var e = Node.NewExtension(new byte[] { 0x01 }, new Node());
+            var e = Node.NewExtension([0x01], new Node());
             var store = new MemoryStore();
             store.Put(e.Hash.ToKey(), e.ToArray());
             var snapshot = store.GetSnapshot();
@@ -95,7 +95,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestGetAndChangedExtension()
         {
-            var e = Node.NewExtension(new byte[] { 0x01 }, new Node());
+            var e = Node.NewExtension([0x01], new Node());
             var store = new MemoryStore();
             store.Put(e.Hash.ToKey(), e.ToArray());
             var snapshot = store.GetSnapshot();
@@ -159,7 +159,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestPutAndChangedExtension()
         {
-            var e = Node.NewExtension(new byte[] { 0x01 }, new Node());
+            var e = Node.NewExtension([0x01], new Node());
             var h = e.Hash;
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();

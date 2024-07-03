@@ -26,11 +26,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hash = UInt160.Zero;
             var condition = new OrCondition
             {
-                Expressions = new WitnessCondition[]
-                {
+                Expressions =
+                [
                     new CalledByContractCondition { Hash = hash },
                     new CalledByGroupCondition { Group = point }
-                }
+                ]
             };
             var json = condition.ToJson();
             var new_condi = WitnessCondition.FromJson(json, 2);

@@ -84,7 +84,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetBlockCount()
         {
             var expectedCount = 1;
-            var result = _rpcServer.GetBlockCount(new JArray());
+            var result = _rpcServer.GetBlockCount([]);
             Assert.AreEqual(expectedCount, result.AsNumber());
         }
 
@@ -92,7 +92,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetBlockHeaderCount()
         {
             var expectedCount = 1;
-            var result = _rpcServer.GetBlockHeaderCount(new JArray());
+            var result = _rpcServer.GetBlockHeaderCount([]);
             Assert.AreEqual(expectedCount, result.AsNumber());
         }
 
@@ -142,7 +142,7 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
             _neoSystem.MemPool.TryAdd(tx, snapshot);
 
-            var result = _rpcServer.GetRawMemPool(new JArray());
+            var result = _rpcServer.GetRawMemPool([]);
 
             Assert.IsTrue(((JArray)result).Any(p => p.AsString() == tx.Hash.ToString()));
         }
@@ -216,7 +216,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetNextBlockValidators()
         {
             var snapshot = _neoSystem.GetSnapshot();
-            var result = _rpcServer.GetNextBlockValidators(new JArray());
+            var result = _rpcServer.GetNextBlockValidators([]);
 
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
             var expected = validators.Select(p =>
@@ -233,7 +233,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetCandidates()
         {
             var snapshot = _neoSystem.GetSnapshot();
-            var result = _rpcServer.GetCandidates(new JArray());
+            var result = _rpcServer.GetCandidates([]);
             var json = new JArray();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
             snapshot.Commit();
@@ -254,7 +254,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetCommittee()
         {
             var snapshot = _neoSystem.GetSnapshot();
-            var result = _rpcServer.GetCommittee(new JArray());
+            var result = _rpcServer.GetCommittee([]);
             var committee = NativeContract.NEO.GetCommittee(snapshot);
             var expected = new JArray(committee.Select(p => (JToken)p.ToString()));
             Assert.AreEqual(expected.ToString(), result.ToString());
@@ -263,7 +263,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestGetNativeContracts()
         {
-            var result = _rpcServer.GetNativeContracts(new JArray());
+            var result = _rpcServer.GetNativeContracts([]);
             var contracts = new JArray(NativeContract.Contracts.Select(p => NativeContract.ContractManagement.GetContract(_neoSystem.GetSnapshot(), p.Hash).ToJson()));
             Assert.AreEqual(contracts.ToString(), result.ToString());
         }
@@ -594,7 +594,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _memoryStore.Reset();
             try
             {
-                _rpcServer.GetCandidates(new JArray());
+                _rpcServer.GetCandidates([]);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)

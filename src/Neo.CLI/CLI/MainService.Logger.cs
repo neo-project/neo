@@ -98,7 +98,7 @@ namespace Neo.CLI
                 if (_showLog)
                 {
                     var currentColor = new ConsoleColorSet();
-                    var messages = message is string msg ? Parse(msg) : new[] { message.ToString() };
+                    var messages = message is string msg ? Parse(msg) : [message.ToString()];
                     ConsoleColorSet logColor;
                     string logLevel;
                     switch (level)
@@ -151,7 +151,7 @@ namespace Neo.CLI
         {
             var equals = message.Trim().Split('=');
 
-            if (equals.Length == 1) return new[] { message };
+            if (equals.Length == 1) return [message];
 
             var messages = new List<string>();
             foreach (var t in @equals)

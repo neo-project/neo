@@ -28,48 +28,54 @@ namespace Neo.UnitTests.SmartContract
         public void TestSerialize()
         {
             byte[] result1 = BinarySerializer.Serialize(new byte[5], ExecutionEngineLimits.Default);
-            byte[] expectedArray1 = new byte[] {
-                        0x28, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00
-                    };
+            byte[] expectedArray1 =
+            [
+                0x28, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00
+            ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString(result1));
 
             byte[] result2 = BinarySerializer.Serialize(true, ExecutionEngineLimits.Default);
-            byte[] expectedArray2 = new byte[] {
-                        0x20, 0x01
-                    };
+            byte[] expectedArray2 =
+            [
+                0x20, 0x01
+            ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray2), Encoding.Default.GetString(result2));
 
             byte[] result3 = BinarySerializer.Serialize(1, ExecutionEngineLimits.Default);
-            byte[] expectedArray3 = new byte[] {
-                        0x21, 0x01, 0x01
-                    };
+            byte[] expectedArray3 =
+            [
+                0x21, 0x01, 0x01
+            ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray3), Encoding.Default.GetString(result3));
 
             StackItem stackItem4 = new InteropInterface(new object());
             Action action4 = () => BinarySerializer.Serialize(stackItem4, ExecutionEngineLimits.Default);
             action4.Should().Throw<NotSupportedException>();
 
-            List<StackItem> list6 = new List<StackItem> { 1 };
+            List<StackItem> list6 = [1];
             StackItem stackItem62 = new VM.Types.Array(list6);
             byte[] result6 = BinarySerializer.Serialize(stackItem62, ExecutionEngineLimits.Default);
-            byte[] expectedArray6 = new byte[] {
-                        0x40,0x01,0x21,0x01,0x01
-                    };
+            byte[] expectedArray6 =
+            [
+                0x40,0x01,0x21,0x01,0x01
+            ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString(result6));
 
-            List<StackItem> list7 = new List<StackItem> { 1 };
+            List<StackItem> list7 = [1];
             StackItem stackItem72 = new Struct(list7);
             byte[] result7 = BinarySerializer.Serialize(stackItem72, ExecutionEngineLimits.Default);
-            byte[] expectedArray7 = new byte[] {
-                        0x41,0x01,0x21,0x01,0x01
-                    };
+            byte[] expectedArray7 =
+            [
+                0x41,0x01,0x21,0x01,0x01
+            ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray7), Encoding.Default.GetString(result7));
 
             StackItem stackItem82 = new Map { [2] = 1 };
             byte[] result8 = BinarySerializer.Serialize(stackItem82, ExecutionEngineLimits.Default);
-            byte[] expectedArray8 = new byte[] {
-                        0x48,0x01,0x21,0x01,0x02,0x21,0x01,0x01
-                    };
+            byte[] expectedArray8 =
+            [
+                0x48,0x01,0x21,0x01,0x02,0x21,0x01,0x01
+            ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray8), Encoding.Default.GetString(result8));
 
             Map stackItem91 = new Map();
@@ -77,7 +83,7 @@ namespace Neo.UnitTests.SmartContract
             Action action9 = () => BinarySerializer.Serialize(stackItem91, ExecutionEngineLimits.Default);
             action9.Should().Throw<NotSupportedException>();
 
-            VM.Types.Array stackItem10 = new VM.Types.Array();
+            VM.Types.Array stackItem10 = [];
             stackItem10.Add(stackItem10);
             Action action10 = () => BinarySerializer.Serialize(stackItem10, ExecutionEngineLimits.Default);
             action10.Should().Throw<NotSupportedException>();
@@ -106,14 +112,14 @@ namespace Neo.UnitTests.SmartContract
             Action action4 = () => BinarySerializer.Deserialize(byteArray4, ExecutionEngineLimits.Default);
             action4.Should().Throw<FormatException>();
 
-            List<StackItem> list5 = new List<StackItem> { 1 };
+            List<StackItem> list5 = [1];
             StackItem stackItem52 = new VM.Types.Array(list5);
             byte[] byteArray5 = BinarySerializer.Serialize(stackItem52, ExecutionEngineLimits.Default);
             StackItem result5 = BinarySerializer.Deserialize(byteArray5, ExecutionEngineLimits.Default);
             Assert.AreEqual(((VM.Types.Array)stackItem52).Count, ((VM.Types.Array)result5).Count);
             Assert.AreEqual(((VM.Types.Array)stackItem52).GetEnumerator().Current, ((VM.Types.Array)result5).GetEnumerator().Current);
 
-            List<StackItem> list6 = new List<StackItem> { 1 };
+            List<StackItem> list6 = [1];
             StackItem stackItem62 = new Struct(list6);
             byte[] byteArray6 = BinarySerializer.Serialize(stackItem62, ExecutionEngineLimits.Default);
             StackItem result6 = BinarySerializer.Deserialize(byteArray6, ExecutionEngineLimits.Default);

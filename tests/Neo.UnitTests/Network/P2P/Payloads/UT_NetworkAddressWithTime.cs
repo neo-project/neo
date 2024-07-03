@@ -25,12 +25,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void SizeAndEndPoint_Get()
         {
-            var test = new NetworkAddressWithTime() { Capabilities = new NodeCapability[0], Address = IPAddress.Any, Timestamp = 1 };
+            var test = new NetworkAddressWithTime() { Capabilities = [], Address = IPAddress.Any, Timestamp = 1 };
             test.Size.Should().Be(21);
 
             Assert.AreEqual(test.EndPoint.Port, 0);
 
-            test = NetworkAddressWithTime.Create(IPAddress.Any, 1, new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+            test = NetworkAddressWithTime.Create(IPAddress.Any, 1, [new ServerCapability(NodeCapabilityType.TcpServer, 22)
+            ]);
             test.Size.Should().Be(24);
 
             Assert.AreEqual(test.EndPoint.Port, 22);
@@ -39,7 +40,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = NetworkAddressWithTime.Create(IPAddress.Any, 1, new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+            var test = NetworkAddressWithTime.Create(IPAddress.Any, 1, [new ServerCapability(NodeCapabilityType.TcpServer, 22)
+            ]);
             var clone = test.ToArray().AsSerializable<NetworkAddressWithTime>();
 
             CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
@@ -48,10 +50,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.Address, clone.Address);
 
             Assert.ThrowsException<FormatException>(() => NetworkAddressWithTime.Create(IPAddress.Any, 1,
-                new NodeCapability[] {
-                    new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
+            [
+                new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
                     new ServerCapability(NodeCapabilityType.TcpServer, 22)
-                }).ToArray().AsSerializable<NetworkAddressWithTime>());
+            ]).ToArray().AsSerializable<NetworkAddressWithTime>());
         }
     }
 }

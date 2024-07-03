@@ -137,7 +137,7 @@ namespace Neo.Plugins.OracleService
                 return $"\"{new UInt256(obj.PayloadChecksum.Sum.ToByteArray())}\"";
             }
             Range range = ParseRange(ps[0]);
-            List<byte[]> hashes = await client.GetObjectPayloadRangeHash(addr, new List<Range>() { range }, ChecksumType.Sha256, Array.Empty<byte>(), new CallOptions { Ttl = 2 }, cancellation);
+            List<byte[]> hashes = await client.GetObjectPayloadRangeHash(addr, new List<Range>() { range }, ChecksumType.Sha256, [], new CallOptions { Ttl = 2 }, cancellation);
             if (hashes.Count == 0) throw new Exception("empty response, object range is invalid (expected 'Offset|Length')");
             return $"\"{new UInt256(hashes[0])}\"";
         }

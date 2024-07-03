@@ -138,7 +138,7 @@ namespace Neo.Network.RPC
         public async Task<Transaction> CreateTransferTxAsync(UInt160 scriptHash, KeyPair fromKey, UInt160 to, BigInteger amount, object data = null, bool addAssert = true)
         {
             var sender = Contract.CreateSignatureRedeemScript(fromKey.PublicKey).ToScriptHash();
-            Signer[] signers = new[] { new Signer { Scopes = WitnessScope.CalledByEntry, Account = sender } };
+            Signer[] signers = [new Signer { Scopes = WitnessScope.CalledByEntry, Account = sender }];
             byte[] script = scriptHash.MakeScript("transfer", sender, to, amount, data);
             if (addAssert) script = script.Concat(new[] { (byte)OpCode.ASSERT }).ToArray();
 
@@ -167,7 +167,7 @@ namespace Neo.Network.RPC
             if (m > fromKeys.Length)
                 throw new ArgumentException($"Need at least {m} KeyPairs for signing!");
             var sender = Contract.CreateMultiSigContract(m, pubKeys).ScriptHash;
-            Signer[] signers = new[] { new Signer { Scopes = WitnessScope.CalledByEntry, Account = sender } };
+            Signer[] signers = [new Signer { Scopes = WitnessScope.CalledByEntry, Account = sender }];
             byte[] script = scriptHash.MakeScript("transfer", sender, to, amount, data);
             if (addAssert) script = script.Concat(new[] { (byte)OpCode.ASSERT }).ToArray();
 

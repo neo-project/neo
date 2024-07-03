@@ -33,7 +33,7 @@ namespace Neo.UnitTests.Extensions
 
             public ManualWitness(params UInt160[] hashForVerify)
             {
-                _hashForVerify = hashForVerify ?? System.Array.Empty<UInt160>();
+                _hashForVerify = hashForVerify ?? [];
             }
 
             public void Deserialize(ref MemoryReader reader) { }

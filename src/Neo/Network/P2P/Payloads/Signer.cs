@@ -75,13 +75,13 @@ namespace Neo.Network.P2P.Payloads
                 throw new FormatException();
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
                 ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
-                : Array.Empty<UInt160>();
+                : [];
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
-                : Array.Empty<ECPoint>();
+                : [];
             Rules = Scopes.HasFlag(WitnessScope.WitnessRules)
                 ? reader.ReadSerializableArray<WitnessRule>(MaxSubitems)
-                : Array.Empty<WitnessRule>();
+                : [];
         }
 
         /// <summary>

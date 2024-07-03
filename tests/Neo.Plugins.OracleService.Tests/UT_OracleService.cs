@@ -85,7 +85,7 @@ namespace Neo.Plugins.OracleService.Tests
                 Filter = "",
                 CallbackContract = UInt160.Zero,
                 CallbackMethod = "callback",
-                UserData = System.Array.Empty<byte>()
+                UserData = []
             };
             byte Prefix_Transaction = 11;
             snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, request.OriginalTxid), new StorageItem(new TransactionState()
@@ -97,7 +97,7 @@ namespace Neo.Plugins.OracleService.Tests
                 }
             }));
             OracleResponse response = new OracleResponse() { Id = 1, Code = OracleResponseCode.Success, Result = new byte[] { 0x00 } };
-            ECPoint[] oracleNodes = new ECPoint[] { ECCurve.Secp256r1.G };
+            ECPoint[] oracleNodes = [ECCurve.Secp256r1.G];
             var tx = OracleService.CreateResponseTx(snapshot, request, response, oracleNodes, ProtocolSettings.Default);
 
             Assert.AreEqual(166, tx.Size);

@@ -66,9 +66,9 @@ namespace Neo.VM.Types
         {
             _array = items switch
             {
-                null => new List<StackItem>(),
+                null => [],
                 List<StackItem> list => list,
-                _ => new List<StackItem>(items)
+                _ => [..items]
             };
             if (referenceCounter != null)
                 foreach (StackItem item in _array)

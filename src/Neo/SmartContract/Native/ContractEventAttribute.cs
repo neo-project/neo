@@ -35,14 +35,14 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
                         Type = arg1Value
                     }
-                }
+                ]
             };
         }
 
@@ -61,8 +61,8 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
@@ -73,7 +73,7 @@ namespace Neo.SmartContract.Native
                         Name = arg2Name,
                         Type = arg2Value
                     }
-                }
+                ]
             };
         }
 
@@ -95,8 +95,8 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native
                         Name = arg3Name,
                         Type = arg3Value
                     }
-                }
+                ]
             };
         }
 
@@ -136,8 +136,8 @@ namespace Neo.SmartContract.Native
             Descriptor = new ContractEventDescriptor()
             {
                 Name = name,
-                Parameters = new ContractParameterDefinition[]
-                {
+                Parameters =
+                [
                     new ContractParameterDefinition()
                     {
                         Name = arg1Name,
@@ -158,7 +158,7 @@ namespace Neo.SmartContract.Native
                         Name = arg4Name,
                         Type = arg4Value
                     }
-                }
+                ]
             };
         }
     }

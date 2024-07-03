@@ -20,7 +20,7 @@ namespace Neo.IO.Caching
         /// <summary>
         /// Sets where the Hashes are stored
         /// </summary>
-        private readonly LinkedList<HashSet<T>> sets = new();
+        private readonly LinkedList<HashSet<T>> sets = [];
 
         /// <summary>
         /// Maximum capacity of each bucket inside each HashSet of <see cref="sets"/>.
@@ -45,7 +45,7 @@ namespace Neo.IO.Caching
             Count = 0;
             this.bucketCapacity = bucketCapacity;
             this.maxBucketCount = maxBucketCount;
-            sets.AddFirst(new HashSet<T>());
+            sets.AddFirst([]);
         }
 
         public bool Add(T item)
@@ -87,7 +87,7 @@ namespace Neo.IO.Caching
                         Count--;
                         if (set.Count == 0)
                         {
-                            removeList ??= new List<HashSet<T>>();
+                            removeList ??= [];
                             removeList.Add(set);
                         }
                         break;

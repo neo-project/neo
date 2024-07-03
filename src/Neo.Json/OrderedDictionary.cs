@@ -37,7 +37,7 @@ namespace Neo.Json
             }
         }
 
-        private readonly InternalCollection collection = new();
+        private readonly InternalCollection collection = [];
 
         public int Count => collection.Count;
         public bool IsReadOnly => false;

@@ -431,7 +431,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<RpcInvokeResult> InvokeFunctionAsync(string scriptHash, string operation, RpcStack[] stacks, params Signer[] signer)
         {
-            List<JToken> parameters = new() { scriptHash.AsScriptHash(), operation, stacks.Select(p => p.ToJson()).ToArray() };
+            List<JToken> parameters = [scriptHash.AsScriptHash(), operation, stacks.Select(p => p.ToJson()).ToArray()];
             if (signer.Length > 0)
             {
                 parameters.Add(signer.Select(p => p.ToJson()).ToArray());
@@ -446,7 +446,7 @@ namespace Neo.Network.RPC
         /// </summary>
         public async Task<RpcInvokeResult> InvokeScriptAsync(ReadOnlyMemory<byte> script, params Signer[] signers)
         {
-            List<JToken> parameters = new() { Convert.ToBase64String(script.Span) };
+            List<JToken> parameters = [Convert.ToBase64String(script.Span)];
             if (signers.Length > 0)
             {
                 parameters.Add(signers.Select(p => p.ToJson()).ToArray());

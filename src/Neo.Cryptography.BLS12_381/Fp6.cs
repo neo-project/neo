@@ -153,26 +153,24 @@ public readonly struct Fp6 : IEquatable<Fp6>, INumber<Fp6>
         var c2 = C2.FrobeniusMap();
 
         // c1 = c1 * (u + 1)^((p - 1) / 3)
-        c1 *= new Fp2(in Fp.Zero, Fp.FromRawUnchecked(new ulong[]
-        {
+        c1 *= new Fp2(in Fp.Zero, Fp.FromRawUnchecked([
             0xcd03_c9e4_8671_f071,
             0x5dab_2246_1fcd_a5d2,
             0x5870_42af_d385_1b95,
             0x8eb6_0ebe_01ba_cb9e,
             0x03f9_7d6e_83d0_50d2,
             0x18f0_2065_5463_8741
-        }));
+        ]));
 
         // c2 = c2 * (u + 1)^((2p - 2) / 3)
-        c2 *= new Fp2(Fp.FromRawUnchecked(new ulong[]
-        {
+        c2 *= new Fp2(Fp.FromRawUnchecked([
             0x890d_c9e4_8675_45c3,
             0x2af3_2253_3285_a5d5,
             0x5088_0866_309b_7e2c,
             0xa20d_1b8c_7e88_1024,
             0x14e4_f04f_e2db_9068,
             0x14e5_6d3f_1564_853a
-        }), in Fp.Zero);
+        ]), in Fp.Zero);
 
         return new Fp6(c0, c1, c2);
     }
@@ -271,28 +269,28 @@ public readonly struct Fp6 : IEquatable<Fp6>, INumber<Fp6>
 
         return new Fp6(new Fp2(
             Fp.SumOfProducts(
-                stackalloc[] { a.C0.C0, -a.C0.C1, a.C1.C0, -a.C1.C1, a.C2.C0, -a.C2.C1 },
-                stackalloc[] { b.C0.C0, b.C0.C1, b20_m_b21, b20_p_b21, b10_m_b11, b10_p_b11 }
+                [a.C0.C0, -a.C0.C1, a.C1.C0, -a.C1.C1, a.C2.C0, -a.C2.C1],
+                [b.C0.C0, b.C0.C1, b20_m_b21, b20_p_b21, b10_m_b11, b10_p_b11]
             ),
             Fp.SumOfProducts(
-                stackalloc[] { a.C0.C0, a.C0.C1, a.C1.C0, a.C1.C1, a.C2.C0, a.C2.C1 },
-                stackalloc[] { b.C0.C1, b.C0.C0, b20_p_b21, b20_m_b21, b10_p_b11, b10_m_b11 }
+                [a.C0.C0, a.C0.C1, a.C1.C0, a.C1.C1, a.C2.C0, a.C2.C1],
+                [b.C0.C1, b.C0.C0, b20_p_b21, b20_m_b21, b10_p_b11, b10_m_b11]
             )), new Fp2(
             Fp.SumOfProducts(
-                stackalloc[] { a.C0.C0, -a.C0.C1, a.C1.C0, -a.C1.C1, a.C2.C0, -a.C2.C1 },
-                stackalloc[] { b.C1.C0, b.C1.C1, b.C0.C0, b.C0.C1, b20_m_b21, b20_p_b21 }
+                [a.C0.C0, -a.C0.C1, a.C1.C0, -a.C1.C1, a.C2.C0, -a.C2.C1],
+                [b.C1.C0, b.C1.C1, b.C0.C0, b.C0.C1, b20_m_b21, b20_p_b21]
             ),
             Fp.SumOfProducts(
-                stackalloc[] { a.C0.C0, a.C0.C1, a.C1.C0, a.C1.C1, a.C2.C0, a.C2.C1 },
-                stackalloc[] { b.C1.C1, b.C1.C0, b.C0.C1, b.C0.C0, b20_p_b21, b20_m_b21 }
+                [a.C0.C0, a.C0.C1, a.C1.C0, a.C1.C1, a.C2.C0, a.C2.C1],
+                [b.C1.C1, b.C1.C0, b.C0.C1, b.C0.C0, b20_p_b21, b20_m_b21]
             )), new Fp2(
             Fp.SumOfProducts(
-                stackalloc[] { a.C0.C0, -a.C0.C1, a.C1.C0, -a.C1.C1, a.C2.C0, -a.C2.C1 },
-                stackalloc[] { b.C2.C0, b.C2.C1, b.C1.C0, b.C1.C1, b.C0.C0, b.C0.C1 }
+                [a.C0.C0, -a.C0.C1, a.C1.C0, -a.C1.C1, a.C2.C0, -a.C2.C1],
+                [b.C2.C0, b.C2.C1, b.C1.C0, b.C1.C1, b.C0.C0, b.C0.C1]
             ),
             Fp.SumOfProducts(
-                stackalloc[] { a.C0.C0, a.C0.C1, a.C1.C0, a.C1.C1, a.C2.C0, a.C2.C1 },
-                stackalloc[] { b.C2.C1, b.C2.C0, b.C1.C1, b.C1.C0, b.C0.C1, b.C0.C0 }
+                [a.C0.C0, a.C0.C1, a.C1.C0, a.C1.C1, a.C2.C0, a.C2.C1],
+                [b.C2.C1, b.C2.C0, b.C1.C1, b.C1.C0, b.C0.C1, b.C0.C0]
             ))
         );
     }

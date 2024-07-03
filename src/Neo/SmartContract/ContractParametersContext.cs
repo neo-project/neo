@@ -313,7 +313,7 @@ namespace Neo.SmartContract
                 witnesses[i] = new Witness
                 {
                     InvocationScript = sb.ToArray(),
-                    VerificationScript = item.Script ?? Array.Empty<byte>()
+                    VerificationScript = item.Script ?? []
                 };
             }
             return witnesses;

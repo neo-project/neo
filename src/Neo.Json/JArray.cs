@@ -19,7 +19,7 @@ namespace Neo.Json
     /// </summary>
     public class JArray : JContainer, IList<JToken?>
     {
-        private readonly List<JToken?> items = new();
+        private readonly List<JToken?> items = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JArray"/> class.

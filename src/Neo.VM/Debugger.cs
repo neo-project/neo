@@ -39,7 +39,7 @@ namespace Neo.VM
         {
             if (!break_points.TryGetValue(script, out HashSet<uint>? hashset))
             {
-                hashset = new HashSet<uint>();
+                hashset = [];
                 break_points.Add(script, hashset);
             }
             hashset.Add(position);

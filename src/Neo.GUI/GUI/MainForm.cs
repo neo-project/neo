@@ -76,8 +76,7 @@ namespace Neo.GUI
             if (item == null)
             {
                 string groupName = account.WatchOnly ? "watchOnlyGroup" : IsSignatureContract(account.Contract.Script) ? "standardContractGroup" : "nonstandardContractGroup";
-                item = listView1.Items.Add(new ListViewItem(new[]
-                {
+                item = listView1.Items.Add(new ListViewItem([
                     new ListViewItem.ListViewSubItem
                     {
                         Name = "address",
@@ -91,7 +90,7 @@ namespace Neo.GUI
                     {
                         Name = NativeContract.GAS.Symbol
                     }
-                }, -1, listView1.Groups[groupName])
+                ], -1, listView1.Groups[groupName])
                 {
                     Name = account.Address,
                     Tag = account
@@ -240,8 +239,7 @@ namespace Neo.GUI
                 }
                 else
                 {
-                    listView2.Items.Add(new ListViewItem(new[]
-                    {
+                    listView2.Items.Add(new ListViewItem([
                         new ListViewItem.ListViewSubItem
                         {
                             Name = "name",
@@ -263,7 +261,7 @@ namespace Neo.GUI
                             Name = "issuer",
                             Text = $"ScriptHash:{assetId}"
                         }
-                    }, -1)
+                    ], -1)
                     {
                         Name = assetId.ToString(),
                         UseItemStyleForSubItems = false

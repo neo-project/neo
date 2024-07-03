@@ -84,16 +84,16 @@ namespace Neo.UnitTests.Ledger
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new Signer() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses =
+            [
                 new Witness
                 {
                     InvocationScript = Array.Empty<byte>(),
                     VerificationScript = Array.Empty<byte>()
                 }
-            };
+            ];
             return mock.Object;
         }
 
@@ -108,16 +108,16 @@ namespace Neo.UnitTests.Ledger
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new Signer() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses =
+            [
                 new Witness
                 {
                     InvocationScript = Array.Empty<byte>(),
                     VerificationScript = Array.Empty<byte>()
                 }
-            };
+            ];
             return mock.Object;
         }
 
@@ -268,24 +268,24 @@ namespace Neo.UnitTests.Ledger
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone
             _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed);
             var tx1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // but in-block tx1 conflicts with mempooled mp1 => mp1 should be removed from pool after persist
-            tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            tx1.Attributes = [new Conflicts() { Hash = mp1.Hash }];
 
             var mp2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 and mp2 don't conflict with anyone
             _unit.TryAdd(mp2, engine.Snapshot);
             var mp3 = CreateTransactionWithFeeAndBalanceVerify(txFee);
             _unit.TryAdd(mp3, engine.Snapshot);
             var tx2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx2 conflicts with mempooled mp2 and mp3 => mp2 and mp3 should be removed from pool after persist
-            tx2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp2.Hash }, new Conflicts() { Hash = mp3.Hash } };
+            tx2.Attributes = [new Conflicts() { Hash = mp2.Hash }, new Conflicts() { Hash = mp3.Hash }];
 
             var tx3 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx3 doesn't conflict with anyone
             var mp4 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp4 conflicts with in-block tx3 => mp4 should be removed from pool after persist
-            mp4.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx3.Hash } };
+            mp4.Attributes = [new Conflicts() { Hash = tx3.Hash }];
             _unit.TryAdd(mp4, engine.Snapshot);
 
             var tx4 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx4 and tx5 don't conflict with anyone
             var tx5 = CreateTransactionWithFeeAndBalanceVerify(txFee);
             var mp5 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp5 conflicts with in-block tx4 and tx5 => mp5 should be removed from pool after persist
-            mp5.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx4.Hash }, new Conflicts() { Hash = tx5.Hash } };
+            mp5.Attributes = [new Conflicts() { Hash = tx4.Hash }, new Conflicts() { Hash = tx5.Hash }];
             _unit.TryAdd(mp5, engine.Snapshot);
 
             var mp6 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp6 doesn't conflict with anyone and noone conflicts with mp6 => mp6 should be left in the pool after persist
@@ -296,15 +296,16 @@ namespace Neo.UnitTests.Ledger
 
             var mp7 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp7 doesn't conflict with anyone
             var tx6 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx6 conflicts with mp7, but doesn't include sender of mp7 into signers list => even if tx6 is included into block, mp7 shouldn't be removed from the pool
-            tx6.Signers = new Signer[] { new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })) }, new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 })) } };
-            tx6.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            tx6.Signers = [new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })) }, new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 })) }
+            ];
+            tx6.Attributes = [new Conflicts() { Hash = mp7.Hash }];
             _unit.TryAdd(mp7, engine.Snapshot);
 
             // Act: persist block and reverify all mempooled txs.
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = new Transaction[] { tx1, tx2, tx3, tx4, tx5, tx6 },
+                Transactions = [tx1, tx2, tx3, tx4, tx5, tx6],
             };
             _unit.UpdatePoolForBlockPersisted(block, engine.Snapshot);
 
@@ -336,37 +337,38 @@ namespace Neo.UnitTests.Ledger
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 
             var mp2_1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp2_1 conflicts with mp1 and has the same network fee
-            mp2_1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            mp2_1.Attributes = [new Conflicts() { Hash = mp1.Hash }];
             _unit.TryAdd(mp2_1, engine.Snapshot);
             var mp2_2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp2_2 also conflicts with mp1 and has the same network fee as mp1 and mp2_1
-            mp2_2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            mp2_2.Attributes = [new Conflicts() { Hash = mp1.Hash }];
             _unit.TryAdd(mp2_2, engine.Snapshot);
 
             var mp3 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp3 conflicts with mp1 and has larger network fee
-            mp3.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            mp3.Attributes = [new Conflicts() { Hash = mp1.Hash }];
             _unit.TryAdd(mp3, engine.Snapshot);
 
             var mp4 = CreateTransactionWithFeeAndBalanceVerify(3 * txFee);  // mp4 conflicts with mp3 and has larger network fee
-            mp4.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp3.Hash } };
+            mp4.Attributes = [new Conflicts() { Hash = mp3.Hash }];
 
             var malicious = CreateTransactionWithFeeAndBalanceVerify(3 * txFee);  // malicious conflicts with mp3 and has larger network fee, but different sender
-            malicious.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp3.Hash } };
-            malicious.Signers = new Signer[] { new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })), Scopes = WitnessScope.None } };
+            malicious.Attributes = [new Conflicts() { Hash = mp3.Hash }];
+            malicious.Signers = [new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })), Scopes = WitnessScope.None }
+            ];
 
             var mp5 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp5 conflicts with mp4 and has smaller network fee
-            mp5.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp4.Hash } };
+            mp5.Attributes = [new Conflicts() { Hash = mp4.Hash }];
 
             var mp6 = CreateTransactionWithFeeAndBalanceVerify(mp2_1.NetworkFee + mp2_2.NetworkFee + 1); // mp6 conflicts with mp2_1 and mp2_2 and has larger network fee.
-            mp6.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp2_1.Hash }, new Conflicts() { Hash = mp2_2.Hash } };
+            mp6.Attributes = [new Conflicts() { Hash = mp2_1.Hash }, new Conflicts() { Hash = mp2_2.Hash }];
 
             var mp7 = CreateTransactionWithFeeAndBalanceVerify(txFee * 2 + 1); // mp7 doesn't conflicts with anyone, but mp8, mp9 and mp10malicious has smaller sum network fee and conflict with mp7.
             var mp8 = CreateTransactionWithFeeAndBalanceVerify(txFee);
-            mp8.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            mp8.Attributes = [new Conflicts() { Hash = mp7.Hash }];
             var mp9 = CreateTransactionWithFeeAndBalanceVerify(txFee);
-            mp9.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            mp9.Attributes = [new Conflicts() { Hash = mp7.Hash }];
             var mp10malicious = CreateTransactionWithFeeAndBalanceVerify(txFee);
-            mp10malicious.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
-            mp10malicious.Signers = new Signer[] { new Signer() { Account = maliciousSender, Scopes = WitnessScope.None } };
+            mp10malicious.Attributes = [new Conflicts() { Hash = mp7.Hash }];
+            mp10malicious.Signers = [new Signer() { Account = maliciousSender, Scopes = WitnessScope.None }];
 
             _unit.SortedTxCount.Should().Be(3);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
@@ -435,7 +437,7 @@ namespace Neo.UnitTests.Ledger
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 
             var mp2 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp2 conflicts with mp1 and has larger same network fee
-            mp2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            mp2.Attributes = [new Conflicts() { Hash = mp1.Hash }];
             _unit.TryAdd(mp2, engine.Snapshot);
 
             _unit.SortedTxCount.Should().Be(1);
@@ -455,7 +457,7 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = new Transaction[] { tx1 },
+                Transactions = [tx1],
             };
             _unit.UpdatePoolForBlockPersisted(block, engine.Snapshot);
             _unit.SortedTxCount.Should().Be(1);
@@ -499,7 +501,7 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
             _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
@@ -524,7 +526,7 @@ namespace Neo.UnitTests.Ledger
                 var blockWith2Tx = new Block
                 {
                     Header = new Header(),
-                    Transactions = new[] { maxTransaction, minTransaction }
+                    Transactions = [maxTransaction, minTransaction]
                 };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, GetSnapshot());
@@ -568,7 +570,7 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
             _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
 
@@ -711,8 +713,8 @@ namespace Neo.UnitTests.Ledger
         public void TestUpdatePoolForBlockPersisted()
         {
             var snapshot = GetSnapshot();
-            byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 }; // 24
-            byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }; // 1048576
+            byte[] transactionsPerBlock = [0x18, 0x00, 0x00, 0x00]; // 24
+            byte[] feePerByte = [0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00]; // 1048576
             StorageItem item1 = new()
             {
                 Value = transactionsPerBlock
@@ -728,7 +730,7 @@ namespace Neo.UnitTests.Ledger
 
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
-            Transaction[] transactions = { tx1, tx2 };
+            Transaction[] transactions = [tx1, tx2];
             _unit.TryAdd(tx1, snapshot);
 
             var block = new Block

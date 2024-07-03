@@ -65,29 +65,32 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Scopes = WitnessScope.WitnessRules,
                 Account = UInt160.Zero,
-                Rules = new WitnessRule[]{ new WitnessRule()
+                Rules =
+                [
+                    new WitnessRule()
                 {
                     Action = WitnessRuleAction.Allow,
                     Condition = new AndCondition()
                     {
-                        Expressions = new WitnessCondition[]
-                        {
+                        Expressions =
+                        [
                             new AndCondition()
                             {
-                                Expressions = new WitnessCondition[]
-                                {
+                                Expressions =
+                                [
                                     new AndCondition()
                                     {
-                                        Expressions = new WitnessCondition[]
-                                        {
+                                        Expressions =
+                                        [
                                             new BooleanCondition() { Expression=true }
-                                        }
+                                        ]
                                     }
-                                }
+                                ]
                             }
-                        }
+                        ]
                     }
-                }}
+                }
+                ]
             };
 
             var hex = "00000000000000000000000000000000000000004001010201020102010001";
@@ -103,29 +106,32 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Scopes = WitnessScope.WitnessRules,
                 Account = UInt160.Zero,
-                Rules = new WitnessRule[]{ new WitnessRule()
+                Rules =
+                [
+                    new WitnessRule()
                 {
                     Action = WitnessRuleAction.Allow,
                     Condition = new OrCondition()
                     {
-                        Expressions = new WitnessCondition[]
-                        {
+                        Expressions =
+                        [
                             new OrCondition()
                             {
-                                Expressions = new WitnessCondition[]
-                                {
+                                Expressions =
+                                [
                                     new OrCondition()
                                     {
-                                        Expressions = new WitnessCondition[]
-                                        {
+                                        Expressions =
+                                        [
                                             new BooleanCondition() { Expression=true }
-                                        }
+                                        ]
                                     }
-                                }
+                                ]
                             }
-                        }
+                        ]
                     }
-                }}
+                }
+                ]
             };
 
             var hex = "00000000000000000000000000000000000000004001010301030103010001";
@@ -140,7 +146,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomContracts,
-                AllowedContracts = new[] { UInt160.Zero },
+                AllowedContracts = [UInt160.Zero],
                 Account = UInt160.Zero
             };
 
@@ -160,7 +166,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomGroups,
-                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
+                AllowedGroups = [ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1)
+                ],
                 Account = UInt160.Zero
             };
 
@@ -206,7 +213,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomContracts,
-                AllowedContracts = new[] { UInt160.Zero },
+                AllowedContracts = [UInt160.Zero],
                 Account = UInt160.Zero
             };
 
@@ -220,7 +227,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomGroups,
-                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
+                AllowedGroups = [ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1)
+                ],
                 Account = UInt160.Zero
             };
 
@@ -235,9 +243,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Account = UInt160.Zero,
                 Scopes = WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules,
-                AllowedContracts = new[] { UInt160.Zero },
-                AllowedGroups = new[] { ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1) },
-                Rules = new WitnessRule[] { new() { Action = WitnessRuleAction.Allow, Condition = new BooleanCondition { Expression = true } } }
+                AllowedContracts = [UInt160.Zero],
+                AllowedGroups = [ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1)
+                ],
+                Rules = [new() { Action = WitnessRuleAction.Allow, Condition = new BooleanCondition { Expression = true } }
+                ]
             };
             var json = signer.ToJson();
             var new_signer = Signer.FromJson(json);

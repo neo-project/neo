@@ -64,19 +64,22 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var data = new ContractParametersContext(snapshot, new Transaction()
             {
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new[] {new Signer()
+                Attributes = [],
+                Signers =
+                [
+                    new Signer()
                 {
                     Account = multiSignContract.ScriptHash,
                     Scopes = WitnessScope.CalledByEntry
-                }},
+                }
+                ],
                 NetworkFee = 0,
                 Nonce = 0,
                 Script = Array.Empty<byte>(),
                 SystemFee = 0,
                 ValidUntilBlock = 0,
                 Version = 0,
-                Witnesses = Array.Empty<Witness>()
+                Witnesses = []
             }, TestProtocolSettings.Default.Network);
 
             for (int x = 0; x < m; x++)
@@ -128,7 +131,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void InvocationScript_Set()
         {
-            byte[] dataArray = new byte[] { 0, 32, 32, 20, 32, 32 };
+            byte[] dataArray = [0, 32, 32, 20, 32, 32];
             uut.InvocationScript = dataArray;
             uut.InvocationScript.Length.Should().Be(6);
             Assert.AreEqual(uut.InvocationScript.Span.ToHexString(), "002020142020");

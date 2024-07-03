@@ -159,10 +159,11 @@ namespace Neo.UnitTests.Network.P2P
             {
                 Nonce = 1,
                 Version = 0,
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = new byte[] { (byte)OpCode.PUSH1 },
-                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } },
+                Signers = [new Signer() { Account = UInt160.Zero }],
+                Witnesses = [new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                ],
             };
 
             var msg = Message.Create(MessageCommand.Transaction, payload);

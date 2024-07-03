@@ -36,20 +36,20 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             eventName.Should().Be(notifyEvent);
 
             ApplicationEngine.Notify += Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             eventName.Should().Be(null);
 
             eventName = notifyEvent;
             ApplicationEngine.Notify -= Test_Notify1;
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             eventName.Should().Be(null);
 
             ApplicationEngine.Notify -= Test_Notify2;
-            engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
+            engine.SendNotification(UInt160.Zero, notifyEvent, []);
             eventName.Should().Be(null);
         }
 
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestCreateDummyBlock()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
+            byte[] SyscallSystemRuntimeCheckWitnessHash = [0x68, 0xf8, 0x27, 0xec, 0x8c];
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot, settings: TestProtocolSettings.Default);
             engine.PersistingBlock.Version.Should().Be(0);
             engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
@@ -125,19 +125,19 @@ namespace Neo.UnitTests.SmartContract
 
                 snapshot.DeleteContract(scriptHash);
                 var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any));
-                contract.Manifest.Abi.Methods = new[]
-                {
+                contract.Manifest.Abi.Methods =
+                [
                     new ContractMethodDescriptor
                     {
                         Name = "disallowed",
-                        Parameters = new ContractParameterDefinition[]{}
+                        Parameters = []
                     },
                     new ContractMethodDescriptor
                     {
                         Name = "test",
-                        Parameters = new ContractParameterDefinition[]{}
+                        Parameters = []
                     }
-                };
+                ];
                 snapshot.AddContract(scriptHash, contract);
             }
 
@@ -155,14 +155,14 @@ namespace Neo.UnitTests.SmartContract
                     Manifest = new()
                     {
                         Abi = new() { },
-                        Permissions = new ContractPermission[]
-                        {
+                        Permissions =
+                        [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash),
-                                Methods = WildcardContainer<string>.Create(new string[]{"test"}) // allowed to call only "test" method of the target contract.
+                                Methods = WildcardContainer<string>.Create(["test"]) // allowed to call only "test" method of the target contract.
                             }
-                        }
+                        ]
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
@@ -185,14 +185,14 @@ namespace Neo.UnitTests.SmartContract
                     Manifest = new()
                     {
                         Abi = new() { },
-                        Permissions = new ContractPermission[]
-                        {
+                        Permissions =
+                        [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash),
-                                Methods = WildcardContainer<string>.Create(new string[]{"test"}) // allowed to call only "test" method of the target contract.
+                                Methods = WildcardContainer<string>.Create(["test"]) // allowed to call only "test" method of the target contract.
                             }
-                        }
+                        ]
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;

@@ -21,7 +21,7 @@ namespace Neo.Network.P2P
     {
         public Dictionary<UInt256, DateTime> InvTasks { get; } = new Dictionary<UInt256, DateTime>();
         public Dictionary<uint, DateTime> IndexTasks { get; } = new Dictionary<uint, DateTime>();
-        public HashSet<UInt256> AvailableTasks { get; } = new HashSet<UInt256>();
+        public HashSet<UInt256> AvailableTasks { get; } = [];
         public Dictionary<uint, Block> ReceivedBlock { get; } = new Dictionary<uint, Block>();
         public bool HasTooManyTasks => InvTasks.Count + IndexTasks.Count >= 100;
         public bool IsFullNode { get; }

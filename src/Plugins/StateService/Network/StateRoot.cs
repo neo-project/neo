@@ -48,7 +48,7 @@ namespace Neo.Plugins.StateService.Network
         {
             get
             {
-                return new[] { Witness };
+                return [Witness];
             }
             set
             {
@@ -107,7 +107,7 @@ namespace Neo.Plugins.StateService.Network
         {
             ECPoint[] validators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.StateValidator, Index);
             if (validators.Length < 1) throw new InvalidOperationException("No script hash for state root verifying");
-            return new UInt160[] { Contract.GetBFTAddress(validators) };
+            return [Contract.GetBFTAddress(validators)];
         }
 
         public JObject ToJson()
@@ -116,7 +116,7 @@ namespace Neo.Plugins.StateService.Network
             json["version"] = Version;
             json["index"] = Index;
             json["roothash"] = RootHash.ToString();
-            json["witnesses"] = Witness is null ? new JArray() : new JArray(Witness.ToJson());
+            json["witnesses"] = Witness is null ? [] : new JArray(Witness.ToJson());
             return json;
         }
     }

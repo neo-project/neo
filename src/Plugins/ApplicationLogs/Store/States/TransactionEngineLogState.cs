@@ -15,7 +15,7 @@ namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class TransactionEngineLogState : ISerializable, IEquatable<TransactionEngineLogState>
     {
-        public Guid[] LogIds { get; private set; } = Array.Empty<Guid>();
+        public Guid[] LogIds { get; private set; } = [];
 
         public static TransactionEngineLogState Create(Guid[] logIds) =>
             new()

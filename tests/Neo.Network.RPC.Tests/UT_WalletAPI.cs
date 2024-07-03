@@ -42,7 +42,7 @@ namespace Neo.Network.RPC.Tests
             keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
             multiSender = Contract.CreateMultiSigContract(1, new ECPoint[] { keyPair1.PublicKey }).ScriptHash;
-            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, []);
             client = rpcClientMock.Object;
             address1 = Wallets.Helper.ToAddress(sender, client.protocolSettings.AddressVersion);
             walletAPI = new WalletAPI(rpcClientMock.Object);
@@ -144,12 +144,12 @@ namespace Neo.Network.RPC.Tests
             json["hash"] = UInt256.Zero.ToString();
             rpcClientMock.Setup(p => p.RpcSendAsync("sendrawtransaction", It.IsAny<JToken>())).ReturnsAsync(json);
 
-            var tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, new[] { keyPair1.PublicKey }, new[] { keyPair1 }, UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
+            var tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, [keyPair1.PublicKey], [keyPair1], UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
             Assert.AreEqual(testScript.ToHexString(), tranaction.Script.Span.ToHexString());
 
             try
             {
-                tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 2, new[] { keyPair1.PublicKey }, new[] { keyPair1 }, UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
+                tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 2, [keyPair1.PublicKey], [keyPair1], UInt160.Zero, NativeContract.GAS.Factor * 100, null, true);
                 Assert.Fail();
             }
             catch (System.Exception e)
@@ -162,7 +162,7 @@ namespace Neo.Network.RPC.Tests
                 .ToArray();
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1_10000000) });
 
-            tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, new[] { keyPair1.PublicKey }, new[] { keyPair1 }, UInt160.Zero, NativeContract.GAS.Factor * 100, string.Empty, true);
+            tranaction = await walletAPI.TransferAsync(NativeContract.GAS.Hash, 1, [keyPair1.PublicKey], [keyPair1], UInt160.Zero, NativeContract.GAS.Factor * 100, string.Empty, true);
             Assert.AreEqual(testScript.ToHexString(), tranaction.Script.Span.ToHexString());
         }
 

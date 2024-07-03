@@ -34,13 +34,13 @@ namespace Neo.Plugins.Trackers.NEP_11
         private const byte Nep11TransferReceivedPrefix = 0xfa;
         private uint _currentHeight;
         private Block _currentBlock;
-        private readonly HashSet<string> _properties = new()
-        {
+        private readonly HashSet<string> _properties =
+        [
             "name",
             "description",
             "image",
             "tokenURI"
-        };
+        ];
 
         public override string TrackName => nameof(Nep11Tracker);
 
@@ -53,7 +53,7 @@ namespace Neo.Plugins.Trackers.NEP_11
             _currentBlock = block;
             _currentHeight = block.Index;
             uint nep11TransferIndex = 0;
-            List<TransferRecord> transfers = new();
+            List<TransferRecord> transfers = [];
             foreach (Blockchain.ApplicationExecuted appExecuted in applicationExecutedList)
             {
                 // Executions that fault won't modify storage, so we can skip them.
@@ -206,9 +206,9 @@ namespace Neo.Plugins.Trackers.NEP_11
 
             JObject json = new();
             json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
-            JArray transfersSent = new();
+            JArray transfersSent = [];
             json["sent"] = transfersSent;
-            JArray transfersReceived = new();
+            JArray transfersReceived = [];
             json["received"] = transfersReceived;
             AddNep11Transfers(Nep11TransferSentPrefix, userScriptHash, startTime, endTime, transfersSent);
             AddNep11Transfers(Nep11TransferReceivedPrefix, userScriptHash, startTime, endTime, transfersReceived);
@@ -221,7 +221,7 @@ namespace Neo.Plugins.Trackers.NEP_11
             UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
 
             JObject json = new();
-            JArray balances = new();
+            JArray balances = [];
             json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
             json["balance"] = balances;
 

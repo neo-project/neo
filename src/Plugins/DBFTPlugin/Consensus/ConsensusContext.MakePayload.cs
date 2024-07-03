@@ -78,7 +78,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
             txs = txs.Take((int)maxTransactionsPerBlock);
 
-            List<UInt256> hashes = new List<UInt256>();
+            List<UInt256> hashes = [];
             Transactions = new Dictionary<UInt256, Transaction>();
             VerificationContext = new TransactionVerificationContext();
 

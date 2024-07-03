@@ -72,7 +72,7 @@ namespace Neo.UnitTests.Ledger
             var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeDatoshiFixed, sizeFixed);
             var tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeDatoshiFixed, sizeFixed);
 
-            tx1.Attributes = new TransactionAttribute[] { new HighPriorityAttribute() };
+            tx1.Attributes = [new HighPriorityAttribute()];
 
             PoolItem pitem1 = new PoolItem(tx1);
             PoolItem pitem2 = new PoolItem(tx2);
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.Ledger
         {
             int sizeFixed = 500;
             int netFeeDatoshiFixed = 10;
-            var tx = GenerateTx(netFeeDatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
+            var tx = GenerateTx(netFeeDatoshiFixed, sizeFixed, [0x13, 0x37]);
 
             PoolItem pitem1 = new PoolItem(tx);
             PoolItem pitem2 = new PoolItem(tx);
@@ -143,18 +143,18 @@ namespace Neo.UnitTests.Ledger
             Transaction tx = new Transaction
             {
                 Nonce = (uint)TestRandom.Next(),
-                Script = overrideScriptBytes ?? new byte[0],
+                Script = overrideScriptBytes ?? [],
                 NetworkFee = networkFee,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
-                Witnesses = new[]
-                {
+                Attributes = [],
+                Signers = [],
+                Witnesses =
+                [
                     new Witness
                     {
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }
-                }
+                ]
             };
 
             tx.Attributes.Length.Should().Be(0);

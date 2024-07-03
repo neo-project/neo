@@ -27,14 +27,14 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Abi = new Neo.SmartContract.Manifest.ContractAbi()
                     {
-                        Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
-                         {
-                             new Neo.SmartContract.Manifest.ContractMethodDescriptor()
+                        Methods =
+                        [
+                            new Neo.SmartContract.Manifest.ContractMethodDescriptor()
                              {
                                   Name = "verify",
-                                  Parameters = Array.Empty<Neo.SmartContract.Manifest.ContractParameterDefinition>()
+                                  Parameters = []
                              }
-                         }
+                        ]
                     }
                 },
                 Nef = new NefFile { Script = new byte[] { 1, 2, 3 } },
@@ -54,14 +54,14 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Abi = new Neo.SmartContract.Manifest.ContractAbi()
                     {
-                        Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
-                         {
-                             new Neo.SmartContract.Manifest.ContractMethodDescriptor()
+                        Methods =
+                        [
+                            new Neo.SmartContract.Manifest.ContractMethodDescriptor()
                              {
                                   Name = "noverify",
-                                  Parameters = Array.Empty<Neo.SmartContract.Manifest.ContractParameterDefinition>()
+                                  Parameters = []
                              }
-                         }
+                        ]
                     }
                 },
                 Nef = new NefFile { Script = new byte[] { 1, 2, 3 } }

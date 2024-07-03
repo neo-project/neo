@@ -112,7 +112,7 @@ namespace Neo
             AddressVersion = 0x35,
             StandbyCommittee = Array.Empty<ECPoint>(),
             ValidatorsCount = 0,
-            SeedList = Array.Empty<string>(),
+            SeedList = [],
             MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,

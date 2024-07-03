@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractEventDescriptor expected = new ContractEventDescriptor
             {
                 Name = "AAA",
-                Parameters = new ContractParameterDefinition[0]
+                Parameters = []
             };
             ContractEventDescriptor actual = ContractEventDescriptor.FromJson(expected.ToJson());
             Assert.AreEqual(expected.Name, actual.Name);

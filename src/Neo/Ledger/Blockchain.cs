@@ -119,7 +119,7 @@ namespace Neo.Ledger
         }
 
         internal class Initialize { }
-        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
+        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = []; public HashSet<IActorRef> Nodes = []; }
 
         public static event CommittingHandler Committing;
         public static event CommittedHandler Committed;
@@ -272,7 +272,7 @@ namespace Neo.Ledger
             if (block.Index == currentHeight + 1)
             {
                 Block block_persist = block;
-                List<Block> blocksToPersistList = new();
+                List<Block> blocksToPersistList = [];
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
@@ -423,7 +423,7 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = system.GetSnapshot())
             {
-                List<ApplicationExecuted> all_application_executed = new();
+                List<ApplicationExecuted> all_application_executed = [];
                 TransactionState[] transactionStates;
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {

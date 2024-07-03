@@ -30,12 +30,12 @@ namespace Neo.UnitTests.SmartContract.Native
             CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
             CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
 
-            data = new byte[] { 1, 2, 3 };
+            data = [1, 2, 3];
 
             CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
             CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
-            Assert.AreEqual("AQIDBA==", StdLib.Base64Encode(new byte[] { 1, 2, 3, 4 }));
-            Assert.AreEqual("2VfUX", StdLib.Base58Encode(new byte[] { 1, 2, 3, 4 }));
+            Assert.AreEqual("AQIDBA==", StdLib.Base64Encode([1, 2, 3, 4]));
+            Assert.AreEqual("2VfUX", StdLib.Base58Encode([1, 2, 3, 4]));
         }
 
         [TestMethod]
@@ -322,7 +322,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize", 5);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize", true);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize", "test");
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize", new object[] { null });
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize", [null]);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize", new ContractParameter(ContractParameterType.Map)
                 {
                     Value = new List<KeyValuePair<ContractParameter, ContractParameter>>() {

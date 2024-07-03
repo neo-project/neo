@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(new UInt256(), contractParameter5.Value);
 
             ContractParameter contractParameter6 = new(ContractParameterType.ByteArray);
-            byte[] expectedArray6 = Array.Empty<byte>();
+            byte[] expectedArray6 = [];
             Assert.IsNotNull(contractParameter6);
             Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString((byte[])contractParameter6.Value));
 

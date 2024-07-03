@@ -202,15 +202,14 @@ namespace Neo.Plugins.RpcServer
             (amount.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Amount can't be negative."));
             Signer[] signers = _params.Count >= 5 ? ((JArray)_params[4]).Select(p => new Signer() { Account = AddressToScriptHash(p.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray() : null;
 
-            Transaction tx = wallet.MakeTransaction(snapshot, new[]
-            {
+            Transaction tx = wallet.MakeTransaction(snapshot, [
                 new TransferOutput
                 {
                     AssetId = assetId,
                     Value = amount,
                     ScriptHash = to
                 }
-            }, from, signers).NotNull_Or(RpcError.InsufficientFunds);
+            ], from, signers).NotNull_Or(RpcError.InsufficientFunds);
 
             ContractParametersContext transContext = new(snapshot, tx, settings.Network);
             wallet.Sign(transContext);
@@ -283,15 +282,14 @@ namespace Neo.Plugins.RpcServer
             AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
             BigDecimal amount = new(BigInteger.Parse(_params[2].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcError.InvalidParams);
-            Transaction tx = wallet.MakeTransaction(snapshot, new[]
-            {
+            Transaction tx = wallet.MakeTransaction(snapshot, [
                 new TransferOutput
                 {
                     AssetId = assetId,
                     Value = amount,
                     ScriptHash = to
                 }
-            }).NotNull_Or(RpcError.InsufficientFunds);
+            ]).NotNull_Or(RpcError.InsufficientFunds);
 
             ContractParametersContext transContext = new(snapshot, tx, settings.Network);
             wallet.Sign(transContext);
@@ -316,13 +314,13 @@ namespace Neo.Plugins.RpcServer
             NativeContract.Ledger.GetTransactionState(system.StoreView, txid).Null_Or(RpcErrorFactory.AlreadyExists("This tx is already confirmed, can't be cancelled."));
 
             var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
-            Signer[] signers = _params.Count >= 2 ? ((JArray)_params[1]).Select(j => new Signer() { Account = AddressToScriptHash(j.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.None }).ToArray() : Array.Empty<Signer>();
+            Signer[] signers = _params.Count >= 2 ? ((JArray)_params[1]).Select(j => new Signer() { Account = AddressToScriptHash(j.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.None }).ToArray() : [];
             signers.Any().True_Or(RpcErrorFactory.BadRequest("No signer."));
             Transaction tx = new Transaction
             {
                 Signers = signers,
                 Attributes = conflict,
-                Witnesses = Array.Empty<Witness>(),
+                Witnesses = [],
             };
 
             tx = Result.Ok_Or(() => wallet.MakeTransaction(system.StoreView, new[] { (byte)OpCode.RET }, signers[0].Account, signers, conflict), RpcError.InsufficientFunds, true);
@@ -346,7 +344,7 @@ namespace Neo.Plugins.RpcServer
         protected virtual JToken InvokeContractVerify(JArray _params)
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
-            ContractParameter[] args = _params.Count >= 2 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : Array.Empty<ContractParameter>();
+            ContractParameter[] args = _params.Count >= 2 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : [];
             Signer[] signers = _params.Count >= 3 ? SignersFromJson((JArray)_params[2], system.Settings) : null;
             Witness[] witnesses = _params.Count >= 3 ? WitnessesFromJson((JArray)_params[2]) : null;
             return GetVerificationResult(script_hash, args, signers, witnesses);
@@ -360,8 +358,8 @@ namespace Neo.Plugins.RpcServer
             (md.ReturnType == ContractParameterType.Boolean).True_Or(RpcErrorFactory.InvalidContractVerification("The verify method doesn't return boolean value."));
             Transaction tx = new()
             {
-                Signers = signers ?? new Signer[] { new() { Account = scriptHash } },
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = signers ?? [new() { Account = scriptHash }],
+                Attributes = [],
                 Witnesses = witnesses,
                 Script = new[] { (byte)OpCode.RET }
             };
@@ -376,7 +374,7 @@ namespace Neo.Plugins.RpcServer
                     sb.EmitPush(args[i]);
 
                 invocationScript = sb.ToArray();
-                tx.Witnesses ??= new Witness[] { new() { InvocationScript = invocationScript } };
+                tx.Witnesses ??= [new() { InvocationScript = invocationScript }];
                 engine.LoadScript(new Script(invocationScript), configureState: p => p.CallFlags = CallFlags.None);
             }
             JObject json = new();

@@ -139,7 +139,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         public void TestCloneExtension()
         {
             var l = Node.NewLeaf(Encoding.ASCII.GetBytes("leaf"));
-            var n = Node.NewExtension(new byte[] { 0x01 }, new Node());
+            var n = Node.NewExtension([0x01], new Node());
             var n1 = n.Clone();
             n1.Next = l;
             Assert.IsTrue(n.Next.IsEmpty);
@@ -158,8 +158,8 @@ namespace Neo.Cryptography.MPTTrie.Tests
         public void TestNewExtensionException()
         {
             Assert.ThrowsException<ArgumentNullException>(() => Node.NewExtension(null, new Node()));
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewExtension(new byte[] { 0x01 }, null));
-            Assert.ThrowsException<InvalidOperationException>(() => Node.NewExtension(Array.Empty<byte>(), new Node()));
+            Assert.ThrowsException<ArgumentNullException>(() => Node.NewExtension([0x01], null));
+            Assert.ThrowsException<InvalidOperationException>(() => Node.NewExtension([], new Node()));
         }
 
         [TestMethod]
@@ -181,9 +181,9 @@ namespace Neo.Cryptography.MPTTrie.Tests
             Assert.AreEqual(1, n.Size);
             n = Node.NewBranch();
             Assert.AreEqual(19, n.Size);
-            n = Node.NewExtension(new byte[] { 0x00 }, new Node());
+            n = Node.NewExtension([0x00], new Node());
             Assert.AreEqual(5, n.Size);
-            n = Node.NewLeaf(new byte[] { 0x00 });
+            n = Node.NewLeaf([0x00]);
             Assert.AreEqual(4, n.Size);
             n = Node.NewHash(UInt256.Zero);
             Assert.AreEqual(33, n.Size);
@@ -192,7 +192,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestFromReplica()
         {
-            var l = Node.NewLeaf(new byte[] { 0x00 });
+            var l = Node.NewLeaf([0x00]);
             var n = Node.NewBranch();
             n.Children[1] = l;
             var r = new Node();
@@ -205,7 +205,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestEmptyLeaf()
         {
-            var leaf = Node.NewLeaf(Array.Empty<byte>());
+            var leaf = Node.NewLeaf([]);
             var data = leaf.ToArray();
             Assert.AreEqual(3, data.Length);
             var l = data.AsSerializable<Node>();

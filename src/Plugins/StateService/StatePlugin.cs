@@ -293,7 +293,7 @@ namespace Neo.Plugins.StateService
             (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
             var script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
             var prefix = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid prefix: {_params[2]}"));
-            byte[] key = Array.Empty<byte>();
+            byte[] key = [];
             if (3 < _params.Count)
                 key = Result.Ok_Or(() => Convert.FromBase64String(_params[3].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[3]}"));
             int count = Settings.Default.MaxFindResultItems;
@@ -315,7 +315,7 @@ namespace Neo.Plugins.StateService
                 Key = key,
             };
             JObject json = new();
-            JArray jarr = new();
+            JArray jarr = [];
             int i = 0;
             foreach (var (ikey, ivalue) in trie.Find(pkey.ToArray(), 0 < key.Length ? fkey.ToArray() : null))
             {

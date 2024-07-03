@@ -22,7 +22,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void AllDifferent()
         {
-            HashSet<string> codes = new();
+            HashSet<string> codes = [];
 
             foreach (RpcError error in typeof(RpcError)
                 .GetFields(BindingFlags.Static | BindingFlags.Public)

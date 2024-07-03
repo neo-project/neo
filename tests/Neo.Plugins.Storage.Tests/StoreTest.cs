@@ -112,15 +112,15 @@ namespace Neo.Plugins.Storage.Tests
 
                 // Test seek in order
 
-                store.Put(new byte[] { 0x00, 0x00, 0x04 }, new byte[] { 0x04 });
-                store.Put(new byte[] { 0x00, 0x00, 0x00 }, new byte[] { 0x00 });
-                store.Put(new byte[] { 0x00, 0x00, 0x01 }, new byte[] { 0x01 });
-                store.Put(new byte[] { 0x00, 0x00, 0x02 }, new byte[] { 0x02 });
-                store.Put(new byte[] { 0x00, 0x00, 0x03 }, new byte[] { 0x03 });
+                store.Put([0x00, 0x00, 0x04], [0x04]);
+                store.Put([0x00, 0x00, 0x00], [0x00]);
+                store.Put([0x00, 0x00, 0x01], [0x01]);
+                store.Put([0x00, 0x00, 0x02], [0x02]);
+                store.Put([0x00, 0x00, 0x03], [0x03]);
 
                 // Seek Forward
 
-                var entries = store.Seek(new byte[] { 0x00, 0x00, 0x02 }, SeekDirection.Forward).ToArray();
+                var entries = store.Seek([0x00, 0x00, 0x02], SeekDirection.Forward).ToArray();
                 Assert.AreEqual(3, entries.Length);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x02 }, entries[0].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x02 }, entries[0].Value);
@@ -131,7 +131,7 @@ namespace Neo.Plugins.Storage.Tests
 
                 // Seek Backward
 
-                entries = store.Seek(new byte[] { 0x00, 0x00, 0x02 }, SeekDirection.Backward).ToArray();
+                entries = store.Seek([0x00, 0x00, 0x02], SeekDirection.Backward).ToArray();
                 Assert.AreEqual(3, entries.Length);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x02 }, entries[0].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x02 }, entries[0].Value);
@@ -139,16 +139,16 @@ namespace Neo.Plugins.Storage.Tests
                 CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[1].Value);
 
                 // Seek Backward
-                store.Delete(new byte[] { 0x00, 0x00, 0x00 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x01 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x02 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x03 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x04 });
-                store.Put(new byte[] { 0x00, 0x00, 0x00 }, new byte[] { 0x00 });
-                store.Put(new byte[] { 0x00, 0x00, 0x01 }, new byte[] { 0x01 });
-                store.Put(new byte[] { 0x00, 0x01, 0x02 }, new byte[] { 0x02 });
+                store.Delete([0x00, 0x00, 0x00]);
+                store.Delete([0x00, 0x00, 0x01]);
+                store.Delete([0x00, 0x00, 0x02]);
+                store.Delete([0x00, 0x00, 0x03]);
+                store.Delete([0x00, 0x00, 0x04]);
+                store.Put([0x00, 0x00, 0x00], [0x00]);
+                store.Put([0x00, 0x00, 0x01], [0x01]);
+                store.Put([0x00, 0x01, 0x02], [0x02]);
 
-                entries = store.Seek(new byte[] { 0x00, 0x00, 0x03 }, SeekDirection.Backward).ToArray();
+                entries = store.Seek([0x00, 0x00, 0x03], SeekDirection.Backward).ToArray();
                 Assert.AreEqual(2, entries.Length);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
@@ -165,7 +165,7 @@ namespace Neo.Plugins.Storage.Tests
         {
             using (store)
             {
-                store.Put(new byte[] { 0x01, 0x02, 0x03 }, new byte[] { 0x04, 0x05, 0x06 });
+                store.Put([0x01, 0x02, 0x03], [0x04, 0x05, 0x06]);
             }
         }
 
@@ -177,7 +177,7 @@ namespace Neo.Plugins.Storage.Tests
         {
             using (store)
             {
-                store.Delete(new byte[] { 0x01, 0x02, 0x03 });
+                store.Delete([0x01, 0x02, 0x03]);
             }
         }
 
@@ -190,7 +190,7 @@ namespace Neo.Plugins.Storage.Tests
         {
             using (store)
             {
-                var ret = store.TryGet(new byte[] { 0x01, 0x02, 0x03 });
+                var ret = store.TryGet([0x01, 0x02, 0x03]);
 
                 if (shouldExist) CollectionAssert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, ret);
                 else Assert.IsNull(ret);

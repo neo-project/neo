@@ -51,16 +51,16 @@ namespace Neo.Network.RPC.Tests
             return new Transaction
             {
                 Script = new byte[1],
-                Signers = new Signer[] { new Signer { Account = UInt160.Zero } },
-                Attributes = new TransactionAttribute[0],
-                Witnesses = new Witness[]
-                {
+                Signers = [new Signer { Account = UInt160.Zero }],
+                Attributes = [],
+                Witnesses =
+                [
                     new Witness
                     {
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }
-                }
+                ]
             };
         }
     }

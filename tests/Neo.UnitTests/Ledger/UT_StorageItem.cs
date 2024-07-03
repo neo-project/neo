@@ -38,7 +38,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Value_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32 };
+            byte[] val = [0x42, 0x32];
             uut.Value = val;
             uut.Value.Length.Should().Be(2);
             uut.Value.Span[0].Should().Be(val[0]);
@@ -77,7 +77,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Deserialize()
         {
-            byte[] data = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            byte[] data = [66, 32, 32, 32, 32, 32, 32, 32, 32, 32];
             MemoryReader reader = new(data);
             uut.Deserialize(ref reader);
             var span = uut.Value.Span;
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.Ledger
                 }
             }
 
-            byte[] requiredData = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            byte[] requiredData = [66, 32, 32, 32, 32, 32, 32, 32, 32, 32];
 
             data.Length.Should().Be(requiredData.Length);
             for (int i = 0; i < requiredData.Length; i++)

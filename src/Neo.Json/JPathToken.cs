@@ -207,7 +207,7 @@ namespace Neo.Json
 
         private static void ProcessRecursiveDescent(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
         {
-            List<JToken?> results = new();
+            List<JToken?> results = [];
             JPathToken token = DequeueToken(tokens);
             if (token.Type != JPathTokenType.Identifier) throw new FormatException();
             while (objects.Length > 0)
@@ -239,7 +239,7 @@ namespace Neo.Json
 
         private static void ProcessUnion(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens, JPathToken first)
         {
-            List<JPathToken> items = new() { first };
+            List<JPathToken> items = [first];
             while (true)
             {
                 JPathToken token = DequeueToken(tokens);

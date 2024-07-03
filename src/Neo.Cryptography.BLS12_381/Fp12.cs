@@ -136,23 +136,21 @@ public readonly struct Fp12 : IEquatable<Fp12>, INumber<Fp12>
 
         // c1 = c1 * (u + 1)^((p - 1) / 6)
         c1 *= new Fp6(new Fp2(
-            Fp.FromRawUnchecked(new ulong[]
-            {
-            0x0708_9552_b319_d465,
+            Fp.FromRawUnchecked([
+                0x0708_9552_b319_d465,
             0xc669_5f92_b50a_8313,
             0x97e8_3ccc_d117_228f,
             0xa35b_aeca_b2dc_29ee,
             0x1ce3_93ea_5daa_ce4d,
             0x08f2_220f_b0fb_66eb
-        }), Fp.FromRawUnchecked(new ulong[]
-        {
-            0xb2f6_6aad_4ce5_d646,
+            ]), Fp.FromRawUnchecked([
+                0xb2f6_6aad_4ce5_d646,
             0x5842_a06b_fc49_7cec,
             0xcf48_95d4_2599_d394,
             0xc11b_9cba_40a8_e8d0,
             0x2e38_13cb_e5a0_de89,
             0x110e_efda_8884_7faf
-        })));
+            ])));
 
         return new Fp12(in c0, in c1);
     }

@@ -72,7 +72,7 @@ namespace Neo.Network.P2P
         private IActorRef tcp_listener;
         private ICancelable timer;
 
-        private static readonly HashSet<IPAddress> localAddresses = new();
+        private static readonly HashSet<IPAddress> localAddresses = [];
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new();
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// A hash set to store the trusted nodes. A trusted node will always be connected.
         /// </summary>
-        protected HashSet<IPAddress> TrustedIpAddresses { get; } = new();
+        protected HashSet<IPAddress> TrustedIpAddresses { get; } = [];
 
         /// <summary>
         /// The port listened by the local Tcp server.

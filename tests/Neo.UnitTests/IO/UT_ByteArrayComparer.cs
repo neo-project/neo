@@ -26,7 +26,7 @@ namespace Neo.UnitTests.IO
             byte[] x = null, y = null;
             comparer.Compare(x, y).Should().Be(0);
 
-            x = new byte[] { 1, 2, 3, 4, 5 };
+            x = [1, 2, 3, 4, 5];
             y = x;
             comparer.Compare(x, y).Should().Be(0);
             comparer.Compare(x, x).Should().Be(0);
@@ -38,24 +38,24 @@ namespace Neo.UnitTests.IO
             x = null;
             comparer.Compare(x, y).Should().Be(-5);
 
-            x = new byte[] { 1 };
-            y = Array.Empty<byte>();
+            x = [1];
+            y = [];
             comparer.Compare(x, y).Should().Be(1);
             y = x;
             comparer.Compare(x, y).Should().Be(0);
 
-            x = new byte[] { 1 };
-            y = new byte[] { 2 };
+            x = [1];
+            y = [2];
             comparer.Compare(x, y).Should().Be(-1);
 
             comparer = ByteArrayComparer.Reverse;
-            x = new byte[] { 3 };
+            x = [3];
             comparer.Compare(x, y).Should().Be(-1);
             y = x;
             comparer.Compare(x, y).Should().Be(0);
 
-            x = new byte[] { 1 };
-            y = new byte[] { 2 };
+            x = [1];
+            y = [2];
             comparer.Compare(x, y).Should().Be(1);
         }
     }

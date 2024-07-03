@@ -156,9 +156,9 @@ namespace Neo.Plugins.Trackers.NEP_17
 
             JObject json = new();
             json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
-            JArray transfersSent = new();
+            JArray transfersSent = [];
             json["sent"] = transfersSent;
-            JArray transfersReceived = new();
+            JArray transfersReceived = [];
             json["received"] = transfersReceived;
             AddNep17Transfers(Nep17TransferSentPrefix, userScriptHash, startTime, endTime, transfersSent);
             AddNep17Transfers(Nep17TransferReceivedPrefix, userScriptHash, startTime, endTime, transfersReceived);
@@ -171,7 +171,7 @@ namespace Neo.Plugins.Trackers.NEP_17
             UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
 
             JObject json = new();
-            JArray balances = new();
+            JArray balances = [];
             json["address"] = userScriptHash.ToAddress(_neoSystem.Settings.AddressVersion);
             json["balance"] = balances;
 

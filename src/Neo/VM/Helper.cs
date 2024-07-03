@@ -148,7 +148,8 @@ namespace Neo.VM
                         if (parameter.Value is BigInteger bi)
                             builder.EmitPush(bi);
                         else
-                            builder.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
+                            builder.EmitPush((BigInteger)typeof(BigInteger).GetConstructor([parameter.Value.GetType()]).Invoke(
+                                [parameter.Value]));
                         break;
                     case ContractParameterType.Hash160:
                         builder.EmitPush((UInt160)parameter.Value);
@@ -296,7 +297,7 @@ namespace Neo.VM
         {
             if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize));
             maxSize -= 2/*[]*/+ Math.Max(0, (stack.Count - 1))/*,*/;
-            JArray result = new();
+            JArray result = [];
             foreach (var item in stack)
                 result.Add(ToJson(item, null, ref maxSize));
             if (maxSize < 0) throw new InvalidOperationException("Max size reached.");
@@ -318,7 +319,7 @@ namespace Neo.VM
                         context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                         if (!context.Add(array)) throw new InvalidOperationException();
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
-                        JArray a = new();
+                        JArray a = [];
                         foreach (StackItem stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
@@ -351,7 +352,7 @@ namespace Neo.VM
                         context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                         if (!context.Add(map)) throw new InvalidOperationException();
                         maxSize -= 2/*[]*/+ Math.Max(0, (map.Count - 1))/*,*/;
-                        JArray a = new();
+                        JArray a = [];
                         foreach (var (k, v) in map)
                         {
                             maxSize -= 17/*{"key":,"value":}*/;
@@ -399,7 +400,7 @@ namespace Neo.VM
             {
                 case Array array:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (_, parameter) = context.FirstOrDefault(p => ReferenceEquals(p.Item1, item));
                     if (parameter is null)
@@ -411,7 +412,7 @@ namespace Neo.VM
                     break;
                 case Map map:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (_, parameter) = context.FirstOrDefault(p => ReferenceEquals(p.Item1, item));
                     if (parameter is null)
@@ -479,7 +480,7 @@ namespace Neo.VM
             {
                 case ContractParameterType.Array:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
                     if (stackItem is null)
@@ -490,7 +491,7 @@ namespace Neo.VM
                     break;
                 case ContractParameterType.Map:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
                     if (stackItem is null)

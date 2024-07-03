@@ -64,7 +64,7 @@ namespace Neo.Network.RPC
         /// <returns></returns>
         public async Task<bool> IsBlockedAsync(UInt160 account)
         {
-            var result = await TestInvokeAsync(scriptHash, "isBlocked", new object[] { account }).ConfigureAwait(false);
+            var result = await TestInvokeAsync(scriptHash, "isBlocked", [account]).ConfigureAwait(false);
             return result.Stack.Single().GetBoolean();
         }
     }

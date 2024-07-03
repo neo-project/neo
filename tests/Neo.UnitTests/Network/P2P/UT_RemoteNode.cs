@@ -50,10 +50,10 @@ namespace Neo.UnitTests.Network.P2P
                 Network = 2,
                 Timestamp = 5,
                 Version = 6,
-                Capabilities = new NodeCapability[]
-                {
+                Capabilities =
+                [
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                }
+                ]
             });
 
             var testProbe = CreateTestProbe();
@@ -75,10 +75,10 @@ namespace Neo.UnitTests.Network.P2P
                 Network = TestProtocolSettings.Default.Network,
                 Timestamp = 5,
                 Version = 6,
-                Capabilities = new NodeCapability[]
-                {
+                Capabilities =
+                [
                     new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                }
+                ]
             });
 
             var testProbe = CreateTestProbe();

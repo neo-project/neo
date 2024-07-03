@@ -187,8 +187,8 @@ namespace Neo.Plugins.OracleService
         {
             try
             {
-                List<ulong> outOfDate = new();
-                List<Task> tasks = new();
+                List<ulong> outOfDate = [];
+                List<Task> tasks = [];
                 foreach (var (id, task) in pendingQueue)
                 {
                     var span = TimeProvider.Current.UtcNow - task.Timestamp;
@@ -305,7 +305,7 @@ namespace Neo.Plugins.OracleService
 
                 Log($"[{req.OriginalTxid}]-({requestId}) Built response tx[[{responseTx.Hash}]], responseCode:{code}, result:{result.ToHexString()}, validUntilBlock:{responseTx.ValidUntilBlock}, backupTx:{backupTx.Hash}-{backupTx.ValidUntilBlock}");
 
-                List<Task> tasks = new List<Task>();
+                List<Task> tasks = [];
                 ECPoint[] oraclePublicKeys = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
                 foreach (var account in wallet.GetAccounts())
                 {
@@ -393,8 +393,8 @@ namespace Neo.Plugins.OracleService
                 Version = 0,
                 Nonce = unchecked((uint)response.Id),
                 ValidUntilBlock = validUntilBlock,
-                Signers = new[]
-                {
+                Signers =
+                [
                     new Signer
                     {
                         Account = NativeContract.Oracle.Hash,
@@ -405,8 +405,8 @@ namespace Neo.Plugins.OracleService
                         Account = oracleSignContract.ScriptHash,
                         Scopes = WitnessScope.None
                     }
-                },
-                Attributes = new[] { response },
+                ],
+                Attributes = [response],
                 Script = OracleResponse.FixedScript,
                 Witnesses = new Witness[2]
             };

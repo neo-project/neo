@@ -36,7 +36,7 @@ namespace Neo.Network.RPC.Tests
         {
             keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
-            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, []);
             nep17API = new Nep17API(rpcClientMock.Object);
         }
 

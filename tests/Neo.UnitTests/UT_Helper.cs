@@ -167,12 +167,12 @@ namespace Neo.UnitTests
         {
             byte[] nullStr = null;
             Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
-            byte[] empty = Array.Empty<byte>();
+            byte[] empty = [];
             empty.ToHexString().Should().Be("");
             empty.ToHexString(false).Should().Be("");
             empty.ToHexString(true).Should().Be("");
 
-            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
+            byte[] str1 = [(byte)'n', (byte)'e', (byte)'o'];
             str1.ToHexString().Should().Be("6e656f");
             str1.ToHexString(false).Should().Be("6e656f");
             str1.ToHexString(true).Should().Be("6f656e");

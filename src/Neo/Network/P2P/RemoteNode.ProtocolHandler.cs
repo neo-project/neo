@@ -44,7 +44,7 @@ namespace Neo.Network.P2P
             remove => handlers.Remove(value);
         }
 
-        private static readonly List<MessageReceivedHandler> handlers = new();
+        private static readonly List<MessageReceivedHandler> handlers = [];
         private readonly PendingKnownHashesCollection pendingKnownHashes = new();
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly HashSetCache<UInt256> sentHashes;
@@ -195,7 +195,7 @@ namespace Neo.Network.P2P
             TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            List<UInt256> hashes = new();
+            List<UInt256> hashes = [];
             for (uint i = 1; i <= count; i++)
             {
                 uint index = state.Index + i;
@@ -293,7 +293,7 @@ namespace Neo.Network.P2P
         {
             DataCache snapshot = system.StoreView;
             if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
-            List<Header> headers = new();
+            List<Header> headers = [];
             uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
             for (uint i = 0; i < count; i++)
             {

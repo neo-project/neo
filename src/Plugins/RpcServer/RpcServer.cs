@@ -73,7 +73,7 @@ namespace Neo.Plugins.RpcServer
                 return false;
             }
 
-            string[] authvalues = authstring.Split(new string[] { ":" }, StringSplitOptions.RemoveEmptyEntries);
+            string[] authvalues = authstring.Split([":"], StringSplitOptions.RemoveEmptyEntries);
             if (authvalues.Length < 2)
                 return false;
 

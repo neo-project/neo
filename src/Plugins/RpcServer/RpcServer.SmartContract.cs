@@ -54,7 +54,7 @@ namespace Neo.Plugins.RpcServer
 
         private void OnTimer(object state)
         {
-            List<(Guid Id, Session Session)> toBeDestroyed = new();
+            List<(Guid Id, Session Session)> toBeDestroyed = [];
             lock (sessions)
             {
                 foreach (var (id, session) in sessions)
@@ -145,7 +145,7 @@ namespace Neo.Plugins.RpcServer
 
         private static JArray ToJson(IEnumerable<DataCache.Trackable> changes)
         {
-            JArray array = new();
+            JArray array = [];
             foreach (var entry in changes)
             {
                 array.Add(new JObject
@@ -182,9 +182,9 @@ namespace Neo.Plugins.RpcServer
             {
                 Account = AddressToScriptHash(u["account"].AsString(), settings.AddressVersion),
                 Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), u["scopes"]?.AsString()),
-                AllowedContracts = ((JArray)u["allowedcontracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray() ?? Array.Empty<UInt160>(),
-                AllowedGroups = ((JArray)u["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray() ?? Array.Empty<ECPoint>(),
-                Rules = ((JArray)u["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? Array.Empty<WitnessRule>(),
+                AllowedContracts = ((JArray)u["allowedcontracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray() ?? [],
+                AllowedGroups = ((JArray)u["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray() ?? [],
+                Rules = ((JArray)u["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? [],
             }).ToArray();
 
             // Validate format
@@ -217,7 +217,7 @@ namespace Neo.Plugins.RpcServer
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
             string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : System.Array.Empty<ContractParameter>();
+            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : [];
             Signer[] signers = _params.Count >= 4 ? SignersFromJson((JArray)_params[3], system.Settings) : null;
             Witness[] witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
             bool useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
@@ -255,7 +255,7 @@ namespace Neo.Plugins.RpcServer
                 session.ResetExpiration();
             }
             IIterator iterator = Result.Ok_Or(() => session.Iterators[iid], RpcError.UnknownIterator);
-            JArray json = new();
+            JArray json = [];
             while (count-- > 0 && iterator.Next())
                 json.Add(iterator.Value(null).ToJson());
             return json;

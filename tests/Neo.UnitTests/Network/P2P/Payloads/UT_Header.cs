@@ -66,7 +66,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     NextConsensus = uut.NextConsensus,
                     Witness = uut.Witness
                 },
-                Hashes = Array.Empty<UInt256>()
+                Hashes = []
             });
 
             var trim = NativeContract.Ledger.GetTrimmedBlock(snapshot, uut.Hash);

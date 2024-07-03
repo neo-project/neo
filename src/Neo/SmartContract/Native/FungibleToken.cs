@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native
 
         protected override void OnManifestCompose(ContractManifest manifest)
         {
-            manifest.SupportedStandards = new[] { "NEP-17" };
+            manifest.SupportedStandards = ["NEP-17"];
         }
 
         internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)

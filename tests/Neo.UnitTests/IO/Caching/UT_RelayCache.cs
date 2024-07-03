@@ -38,10 +38,10 @@ namespace Neo.UnitTests.IO.Caching
                 SystemFee = 0,
                 NetworkFee = 0,
                 ValidUntilBlock = 100,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
+                Attributes = [],
+                Signers = [],
                 Script = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04 },
-                Witnesses = Array.Empty<Witness>()
+                Witnesses = []
             };
             relayCache.Add(tx);
             relayCache.Contains(tx).Should().BeTrue();

@@ -80,7 +80,7 @@ namespace Neo.SmartContract
         /// </summary>
         public IDiagnostic Diagnostic { get; }
 
-        private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
+        private List<IDisposable> Disposables => disposables ??= [];
 
         /// <summary>
         /// The trigger of the execution.
@@ -615,7 +615,7 @@ namespace Neo.SmartContract
                         VerificationScript = Array.Empty<byte>()
                     },
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
         }
 

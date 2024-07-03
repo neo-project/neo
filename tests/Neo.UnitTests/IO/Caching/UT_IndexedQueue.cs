@@ -77,7 +77,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestEnumerator()
         {
-            int[] arr = new int[3] { 1, 2, 3 };
+            int[] arr = [1, 2, 3];
             var queue = new IndexedQueue<int>(arr);
 
             arr.SequenceEqual(queue).Should().BeTrue();

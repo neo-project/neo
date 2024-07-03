@@ -32,7 +32,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// <summary>
         /// Key for saving consensus state.
         /// </summary>
-        private static readonly byte[] ConsensusStateKey = { 0xf4 };
+        private static readonly byte[] ConsensusStateKey = [0xf4];
 
         public Block Block;
         public byte ViewNumber;
@@ -313,8 +313,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             writer.Write(Block.PrimaryIndex);
             writer.Write(Block.NextConsensus ?? UInt160.Zero);
             writer.Write(ViewNumber);
-            writer.Write(TransactionHashes ?? Array.Empty<UInt256>());
-            writer.Write(Transactions?.Values.ToArray() ?? Array.Empty<Transaction>());
+            writer.Write(TransactionHashes ?? []);
+            writer.Write(Transactions?.Values.ToArray() ?? []);
             writer.WriteNullableArray(PreparationPayloads);
             writer.WriteNullableArray(CommitPayloads);
             writer.WriteNullableArray(ChangeViewPayloads);

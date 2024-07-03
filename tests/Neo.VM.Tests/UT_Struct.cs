@@ -23,15 +23,15 @@ namespace Neo.Test
 
         public UT_Struct()
         {
-            @struct = new Struct { 1 };
+            @struct = [1];
             for (int i = 0; i < 20000; i++)
-                @struct = new Struct { @struct };
+                @struct = [@struct];
         }
 
         [TestMethod]
         public void TestClone()
         {
-            Struct s1 = new() { 1, new Struct { 2 } };
+            Struct s1 = [1, new Struct { 2 }];
             Struct s2 = s1.Clone(ExecutionEngineLimits.Default);
             s1[0] = 3;
             Assert.AreEqual(1, s2[0]);
@@ -43,10 +43,10 @@ namespace Neo.Test
         [TestMethod]
         public void TestEquals()
         {
-            Struct s1 = new() { 1, new Struct { 2 } };
-            Struct s2 = new() { 1, new Struct { 2 } };
+            Struct s1 = [1, new Struct { 2 }];
+            Struct s2 = [1, new Struct { 2 }];
             Assert.IsTrue(s1.Equals(s2, ExecutionEngineLimits.Default));
-            Struct s3 = new() { 1, new Struct { 3 } };
+            Struct s3 = [1, new Struct { 3 }];
             Assert.IsFalse(s1.Equals(s3, ExecutionEngineLimits.Default));
             Assert.ThrowsException<InvalidOperationException>(() => @struct.Equals(@struct.Clone(ExecutionEngineLimits.Default), ExecutionEngineLimits.Default));
         }
@@ -55,8 +55,8 @@ namespace Neo.Test
         public void TestEqualsDos()
         {
             string payloadStr = new string('h', 65535);
-            Struct s1 = new();
-            Struct s2 = new();
+            Struct s1 = [];
+            Struct s2 = [];
             for (int i = 0; i < 2; i++)
             {
                 s1.Add(payloadStr);

@@ -122,7 +122,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
 
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
-            List<Transaction> unverified = new List<Transaction>();
+            List<Transaction> unverified = [];
             foreach (UInt256 hash in context.TransactionHashes)
             {
                 if (mempoolVerified.TryGetValue(hash, out Transaction tx))

@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Cryptography
         {
             string input = "3vQB7B6MrGQZaxCuFg4oh";
             byte[] result = input.Base58CheckDecode();
-            byte[] helloWorld = { 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 };
+            byte[] helloWorld = [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100];
             result.Should().Equal(helloWorld);
 
             input = "3v";
@@ -112,16 +112,16 @@ namespace Neo.UnitTests.Cryptography
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
                 SystemFee = 4200000000,
-                Signers = new Signer[] { new Signer() { Account = (Array.Empty<byte>()).ToScriptHash() } },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Witnesses = new[]
-                {
+                Signers = [new Signer() { Account = (Array.Empty<byte>()).ToScriptHash() }],
+                Attributes = [],
+                Witnesses =
+                [
                     new Witness
                     {
                         InvocationScript = Array.Empty<byte>(),
                         VerificationScript = Array.Empty<byte>()
                     }
-                }
+                ]
             };
             filter.Test(tx).Should().BeFalse();
             filter.Add(tx.Witnesses[0].ScriptHash.ToArray());

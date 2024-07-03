@@ -110,7 +110,7 @@ namespace Neo.Network.P2P
                 return;
             }
 
-            HashSet<UInt256> hashes = new(payload.Hashes);
+            HashSet<UInt256> hashes = [..payload.Hashes];
             // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
@@ -361,7 +361,7 @@ namespace Neo.Network.P2P
                 session.AvailableTasks.Remove(knownHashes);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
-                HashSet<UInt256> hashes = new(session.AvailableTasks);
+                HashSet<UInt256> hashes = [..session.AvailableTasks];
                 if (hashes.Count > 0)
                 {
                     foreach (UInt256 hash in hashes.ToArray())

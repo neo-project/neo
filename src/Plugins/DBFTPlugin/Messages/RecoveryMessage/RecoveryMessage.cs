@@ -100,7 +100,7 @@ namespace Neo.Plugins.DBFTPlugin.Messages
         internal ExtensiblePayload[] GetPrepareResponsePayloads(ConsensusContext context)
         {
             UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.Block.PrimaryIndex]?.Hash;
-            if (preparationHash is null) return Array.Empty<ExtensiblePayload>();
+            if (preparationHash is null) return [];
             return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.Block.PrimaryIndex).Select(p => context.CreatePayload(new PrepareResponse
             {
                 BlockIndex = BlockIndex,

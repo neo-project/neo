@@ -335,7 +335,7 @@ namespace Neo.ConsoleService
                     return ret.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 }
 
-                return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? Array.Empty<string>();
+                return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? [];
             });
 
             RegisterCommandHandler<string, byte>(false, str => byte.Parse(str));
@@ -415,7 +415,7 @@ namespace Neo.ConsoleService
 
                     if (!_verbs.TryGetValue(command.Key, out var commands))
                     {
-                        _verbs.Add(command.Key, new List<ConsoleCommandMethod>(new[] { command }));
+                        _verbs.Add(command.Key, [..new[] { command }]);
                     }
                     else
                     {

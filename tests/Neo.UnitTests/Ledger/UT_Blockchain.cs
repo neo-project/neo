@@ -40,10 +40,10 @@ namespace Neo.UnitTests.Ledger
             senderProbe = CreateTestProbe();
             txSample = new Transaction()
             {
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = Array.Empty<byte>(),
-                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                Witnesses = Array.Empty<Witness>()
+                Signers = [new Signer() { Account = UInt160.Zero }],
+                Witnesses = []
             };
             system.MemPool.TryAdd(txSample, TestBlockchain.GetTestSnapshot());
         }
@@ -121,7 +121,7 @@ namespace Neo.UnitTests.Ledger
             var tx2 = TestUtils.CreateValidTx(snapshot, walletA, accA.ScriptHash, 1);
             var tx3 = TestUtils.CreateValidTx(snapshot, walletB, accB.ScriptHash, 2);
 
-            tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash }, new Conflicts() { Hash = tx3.Hash } };
+            tx1.Attributes = [new Conflicts() { Hash = tx2.Hash }, new Conflicts() { Hash = tx3.Hash }];
 
             // Persist tx1.
             var block = new Block
@@ -134,7 +134,7 @@ namespace Neo.UnitTests.Ledger
                     PrevHash = UInt256.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Transactions = new Transaction[] { tx1 },
+                Transactions = [tx1],
             };
             byte[] onPersistScript;
             using (ScriptBuilder sb = new())
