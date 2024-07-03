@@ -133,7 +133,7 @@ namespace Neo.GUI
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (!(comboBox1.SelectedItem is string method)) return;
+            if (comboBox1.SelectedItem is not string method) return;
             JArray functions = (JArray)abi["functions"];
             var function = functions.First(p => p["name"].AsString() == method);
             JArray _params = (JArray)function["parameters"];

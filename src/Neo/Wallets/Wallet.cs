@@ -247,7 +247,7 @@ namespace Neo.Wallets
             foreach (WalletAccount account in GetAccounts())
             {
                 if (account.IsDefault) return account;
-                if (first == null) first = account;
+                first ??= account;
             }
             return first;
         }
@@ -520,8 +520,7 @@ namespace Neo.Wallets
                 }
                 script = sb.ToArray();
             }
-            if (balances_gas is null)
-                balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
+            balances_gas ??= accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
             return MakeTransaction(snapshot, script, [.. cosignerList.Values], [], balances_gas, persistingBlock: persistingBlock);
         }
