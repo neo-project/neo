@@ -283,14 +283,12 @@ namespace Neo.CLI
 
             // Build script
 
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                if (dataParameter is not null)
-                    sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToString(), dataParameter);
-                else
-                    sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToString());
-                return sb.ToArray();
-            }
+            using ScriptBuilder sb = new ScriptBuilder();
+            if (dataParameter is not null)
+                sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToString(), dataParameter);
+            else
+                sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToString());
+            return sb.ToArray();
         }
 
         private byte[] LoadUpdateScript(UInt160 scriptHash, string nefFilePath, string manifestFilePath, JObject? data, out NefFile nef, out ContractManifest manifest)
@@ -336,14 +334,12 @@ namespace Neo.CLI
 
             // Build script
 
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                if (dataParameter is null)
-                    sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifest.ToJson().ToString());
-                else
-                    sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifest.ToJson().ToString(), dataParameter);
-                return sb.ToArray();
-            }
+            using ScriptBuilder sb = new ScriptBuilder();
+            if (dataParameter is null)
+                sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifest.ToJson().ToString());
+            else
+                sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifest.ToJson().ToString(), dataParameter);
+            return sb.ToArray();
         }
 
         public override bool OnStart(string[] args)
@@ -537,16 +533,14 @@ namespace Neo.CLI
             fs.Seek(0, SeekOrigin.End);
             Console.WriteLine("Export block from " + start + " to " + end);
 
-            using (var percent = new ConsolePercent(start, end))
+            using var percent = new ConsolePercent(start, end);
+            for (uint i = start; i <= end; i++)
             {
-                for (uint i = start; i <= end; i++)
-                {
-                    Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
-                    byte[] array = block.ToArray();
-                    fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
-                    fs.Write(array, 0, array.Length);
-                    percent.Value = i;
-                }
+                Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
+                byte[] array = block.ToArray();
+                fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
+                fs.Write(array, 0, array.Length);
+                percent.Value = i;
             }
         }
 
