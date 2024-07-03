@@ -70,7 +70,7 @@ namespace Neo.GUI
             }
             File.WriteAllBytes("update.bat", Resources.UpdateBat);
             Close();
-            if (Program.MainForm != null) Program.MainForm.Close();
+            Program.MainForm?.Close();
             Process.Start("update.bat");
         }
     }

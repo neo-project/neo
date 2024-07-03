@@ -32,9 +32,7 @@ namespace Neo.SmartContract
 
             Script = null;
             ScriptHash = contract.Hash;
-            ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
-            if (descriptor is null) throw new NotSupportedException("The smart contract haven't got verify method.");
-
+            ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount) ?? throw new NotSupportedException("The smart contract haven't got verify method.");
             ParameterList = descriptor.Parameters.Select(u => u.Type).ToArray();
         }
     }

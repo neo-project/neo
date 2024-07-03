@@ -94,12 +94,7 @@ namespace Neo.Plugins.ApplicationLogs
                 throw new RpcException(RpcError.InvalidParams);
             if (UInt256.TryParse(_params[0].AsString(), out var hash))
             {
-                var raw = BlockToJObject(hash);
-                if (raw == null)
-                    raw = TransactionToJObject(hash);
-                if (raw == null)
-                    throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
-
+                var raw = (BlockToJObject(hash) ?? TransactionToJObject(hash)) ?? throw new RpcException(RpcError.InvalidParams.WithData("Unknown transaction/blockhash"));
                 if (_params.Count >= 2 && Enum.TryParse(_params[1].AsString(), true, out TriggerType triggerType))
                 {
                     var executions = raw["executions"] as JArray;

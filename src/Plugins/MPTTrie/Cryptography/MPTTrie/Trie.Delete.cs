@@ -123,8 +123,7 @@ namespace Neo.Cryptography.MPTTrie
                     }
                 case NodeType.HashNode:
                     {
-                        var newNode = cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt delete");
+                        var newNode = cache.Resolve(node.Hash) ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt delete");
                         node = newNode;
                         return TryDelete(ref node, path);
                     }

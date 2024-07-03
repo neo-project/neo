@@ -76,10 +76,8 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
-            if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash) ?? throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count) ?? throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
             ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
@@ -93,9 +91,7 @@ namespace Neo.SmartContract
         /// <param name="version">The version of the native contract to be called.</param>
         protected internal void CallNativeContract(byte version)
         {
-            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
-            if (contract is null)
-                throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
+            NativeContract contract = NativeContract.GetContract(CurrentScriptHash) ?? throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
             if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot)))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);

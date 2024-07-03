@@ -69,8 +69,7 @@ namespace Neo.Plugins.StorageDumper
             byte[]? prefix = null;
             if (contractHash is not null)
             {
-                var contract = NativeContract.ContractManagement.GetContract(systems[network].StoreView, contractHash);
-                if (contract is null) throw new InvalidOperationException("contract not found");
+                var contract = NativeContract.ContractManagement.GetContract(systems[network].StoreView, contractHash) ?? throw new InvalidOperationException("contract not found");
                 prefix = BitConverter.GetBytes(contract.Id);
             }
             var states = systems[network].StoreView.Find(prefix);
@@ -156,10 +155,7 @@ namespace Neo.Plugins.StorageDumper
                 string path = GetOrCreateDirectory(network, blockIndex);
                 var filepart = (blockIndex / Settings.Default!.BlockCacheSize) * Settings.Default.BlockCacheSize;
                 path = $"{path}/dump-block-{filepart}.dump";
-                if (_writer != null)
-                {
-                    _writer.Dispose();
-                }
+                _writer?.Dispose();
                 _writer = new StreamWriter(new FileStream(path, FileMode.Append));
             }
         }

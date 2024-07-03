@@ -145,8 +145,7 @@ namespace Neo.Cryptography.MPTTrie
                     }
                 case NodeType.HashNode:
                     {
-                        Node newNode = cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt put");
+                        Node newNode = cache.Resolve(node.Hash) ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt put");
                         node = newNode;
                         Put(ref node, path, val);
                         break;

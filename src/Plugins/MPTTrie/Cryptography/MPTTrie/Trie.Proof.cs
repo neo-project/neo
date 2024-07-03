@@ -47,8 +47,7 @@ namespace Neo.Cryptography.MPTTrie
                     break;
                 case NodeType.HashNode:
                     {
-                        var newNode = cache.Resolve(node.Hash);
-                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt getproof");
+                        var newNode = cache.Resolve(node.Hash) ?? throw new InvalidOperationException("Internal error, can't resolve hash when mpt getproof");
                         node = newNode;
                         return GetProof(ref node, path, set);
                     }

@@ -355,12 +355,8 @@ namespace Neo.SmartContract
             }
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
             string name = Utility.StrictUTF8.GetString(eventName);
-            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
-            if (contract is null)
-                throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
-            var @event = contract.Manifest.Abi.Events.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal));
-            if (@event is null)
-                throw new InvalidOperationException($"Event `{name}` does not exist.");
+            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract ?? throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
+            var @event = contract.Manifest.Abi.Events.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal)) ?? throw new InvalidOperationException($"Event `{name}` does not exist.");
             if (@event.Parameters.Length != state.Count)
                 throw new InvalidOperationException("The number of the arguments does not match the formal parameters of the event.");
             for (int i = 0; i < @event.Parameters.Length; i++)

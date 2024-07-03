@@ -315,11 +315,7 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                NEP6Account account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
-                if (account == null)
-                {
-                    account = accounts.Values.FirstOrDefault(p => p.HasKey);
-                }
+                NEP6Account account = accounts.Values.FirstOrDefault(p => !p.Decrypted) ?? accounts.Values.FirstOrDefault(p => p.HasKey);
                 if (account == null) return true;
                 if (account.Decrypted)
                 {

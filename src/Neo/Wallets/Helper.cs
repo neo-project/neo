@@ -117,12 +117,8 @@ namespace Neo.Wallets
 
                 if (witnessScript is null || witnessScript.Length == 0)
                 {
-                    var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
-                    if (contract is null)
-                        throw new ArgumentException($"The smart contract or address {hash} is not found");
-                    var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
-                    if (md is null)
-                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
+                    var contract = NativeContract.ContractManagement.GetContract(snapshot, hash) ?? throw new ArgumentException($"The smart contract or address {hash} is not found");
+                    var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount) ?? throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
                     if (md.ReturnType != ContractParameterType.Boolean)
                         throw new ArgumentException("The verify method doesn't return boolean value.");
                     if (md.Parameters.Length > 0 && invocationScript is null)

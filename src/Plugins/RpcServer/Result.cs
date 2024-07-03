@@ -27,8 +27,7 @@ namespace Neo.Plugins.RpcServer
         {
             try
             {
-                var result = function();
-                if (result == null) throw new RpcException(err);
+                var result = function() ?? throw new RpcException(err);
                 return result;
             }
             catch (Exception ex)

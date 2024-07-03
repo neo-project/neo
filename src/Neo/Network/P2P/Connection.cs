@@ -74,10 +74,7 @@ namespace Neo.Network.P2P
         public void Disconnect(bool abort = false)
         {
             disconnected = true;
-            if (tcp != null)
-            {
-                tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
-            }
+            tcp?.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
             Context.Stop(Self);
         }
 
@@ -141,10 +138,7 @@ namespace Neo.Network.P2P
         /// <param name="data"></param>
         protected void SendData(ByteString data)
         {
-            if (tcp != null)
-            {
-                tcp.Tell(Tcp.Write.Create(data, Ack.Instance));
-            }
+            tcp?.Tell(Tcp.Write.Create(data, Ack.Instance));
         }
     }
 }
