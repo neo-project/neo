@@ -60,24 +60,22 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "c");
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "d");
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abc");
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abcd");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "c");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "d");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abc");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abcd");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
-                engine.LoadScript(script.ToArray());
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(4, engine.ResultStack.Count);
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(4, engine.ResultStack.Count);
 
-                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
-                Assert.AreEqual(0, engine.ResultStack.Pop<Integer>().GetInteger());
-                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
-                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
-            }
+            Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+            Assert.AreEqual(0, engine.ResultStack.Pop<Integer>().GetInteger());
+            Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+            Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
         }
 
         [TestMethod]

@@ -383,7 +383,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value3.ToArray());
 
-            var items = myDataCache.Find().GetEnumerator();
+            using var items = myDataCache.Find().GetEnumerator();
             items.MoveNext().Should().Be(true);
             items.Current.Key.Should().Be(key1);
 

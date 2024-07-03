@@ -200,7 +200,7 @@ namespace Neo.SmartContract
                 case byte[] data:
                     return data.ToHexString();
                 case IList<ContractParameter> data:
-                    if (context is null) context = [];
+                    context ??= [];
                     if (context.Contains(parameter))
                     {
                         return "(array)";
@@ -221,7 +221,7 @@ namespace Neo.SmartContract
                         return sb.ToString();
                     }
                 case IList<KeyValuePair<ContractParameter, ContractParameter>> data:
-                    if (context is null) context = [];
+                    context ??= [];
                     if (context.Contains(parameter))
                     {
                         return "(map)";

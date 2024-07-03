@@ -75,7 +75,7 @@ namespace Neo.Cryptography.MPTTrie
         {
             var path = ToNibbles(prefix);
             int offset = 0;
-            if (from is null) from = [];
+            from ??= [];
             if (0 < from.Length)
             {
                 if (!from.AsSpan().StartsWith(prefix))

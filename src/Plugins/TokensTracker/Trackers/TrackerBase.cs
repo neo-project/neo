@@ -73,12 +73,10 @@ namespace Neo.Plugins.Trackers
         protected static byte[] Key(byte prefix, ISerializable key)
         {
             byte[] buffer = new byte[key.Size + 1];
-            using (MemoryStream ms = new(buffer, true))
-            using (BinaryWriter writer = new(ms))
-            {
-                writer.Write(prefix);
-                key.Serialize(writer);
-            }
+            using MemoryStream ms = new(buffer, true);
+            using BinaryWriter writer = new(ms);
+            writer.Write(prefix);
+            key.Serialize(writer);
             return buffer;
         }
 

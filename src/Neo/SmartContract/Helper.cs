@@ -326,42 +326,41 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, datoshi))
+
+            using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, datoshi);
+            if (witness.VerificationScript.Length == 0)
             {
-                if (witness.VerificationScript.Length == 0)
-                {
-                    ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
-                    if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
-                    if (md?.ReturnType != ContractParameterType.Boolean) return false;
-                    engine.LoadContract(cs, md, CallFlags.ReadOnly);
-                }
-                else
-                {
-                    if (NativeContract.IsNative(hash)) return false;
-                    if (hash != witness.ScriptHash) return false;
-                    Script verificationScript;
-                    try
-                    {
-                        verificationScript = new Script(witness.VerificationScript, true);
-                    }
-                    catch (BadScriptException)
-                    {
-                        return false;
-                    }
-                    engine.LoadScript(verificationScript, initialPosition: 0, configureState: p =>
-                    {
-                        p.CallFlags = CallFlags.ReadOnly;
-                        p.ScriptHash = hash;
-                    });
-                }
-
-                engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-
-                if (engine.Execute() == VMState.FAULT) return false;
-                if (!engine.ResultStack.Peek().GetBoolean()) return false;
-                fee = engine.FeeConsumed;
+                ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
+                if (cs is null) return false;
+                ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
+                if (md?.ReturnType != ContractParameterType.Boolean) return false;
+                engine.LoadContract(cs, md, CallFlags.ReadOnly);
             }
+            else
+            {
+                if (NativeContract.IsNative(hash)) return false;
+                if (hash != witness.ScriptHash) return false;
+                Script verificationScript;
+                try
+                {
+                    verificationScript = new Script(witness.VerificationScript, true);
+                }
+                catch (BadScriptException)
+                {
+                    return false;
+                }
+                engine.LoadScript(verificationScript, initialPosition: 0, configureState: p =>
+                {
+                    p.CallFlags = CallFlags.ReadOnly;
+                    p.ScriptHash = hash;
+                });
+            }
+
+            engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
+
+            if (engine.Execute() == VMState.FAULT) return false;
+            if (!engine.ResultStack.Peek().GetBoolean()) return false;
+            fee = engine.FeeConsumed;
             return true;
         }
     }

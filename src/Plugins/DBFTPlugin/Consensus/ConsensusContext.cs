@@ -211,18 +211,16 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 if (_witnessSize == 0 || (pv != null && pv.Length != Validators.Length))
                 {
                     // Compute the expected size of the witness
-                    using (ScriptBuilder sb = new())
+                    using ScriptBuilder sb = new();
+                    for (int x = 0; x < M; x++)
                     {
-                        for (int x = 0; x < M; x++)
-                        {
-                            sb.EmitPush(new byte[64]);
-                        }
-                        _witnessSize = new Witness
-                        {
-                            InvocationScript = sb.ToArray(),
-                            VerificationScript = Contract.CreateMultiSigRedeemScript(M, Validators)
-                        }.Size;
+                        sb.EmitPush(new byte[64]);
                     }
+                    _witnessSize = new Witness
+                    {
+                        InvocationScript = sb.ToArray(),
+                        VerificationScript = Contract.CreateMultiSigRedeemScript(M, Validators)
+                    }.Size;
                 }
                 MyIndex = -1;
                 ChangeViewPayloads = new ExtensiblePayload[Validators.Length];

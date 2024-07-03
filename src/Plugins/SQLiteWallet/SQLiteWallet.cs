@@ -103,10 +103,7 @@ class SQLiteWallet : Wallet
         {
             if (accounts.TryGetValue(account.ScriptHash, out SQLiteWalletAccount account_old))
             {
-                if (account.Contract == null)
-                {
-                    account.Contract = account_old.Contract;
-                }
+                account.Contract ??= account_old.Contract;
             }
             accounts[account.ScriptHash] = account;
         }

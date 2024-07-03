@@ -171,7 +171,7 @@ namespace Neo.VM
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
                 throw new InvalidOperationException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
             InvocationStack.Push(context);
-            if (EntryContext is null) EntryContext = context;
+            EntryContext ??= context;
             CurrentContext = context;
         }
 

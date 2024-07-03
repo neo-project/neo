@@ -51,7 +51,7 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction)
         {
-            if (keyOrPrefix == null) keyOrPrefix = [];
+            keyOrPrefix ??= [];
 
             using var it = db.NewIterator(readOptions: options);
 

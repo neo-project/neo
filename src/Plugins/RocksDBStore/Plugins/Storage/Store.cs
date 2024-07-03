@@ -38,7 +38,7 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            if (keyOrPrefix == null) keyOrPrefix = [];
+            keyOrPrefix ??= [];
 
             using var it = db.NewIterator();
             if (direction == SeekDirection.Forward)

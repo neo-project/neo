@@ -72,7 +72,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             string[] s = null;
             IReadOnlyList<string> rs = new string[0];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
-            IEnumerator<string> enumerator = container.GetEnumerator();
+            using IEnumerator<string> enumerator = container.GetEnumerator();
             enumerator.Should().Be(rs.GetEnumerator());
 
             s = ["hello", "world"];

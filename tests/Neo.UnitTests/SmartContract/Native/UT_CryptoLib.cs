@@ -212,43 +212,41 @@ namespace Neo.UnitTests.SmartContract.Native
             var data = new byte[32];
             data[0] = 0x03;
             var snapshot = TestBlockchain.GetTestSnapshot();
-            using (ScriptBuilder script = new())
-            {
-                script.EmitPush(negative);
-                script.EmitPush(mul.ToLower().HexToBytes());
-                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", point.ToLower().HexToBytes());
-                script.EmitPush(3);
-                script.Emit(OpCode.PACK);
-                script.EmitPush(CallFlags.All);
-                script.EmitPush("bls12381Mul");
-                script.EmitPush(NativeContract.CryptoLib.Hash);
-                script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            using ScriptBuilder script = new();
+            script.EmitPush(negative);
+            script.EmitPush(mul.ToLower().HexToBytes());
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", point.ToLower().HexToBytes());
+            script.EmitPush(3);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.All);
+            script.EmitPush("bls12381Mul");
+            script.EmitPush(NativeContract.CryptoLib.Hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
-                engine.LoadScript(script.ToArray());
-                Assert.AreEqual(VMState.HALT, engine.Execute());
-                var result = engine.ResultStack.Pop();
-                switch (expectedType)
-                {
-                    case BLS12381PointType.G1Proj:
-                        {
-                            new G1Affine(result.GetInterface<G1Projective>()).ToCompressed().ToHexString().Should().Be(expected);
-                            break;
-                        }
-                    case BLS12381PointType.G2Proj:
-                        {
-                            new G2Affine(result.GetInterface<G2Projective>()).ToCompressed().ToHexString().Should().Be(expected);
-                            break;
-                        }
-                    case BLS12381PointType.GT:
-                        {
-                            result.GetInterface<Gt>().ToArray().ToHexString().Should().Be(expected);
-                            break;
-                        }
-                    default:
-                        Assert.Fail("Unknown result point type.");
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            var result = engine.ResultStack.Pop();
+            switch (expectedType)
+            {
+                case BLS12381PointType.G1Proj:
+                    {
+                        new G1Affine(result.GetInterface<G1Projective>()).ToCompressed().ToHexString().Should().Be(expected);
                         break;
-                }
+                    }
+                case BLS12381PointType.G2Proj:
+                    {
+                        new G2Affine(result.GetInterface<G2Projective>()).ToCompressed().ToHexString().Should().Be(expected);
+                        break;
+                    }
+                case BLS12381PointType.GT:
+                    {
+                        result.GetInterface<Gt>().ToArray().ToHexString().Should().Be(expected);
+                        break;
+                    }
+                default:
+                    Assert.Fail("Unknown result point type.");
+                    break;
             }
         }
 
@@ -886,24 +884,22 @@ namespace Neo.UnitTests.SmartContract.Native
         private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            using (ScriptBuilder script = new())
-            {
-                script.EmitPush((int)curveHash);
-                script.EmitPush(signature);
-                script.EmitPush(pub.EncodePoint(true));
-                script.EmitPush(message);
-                script.EmitPush(4);
-                script.Emit(OpCode.PACK);
-                script.EmitPush(CallFlags.All);
-                script.EmitPush("verifyWithECDsa");
-                script.EmitPush(NativeContract.CryptoLib.Hash);
-                script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            using ScriptBuilder script = new();
+            script.EmitPush((int)curveHash);
+            script.EmitPush(signature);
+            script.EmitPush(pub.EncodePoint(true));
+            script.EmitPush(message);
+            script.EmitPush(4);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.All);
+            script.EmitPush("verifyWithECDsa");
+            script.EmitPush(NativeContract.CryptoLib.Hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
-                engine.LoadScript(script.ToArray());
-                Assert.AreEqual(VMState.HALT, engine.Execute());
-                return engine.ResultStack.Pop().GetBoolean();
-            }
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            return engine.ResultStack.Pop().GetBoolean();
         }
     }
 }

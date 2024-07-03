@@ -294,18 +294,16 @@ namespace Neo.CLI
                 }
 
                 string[] lines = File.ReadAllLines(fileInfo.FullName).Where(u => !string.IsNullOrEmpty(u)).ToArray();
-                using (var percent = new ConsolePercent(0, lines.Length))
+                using var percent = new ConsolePercent(0, lines.Length);
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    for (int i = 0; i < lines.Length; i++)
-                    {
-                        if (lines[i].Length == 64)
-                            prikey = lines[i].HexToBytes();
-                        else
-                            prikey = Wallet.GetPrivateKeyFromWIF(lines[i]);
-                        CurrentWallet!.CreateAccount(prikey);
-                        Array.Clear(prikey, 0, prikey.Length);
-                        percent.Value++;
-                    }
+                    if (lines[i].Length == 64)
+                        prikey = lines[i].HexToBytes();
+                    else
+                        prikey = Wallet.GetPrivateKeyFromWIF(lines[i]);
+                    CurrentWallet!.CreateAccount(prikey);
+                    Array.Clear(prikey, 0, prikey.Length);
+                    percent.Value++;
                 }
             }
             else
@@ -351,14 +349,12 @@ namespace Neo.CLI
                 }
 
                 string[] lines = File.ReadAllLines(fileInfo.FullName).Where(u => !string.IsNullOrEmpty(u)).ToArray();
-                using (var percent = new ConsolePercent(0, lines.Length))
+                using var percent = new ConsolePercent(0, lines.Length);
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    for (int i = 0; i < lines.Length; i++)
-                    {
-                        address = StringToAddress(lines[i], NeoSystem.Settings.AddressVersion);
-                        CurrentWallet!.CreateAccount(address);
-                        percent.Value++;
-                    }
+                    address = StringToAddress(lines[i], NeoSystem.Settings.AddressVersion);
+                    CurrentWallet!.CreateAccount(address);
+                    percent.Value++;
                 }
             }
             else
