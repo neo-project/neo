@@ -27,7 +27,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.IsEmpty)
                         {
                             start = node;
-                            return ReadOnlySpan<byte>.Empty;
+                            return [];
                         }
                         break;
                     }
@@ -44,7 +44,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (path.IsEmpty)
                         {
                             start = node;
-                            return ReadOnlySpan<byte>.Empty;
+                            return [];
                         }
                         return Concat(path[..1], Seek(ref node.Children[path[0]], path[1..], out start));
                     }
@@ -68,14 +68,14 @@ namespace Neo.Cryptography.MPTTrie
                     }
             }
             start = null;
-            return ReadOnlySpan<byte>.Empty;
+            return [];
         }
 
         public IEnumerable<(ReadOnlyMemory<byte> Key, ReadOnlyMemory<byte> Value)> Find(ReadOnlySpan<byte> prefix, byte[] from = null)
         {
             var path = ToNibbles(prefix);
             int offset = 0;
-            if (from is null) from = Array.Empty<byte>();
+            if (from is null) from = [];
             if (0 < from.Length)
             {
                 if (!from.AsSpan().StartsWith(prefix))
@@ -89,7 +89,7 @@ namespace Neo.Cryptography.MPTTrie
             {
                 for (int i = 0; i < from.Length && i < path.Length; i++)
                 {
-                    if (path[i] < from[i]) return Enumerable.Empty<(ReadOnlyMemory<byte>, ReadOnlyMemory<byte>)>();
+                    if (path[i] < from[i]) return [];
                     if (path[i] > from[i])
                     {
                         offset = from.Length;

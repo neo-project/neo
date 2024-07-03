@@ -73,7 +73,7 @@ class SQLiteWallet : Wallet
         salt = new byte[20];
         masterKey = new byte[32];
         this.scrypt = scrypt;
-        accounts = new Dictionary<UInt160, SQLiteWalletAccount>();
+        accounts = [];
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
         {
             rng.GetBytes(iv);
@@ -211,7 +211,7 @@ class SQLiteWallet : Wallet
         VerificationContract contract = new()
         {
             Script = SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
-            ParameterList = new[] { ContractParameterType.Signature }
+            ParameterList = [ContractParameterType.Signature]
         };
         SQLiteWalletAccount account = new(contract.ScriptHash, ProtocolSettings)
         {

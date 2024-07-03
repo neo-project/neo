@@ -113,7 +113,7 @@ namespace Neo.Cryptography.MPTTrie
                             node = lastChild;
                             return true;
                         }
-                        node = Node.NewExtension(childrenIndexes.ToArray(), lastChild);
+                        node = Node.NewExtension([.. childrenIndexes], lastChild);
                         cache.PutNode(node);
                         return true;
                     }

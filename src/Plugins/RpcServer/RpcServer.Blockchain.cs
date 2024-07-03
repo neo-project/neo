@@ -290,7 +290,7 @@ namespace Neo.Plugins.RpcServer
             }
 
             JObject json = new();
-            JArray jarr = new();
+            JArray jarr = [];
             int pageSize = settings.FindStoragePageSize;
             int i = 0;
 
@@ -370,7 +370,7 @@ namespace Neo.Plugins.RpcServer
             try
             {
                 using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: system.Settings, gas: settings.MaxGasInvoke);
-                resultstack = engine.ResultStack.ToArray();
+                resultstack = [.. engine.ResultStack];
             }
             catch
             {
@@ -382,7 +382,7 @@ namespace Neo.Plugins.RpcServer
             {
                 if (resultstack.Length > 0)
                 {
-                    JArray jArray = new();
+                    JArray jArray = [];
                     var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount) ?? throw new RpcException(RpcError.InternalServerError.WithData("Can't get next block validators."));
 
                     foreach (var item in resultstack)

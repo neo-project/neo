@@ -22,7 +22,7 @@ namespace Neo.Plugins.StorageDumper
 {
     public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
-        private readonly Dictionary<uint, NeoSystem> systems = new Dictionary<uint, NeoSystem>();
+        private readonly Dictionary<uint, NeoSystem> systems = [];
 
         private StreamWriter? _writer;
         /// <summary>
@@ -96,7 +96,7 @@ namespace Neo.Plugins.StorageDumper
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (blockIndex >= Settings.Default!.HeightToBegin)
             {
-                JArray stateChangeArray = new JArray();
+                JArray stateChangeArray = [];
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {

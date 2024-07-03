@@ -434,7 +434,7 @@ namespace Neo.CLI
             {
                 while (true)
                 {
-                    List<Block> blocksToImport = new List<Block>();
+                    List<Block> blocksToImport = [];
                     for (int i = 0; i < 10; i++)
                     {
                         if (!blocksBeingImported.MoveNext()) break;
@@ -568,7 +568,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
 
-            Signer[] signers = Array.Empty<Signer>();
+            Signer[] signers = [];
             var snapshot = NeoSystem.StoreView;
 
             if (account != null)
@@ -616,7 +616,7 @@ namespace Neo.CLI
         /// <returns>Return true if it was successful</returns>
         private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long datoshi = TestModeGas)
         {
-            List<ContractParameter> parameters = new();
+            List<ContractParameter> parameters = [];
 
             if (contractParameters != null)
             {
@@ -650,7 +650,7 @@ namespace Neo.CLI
 
             using (ScriptBuilder scriptBuilder = new ScriptBuilder())
             {
-                scriptBuilder.EmitDynamicCall(scriptHash, operation, parameters.ToArray());
+                scriptBuilder.EmitDynamicCall(scriptHash, operation, [.. parameters]);
                 script = scriptBuilder.ToArray();
                 ConsoleHelper.Info("Invoking script with: ", $"'{script.ToBase64String()}'");
             }

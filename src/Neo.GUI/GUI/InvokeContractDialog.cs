@@ -82,10 +82,10 @@ namespace Neo.GUI
             }
             Transaction tx_test = tx ?? new Transaction
             {
-                Signers = new Signer[0],
-                Attributes = new TransactionAttribute[0],
+                Signers = [],
+                Attributes = [],
                 Script = script,
-                Witnesses = new Witness[0]
+                Witnesses = []
             };
             using ApplicationEngine engine = ApplicationEngine.Run(tx_test.Script, Service.NeoSystem.StoreView, container: tx_test);
             StringBuilder sb = new StringBuilder();

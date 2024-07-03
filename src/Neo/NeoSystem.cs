@@ -92,7 +92,7 @@ namespace Neo
         /// <summary>
         /// The header cache of the <see cref="NeoSystem"/>.
         /// </summary>
-        public HeaderCache HeaderCache { get; } = new();
+        public HeaderCache HeaderCache { get; } = [];
 
         internal RelayCache RelayCache { get; } = new(100);
 
@@ -166,7 +166,7 @@ namespace Neo
                     VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 },
             },
-            Transactions = Array.Empty<Transaction>()
+            Transactions = []
         };
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

@@ -74,7 +74,7 @@ namespace Neo.Plugins.Trackers
                 startTimeBytes = BitConverter.GetBytes(startTime);
                 endTimeBytes = BitConverter.GetBytes(endTime);
             }
-            var transferPairs = _db.FindRange<TKey, TValue>(prefix.Concat(startTimeBytes).ToArray(), prefix.Concat(endTimeBytes).ToArray());
+            var transferPairs = _db.FindRange<TKey, TValue>([.. prefix, .. startTimeBytes], [.. prefix, .. endTimeBytes]);
             return transferPairs;
         }
 

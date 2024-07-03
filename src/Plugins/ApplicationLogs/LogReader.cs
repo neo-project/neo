@@ -44,7 +44,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         public LogReader()
         {
-            _logEvents = new();
+            _logEvents = [];
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
