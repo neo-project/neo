@@ -277,7 +277,7 @@ namespace Neo.CLI
                     w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
                 .SelectMany(s => s!["assets"]!.AsArray())
                 .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()))
-                .Where(s => !s.StartsWith("neo-cli-", StringComparison.InvariantCultureIgnoreCase));
+                .Where(s => !s.StartsWith("neo-cli", StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }
