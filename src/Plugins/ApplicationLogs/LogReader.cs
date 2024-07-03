@@ -145,10 +145,9 @@ namespace Neo.Plugins.ApplicationLogs
 
             if (blockOnPersist == null)
                 ConsoleHelper.Error($"No logs.");
-            if (blockOnPersist != null)
-                PrintExecutionToConsole(blockOnPersist);
-            if (blockPostPersist != null)
+            else
             {
+                PrintExecutionToConsole(blockOnPersist);
                 ConsoleHelper.Info("--------------------------------");
                 PrintExecutionToConsole(blockPostPersist);
             }
