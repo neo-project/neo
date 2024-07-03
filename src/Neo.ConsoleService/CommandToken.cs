@@ -79,11 +79,7 @@ namespace Neo.ConsoleService
                         {
                             lastToken = CommandStringToken.Parse(commandLine, ref index,
                                 lastToken is CommandQuoteToken quote ? quote : null);
-
-                            if (lastToken is not null)
-                            {
-                                yield return lastToken;
-                            }
+                            yield return lastToken;
                             break;
                         }
                 }
