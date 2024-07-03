@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Cryptography
             action = () => input.Base58CheckDecode();
             action.Should().Throw<FormatException>();
 
-            Assert.ThrowsException<ArgumentException>(() => string.Empty.Base58CheckDecode());
+            Assert.ThrowsException<FormatException>(() => string.Empty.Base58CheckDecode());
         }
 
         [TestMethod]
