@@ -134,7 +134,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            if (privateKey is null) throw new ArgumentNullException(nameof(privateKey));
+            ArgumentNullException.ThrowIfNull(privateKey);
             KeyPair key = new(privateKey);
             if (key.PublicKey.IsInfinity) throw new ArgumentException(null, nameof(privateKey));
             NEP6Contract contract = new()

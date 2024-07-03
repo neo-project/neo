@@ -338,8 +338,8 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromNEP2(string nep2, byte[] passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
-            if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
-            if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
+            ArgumentNullException.ThrowIfNull(nep2);
+            ArgumentNullException.ThrowIfNull(passphrase);
             byte[] data = nep2.Base58CheckDecode();
             if (data.Length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
                 throw new FormatException();
@@ -370,7 +370,7 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromWIF(string wif)
         {
-            if (wif is null) throw new ArgumentNullException(nameof(wif));
+            ArgumentNullException.ThrowIfNull(wif);
             byte[] data = wif.Base58CheckDecode();
             if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
                 throw new FormatException();
