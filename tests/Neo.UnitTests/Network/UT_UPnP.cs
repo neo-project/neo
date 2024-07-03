@@ -29,7 +29,7 @@ namespace Neo.UnitTests.Network
         {
             Assert.ThrowsException<Exception>(() => UPnP.ForwardPort(1, System.Net.Sockets.ProtocolType.Tcp, ""));
             Assert.ThrowsException<Exception>(() => UPnP.DeleteForwardingRule(1, System.Net.Sockets.ProtocolType.Tcp));
-            Assert.ThrowsException<Exception>(() => UPnP.GetExternalIP());
+            Assert.ThrowsException<Exception>(UPnP.GetExternalIP);
         }
     }
 }

@@ -563,7 +563,7 @@ namespace Neo.Plugins.OracleService
         {
             if (wallet is null) return false;
             return oracles
-                .Select(p => wallet.GetAccount(p))
+                .Select(wallet.GetAccount)
                 .Any(p => p is not null && p.HasKey && !p.Lock);
         }
 

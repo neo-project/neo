@@ -42,7 +42,7 @@ namespace Neo.SmartContract
             {
                 case Array array:
                     {
-                        return array.Select(p => Serialize(p)).ToArray();
+                        return array.Select(Serialize).ToArray();
                     }
                 case ByteString _:
                 case Buffer _:

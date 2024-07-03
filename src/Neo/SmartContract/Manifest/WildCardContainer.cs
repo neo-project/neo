@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Manifest
                     if (str.Value != "*") throw new FormatException();
                     return CreateWildcard();
                 case JArray array:
-                    return Create(array.Select(p => elementSelector(p)).ToArray());
+                    return Create(array.Select(elementSelector).ToArray());
                 default:
                     throw new FormatException();
             }
@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Manifest
         public JToken ToJson(Func<T, JToken> elementSelector)
         {
             if (IsWildcard) return "*";
-            return _data.Select(p => elementSelector(p)).ToArray();
+            return _data.Select(elementSelector).ToArray();
         }
     }
 }

@@ -498,7 +498,7 @@ namespace Neo.SmartContract
                 ISerializable i => i.ToArray(),
                 StackItem item => item,
                 (object a, object b) => new Struct(ReferenceCounter) { Convert(a), Convert(b) },
-                Array array => new VMArray(ReferenceCounter, array.OfType<object>().Select(p => Convert(p))),
+                Array array => new VMArray(ReferenceCounter, array.OfType<object>().Select(Convert)),
                 _ => StackItem.FromInterface(value)
             };
         }

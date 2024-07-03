@@ -104,7 +104,7 @@ namespace Neo
             }
             else
             {
-                set.RemoveWhere(u => other.Contains(u));
+                set.RemoveWhere(other.Contains);
             }
         }
 
@@ -117,7 +117,7 @@ namespace Neo
             }
             else
             {
-                set.RemoveWhere(u => other.Contains(u));
+                set.RemoveWhere(other.Contains);
             }
         }
 
@@ -129,7 +129,7 @@ namespace Neo
             }
             else
             {
-                set.RemoveWhere(u => other.ContainsKey(u));
+                set.RemoveWhere(other.ContainsKey);
             }
         }
 

@@ -24,7 +24,7 @@ namespace Neo.Plugins.RpcServer
 
         public Settings(IConfigurationSection section) : base(section)
         {
-            Servers = section.GetSection(nameof(Servers)).GetChildren().Select(p => RpcServerSettings.Load(p)).ToArray();
+            Servers = section.GetSection(nameof(Servers)).GetChildren().Select(RpcServerSettings.Load).ToArray();
         }
     }
 

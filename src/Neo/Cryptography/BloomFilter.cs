@@ -90,7 +90,7 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if <paramref name="element"/> is found in the <see cref="BloomFilter"/>; otherwise, <see langword="false"/>.</returns>
         public bool Check(byte[] element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
+            foreach (uint i in seeds.AsParallel().Select(element.Murmur32))
                 if (!bits.Get((int)(i % (uint)bits.Length)))
                     return false;
             return true;

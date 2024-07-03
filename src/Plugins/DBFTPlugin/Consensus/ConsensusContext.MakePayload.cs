@@ -147,13 +147,13 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             return MakeSignedPayload(new RecoveryMessage
             {
-                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => GetChangeViewPayloadCompact(p)).Take(M).ToDictionary(p => p.ValidatorIndex),
+                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(GetChangeViewPayloadCompact).Take(M).ToDictionary(p => p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
                 PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => GetPreparationPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex),
+                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(GetPreparationPayloadCompact).ToDictionary(p => p.ValidatorIndex),
                 CommitMessages = CommitSent
-                    ? CommitPayloads.Where(p => p != null).Select(p => GetCommitPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex)
+                    ? CommitPayloads.Where(p => p != null).Select(GetCommitPayloadCompact).ToDictionary(p => p.ValidatorIndex)
                     : new Dictionary<byte, RecoveryMessage.CommitPayloadCompact>()
             });
         }

@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Manifest
                 Contract = ContractPermissionDescriptor.FromJson((JString)json["contract"]),
                 Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.GetString()),
             };
-            if (permission.Methods.Any(p => string.IsNullOrEmpty(p)))
+            if (permission.Methods.Any(string.IsNullOrEmpty))
                 throw new FormatException();
             _ = permission.Methods.ToDictionary(p => p);
             return permission;

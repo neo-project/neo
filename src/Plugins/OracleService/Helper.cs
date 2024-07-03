@@ -18,7 +18,7 @@ namespace Neo.Plugins.OracleService
     {
         public static bool IsInternal(this IPHostEntry entry)
         {
-            return entry.AddressList.Any(p => IsInternal(p));
+            return entry.AddressList.Any(IsInternal);
         }
 
         /// <summary>
