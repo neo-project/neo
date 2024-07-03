@@ -35,14 +35,19 @@ namespace Neo.Wallets
     /// <summary>
     /// The base class of wallets.
     /// </summary>
-    public abstract class Wallet
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="Wallet"/> class.
+    /// </remarks>
+    /// <param name="path">The path of the wallet file.</param>
+    /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.</param>
+    public abstract class Wallet(string path, ProtocolSettings settings)
     {
         private static readonly List<IWalletFactory> factories = [NEP6WalletFactory.Instance];
 
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
         /// </summary>
-        public ProtocolSettings ProtocolSettings { get; }
+        public ProtocolSettings ProtocolSettings { get; } = settings;
 
         /// <summary>
         /// The name of the wallet.
@@ -52,7 +57,7 @@ namespace Neo.Wallets
         /// <summary>
         /// The path of the wallet.
         /// </summary>
-        public string Path { get; }
+        public string Path { get; } = path;
 
         /// <summary>
         /// The version of the wallet.
@@ -120,17 +125,6 @@ namespace Neo.Wallets
         /// </summary>
         /// <returns>All accounts in the wallet.</returns>
         public abstract IEnumerable<WalletAccount> GetAccounts();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Wallet"/> class.
-        /// </summary>
-        /// <param name="path">The path of the wallet file.</param>
-        /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.</param>
-        protected Wallet(string path, ProtocolSettings settings)
-        {
-            ProtocolSettings = settings;
-            Path = path;
-        }
 
         /// <summary>
         /// Creates a standard account for the wallet.

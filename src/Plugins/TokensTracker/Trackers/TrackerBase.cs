@@ -28,22 +28,14 @@ namespace Neo.Plugins.Trackers
 {
     record TransferRecord(UInt160 asset, UInt160 from, UInt160 to, byte[] tokenId, BigInteger amount);
 
-    abstract class TrackerBase
+    abstract class TrackerBase(IStore db, uint maxResult, bool shouldTrackHistory, NeoSystem neoSystem)
     {
-        protected bool _shouldTrackHistory;
-        protected uint _maxResults;
-        protected IStore _db;
+        protected bool _shouldTrackHistory = shouldTrackHistory;
+        protected uint _maxResults = maxResult;
+        protected IStore _db = db;
         private ISnapshot _levelDbSnapshot;
-        protected NeoSystem _neoSystem;
+        protected NeoSystem _neoSystem = neoSystem;
         public abstract string TrackName { get; }
-
-        protected TrackerBase(IStore db, uint maxResult, bool shouldTrackHistory, NeoSystem neoSystem)
-        {
-            _db = db;
-            _maxResults = maxResult;
-            _shouldTrackHistory = shouldTrackHistory;
-            _neoSystem = neoSystem;
-        }
 
         public abstract void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
 
