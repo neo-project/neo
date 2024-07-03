@@ -77,10 +77,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var snapshot = TestBlockchain.GetTestSnapshot();
 
             Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = [] }));
-            Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = [new Signer() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") }
+            Assert.IsFalse(test.Verify(snapshot, new Transaction()
+            {
+                Signers = [new Signer() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") }
                 ]
             }));
-            Assert.IsTrue(test.Verify(snapshot, new Transaction() { Signers = [new Signer() { Account = NativeContract.NEO.GetCommitteeAddress(snapshot) }
+            Assert.IsTrue(test.Verify(snapshot, new Transaction()
+            {
+                Signers = [new Signer() { Account = NativeContract.NEO.GetCommitteeAddress(snapshot) }
                 ]
             }));
         }

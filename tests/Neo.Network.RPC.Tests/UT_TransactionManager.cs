@@ -143,7 +143,7 @@ namespace Neo.Network.RPC.Tests
                 new Signer
                 {
                     Account = sender,
-                    Scopes= WitnessScope.Global
+                    Scopes = WitnessScope.Global
                 }
             ];
 
@@ -161,7 +161,7 @@ namespace Neo.Network.RPC.Tests
             [
                 new Signer
                 {
-                    Account  =  sender,
+                    Account = sender,
                     Scopes = WitnessScope.Global
                 }
             ];

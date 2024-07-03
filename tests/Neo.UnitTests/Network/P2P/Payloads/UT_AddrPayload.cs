@@ -38,10 +38,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var test = AddrPayload.Create([
                 new NetworkAddressWithTime()
-            {
-                Address = IPAddress.Any,
-                Capabilities = [], Timestamp = 1
-            }
+                {
+                    Address = IPAddress.Any,
+                    Capabilities = [],
+                    Timestamp = 1
+                }
             ]);
             var clone = test.ToArray().AsSerializable<AddrPayload>();
 

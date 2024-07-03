@@ -30,10 +30,10 @@ namespace Neo.UnitTests.SmartContract
                         Methods =
                         [
                             new Neo.SmartContract.Manifest.ContractMethodDescriptor()
-                             {
-                                  Name = "verify",
-                                  Parameters = []
-                             }
+                            {
+                                Name = "verify",
+                                Parameters = []
+                            }
                         ]
                     }
                 },
@@ -57,10 +57,10 @@ namespace Neo.UnitTests.SmartContract
                         Methods =
                         [
                             new Neo.SmartContract.Manifest.ContractMethodDescriptor()
-                             {
-                                  Name = "noverify",
-                                  Parameters = []
-                             }
+                            {
+                                Name = "noverify",
+                                Parameters = []
+                            }
                         ]
                     }
                 },

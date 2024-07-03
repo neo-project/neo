@@ -141,7 +141,7 @@ namespace Neo.UnitTests
                     {
                         AssetId = NativeContract.GAS.Hash,
                         ScriptHash = account,
-                        Value = new BigDecimal(BigInteger.One,8)
+                        Value = new BigDecimal(BigInteger.One, 8)
                     }
                 ],
                 account);
@@ -168,21 +168,21 @@ namespace Neo.UnitTests
                 Signers =
                 [
                     new Signer()
-                {
-                    Account = sender,
-                    Scopes = WitnessScope.CalledByEntry,
-                    AllowedContracts = [],
-                    AllowedGroups = [],
-                    Rules = [],
-                }
+                    {
+                        Account = sender,
+                        Scopes = WitnessScope.CalledByEntry,
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
+                    }
                 ],
                 Witnesses =
                 [
                     new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
+                    }
                 ]
             };
         }

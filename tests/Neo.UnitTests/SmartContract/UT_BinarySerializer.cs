@@ -30,21 +30,30 @@ namespace Neo.UnitTests.SmartContract
             byte[] result1 = BinarySerializer.Serialize(new byte[5], ExecutionEngineLimits.Default);
             byte[] expectedArray1 =
             [
-                0x28, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00
+                0x28,
+                0x05,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00
             ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString(result1));
 
             byte[] result2 = BinarySerializer.Serialize(true, ExecutionEngineLimits.Default);
             byte[] expectedArray2 =
             [
-                0x20, 0x01
+                0x20,
+                0x01
             ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray2), Encoding.Default.GetString(result2));
 
             byte[] result3 = BinarySerializer.Serialize(1, ExecutionEngineLimits.Default);
             byte[] expectedArray3 =
             [
-                0x21, 0x01, 0x01
+                0x21,
+                0x01,
+                0x01
             ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray3), Encoding.Default.GetString(result3));
 
@@ -57,7 +66,11 @@ namespace Neo.UnitTests.SmartContract
             byte[] result6 = BinarySerializer.Serialize(stackItem62, ExecutionEngineLimits.Default);
             byte[] expectedArray6 =
             [
-                0x40,0x01,0x21,0x01,0x01
+                0x40,
+                0x01,
+                0x21,
+                0x01,
+                0x01
             ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString(result6));
 
@@ -66,7 +79,11 @@ namespace Neo.UnitTests.SmartContract
             byte[] result7 = BinarySerializer.Serialize(stackItem72, ExecutionEngineLimits.Default);
             byte[] expectedArray7 =
             [
-                0x41,0x01,0x21,0x01,0x01
+                0x41,
+                0x01,
+                0x21,
+                0x01,
+                0x01
             ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray7), Encoding.Default.GetString(result7));
 
@@ -74,7 +91,14 @@ namespace Neo.UnitTests.SmartContract
             byte[] result8 = BinarySerializer.Serialize(stackItem82, ExecutionEngineLimits.Default);
             byte[] expectedArray8 =
             [
-                0x48,0x01,0x21,0x01,0x02,0x21,0x01,0x01
+                0x48,
+                0x01,
+                0x21,
+                0x01,
+                0x02,
+                0x21,
+                0x01,
+                0x01
             ];
             Assert.AreEqual(Encoding.Default.GetString(expectedArray8), Encoding.Default.GetString(result8));
 

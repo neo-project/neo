@@ -68,11 +68,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Rules =
                 [
                     new WitnessRule()
-                {
-                    Action = WitnessRuleAction.Allow,
-                    Condition = new AndCondition()
                     {
-                        Expressions =
+                        Action = WitnessRuleAction.Allow,
+                        Condition = new AndCondition()
+                        {
+                            Expressions =
                         [
                             new AndCondition()
                             {
@@ -82,14 +82,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                                     {
                                         Expressions =
                                         [
-                                            new BooleanCondition() { Expression=true }
+                                            new BooleanCondition() { Expression = true }
                                         ]
                                     }
                                 ]
                             }
                         ]
+                        }
                     }
-                }
                 ]
             };
 
@@ -109,11 +109,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Rules =
                 [
                     new WitnessRule()
-                {
-                    Action = WitnessRuleAction.Allow,
-                    Condition = new OrCondition()
                     {
-                        Expressions =
+                        Action = WitnessRuleAction.Allow,
+                        Condition = new OrCondition()
+                        {
+                            Expressions =
                         [
                             new OrCondition()
                             {
@@ -123,14 +123,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                                     {
                                         Expressions =
                                         [
-                                            new BooleanCondition() { Expression=true }
+                                            new BooleanCondition() { Expression = true }
                                         ]
                                     }
                                 ]
                             }
                         ]
+                        }
                     }
-                }
                 ]
             };
 

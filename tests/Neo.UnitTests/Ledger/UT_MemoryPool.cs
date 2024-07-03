@@ -296,7 +296,8 @@ namespace Neo.UnitTests.Ledger
 
             var mp7 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp7 doesn't conflict with anyone
             var tx6 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx6 conflicts with mp7, but doesn't include sender of mp7 into signers list => even if tx6 is included into block, mp7 shouldn't be removed from the pool
-            tx6.Signers = [new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })) }, new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 })) }
+            tx6.Signers = [new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })) },
+                new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 })) }
             ];
             tx6.Attributes = [new Conflicts() { Hash = mp7.Hash }];
             _unit.TryAdd(mp7, engine.Snapshot);

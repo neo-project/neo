@@ -68,10 +68,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Signers =
                 [
                     new Signer()
-                {
-                    Account = multiSignContract.ScriptHash,
-                    Scopes = WitnessScope.CalledByEntry
-                }
+                    {
+                        Account = multiSignContract.ScriptHash,
+                        Scopes = WitnessScope.CalledByEntry
+                    }
                 ],
                 NetworkFee = 0,
                 Nonce = 0,

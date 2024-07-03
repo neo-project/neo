@@ -28,10 +28,26 @@ namespace Neo.UnitTests.IO
         {
             byte[] caseArray =
             [
-                0x00,0x00,0x00,0x00,0x00,
-                                            0x00,0x00,0x00,0x00,0x00,
-                                            0x00,0x00,0x00,0x00,0x00,
-                                            0x00,0x00,0x00,0x00,0x00
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00
             ];
             UInt160 result = Neo.IO.Helper.AsSerializable<UInt160>(caseArray);
             Assert.AreEqual(UInt160.Zero, result);
@@ -118,10 +134,26 @@ namespace Neo.UnitTests.IO
                 {
                     byte[] caseArray =
                     [
-                        0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00
                     ];
                     ISerializable result = Neo.IO.Helper.AsSerializable(caseArray, typeof(UInt160));
                     Assert.AreEqual(UInt160.Zero, result);

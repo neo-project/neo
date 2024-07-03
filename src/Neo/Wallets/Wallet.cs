@@ -387,7 +387,7 @@ namespace Neo.Wallets
                 if (cosigners[i].Account.Equals(sender))
                 {
                     if (i == 0) return cosigners;
-                    List<Signer> list = [..cosigners];
+                    List<Signer> list = [.. cosigners];
                     list.RemoveAt(i);
                     list.Insert(0, cosigners[i]);
                     return [.. list];

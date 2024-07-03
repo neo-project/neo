@@ -415,7 +415,7 @@ namespace Neo.ConsoleService
 
                     if (!_verbs.TryGetValue(command.Key, out var commands))
                     {
-                        _verbs.Add(command.Key, [..new[] { command }]);
+                        _verbs.Add(command.Key, [.. new[] { command }]);
                     }
                     else
                     {

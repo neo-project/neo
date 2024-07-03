@@ -40,10 +40,11 @@ namespace Neo.UnitTests.Ledger
                     Signers = [new Signer() { Account = UInt160.Zero }],
                     Witnesses =
                     [
-                        new Witness() {
-                        InvocationScript=Array.Empty<byte>(),
-                        VerificationScript=Array.Empty<byte>()
-                    }
+                        new Witness()
+                        {
+                            InvocationScript = Array.Empty<byte>(),
+                            VerificationScript = Array.Empty<byte>()
+                        }
                     ]
                 }
             };

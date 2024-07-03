@@ -150,11 +150,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var tx = walletA.MakeTransaction(snapshot, [
                 new TransferOutput()
-                    {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
-                    }
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = acc.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8)
+                }
             ], acc.ScriptHash);
 
             Assert.IsNotNull(tx);
@@ -217,11 +217,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // self-transfer of 1e-8 GAS
             var tx = wallet.MakeTransaction(snapshot, [
                 new TransferOutput()
-                    {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
-                    }
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = acc.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8)
+                }
             ], acc.ScriptHash);
 
             Assert.IsNotNull(tx);
@@ -1171,11 +1171,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             tx = walletA.MakeTransaction(snapshot, [
                 new TransferOutput()
-                    {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
-                    }
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = acc.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8)
+                }
             ], acc.ScriptHash);
 
             // Sign
@@ -1260,11 +1260,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             snapshot.Commit();
             tx = walletA.MakeTransaction(snapshot, [
                 new TransferOutput()
-                    {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
-                    }
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = acc.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8)
+                }
             ], acc.ScriptHash);
 
             // Sign

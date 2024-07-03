@@ -431,7 +431,7 @@ namespace Neo.Persistence
                     ))
                     .OrderBy(p => p.KeyBytes, comparer)
                     .ToArray();
-                cachedKeySet = [..dictionary.Keys];
+                cachedKeySet = [.. dictionary.Keys];
             }
             var uncached = SeekInternal(keyOrPrefix ?? [], direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))

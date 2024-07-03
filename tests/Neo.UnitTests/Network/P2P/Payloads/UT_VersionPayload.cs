@@ -45,8 +45,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.ThrowsException<FormatException>(() => VersionPayload.Create(123, 456, "neo3",
             [
-                new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
-                    new ServerCapability(NodeCapabilityType.TcpServer, 22)
+                new ServerCapability(NodeCapabilityType.TcpServer, 22),
+                new ServerCapability(NodeCapabilityType.TcpServer, 22)
             ]).ToArray().AsSerializable<VersionPayload>());
         }
     }

@@ -33,10 +33,38 @@ namespace Neo.UnitTests.SmartContract
             {
                 byte[] privateKey =
                 [
-                    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01,
+                    0x01
                 ];
                 key = new KeyPair(privateKey);
                 contract = Contract.CreateSignatureContract(key.PublicKey);
@@ -146,10 +174,38 @@ namespace Neo.UnitTests.SmartContract
 
             byte[] privateKey2 =
             [
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x02
             ];
             var key2 = new KeyPair(privateKey2);
             var multiSignContract = Contract.CreateMultiSigContract(2,
@@ -172,10 +228,38 @@ namespace Neo.UnitTests.SmartContract
             context = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             byte[] privateKey3 =
             [
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                              0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x03
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x01,
+                0x03
             ];
             var key3 = new KeyPair(privateKey3);
             context.AddSignature(multiSignContract, key3.PublicKey, [0x01]).Should().BeFalse();
