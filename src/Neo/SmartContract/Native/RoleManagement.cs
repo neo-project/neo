@@ -26,7 +26,16 @@ namespace Neo.SmartContract.Native
     {
         [ContractEvent(0, name: "Designation",
             "Role", ContractParameterType.Integer,
-            "BlockIndex", ContractParameterType.Integer)]
+            "BlockIndex", ContractParameterType.Integer,
+            Hardfork.HF_Domovoi)]
+
+        [ContractEvent(Hardfork.HF_Domovoi, 0, name: "Designation",
+            "Role", ContractParameterType.Integer,
+            "BlockIndex", ContractParameterType.Integer,
+            "Old", ContractParameterType.Array,
+            "New", ContractParameterType.Array
+            )]
+
         internal RoleManagement() : base() { }
 
         /// <summary>
@@ -69,7 +78,18 @@ namespace Neo.SmartContract.Native
             list.AddRange(nodes);
             list.Sort();
             engine.Snapshot.Add(key, new StorageItem(list));
-            engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock.Index }));
+
+            if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
+            {
+                var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.Snapshot, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
+                var newNodes = new VM.Types.Array(engine.ReferenceCounter, nodes.Select(u => (ByteString)u.EncodePoint(true)));
+
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
+            }
+            else
+            {
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index]));
+            }
         }
 
         private class NodeList : InteroperableList<ECPoint>
