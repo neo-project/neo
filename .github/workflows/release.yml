@@ -1,0 +1,348 @@
+name: Release (neo-cli)
+
+# Trigger the workflow on a release event when a new release is published
+on:
+  release:
+    types: [published]
+
+# Define environment variables
+env:
+  DOTNET_VERSION: 8.0.x
+  CONFIGURATION: Release
+  DIST_PATH: /tmp/dist
+  OUTPUT_PATH: /tmp/out
+
+jobs:
+  build-leveldb:
+    name: Build leveldb win-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+        arch: [x64, arm64]
+
+    steps:
+    # Step to lookup cache for the LevelDB build distribution
+    - name: Lookup Cache Distribution
+      id: cache-leveldb
+      uses: actions/cache@v4
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-${{ matrix.os }}-${{ matrix.arch }}
+        enableCrossOsArchive: true
+        lookup-only: true
+
+    # Conditionally checkout LevelDB repository if cache is not found
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
+      name: Checkout Repository Code (leveldb)
+      uses: actions/checkout@v4
+      with:
+        repository: google/leveldb
+        path: leveldb
+        submodules: true
+        fetch-depth: 0
+
+    # Conditionally setup MSBuild if cache is not found
+    - if: ${{ matrix.os == 'windows-latest' && steps.cache-leveldb.outputs.cache-hit != 'true' }}
+      name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    # Conditionally setup LevelDB build directory if cache is not found
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
+      name: Setup LevelDb
+      working-directory: ./leveldb
+      run: mkdir -p ./build/Release
+
+    # Conditionally create build files for LevelDB if cache is not found
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
+      name: Create Build Files (win-${{ matrix.arch }})
+      working-directory: ./leveldb/build
+      run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
+
+    # Conditionally build LevelDB using MSBuild if cache is not found
+    - if: ${{ matrix.os == 'windows-latest' && steps.cache-leveldb.outputs.cache-hit != 'true' }}
+      name: Build (MSBuild)
+      working-directory: ./leveldb/build
+      run: msbuild ./leveldb.sln /p:Configuration=Release
+
+    # Conditionally cache the LevelDB distribution if it was built
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
+      name: Cache Distribution
+      uses: actions/cache/save@v4
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-${{ matrix.os }}-${{ matrix.arch }}
+        enableCrossOsArchive: true
+
+  build-neo-cli:
+    needs: [build-leveldb]
+    name: ${{ matrix.runtime }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime: [linux-x64, linux-arm64, win-x64, win-arm64, osx-x64, osx-arm64]
+
+    steps:
+    # Step to set the application version from the release tag
+    - name: Set Application Version (Environment Variable)
+      run: |
+        APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+    # Checkout the neo-cli repository code
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # Setup .NET environment
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    # Publish the neo-cli project
+    - name: .NET Publish (neo-cli)
+      run: |
+        dotnet publish ./src/Neo.CLI \
+        --version-suffix ${{ matrix.runtime }} \
+        --framework net8.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --runtime ${{ matrix.runtime }} \
+        --self-contained true \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }} \
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:RuntimeIdentifier=${{ matrix.runtime }} \
+        -p:SelfContained=true \
+        -p:IncludeNativeLibrariesForSelfExtract=false \
+        -p:PublishTrimmed=false \
+        -p:PublishSingleFile=true \
+        -p:PublishReadyToRun=true \
+        -p:EnableCompressionInSingleFile=true \
+        -p:DebugType=embedded \
+        -p:ServerGarbageCollection=true
+
+    # Build the LevelDBStore plugin
+    - name: .NET Build (LevelDBStore)
+      run: |
+        dotnet build ./src/Plugins/LevelDBStore \
+        --version-suffix ${{ matrix.runtime }} \
+        --framework net8.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }}
+
+    # Remove unnecessary files from the LevelDBStore plugin output
+    - name: Remove files (junk)
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
+      run: |
+        rm -v Neo*
+        rm -v *.pdb
+        rm -v *.xml
+
+    # Remove XML comment files from the neo-cli output
+    - name: Remove Xml Comment Files
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: rm -v *.xml
+
+    # Get cached LevelDB distribution for Windows x64 if applicable
+    - if: ${{ startsWith(matrix.runtime, 'win-x64') }}
+      name: Get Distribution Caches (win-x64)
+      uses: actions/cache@v4
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-windows-latest-x64
+        enableCrossOsArchive: true
+        fail-on-cache-miss: true
+
+    # Get cached LevelDB distribution for Windows arm64 if applicable
+    - if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
+      name: Get Distribution Caches (win-arm64)
+      uses: actions/cache@v4
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-windows-latest-arm64
+        enableCrossOsArchive: true
+        fail-on-cache-miss: true
+
+    # Copy LevelDB files to the output directory for Windows
+    - if: ${{ startsWith(matrix.runtime, 'win') }}
+      name: Copy Files (leveldb) (win)
+      run: cp -v ./leveldb/build/Release/leveldb.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
+
+    # Create the distribution directory
+    - name: Create Distribution Directory
+      run: mkdir -p ${{ env.DIST_PATH }}
+
+    # Create a tarball file for Linux distributions
+    - name: Create Tarball File (linux)
+      if: ${{ startsWith(matrix.runtime, 'linux') }}
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz .
+
+    # Create a tarball file for macOS distributions
+    - name: Cache Distribution
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/*
+        key: neo-${{ matrix.runtime }}
+        enableCrossOsArchive: true
+
+    # Create a zip file for Windows distributions
+    - name: Create Zip File (win)
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: zip ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.zip -r *
+
+    # Create checksum files for Linux distributions
+    - name: Create Checksum Files (linux)
+      if: ${{ startsWith(matrix.runtime, 'linux') }}
+      working-directory: ${{ env.DIST_PATH }}
+      env:
+        FILENAME: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}
+      run: |
+          sha256sum ${{ env.FILENAME }}.tar.gz > ${{ env.FILENAME }}.sha256
+
+    # Create checksum files for Windows distributions
+    - name: Create Checksum Files (win)
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      working-directory: ${{ env.DIST_PATH }}
+      env:
+        FILENAME: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}
+      run: |
+          sha256sum ${{ env.FILENAME }}.zip > ${{ env.FILENAME }}.sha256
+
+    # List the contents of the distribution and output directories
+    - name: Output/Distribution Directory Contents
+      run: |
+        ls -la ${{ env.DIST_PATH }}
+        ls -la ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+
+    # Upload tarball files for Linux distributions
+    - name: Upload Tarball File (linux)
+      if: ${{ startsWith(matrix.runtime, 'linux') }}
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.tar.gz
+          asset_content_type: application/x-gtar
+
+    # Upload zip files for Windows distributions
+    - name: Upload Zip File (win)
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.zip
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.zip
+          asset_content_type: application/zip
+
+    # Upload checksum files for all distributions
+    - name: Upload Checksum File (all)
+      if: ${{ startsWith(matrix.runtime, 'osx') == false }}
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-${{ matrix.runtime }}.sha256
+          asset_content_type: text/plain
+
+  code-sign:
+    needs: [build-neo-cli]
+    name: CodeSign & Publish (neo-cli) ${{ matrix.arch }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+
+    steps:
+    # Step to set the application version from the release tag
+    - name: Set Application Version (Environment Variable)
+      run: |
+        APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+    - name: Get Distribution Caches (win-${{ matrix.arch}})
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}/*
+        key: neo-osx-${{ matrix.arch }}
+        enableCrossOsArchive: true
+        fail-on-cache-miss: true
+
+    - name: Sign (neo-cli)
+      working-directory: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}
+      run: codesign --force --deep -s - neo-cli
+
+    # Create the distribution directory
+    - name: Create Distribution Directory
+      run: mkdir -p ${{ env.DIST_PATH }}
+
+    # Create a tarball file for macOS distributions
+    - name: Create Tarball File (osx)
+      working-directory: ${{ env.OUTPUT_PATH }}/osx-${{ matrix.arch }}
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.tar.xz .
+
+    # Create checksum files for macOS distributions
+    - name: Create Checksum Files (osx)
+      working-directory: ${{ env.DIST_PATH }}
+      env:
+        FILENAME: neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}
+      run: |
+          shasum -a 256 ${{ env.FILENAME }}.tar.xz > ${{ env.FILENAME }}.sha256
+
+    # Upload tarball files for macOS distributions
+    - name: Upload Tarball File (osx)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.tar.xz
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.tar.xz
+          asset_content_type: application/x-gtar
+
+      # Upload checksum files for all distributions
+    - name: Upload Checksum File (all)
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.DIST_PATH }}/neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.sha256
+          asset_name: neo-cli.v${{ env.APP_VERSION }}-osx-${{ matrix.arch }}.sha256
+          asset_content_type: text/plain
+
+  cleanup:
+    needs: [build-neo-cli, code-sign]
+    runs-on: ubuntu-latest
+    steps:
+      # Cleanup step to delete old caches
+      - name: Cleanup
+        run: |
+          gh extension install actions/gh-actions-cache
+          
+          echo "Fetching list of cache key"
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH -L 100 | cut -f 1 )
+
+          ## Setting this to not fail the workflow while deleting cache keys. 
+          set +e
+          echo "Deleting caches..."
+          for cacheKey in $cacheKeysForPR
+          do
+            gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+          done
+          echo "Done"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref }}
