@@ -75,7 +75,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
-        dotnet build --output ./bin/tests/
+        dotnet build
 
         dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests --disable-build-servers --no-build
         dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests --disable-build-servers --no-build
