@@ -17,7 +17,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Text;
