@@ -104,7 +104,7 @@ namespace Neo.CLI
                 ?? throw new Exception($"Could not find {pluginName}");
 
             var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
-
+            Console.WriteLine($"Downloading {pluginName} {pluginVersion}...");
             return await httpClient.GetStreamAsync(downloadUrl);
         }
 
