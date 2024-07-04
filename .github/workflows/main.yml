@@ -68,25 +68,25 @@ jobs:
       if: matrix.os != 'ubuntu-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
-        dotnet test --blame-hang --blame-crash
+        dotnet test --blame-hang --blame-crash -p:ParallelizeTestCollections=false
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
 
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests
-        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
-        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
-        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests -p:ParallelizeTestCollections=false
 
         # Plugins
-        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
-        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests
-        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests
-        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
-        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests -p:ParallelizeTestCollections=false
+        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests -p:ParallelizeTestCollections=false
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
