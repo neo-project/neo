@@ -51,6 +51,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestCleanup]
         public void TestCleanup()
         {
+            // Please build and test in debug mode
             _neoSystem.MemPool.Clear();
             _memoryStore.Reset();
             var snapshot = _neoSystem.GetSnapshot();

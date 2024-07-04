@@ -48,7 +48,7 @@ public partial class TestUtils
     {
         header.PrevHash = val256;
         header.MerkleRoot = merkRootVal = UInt256.Parse("0x6226416a0e5aca42b5566f5a19ab467692688ba9d47986f6981a7f747bba2772");
-        header.Timestamp = timestampVal = TimeProvider.Current.UtcNow.ToTimestampMS();// new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc).ToTimestampMS(); // GMT: Sunday, June 1, 1980 12:00:01.001 AM
+        header.Timestamp = timestampVal = new DateTime(2024, 06, 05, 0, 33, 1, 001, DateTimeKind.Utc).ToTimestampMS();
         if (snapshot != null)
             header.Index = indexVal = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
         else
