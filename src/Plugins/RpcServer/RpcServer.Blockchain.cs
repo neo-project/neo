@@ -43,7 +43,7 @@ namespace Neo.Plugins.RpcServer
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
         /// <returns>The block data as a <see cref="JToken"/>. If the second item of _params is true, then
-        /// block data is json format, otherwise, the return type is byte array.</returns>
+        /// block data is json format, otherwise, the return type is Base64-encoded byte array.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlock(JArray _params)
         {
@@ -120,7 +120,7 @@ namespace Neo.Plugins.RpcServer
         /// An array containing the block header hash or index as the first element,
         /// and an optional boolean indicating whether to return verbose information.
         /// </param>
-        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise base64string.</returns>
+        /// <returns>The block header data as a <see cref="JToken"/>. In json format if the second item of _params is true, otherwise Base64-encoded byte array.</returns>
         [RpcMethod]
         protected internal virtual JToken GetBlockHeader(JArray _params)
         {
@@ -152,9 +152,9 @@ namespace Neo.Plugins.RpcServer
         }
 
         /// <summary>
-        /// Gets the state of a contract by its ID or script hash.
+        /// Gets the state of a contract by its ID or script hash or (only for native contracts) by case-insensitive name.
         /// </summary>
-        /// <param name="_params">An array containing the contract ID or script hash as the first element.</param>
+        /// <param name="_params">An array containing the contract ID or script hash or case-insensitive native contract name as the first element.</param>
         /// <returns>The contract state in json format as a <see cref="JToken"/>.</returns>
         [RpcMethod]
         protected internal virtual JToken GetContractState(JArray _params)
@@ -266,7 +266,7 @@ namespace Neo.Plugins.RpcServer
         /// </summary>
         /// <param name="_params">
         /// An array containing the contract ID or script hash as the first element,
-        /// the storage key prefix as the second element,
+        /// the Base64-encoded storage key prefix as the second element,
         /// and an optional start index as the third element.
         /// </param>
         /// <returns>The found storage items <see cref="StorageItem"/> as a <see cref="JToken"/>.</returns>

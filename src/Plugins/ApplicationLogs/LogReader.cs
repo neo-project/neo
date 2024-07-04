@@ -143,12 +143,11 @@ namespace Neo.Plugins.ApplicationLogs
                 _neostore.GetBlockLog(blockhash, TriggerType.PostPersist) :
                 _neostore.GetBlockLog(blockhash, TriggerType.PostPersist, eventName);
 
-            if (blockOnPersist == null && blockOnPersist == null)
+            if (blockOnPersist == null)
                 ConsoleHelper.Error($"No logs.");
-            if (blockOnPersist != null)
-                PrintExecutionToConsole(blockOnPersist);
-            if (blockPostPersist != null)
+            else
             {
+                PrintExecutionToConsole(blockOnPersist);
                 ConsoleHelper.Info("--------------------------------");
                 PrintExecutionToConsole(blockPostPersist);
             }
