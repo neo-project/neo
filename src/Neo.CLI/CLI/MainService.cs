@@ -403,7 +403,7 @@ namespace Neo.CLI
                 else if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
                 {
                     DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
-                        "Use command \"brew install leveldb\" in terminal and download from https://github.com/neo-ngd/leveldb/releases");
+                        "Use command \"brew install leveldb\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
                 }
                 else
                 {
