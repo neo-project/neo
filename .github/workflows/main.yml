@@ -69,26 +69,25 @@ jobs:
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet build
-        dotnet test --blame-hang --blame-crash --disable-build-servers --no-build
+        dotnet test --blame-hang --blame-crash --no-build
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
-        dotnet build
 
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests --disable-build-servers --no-build
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests
+        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
+        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
+        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
 
         # Plugins
-        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests --disable-build-servers --no-build
-        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests --disable-build-servers --no-build
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
+        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
+        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
