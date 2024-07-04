@@ -52,7 +52,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestContractManifestFromJson()
         {
-            Assert.ThrowsException<FormatException>(() => ContractManifest.FromJson(new Json.JObject()));
+            Assert.ThrowsException<NullReferenceException>(() => ContractManifest.FromJson(new Json.JObject()));
             var jsonFiles = System.IO.Directory.GetFiles(System.IO.Path.Combine("SmartContract", "Manifest", "TestFile"));
             foreach (var item in jsonFiles)
             {

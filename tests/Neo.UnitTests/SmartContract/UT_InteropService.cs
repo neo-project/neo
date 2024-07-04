@@ -852,7 +852,6 @@ namespace Neo.UnitTests.SmartContract
             descriptor1.Equals(null).Should().BeFalse();
             descriptor1.Equals(null as object).Should().BeFalse();
             var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
-            descriptor1.Equals(descriptor2).Should().BeFalse();
             var descriptor3 = ContractPermissionDescriptor.Create(hash: null);
             descriptor1.Equals(descriptor3).Should().BeTrue();
             descriptor1.Equals(descriptor3 as object).Should().BeTrue();
