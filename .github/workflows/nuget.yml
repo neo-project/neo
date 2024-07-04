@@ -35,8 +35,8 @@ jobs:
         dotnet pack ./neo.sln \
         --configuration Release \
         --output ./sbin \
-        --verbosity normal \                        # Normal verbosity level
-        -p:VersionPrefix=${{ env.APP_VERSION }}     # Set the version prefix from tag_name
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }}
 
     - name: Publish to NuGet.org
       run: |

@@ -269,13 +269,15 @@ namespace Neo.CLI
             var asmName = Assembly.GetExecutingAssembly().GetName();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
-            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl)
+                ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
             return json.AsArray()
                 .Where(w =>
                     w != null &&
                     w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
                 .SelectMany(s => s!["assets"]!.AsArray())
-                .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()));
+                .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()))
+                .Where(s => !s.StartsWith("neo-cli", StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }
