@@ -82,20 +82,6 @@ namespace Neo
             return buffer;
         }
 
-        internal static int GetLowestSetBit(this BigInteger i)
-        {
-            if (i.Sign == 0)
-                return -1;
-            byte[] b = i.ToByteArray();
-            int w = 0;
-            while (b[w] == 0)
-                w++;
-            for (int x = 0; x < 8; x++)
-                if ((b[w] & 1 << x) > 0)
-                    return x + w * 8;
-            throw new Exception();
-        }
-
         internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
         {
             if (set.Count > other.Count)
@@ -157,32 +143,6 @@ namespace Neo
             return result;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static BigInteger Mod(this BigInteger x, BigInteger y)
-        {
-            x %= y;
-            if (x.Sign < 0)
-                x += y;
-            return x;
-        }
-
-        internal static BigInteger ModInverse(this BigInteger a, BigInteger n)
-        {
-            BigInteger i = n, v = 0, d = 1;
-            while (a > 0)
-            {
-                BigInteger t = i / a, x = a;
-                a = i % x;
-                i = x;
-                x = d;
-                d = v - t * x;
-                v = x;
-            }
-            v %= n;
-            if (v < 0) v = (v + n) % n;
-            return v;
-        }
-
         internal static BigInteger NextBigInteger(this Random rand, int sizeInBits)
         {
             if (sizeInBits < 0)
@@ -208,12 +168,6 @@ namespace Neo
             var sum = BigInteger.Zero;
             foreach (var bi in source) sum += bi;
             return sum;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool TestBit(this BigInteger i, int index)
-        {
-            return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
         /// <summary>
