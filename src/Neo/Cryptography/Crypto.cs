@@ -170,7 +170,7 @@ namespace Neo.Cryptography
         {
             if (CacheECDsa.TryGet(pubkey, out var cache))
             {
-                return cache.value;
+                return cache.Value;
             }
             var curve =
                 pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
