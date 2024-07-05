@@ -24,7 +24,7 @@ using Array = Neo.VM.Types.Array;
 namespace Neo.SmartContract.Native
 {
     [DebuggerDisplay("{Name}")]
-    internal class ContractMethodMetadata
+    internal class ContractMethodMetadata : IHardforkActivable
     {
         public string Name { get; }
         public MethodInfo Handler { get; }
