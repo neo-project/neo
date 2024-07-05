@@ -27,7 +27,6 @@ namespace Neo.UnitTests;
 
 public partial class TestUtils
 {
-
     public static Transaction CreateInvalidTransaction(DataCache snapshot, NEP6Wallet wallet, WalletAccount account, InvalidTransactionType type, UInt256 conflict = null)
     {
         var rand = new Random();
