@@ -64,6 +64,54 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
+        public void TestLevelDbSnapshot()
+        {
+            using var plugin = new LevelDBStore();
+            using var store = plugin.GetStore(path_leveldb);
+
+            var snapshot = store.GetSnapshot();
+
+            var testKey = new byte[] { 0x01, 0x02, 0x03 };
+            var testValue = new byte[] { 0x04, 0x05, 0x06 };
+
+            snapshot.Put(testKey,testValue);
+            // Data saved to the leveldb snapshot shall not be visible to the store
+            Assert.IsNull(snapshot.TryGet(testKey));
+            snapshot.Commit();
+
+            // After commit, the data shall be visible to the store and to the snapshot
+            CollectionAssert.AreEqual(testValue, snapshot.TryGet(testKey));
+            var b = store.TryGet(testKey);
+            CollectionAssert.AreEqual(testValue,b );
+
+            snapshot.Dispose();
+        }
+
+        [TestMethod]
+        public void TestLevelDbMultiSnapshot()
+        {
+            using var plugin = new LevelDBStore();
+            using var store = plugin.GetStore(path_leveldb);
+
+            var snapshot = store.GetSnapshot();
+            var snapshot2 = store.GetSnapshot();
+
+            var testKey = new byte[] { 0x01, 0x02, 0x03 };
+            var testValue = new byte[] { 0x04, 0x05, 0x06 };
+
+            snapshot.Put(testKey,testValue);
+            CollectionAssert.AreEqual(testValue, snapshot.TryGet(testKey));
+            snapshot.Commit();
+            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
+
+            var ret = snapshot2.TryGet(testKey);
+            Assert.IsNull(ret);
+
+            snapshot.Dispose();
+            snapshot2.Dispose();
+        }
+
+        [TestMethod]
         public void TestRocksDb()
         {
             using var plugin = new RocksDBStore();
