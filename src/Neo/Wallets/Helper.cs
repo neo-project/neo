@@ -159,9 +159,6 @@ namespace Neo.Wallets
                                     script.Emit(OpCode.PUSHINT256, new byte[Integer.MaxSize]);
                                     script.Emit(OpCode.NEWARRAY);
                                     break;
-                                case ContractParameterType.Map:
-                                    script.Emit(OpCode.NEWMAP);
-                                    break;
                                 default:
                                     throw new ArgumentException("The verify method requires parameters that need to be passed via the witness' invocation script.");
                             }
