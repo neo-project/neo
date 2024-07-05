@@ -113,8 +113,8 @@ namespace Neo.SmartContract.Manifest
             ContractManifest manifest = new()
             {
                 Name = json["name"]!.GetString(),
-                Groups = ((JArray)json["groups"])!.Select(u => ContractGroup.FromJson((JObject)u)).ToArray(),
-                SupportedStandards = ((JArray)json["supportedstandards"])!.Select(u => u.GetString()).ToArray(),
+                Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson((JObject)u)).ToArray() ?? [],
+                SupportedStandards = ((JArray)json["supportedstandards"])?.Select(u => u.GetString()).ToArray() ?? [],
                 Abi = ContractAbi.FromJson((JObject)json["abi"]),
                 Permissions = ((JArray)json["permissions"])!.Select(u => ContractPermission.FromJson((JObject)u)).ToArray(),
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u)),
