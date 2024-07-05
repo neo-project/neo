@@ -16,7 +16,7 @@ namespace Neo.SmartContract.Native
 {
     [DebuggerDisplay("{Name}")]
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false)]
-    internal class ContractMethodAttribute : Attribute
+    internal class ContractMethodAttribute : Attribute, IHardforkActivable
     {
         public string Name { get; init; }
         public CallFlags RequiredCallFlags { get; init; }
@@ -30,6 +30,11 @@ namespace Neo.SmartContract.Native
         public ContractMethodAttribute(Hardfork activeIn)
         {
             ActiveIn = activeIn;
+        }
+
+        public ContractMethodAttribute(Hardfork activeIn, Hardfork deprecatedIn) : this(activeIn)
+        {
+            DeprecatedIn = deprecatedIn;
         }
 
         public ContractMethodAttribute(bool isDeprecated, Hardfork deprecatedIn)
