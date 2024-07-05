@@ -80,6 +80,7 @@ namespace Neo.CLI
         /// <returns>Downloaded content</returns>
         private static async Task<Stream> DownloadPluginAsync(string pluginName, Version pluginVersion, string? customDownloadUrl = null, bool prerelease = false)
         {
+            ConsoleHelper.Info($"Downloading {pluginName} {pluginVersion}...");
             using var httpClient = new HttpClient();
 
             var asmName = Assembly.GetExecutingAssembly().GetName();
@@ -104,7 +105,6 @@ namespace Neo.CLI
                 ?? throw new Exception($"Could not find {pluginName}");
 
             var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
-
             return await httpClient.GetStreamAsync(downloadUrl);
         }
 
