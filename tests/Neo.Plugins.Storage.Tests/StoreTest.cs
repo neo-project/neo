@@ -188,8 +188,7 @@ namespace Neo.Plugins.Storage.Tests
             CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
 
             // Data saved to the leveldb from snapshot1 shall also be visible to snapshot2
-            var ret = snapshot2.TryGet(testKey);
-            Assert.IsNull(ret);
+            CollectionAssert.AreEqual(testValue, snapshot2.TryGet(testKey));
 
             snapshot.Dispose();
             snapshot2.Dispose();
