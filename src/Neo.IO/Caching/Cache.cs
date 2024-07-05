@@ -17,25 +17,21 @@ using System.Threading;
 
 namespace Neo.IO.Caching
 {
-    internal abstract class Cache<TKey, TValue> : ICollection<TValue>, IDisposable
+    internal abstract class Cache<TKey, TValue>
+        (int max_capacity, IEqualityComparer<TKey>? comparer = null) : ICollection<TValue>, IDisposable
+        where TKey : notnull
     {
         protected class CacheItem
+            (TKey key, TValue value)
         {
-            public readonly TKey Key;
-            public readonly TValue Value;
-            public readonly DateTime Time;
-
-            public CacheItem(TKey key, TValue value)
-            {
-                Key = key;
-                Value = value;
-                Time = TimeProvider.Current.UtcNow;
-            }
+            public readonly TKey Key = key;
+            public readonly TValue Value = value;
+            public readonly DateTime Time = DateTime.UtcNow;
         }
 
         protected readonly ReaderWriterLockSlim RwSyncRootLock = new(LockRecursionPolicy.SupportsRecursion);
-        protected readonly Dictionary<TKey, CacheItem> InnerDictionary;
-        private readonly int max_capacity;
+        protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new Dictionary<TKey, CacheItem>(comparer);
+        private readonly int _max_capacity = max_capacity;
 
         public TValue this[TKey key]
         {
@@ -44,7 +40,7 @@ namespace Neo.IO.Caching
                 RwSyncRootLock.EnterReadLock();
                 try
                 {
-                    if (!InnerDictionary.TryGetValue(key, out CacheItem item)) throw new KeyNotFoundException();
+                    if (!InnerDictionary.TryGetValue(key, out CacheItem? item)) throw new KeyNotFoundException();
                     OnAccess(item);
                     return item.Value;
                 }
@@ -73,15 +69,9 @@ namespace Neo.IO.Caching
 
         public bool IsReadOnly => false;
 
-        public Cache(int max_capacity, IEqualityComparer<TKey> comparer = null)
-        {
-            this.max_capacity = max_capacity;
-            InnerDictionary = new Dictionary<TKey, CacheItem>(comparer);
-        }
-
         public void Add(TValue item)
         {
-            TKey key = GetKeyForItem(item);
+            var key = GetKeyForItem(item);
             RwSyncRootLock.EnterWriteLock();
             try
             {
@@ -95,16 +85,16 @@ namespace Neo.IO.Caching
 
         private void AddInternal(TKey key, TValue item)
         {
-            if (InnerDictionary.TryGetValue(key, out CacheItem cacheItem))
+            if (InnerDictionary.TryGetValue(key, out CacheItem? cacheItem))
             {
                 OnAccess(cacheItem);
             }
             else
             {
-                if (InnerDictionary.Count >= max_capacity)
+                if (InnerDictionary.Count >= _max_capacity)
                 {
                     //TODO: Perform a performance test on the PLINQ query to determine which algorithm is better here (parallel or not)
-                    foreach (CacheItem item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(InnerDictionary.Count - max_capacity + 1))
+                    foreach (var item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(InnerDictionary.Count - _max_capacity + 1))
                     {
                         RemoveInternal(item_del);
                     }
@@ -118,9 +108,9 @@ namespace Neo.IO.Caching
             RwSyncRootLock.EnterWriteLock();
             try
             {
-                foreach (TValue item in items)
+                foreach (var item in items)
                 {
-                    TKey key = GetKeyForItem(item);
+                    var key = GetKeyForItem(item);
                     AddInternal(key, item);
                 }
             }
@@ -135,7 +125,7 @@ namespace Neo.IO.Caching
             RwSyncRootLock.EnterWriteLock();
             try
             {
-                foreach (CacheItem item_del in InnerDictionary.Values.ToArray())
+                foreach (var item_del in InnerDictionary.Values.ToArray())
                 {
                     RemoveInternal(item_del);
                 }
@@ -151,7 +141,7 @@ namespace Neo.IO.Caching
             RwSyncRootLock.EnterReadLock();
             try
             {
-                if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
+                if (!InnerDictionary.TryGetValue(key, out CacheItem? cacheItem)) return false;
                 OnAccess(cacheItem);
                 return true;
             }
@@ -171,7 +161,7 @@ namespace Neo.IO.Caching
             if (array == null) throw new ArgumentNullException();
             if (arrayIndex < 0) throw new ArgumentOutOfRangeException();
             if (arrayIndex + InnerDictionary.Count > array.Length) throw new ArgumentException();
-            foreach (TValue item in this)
+            foreach (var item in this)
             {
                 array[arrayIndex++] = item;
             }
@@ -188,7 +178,7 @@ namespace Neo.IO.Caching
             RwSyncRootLock.EnterReadLock();
             try
             {
-                foreach (TValue item in InnerDictionary.Values.Select(p => p.Value))
+                foreach (var item in InnerDictionary.Values.Select(p => p.Value))
                 {
                     yield return item;
                 }
@@ -211,7 +201,7 @@ namespace Neo.IO.Caching
             RwSyncRootLock.EnterWriteLock();
             try
             {
-                if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
+                if (!InnerDictionary.TryGetValue(key, out CacheItem? cacheItem)) return false;
                 RemoveInternal(cacheItem);
                 return true;
             }
@@ -242,7 +232,7 @@ namespace Neo.IO.Caching
             RwSyncRootLock.EnterReadLock();
             try
             {
-                if (InnerDictionary.TryGetValue(key, out CacheItem cacheItem))
+                if (InnerDictionary.TryGetValue(key, out CacheItem? cacheItem))
                 {
                     OnAccess(cacheItem);
                     item = cacheItem.Value;
@@ -253,7 +243,7 @@ namespace Neo.IO.Caching
             {
                 RwSyncRootLock.ExitReadLock();
             }
-            item = default;
+            item = default!;
             return false;
         }
     }
