@@ -159,30 +159,6 @@ namespace Neo
         }
 
         /// <summary>
-        /// Finds the sum of the specified integers.
-        /// </summary>
-        /// <param name="source">The specified integers.</param>
-        /// <returns>The sum of the integers.</returns>
-        public static BigInteger Sum(this IEnumerable<BigInteger> source)
-        {
-            var sum = BigInteger.Zero;
-            foreach (var bi in source) sum += bi;
-            return sum;
-        }
-
-        /// <summary>
-        /// Converts a <see cref="BigInteger"/> to byte array and eliminates all the leading zeros.
-        /// </summary>
-        /// <param name="i">The <see cref="BigInteger"/> to convert.</param>
-        /// <returns>The converted byte array.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] ToByteArrayStandard(this BigInteger i)
-        {
-            if (i.IsZero) return Array.Empty<byte>();
-            return i.ToByteArray();
-        }
-
-        /// <summary>
         /// Converts a byte array to hex <see cref="string"/>.
         /// </summary>
         /// <param name="value">The byte array to convert.</param>

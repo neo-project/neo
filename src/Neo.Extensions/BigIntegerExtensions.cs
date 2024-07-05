@@ -10,12 +10,13 @@
 // modifications are permitted.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {
-    internal static class BigIntegerExtensions
+    public static class BigIntegerExtensions
     {
         internal static int GetLowestSetBit(this BigInteger i)
         {
@@ -61,6 +62,30 @@ namespace Neo.Extensions
         internal static bool TestBit(this BigInteger i, int index)
         {
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
+        }
+
+        /// <summary>
+        /// Finds the sum of the specified integers.
+        /// </summary>
+        /// <param name="source">The specified integers.</param>
+        /// <returns>The sum of the integers.</returns>
+        public static BigInteger Sum(this IEnumerable<BigInteger> source)
+        {
+            var sum = BigInteger.Zero;
+            foreach (var bi in source) sum += bi;
+            return sum;
+        }
+
+        /// <summary>
+        /// Converts a <see cref="BigInteger"/> to byte array and eliminates all the leading zeros.
+        /// </summary>
+        /// <param name="i">The <see cref="BigInteger"/> to convert.</param>
+        /// <returns>The converted byte array.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] ToByteArrayStandard(this BigInteger i)
+        {
+            if (i.IsZero) return Array.Empty<byte>();
+            return i.ToByteArray();
         }
     }
 }
