@@ -93,7 +93,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var after = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 20);
 
             Assert.AreEqual(2, before.Manifest.Abi.Events[0].Parameters.Length);
+            Assert.AreEqual(1, before.Manifest.Abi.Events.Length);
             Assert.AreEqual(4, after.Manifest.Abi.Events[0].Parameters.Length);
+            Assert.AreEqual(1, after.Manifest.Abi.Events.Length);
         }
 
         [TestMethod]
