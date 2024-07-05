@@ -161,6 +161,7 @@ namespace Neo.SmartContract.Native
             _usedHardforks =
                 _methodDescriptors.Select(u => u.ActiveIn)
                     .Concat(_methodDescriptors.Select(u => u.DeprecatedIn))
+                    .Concat(_eventsDescriptors.Select(u => u.DeprecatedIn))
                     .Concat(_eventsDescriptors.Select(u => u.ActiveIn))
                     .Concat([ActiveIn])
                     .Where(u => u is not null)
@@ -184,15 +185,7 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in _methodDescriptors.Where(u
-                             =>
-                             // no hardfork is involved
-                             u.ActiveIn is null && u.DeprecatedIn is null ||
-                             // deprecated method hardfork is involved
-                             u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, blockHeight) == false ||
-                             // active method hardfork is involved
-                             u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, blockHeight))
-                         )
+                foreach (ContractMethodMetadata method in _methodDescriptors.Where(u => IsActive(u, hfChecker, blockHeight)))
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
@@ -214,6 +207,16 @@ namespace Neo.SmartContract.Native
         /// <returns>The <see cref="ContractState"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContractState GetContractState(ProtocolSettings settings, uint blockHeight) => GetContractState(settings.IsHardforkEnabled, blockHeight);
+
+        internal static bool IsActive(IHardforkActivable u, IsHardforkEnabledDelegate hfChecker, uint blockHeight)
+        {
+            return  // no hardfork is involved
+                    u.ActiveIn is null && u.DeprecatedIn is null ||
+                    // deprecated method hardfork is involved
+                    u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, blockHeight) == false ||
+                    // active method hardfork is involved
+                    u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, blockHeight);
+        }
 
         /// <summary>
         /// The <see cref="ContractState"/> of the native contract.
@@ -245,7 +248,7 @@ namespace Neo.SmartContract.Native
                 Abi = new ContractAbi
                 {
                     Events = _eventsDescriptors
-                        .Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, blockHeight))
+                        .Where(u => IsActive(u, hfChecker, blockHeight))
                         .Select(p => p.Descriptor).ToArray(),
                     Methods = allowedMethods.Methods.Values
                         .Select(p => p.Descriptor).ToArray()
