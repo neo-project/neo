@@ -13,6 +13,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.Security.Cryptography;
@@ -60,6 +61,19 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 var manifest = ContractManifest.FromJson(json);
                 manifest.ToJson().ToString().Should().Be(json.ToString());
             }
+        }
+
+        [TestMethod]
+        public void TestEquals()
+        {
+            var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
+            var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+
+            Assert.AreNotEqual(descriptor1, descriptor2);
+
+            var descriptor3 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+
+            Assert.AreEqual(descriptor2, descriptor3);
         }
     }
 }
