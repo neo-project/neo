@@ -82,15 +82,12 @@ namespace Neo.SmartContract
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator StorageKey(byte[] value)
-        {
-            return new StorageKey(value);
-        }
+        public static implicit operator StorageKey(byte[] value) => new StorageKey(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator StorageKey(ReadOnlyMemory<byte> value)
-        {
-            return value.ToArray();
-        }
+        public static implicit operator StorageKey(ReadOnlyMemory<byte> value) => new StorageKey(value.Span.ToArray());
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new StorageKey(value.ToArray());
     }
 }
