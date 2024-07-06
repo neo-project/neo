@@ -41,84 +41,95 @@ public class UT_MemorySnapshotCache
     [TestMethod]
     public void SingleSnapshotCacheTest()
     {
-        var key1 = new byte[] { 0x01, 0x02 };
-        var value1 = new byte[] { 0x03, 0x04 };
+        var key1 = new StorageKey([0x01, 0x02,0x03,0x04,0x05,0x06]);
+        var value1 = new StorageItem([0x03, 0x04]);
 
-        _snapshotCache.Delete(new StorageKey(key1));
-        Assert.IsNull(_snapshot.TryGet(key1));
+        _snapshotCache.Delete(key1);
+        Assert.IsNull(_snapshotCache.TryGet(key1));
 
-        // Both Store and Snapshot can not get the value that are cached in the snapshot
-        _snapshot.Put(key1, value1);
-        Assert.IsNull(_snapshot.TryGet(key1));
-        Assert.IsNull(_memoryStore.TryGet(key1));
+        // Adding value to the snapshot cache will not affect the snapshot or the store
+        // But the snapshot cache itself can see the added item right after it is added.
+        _snapshotCache.Add(key1, value1);
 
-        _snapshot.Commit();
+        Assert.AreEqual(value1.Value, _snapshotCache.TryGet(key1).Value);
+        Assert.IsNull(_snapshot.TryGet(key1.ToArray()));
+        Assert.IsNull(_memoryStore.TryGet(key1.ToArray()));
 
-        // After commit the snapshot, the value can be get from the store but still can not get from the snapshot
-        CollectionAssert.AreEqual(value1, _memoryStore.TryGet(key1));
-        Assert.IsNull(_snapshot.TryGet(key1));
+        // After commit the snapshot cache, it works the same as commit the snapshot.
+        // the value can be get from the snapshot cache and store but still can not get from the snapshot
+        _snapshotCache.Commit();
 
-        _snapshot.Delete(key1);
+        Assert.AreEqual(value1.Value, _snapshotCache.TryGet(key1).Value);
+        Assert.IsFalse(_snapshot.Contains(key1.ToArray()));
+        Assert.IsTrue(_memoryStore.Contains(key1.ToArray()));
 
-        // Deleted value can not being found from the snapshot but can still get from the store
-        Assert.IsFalse(_snapshot.Contains(key1));
-        Assert.IsTrue(_memoryStore.Contains(key1));
+        // Test delete
 
-        _snapshot.Commit();
+        // Reset the snapshot to make it accessible to the new value.
+        _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
+        _snapshotCache = new SnapshotCache(_snapshot);
 
-        // After commit the snapshot, the value can not be found from the store
-        Assert.IsFalse(_memoryStore.Contains(key1));
+        // Delete value to the snapshot cache will not affect the snapshot or the store
+        // But the snapshot cache itself can not see the added item.
+        _snapshotCache.Delete(key1);
 
-        // Test seek in order
-        _snapshot.Put([0x00, 0x00, 0x04], [0x04]);
-        _snapshot.Put([0x00, 0x00, 0x00], [0x00]);
-        _snapshot.Put([0x00, 0x00, 0x01], [0x01]);
-        _snapshot.Put([0x00, 0x00, 0x02], [0x02]);
-        _snapshot.Put([0x00, 0x00, 0x03], [0x03]);
+        // Value is removed from the snapshot cache immediately
+        Assert.IsNull(_snapshotCache.TryGet(key1));
+        // But the underline snapshot will not be changed.
+        Assert.IsTrue(_snapshot.Contains(key1.ToArray()));
+        // And the store is also not affected.
+        Assert.IsNotNull(_memoryStore.TryGet(key1.ToArray()));
 
-        // Can not get anything from the snapshot
-        var entries = _snapshot.Seek([0x00, 0x00, 0x02]).ToArray();
-        Assert.AreEqual(0, entries.Length);
+        // commit the snapshot cache
+        _snapshotCache.Commit();
+
+        _snapshotCache.Delete(key1);
+        // Value is removed from both the cache and store, but the snapshot remains the same.
+        Assert.IsNull(_snapshotCache.TryGet(key1));
+        Assert.IsTrue(_snapshot.Contains(key1.ToArray()));
+        Assert.IsFalse(_memoryStore.Contains(key1.ToArray()));
     }
 
     [TestMethod]
     public void MultiSnapshotCacheTest()
     {
-        var key1 = new byte[] { 0x01, 0x02 };
-        var value1 = new byte[] { 0x03, 0x04 };
+        var key1 = new StorageKey([0x01, 0x02,0x03,0x04,0x05,0x06]);
+        var value1 = new StorageItem([0x03, 0x04]);
 
-        _snapshot.Delete(key1);
-        Assert.IsNull(_snapshot.TryGet(key1));
+        _snapshotCache.Delete(key1);
+        Assert.IsNull(_snapshotCache.TryGet(key1));
 
-        // Both Store and Snapshot can not get the value that are cached in the snapshot
-        _snapshot.Put(key1, value1);
-        // After commit the snapshot, the value can be get from the store but still can not get from the snapshot
-        // But can get the value from a new snapshot
-        _snapshot.Commit();
-        var snapshot2 = _memoryStore.GetSnapshot();
-        CollectionAssert.AreEqual(value1, _memoryStore.TryGet(key1));
-        Assert.IsNull(_snapshot.TryGet(key1));
-        CollectionAssert.AreEqual(value1, snapshot2.TryGet(key1));
+        // Adding value to the snapshot cache will not affect the snapshot or the store
+        // But the snapshot cache itself can see the added item.
+        _snapshotCache.Add(key1, value1);
 
-        _snapshot.Delete(key1);
+        // After commit the snapshot cache, it works the same as commit the snapshot.
+        // the value can be get from the snapshot cache but still can not get from the snapshot
+        _snapshotCache.Commit();
 
-        // Deleted value can not being found from the snapshot but can still get from the store and snapshot2
-        Assert.IsFalse(_snapshot.Contains(key1));
-        Assert.IsTrue(_memoryStore.Contains(key1));
-        Assert.IsTrue(snapshot2.Contains(key1));
+        // Get a new snapshot cache to test if the value can be seen from the new snapshot cache
+        var snapshotCache2 = new SnapshotCache(_snapshot);
+        Assert.IsNull(snapshotCache2.TryGet(key1));
+        Assert.IsFalse(_snapshot.Contains(key1.ToArray()));
 
-        _snapshot.Commit();
+        // Test delete
 
-        // After commit the snapshot, the value can not be found from the store, but can be found in snapshots
-        // Cause snapshot1 or store can not change the status of snapshot2.
-        Assert.IsFalse(_memoryStore.Contains(key1));
-        Assert.IsTrue(snapshot2.Contains(key1));
-        Assert.IsFalse(_snapshot.Contains(key1));
+        // Reset the snapshot to make it accessible to the new value.
+        _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
+        _snapshotCache = new SnapshotCache(_snapshot);
 
-        // Add value via snapshot2 will not affect snapshot1 at all
-        snapshot2.Put(key1, value1);
-        snapshot2.Commit();
-        Assert.IsNull(_snapshot.TryGet(key1));
-        CollectionAssert.AreEqual(value1, snapshot2.TryGet(key1));
+        // Delete value to the snapshot cache will affect the snapshot
+        // But the snapshot and store itself can still see the item.
+        _snapshotCache.Delete(key1);
+
+        // Commiting the snapshot cache will change the store, but the existing snapshot remains same.
+        _snapshotCache.Commit();
+
+        // reset the snapshotcache2 to snapshot
+        snapshotCache2 = new SnapshotCache(_snapshot);
+        // Value is removed from the store, but the snapshot remains the same.
+        // thus the snapshot cache from the snapshot will remain the same.
+        Assert.IsNotNull(snapshotCache2.TryGet(key1));
+        Assert.IsNull(_memoryStore.TryGet(key1.ToArray()));
     }
 }

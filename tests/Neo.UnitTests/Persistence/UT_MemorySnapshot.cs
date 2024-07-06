@@ -56,7 +56,8 @@ public class UT_MemorySnapshot
 
         _snapshot.Delete(key1);
 
-        // Deleted value can not being found from the snapshot but can still get from the store
+        // Deleted value can not be found from the snapshot but can still get from the store
+        // This is because snapshot has no key1 at all.
         Assert.IsFalse(_snapshot.Contains(key1));
         Assert.IsTrue(_memoryStore.Contains(key1));
 
