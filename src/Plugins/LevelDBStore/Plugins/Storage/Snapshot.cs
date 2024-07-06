@@ -11,6 +11,7 @@
 
 using Neo.IO.Data.LevelDB;
 using Neo.Persistence;
+using System;
 using System.Collections.Generic;
 using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
 
@@ -22,6 +23,7 @@ namespace Neo.Plugins.Storage
         private readonly LSnapshot snapshot;
         private readonly ReadOptions options;
         private readonly WriteBatch batch;
+        private bool isCommitted = false;
 
         public Snapshot(DB db)
         {
@@ -34,10 +36,13 @@ namespace Neo.Plugins.Storage
         public void Commit()
         {
             db.Write(WriteOptions.Default, batch);
+            isCommitted = true;
         }
 
         public void Delete(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             batch.Delete(key);
         }
 
@@ -48,21 +53,25 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
             return db.Seek(options, prefix, direction, (k, v) => (k, v));
         }
 
         public void Put(byte[] key, byte[] value)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
             batch.Put(key, value);
         }
 
         public bool Contains(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
             return db.Contains(options, key);
         }
 
         public byte[] TryGet(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
             return db.Get(options, key);
         }
     }

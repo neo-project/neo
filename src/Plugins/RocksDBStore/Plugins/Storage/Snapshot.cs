@@ -22,6 +22,7 @@ namespace Neo.Plugins.Storage
         private readonly RocksDbSharp.Snapshot snapshot;
         private readonly WriteBatch batch;
         private readonly ReadOptions options;
+        private bool isCommitted = false;
 
         public Snapshot(RocksDb db)
         {
@@ -37,20 +38,27 @@ namespace Neo.Plugins.Storage
         public void Commit()
         {
             db.Write(batch, Options.WriteDefault);
+            isCommitted = true;
         }
 
         public void Delete(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             batch.Delete(key);
         }
 
         public void Put(byte[] key, byte[] value)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             batch.Put(key, value);
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();
 
             using var it = db.NewIterator(readOptions: options);
@@ -65,11 +73,15 @@ namespace Neo.Plugins.Storage
 
         public bool Contains(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             return db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: options) >= 0;
         }
 
         public byte[] TryGet(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             return db.Get(key, readOptions: options);
         }
 

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -19,6 +20,7 @@ namespace Neo.Persistence
 {
     internal class MemorySnapshot : ISnapshot
     {
+        private bool isCommitted = false;
         private readonly ConcurrentDictionary<byte[], byte[]> innerData;
         private readonly ImmutableDictionary<byte[], byte[]> immutableData;
         private readonly ConcurrentDictionary<byte[], byte[]> writeBatch;
@@ -37,10 +39,13 @@ namespace Neo.Persistence
                     innerData.TryRemove(pair.Key, out _);
                 else
                     innerData[pair.Key] = pair.Value;
+            isCommitted = true;
         }
 
         public void Delete(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             writeBatch[key] = null;
         }
 
@@ -50,11 +55,15 @@ namespace Neo.Persistence
 
         public void Put(byte[] key, byte[] value)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             writeBatch[key[..]] = value[..];
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = immutableData;
             if (keyOrPrefix?.Length > 0)
@@ -65,12 +74,16 @@ namespace Neo.Persistence
 
         public byte[] TryGet(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             immutableData.TryGetValue(key, out byte[] value);
             return value?[..];
         }
 
         public bool Contains(byte[] key)
         {
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed snapshot.");
+
             return immutableData.ContainsKey(key);
         }
     }
