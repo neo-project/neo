@@ -11,4 +11,8 @@
     <PackageReference Include="rocksdb" Version="8.11.3.46984" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
+  </ItemGroup>
+
 </Project>

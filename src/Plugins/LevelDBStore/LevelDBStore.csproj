@@ -8,4 +8,8 @@
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
+  </ItemGroup>
+
 </Project>
