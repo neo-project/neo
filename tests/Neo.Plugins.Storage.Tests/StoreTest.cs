@@ -75,7 +75,6 @@ namespace Neo.Plugins.Storage.Tests
         [TestMethod]
         public void TestLevelDbSnapshot()
         {
-            ReSetStore();
             using var store = levelDbStore.GetStore(path_leveldb);
 
             var snapshot = store.GetSnapshot();
@@ -105,7 +104,6 @@ namespace Neo.Plugins.Storage.Tests
         [TestMethod]
         public void TestLevelDbMultiSnapshot()
         {
-            ReSetStore();
             using var store = levelDbStore.GetStore(path_leveldb);
 
             var snapshot = store.GetSnapshot();
@@ -146,7 +144,6 @@ namespace Neo.Plugins.Storage.Tests
         [TestMethod]
         public void TestRocksDbSnapshot()
         {
-            ReSetStore();
             using var store = rocksDBStore.GetStore(path_leveldb);
 
             var snapshot = store.GetSnapshot();
@@ -177,7 +174,6 @@ namespace Neo.Plugins.Storage.Tests
         [TestMethod]
         public void TestRocksDbMultiSnapshot()
         {
-            ReSetStore();
             using var store = rocksDBStore.GetStore(path_leveldb);
 
             var snapshot = store.GetSnapshot();
