@@ -48,8 +48,7 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return db.Seek(options, prefix, direction, (k, v) => (k, v))
-                ?? db.Seek(ReadOptions.Default, prefix, direction, (k, v) => (k, v));
+            return db.Seek(options, prefix, direction, (k, v) => (k, v));
         }
 
         public void Put(byte[] key, byte[] value)
@@ -59,12 +58,12 @@ namespace Neo.Plugins.Storage
 
         public bool Contains(byte[] key)
         {
-            return db.Contains(options, key) || db.Contains(ReadOptions.Default, key);
+            return db.Contains(options, key);
         }
 
         public byte[] TryGet(byte[] key)
         {
-            return db.Get(options, key) ?? db.Get(ReadOptions.Default, key);
+            return db.Get(options, key);
         }
     }
 }

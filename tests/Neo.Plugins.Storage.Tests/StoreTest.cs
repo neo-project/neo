@@ -93,10 +93,10 @@ namespace Neo.Plugins.Storage.Tests
 
             snapshot.Commit();
 
-            // After commit, the data shall be visible to the store and to the snapshot
-            CollectionAssert.AreEqual(testValue, snapshot.TryGet(testKey));
+            // After commit, the data shall be visible to the store but not to the snapshot
+            Assert.IsNull(snapshot.TryGet(testKey));
             CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
-            Assert.AreEqual(true, snapshot.Contains(testKey));
+            Assert.AreEqual(false, snapshot.Contains(testKey));
             Assert.AreEqual(true, store.Contains(testKey));
 
             snapshot.Dispose();
@@ -109,7 +109,6 @@ namespace Neo.Plugins.Storage.Tests
             using var store = levelDbStore.GetStore(path_leveldb);
 
             var snapshot = store.GetSnapshot();
-            var snapshot2 = store.GetSnapshot();
 
             var testKey = new byte[] { 0x01, 0x02, 0x03 };
             var testValue = new byte[] { 0x04, 0x05, 0x06 };
@@ -118,8 +117,11 @@ namespace Neo.Plugins.Storage.Tests
             snapshot.Commit();
             CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
 
-            // Data saved to the leveldb from snapshot1 shall also be visible to snapshot2
+            var snapshot2 = store.GetSnapshot();
+
+            // Data saved to the leveldb from snapshot1 shall be visible to snapshot2 but not visible to snapshot1
             CollectionAssert.AreEqual(testValue, snapshot2.TryGet(testKey));
+            Assert.IsNull(snapshot.TryGet(testKey));
 
             snapshot.Dispose();
             snapshot2.Dispose();
@@ -153,8 +155,9 @@ namespace Neo.Plugins.Storage.Tests
             var testValue = new byte[] { 0x04, 0x05, 0x06 };
 
             snapshot.Put(testKey, testValue);
-            // Data saved to the leveldb snapshot shall not be visible to the store
+            // Data saved to the leveldb snapshot shall not be visible
             Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsNull(store.TryGet(testKey));
 
             // Value is in the write batch, not visible to the store and snapshot
             Assert.AreEqual(false, snapshot.Contains(testKey));
@@ -162,10 +165,10 @@ namespace Neo.Plugins.Storage.Tests
 
             snapshot.Commit();
 
-            // After commit, the data shall be visible to the store and to the snapshot
-            CollectionAssert.AreEqual(testValue, snapshot.TryGet(testKey));
+            // After commit, the data shall be visible to the store but not to the snapshot
+            Assert.IsNull(snapshot.TryGet(testKey));
             CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
-            Assert.AreEqual(true, snapshot.Contains(testKey));
+            Assert.AreEqual(false, snapshot.Contains(testKey));
             Assert.AreEqual(true, store.Contains(testKey));
 
             snapshot.Dispose();
@@ -178,7 +181,6 @@ namespace Neo.Plugins.Storage.Tests
             using var store = rocksDBStore.GetStore(path_leveldb);
 
             var snapshot = store.GetSnapshot();
-            var snapshot2 = store.GetSnapshot();
 
             var testKey = new byte[] { 0x01, 0x02, 0x03 };
             var testValue = new byte[] { 0x04, 0x05, 0x06 };
@@ -187,7 +189,8 @@ namespace Neo.Plugins.Storage.Tests
             snapshot.Commit();
             CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
 
-            // Data saved to the leveldb from snapshot1 shall also be visible to snapshot2
+            var snapshot2 = store.GetSnapshot();
+            // Data saved to the leveldb from snapshot1 shall only be visible to snapshot2
             CollectionAssert.AreEqual(testValue, snapshot2.TryGet(testKey));
 
             snapshot.Dispose();

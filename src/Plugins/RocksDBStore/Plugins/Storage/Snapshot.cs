@@ -65,12 +65,12 @@ namespace Neo.Plugins.Storage
 
         public bool Contains(byte[] key)
         {
-            return db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: options) >= 0 || db.Get(key, Array.Empty<byte>(), 0, 0) >= 0;
+            return db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: options) >= 0;
         }
 
         public byte[] TryGet(byte[] key)
         {
-            return db.Get(key, readOptions: options) ?? db.Get(key);
+            return db.Get(key, readOptions: options);
         }
 
         public void Dispose()
