@@ -12,6 +12,7 @@
 using Neo.Cryptography;
 using System;
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
 {
@@ -78,6 +79,18 @@ namespace Neo.SmartContract
                 Key.CopyTo(cache.AsMemory(sizeof(int)));
             }
             return cache;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator StorageKey(byte[] value)
+        {
+            return new StorageKey(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator StorageKey(ReadOnlyMemory<byte> value)
+        {
+            return value.ToArray();
         }
     }
 }
