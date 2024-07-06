@@ -41,7 +41,7 @@ public class UT_MemorySnapshotCache
     [TestMethod]
     public void SingleSnapshotCacheTest()
     {
-        var key1 = new StorageKey([0x01, 0x02,0x03,0x04,0x05,0x06]);
+        var key1 = new KeyBuilder(0, 1);
         var value1 = new StorageItem([0x03, 0x04]);
 
         _snapshotCache.Delete(key1);
@@ -83,9 +83,8 @@ public class UT_MemorySnapshotCache
         // commit the snapshot cache
         _snapshotCache.Commit();
 
-        _snapshotCache.Delete(key1);
-        // Value is removed from both the cache and store, but the snapshot remains the same.
-        Assert.IsNull(_snapshotCache.TryGet(key1));
+        // Value is removed from both the store, but the snapshot and snapshot cache remains the same.
+        Assert.IsTrue(_snapshotCache.Contains(key1));
         Assert.IsTrue(_snapshot.Contains(key1.ToArray()));
         Assert.IsFalse(_memoryStore.Contains(key1.ToArray()));
     }
@@ -93,7 +92,7 @@ public class UT_MemorySnapshotCache
     [TestMethod]
     public void MultiSnapshotCacheTest()
     {
-        var key1 = new StorageKey([0x01, 0x02,0x03,0x04,0x05,0x06]);
+        var key1 = new KeyBuilder(0, 1);
         var value1 = new StorageItem([0x03, 0x04]);
 
         _snapshotCache.Delete(key1);
