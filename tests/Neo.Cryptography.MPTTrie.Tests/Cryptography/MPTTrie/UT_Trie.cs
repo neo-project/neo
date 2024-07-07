@@ -170,9 +170,9 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var snapshot2 = store.GetSnapshot();
             var mpt2 = new Trie(snapshot2, mpt1.Root.Hash);
             Assert.IsTrue(mpt2.Delete("ac00".HexToBytes()));
+            Assert.IsTrue(mpt2.Delete("ac10".HexToBytes()));
             mpt2.Commit();
             snapshot2.Commit();
-            Assert.IsTrue(mpt2.Delete("ac10".HexToBytes()));
         }
 
         [TestMethod]
