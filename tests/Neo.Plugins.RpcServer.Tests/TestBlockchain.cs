@@ -43,7 +43,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
         internal static DataCache GetTestSnapshot()
         {
-            return TheNeoSystem.GetSnapshot().CreateSnapshot();
+            return TheNeoSystem.GetSnapshotCache().CloneCache();
         }
     }
 }

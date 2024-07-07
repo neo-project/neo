@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TrimTest()
         {
             UInt256 val256 = UInt256.Zero;
-            var snapshot = TestBlockchain.GetTestSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot().CloneCache();
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
 

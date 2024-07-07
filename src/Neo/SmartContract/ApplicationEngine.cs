@@ -460,7 +460,7 @@ namespace Neo.SmartContract
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             ExecutionContextState state = context.GetState<ExecutionContextState>();
-            state.Snapshot = Snapshot?.CreateSnapshot();
+            state.Snapshot = Snapshot?.CloneCache();
             configureState?.Invoke(state);
 
             // Load context
