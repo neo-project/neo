@@ -1,12 +1,12 @@
-#!/usr/bin/expect -f
+#!/usr/bin/expect -d -f
 #
 # This script uses expect to test neo-cli
 #
 set timeout 10
-
+exp_internal true
 
 # Start neo-cli
-spawn dotnet out/Neo.CLI/neo-cli.dll
+spawn dotnet ./bin/Neo.CLI/net8.0/neo-cli.dll
 
 # Expect the main input prompt
 expect {
