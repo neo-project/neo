@@ -17,6 +17,27 @@ namespace Neo.Extensions
     public static class ByteExtensions2
     {
         /// <summary>
+        /// Compresses the specified data using the LZ4 algorithm.
+        /// </summary>
+        /// <param name="data">The data to be compressed.</param>
+        /// <returns>The compressed data.</returns>
+        public static ReadOnlyMemory<byte> CompressLz4(this byte[] data)
+        {
+            return data.AsSpan().CompressLz4();
+        }
+
+        /// <summary>
+        /// Decompresses the specified data using the LZ4 algorithm.
+        /// </summary>
+        /// <param name="data">The compressed data.</param>
+        /// <param name="maxOutput">The maximum data size after decompression.</param>
+        /// <returns>The original data.</returns>
+        public static byte[] DecompressLz4(this byte[] data, int maxOutput)
+        {
+            return data.AsSpan().DecompressLz4(maxOutput);
+        }
+
+        /// <summary>
         /// Converts a byte array to an <see cref="ISerializable"/> object.
         /// </summary>
         /// <typeparam name="T">The type to convert to.</typeparam>

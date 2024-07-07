@@ -22,9 +22,13 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="data">The data to be compressed.</param>
         /// <returns>The compressed data.</returns>
-        public static ReadOnlyMemory<byte> CompressLz4(this byte[] data)
+        public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
         {
-            return CompressLz4(data.AsSpan());
+            var maxLength = LZ4Codec.MaximumOutputSize(data.Length);
+            var buffer = new byte[sizeof(uint) + maxLength];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
+            var length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
+            return buffer.AsMemory(0, sizeof(uint) + length);
         }
 
         /// <summary>
@@ -32,7 +36,7 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="data">The data to be compressed.</param>
         /// <returns>The compressed data.</returns>
-        public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
+        public static ReadOnlyMemory<byte> CompressLz4(this Span<byte> data)
         {
             var maxLength = LZ4Codec.MaximumOutputSize(data.Length);
             var buffer = new byte[sizeof(uint) + maxLength];
@@ -47,9 +51,14 @@ namespace Neo.Extensions
         /// <param name="data">The compressed data.</param>
         /// <param name="maxOutput">The maximum data size after decompression.</param>
         /// <returns>The original data.</returns>
-        public static byte[] DecompressLz4(this byte[] data, int maxOutput)
+        public static byte[] DecompressLz4(this ReadOnlySpan<byte> data, int maxOutput)
         {
-            return DecompressLz4(data.AsSpan(), maxOutput);
+            var length = BinaryPrimitives.ReadInt32LittleEndian(data);
+            if (length < 0 || length > maxOutput) throw new FormatException();
+            var result = new byte[length];
+            if (LZ4Codec.Decode(data[4..], result) != length)
+                throw new FormatException();
+            return result;
         }
 
         /// <summary>
@@ -58,7 +67,7 @@ namespace Neo.Extensions
         /// <param name="data">The compressed data.</param>
         /// <param name="maxOutput">The maximum data size after decompression.</param>
         /// <returns>The original data.</returns>
-        public static byte[] DecompressLz4(this ReadOnlySpan<byte> data, int maxOutput)
+        public static byte[] DecompressLz4(this Span<byte> data, int maxOutput)
         {
             var length = BinaryPrimitives.ReadInt32LittleEndian(data);
             if (length < 0 || length > maxOutput) throw new FormatException();
