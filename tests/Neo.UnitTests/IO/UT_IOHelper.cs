@@ -110,23 +110,12 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializable()
         {
-            for (int i = 0; i < 2; i++)
-            {
-                if (i == 0)
-                {
-                    byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00 };
-                    ISerializable result = Neo.IO.Helper.AsSerializable(caseArray, typeof(UInt160));
-                    Assert.AreEqual(UInt160.Zero, result);
-                }
-                else
-                {
-                    Action action = () => Neo.IO.Helper.AsSerializable(Array.Empty<byte>(), typeof(double));
-                    action.Should().Throw<InvalidCastException>();
-                }
-            }
+            byte[] caseArray = [0x00,0x00,0x00,0x00,0x00,
+                                0x00,0x00,0x00,0x00,0x00,
+                                0x00,0x00,0x00,0x00,0x00,
+                                0x00,0x00,0x00,0x00,0x00];
+            ISerializable result = caseArray.AsSerializable<UInt160>();
+            Assert.AreEqual(UInt160.Zero, result);
         }
 
         [TestMethod]
@@ -164,7 +153,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializableArray()
         {
-            byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
+            byte[] byteArray = new UInt160[] { UInt160.Zero }.ToByteArray();
             UInt160[] result = Neo.IO.Helper.AsSerializableArray<UInt160>(byteArray);
             Assert.AreEqual(1, result.Length);
             Assert.AreEqual(UInt160.Zero, result[0]);
@@ -234,7 +223,7 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    int result = Neo.IO.Helper.GetVarSize(new UInt160[] { UInt160.Zero });
+                    int result = new UInt160[] { UInt160.Zero }.GetVarSize();
                     Assert.AreEqual(21, result);
                 }
                 else if (i == 1)//sbyte
@@ -244,7 +233,7 @@ namespace Neo.UnitTests.IO
                         TestEnum0.case1
                     };
                     IReadOnlyCollection<TestEnum0> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    int result = testList.GetVarSize();
                     Assert.AreEqual(2, result);
                 }
                 else if (i == 2)//byte
@@ -254,7 +243,7 @@ namespace Neo.UnitTests.IO
                         TestEnum1.case1
                     };
                     IReadOnlyCollection<TestEnum1> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    int result = testList.GetVarSize();
                     Assert.AreEqual(2, result);
                 }
                 else if (i == 3)//short
@@ -264,7 +253,7 @@ namespace Neo.UnitTests.IO
                         TestEnum2.case1
                     };
                     IReadOnlyCollection<TestEnum2> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    int result = testList.GetVarSize();
                     Assert.AreEqual(3, result);
                 }
                 else if (i == 4)//ushort
@@ -274,7 +263,7 @@ namespace Neo.UnitTests.IO
                         TestEnum3.case1
                     };
                     IReadOnlyCollection<TestEnum3> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    int result = testList.GetVarSize();
                     Assert.AreEqual(3, result);
                 }
                 else if (i == 5)//int
@@ -284,7 +273,7 @@ namespace Neo.UnitTests.IO
                         TestEnum4.case1
                     };
                     IReadOnlyCollection<TestEnum4> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    int result = testList.GetVarSize();
                     Assert.AreEqual(5, result);
                 }
                 else if (i == 6)//uint
@@ -294,7 +283,7 @@ namespace Neo.UnitTests.IO
                         TestEnum5.case1
                     };
                     IReadOnlyCollection<TestEnum5> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    int result = testList.GetVarSize();
                     Assert.AreEqual(5, result);
                 }
                 else if (i == 7)//long
@@ -304,7 +293,7 @@ namespace Neo.UnitTests.IO
                         TestEnum6.case1
                     };
                     IReadOnlyCollection<TestEnum6> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    int result = testList.GetVarSize();
                     Assert.AreEqual(9, result);
                 }
                 else if (i == 8)
@@ -314,7 +303,7 @@ namespace Neo.UnitTests.IO
                         1
                     };
                     IReadOnlyCollection<int> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize<int>(testList);
+                    int result = testList.GetVarSize<int>();
                     Assert.AreEqual(5, result);
                 }
             }
@@ -413,7 +402,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestToByteArrayGeneric()
         {
-            byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
+            byte[] byteArray = new UInt160[] { UInt160.Zero }.ToByteArray();
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01,0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
