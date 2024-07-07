@@ -25,8 +25,6 @@ namespace Neo
     /// </summary>
     public static class Helper
     {
-        private static readonly DateTime unixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
         internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
         {
             if (set.Count > other.Count)
@@ -101,26 +99,6 @@ namespace Neo
             else
                 b[^1] &= (byte)((1 << sizeInBits % 8) - 1);
             return new BigInteger(b);
-        }
-
-        /// <summary>
-        /// Converts a <see cref="DateTime"/> to timestamp.
-        /// </summary>
-        /// <param name="time">The <see cref="DateTime"/> to convert.</param>
-        /// <returns>The converted timestamp.</returns>
-        public static uint ToTimestamp(this DateTime time)
-        {
-            return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
-        }
-
-        /// <summary>
-        /// Converts a <see cref="DateTime"/> to timestamp in milliseconds.
-        /// </summary>
-        /// <param name="time">The <see cref="DateTime"/> to convert.</param>
-        /// <returns>The converted timestamp.</returns>
-        public static ulong ToTimestampMS(this DateTime time)
-        {
-            return (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
         }
 
         /// <summary>
