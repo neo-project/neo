@@ -177,17 +177,17 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    int result = Neo.IO.Helper.GetVarSize(1);
+                    int result = UnsafeData.GetVarSize(1);
                     Assert.AreEqual(1, result);
                 }
                 else if (i == 1)
                 {
-                    int result = Neo.IO.Helper.GetVarSize(0xFFFF);
+                    int result = UnsafeData.GetVarSize(0xFFFF);
                     Assert.AreEqual(3, result);
                 }
                 else
                 {
-                    int result = Neo.IO.Helper.GetVarSize(0xFFFFFF);
+                    int result = UnsafeData.GetVarSize(0xFFFFFF);
                     Assert.AreEqual(5, result);
                 }
             }
@@ -323,7 +323,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGetVarSizeString()
         {
-            int result = Neo.IO.Helper.GetVarSize("AA");
+            int result = "AA".GetVarSize();
             Assert.AreEqual(3, result);
         }
 

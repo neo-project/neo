@@ -32,5 +32,16 @@ namespace Neo.Extensions
                 result[i] = byte.Parse(value.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier);
             return result;
         }
+
+        /// <summary>
+        /// Gets the size of the specified <see cref="string"/> encoded in variable-length encoding.
+        /// </summary>
+        /// <param name="value">The specified <see cref="string"/>.</param>
+        /// <returns>The size of the <see cref="string"/>.</returns>
+        public static int GetVarSize(this string value)
+        {
+            var size = Utility.StrictUTF8.GetByteCount(value);
+            return UnsafeData.GetVarSize(size) + size;
+        }
     }
 }
