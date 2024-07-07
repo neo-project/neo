@@ -530,7 +530,7 @@ namespace Neo.Plugins.OracleService
             }
             ECPoint[] oraclesNodes = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
             int neededThreshold = oraclesNodes.Length - (oraclesNodes.Length - 1) / 3;
-            if (OracleSigns.Count >= neededThreshold && tx != null)
+            if (OracleSigns.Count >= neededThreshold)
             {
                 var contract = Contract.CreateMultiSigContract(neededThreshold, oraclesNodes);
                 ScriptBuilder sb = new ScriptBuilder();
