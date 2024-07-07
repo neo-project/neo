@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.MPTTrie;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.Plugins.StateService.Network;
 using System;
