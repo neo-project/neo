@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;

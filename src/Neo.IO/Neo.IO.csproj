@@ -12,7 +12,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.UnitTests" />
-    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+    <InternalsVisibleTo Include="Neo.Extensions" />
   </ItemGroup>
 
   <ItemGroup>

@@ -217,10 +217,10 @@ namespace Neo.UnitTests
         public void TestUnmapForIPAddress()
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
-            addr.Unmap().Should().Be(addr);
+            addr.UnMap().Should().Be(addr);
 
             var addr2 = addr.MapToIPv6();
-            addr2.Unmap().Should().Be(addr);
+            addr2.UnMap().Should().Be(addr);
         }
 
         [TestMethod]
@@ -228,11 +228,11 @@ namespace Neo.UnitTests
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
             var endPoint = new IPEndPoint(addr, 8888);
-            endPoint.Unmap().Should().Be(endPoint);
+            endPoint.UnMap().Should().Be(endPoint);
 
             var addr2 = addr.MapToIPv6();
             var endPoint2 = new IPEndPoint(addr2, 8888);
-            endPoint2.Unmap().Should().Be(endPoint);
+            endPoint2.UnMap().Should().Be(endPoint);
         }
     }
 }
