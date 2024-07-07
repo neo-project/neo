@@ -124,18 +124,12 @@ jobs:
     - name: Set Version
       run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
 
-    - name : Pack (Neo)
+    - name : Pack (Everything)
       run: |
         dotnet pack \
         --configuration Release \
         --output ./out \
         --version-suffix ${{ env.VERSION_SUFFIX }}
-
-    - name: Remove Unwanted Files
-      working-directory: ./out
-      run: |
-        rm -v Neo.CLI*
-        rm -v Neo.GUI*
 
     - name: Publish to Github Packages
       working-directory: ./out
