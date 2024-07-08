@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestActiveDeprecatedIn()
         {
-            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Cockatrice\": 20");
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
             ProtocolSettings settings = ProtocolSettings.Load(file, false);
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestIsInitializeBlock()
         {
-            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Cockatrice\": 20");
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
