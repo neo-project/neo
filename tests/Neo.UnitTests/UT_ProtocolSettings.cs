@@ -52,7 +52,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestBAndNotA()
         {
-            string json = CreateHKSettings("\"HF_Basilisk\": 4120000");
+            string json = CreateHFSettings("\"HF_Basilisk\": 4120000");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
@@ -74,7 +74,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestAAndNotB()
         {
-            string json = CreateHKSettings("\"HF_Aspidochelone\": 0");
+            string json = CreateHFSettings("\"HF_Aspidochelone\": 0");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
@@ -96,7 +96,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestNone()
         {
-            string json = CreateHKSettings("");
+            string json = CreateHFSettings("");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
@@ -117,14 +117,14 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestAMoreThanB()
         {
-            string json = CreateHKSettings("\"HF_Aspidochelone\": 4120001, \"HF_Basilisk\": 4120000");
+            string json = CreateHFSettings("\"HF_Aspidochelone\": 4120001, \"HF_Basilisk\": 4120000");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
             Assert.ThrowsException<ArgumentException>(() => ProtocolSettings.Load(file, false));
             File.Delete(file);
         }
 
-        internal static string CreateHKSettings(string hf)
+        internal static string CreateHFSettings(string hf)
         {
             return @"
 {
