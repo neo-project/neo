@@ -58,6 +58,28 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.ResetStore();
         }
 
+        class active : IHardforkActivable
+        {
+            public Hardfork? ActiveIn { get; init; }
+            public Hardfork? DeprecatedIn { get; init; }
+        }
+
+        [TestMethod]
+        public void TestActiveDeprecatedIn()
+        {
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            File.Delete(file);
+
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 1));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 20));
+
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 1));
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
+        }
+
         [TestMethod]
         public void TestGetContract()
         {
@@ -67,7 +89,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestIsInitializeBlock()
         {
-            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Cockatrice\": 20");
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
