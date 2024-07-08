@@ -168,7 +168,7 @@ namespace Neo.Persistence
         /// <param name="key">The key of the entry.</param>
         public void Delete(StorageKey key)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
             lock (dictionary)
             {
                 if (dictionary.TryGetValue(key, out Trackable trackable))
@@ -213,7 +213,7 @@ namespace Neo.Persistence
         /// <returns>The entries found with the desired prefix.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[] key_prefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             var seek_prefix = key_prefix;
             if (direction == SeekDirection.Backward)
@@ -243,7 +243,7 @@ namespace Neo.Persistence
 
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[] key_prefix, byte[] seek_prefix, SeekDirection direction)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             foreach (var (key, value) in Seek(seek_prefix, direction))
                 if (key.ToArray().AsSpan().StartsWith(key_prefix))
@@ -261,7 +261,7 @@ namespace Neo.Persistence
         /// <returns>The entries found with the desired range.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             ByteArrayComparer comparer = direction == SeekDirection.Forward
                 ? ByteArrayComparer.Default
@@ -279,7 +279,7 @@ namespace Neo.Persistence
         /// <returns>The change set.</returns>
         public IEnumerable<Trackable> GetChangeSet()
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             lock (dictionary)
             {
@@ -295,7 +295,7 @@ namespace Neo.Persistence
         /// <returns><see langword="true"/> if the cache contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
         public bool Contains(StorageKey key)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             lock (dictionary)
             {
@@ -327,7 +327,7 @@ namespace Neo.Persistence
         /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
         public StorageItem GetAndChange(StorageKey key, Func<StorageItem> factory = null)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             lock (dictionary)
             {
@@ -385,7 +385,7 @@ namespace Neo.Persistence
         /// <returns>The cached data.</returns>
         public StorageItem GetOrAdd(StorageKey key, Func<StorageItem> factory)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             lock (dictionary)
             {
@@ -436,7 +436,7 @@ namespace Neo.Persistence
         /// <returns>An enumerator containing all the entries after seeking.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
@@ -502,7 +502,7 @@ namespace Neo.Persistence
         /// <returns>The cached data. Or <see langword="null"/> if it is neither in the cache nor in the underlying storage.</returns>
         public StorageItem TryGet(StorageKey key)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             lock (dictionary)
             {
