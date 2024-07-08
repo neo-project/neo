@@ -124,7 +124,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestVerifyWitnesses()
         {
-            var snapshot1 = TestBlockchain.GetTestSnapshot().CreateSnapshot();
+            var snapshot1 = TestBlockchain.GetTestSnapshotCache().CreateSnapshot();
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TestUtils.BlocksAdd(snapshot1, index1, new TrimmedBlock()
             {
@@ -141,7 +141,7 @@ namespace Neo.UnitTests.SmartContract
             TestUtils.BlocksDelete(snapshot1, index1);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshot1, 100));
 
-            var snapshot2 = TestBlockchain.GetTestSnapshot();
+            var snapshot2 = TestBlockchain.GetTestSnapshotCache();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new()
             {
@@ -162,7 +162,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot2.DeleteContract(UInt160.Zero);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, TestProtocolSettings.Default, snapshot2, 100));
 
-            var snapshot3 = TestBlockchain.GetTestSnapshot();
+            var snapshot3 = TestBlockchain.GetTestSnapshotCache();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block3 = new()
             {

@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void MemoryCompare()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             using (var script = new ScriptBuilder())
             {
@@ -83,7 +83,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void CheckDecodeEncode()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             using (ScriptBuilder script = new())
             {
@@ -137,7 +137,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void MemorySearch()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             using (var script = new ScriptBuilder())
             {
@@ -203,7 +203,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void StringSplit()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "a,b", ",");
@@ -223,7 +223,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void StringElementLength()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "🦆");
@@ -246,7 +246,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Simulating invalid UTF-8 byte (0xff) decoded as a UTF-16 char
             const char badChar = (char)0xff;
             var badStr = badChar.ToString();
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", badStr);
@@ -264,7 +264,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Json_Deserialize()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             // Good
 
@@ -313,7 +313,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Json_Serialize()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             // Good
 
@@ -363,7 +363,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestRuntime_Serialize()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             // Good
 
@@ -384,7 +384,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestRuntime_Deserialize()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             // Good
 
