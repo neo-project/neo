@@ -13,12 +13,12 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
-    public enum CompressionType : byte
+    public enum CompressionType : int
     {
-        kNoCompression = 0x0,
-        kSnappyCompression = 0x1
+        NoCompression = 0,
+        SnappyCompression = 1,
     }
 
     public static class Native

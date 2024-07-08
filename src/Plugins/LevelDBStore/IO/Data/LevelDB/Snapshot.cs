@@ -11,24 +11,34 @@
 
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
-    public class Snapshot : IDisposable
+    /// <summary>
+    /// A Snapshot is an immutable object and can therefore be safely
+    /// accessed from multiple threads without any external synchronization.
+    /// </summary>
+    public class SnapShot : LevelDBHandle
     {
-        internal nint db, handle;
+        // pointer to parent so that we can call ReleaseSnapshot(this) when disposed
+        public WeakReference _parent;  // as DB
 
-        internal Snapshot(nint db)
+        internal SnapShot(nint handle, DB parent)
         {
-            this.db = db;
-            handle = Native.leveldb_create_snapshot(db);
+            Handle = handle;
+            _parent = new WeakReference(parent);
         }
 
-        public void Dispose()
+        internal SnapShot(nint handle)
         {
-            if (handle != nint.Zero)
+            Handle = handle;
+            _parent = new WeakReference(null);
+        }
+
+        protected override void FreeUnManagedObjects()
+        {
+            if (_parent.IsAlive)
             {
-                Native.leveldb_release_snapshot(db, handle);
-                handle = nint.Zero;
+                if (_parent.Target is DB parent) Native.leveldb_release_snapshot(parent.Handle, Handle);
             }
         }
     }

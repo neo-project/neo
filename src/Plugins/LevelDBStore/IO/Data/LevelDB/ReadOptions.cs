@@ -9,42 +9,54 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
-    public class ReadOptions
+    /// <summary>
+    /// Options that control read operations.
+    /// </summary>
+    public class ReadOptions : LevelDBHandle
     {
-        public static readonly ReadOptions Default = new ReadOptions();
-        internal readonly nint handle = Native.leveldb_readoptions_create();
+        public static readonly ReadOptions Default = new();
 
-        public bool VerifyChecksums
+        public ReadOptions()
         {
-            set
-            {
-                Native.leveldb_readoptions_set_verify_checksums(handle, value);
-            }
+            Handle = Native.leveldb_readoptions_create();
         }
 
+        /// <summary>
+        /// If true, all data read from underlying storage will be
+        /// verified against corresponding checksums.
+        /// </summary>
+        public bool VerifyCheckSums
+        {
+            set { Native.leveldb_readoptions_set_verify_checksums(Handle, value); }
+        }
+
+        /// <summary>
+        /// Should the data read for this iteration be cached in memory?
+        /// Callers may wish to set this field to false for bulk scans.
+        /// Default: true
+        /// </summary>
         public bool FillCache
         {
-            set
-            {
-                Native.leveldb_readoptions_set_fill_cache(handle, value);
-            }
+            set { Native.leveldb_readoptions_set_fill_cache(Handle, value); }
         }
 
-        public Snapshot Snapshot
+        /// <summary>
+        /// If "snapshot" is provides, read as of the supplied snapshot
+        /// (which must belong to the DB that is being read and which must
+        /// not have been released).  
+        /// If "snapshot" is not set, use an implicit
+        /// snapshot of the state at the beginning of this read operation.
+        /// </summary>
+        public SnapShot Snapshot
         {
-            set
-            {
-                Native.leveldb_readoptions_set_snapshot(handle, value.handle);
-            }
+            set { Native.leveldb_readoptions_set_snapshot(Handle, value.Handle); }
         }
 
-        ~ReadOptions()
+        protected override void FreeUnManagedObjects()
         {
-            Native.leveldb_readoptions_destroy(handle);
+            Native.leveldb_readoptions_destroy(Handle);
         }
     }
 }

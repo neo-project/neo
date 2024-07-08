@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.Plugins.Storage.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// Base class for all LevelDB objects

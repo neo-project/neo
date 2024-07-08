@@ -9,10 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Plugins.Storage.IO.Data.LevelDB;
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// WriteBatch holds a collection of updates to apply atomically to a DB.

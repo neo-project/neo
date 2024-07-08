@@ -9,55 +9,34 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Persistence;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     public static class Helper
     {
-        public static IEnumerable<T> Seek<T>(this DB db, ReadOptions options, byte[] prefix, SeekDirection direction, Func<byte[], byte[], T> resultSelector)
+        public static IEnumerable<(byte[], byte[])> Seek(this DB db, byte[] prefix, ReadOptions options)
         {
-            using Iterator it = db.NewIterator(options);
-            if (direction == SeekDirection.Forward)
-            {
-                for (it.Seek(prefix); it.Valid(); it.Next())
-                    yield return resultSelector(it.Key(), it.Value());
-            }
-            else
-            {
-                // SeekForPrev
+            using var it = db.CreateIterator(options);
 
-                it.Seek(prefix);
-                if (!it.Valid())
-                    it.SeekToLast();
-                else if (it.Key().AsSpan().SequenceCompareTo(prefix) > 0)
-                    it.Prev();
-
-                for (; it.Valid(); it.Prev())
-                    yield return resultSelector(it.Key(), it.Value());
-            }
+            for (it.Seek(prefix); it.IsValid(); it.Next())
+                yield return new(it.Key(), it.Value());
         }
 
-        public static IEnumerable<T> FindRange<T>(this DB db, ReadOptions options, byte[] startKey, byte[] endKey, Func<byte[], byte[], T> resultSelector)
+        public static IEnumerable<(byte[], byte[])> SeekPrev(this DB db, byte[] prefix, ReadOptions options)
         {
-            using Iterator it = db.NewIterator(options);
-            for (it.Seek(startKey); it.Valid(); it.Next())
-            {
-                byte[] key = it.Key();
-                if (key.AsSpan().SequenceCompareTo(endKey) > 0) break;
-                yield return resultSelector(key, it.Value());
-            }
-        }
+            using var it = db.CreateIterator(options);
 
-        internal static byte[] ToByteArray(this nint data, UIntPtr length)
-        {
-            if (data == nint.Zero) return null;
-            byte[] buffer = new byte[(int)length];
-            Marshal.Copy(data, buffer, 0, (int)length);
-            return buffer;
+            it.Seek(prefix);
+
+            if (!it.IsValid())
+                it.SeekToLast();
+            else if (it.Key().AsSpan().SequenceCompareTo(prefix) > 0)
+                it.Prev();
+
+            for (; it.IsValid(); it.Prev())
+                yield return new(it.Key(), it.Value());
         }
     }
 }
