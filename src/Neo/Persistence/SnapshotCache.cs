@@ -37,14 +37,14 @@ namespace Neo.Persistence
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             snapshot?.Put(key.ToArray(), value.ToArray());
         }
 
         protected override void DeleteInternal(StorageKey key)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             snapshot?.Delete(key.ToArray());
         }
@@ -57,21 +57,21 @@ namespace Neo.Persistence
 
         protected override bool ContainsInternal(StorageKey key)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             return store.Contains(key.ToArray());
         }
 
         public void Dispose()
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             snapshot?.Dispose();
         }
 
         protected override StorageItem GetInternal(StorageKey key)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             byte[] value = store.TryGet(key.ToArray());
             if (value == null) throw new KeyNotFoundException();
@@ -87,7 +87,7 @@ namespace Neo.Persistence
 
         protected override StorageItem TryGetInternal(StorageKey key)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             byte[] value = store.TryGet(key.ToArray());
             if (value == null) return null;
@@ -96,7 +96,7 @@ namespace Neo.Persistence
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            if (isCommitted) throw new InvalidOperationException("Can not read/write a  committed data cache.");
+            if (isCommitted) throw new InvalidOperationException("Can not read/write a committed data cache.");
 
             snapshot?.Put(key.ToArray(), value.ToArray());
         }
