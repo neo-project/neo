@@ -9,78 +9,67 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+using Neo.Plugins.Storage.IO.Data.LevelDB;
 
 namespace Neo.IO.Data.LevelDB
 {
-    public class Iterator : IDisposable
+    public class Iterator : LevelDBHandle
     {
-        private IntPtr handle;
-
-        internal Iterator(IntPtr handle)
+        internal Iterator(nint handle)
         {
-            this.handle = handle;
+            Handle = handle;
         }
 
         private void CheckError()
         {
-            Native.leveldb_iter_get_error(handle, out IntPtr error);
+            Native.leveldb_iter_get_error(Handle, out nint error);
             NativeHelper.CheckError(error);
-        }
-
-        public void Dispose()
-        {
-            if (handle != IntPtr.Zero)
-            {
-                Native.leveldb_iter_destroy(handle);
-                handle = IntPtr.Zero;
-            }
         }
 
         public byte[] Key()
         {
-            IntPtr key = Native.leveldb_iter_key(handle, out UIntPtr length);
+            var key = Native.leveldb_iter_key(Handle, out var length);
             CheckError();
-            return key.ToByteArray(length);
+            return key.ToByteArray((nuint)length);
         }
 
         public void Next()
         {
-            Native.leveldb_iter_next(handle);
+            Native.leveldb_iter_next(Handle);
             CheckError();
         }
 
         public void Prev()
         {
-            Native.leveldb_iter_prev(handle);
+            Native.leveldb_iter_prev(Handle);
             CheckError();
         }
 
         public void Seek(byte[] target)
         {
-            Native.leveldb_iter_seek(handle, target, (UIntPtr)target.Length);
+            Native.leveldb_iter_seek(Handle, target, target.Length);
         }
 
         public void SeekToFirst()
         {
-            Native.leveldb_iter_seek_to_first(handle);
+            Native.leveldb_iter_seek_to_first(Handle);
         }
 
         public void SeekToLast()
         {
-            Native.leveldb_iter_seek_to_last(handle);
+            Native.leveldb_iter_seek_to_last(Handle);
         }
 
         public bool Valid()
         {
-            return Native.leveldb_iter_valid(handle);
+            return Native.leveldb_iter_valid(Handle);
         }
 
         public byte[] Value()
         {
-            IntPtr value = Native.leveldb_iter_value(handle, out UIntPtr length);
+            var value = Native.leveldb_iter_value(Handle, out var length);
             CheckError();
-            return value.ToByteArray(length);
+            return value.ToByteArray((nuint)length);
         }
     }
 }

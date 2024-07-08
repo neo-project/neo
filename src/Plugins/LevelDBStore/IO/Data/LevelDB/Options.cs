@@ -9,14 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.IO.Data.LevelDB
 {
     public class Options
     {
         public static readonly Options Default = new Options();
-        internal readonly IntPtr handle = Native.leveldb_options_create();
+        internal readonly nint handle = Native.leveldb_options_create();
 
         public bool CreateIfMissing
         {
@@ -46,7 +44,7 @@ namespace Neo.IO.Data.LevelDB
         {
             set
             {
-                Native.leveldb_options_set_write_buffer_size(handle, (UIntPtr)value);
+                Native.leveldb_options_set_write_buffer_size(handle, value);
             }
         }
 
@@ -62,7 +60,7 @@ namespace Neo.IO.Data.LevelDB
         {
             set
             {
-                Native.leveldb_options_set_block_size(handle, (UIntPtr)value);
+                Native.leveldb_options_set_block_size(handle, value);
             }
         }
 
@@ -82,7 +80,7 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
-        public IntPtr FilterPolicy
+        public nint FilterPolicy
         {
             set
             {

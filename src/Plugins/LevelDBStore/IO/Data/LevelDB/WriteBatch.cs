@@ -9,32 +9,69 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Plugins.Storage.IO.Data.LevelDB;
 using System;
 
 namespace Neo.IO.Data.LevelDB
 {
-    public class WriteBatch
+    /// <summary>
+    /// WriteBatch holds a collection of updates to apply atomically to a DB.
+    ///
+    /// The updates are applied in the order in which they are added
+    /// to the WriteBatch.  For example, the value of "key" will be "v3"
+    /// after the following batch is written:
+    ///
+    ///    batch.Put("key", "v1");
+    ///    batch.Delete("key");
+    ///    batch.Put("key", "v2");
+    ///    batch.Put("key", "v3");
+    /// </summary>
+    public class WriteBatch : LevelDBHandle
     {
-        internal readonly IntPtr handle = Native.leveldb_writebatch_create();
-
-        ~WriteBatch()
+        public WriteBatch()
         {
-            Native.leveldb_writebatch_destroy(handle);
+            Handle = Native.leveldb_writebatch_create();
         }
 
+        /// <summary>
+        /// Clear all updates buffered in this batch.
+        /// </summary>
         public void Clear()
         {
-            Native.leveldb_writebatch_clear(handle);
+            Native.leveldb_writebatch_clear(Handle);
         }
 
-        public void Delete(byte[] key)
+        /// <summary>
+        /// Store the mapping "key->value" in the database.
+        /// </summary>
+        public WriteBatch Put(byte[] key, byte[] value)
         {
-            Native.leveldb_writebatch_delete(handle, key, (UIntPtr)key.Length);
+            Native.leveldb_writebatch_put(Handle, key, key.Length, value, value.Length);
+            return this;
         }
 
-        public void Put(byte[] key, byte[] value)
+        /// <summary>
+        /// If the database contains a mapping for "key", erase it.  
+        /// Else do nothing.
+        /// </summary>
+        public WriteBatch Delete(byte[] key)
         {
-            Native.leveldb_writebatch_put(handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length);
+            Native.leveldb_writebatch_delete(Handle, key, key.Length);
+            return this;
         }
+
+        /// <summary>
+        /// Support for iterating over a batch.
+        /// </summary>
+        public void Iterate(object state, Action<object, byte[], int, byte[], int> put, Action<object, byte[], int> deleted)
+        {
+            Native.leveldb_writebatch_iterate(Handle, state, put, deleted);
+        }
+
+        protected override void FreeUnManagedObjects()
+        {
+            Native.leveldb_writebatch_destroy(Handle);
+        }
+
     }
 }

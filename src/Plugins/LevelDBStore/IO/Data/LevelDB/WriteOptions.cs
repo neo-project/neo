@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.IO.Data.LevelDB
 {
     public class WriteOptions
@@ -18,7 +16,7 @@ namespace Neo.IO.Data.LevelDB
         public static readonly WriteOptions Default = new WriteOptions();
         public static readonly WriteOptions SyncWrite = new WriteOptions { Sync = true };
 
-        internal readonly IntPtr handle = Native.leveldb_writeoptions_create();
+        internal readonly nint handle = Native.leveldb_writeoptions_create();
 
         public bool Sync
         {

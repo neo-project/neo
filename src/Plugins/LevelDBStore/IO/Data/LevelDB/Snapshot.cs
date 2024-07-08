@@ -15,9 +15,9 @@ namespace Neo.IO.Data.LevelDB
 {
     public class Snapshot : IDisposable
     {
-        internal IntPtr db, handle;
+        internal nint db, handle;
 
-        internal Snapshot(IntPtr db)
+        internal Snapshot(nint db)
         {
             this.db = db;
             handle = Native.leveldb_create_snapshot(db);
@@ -25,10 +25,10 @@ namespace Neo.IO.Data.LevelDB
 
         public void Dispose()
         {
-            if (handle != IntPtr.Zero)
+            if (handle != nint.Zero)
             {
                 Native.leveldb_release_snapshot(db, handle);
-                handle = IntPtr.Zero;
+                handle = nint.Zero;
             }
         }
     }

@@ -31,7 +31,7 @@ namespace Neo.Plugins.Storage
 
         public void Dispose()
         {
-            db.Dispose();
+            ((System.IDisposable)db).Dispose();
         }
 
         public IEnumerable<(byte[], byte[])> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)

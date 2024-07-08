@@ -16,7 +16,7 @@ namespace Neo.IO.Data.LevelDB
     public class ReadOptions
     {
         public static readonly ReadOptions Default = new ReadOptions();
-        internal readonly IntPtr handle = Native.leveldb_readoptions_create();
+        internal readonly nint handle = Native.leveldb_readoptions_create();
 
         public bool VerifyChecksums
         {

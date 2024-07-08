@@ -52,9 +52,9 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
-        internal static byte[] ToByteArray(this IntPtr data, UIntPtr length)
+        internal static byte[] ToByteArray(this nint data, UIntPtr length)
         {
-            if (data == IntPtr.Zero) return null;
+            if (data == nint.Zero) return null;
             byte[] buffer = new byte[(int)length];
             Marshal.Copy(data, buffer, 0, (int)length);
             return buffer;
