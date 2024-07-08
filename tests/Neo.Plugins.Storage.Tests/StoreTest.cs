@@ -29,13 +29,14 @@ namespace Neo.Plugins.Storage.Tests
         {
             levelDbStore ??= new LevelDBStore();
             rocksDBStore ??= new RocksDBStore();
-            ReSetStore();
+            OnEnd();
         }
 
         [TestCleanup]
         public void OnEnd()
         {
-            ReSetStore();
+            if (Directory.Exists(path_leveldb)) Directory.Delete(path_leveldb, true);
+            if (Directory.Exists(path_rocksdb)) Directory.Delete(path_rocksdb, true);
         }
 
         [TestMethod]
@@ -58,7 +59,6 @@ namespace Neo.Plugins.Storage.Tests
         [TestMethod]
         public void TestLevelDb()
         {
-            ReSetStore();
             TestPersistenceDelete(levelDbStore.GetStore(path_leveldb));
             // Test all with the same store
 
@@ -308,12 +308,6 @@ namespace Neo.Plugins.Storage.Tests
                 if (shouldExist) CollectionAssert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, ret);
                 else Assert.IsNull(ret);
             }
-        }
-
-        private void ReSetStore()
-        {
-            if (Directory.Exists(path_leveldb)) Directory.Delete(path_leveldb, true);
-            if (Directory.Exists(path_rocksdb)) Directory.Delete(path_rocksdb, true);
         }
     }
 }
