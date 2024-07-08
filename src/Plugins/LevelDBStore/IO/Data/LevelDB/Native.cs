@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Neo.IO.Storage.LevelDB
@@ -256,19 +255,5 @@ namespace Neo.IO.Storage.LevelDB
         public static extern void leveldb_comparator_destroy(nint /* leveldb_comparator_t* */ cmp);
 
         #endregion
-    }
-
-    internal static class NativeHelper
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void CheckError(nint error)
-        {
-            if (error != nint.Zero)
-            {
-                string message = Marshal.PtrToStringAnsi(error);
-                Native.leveldb_free(error);
-                throw new LevelDBException(message);
-            }
-        }
     }
 }

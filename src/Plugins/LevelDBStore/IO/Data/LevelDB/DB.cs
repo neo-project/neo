@@ -24,7 +24,7 @@ namespace Neo.IO.Storage.LevelDB
     {
         static void Throw(IntPtr error)
         {
-            Throw(error, msg => new Exception(msg));
+            Throw(error, msg => new LevelDBException(msg));
         }
 
         static void Throw(IntPtr error, Func<string, Exception> exception)
