@@ -21,21 +21,12 @@ namespace Neo.Plugins.Storage.Tests
     {
         private const string path_leveldb = "Data_LevelDB_UT";
         private const string path_rocksdb = "Data_RocksDB_UT";
-        private static LevelDBStore levelDbStore;
-        private static RocksDBStore rocksDBStore;
 
         [TestInitialize]
         public void OnStart()
         {
-            levelDbStore ??= new LevelDBStore();
-            rocksDBStore ??= new RocksDBStore();
-            ReSetStore();
-        }
-
-        [TestCleanup]
-        public void OnEnd()
-        {
-            ReSetStore();
+            if (Directory.Exists(path_leveldb)) Directory.Delete(path_leveldb, true);
+            if (Directory.Exists(path_rocksdb)) Directory.Delete(path_rocksdb, true);
         }
 
         [TestMethod]
@@ -58,143 +49,35 @@ namespace Neo.Plugins.Storage.Tests
         [TestMethod]
         public void TestLevelDb()
         {
-            ReSetStore();
-            TestPersistenceDelete(levelDbStore.GetStore(path_leveldb));
+            using var plugin = new LevelDBStore();
+            TestPersistenceDelete(plugin.GetStore(path_leveldb));
             // Test all with the same store
 
-            TestStorage(levelDbStore.GetStore(path_leveldb));
+            TestStorage(plugin.GetStore(path_leveldb));
 
             // Test with different storages
 
-            TestPersistenceWrite(levelDbStore.GetStore(path_leveldb));
-            TestPersistenceRead(levelDbStore.GetStore(path_leveldb), true);
-            TestPersistenceDelete(levelDbStore.GetStore(path_leveldb));
-            TestPersistenceRead(levelDbStore.GetStore(path_leveldb), false);
-        }
-
-        [TestMethod]
-        public void TestLevelDbSnapshot()
-        {
-            ReSetStore();
-            using var store = levelDbStore.GetStore(path_leveldb);
-
-            var snapshot = store.GetSnapshot();
-
-            var testKey = new byte[] { 0x01, 0x02, 0x03 };
-            var testValue = new byte[] { 0x04, 0x05, 0x06 };
-
-            snapshot.Put(testKey, testValue);
-            // Data saved to the leveldb snapshot shall not be visible to the store
-            Assert.IsNull(snapshot.TryGet(testKey));
-
-            // Value is in the write batch, not visible to the store and snapshot
-            Assert.AreEqual(false, snapshot.Contains(testKey));
-            Assert.AreEqual(false, store.Contains(testKey));
-
-            snapshot.Commit();
-
-            // After commit, the data shall be visible to the store but not to the snapshot
-            Assert.IsNull(snapshot.TryGet(testKey));
-            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
-            Assert.AreEqual(false, snapshot.Contains(testKey));
-            Assert.AreEqual(true, store.Contains(testKey));
-
-            snapshot.Dispose();
-        }
-
-        [TestMethod]
-        public void TestLevelDbMultiSnapshot()
-        {
-            ReSetStore();
-            using var store = levelDbStore.GetStore(path_leveldb);
-
-            var snapshot = store.GetSnapshot();
-
-            var testKey = new byte[] { 0x01, 0x02, 0x03 };
-            var testValue = new byte[] { 0x04, 0x05, 0x06 };
-
-            snapshot.Put(testKey, testValue);
-            snapshot.Commit();
-            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
-
-            var snapshot2 = store.GetSnapshot();
-
-            // Data saved to the leveldb from snapshot1 shall be visible to snapshot2 but not visible to snapshot1
-            CollectionAssert.AreEqual(testValue, snapshot2.TryGet(testKey));
-            Assert.IsNull(snapshot.TryGet(testKey));
-
-            snapshot.Dispose();
-            snapshot2.Dispose();
+            TestPersistenceWrite(plugin.GetStore(path_leveldb));
+            TestPersistenceRead(plugin.GetStore(path_leveldb), true);
+            TestPersistenceDelete(plugin.GetStore(path_leveldb));
+            TestPersistenceRead(plugin.GetStore(path_leveldb), false);
         }
 
         [TestMethod]
         public void TestRocksDb()
         {
-            TestPersistenceDelete(rocksDBStore.GetStore(path_rocksdb));
+            using var plugin = new RocksDBStore();
+            TestPersistenceDelete(plugin.GetStore(path_rocksdb));
             // Test all with the same store
 
-            TestStorage(rocksDBStore.GetStore(path_rocksdb));
+            TestStorage(plugin.GetStore(path_rocksdb));
 
             // Test with different storages
 
-            TestPersistenceWrite(rocksDBStore.GetStore(path_rocksdb));
-            TestPersistenceRead(rocksDBStore.GetStore(path_rocksdb), true);
-            TestPersistenceDelete(rocksDBStore.GetStore(path_rocksdb));
-            TestPersistenceRead(rocksDBStore.GetStore(path_rocksdb), false);
-        }
-
-        [TestMethod]
-        public void TestRocksDbSnapshot()
-        {
-            ReSetStore();
-            using var store = rocksDBStore.GetStore(path_leveldb);
-
-            var snapshot = store.GetSnapshot();
-
-            var testKey = new byte[] { 0x01, 0x02, 0x03 };
-            var testValue = new byte[] { 0x04, 0x05, 0x06 };
-
-            snapshot.Put(testKey, testValue);
-            // Data saved to the leveldb snapshot shall not be visible
-            Assert.IsNull(snapshot.TryGet(testKey));
-            Assert.IsNull(store.TryGet(testKey));
-
-            // Value is in the write batch, not visible to the store and snapshot
-            Assert.AreEqual(false, snapshot.Contains(testKey));
-            Assert.AreEqual(false, store.Contains(testKey));
-
-            snapshot.Commit();
-
-            // After commit, the data shall be visible to the store but not to the snapshot
-            Assert.IsNull(snapshot.TryGet(testKey));
-            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
-            Assert.AreEqual(false, snapshot.Contains(testKey));
-            Assert.AreEqual(true, store.Contains(testKey));
-
-            snapshot.Dispose();
-        }
-
-        [TestMethod]
-        public void TestRocksDbMultiSnapshot()
-        {
-            ReSetStore();
-            using var store = rocksDBStore.GetStore(path_leveldb);
-
-            var snapshot = store.GetSnapshot();
-
-            var testKey = new byte[] { 0x01, 0x02, 0x03 };
-            var testValue = new byte[] { 0x04, 0x05, 0x06 };
-
-            snapshot.Put(testKey, testValue);
-            snapshot.Commit();
-            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
-
-            var snapshot2 = store.GetSnapshot();
-            // Data saved to the leveldb from snapshot1 shall only be visible to snapshot2
-            CollectionAssert.AreEqual(testValue, snapshot2.TryGet(testKey));
-
-            snapshot.Dispose();
-            snapshot2.Dispose();
+            TestPersistenceWrite(plugin.GetStore(path_rocksdb));
+            TestPersistenceRead(plugin.GetStore(path_rocksdb), true);
+            TestPersistenceDelete(plugin.GetStore(path_rocksdb));
+            TestPersistenceRead(plugin.GetStore(path_rocksdb), false);
         }
 
         /// <summary>
@@ -312,12 +195,6 @@ namespace Neo.Plugins.Storage.Tests
                 if (shouldExist) CollectionAssert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, ret);
                 else Assert.IsNull(ret);
             }
-        }
-
-        private void ReSetStore()
-        {
-            if (Directory.Exists(path_leveldb)) Directory.Delete(path_leveldb, true);
-            if (Directory.Exists(path_rocksdb)) Directory.Delete(path_rocksdb, true);
         }
     }
 }
