@@ -192,16 +192,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestToByteArrayStandard()
-        {
-            BigInteger number = BigInteger.Zero;
-            Assert.AreEqual("", number.ToByteArrayStandard().ToHexString());
-
-            number = BigInteger.One;
-            Assert.AreEqual("01", number.ToByteArrayStandard().ToHexString());
-        }
-
-        [TestMethod]
         public void TestNextBigIntegerForRandom()
         {
             Random ran = new();

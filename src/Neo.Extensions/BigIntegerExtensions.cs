@@ -18,7 +18,7 @@ namespace Neo.Extensions
 {
     public static class BigIntegerExtensions
     {
-        internal static int GetLowestSetBit(this BigInteger i)
+        public static int GetLowestSetBit(this BigInteger i)
         {
             if (i.Sign == 0)
                 return -1;
@@ -33,7 +33,7 @@ namespace Neo.Extensions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static BigInteger Mod(this BigInteger x, BigInteger y)
+        public static BigInteger Mod(this BigInteger x, BigInteger y)
         {
             x %= y;
             if (x.Sign < 0)
@@ -41,7 +41,7 @@ namespace Neo.Extensions
             return x;
         }
 
-        internal static BigInteger ModInverse(this BigInteger a, BigInteger n)
+        public static BigInteger ModInverse(this BigInteger a, BigInteger n)
         {
             BigInteger i = n, v = 0, d = 1;
             while (a > 0)
@@ -59,7 +59,7 @@ namespace Neo.Extensions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool TestBit(this BigInteger i, int index)
+        public static bool TestBit(this BigInteger i, int index)
         {
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
