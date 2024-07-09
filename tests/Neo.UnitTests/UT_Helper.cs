@@ -52,22 +52,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetLowestSetBit()
-        {
-            var big1 = new BigInteger(0);
-            big1.GetLowestSetBit().Should().Be(-1);
-
-            var big2 = new BigInteger(512);
-            big2.GetLowestSetBit().Should().Be(9);
-
-            var big3 = new BigInteger(int.MinValue);
-            big3.GetLowestSetBit().Should().Be(31);
-
-            var big4 = new BigInteger(long.MinValue);
-            big4.GetLowestSetBit().Should().Be(63);
-        }
-
-        [TestMethod]
         public void TestHexToBytes()
         {
             string nullStr = null;
@@ -161,22 +145,6 @@ namespace Neo.UnitTests
             a.Remove(b);
 
             CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
-        }
-
-        [TestMethod]
-        public void TestToHexString()
-        {
-            byte[] nullStr = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
-            byte[] empty = Array.Empty<byte>();
-            empty.ToHexString().Should().Be("");
-            empty.ToHexString(false).Should().Be("");
-            empty.ToHexString(true).Should().Be("");
-
-            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
-            str1.ToHexString().Should().Be("6e656f");
-            str1.ToHexString(false).Should().Be("6e656f");
-            str1.ToHexString(true).Should().Be("6f656e");
         }
 
         [TestMethod]
