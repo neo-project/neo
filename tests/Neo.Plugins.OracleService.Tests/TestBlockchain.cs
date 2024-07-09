@@ -16,11 +16,9 @@ using System;
 
 namespace Neo.Plugins.OracleService.Tests
 {
-
     public static class TestBlockchain
     {
         private static readonly NeoSystem s_theNeoSystem;
-
         private static readonly MemoryStore s_store = new();
 
         private class StoreProvider : IStoreProvider
@@ -29,7 +27,6 @@ namespace Neo.Plugins.OracleService.Tests
 
             public IStore GetStore(string path) => s_store;
         }
-
 
         static TestBlockchain()
         {
