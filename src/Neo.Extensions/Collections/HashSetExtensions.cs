@@ -15,7 +15,7 @@ namespace Neo.Extensions
 {
     public static class HashSetExtensions
     {
-        internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
+        public static void Remove<T>(this HashSet<T> set, ISet<T> other)
         {
             if (set.Count > other.Count)
             {
@@ -27,7 +27,7 @@ namespace Neo.Extensions
             }
         }
 
-        internal static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
+        public static void Remove<T, V>(this HashSet<T> set, IReadOnlyDictionary<T, V> other)
         {
             if (set.Count > other.Count)
             {
