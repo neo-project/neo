@@ -19,7 +19,7 @@ namespace Neo.Extensions
         /// Checks if address is IPv4 Mapped to IPv6 format, if so, Map to IPv4.
         /// Otherwise, return current address.
         /// </summary>
-        internal static IPAddress UnMap(this IPAddress address)
+        public static IPAddress UnMap(this IPAddress address)
         {
             if (address.IsIPv4MappedToIPv6)
                 address = address.MapToIPv4();
@@ -30,7 +30,7 @@ namespace Neo.Extensions
         /// Checks if IPEndPoint is IPv4 Mapped to IPv6 format, if so, unmap to IPv4.
         /// Otherwise, return current endpoint.
         /// </summary>
-        internal static IPEndPoint UnMap(this IPEndPoint endPoint)
+        public static IPEndPoint UnMap(this IPEndPoint endPoint)
         {
             if (!endPoint.Address.IsIPv4MappedToIPv6)
                 return endPoint;
