@@ -50,7 +50,7 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
             direction == SeekDirection.Forward
-                ? _db.Seek(prefix, new ReadOptions { FillCache = false, })
-                : _db.SeekPrev(prefix, new ReadOptions { FillCache = false, });
+                ? _db.Seek(prefix, ReadOptions.Default)
+                : _db.SeekPrev(prefix, ReadOptions.Default);
     }
 }
