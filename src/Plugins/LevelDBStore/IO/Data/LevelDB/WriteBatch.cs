@@ -71,6 +71,5 @@ namespace Neo.IO.Storage.LevelDB
         {
             Native.leveldb_writebatch_destroy(Handle);
         }
-
     }
 }
