@@ -659,5 +659,26 @@ namespace Neo.Ledger
 
             return _unverifiedTransactions.Count > 0;
         }
+
+#if DEBUG
+        // This method is only for test purpose
+        // Do not remove it from the DEBUG build
+        internal void Clear()
+        {
+            _txRwLock.EnterReadLock();
+            try
+            {
+                _unsortedTransactions.Clear();
+                _conflicts.Clear();
+                _sortedTransactions.Clear();
+                _unverifiedTransactions.Clear();
+                _unverifiedSortedTransactions.Clear();
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+        }
+#endif
     }
 }
