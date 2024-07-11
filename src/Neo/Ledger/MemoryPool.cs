@@ -661,7 +661,7 @@ namespace Neo.Ledger
         }
 
         // This method is only for test purpose
-        // Do not use this method outside unit tests
+        // Do not use this method outside of unit tests
         internal void Clear()
         {
             _txRwLock.EnterReadLock();
