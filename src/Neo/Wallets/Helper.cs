@@ -174,8 +174,11 @@ namespace Neo.Wallets
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings, gas: maxExecutionCost);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-                    _ = engine.Execute(); // https://github.com/neo-project/neo/issues/2805
-
+                    if (engine.Execute() == VMState.HALT)
+                    {
+                        // https://github.com/neo-project/neo/issues/2805
+                        _ = engine.ResultStack.Pop().GetBoolean(); // Ensure that the result is boolean
+                    }
                     maxExecutionCost -= engine.FeeConsumed;
                     if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
                     networkFee += engine.FeeConsumed;
