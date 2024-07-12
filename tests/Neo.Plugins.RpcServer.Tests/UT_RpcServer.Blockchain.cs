@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Akka.Util.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -101,8 +102,9 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var snapshot = _neoSystem.GetSnapshotCache();
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
-            TestUtils.BlocksAdd(snapshot, block.Hash, block);
-            snapshot.Commit();
+            // TestUtils.BlocksAdd(snapshot, block.Hash, block);
+            // snapshot.Commit();
+            var reason = _neoSystem.Blockchain.Ask<Blockchain.RelayResult>(block).Result;
             var expectedHash = block.Hash.ToString();
             var result = _rpcServer.GetBlockHash(new JArray(block.Index));
             Assert.AreEqual(expectedHash, result.AsString());
