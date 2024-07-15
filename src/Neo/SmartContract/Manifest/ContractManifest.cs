@@ -112,20 +112,21 @@ namespace Neo.SmartContract.Manifest
         {
             ContractManifest manifest = new()
             {
-                Name = json["name"].GetString(),
-                Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson((JObject)u)).ToArray(),
-                SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.GetString()).ToArray(),
+                Name = json["name"]!.GetString(),
+                Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson((JObject)u)).ToArray() ?? [],
+                SupportedStandards = ((JArray)json["supportedstandards"])?.Select(u => u.GetString()).ToArray() ?? [],
                 Abi = ContractAbi.FromJson((JObject)json["abi"]),
-                Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson((JObject)u)).ToArray(),
+                Permissions = ((JArray)json["permissions"])?.Select(u => ContractPermission.FromJson((JObject)u)).ToArray() ?? [],
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u)),
                 Extra = (JObject)json["extra"]
             };
+
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException();
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
             if (json["features"] is not JObject features || features.Count != 0)
                 throw new FormatException();
-            if (manifest.SupportedStandards.Any(p => string.IsNullOrEmpty(p)))
+            if (manifest.SupportedStandards.Any(string.IsNullOrEmpty))
                 throw new FormatException();
             _ = manifest.SupportedStandards.ToDictionary(p => p);
             _ = manifest.Permissions.ToDictionary(p => p.Contract);
