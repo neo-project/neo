@@ -532,7 +532,7 @@ namespace Neo.UnitTests.SmartContract
             var list = NativeContract.ContractManagement.ListContracts(engine.Snapshot);
             list.ForEach(p => p.Id.Should().BeLessThan(0));
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var state = TestUtils.GetContract();
             snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
