@@ -49,7 +49,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public async Task Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];

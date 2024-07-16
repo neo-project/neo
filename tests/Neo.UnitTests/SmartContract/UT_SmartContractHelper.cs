@@ -124,7 +124,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestVerifyWitnesses()
         {
-            var snapshot1 = TestBlockchain.GetTestSnapshot().CreateSnapshot();
+            var snapshot1 = TestBlockchain.GetTestSnapshot().CloneCache();
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TestUtils.BlocksAdd(snapshot1, index1, new TrimmedBlock()
             {
