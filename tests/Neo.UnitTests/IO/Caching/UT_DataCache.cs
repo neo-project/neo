@@ -132,7 +132,7 @@ namespace Neo.UnitTests.IO.Caching
 
             myDataCache.TryGet(key1).Value.ToArray().SequenceEqual(value1.ToArray()).Should().BeTrue();
             // Though value is deleted from the store, the value can still be gotten from the snapshot cache.
-            myDataCache.TryGet(key2).Should().NotBeNull();
+            myDataCache.TryGet(key2).Value.ToArray().SequenceEqual(value2.ToArray()).Should().BeTrue();
             myDataCache.TryGet(key3).Value.ToArray().SequenceEqual(value4.ToArray()).Should().BeTrue();
         }
 
