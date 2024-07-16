@@ -139,7 +139,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCreateSnapshot()
         {
-            myDataCache.CreateSnapshot().Should().NotBeNull();
+            myDataCache.CloneCache().Should().NotBeNull();
         }
 
         [TestMethod]

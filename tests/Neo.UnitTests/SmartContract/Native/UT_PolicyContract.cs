@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Default()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetAttributeFee()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Fake blockchain
             Block block = new()
@@ -115,7 +115,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetFeePerByte()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Fake blockchain
 
@@ -154,7 +154,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetBaseExecFee()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Fake blockchain
 
@@ -204,7 +204,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetStoragePrice()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Fake blockchain
 
@@ -254,7 +254,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_BlockAccount()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Fake blockchain
 
@@ -310,7 +310,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Block_UnblockAccount()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Fake blockchain
 

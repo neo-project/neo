@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = []
             };
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Ensure that native NEP17 contracts contain proper supported standards and events declared
             // in the manifest constructed for all hardforks enabled. Ref. https://github.com/neo-project/neo/pull/3195.
@@ -150,7 +150,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = []
             };
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Ensure that all native contracts have proper state generated with an assumption that
             // all hardforks enabled.

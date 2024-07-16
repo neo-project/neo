@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Vote()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -114,7 +114,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Vote_Sameaccounts()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -147,7 +147,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Vote_ChangeVote()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
@@ -182,7 +182,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Vote_VoteToNull()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
@@ -219,7 +219,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_UnclaimedGas()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -239,7 +239,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_RegisterValidator()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             var keyCount = snapshot.GetChangeSet().Count();
             var point = TestProtocolSettings.Default.StandbyValidators[0].EncodePoint(true).Clone() as byte[];
@@ -267,7 +267,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_UnregisterCandidate()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             _persistingBlock.Header.Index = 1;
             var keyCount = snapshot.GetChangeSet().Count();
             var point = TestProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
@@ -328,7 +328,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_GetCommittee()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var keyCount = snapshot.GetChangeSet().Count();
             var point = TestProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
             var persistingBlock = _persistingBlock;
@@ -388,7 +388,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Transfer()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
 
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
@@ -447,7 +447,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_BalanceOf()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             byte[] account = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
             NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(100_000_000);
@@ -460,7 +460,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_CommitteeBonus()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block
             {
                 Header = new Header
@@ -485,7 +485,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Initialize()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // StandbyValidators
 
@@ -495,7 +495,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestCalculateBonus()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block();
 
             StorageKey key = CreateStorageKey(20, UInt160.Zero.ToArray());
@@ -584,7 +584,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetNextBlockValidators2()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var result = NativeContract.NEO.GetNextBlockValidators(snapshot, 7);
             result.Length.Should().Be(7);
             result[0].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
@@ -607,7 +607,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetCandidates2()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var result = NativeContract.NEO.GetCandidatesInternal(snapshot);
             result.Count().Should().Be(0);
 
@@ -619,7 +619,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestCheckCandidate()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var committee = NativeContract.NEO.GetCommittee(snapshot);
             var point = committee[0].EncodePoint(true);
 
@@ -700,7 +700,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetValidators()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var result = NativeContract.NEO.ComputeNextBlockValidators(snapshot, TestProtocolSettings.Default);
             result[0].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
             result[1].ToArray().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
@@ -730,7 +730,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTotalSupply()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             NativeContract.NEO.TotalSupply(snapshot).Should().Be(new BigInteger(100000000));
         }
 
@@ -738,7 +738,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestEconomicParameter()
         {
             const byte Prefix_CurrentBlock = 12;
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block { Header = new Header() };
 
             (BigInteger, bool) result = Check_GetGasPerBlock(snapshot, persistingBlock);
@@ -768,7 +768,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestClaimGas()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
 
             // Initialize block
             snapshot.Add(CreateStorageKey(1), new StorageItem(new BigInteger(30000000)));
@@ -877,7 +877,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestUnclaimedGas()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             snapshot.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
@@ -886,7 +886,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestVote()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             UInt160 account = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
             StorageKey keyAccount = CreateStorageKey(20, account.ToArray());
             StorageKey keyValidator = CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray());
@@ -924,7 +924,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshot.CloneCache();
             _persistingBlock.Header.Index = 1;
             var engine = ApplicationEngine.Create(TriggerType.Application, TestBlockchain.TheNeoSystem.GenesisBlock, snapshot, _persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             ScriptBuilder sb = new();
