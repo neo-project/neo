@@ -17,17 +17,11 @@ using System.Collections;
 
 namespace Neo.IO.Actors
 {
-    internal abstract class PriorityMailbox : MailboxType, IProducesMessageQueue<PriorityMessageQueue>
+    internal abstract class PriorityMailbox
+        (Settings settings, Config config) : MailboxType(settings, config), IProducesMessageQueue<PriorityMessageQueue>
     {
-        public PriorityMailbox(Akka.Actor.Settings settings, Config config)
-            : base(settings, config)
-        {
-        }
-
-        public override IMessageQueue Create(IActorRef owner, ActorSystem system)
-        {
-            return new PriorityMessageQueue(ShallDrop, IsHighPriority);
-        }
+        public override IMessageQueue Create(IActorRef owner, ActorSystem system) =>
+            new PriorityMessageQueue(ShallDrop, IsHighPriority);
 
         internal protected virtual bool IsHighPriority(object message) => false;
         internal protected virtual bool ShallDrop(object message, IEnumerable queue) => false;
