@@ -326,7 +326,7 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, datoshi))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CloneCache(), null, settings, datoshi))
             {
                 if (witness.VerificationScript.Length == 0)
                 {

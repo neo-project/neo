@@ -62,7 +62,7 @@ namespace Neo.UnitTests.SmartContract.Native
             List<Role> roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
             foreach (var role in roles)
             {
-                var snapshot1 = _snapshot.CreateSnapshot();
+                var snapshot1 = _snapshot.CloneCache();
                 UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
                 List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
                 EventHandler<NotifyEventArgs> ev = (o, e) => notifications.Add(e);
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 ApplicationEngine.Notify -= ev;
                 notifications.Count.Should().Be(1);
                 notifications[0].EventName.Should().Be("Designation");
-                var snapshot2 = _snapshot.CreateSnapshot();
+                var snapshot2 = _snapshot.CloneCache();
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
                     "getDesignatedByRole",
