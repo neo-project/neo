@@ -38,6 +38,14 @@ namespace Neo.Plugins.DBFTPlugin
             RemoteNode.MessageReceived += ((IMessageReceivedHandler)this).RemoteNode_MessageReceived_Handler;
         }
 
+#if DEBUG
+        internal DBFTPlugin(NeoSystem neoSystem, IWalletProvider wallet) : this()
+        {
+            this.neoSystem = neoSystem;
+            walletProvider = wallet;
+        }
+#endif
+
         public DBFTPlugin(Settings settings) : this()
         {
             this.settings = settings;
