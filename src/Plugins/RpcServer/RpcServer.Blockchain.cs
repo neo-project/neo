@@ -49,7 +49,7 @@ namespace Neo.Plugins.RpcServer
         {
             JToken key = Result.Ok_Or(() => _params[0], RpcError.InvalidParams.WithData($"Invalid Block Hash or Index: {_params[0]}"));
             bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             Block block;
             if (key is JNumber)
             {
@@ -245,7 +245,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetStorage(JArray _params)
         {
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
                 UInt160 hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid contract hash {_params[0]}"));
@@ -273,7 +273,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken FindStorage(JArray _params)
         {
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
                 UInt160 hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid contract hash {_params[0]}"));
@@ -341,7 +341,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetNextBlockValidators(JArray _params)
         {
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, system.Settings.ValidatorsCount);
             return validators.Select(p =>
             {
@@ -360,7 +360,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetCandidates(JArray _params)
         {
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             byte[] script;
             using (ScriptBuilder sb = new())
             {
