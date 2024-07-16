@@ -29,7 +29,7 @@ namespace Neo.Plugins.RpcServer
         public Session(NeoSystem system, byte[] script, Signer[] signers, Witness[] witnesses, long datoshi, Diagnostic diagnostic)
         {
             Random random = new();
-            Snapshot = system.GetSnapshot();
+            Snapshot = system.GetSnapshotCache();
             Transaction tx = signers == null ? null : new Transaction
             {
                 Version = 0,
