@@ -91,7 +91,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void NeoSystemStoreAddTest()
         {
-            var storeCache = _neoSystem.GetSnapshot();
+            var storeCache = _neoSystem.GetSnapshotCache();
             var key = new KeyBuilder(0, 0);
             storeCache.Add(key, new StorageItem(UInt256.Zero.ToArray()));
             storeCache.Commit();
@@ -102,7 +102,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void NeoSystemStoreGetAndChange()
         {
-            var storeView = _neoSystem.GetSnapshot();
+            var storeView = _neoSystem.GetSnapshotCache();
             var key = new KeyBuilder(1, 1);
             var item = new StorageItem([1, 2, 3]);
             storeView.Delete(key);

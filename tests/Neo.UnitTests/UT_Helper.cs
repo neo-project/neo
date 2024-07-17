@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.SmartContract;
@@ -188,16 +189,6 @@ namespace Neo.UnitTests
                 .FirstOrDefault();
             string version = asm?.GetVersion() ?? "";
             version.Should().Be("0.0.0");
-        }
-
-        [TestMethod]
-        public void TestToByteArrayStandard()
-        {
-            BigInteger number = BigInteger.Zero;
-            Assert.AreEqual("", number.ToByteArrayStandard().ToHexString());
-
-            number = BigInteger.One;
-            Assert.AreEqual("01", number.ToByteArrayStandard().ToHexString());
         }
 
         [TestMethod]
