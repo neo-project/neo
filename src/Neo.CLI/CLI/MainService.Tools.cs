@@ -13,7 +13,6 @@ using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -21,6 +20,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.CLI
@@ -56,7 +56,8 @@ namespace Neo.CLI
 
                 if (result != null)
                 {
-                    Console.WriteLine($"{pair.Key,-30}\t{result}");
+                    ConsoleHelper.Info("", "-----", pair.Key, "-----");
+                    ConsoleHelper.Info("", result, Environment.NewLine);
                     any = true;
                 }
             }
@@ -417,62 +418,41 @@ namespace Neo.CLI
         [ParseFunction("Base64 Smart Contract Script Analysis")]
         private string? ScriptsToOpCode(string base64)
         {
-            Script script;
             try
             {
-                var scriptData = Convert.FromBase64String(base64);
-                script = new Script(scriptData.ToArray(), true);
+                var bytes = Convert.FromBase64String(base64);
+                var sb = new StringBuilder();
+
+                foreach (var instruct in new VMInstruction(bytes))
+                {
+                    if (instruct.OperandSize == 0)
+                        sb.AppendFormat("{0:X04} {1}{2}", instruct.Position, instruct.OpCode, Environment.NewLine);
+                    else
+                        sb.AppendFormat("{0:X04} {1,-10}{2}{3}", instruct.Position, instruct.OpCode, DecodeOperand(instruct), Environment.NewLine);
+                }
+
+                return sb.ToString();
             }
-            catch (Exception)
+            catch
             {
                 return null;
             }
-            return ScriptsToOpCode(script);
         }
 
-        private string ScriptsToOpCode(Script script)
+        private string DecodeOperand(VMInstruction instruction)
         {
-            //Initialize all InteropService
-            var dic = new Dictionary<uint, string>();
-            ApplicationEngine.Services.ToList().ForEach(p => dic.Add(p.Value.Hash, p.Value.Name));
-
-            //Analyzing Scripts
-            var ip = 0;
-            Instruction instruction;
-            var result = new List<string>();
-            while (ip < script.Length && (instruction = script.GetInstruction(ip)) != null)
+            var operand = instruction.Operand[instruction.OperandPrefixSize..].ToArray();
+            var asStr = Encoding.UTF8.GetString(operand);
+            return instruction.OpCode switch
             {
-                ip += instruction.Size;
-
-                var op = instruction.OpCode;
-
-                if (op.ToString().StartsWith("PUSHINT"))
-                {
-                    var operand = instruction.Operand.ToArray();
-                    result.Add($"{op} {new BigInteger(operand)}");
-                }
-                else if (op == OpCode.SYSCALL)
-                {
-                    var operand = instruction.Operand.ToArray();
-                    result.Add($"{op} {dic[BitConverter.ToUInt32(operand)]}");
-                }
-                else
-                {
-                    if (!instruction.Operand.IsEmpty && instruction.Operand.Length > 0)
-                    {
-                        var operand = instruction.Operand.ToArray();
-                        var ascii = Encoding.Default.GetString(operand);
-                        ascii = ascii.Any(p => p < '0' || p > 'z') ? operand.ToHexString() : ascii;
-
-                        result.Add($"{op} {(operand.Length == 20 ? new UInt160(operand).ToString() : ascii)}");
-                    }
-                    else
-                    {
-                        result.Add($"{op}");
-                    }
-                }
-            }
-            return Environment.NewLine + string.Join("\r\n", result.ToArray());
+                VM.OpCode.PUSHINT8 => $"{Unsafe.As<byte, sbyte>(ref operand[0])}",
+                VM.OpCode.PUSHINT16 => $"{Unsafe.As<byte, short>(ref operand[0])}",
+                VM.OpCode.PUSHINT32 => $"{Unsafe.As<byte, int>(ref operand[0])}",
+                VM.OpCode.PUSHINT64 => $"{Unsafe.As<byte, long>(ref operand[0])}",
+                VM.OpCode.PUSHINT128 or VM.OpCode.PUSHINT256 => $"{new BigInteger(operand)}",
+                VM.OpCode.SYSCALL => $"[{ApplicationEngine.Services[Unsafe.As<byte, uint>(ref operand[0])].Name}]",
+                _ => asStr.All(a => char.IsAscii(a)) ? $"\"{asStr}\"" : Convert.ToHexString(operand),
+            };
         }
 
         /// <summary>
