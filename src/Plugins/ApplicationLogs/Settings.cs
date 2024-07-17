@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Neo.Plugins.ApplicationLogs
 {
-    internal class Settings : PluginSettings
+    internal class Settings
     {
         public string Path { get; }
         public uint Network { get; }
@@ -23,7 +23,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         public static Settings Default { get; private set; }
 
-        private Settings(IConfigurationSection section) : base(section)
+        private Settings(IConfigurationSection section)
         {
             Path = section.GetValue("Path", "ApplicationLogs_{0}");
             Network = section.GetValue("Network", 5195086u);
