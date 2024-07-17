@@ -196,7 +196,7 @@ namespace Neo.Plugins.RpcServer
             UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
             UInt160 from = AddressToScriptHash(_params[1].AsString(), system.Settings.AddressVersion);
             UInt160 to = AddressToScriptHash(_params[2].AsString(), system.Settings.AddressVersion);
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
             BigDecimal amount = new(BigInteger.Parse(_params[3].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Amount can't be negative."));
@@ -243,7 +243,7 @@ namespace Neo.Plugins.RpcServer
             Signer[] signers = _params.Count >= to_start + 2 ? ((JArray)_params[to_start + 1]).Select(p => new Signer() { Account = AddressToScriptHash(p.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray() : null;
 
             TransferOutput[] outputs = new TransferOutput[to.Count];
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             for (int i = 0; i < to.Count; i++)
             {
                 UInt160 asset_id = UInt160.Parse(to[i]["asset"].AsString());
@@ -279,7 +279,7 @@ namespace Neo.Plugins.RpcServer
             CheckWallet();
             UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset hash: {_params[0]}"));
             UInt160 to = AddressToScriptHash(_params[1].AsString(), system.Settings.AddressVersion);
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
             BigDecimal amount = new(BigInteger.Parse(_params[2].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcError.InvalidParams);
@@ -354,7 +354,7 @@ namespace Neo.Plugins.RpcServer
 
         private JObject GetVerificationResult(UInt160 scriptHash, ContractParameter[] args, Signer[] signers = null, Witness[] witnesses = null)
         {
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash).NotNull_Or(RpcError.UnknownContract);
             var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount).NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash));
             (md.ReturnType == ContractParameterType.Boolean).True_Or(RpcErrorFactory.InvalidContractVerification("The verify method doesn't return boolean value."));
@@ -365,7 +365,7 @@ namespace Neo.Plugins.RpcServer
                 Witnesses = witnesses,
                 Script = new[] { (byte)OpCode.RET }
             };
-            using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: system.Settings);
+            using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: system.Settings);
             engine.LoadContract(contract, md, CallFlags.ReadOnly);
 
             var invocationScript = Array.Empty<byte>();
