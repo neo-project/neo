@@ -48,7 +48,7 @@ namespace Neo.Plugins.RpcServer
             public override void Save() { }
         }
 
-        protected Wallet wallet;
+        protected internal Wallet wallet;
 
         private void CheckWallet()
         {
@@ -56,14 +56,14 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken CloseWallet(JArray _params)
+        protected internal virtual JToken CloseWallet(JArray _params)
         {
             wallet = null;
             return true;
         }
 
         [RpcMethod]
-        protected virtual JToken DumpPrivKey(JArray _params)
+        protected internal virtual JToken DumpPrivKey(JArray _params)
         {
             CheckWallet();
             UInt160 scriptHash = AddressToScriptHash(_params[0].AsString(), system.Settings.AddressVersion);
@@ -72,7 +72,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken GetNewAddress(JArray _params)
+        protected internal virtual JToken GetNewAddress(JArray _params)
         {
             CheckWallet();
             WalletAccount account = wallet.CreateAccount();
@@ -82,7 +82,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken GetWalletBalance(JArray _params)
+        protected internal virtual JToken GetWalletBalance(JArray _params)
         {
             CheckWallet();
             UInt160 asset_id = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
@@ -92,7 +92,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken GetWalletUnclaimedGas(JArray _params)
+        protected internal virtual JToken GetWalletUnclaimedGas(JArray _params)
         {
             CheckWallet();
             // Datoshi is the smallest unit of GAS, 1 GAS = 10^8 Datoshi
@@ -107,7 +107,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken ImportPrivKey(JArray _params)
+        protected internal virtual JToken ImportPrivKey(JArray _params)
         {
             CheckWallet();
             string privkey = _params[0].AsString();
@@ -124,7 +124,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken CalculateNetworkFee(JArray _params)
+        protected internal virtual JToken CalculateNetworkFee(JArray _params)
         {
             var tx = Convert.FromBase64String(_params[0].AsString());
 
@@ -137,7 +137,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken ListAddress(JArray _params)
+        protected internal virtual JToken ListAddress(JArray _params)
         {
             CheckWallet();
             return wallet.GetAccounts().Select(p =>
@@ -152,12 +152,24 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken OpenWallet(JArray _params)
+        protected internal virtual JToken OpenWallet(JArray _params)
         {
             string path = _params[0].AsString();
             string password = _params[1].AsString();
             File.Exists(path).True_Or(RpcError.WalletNotFound);
-            wallet = Wallet.Open(path, password, system.Settings).NotNull_Or(RpcError.WalletNotSupported);
+            try
+            {
+                wallet = Wallet.Open(path, password, system.Settings).NotNull_Or(RpcError.WalletNotSupported);
+            }
+            catch (NullReferenceException)
+            {
+                throw new RpcException(RpcError.WalletNotSupported);
+            }
+            catch (InvalidOperationException)
+            {
+                throw new RpcException(RpcError.WalletNotSupported.WithData("Invalid password."));
+            }
+
             return true;
         }
 
@@ -190,7 +202,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken SendFrom(JArray _params)
+        protected internal virtual JToken SendFrom(JArray _params)
         {
             CheckWallet();
             UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
@@ -228,7 +240,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken SendMany(JArray _params)
+        protected internal virtual JToken SendMany(JArray _params)
         {
             CheckWallet();
             int to_start = 0;
@@ -274,7 +286,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken SendToAddress(JArray _params)
+        protected internal virtual JToken SendToAddress(JArray _params)
         {
             CheckWallet();
             UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset hash: {_params[0]}"));
@@ -309,7 +321,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken CancelTransaction(JArray _params)
+        protected internal virtual JToken CancelTransaction(JArray _params)
         {
             CheckWallet();
             var txid = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid txid: {_params[0]}"));
@@ -343,7 +355,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken InvokeContractVerify(JArray _params)
+        protected internal virtual JToken InvokeContractVerify(JArray _params)
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
             ContractParameter[] args = _params.Count >= 2 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : Array.Empty<ContractParameter>();
