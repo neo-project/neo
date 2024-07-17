@@ -34,11 +34,11 @@ namespace Neo.Plugins.RestServer.Controllers.v1
     [ApiController]
     public class ContractsController : ControllerBase
     {
-        private readonly NeoSystem _neosystem;
+        private readonly NeoSystem _neoSystem;
 
         public ContractsController()
         {
-            _neosystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
+            _neoSystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
         }
 
         /// <summary>
@@ -61,10 +61,10 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 1 || take < 1 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            var contracts = NativeContract.ContractManagement.ListContracts(_neosystem.StoreView);
+            var contracts = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
             if (contracts.Any() == false)
                 return NoContent();
-            var contractRequestList = contracts.OrderBy(o => o.Manifest.Name).Skip((skip - 1) * take).Take(take);
+            var contractRequestList = contracts.OrderBy(o => o.Id).Skip((skip - 1) * take).Take(take);
             if (contractRequestList.Any() == false)
                 return NoContent();
             return Ok(contractRequestList);
@@ -80,14 +80,14 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CountModel))]
         public IActionResult GetCount()
         {
-            var contracts = NativeContract.ContractManagement.ListContracts(_neosystem.StoreView);
+            var contracts = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
             return Ok(new CountModel() { Count = contracts.Count() });
         }
 
         /// <summary>
         /// Get a smart contract's storage.
         /// </summary>
-        /// <param name="scripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+        /// <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
         /// <returns>An array of the Key (Base64) Value (Base64) Pairs objects.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
@@ -95,21 +95,21 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>[]))]
         public IActionResult GetContractStorage(
             [FromRoute(Name = "hash")]
-            UInt160 scripthash)
+            UInt160 scriptHash)
         {
-            if (NativeContract.IsNative(scripthash))
+            if (NativeContract.IsNative(scriptHash))
                 return NoContent();
-            var contract = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scripthash);
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contract == null)
-                throw new ContractNotFoundException(scripthash);
-            var contractStorage = contract.GetStorage(_neosystem.StoreView);
+                throw new ContractNotFoundException(scriptHash);
+            var contractStorage = contract.GetStorage(_neoSystem.StoreView);
             return Ok(contractStorage.Select(s => new KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>(s.key.Key, s.value.Value)));
         }
 
         /// <summary>
         /// Get a smart contract.
         /// </summary>
-        /// <param name="scripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+        /// <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
         /// <returns>Contract Object.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
@@ -117,18 +117,18 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ContractState))]
         public IActionResult GetByScriptHash(
             [FromRoute(Name = "hash")]
-            UInt160 scripthash)
+            UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scripthash);
+            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contracts == null)
-                throw new ContractNotFoundException(scripthash);
+                throw new ContractNotFoundException(scriptHash);
             return Ok(contracts);
         }
 
         /// <summary>
         /// Get abi of a smart contract.
         /// </summary>
-        /// <param name="scripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+        /// <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
         /// <returns>Contract Abi Object.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
@@ -136,18 +136,18 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ContractAbi))]
         public IActionResult GetContractAbi(
             [FromRoute(Name = "hash")]
-            UInt160 scripthash)
+            UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scripthash);
+            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contracts == null)
-                throw new ContractNotFoundException(scripthash);
+                throw new ContractNotFoundException(scriptHash);
             return Ok(contracts.Manifest.Abi);
         }
 
         /// <summary>
         /// Get manifest of a smart contract.
         /// </summary>
-        /// <param name="scripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+        /// <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
         /// <returns>Contract Manifest object.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
@@ -155,18 +155,18 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ContractManifest))]
         public IActionResult GetContractManifest(
             [FromRoute(Name = "hash")]
-            UInt160 scripthash)
+            UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scripthash);
+            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contracts == null)
-                throw new ContractNotFoundException(scripthash);
+                throw new ContractNotFoundException(scriptHash);
             return Ok(contracts.Manifest);
         }
 
         /// <summary>
         /// Get nef of a smart contract.
         /// </summary>
-        /// <param name="scripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+        /// <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
         /// <returns>Contract Nef object.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
@@ -174,18 +174,18 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(NefFile))]
         public IActionResult GetContractNef(
             [FromRoute(Name = "hash")]
-            UInt160 scripthash)
+            UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scripthash);
+            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contracts == null)
-                throw new ContractNotFoundException(scripthash);
+                throw new ContractNotFoundException(scriptHash);
             return Ok(contracts.Nef);
         }
 
         /// <summary>
         /// Invoke a method as ReadOnly Flag on a smart contract.
         /// </summary>
-        /// <param name="scripthash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
+        /// <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
         /// <param name="method" example="balanceOf">method name</param>
         /// <param name="contractParameters">JArray of the contract parameters.</param>
         /// <returns>Execution Engine object.</returns>
@@ -195,20 +195,20 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecutionEngineModel))]
         public IActionResult InvokeContract(
             [FromRoute(Name = "hash")]
-            UInt160 scripthash,
+            UInt160 scriptHash,
             [FromQuery(Name = "method")]
             string method,
             [FromBody]
             ContractParameter[] contractParameters)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scripthash);
+            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contracts == null)
-                throw new ContractNotFoundException(scripthash);
+                throw new ContractNotFoundException(scriptHash);
             if (string.IsNullOrEmpty(method))
                 throw new QueryParameterNotFoundException(nameof(method));
             try
             {
-                var engine = ScriptHelper.InvokeMethod(_neosystem.Settings, _neosystem.StoreView, contracts.Hash, method, contractParameters, out var script);
+                var engine = ScriptHelper.InvokeMethod(_neoSystem.Settings, _neoSystem.StoreView, contracts.Hash, method, contractParameters, out var script);
                 return Ok(engine.ToModel());
             }
             catch (Exception ex)

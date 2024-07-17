@@ -32,11 +32,11 @@ namespace Neo.Plugins.RestServer.Controllers.v1
     [ApiController]
     public class LedgerController : ControllerBase
     {
-        private readonly NeoSystem _neosystem;
+        private readonly NeoSystem _neoSystem;
 
         public LedgerController()
         {
-            _neosystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
+            _neoSystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
         }
 
         #region Accounts
@@ -51,7 +51,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AccountDetails[]))]
         public IActionResult ShowGasAccounts()
         {
-            var accounts = NativeContract.GAS.ListAccounts(_neosystem.StoreView, _neosystem.Settings);
+            var accounts = NativeContract.GAS.ListAccounts(_neoSystem.StoreView, _neoSystem.Settings);
             return Ok(accounts.OrderByDescending(o => o.Balance));
         }
 
@@ -65,7 +65,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AccountDetails[]))]
         public IActionResult ShowNeoAccounts()
         {
-            var accounts = NativeContract.NEO.ListAccounts(_neosystem.StoreView, _neosystem.Settings);
+            var accounts = NativeContract.NEO.ListAccounts(_neoSystem.StoreView, _neoSystem.Settings);
             return Ok(accounts.OrderByDescending(o => o.Balance));
         }
 
@@ -95,17 +95,17 @@ namespace Neo.Plugins.RestServer.Controllers.v1
                 throw new InvalidParameterRangeException();
             //var start = (skip - 1) * take + startIndex;
             //var end = start + take;
-            var start = NativeContract.Ledger.CurrentIndex(_neosystem.StoreView) - (skip - 1) * take;
+            var start = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView) - (skip - 1) * take;
             var end = start - take;
             var lstOfBlocks = new List<Header>();
-            for (uint i = start; i > end; i--)
+            for (var i = start; i > end; i--)
             {
-                var block = NativeContract.Ledger.GetBlock(_neosystem.StoreView, i);
+                var block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, i);
                 if (block == null)
                     break;
                 lstOfBlocks.Add(block.Header);
             }
-            if (lstOfBlocks.Count != 0)
+            if (lstOfBlocks.Count == 0)
                 return NoContent();
             return Ok(lstOfBlocks);
         }
@@ -120,8 +120,8 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Header))]
         public IActionResult GetCurrentBlockHeader()
         {
-            var currentIndex = NativeContract.Ledger.CurrentIndex(_neosystem.StoreView);
-            var blockheader = NativeContract.Ledger.GetHeader(_neosystem.StoreView, currentIndex);
+            var currentIndex = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
+            var blockheader = NativeContract.Ledger.GetHeader(_neoSystem.StoreView, currentIndex);
             return Ok(blockheader);
         }
 
@@ -138,7 +138,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "index")]
             uint blockIndex)
         {
-            var block = NativeContract.Ledger.GetBlock(_neosystem.StoreView, blockIndex);
+            var block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, blockIndex);
             if (block == null)
                 throw new BlockNotFoundException(blockIndex);
             return Ok(block);
@@ -157,7 +157,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "index")]
             uint blockIndex)
         {
-            var block = NativeContract.Ledger.GetBlock(_neosystem.StoreView, blockIndex);
+            var block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, blockIndex);
             if (block == null)
                 throw new BlockNotFoundException(blockIndex);
             return Ok(block.Header);
@@ -176,7 +176,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "index")]
             uint blockIndex)
         {
-            var block = NativeContract.Ledger.GetBlock(_neosystem.StoreView, blockIndex);
+            var block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, blockIndex);
             if (block == null)
                 throw new BlockNotFoundException(blockIndex);
             return Ok(block.Witness);
@@ -204,7 +204,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 1 || take < 1 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            var block = NativeContract.Ledger.GetBlock(_neosystem.StoreView, blockIndex);
+            var block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, blockIndex);
             if (block == null)
                 throw new BlockNotFoundException(blockIndex);
             if (block.Transactions == null || block.Transactions.Length == 0)
@@ -226,12 +226,12 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [HttpGet("transactions/{hash:required}", Name = "GetTransaction")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Transaction))]
         public IActionResult GetTransaction(
-            [FromRoute( Name = "hash")]
+            [FromRoute(Name = "hash")]
             UInt256 hash)
         {
-            if (NativeContract.Ledger.ContainsTransaction(_neosystem.StoreView, hash) == false)
+            if (NativeContract.Ledger.ContainsTransaction(_neoSystem.StoreView, hash) == false)
                 throw new TransactionNotFoundException(hash);
-            var txst = NativeContract.Ledger.GetTransaction(_neosystem.StoreView, hash);
+            var txst = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash);
             return Ok(txst);
         }
 
@@ -248,9 +248,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute( Name = "hash")]
             UInt256 hash)
         {
-            if (NativeContract.Ledger.ContainsTransaction(_neosystem.StoreView, hash) == false)
+            if (NativeContract.Ledger.ContainsTransaction(_neoSystem.StoreView, hash) == false)
                 throw new TransactionNotFoundException(hash);
-            var tx = NativeContract.Ledger.GetTransaction(_neosystem.StoreView, hash);
+            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash);
             return Ok(tx.Witnesses);
         }
 
@@ -267,9 +267,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute( Name = "hash")]
             UInt256 hash)
         {
-            if (NativeContract.Ledger.ContainsTransaction(_neosystem.StoreView, hash) == false)
+            if (NativeContract.Ledger.ContainsTransaction(_neoSystem.StoreView, hash) == false)
                 throw new TransactionNotFoundException(hash);
-            var tx = NativeContract.Ledger.GetTransaction(_neosystem.StoreView, hash);
+            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash);
             return Ok(tx.Signers);
         }
 
@@ -286,9 +286,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute( Name = "hash")]
             UInt256 hash)
         {
-            if (NativeContract.Ledger.ContainsTransaction(_neosystem.StoreView, hash) == false)
+            if (NativeContract.Ledger.ContainsTransaction(_neoSystem.StoreView, hash) == false)
                 throw new TransactionNotFoundException(hash);
-            var tx = NativeContract.Ledger.GetTransaction(_neosystem.StoreView, hash);
+            var tx = NativeContract.Ledger.GetTransaction(_neoSystem.StoreView, hash);
             return Ok(tx.Attributes);
         }
 
@@ -314,7 +314,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 0 || take < 0 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            return Ok(_neosystem.MemPool.Skip((skip - 1) * take).Take(take));
+            return Ok(_neoSystem.MemPool.Skip((skip - 1) * take).Take(take));
         }
 
         /// <summary>
@@ -328,9 +328,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         public IActionResult GetMemoryPoolCount() =>
             Ok(new MemoryPoolCountModel()
             {
-                Count = _neosystem.MemPool.Count,
-                UnVerifiedCount = _neosystem.MemPool.UnVerifiedCount,
-                VerifiedCount = _neosystem.MemPool.VerifiedCount,
+                Count = _neoSystem.MemPool.Count,
+                UnVerifiedCount = _neoSystem.MemPool.UnVerifiedCount,
+                VerifiedCount = _neoSystem.MemPool.VerifiedCount,
             });
 
         /// <summary>
@@ -353,9 +353,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 0 || take < 0 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            if (_neosystem.MemPool.Any() == false)
+            if (_neoSystem.MemPool.Any() == false)
                 return NoContent();
-            var vTx = _neosystem.MemPool.GetVerifiedTransactions();
+            var vTx = _neoSystem.MemPool.GetVerifiedTransactions();
             return Ok(vTx.Skip((skip - 1) * take).Take(take));
         }
 
@@ -379,9 +379,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 0 || take < 0 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            if (_neosystem.MemPool.Any() == false)
+            if (_neoSystem.MemPool.Any() == false)
                 return NoContent();
-            _neosystem.MemPool.GetVerifiedAndUnverifiedTransactions(out _, out var unVerifiedTransactions);
+            _neoSystem.MemPool.GetVerifiedAndUnverifiedTransactions(out _, out var unVerifiedTransactions);
             return Ok(unVerifiedTransactions.Skip((skip - 1) * take).Take(take));
         }
 

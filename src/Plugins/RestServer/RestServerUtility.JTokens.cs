@@ -217,6 +217,7 @@ namespace Neo.Plugins.RestServer
             JToken.FromObject(new
             {
                 contract.Id,
+                contract.UpdateCounter,
                 contract.Manifest.Name,
                 contract.Hash,
                 Manifest = ContractManifestToJToken(contract.Manifest, serializer),
