@@ -472,10 +472,10 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                _ = InvokeCommittingAsync(system, block, snapshot, all_application_executed);
+                InvokeCommitting(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
-            _ = InvokeCommittedAsync(system, block);
+            InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
@@ -484,22 +484,19 @@ namespace Neo.Ledger
                 Debug.Assert(header.Index == block.Index);
         }
 
-        internal static async Task InvokeCommittingAsync(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        internal static void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
-            await InvokeHandlersAsync(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
+            InvokeHandlers(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
         }
 
-        internal static async Task InvokeCommittedAsync(NeoSystem system, Block block)
+        internal static void InvokeCommitted(NeoSystem system, Block block)
         {
-            await InvokeHandlersAsync(Committed?.GetInvocationList(), h => ((CommittedHandler)h)(system, block));
+            InvokeHandlers(Committed?.GetInvocationList(), h => ((CommittedHandler)h)(system, block));
         }
 
-        private static async Task InvokeHandlersAsync(Delegate[] handlers, Action<Delegate> handlerAction)
+        private static void InvokeHandlers(Delegate[] handlers, Action<Delegate> handlerAction)
         {
-            if (handlers == null) return;
-
-            var exceptions = new ConcurrentBag<Exception>();
-            var tasks = handlers.Select(handler => Task.Run(() =>
+            handlers?.ForEach(handler =>
             {
                 try
                 {
@@ -516,7 +513,6 @@ namespace Neo.Ledger
                     switch (plugin.ExceptionPolicy)
                     {
                         case UnhandledExceptionPolicy.StopNode:
-                            exceptions.Add(ex);
                             throw;
                         case UnhandledExceptionPolicy.StopPlugin:
                             //Stop plugin on exception
@@ -528,18 +524,9 @@ namespace Neo.Ledger
                         default:
                             throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
                     }
-
                     Utility.Log(nameof(plugin), LogLevel.Error, ex);
                 }
-                catch (Exception ex)
-                {
-                    exceptions.Add(ex);
-                }
-            })).ToList();
-
-            await Task.WhenAll(tasks);
-
-            exceptions.ForEach(e => throw e);
+            });
         }
 
         /// <summary>

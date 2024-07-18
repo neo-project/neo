@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Plugins
         private readonly UnhandledExceptionPolicy _exceptionPolicy;
         protected internal override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
 
-        public TestPlugin(UnhandledExceptionPolicy exceptionPolicy = UnhandledExceptionPolicy.StopPlugin) : base()
+        public TestPlugin(UnhandledExceptionPolicy exceptionPolicy = UnhandledExceptionPolicy.StopPlugin)
         {
             Blockchain.Committing += OnCommitting;
             Blockchain.Committed += OnCommitted;
