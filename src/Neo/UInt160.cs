@@ -13,6 +13,7 @@ using Neo.IO;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Neo
@@ -31,68 +32,72 @@ namespace Neo
         /// <summary>
         /// Represents 0.
         /// </summary>
-        public static readonly UInt160 Zero = new();
+        public static UInt160 Zero => new();
 
-        [FieldOffset(0)] private ulong value1;
-        [FieldOffset(8)] private ulong value2;
-        [FieldOffset(16)] private uint value3;
+        [FieldOffset(0)] private ulong _value1;
+        [FieldOffset(8)] private ulong _value2;
+        [FieldOffset(16)] private uint _value3;
 
         public int Size => Length;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt160"/> class.
         /// </summary>
-        public UInt160()
-        {
-        }
+        public UInt160() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt160"/> class.
         /// </summary>
         /// <param name="value">The value of the <see cref="UInt160"/>.</param>
-        public unsafe UInt160(ReadOnlySpan<byte> value)
+        public UInt160(ReadOnlySpan<byte> value)
         {
-            if (value.Length != Length) throw new FormatException();
-            fixed (ulong* p = &value1)
-            {
-                Span<byte> dst = new(p, Length);
-                value[..Length].CopyTo(dst);
-            }
+            if (value.Length != Length)
+                throw new FormatException();
+
+            var bytes = value.ToArray();
+            _value1 = Unsafe.As<byte, ulong>(ref bytes[0]);
+            _value2 = Unsafe.As<byte, ulong>(ref bytes[8]);
+            _value3 = Unsafe.As<byte, uint>(ref bytes[16]);
         }
 
         public int CompareTo(UInt160 other)
         {
-            int result = value3.CompareTo(other.value3);
+            var result = _value3.CompareTo(other._value3);
             if (result != 0) return result;
-            result = value2.CompareTo(other.value2);
+            result = _value2.CompareTo(other._value2);
             if (result != 0) return result;
-            return value1.CompareTo(other.value1);
+            return _value1.CompareTo(other._value1);
         }
 
         public void Deserialize(ref MemoryReader reader)
         {
-            value1 = reader.ReadUInt64();
-            value2 = reader.ReadUInt64();
-            value3 = reader.ReadUInt32();
+            _value1 = reader.ReadUInt64();
+            _value2 = reader.ReadUInt64();
+            _value3 = reader.ReadUInt32();
         }
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(obj, this)) return true;
-            return Equals(obj as UInt160);
+            if (obj == null)
+                return false;
+
+            var other = obj as UInt160;
+            if (other == null)
+                return false;
+            return Equals(other);
         }
 
         public bool Equals(UInt160 other)
         {
-            if (other is null) return false;
-            return value1 == other.value1
-                && value2 == other.value2
-                && value3 == other.value3;
+            if (other == null) return false;
+            return _value1 == other._value1 &&
+                _value2 == other._value2 &&
+                _value3 == other._value3;
         }
 
         public override int GetHashCode()
         {
-            return (int)value1;
+            return HashCode.Combine(_value1, _value2, _value3);
         }
 
         /// <summary>
@@ -109,9 +114,9 @@ namespace Neo
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(value1);
-            writer.Write(value2);
-            writer.Write(value3);
+            writer.Write(_value1);
+            writer.Write(_value2);
+            writer.Write(_value3);
         }
 
         public override string ToString()
@@ -139,9 +144,9 @@ namespace Neo
                 result = null;
                 return false;
             }
-            byte[] data = new byte[Length];
-            for (int i = 0; i < Length; i++)
-                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
+            var data = new byte[Length];
+            for (var i = 0; i < Length; i++)
+                if (!byte.TryParse(s.AsSpan(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
                 {
                     result = null;
                     return false;
@@ -150,16 +155,25 @@ namespace Neo
             return true;
         }
 
+        public static implicit operator UInt160(string s)
+        {
+            return Parse(s);
+        }
+
         public static bool operator ==(UInt160 left, UInt160 right)
         {
             if (ReferenceEquals(left, right)) return true;
-            if (left is null || right is null) return false;
+            if (left is null || right is null)
+                return Equals(left, right);
             return left.Equals(right);
         }
 
         public static bool operator !=(UInt160 left, UInt160 right)
         {
-            return !(left == right);
+            if (ReferenceEquals(left, right)) return false;
+            if (left is null || right is null)
+                return !Equals(left, right);
+            return !left.Equals(right);
         }
 
         public static bool operator >(UInt160 left, UInt160 right)
