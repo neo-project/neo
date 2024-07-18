@@ -247,33 +247,46 @@ namespace Neo.Plugins
         /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
         public static bool SendMessage(object message)
         {
-
-            return Plugins.Any(plugin =>
+            foreach (var plugin in Plugins)
+            {
+                if (plugin.IsStopped)
                 {
-                    try
-                    {
-                        return !plugin.IsStopped &&
-                               plugin.OnMessage(message);
-                    }
-                    catch (Exception ex)
-                    {
-                        switch (plugin.ExceptionPolicy)
-                        {
-                            case UnhandledExceptionPolicy.StopNode:
-                                throw;
-                            case UnhandledExceptionPolicy.StopPlugin:
-                                plugin.IsStopped = true;
-                                break;
-                            case UnhandledExceptionPolicy.Ignore:
-                                break;
-                            default:
-                                throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
-                        }
-                        Utility.Log(nameof(Plugin), LogLevel.Error, ex);
-                        return false;
-                    }
+                    continue;
                 }
-            );
+
+                bool result;
+                try
+                {
+                    result = plugin.OnMessage(message);
+                }
+                catch (Exception ex)
+                {
+                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case UnhandledExceptionPolicy.StopNode:
+                            throw;
+                        case UnhandledExceptionPolicy.StopPlugin:
+                            plugin.IsStopped = true;
+                            break;
+                        case UnhandledExceptionPolicy.Ignore:
+                            break;
+                        default:
+                            throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
+                    }
+
+                    continue; // Skip to the next plugin if an exception is handled
+                }
+
+                if (result)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
+
     }
 }
