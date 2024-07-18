@@ -137,11 +137,12 @@ namespace Neo
             if (string.IsNullOrWhiteSpace(str)) return false;
 
             if (str.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-            {
                 str = str[2..];
 
-                if (str.Length != Length * 2) return false;
+            if (str.Length != Length * 2) return false;
 
+            try
+            {
                 var data = Enumerable.Range(0, Length)
                     .Select(s => Convert.ToByte(str.Substring(s * 2, 2), 16))
                     .ToArray();
@@ -149,7 +150,10 @@ namespace Neo
                 result = new(data);
                 return true;
             }
-            return false;
+            catch
+            {
+                return false;
+            }
         }
 
         public static implicit operator UInt160(string s)
