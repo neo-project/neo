@@ -121,7 +121,7 @@ namespace Neo
 
         public override string ToString()
         {
-            return "0x" + this.ToArray().ToHexString();
+            return "0x" + this.ToArray().ToHexString(reverse: true);
         }
 
         /// <summary>
@@ -145,6 +145,7 @@ namespace Neo
             {
                 var data = Enumerable.Range(0, Length)
                     .Select(s => Convert.ToByte(str.Substring(s * 2, 2), 16))
+                    .Reverse()
                     .ToArray();
 
                 result = new(data);
