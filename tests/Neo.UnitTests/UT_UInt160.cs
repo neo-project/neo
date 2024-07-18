@@ -35,15 +35,16 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGernerator2()
         {
-            UInt160 uInt160 = new UInt160(new byte[20]);
+            UInt160 uInt160 = new byte[20];
             Assert.IsNotNull(uInt160);
         }
 
         [TestMethod]
         public void TestGernerator3()
         {
-            UInt160 uInt160 = "0x0000000000000000000000000000000000000000";
+            UInt160 uInt160 = "0xff00000000000000000000000000000000000001";
             Assert.IsNotNull(uInt160);
+            Assert.IsTrue(uInt160.ToString() == "0xff00000000000000000000000000000000000001");
         }
 
         [TestMethod]

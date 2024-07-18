@@ -11,8 +11,8 @@
 
 using Neo.IO;
 using System;
-using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -121,43 +121,45 @@ namespace Neo
 
         public override string ToString()
         {
-            return "0x" + this.ToArray().ToHexString(reverse: true);
+            return "0x" + this.ToArray().ToHexString();
         }
 
         /// <summary>
         /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
-        /// <param name="s">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
+        /// <param name="str">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt160"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string s, out UInt160 result)
+        public static bool TryParse(string str, out UInt160 result)
         {
-            if (s == null)
+            result = null;
+
+            if (string.IsNullOrWhiteSpace(str)) return false;
+
+            if (str.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
             {
-                result = null;
-                return false;
+                str = str[2..];
+
+                if (str.Length != Length * 2) return false;
+
+                var data = Enumerable.Range(0, Length)
+                    .Select(s => Convert.ToByte(str.Substring(s * 2, 2), 16))
+                    .ToArray();
+
+                result = new(data);
+                return true;
             }
-            if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                s = s[2..];
-            if (s.Length != Length * 2)
-            {
-                result = null;
-                return false;
-            }
-            var data = new byte[Length];
-            for (var i = 0; i < Length; i++)
-                if (!byte.TryParse(s.AsSpan(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
-                {
-                    result = null;
-                    return false;
-                }
-            result = new UInt160(data);
-            return true;
+            return false;
         }
 
         public static implicit operator UInt160(string s)
         {
             return Parse(s);
+        }
+
+        public static implicit operator UInt160(byte[] b)
+        {
+            return new UInt160(b);
         }
 
         public static bool operator ==(UInt160 left, UInt160 right)
