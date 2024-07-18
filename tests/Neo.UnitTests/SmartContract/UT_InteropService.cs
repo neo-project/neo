@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.TestKit.Xunit2;
+using Akka.Util.Internal;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
@@ -476,7 +477,7 @@ namespace Neo.UnitTests.SmartContract
                 BlockIndex = 0,
                 Transaction = TestUtils.CreateRandomHashTransaction()
             };
-            UT_SmartContractHelper.TransactionAdd(engine.Snapshot, state);
+            TestUtils.TransactionAdd(engine.Snapshot, state);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Ledger.Hash, "getTransactionHeight", state.Transaction.Hash);
@@ -505,6 +506,41 @@ namespace Neo.UnitTests.SmartContract
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Hash.Should().Be(state.Hash);
+        }
+
+        [TestMethod]
+        public void TestBlockchain_GetContractById()
+        {
+            var engine = GetEngine(true, true);
+            var contract = NativeContract.ContractManagement.GetContractById(engine.Snapshot, -1);
+            contract.Id.Should().Be(-1);
+            contract.Manifest.Name.Should().Be(nameof(ContractManagement));
+        }
+
+        [TestMethod]
+        public void TestBlockchain_HasMethod()
+        {
+            var engine = GetEngine(true, true);
+            NativeContract.ContractManagement.HasMethod(engine.Snapshot, NativeContract.NEO.Hash, "symbol", 0).Should().Be(true);
+            NativeContract.ContractManagement.HasMethod(engine.Snapshot, NativeContract.NEO.Hash, "transfer", 4).Should().Be(true);
+        }
+
+        [TestMethod]
+        public void TestBlockchain_ListContracts()
+        {
+            var engine = GetEngine(true, true);
+            var list = NativeContract.ContractManagement.ListContracts(engine.Snapshot);
+            list.ForEach(p => p.Id.Should().BeLessThan(0));
+
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            var state = TestUtils.GetContract();
+            snapshot.AddContract(state.Hash, state);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            engine.LoadScript(new byte[] { 0x01 });
+            NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Hash.Should().Be(state.Hash);
+
+            var list2 = NativeContract.ContractManagement.ListContracts(engine.Snapshot);
+            list2.Count().Should().Be(list.Count() + 1);
         }
 
         [TestMethod]
@@ -738,6 +774,93 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
+        }
+
+        [TestMethod]
+        public void TestVerifyWithECDsaV0()
+        {
+            var privateKey = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(privateKey);
+            var publicKeyR1 = new KeyPair(privateKey).PublicKey.ToArray();
+            var publicKeyK1 = (Neo.Cryptography.ECC.ECCurve.Secp256k1.G * privateKey).ToArray();
+            var hexMessage = "Hello, world!"u8.ToArray();
+            var signatureR1 = Crypto.Sign(hexMessage, privateKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
+            var signatureK1 = Crypto.Sign(hexMessage, privateKey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
+
+            var result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
+            result.Should().BeTrue();
+            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
+            result.Should().BeTrue();
+            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[0], NamedCurveHash.secp256k1SHA256);
+            result.Should().BeFalse();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
+        }
+
+        [TestMethod]
+        public void TestSha256()
+        {
+            var input = "Hello, world!"u8.ToArray();
+            var actualHash = CryptoLib.Sha256(input);
+            var expectedHash = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3";
+            actualHash.ToHexString().Should().Be(expectedHash);
+        }
+
+        [TestMethod]
+        public void TestRIPEMD160()
+        {
+            var input = "Hello, world!"u8.ToArray();
+            var actualHash = CryptoLib.RIPEMD160(input);
+            var expectedHash = "58262d1fbdbe4530d8865d3518c6d6e41002610f";
+            actualHash.ToHexString().Should().Be(expectedHash);
+        }
+
+        [TestMethod]
+        public void TestMurmur32()
+        {
+            var input = "Hello, world!"u8.ToArray();
+            var actualHash = CryptoLib.Murmur32(input, 0);
+            var expectedHash = "433e36c0";
+            actualHash.ToHexString().Should().Be(expectedHash);
+        }
+
+        [TestMethod]
+        public void TestGetBlockHash()
+        {
+            var snapshot = GetEngine(true, true).Snapshot;
+            var hash = LedgerContract.Ledger.GetBlockHash(snapshot, 0);
+            var hash2 = LedgerContract.Ledger.GetBlock(snapshot, 0).Hash;
+            var hash3 = LedgerContract.Ledger.GetHeader(snapshot, 0).Hash;
+            hash.ToString().Should().Be(hash2.ToString());
+            hash.ToString().Should().Be(hash3.ToString());
+            hash.ToString().Should().Be("0x1f4d1defa46faa5e7b9b8d3f79a06bec777d7c26c4aa5f6f5899a291daa87c15");
+            LedgerContract.Ledger.ContainsBlock(snapshot, hash).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestGetCandidateVote()
+        {
+            var snapshot = GetEngine(true, true).Snapshot;
+            var vote = LedgerContract.NEO.GetCandidateVote(snapshot, new ECPoint());
+            vote.Should().Be(-1);
+        }
+
+        [TestMethod]
+        public void TestContractPermissionDescriptorEquals()
+        {
+            var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
+            descriptor1.Equals(null).Should().BeFalse();
+            descriptor1.Equals(null as object).Should().BeFalse();
+            var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+            var descriptor3 = ContractPermissionDescriptor.Create(hash: null);
+            descriptor1.Equals(descriptor3).Should().BeTrue();
+            descriptor1.Equals(descriptor3 as object).Should().BeTrue();
+            var descriptor4 = ContractPermissionDescriptor.Create(group: null);
+            var descriptor5 = ContractPermissionDescriptor.Create(group: new ECPoint());
+            descriptor1.Equals(descriptor4).Should().BeTrue();
+            descriptor2.Equals(descriptor3).Should().BeFalse();
+            descriptor5.Equals(descriptor3).Should().BeFalse();
+            descriptor5.Equals(descriptor5).Should().BeTrue();
         }
     }
 }

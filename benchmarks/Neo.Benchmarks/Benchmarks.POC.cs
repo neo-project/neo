@@ -69,7 +69,7 @@ public class Benchmarks_PoCs
             Script = Convert.FromBase64String(poc),
             Witnesses = Array.Empty<Witness>()
         };
-        using var snapshot = system.GetSnapshot();
+        using var snapshot = system.GetSnapshotCache();
         using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, system.GenesisBlock, protocol, tx.SystemFee);
         engine.LoadScript(tx.Script);
         Stopwatch stopwatch = Stopwatch.StartNew();
