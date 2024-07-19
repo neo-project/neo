@@ -48,7 +48,7 @@ namespace Neo.UnitTests.Ledger
 
         private static DataCache GetSnapshot()
         {
-            return testBlockchain.StoreView.CreateSnapshot();
+            return testBlockchain.StoreView.CloneCache();
         }
 
         [TestInitialize]
