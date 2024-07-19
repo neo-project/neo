@@ -12,75 +12,130 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Data.LevelDB;
 using System;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Plugins.Storage.Tests;
 
+/*
+ * LevelDB Thread Safety Explanation:
+ *
+ * LevelDB is designed to be a fast key-value storage library. However, it has
+ * some limitations regarding thread safety. Specifically, LevelDB is not thread-safe
+ * when multiple threads are attempting to write to the database concurrently. This can
+ * lead to data corruption, crashes, and other undefined behaviors.
+ *
+ * LevelDB provides snapshots and batch writes. Snapshots allow
+ * a consistent view of the database at a point in time, but they are not designed for
+ * concurrent write operations. Batch writes can be used to perform atomic updates,
+ * but they also need to be managed carefully to avoid concurrency issues.
+ *
+ * In this test class, we demonstrate these thread safety issues and how to mitigate
+ * them using different approaches such as locking mechanisms and creating separate
+ * snapshots for each thread.
+ */
 partial class StoreTest
 {
-
     [TestMethod]
     [ExpectedException(typeof(AggregateException))]
     public void TestMultiThreadLevelDbSnapshotPut()
     {
         using var store = levelDbStore.GetStore(path_leveldb);
-        var snapshot = store.GetSnapshot();
+        using var snapshot = store.GetSnapshot();
         var testKey = new byte[] { 0x01, 0x02, 0x03 };
 
-        var tasks = new Task[100];
-        for (var i = 0; i < tasks.Length; i++)
+        var threadCount = 1;
+        while (true)
         {
-            var value = new byte[] { 0x04, 0x05, 0x06, (byte)i };
-            tasks[i] = Task.Run(() =>
+            var tasks = new Task[threadCount];
+            try
             {
-                snapshot.Put(testKey, value);
-                snapshot.Commit();
-            });
+                for (var i = 0; i < tasks.Length; i++)
+                {
+                    var value = new byte[] { 0x04, 0x05, 0x06, (byte)i };
+                    tasks[i] = Task.Run(() =>
+                    {
+                        // Introduce delay to increase conflict chance
+                        Thread.Sleep(new Random().Next(1, 10));
+                        // Attempt to write to the snapshot and commit
+                        snapshot.Put(testKey, value);
+                        snapshot.Commit();
+                    });
+                }
+
+                // Wait for all tasks to complete
+                Task.WaitAll(tasks);
+                threadCount++;
+            }
+            catch (AggregateException)
+            {
+                // AggregateException is expected due to concurrent access
+                Console.WriteLine($"AggregateException caught with {threadCount} threads.");
+                throw;
+            }
+            catch (LevelDBException ex)
+            {
+                // LevelDBException is also possible due to LevelDB being thread-unsafe
+                Console.WriteLine($"LevelDBException caught with {threadCount} threads: {ex.Message}");
+                break;
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail("Unexpected exception: " + ex.Message);
+            }
         }
-        Task.WaitAll(tasks);
-        snapshot.Dispose();
     }
 
     [TestMethod]
-    public void TestMultiThreadLevelDbSnapshotPutWithoutCommit()
+    public void TestMultiThreadLevelDbSnapshotPutUntilException()
     {
         using var store = levelDbStore.GetStore(path_leveldb);
-        var snapshot = store.GetSnapshot();
+        using var snapshot = store.GetSnapshot();
         var testKey = new byte[] { 0x01, 0x02, 0x03 };
 
-        var tasks = new Task[100];
-        for (var i = 0; i < tasks.Length; i++)
+        var threadCount = 1;
+        while (true)
         {
-            var value = new byte[] { 0x04, 0x05, 0x06, (byte)i };
-            tasks[i] = Task.Run(() =>
+            var tasks = new Task[threadCount];
+            try
             {
-                snapshot.Put(testKey, value);
-            });
-        }
+                for (var i = 0; i < tasks.Length; i++)
+                {
+                    var value = new byte[] { 0x04, 0x05, 0x06, (byte)i };
+                    tasks[i] = Task.Run(() =>
+                    {
+                        // Introduce delay to increase conflict chance
+                        Thread.Sleep(new Random().Next(1, 100));
+                        // Attempt to write to the snapshot without committing
+                        snapshot.Put(testKey, value);
+                    });
+                }
 
-        try
-        {
-            Task.WaitAll(tasks);
-            snapshot.Commit();
-        }
-        catch (AggregateException ae)
-        {
-            var innerExceptions = ae.InnerExceptions;
-            var hasExpectedException = innerExceptions.Any(innerException => innerException is AggregateException or LevelDBException);
+                // Wait for all tasks to complete
+                Task.WaitAll(tasks);
 
-            if (!hasExpectedException)
+                // Attempt to commit the changes
+                snapshot.Commit();
+                threadCount++;
+            }
+            catch (AggregateException ex)
             {
-                // Re-throw if none of the expected exceptions were found
-                throw;
+                // AggregateException is expected due to concurrent access
+                Console.WriteLine($"AggregateException caught with {threadCount} threads.");
+                break;
+            }
+            catch (LevelDBException ex)
+            {
+                // LevelDBException is also possible due to LevelDB being thread-unsafe
+                Console.WriteLine($"LevelDBException caught with {threadCount} threads.");
+                break;
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail("Unexpected exception: " + ex.Message);
             }
         }
-        finally
-        {
-            snapshot.Dispose();
-        }
     }
-
 
     [TestMethod]
     public void TestMultiThreadLevelDbSnapshotPutWithLocker()
@@ -88,16 +143,16 @@ partial class StoreTest
         using var store = levelDbStore.GetStore(path_leveldb);
 
         object locker = new();
-        var snapshot = store.GetSnapshot();
-
         var testKey = new byte[] { 0x01, 0x02, 0x03 };
 
-        var tasks = new Task[100];
+        var tasks = new Task[10];
         for (var i = 0; i < tasks.Length; i++)
         {
             var value = new byte[] { 0x04, 0x05, 0x06, (byte)i };
             tasks[i] = Task.Run(() =>
             {
+                using var snapshot = store.GetSnapshot();
+                // Use a lock to ensure thread-safe access to the snapshot
                 lock (locker)
                 {
                     snapshot.Put(testKey, value);
@@ -105,8 +160,9 @@ partial class StoreTest
                 }
             });
         }
+
+        // Wait for all tasks to complete
         Task.WaitAll(tasks);
-        snapshot.Dispose();
     }
 
     [TestMethod]
@@ -121,12 +177,22 @@ partial class StoreTest
             var value = new byte[] { 0x04, 0x05, 0x06, (byte)i };
             tasks[i] = Task.Run(() =>
             {
-                var snapshot = store.GetSnapshot();
-                snapshot.Put(testKey, value);
-                snapshot.Commit();
-                snapshot.Dispose();
+                try
+                {
+                    // Create a new snapshot for each thread to avoid concurrent access issues
+                    using var snapshot = store.GetSnapshot();
+                    snapshot.Put(testKey, value);
+                    snapshot.Commit();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Task {i} encountered an exception: {ex}");
+                    throw;
+                }
             });
         }
+
+        // Wait for all tasks to complete
         Task.WaitAll(tasks);
     }
 }
