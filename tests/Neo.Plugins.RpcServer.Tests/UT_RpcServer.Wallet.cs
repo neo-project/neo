@@ -9,11 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests;
+using Neo.UnitTests.Extensions;
 using System;
 using System.IO;
 using System.Linq;
@@ -118,7 +122,6 @@ partial class UT_RpcServer
     {
         TestUtilOpenWallet();
         var result = _rpcServer.GetWalletUnclaimedGas([]);
-        var b = result.AsString();
         Assert.IsInstanceOfType(result, typeof(JString));
         TestUtilCloseWallet();
     }
@@ -126,6 +129,7 @@ partial class UT_RpcServer
     [TestMethod]
     public void TestImportPrivKey()
     {
+        TestUtilOpenWallet();
         var privKey = _walletAccount.GetKey().Export();
         var paramsArray = new JArray(privKey);
         var result = _rpcServer.ImportPrivKey(paramsArray);
@@ -135,6 +139,16 @@ partial class UT_RpcServer
         Assert.IsTrue(json.ContainsProperty("haskey"));
         Assert.IsTrue(json.ContainsProperty("label"));
         Assert.IsTrue(json.ContainsProperty("watchonly"));
+        TestUtilCloseWallet();
+    }
+
+    [TestMethod]
+    public void TestImportPrivKeyNoWallet()
+    {
+        var privKey = _walletAccount.GetKey().Export();
+        var paramsArray = new JArray(privKey);
+        var exception = Assert.ThrowsException<RpcException>(()=> _rpcServer.ImportPrivKey(paramsArray));
+       Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -150,16 +164,25 @@ partial class UT_RpcServer
     }
 
     [TestMethod]
-    public void TestListAddress()
+    public void TestListAddressNoWallet()
     {
-        var result = _rpcServer.ListAddress(new JArray());
-        Assert.IsInstanceOfType(result, typeof(JArray));
-        var json = (JArray)result;
-        Assert.IsTrue(json.Count > 0);
+        var exception =Assert.ThrowsException<RpcException>(()=> _rpcServer.ListAddress([]));
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
-    public void TestSendFrom()
+    public void TestListAddress()
+    {
+        TestUtilOpenWallet();
+        var result = _rpcServer.ListAddress([]);
+        Assert.IsInstanceOfType(result, typeof(JArray));
+        var json = (JArray)result;
+        Assert.IsTrue(json.Count > 0);
+        TestUtilCloseWallet();
+    }
+
+    [TestMethod]
+    public void TestSendFromNoWallet()
     {
         var assetId = NativeContract.GAS.Hash;
         var from = _walletAccount.Address;
@@ -167,6 +190,22 @@ partial class UT_RpcServer
         var amount = "1";
         var paramsArray = new JArray(assetId.ToString(), from, to, amount);
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendFrom(paramsArray), "Should throw RpcException for insufficient funds");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+    }
+
+    [TestMethod]
+    public void TestSendFrom()
+    {
+        TestUtilOpenWallet();
+        var assetId = NativeContract.GAS.Hash;
+        var from = _walletAccount.Address;
+        var to = _walletAccount.Address;
+        var amount = "1";
+        var paramsArray = new JArray(assetId.ToString(), from, to, amount);
+        var result = _rpcServer.SendFrom(paramsArray);
+        Assert.IsInstanceOfType(result, typeof(JString));
+        // Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        TestUtilCloseWallet();
     }
 
     [TestMethod]
@@ -176,6 +215,7 @@ partial class UT_RpcServer
         var to = new JArray { new JObject { ["asset"] = NativeContract.GAS.Hash.ToString(), ["value"] = "1", ["address"] = _walletAccount.Address } };
         var paramsArray = new JArray(from, to);
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendMany(paramsArray), "Should throw RpcException for insufficient funds");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -186,6 +226,7 @@ partial class UT_RpcServer
         var amount = "1";
         var paramsArray = new JArray(assetId.ToString(), to, amount);
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendToAddress(paramsArray), "Should throw RpcException for insufficient funds");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -201,6 +242,7 @@ partial class UT_RpcServer
     {
         _rpcServer.wallet = null;
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.DumpPrivKey(new JArray(_walletAccount.Address)), "Should throw RpcException for no opened wallet");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -208,6 +250,7 @@ partial class UT_RpcServer
     {
         _rpcServer.wallet = null;
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.GetNewAddress(new JArray()), "Should throw RpcException for no opened wallet");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -215,6 +258,7 @@ partial class UT_RpcServer
     {
         _rpcServer.wallet = null;
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.GetWalletBalance(new JArray(NativeContract.NEO.Hash.ToString())), "Should throw RpcException for no opened wallet");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -222,6 +266,7 @@ partial class UT_RpcServer
     {
         _rpcServer.wallet = null;
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.GetWalletUnclaimedGas(new JArray()), "Should throw RpcException for no opened wallet");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -230,6 +275,7 @@ partial class UT_RpcServer
         _rpcServer.wallet = null;
         var privKey = _walletAccount.GetKey().Export();
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.ImportPrivKey(new JArray(privKey)), "Should throw RpcException for no opened wallet");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -238,6 +284,7 @@ partial class UT_RpcServer
         var invalidTxBase64 = "invalid_base64";
         var paramsArray = new JArray(invalidTxBase64);
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CalculateNetworkFee(paramsArray), "Should throw RpcException for invalid transaction format");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
@@ -266,11 +313,11 @@ partial class UT_RpcServer
         // Test with invalid transaction id
         var invalidParamsArray = new JArray("invalid_txid");
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CancelTransaction(invalidParamsArray), "Should throw RpcException for invalid txid");
-
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         // Test with null wallet
         _rpcServer.wallet = null;
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CancelTransaction(paramsArray), "Should throw RpcException for no opened wallet");
-
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         TestUtilCloseWallet();
     }
 
@@ -280,10 +327,11 @@ partial class UT_RpcServer
         var scriptHash = UInt160.Parse("0x70cde1619e405cdef363ab66a1e8dce430d798d5");
         var paramsArray = new JArray(scriptHash.ToString());
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify(paramsArray), "Should throw RpcException for unknown contract");
-
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         // Test with invalid script hash
         var invalidParamsArray = new JArray("invalid_script_hash");
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify(invalidParamsArray), "Should throw RpcException for invalid script hash");
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
 
@@ -315,5 +363,35 @@ partial class UT_RpcServer
         {
             Console.WriteLine(e);
         }
+    }
+
+    private UInt160 TestUtilAddTestContract()
+    {
+        var state = TestUtils.GetContract();
+
+        var storageKey = new StorageKey
+        {
+            Id = state.Id,
+            Key = new byte[] { 0x01 }
+        };
+
+        var storageItem = new StorageItem
+        {
+            Value = new byte[] { 0x01, 0x02, 0x03, 0x04 }
+        };
+
+        var snapshot = _neoSystem.GetSnapshotCache();
+        snapshot.AddContract(state.Hash, state);
+        snapshot.Add(storageKey, storageItem);
+        snapshot.Commit();
+        return state.Hash;
+        // var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+        // engine.LoadScript(new byte[] { 0x01 });
+        //
+        // engine.Get(new StorageContext
+        // {
+        //     Id = state.Id,
+        //     IsReadOnly = false
+        // }, new byte[] { 0x01 }).Value.Span.ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
     }
 }
