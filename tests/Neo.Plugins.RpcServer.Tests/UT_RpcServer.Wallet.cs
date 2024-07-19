@@ -108,7 +108,7 @@ partial class UT_RpcServer
     public void TestGetWalletBalanceInvalidAsset()
     {
         TestUtilOpenWallet();
-        var assetId =  UInt160.Zero;
+        var assetId = UInt160.Zero;
         var paramsArray = new JArray(assetId.ToString());
         var result = _rpcServer.GetWalletBalance(paramsArray);
         Assert.IsInstanceOfType(result, typeof(JObject));
@@ -147,14 +147,15 @@ partial class UT_RpcServer
     {
         var privKey = _walletAccount.GetKey().Export();
         var paramsArray = new JArray(privKey);
-        var exception = Assert.ThrowsException<RpcException>(()=> _rpcServer.ImportPrivKey(paramsArray));
-       Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.ImportPrivKey(paramsArray));
+        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
     [TestMethod]
     public void TestCalculateNetworkFee()
     {
-        var tx = new Transaction { Signers = [new Signer { Account = _walletAccount.ScriptHash }] };
+        var snapshot = _neoSystem.GetSnapshot();
+        var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
         var txBase64 = Convert.ToBase64String(tx.ToArray());
         var paramsArray = new JArray(txBase64);
         var result = _rpcServer.CalculateNetworkFee(paramsArray);
@@ -164,9 +165,16 @@ partial class UT_RpcServer
     }
 
     [TestMethod]
+    public void TestCalculateNetworkFeeNoParam()
+    {
+        var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CalculateNetworkFee([]));
+        Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
+    }
+
+    [TestMethod]
     public void TestListAddressNoWallet()
     {
-        var exception =Assert.ThrowsException<RpcException>(()=> _rpcServer.ListAddress([]));
+        var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.ListAddress([]));
         Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
     }
 
@@ -202,9 +210,8 @@ partial class UT_RpcServer
         var to = _walletAccount.Address;
         var amount = "1";
         var paramsArray = new JArray(assetId.ToString(), from, to, amount);
-        var result = _rpcServer.SendFrom(paramsArray);
-        Assert.IsInstanceOfType(result, typeof(JString));
-        // Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendFrom(paramsArray));
+        Assert.AreEqual(exception.HResult, RpcError.InvalidRequest.Code);
         TestUtilCloseWallet();
     }
 
@@ -284,7 +291,7 @@ partial class UT_RpcServer
         var invalidTxBase64 = "invalid_base64";
         var paramsArray = new JArray(invalidTxBase64);
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CalculateNetworkFee(paramsArray), "Should throw RpcException for invalid transaction format");
-        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
     }
 
     [TestMethod]
@@ -304,16 +311,24 @@ partial class UT_RpcServer
     public void TestCancelTransaction()
     {
         TestUtilOpenWallet();
-        var txid = UInt256.Parse("0x1c6e86f1b7a716b1a946d6fa7e6ec9f9e9d0f1f5b6d1a56e7766e8d5e9b8f1c6");
-        var paramsArray = new JArray(txid.ToString());
+        var snapshot = _neoSystem.GetSnapshot();
+        var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
+        snapshot.Commit();
+        var paramsArray = new JArray(tx.Hash.ToString(), new JArray(_walletAccount.Address));
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CancelTransaction(paramsArray), "Should throw RpcException for non-existing transaction");
 
-        Assert.AreEqual(RpcError.NoOpenedWallet.Code, exception.HResult);
+        Assert.AreEqual(RpcError.InsufficientFunds.Code, exception.HResult);
 
         // Test with invalid transaction id
-        var invalidParamsArray = new JArray("invalid_txid");
+        var invalidParamsArray = new JArray("invalid_txid", new JArray(_walletAccount.Address));
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CancelTransaction(invalidParamsArray), "Should throw RpcException for invalid txid");
-        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
+
+        // Test with no signer
+        invalidParamsArray = new JArray(tx.Hash.ToString());
+        exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CancelTransaction(invalidParamsArray), "Should throw RpcException for invalid txid");
+        Assert.AreEqual(exception.HResult, RpcError.BadRequest.Code);
+
         // Test with null wallet
         _rpcServer.wallet = null;
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CancelTransaction(paramsArray), "Should throw RpcException for no opened wallet");
@@ -327,11 +342,11 @@ partial class UT_RpcServer
         var scriptHash = UInt160.Parse("0x70cde1619e405cdef363ab66a1e8dce430d798d5");
         var paramsArray = new JArray(scriptHash.ToString());
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify(paramsArray), "Should throw RpcException for unknown contract");
-        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        Assert.AreEqual(exception.HResult, RpcError.UnknownContract.Code);
         // Test with invalid script hash
         var invalidParamsArray = new JArray("invalid_script_hash");
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify(invalidParamsArray), "Should throw RpcException for invalid script hash");
-        Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
     }
 
 

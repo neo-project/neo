@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2024 The Neo Project.
 //
 // TestUtils.Contract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -18,52 +18,52 @@ namespace Neo.UnitTests;
 
 partial class TestUtils
 {
-            public static ContractManifest CreateDefaultManifest()
+    public static ContractManifest CreateDefaultManifest()
+    {
+        return new ContractManifest
+        {
+            Name = "testManifest",
+            Groups = [],
+            SupportedStandards = [],
+            Abi = new ContractAbi
             {
-                return new ContractManifest
-                {
-                    Name = "testManifest",
-                    Groups = [],
-                    SupportedStandards = [],
-                    Abi = new ContractAbi
-                    {
-                        Events = [],
-                        Methods =
-                        [
-                            new ContractMethodDescriptor
-                            {
-                                Name = "testMethod",
-                                Parameters = [],
-                                ReturnType = ContractParameterType.Void,
-                                Offset = 0,
-                                Safe = true
-                            }
-                        ]
-                    },
-                    Permissions = [ContractPermission.DefaultPermission],
-                    Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
-                    Extra = null
-                };
-            }
-
-            public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
-            {
-                var manifest = CreateDefaultManifest();
-                manifest.Abi.Methods =
+                Events = [],
+                Methods =
                 [
-                    new ContractMethodDescriptor()
+                    new ContractMethodDescriptor
                     {
-                        Name = method,
-                        Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
-                        {
-                            Name = $"p{i}",
-                            Type = p
-                        }).ToArray(),
-                        ReturnType = returnType
+                        Name = "testMethod",
+                        Parameters = [],
+                        ReturnType = ContractParameterType.Void,
+                        Offset = 0,
+                        Safe = true
                     }
-                ];
-                return manifest;
+                ]
+            },
+            Permissions = [ContractPermission.DefaultPermission],
+            Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
+            Extra = null
+        };
+    }
+
+    public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
+    {
+        var manifest = CreateDefaultManifest();
+        manifest.Abi.Methods =
+        [
+            new ContractMethodDescriptor()
+            {
+                Name = method,
+                Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                {
+                    Name = $"p{i}",
+                    Type = p
+                }).ToArray(),
+                ReturnType = returnType
             }
+        ];
+        return manifest;
+    }
 
     public static ContractState GetContract(string method = "test", int parametersCount = 0)
     {

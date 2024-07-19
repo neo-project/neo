@@ -29,73 +29,77 @@ namespace Neo.UnitTests;
 
 public partial class TestUtils
 {
-            public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, WalletAccount account)
+    public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, WalletAccount account)
+    {
+        return CreateValidTx(snapshot, wallet, account.ScriptHash, (uint)new Random().Next());
+    }
+
+    public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
+    {
+        var tx = wallet.MakeTransaction(snapshot, [
+                new TransferOutput
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = account,
+                    Value = new BigDecimal(BigInteger.One, 8)
+                }
+            ],
+            account);
+
+        tx.Nonce = nonce;
+        tx.Signers = [new Signer { Account = account, Scopes = WitnessScope.CalledByEntry }];
+        var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
+        Assert.IsNull(data.GetSignatures(tx.Sender));
+        Assert.IsTrue(wallet.Sign(data));
+        Assert.IsTrue(data.Completed);
+        Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
+
+        tx.Witnesses = data.GetWitnesses();
+        return tx;
+    }
+
+    public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce, UInt256[] conflicts)
+    {
+        var tx = wallet.MakeTransaction(snapshot, [
+                new TransferOutput
+                {
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = account,
+                    Value = new BigDecimal(BigInteger.One, 8)
+                }
+            ],
+            account);
+        tx.Attributes = conflicts.Select(conflict => new Conflicts { Hash = conflict }).ToArray();
+        tx.Nonce = nonce;
+        tx.Signers = [new Signer { Account = account, Scopes = WitnessScope.CalledByEntry }];
+        var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
+        Assert.IsNull(data.GetSignatures(tx.Sender));
+        Assert.IsTrue(wallet.Sign(data));
+        Assert.IsTrue(data.Completed);
+        Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
+        tx.Witnesses = data.GetWitnesses();
+        return tx;
+    }
+
+    public static Transaction CreateRandomHashTransaction()
+    {
+        var randomBytes = new byte[16];
+        TestRandom.NextBytes(randomBytes);
+        return new Transaction
         {
-            return CreateValidTx(snapshot, wallet, account.ScriptHash, (uint)new Random().Next());
-        }
-
-        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
-        {
-            var tx = wallet.MakeTransaction(snapshot, [
-                    new TransferOutput
-                    {
-                        AssetId = NativeContract.GAS.Hash,
-                        ScriptHash = account,
-                        Value = new BigDecimal(BigInteger.One, 8)
-                    }
-                ],
-                account);
-
-            tx.Nonce = nonce;
-
-            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            Assert.IsNull(data.GetSignatures(tx.Sender));
-            Assert.IsTrue(wallet.Sign(data));
-            Assert.IsTrue(data.Completed);
-            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count());
-
-            tx.Witnesses = data.GetWitnesses();
-            return tx;
-        }
-
-        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce, UInt256[] conflicts)
-        {
-            var tx = wallet.MakeTransaction(snapshot, [
-                    new TransferOutput
-                    {
-                        AssetId = NativeContract.GAS.Hash,
-                        ScriptHash = account,
-                        Value = new BigDecimal(BigInteger.One, 8)
-                    }
-                ],
-                account);
-            tx.Attributes = conflicts.Select(conflict => new Conflicts { Hash = conflict }).ToArray();
-            tx.Nonce = nonce;
-
-            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            Assert.IsNull(data.GetSignatures(tx.Sender));
-            Assert.IsTrue(wallet.Sign(data));
-            Assert.IsTrue(data.Completed);
-            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count);
-            tx.Witnesses = data.GetWitnesses();
-            return tx;
-        }
-
-        public static Transaction CreateRandomHashTransaction()
-        {
-            var randomBytes = new byte[16];
-            TestRandom.NextBytes(randomBytes);
-            return new Transaction
-            {
-                Script = randomBytes,
-                Attributes = [],
-                Signers = [new Signer { Account = UInt160.Zero }],
-                Witnesses =
-                [
-                    new Witness(invocationScript: Array.Empty<byte>(), verificationScript: Array.Empty<byte>())
-                ]
-            };
-        }
+            Script = randomBytes,
+            Attributes = [],
+            Signers = [new Signer { Account = UInt160.Zero }],
+            Witnesses =
+            [
+                new Witness
+                {
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
+                }
+            ]
+        };
+    }
 
     public static Transaction GetTransaction(UInt160 sender)
     {
@@ -105,22 +109,22 @@ public partial class TestUtils
             Attributes = [],
             Signers =
             [
-                new Signer()
-            {
-                Account = sender,
-                Scopes = WitnessScope.CalledByEntry,
-                AllowedContracts = [],
-                AllowedGroups = [],
-                Rules = [],
-            }
+                new Signer
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CalledByEntry,
+                    AllowedContracts = [],
+                    AllowedGroups = [],
+                    Rules = [],
+                }
             ],
             Witnesses =
             [
                 new Witness
-            {
-                InvocationScript = Array.Empty<byte>(),
-                VerificationScript = Array.Empty<byte>()
-            }
+                {
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
+                }
             ]
         };
     }
