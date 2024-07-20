@@ -307,7 +307,8 @@ namespace Neo.UnitTests.Wallets.NEP6
             Assert.AreEqual(true, cert.HasPrivateKey);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                Assert.ThrowsException<PlatformNotSupportedException>(() => uut.Import(cert));
+                var exception = Assert.ThrowsException<WalletException>(() => uut.Import(cert));
+                Assert.AreEqual(exception.ErrorType, WalletErrorType.UnsupportedOperation);
                 return;
             }
             WalletAccount account = uut.Import(cert);
