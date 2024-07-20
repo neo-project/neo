@@ -26,10 +26,12 @@ namespace Neo.UnitTests.Wallets
         {
             byte[] array = { 0x01 };
             UInt160 scriptHash = new UInt160(Crypto.Hash160(array));
-            "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion).Should().Be(scriptHash);
+            "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion).Should()
+                .Be(scriptHash);
 
-            Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash(TestProtocolSettings.Default.AddressVersion);
-            action.Should().Throw<FormatException>();
+            var exception = Assert.ThrowsException<WalletException>(() =>
+                "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash(TestProtocolSettings.Default.AddressVersion));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.FormatError);
 
             var address = scriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
             Span<byte> data = stackalloc byte[21];
@@ -37,8 +39,9 @@ namespace Neo.UnitTests.Wallets
             data[0] = 0x01;
             scriptHash.ToArray().CopyTo(data[1..]);
             address = Base58.Base58CheckEncode(data);
-            action = () => address.ToScriptHash(ProtocolSettings.Default.AddressVersion);
-            action.Should().Throw<FormatException>();
+            exception = Assert.ThrowsException<WalletException>(() =>
+                address.ToScriptHash(ProtocolSettings.Default.AddressVersion));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.FormatError);
         }
     }
 }

@@ -24,28 +24,42 @@ namespace Neo.Wallets.NEP6
         public static NEP6Contract FromJson(JObject json)
         {
             if (json == null) return null;
-            return new NEP6Contract
+            try
             {
-                Script = Convert.FromBase64String(json["script"].AsString()),
-                ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].GetEnum<ContractParameterType>()).ToArray(),
-                ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
-                Deployed = json["deployed"].AsBoolean()
-            };
+                return new NEP6Contract
+                {
+                    Script = Convert.FromBase64String(json["script"].AsString()),
+                    ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].GetEnum<ContractParameterType>()).ToArray(),
+                    ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
+                    Deployed = json["deployed"].AsBoolean()
+                };
+            }
+            catch (Exception e)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         public JObject ToJson()
         {
-            JObject contract = new();
-            contract["script"] = Convert.ToBase64String(Script);
-            contract["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
+            try
             {
-                JObject parameter = new();
-                parameter["name"] = name;
-                parameter["type"] = type;
-                return parameter;
-            }));
-            contract["deployed"] = Deployed;
-            return contract;
+                JObject contract = new()
+                {
+                    ["script"] = Convert.ToBase64String(Script),
+                    ["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
+                    {
+                        JObject parameter = new() { ["name"] = name, ["type"] = type };
+                        return parameter;
+                    })),
+                    ["deployed"] = Deployed
+                };
+                return contract;
+            }
+            catch (Exception e)
+            {
+                throw WalletException.FromException(e);
+            }
         }
     }
 }

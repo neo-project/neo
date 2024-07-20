@@ -93,8 +93,10 @@ namespace Neo.UnitTests.Wallets.NEP6
             Assert.IsTrue(uut.Sign(ctx));
             tx.Witnesses = ctx.GetWitnesses();
             Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, TestBlockchain.GetTestSnapshot(), long.MaxValue));
-            Assert.ThrowsException<ArgumentNullException>(() => uut.CreateAccount((byte[])null));
-            Assert.ThrowsException<ArgumentException>(() => uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551".HexToBytes()));
+            var exception = Assert.ThrowsException<WalletException>(() => uut.CreateAccount((byte[])null));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ArgumentNull);
+            exception = Assert.ThrowsException<WalletException>(() => uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551".HexToBytes()));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.InvalidPrivateKey);
         }
 
         [TestMethod]

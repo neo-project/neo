@@ -345,29 +345,38 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromNEP2(string nep2, byte[] passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
-            if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
-            if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
-            byte[] data = nep2.Base58CheckDecode();
-            if (data.Length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
-                throw new FormatException();
-            byte[] addresshash = new byte[4];
-            Buffer.BlockCopy(data, 3, addresshash, 0, 4);
-            byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
-            byte[] derivedhalf1 = derivedkey[..32];
-            byte[] derivedhalf2 = derivedkey[32..];
-            Array.Clear(derivedkey, 0, derivedkey.Length);
-            byte[] encryptedkey = new byte[32];
-            Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
-            Array.Clear(data, 0, data.Length);
-            byte[] prikey = XOR(Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
-            Array.Clear(derivedhalf1, 0, derivedhalf1.Length);
-            Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
-            ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
-            UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            string address = script_hash.ToAddress(version);
-            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
-                throw new FormatException();
-            return prikey;
+
+            ThrowIfNull(nep2, nameof(nep2));
+            ThrowIfNull(passphrase, nameof(passphrase));
+            try
+            {
+                byte[] data = nep2.Base58CheckDecode();
+                if (data.Length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
+                    throw new WalletException(WalletErrorType.FormatError, "Invalid NEP-2 format");
+                byte[] addresshash = new byte[4];
+                Buffer.BlockCopy(data, 3, addresshash, 0, 4);
+                byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
+                byte[] derivedhalf1 = derivedkey[..32];
+                byte[] derivedhalf2 = derivedkey[32..];
+                Array.Clear(derivedkey, 0, derivedkey.Length);
+                byte[] encryptedkey = new byte[32];
+                Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
+                Array.Clear(data, 0, data.Length);
+                byte[] prikey = XOR(Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
+                Array.Clear(derivedhalf1, 0, derivedhalf1.Length);
+                Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
+                ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
+                UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+                string address = script_hash.ToAddress(version);
+                if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
+                    throw new WalletException(WalletErrorType.FormatError);
+                return prikey;
+            }
+            catch (Exception e)
+            {
+                throw WalletException.FromException(e);
+            }
+
         }
 
         /// <summary>
@@ -377,10 +386,10 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromWIF(string wif)
         {
-            if (wif is null) throw new ArgumentNullException(nameof(wif));
+            ThrowIfNull(wif, nameof(wif));
             byte[] data = wif.Base58CheckDecode();
             if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
-                throw new FormatException();
+                throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format");
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
@@ -416,7 +425,7 @@ namespace Neo.Wallets
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                throw new PlatformNotSupportedException("Importing certificates is not supported on macOS.");
+                throw new WalletException(WalletErrorType.UnsupportedOperation, "Importing certificates is not supported on macOS.");
             }
             byte[] privateKey;
             using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
@@ -492,13 +501,14 @@ namespace Neo.Wallets
                         sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
                         using ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings, persistingBlock: persistingBlock);
                         if (engine.State != VMState.HALT)
-                            throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
+                            throw new WalletException(WalletErrorType.ContractError, $"Execution for {assetId}.balanceOf('{account}') failed.");
                         BigInteger value = engine.ResultStack.Pop().GetInteger();
                         if (value.Sign > 0) balances.Add((account, value));
                     }
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
                     if (sum_balance < sum)
-                        throw new InvalidOperationException($"It does not have enough balance, expected: {sum} found: {sum_balance}");
+                        throw new WalletException(WalletErrorType.InsufficientFunds, $"Insufficient balance for asset {assetId}. Required: {sum}, Available: {sum_balance}");
+
                     foreach (TransferOutput output in group)
                     {
                         balances = balances.OrderBy(p => p.Value).ToList();
@@ -530,7 +540,15 @@ namespace Neo.Wallets
             if (balances_gas is null)
                 balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas, persistingBlock: persistingBlock);
+            try
+            {
+                return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas, persistingBlock: persistingBlock);
+            }
+            catch (Exception ex)
+            {
+                throw new WalletException(WalletErrorType.TransactionCreationError, "Failed to create transaction.", ex);
+            }
+
         }
 
         /// <summary>
@@ -579,7 +597,7 @@ namespace Neo.Wallets
                 {
                     if (engine.State == VMState.FAULT)
                     {
-                        throw new InvalidOperationException($"Failed execution for '{Convert.ToBase64String(script.Span)}'", engine.FaultException);
+                        throw new WalletException(WalletErrorType.ExecutionFault, $"Failed execution for '{Convert.ToBase64String(script.Span)}'", engine.FaultException);
                     }
                     tx.SystemFee = engine.FeeConsumed;
                 }
@@ -587,7 +605,7 @@ namespace Neo.Wallets
                 tx.NetworkFee = tx.CalculateNetworkFee(snapshot, ProtocolSettings, (a) => GetAccount(a)?.Contract?.Script, maxGas);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
-            throw new InvalidOperationException("Insufficient GAS");
+            throw new WalletException(WalletErrorType.InsufficientFunds, "Insufficient GAS");
         }
 
         /// <summary>
@@ -686,20 +704,51 @@ namespace Neo.Wallets
         /// <returns>The created new wallet.</returns>
         public static Wallet Migrate(string path, string oldPath, string password, ProtocolSettings settings)
         {
+            ThrowIfNull(path, nameof(path));
+            ThrowIfNull(oldPath, nameof(oldPath));
+            ThrowIfNull(password, nameof(password));
+            ThrowIfNull(settings, nameof(settings));
+
             IWalletFactory factoryOld = GetFactory(oldPath);
             if (factoryOld is null)
-                throw new InvalidOperationException("The old wallet file format is not supported.");
+                throw new WalletException(WalletErrorType.UnsupportedWalletFormat, "The old wallet file format is not supported.");
+
             IWalletFactory factoryNew = GetFactory(path);
             if (factoryNew is null)
-                throw new InvalidOperationException("The new wallet file format is not supported.");
+                throw new WalletException(WalletErrorType.UnsupportedWalletFormat, "The new wallet file format is not supported.");
 
-            Wallet oldWallet = factoryOld.OpenWallet(oldPath, password, settings);
-            Wallet newWallet = factoryNew.CreateWallet(oldWallet.Name, path, password, settings);
+            Wallet oldWallet;
+            try
+            {
+                oldWallet = factoryOld.OpenWallet(oldPath, password, settings);
+            }
+            catch (Exception ex)
+            {
+                throw new WalletException(WalletErrorType.OpenWalletError, "Failed to open the old wallet.", ex);
+            }
+
+            Wallet newWallet;
+            try
+            {
+                newWallet = factoryNew.CreateWallet(oldWallet.Name, path, password, settings);
+            }
+            catch (Exception ex)
+            {
+                throw new WalletException(WalletErrorType.CreateWalletError, "Failed to create the new wallet.", ex);
+            }
 
             foreach (WalletAccount account in oldWallet.GetAccounts())
             {
-                newWallet.CreateAccount(account.Contract, account.GetKey());
+                try
+                {
+                    newWallet.CreateAccount(account.Contract, account.GetKey());
+                }
+                catch (Exception ex)
+                {
+                    throw new WalletException(WalletErrorType.MigrateAccountError, $"Failed to migrate account {account.Address}", ex);
+                }
             }
+
             return newWallet;
         }
 

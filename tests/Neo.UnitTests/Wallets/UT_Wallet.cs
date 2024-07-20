@@ -252,11 +252,11 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetPrivateKeyFromNEP2()
         {
-            Action action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            action.Should().Throw<FormatException>();
+            var exception = Assert.ThrowsException<WalletException>(() => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", ProtocolSettings.Default.AddressVersion, 2, 1, 1));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.FormatError);
 
-            action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            action.Should().Throw<FormatException>();
+            exception = Assert.ThrowsException<WalletException>(() => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.FormatError);
 
             Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1).Should().BeEquivalentTo(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
         }
@@ -264,11 +264,11 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetPrivateKeyFromWIF()
         {
-            Action action = () => Wallet.GetPrivateKeyFromWIF(null);
-            action.Should().Throw<ArgumentNullException>();
+            var exception = Assert.ThrowsException<WalletException>(() => Wallet.GetPrivateKeyFromWIF(null));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ArgumentNull);
 
-            action = () => Wallet.GetPrivateKeyFromWIF("3vQB7B6MrGQZaxCuFg4oh");
-            action.Should().Throw<FormatException>();
+            exception = Assert.ThrowsException<WalletException>(() => Wallet.GetPrivateKeyFromWIF("3vQB7B6MrGQZaxCuFg4oh"));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.InvalidPrivateKey);
 
             Wallet.GetPrivateKeyFromWIF("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU").Should().BeEquivalentTo(new byte[] { 199, 19, 77, 111, 216, 231, 61, 129, 158, 130, 117, 92, 100, 201, 55, 136, 216, 219, 9, 97, 146, 158, 2, 90, 83, 54, 60, 76, 192, 42, 105, 98 });
         }
@@ -296,7 +296,7 @@ namespace Neo.UnitTests.Wallets
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
-            Action action = () => wallet.MakeTransaction(snapshot, new TransferOutput[]
+            var exception = Assert.ThrowsException<WalletException>(() => wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -305,10 +305,10 @@ namespace Neo.UnitTests.Wallets
                      Value = new BigDecimal(BigInteger.One,8),
                      Data = "Dec 12th"
                 }
-            }, UInt160.Zero);
-            action.Should().Throw<InvalidOperationException>();
+            }, UInt160.Zero));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.InsufficientFunds);
 
-            action = () => wallet.MakeTransaction(snapshot, new TransferOutput[]
+            exception = Assert.ThrowsException<WalletException>(() => wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -317,10 +317,10 @@ namespace Neo.UnitTests.Wallets
                      Value = new BigDecimal(BigInteger.One,8),
                      Data = "Dec 12th"
                 }
-            }, account.ScriptHash);
-            action.Should().Throw<InvalidOperationException>();
+            }, account.ScriptHash));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.InsufficientFunds);
 
-            action = () => wallet.MakeTransaction(snapshot, new TransferOutput[]
+            exception = Assert.ThrowsException<WalletException>(() => wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -329,8 +329,8 @@ namespace Neo.UnitTests.Wallets
                      Value = new BigDecimal(BigInteger.One,8),
                      Data = "Dec 12th"
                 }
-            }, account.ScriptHash);
-            action.Should().Throw<InvalidOperationException>();
+            }, account.ScriptHash));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ContractError);
 
             // Fake balance
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
@@ -375,8 +375,8 @@ namespace Neo.UnitTests.Wallets
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             MyWallet wallet = new();
-            Action action = () => wallet.MakeTransaction(snapshot, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>());
-            action.Should().Throw<InvalidOperationException>();
+            var exception = Assert.ThrowsException<WalletException>(() => wallet.MakeTransaction(snapshot, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>()));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.InsufficientFunds);
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);

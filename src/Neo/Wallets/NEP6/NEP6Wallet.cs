@@ -58,8 +58,15 @@ namespace Neo.Wallets.NEP6
             this.password = password;
             if (File.Exists(path))
             {
-                JObject wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
-                LoadFromJson(wallet, out Scrypt, out accounts, out extra);
+                try
+                {
+                    JObject wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
+                    LoadFromJson(wallet, out Scrypt, out accounts, out extra);
+                }
+                catch (Exception ex)
+                {
+                    throw new WalletException(WalletErrorType.LoadWalletError, "Failed to load wallet file.", ex);
+                }
             }
             else
             {
@@ -86,13 +93,20 @@ namespace Neo.Wallets.NEP6
 
         private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken extra)
         {
-            version = Version.Parse(wallet["version"].AsString());
-            name = wallet["name"]?.AsString();
-            scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
-            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
-            extra = wallet["extra"];
-            if (!VerifyPasswordInternal(password))
-                throw new InvalidOperationException("Wrong password.");
+            try
+            {
+                version = Version.Parse(wallet["version"].AsString());
+                name = wallet["name"]?.AsString();
+                scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
+                accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
+                extra = wallet["extra"];
+                if (!VerifyPasswordInternal(password))
+                    throw new WalletException(WalletErrorType.PasswordIncorrect, "Wrong password.");
+            }
+            catch (Exception ex) when (!(ex is WalletException))
+            {
+                throw new WalletException(WalletErrorType.LoadWalletError, "Failed to parse wallet JSON.", ex);
+            }
         }
 
         private void AddAccount(NEP6Account account)
@@ -134,22 +148,29 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            if (privateKey is null) throw new ArgumentNullException(nameof(privateKey));
-            KeyPair key = new(privateKey);
-            if (key.PublicKey.IsInfinity) throw new ArgumentException(null, nameof(privateKey));
-            NEP6Contract contract = new()
+            Helper.ThrowIfNull(privateKey, nameof(privateKey));
+            try
             {
-                Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature },
-                ParameterNames = new[] { "signature" },
-                Deployed = false
-            };
-            NEP6Account account = new(this, contract.ScriptHash, key, password)
+                KeyPair key = new(privateKey);
+                if (key.PublicKey.IsInfinity) throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid private key.");
+                NEP6Contract contract = new()
+                {
+                    Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
+                    ParameterList = new[] { ContractParameterType.Signature },
+                    ParameterNames = new[] { "signature" },
+                    Deployed = false
+                };
+                NEP6Account account = new(this, contract.ScriptHash, key, password)
+                {
+                    Contract = contract
+                };
+                AddAccount(account);
+                return account;
+            }
+            catch (Exception ex) when (!(ex is WalletException))
             {
-                Contract = contract
-            };
-            AddAccount(account);
-            return account;
+                throw new WalletException(WalletErrorType.CreateAccountError, "Failed to create account.", ex);
+            }
         }
 
         public override WalletAccount CreateAccount(Contract contract, KeyPair key = null)
@@ -226,7 +247,7 @@ namespace Neo.Wallets.NEP6
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                throw new PlatformNotSupportedException("Importing certificates is not supported on macOS.");
+                throw new WalletException(WalletErrorType.UnsupportedOperation, "Importing certificates is not supported on macOS.");
             }
             KeyPair key;
             using (ECDsa ecdsa = cert.GetECDsaPrivateKey())

@@ -91,7 +91,7 @@ namespace Neo.Wallets.NEP6
                 Wallet.GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
                 return true;
             }
-            catch (FormatException)
+            catch
             {
                 return false;
             }

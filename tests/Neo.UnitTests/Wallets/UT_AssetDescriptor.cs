@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 
 namespace Neo.UnitTests.Wallets
@@ -23,11 +24,11 @@ namespace Neo.UnitTests.Wallets
         public void TestConstructorWithNonexistAssetId()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            Action action = () =>
-            {
-                var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
-            };
-            action.Should().Throw<ArgumentException>();
+            var exception = Assert.ThrowsException<WalletException>(() =>
+             {
+                 var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
+             });
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ContractNotFound);
         }
 
         [TestMethod]

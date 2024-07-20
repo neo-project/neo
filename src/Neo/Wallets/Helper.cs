@@ -63,15 +63,15 @@ namespace Neo.Wallets
         {
             byte[] data = address.Base58CheckDecode();
             if (data.Length != 21)
-                throw new FormatException();
+                throw new WalletException(WalletErrorType.FormatError, "Invalid address format: incorrect length");
             if (data[0] != version)
-                throw new FormatException();
+                throw new WalletException(WalletErrorType.FormatError, "Invalid address version");
             return new UInt160(data.AsSpan(1));
         }
 
         internal static byte[] XOR(byte[] x, byte[] y)
         {
-            if (x.Length != y.Length) throw new ArgumentException();
+            if (x.Length != y.Length) throw new WalletException(WalletErrorType.InvalidOperation, "Arrays must have the same length");
             byte[] r = new byte[x.Length];
             for (int i = 0; i < r.Length; i++)
                 r[i] = (byte)(x[i] ^ y[i]);
@@ -119,14 +119,14 @@ namespace Neo.Wallets
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null)
-                        throw new ArgumentException($"The smart contract or address {hash} is not found");
+                        throw new WalletException(WalletErrorType.ContractNotFound, $"The smart contract or address {hash} is not found");
                     var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
                     if (md is null)
-                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
+                        throw new WalletException(WalletErrorType.ContractError, $"The smart contract {contract.Hash} hasn't got a verify method");
                     if (md.ReturnType != ContractParameterType.Boolean)
-                        throw new ArgumentException("The verify method doesn't return boolean value.");
+                        throw new WalletException(WalletErrorType.ContractError, "The verify method doesn't return boolean value");
                     if (md.Parameters.Length > 0 && invocationScript is null)
-                        throw new ArgumentException("The verify method requires parameters that need to be passed via the witness' invocation script.");
+                        throw new WalletException(WalletErrorType.ContractError, "The verify method requires parameters that need to be passed via the witness' invocation script");
 
                     // Empty verification and non-empty invocation scripts
                     var invSize = invocationScript?.GetVarSize() ?? Array.Empty<byte>().GetVarSize();
@@ -136,11 +136,11 @@ namespace Neo.Wallets
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
-                    if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
+                    if (engine.Execute() == VMState.FAULT) throw new WalletException(WalletErrorType.ExecutionFault, $"Smart contract {contract.Hash} verification fault");
+                    if (!engine.ResultStack.Pop().GetBoolean()) throw new WalletException(WalletErrorType.VerificationFailed, $"Smart contract {contract.Hash} returns false");
 
                     maxExecutionCost -= engine.FeeConsumed;
-                    if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
+                    if (maxExecutionCost <= 0) throw new WalletException(WalletErrorType.InsufficientFunds, "Insufficient GAS");
                     networkFee += engine.FeeConsumed;
                 }
                 else if (IsSignatureContract(witnessScript))
@@ -162,6 +162,12 @@ namespace Neo.Wallets
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }
             return networkFee;
+        }
+
+        internal static void ThrowIfNull(object argument, string paramName)
+        {
+            if (argument == null)
+                throw new WalletException(WalletErrorType.ArgumentNull, $"Argument {paramName} cannot be null.");
         }
     }
 }
