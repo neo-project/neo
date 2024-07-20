@@ -105,7 +105,7 @@ partial class StoreTest
                     tasks[i] = Task.Run(() =>
                     {
                         // Introduce delay to increase conflict chance
-                        Thread.Sleep(new Random().Next(1, 100));
+                        Thread.Sleep(Random.Shared.Next(1, 100));
                         // Attempt to write to the snapshot without committing
                         snapshot.Put(testKey, value);
                     });
