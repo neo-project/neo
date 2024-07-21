@@ -182,6 +182,5 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             return BinaryPrimitives.ReadUInt64LittleEndian(buffer);
         }
-
     }
 }
