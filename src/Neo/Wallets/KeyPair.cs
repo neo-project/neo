@@ -55,7 +55,15 @@ namespace Neo.Wallets
             }
             else
             {
-                PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
+                try
+                {
+                    PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
+                }
+                catch
+                {
+                    throw new WalletException(WalletErrorType.InvalidPrivateKey, nameof(privateKey));
+                }
+
             }
         }
 

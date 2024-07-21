@@ -50,22 +50,29 @@ namespace Neo.Wallets
         /// <param name="asset_id">The id of the asset.</param>
         public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 asset_id)
         {
-            var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
-            if (contract is null) throw new WalletException(WalletErrorType.ContractNotFound, nameof(asset_id));
-
-            byte[] script;
-            using (ScriptBuilder sb = new())
+            try
             {
-                sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
-                sb.EmitDynamicCall(asset_id, "symbol", CallFlags.ReadOnly);
-                script = sb.ToArray();
+                var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
+                if (contract is null) throw new WalletException(WalletErrorType.ContractNotFound, nameof(asset_id));
+
+                byte[] script;
+                using (ScriptBuilder sb = new())
+                {
+                    sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
+                    sb.EmitDynamicCall(asset_id, "symbol", CallFlags.ReadOnly);
+                    script = sb.ToArray();
+                }
+                using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
+                if (engine.State != VMState.HALT) throw new WalletException(WalletErrorType.ExecutionFault, nameof(asset_id));
+                AssetId = asset_id;
+                AssetName = contract.Manifest.Name;
+                Symbol = engine.ResultStack.Pop().GetString();
+                Decimals = (byte)engine.ResultStack.Pop().GetInteger();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_30000000L);
-            if (engine.State != VMState.HALT) throw new WalletException(WalletErrorType.ExecutionFault, nameof(asset_id));
-            AssetId = asset_id;
-            AssetName = contract.Manifest.Name;
-            Symbol = engine.ResultStack.Pop().GetString();
-            Decimals = (byte)engine.ResultStack.Pop().GetInteger();
+            catch (Exception ex) when (ex is not WalletException)
+            {
+                throw WalletException.FromException(ex);
+            }
         }
 
         public override string ToString()

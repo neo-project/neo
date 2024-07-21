@@ -141,6 +141,7 @@ namespace Neo.Wallets
         {
             var privateKey = new byte[32];
             using var rng = RandomNumberGenerator.Create();
+            var maxTry = 100;
 
             do
             {
@@ -149,16 +150,18 @@ namespace Neo.Wallets
                     rng.GetBytes(privateKey);
                     return CreateAccount(privateKey);
                 }
-                catch (ArgumentException)
+                catch
                 {
                     // Try again
+                    maxTry--;
                 }
                 finally
                 {
                     Array.Clear(privateKey, 0, privateKey.Length);
                 }
             }
-            while (true);
+            while (maxTry > 0);
+            throw new WalletException(WalletErrorType.UnknownError, "Failed to create account.");
         }
 
         /// <summary>
@@ -280,34 +283,48 @@ namespace Neo.Wallets
         /// <returns>The balance for the specified asset.</returns>
         public BigDecimal GetBalance(DataCache snapshot, UInt160 asset_id, params UInt160[] accounts)
         {
-            byte[] script;
-            using (ScriptBuilder sb = new())
+            try
             {
-                sb.EmitPush(0);
-                foreach (UInt160 account in accounts)
+                byte[] script;
+                using (ScriptBuilder sb = new())
                 {
-                    sb.EmitDynamicCall(asset_id, "balanceOf", CallFlags.ReadOnly, account);
-                    sb.Emit(OpCode.ADD);
+                    sb.EmitPush(0);
+                    foreach (UInt160 account in accounts)
+                    {
+                        sb.EmitDynamicCall(asset_id, "balanceOf", CallFlags.ReadOnly, account);
+                        sb.Emit(OpCode.ADD);
+                    }
+                    sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
+                    script = sb.ToArray();
                 }
-                sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
-                script = sb.ToArray();
+                using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: ProtocolSettings, gas: 0_60000000L * accounts.Length);
+                if (engine.State == VMState.FAULT)
+                    return new BigDecimal(BigInteger.Zero, 0);
+                byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
+                BigInteger amount = engine.ResultStack.Pop().GetInteger();
+                return new BigDecimal(amount, decimals);
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: ProtocolSettings, gas: 0_60000000L * accounts.Length);
-            if (engine.State == VMState.FAULT)
-                return new BigDecimal(BigInteger.Zero, 0);
-            byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
-            BigInteger amount = engine.ResultStack.Pop().GetInteger();
-            return new BigDecimal(amount, decimals);
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         private static byte[] Decrypt(byte[] data, byte[] key)
         {
-            using Aes aes = Aes.Create();
-            aes.Key = key;
-            aes.Mode = CipherMode.ECB;
-            aes.Padding = PaddingMode.None;
-            using ICryptoTransform decryptor = aes.CreateDecryptor();
-            return decryptor.TransformFinalBlock(data, 0, data.Length);
+            try
+            {
+                using Aes aes = Aes.Create();
+                aes.Key = key;
+                aes.Mode = CipherMode.ECB;
+                aes.Padding = PaddingMode.None;
+                using ICryptoTransform decryptor = aes.CreateDecryptor();
+                return decryptor.TransformFinalBlock(data, 0, data.Length);
+            }
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         /// <summary>
@@ -322,10 +339,15 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
+            ThrowIfNull(passphrase, nameof(passphrase));
             byte[] passphrasedata = Encoding.UTF8.GetBytes(passphrase);
             try
             {
                 return GetPrivateKeyFromNEP2(nep2, passphrasedata, version, N, r, p);
+            }
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
             }
             finally
             {
@@ -376,7 +398,6 @@ namespace Neo.Wallets
             {
                 throw WalletException.FromException(e);
             }
-
         }
 
         /// <summary>
@@ -386,14 +407,21 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromWIF(string wif)
         {
-            ThrowIfNull(wif, nameof(wif));
-            byte[] data = wif.Base58CheckDecode();
-            if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
-                throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format");
-            byte[] privateKey = new byte[32];
-            Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
-            Array.Clear(data, 0, data.Length);
-            return privateKey;
+            try
+            {
+                ThrowIfNull(wif, nameof(wif));
+                byte[] data = wif.Base58CheckDecode();
+                if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
+                    throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format");
+                byte[] privateKey = new byte[32];
+                Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
+                Array.Clear(data, 0, data.Length);
+                return privateKey;
+            }
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format", e);
+            }
         }
 
         private static Signer[] GetSigners(UInt160 sender, Signer[] cosigners)
@@ -427,14 +455,22 @@ namespace Neo.Wallets
             {
                 throw new WalletException(WalletErrorType.UnsupportedOperation, "Importing certificates is not supported on macOS.");
             }
-            byte[] privateKey;
-            using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
+
+            try
             {
-                privateKey = ecdsa.ExportParameters(true).D;
+                byte[] privateKey;
+                using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
+                {
+                    privateKey = ecdsa.ExportParameters(true).D;
+                }
+                WalletAccount account = CreateAccount(privateKey);
+                Array.Clear(privateKey, 0, privateKey.Length);
+                return account;
             }
-            WalletAccount account = CreateAccount(privateKey);
-            Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         /// <summary>
@@ -444,10 +480,17 @@ namespace Neo.Wallets
         /// <returns>The imported account.</returns>
         public virtual WalletAccount Import(string wif)
         {
-            byte[] privateKey = GetPrivateKeyFromWIF(wif);
-            WalletAccount account = CreateAccount(privateKey);
-            Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            try
+            {
+                byte[] privateKey = GetPrivateKeyFromWIF(wif);
+                WalletAccount account = CreateAccount(privateKey);
+                Array.Clear(privateKey, 0, privateKey.Length);
+                return account;
+            }
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         /// <summary>
@@ -461,10 +504,17 @@ namespace Neo.Wallets
         /// <returns>The imported account.</returns>
         public virtual WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p);
-            WalletAccount account = CreateAccount(privateKey);
-            Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            try
+            {
+                byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p);
+                WalletAccount account = CreateAccount(privateKey);
+                Array.Clear(privateKey, 0, privateKey.Length);
+                return account;
+            }
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         /// <summary>
@@ -615,61 +665,68 @@ namespace Neo.Wallets
         /// <returns><see langword="true"/> if the signature is successfully added to the context; otherwise, <see langword="false"/>.</returns>
         public bool Sign(ContractParametersContext context)
         {
-            if (context.Network != ProtocolSettings.Network) return false;
-            bool fSuccess = false;
-            foreach (UInt160 scriptHash in context.ScriptHashes)
+            try
             {
-                WalletAccount account = GetAccount(scriptHash);
-
-                if (account != null)
+                if (context.Network != ProtocolSettings.Network) return false;
+                bool fSuccess = false;
+                foreach (UInt160 scriptHash in context.ScriptHashes)
                 {
-                    // Try to sign self-contained multiSig
+                    WalletAccount account = GetAccount(scriptHash);
 
-                    Contract multiSigContract = account.Contract;
-
-                    if (multiSigContract != null &&
-                        IsMultiSigContract(multiSigContract.Script, out int m, out ECPoint[] points))
+                    if (account != null)
                     {
-                        foreach (var point in points)
+                        // Try to sign self-contained multiSig
+
+                        Contract multiSigContract = account.Contract;
+
+                        if (multiSigContract != null &&
+                            IsMultiSigContract(multiSigContract.Script, out int m, out ECPoint[] points))
                         {
-                            account = GetAccount(point);
-                            if (account?.HasKey != true) continue;
+                            foreach (var point in points)
+                            {
+                                account = GetAccount(point);
+                                if (account?.HasKey != true) continue;
+                                KeyPair key = account.GetKey();
+                                byte[] signature = context.Verifiable.Sign(key, context.Network);
+                                fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
+                                if (fSuccess) m--;
+                                if (context.Completed || m <= 0) break;
+                            }
+                            continue;
+                        }
+                        else if (account.HasKey)
+                        {
+                            // Try to sign with regular accounts
                             KeyPair key = account.GetKey();
                             byte[] signature = context.Verifiable.Sign(key, context.Network);
-                            fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
-                            if (fSuccess) m--;
-                            if (context.Completed || m <= 0) break;
+                            fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+                            continue;
                         }
-                        continue;
                     }
-                    else if (account.HasKey)
+
+                    // Try Smart contract verification
+
+                    var contract = NativeContract.ContractManagement.GetContract(context.Snapshot, scriptHash);
+
+                    if (contract != null)
                     {
-                        // Try to sign with regular accounts
-                        KeyPair key = account.GetKey();
-                        byte[] signature = context.Verifiable.Sign(key, context.Network);
-                        fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
-                        continue;
+                        var deployed = new DeployedContract(contract);
+
+                        // Only works with verify without parameters
+
+                        if (deployed.ParameterList.Length == 0)
+                        {
+                            fSuccess |= context.Add(deployed);
+                        }
                     }
                 }
 
-                // Try Smart contract verification
-
-                var contract = NativeContract.ContractManagement.GetContract(context.Snapshot, scriptHash);
-
-                if (contract != null)
-                {
-                    var deployed = new DeployedContract(contract);
-
-                    // Only works with verify without parameters
-
-                    if (deployed.ParameterList.Length == 0)
-                    {
-                        fSuccess |= context.Add(deployed);
-                    }
-                }
+                return fSuccess;
             }
-
-            return fSuccess;
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         /// <summary>

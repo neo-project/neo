@@ -75,10 +75,7 @@ namespace Neo.Wallets.NEP6
         /// <returns>The parameters represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            JObject json = new();
-            json["n"] = N;
-            json["r"] = R;
-            json["p"] = P;
+            JObject json = new() { ["n"] = N, ["r"] = R, ["p"] = P };
             return json;
         }
     }

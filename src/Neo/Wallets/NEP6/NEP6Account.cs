@@ -41,14 +41,21 @@ namespace Neo.Wallets.NEP6
 
         public static NEP6Account FromJson(JObject json, NEP6Wallet wallet)
         {
-            return new NEP6Account(wallet, json["address"].GetString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetString())
+            try
             {
-                Label = json["label"]?.GetString(),
-                IsDefault = json["isDefault"].GetBoolean(),
-                Lock = json["lock"].GetBoolean(),
-                Contract = NEP6Contract.FromJson((JObject)json["contract"]),
-                Extra = json["extra"]
-            };
+                return new NEP6Account(wallet, json["address"].GetString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetString())
+                {
+                    Label = json["label"]?.GetString(),
+                    IsDefault = json["isDefault"].GetBoolean(),
+                    Lock = json["lock"].GetBoolean(),
+                    Contract = NEP6Contract.FromJson((JObject)json["contract"]),
+                    Extra = json["extra"]
+                };
+            }
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         public override KeyPair GetKey()
@@ -66,7 +73,14 @@ namespace Neo.Wallets.NEP6
             if (nep2key == null) return null;
             if (key == null)
             {
-                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
+                try
+                {
+                    key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
+                }
+                catch (Exception e) when (e is not WalletException)
+                {
+                    throw new WalletException(WalletErrorType.PasswordIncorrect);
+                }
             }
             return key;
         }

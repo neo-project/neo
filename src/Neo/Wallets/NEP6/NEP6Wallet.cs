@@ -103,7 +103,7 @@ namespace Neo.Wallets.NEP6
                 if (!VerifyPasswordInternal(password))
                     throw new WalletException(WalletErrorType.PasswordIncorrect, "Wrong password.");
             }
-            catch (Exception ex) when (!(ex is WalletException))
+            catch (Exception ex) when (ex is not WalletException)
             {
                 throw new WalletException(WalletErrorType.LoadWalletError, "Failed to parse wallet JSON.", ex);
             }

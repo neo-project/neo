@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Routing;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P;
@@ -36,7 +37,14 @@ namespace Neo.Wallets
         /// <returns>The signature for the <see cref="IVerifiable"/>.</returns>
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key, uint network)
         {
-            return Crypto.Sign(verifiable.GetSignData(network), key.PrivateKey);
+            try
+            {
+                return Crypto.Sign(verifiable.GetSignData(network), key.PrivateKey);
+            }
+            catch (Exception ex)
+            {
+                throw WalletException.FromException(ex);
+            }
         }
 
         /// <summary>
@@ -61,12 +69,19 @@ namespace Neo.Wallets
         /// <returns>The converted script hash.</returns>
         public static UInt160 ToScriptHash(this string address, byte version)
         {
-            byte[] data = address.Base58CheckDecode();
-            if (data.Length != 21)
-                throw new WalletException(WalletErrorType.FormatError, "Invalid address format: incorrect length");
-            if (data[0] != version)
-                throw new WalletException(WalletErrorType.FormatError, "Invalid address version");
-            return new UInt160(data.AsSpan(1));
+            try
+            {
+                byte[] data = address.Base58CheckDecode();
+                if (data.Length != 21)
+                    throw new WalletException(WalletErrorType.FormatError, "Invalid address format: incorrect length");
+                if (data[0] != version)
+                    throw new WalletException(WalletErrorType.FormatError, "Invalid address version");
+                return new UInt160(data.AsSpan(1));
+            }
+            catch (Exception e) when (e is not WalletException)
+            {
+                throw new WalletException(WalletErrorType.FormatError, "Invalid address format");
+            }
         }
 
         internal static byte[] XOR(byte[] x, byte[] y)
@@ -90,78 +105,84 @@ namespace Neo.Wallets
         /// <returns>The network fee of the transaction.</returns>
         public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings, Func<UInt160, byte[]> accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
         {
-            UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
-
-            // base size for transaction: includes const_header + signers + attributes + script + hashes
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length), index = -1;
-            uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            long networkFee = 0;
-            foreach (UInt160 hash in hashes)
+            try
             {
-                index++;
-                byte[] witnessScript = accountScript(hash);
-                byte[] invocationScript = null;
+                UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
-                if (tx.Witnesses != null && witnessScript is null)
+                // base size for transaction: includes const_header + signers + attributes + script + hashes
+                int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length), index = -1;
+                uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+                long networkFee = 0;
+                foreach (UInt160 hash in hashes)
                 {
-                    // Try to find the script in the witnesses
-                    Witness witness = tx.Witnesses[index];
-                    witnessScript = witness?.VerificationScript.ToArray();
+                    index++;
+                    byte[] witnessScript = accountScript(hash);
+                    byte[] invocationScript = null;
 
+                    if (tx.Witnesses != null && witnessScript is null)
+                    {
+                        // Try to find the script in the witnesses
+                        Witness witness = tx.Witnesses[index];
+                        witnessScript = witness?.VerificationScript.ToArray();
+
+                        if (witnessScript is null || witnessScript.Length == 0)
+                        {
+                            // Then it's a contract-based witness, so try to get the corresponding invocation script for it
+                            invocationScript = witness?.InvocationScript.ToArray();
+                        }
+                    }
                     if (witnessScript is null || witnessScript.Length == 0)
                     {
-                        // Then it's a contract-based witness, so try to get the corresponding invocation script for it
-                        invocationScript = witness?.InvocationScript.ToArray();
+                        var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
+                        if (contract is null)
+                            throw new WalletException(WalletErrorType.ContractNotFound, $"The smart contract or address {hash} is not found");
+                        var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
+                        if (md is null)
+                            throw new WalletException(WalletErrorType.ContractError, $"The smart contract {contract.Hash} hasn't got a verify method");
+                        if (md.ReturnType != ContractParameterType.Boolean)
+                            throw new WalletException(WalletErrorType.ContractError, "The verify method doesn't return boolean value");
+                        if (md.Parameters.Length > 0 && invocationScript is null)
+                            throw new WalletException(WalletErrorType.ContractError, "The verify method requires parameters that need to be passed via the witness' invocation script");
+
+                        // Empty verification and non-empty invocation scripts
+                        var invSize = invocationScript?.GetVarSize() ?? Array.Empty<byte>().GetVarSize();
+                        size += Array.Empty<byte>().GetVarSize() + invSize;
+
+                        // Check verify cost
+                        using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
+                        engine.LoadContract(contract, md, CallFlags.ReadOnly);
+                        if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
+                        if (engine.Execute() == VMState.FAULT) throw new WalletException(WalletErrorType.ExecutionFault, $"Smart contract {contract.Hash} verification fault");
+                        if (!engine.ResultStack.Pop().GetBoolean()) throw new WalletException(WalletErrorType.VerificationFailed, $"Smart contract {contract.Hash} returns false");
+
+                        maxExecutionCost -= engine.FeeConsumed;
+                        if (maxExecutionCost <= 0) throw new WalletException(WalletErrorType.InsufficientFunds, "Insufficient GAS");
+                        networkFee += engine.FeeConsumed;
                     }
+                    else if (IsSignatureContract(witnessScript))
+                    {
+                        size += 67 + witnessScript.GetVarSize();
+                        networkFee += exec_fee_factor * SignatureContractCost();
+                    }
+                    else if (IsMultiSigContract(witnessScript, out int m, out int n))
+                    {
+                        int size_inv = 66 * m;
+                        size += IO.Helper.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
+                        networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
+                    }
+                    // We can support more contract types in the future.
                 }
-
-                if (witnessScript is null || witnessScript.Length == 0)
+                networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
+                foreach (TransactionAttribute attr in tx.Attributes)
                 {
-                    var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
-                    if (contract is null)
-                        throw new WalletException(WalletErrorType.ContractNotFound, $"The smart contract or address {hash} is not found");
-                    var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
-                    if (md is null)
-                        throw new WalletException(WalletErrorType.ContractError, $"The smart contract {contract.Hash} hasn't got a verify method");
-                    if (md.ReturnType != ContractParameterType.Boolean)
-                        throw new WalletException(WalletErrorType.ContractError, "The verify method doesn't return boolean value");
-                    if (md.Parameters.Length > 0 && invocationScript is null)
-                        throw new WalletException(WalletErrorType.ContractError, "The verify method requires parameters that need to be passed via the witness' invocation script");
-
-                    // Empty verification and non-empty invocation scripts
-                    var invSize = invocationScript?.GetVarSize() ?? Array.Empty<byte>().GetVarSize();
-                    size += Array.Empty<byte>().GetVarSize() + invSize;
-
-                    // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
-                    engine.LoadContract(contract, md, CallFlags.ReadOnly);
-                    if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) throw new WalletException(WalletErrorType.ExecutionFault, $"Smart contract {contract.Hash} verification fault");
-                    if (!engine.ResultStack.Pop().GetBoolean()) throw new WalletException(WalletErrorType.VerificationFailed, $"Smart contract {contract.Hash} returns false");
-
-                    maxExecutionCost -= engine.FeeConsumed;
-                    if (maxExecutionCost <= 0) throw new WalletException(WalletErrorType.InsufficientFunds, "Insufficient GAS");
-                    networkFee += engine.FeeConsumed;
+                    networkFee += attr.CalculateNetworkFee(snapshot, tx);
                 }
-                else if (IsSignatureContract(witnessScript))
-                {
-                    size += 67 + witnessScript.GetVarSize();
-                    networkFee += exec_fee_factor * SignatureContractCost();
-                }
-                else if (IsMultiSigContract(witnessScript, out int m, out int n))
-                {
-                    int size_inv = 66 * m;
-                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
-                    networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
-                }
-                // We can support more contract types in the future.
+                return networkFee;
             }
-            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            foreach (TransactionAttribute attr in tx.Attributes)
+            catch (Exception ex) when (ex is not WalletException)
             {
-                networkFee += attr.CalculateNetworkFee(snapshot, tx);
+                throw new WalletException(WalletErrorType.UnknownError, ex.Message, ex);
             }
-            return networkFee;
         }
 
         internal static void ThrowIfNull(object argument, string paramName)
