@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Neo.Plugins.Storage.Tests</RootNamespace>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,8 +12,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
-    <ProjectReference Include="..\..\src\Plugins\RocksDBStore\RocksDBStore.csproj" />
+    <ProjectReference Include="..\..\src\Neo.Extensions\Neo.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 
 </Project>

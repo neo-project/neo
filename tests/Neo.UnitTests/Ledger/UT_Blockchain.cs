@@ -57,7 +57,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestValidTransaction()
         {
-            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshot();
+            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshotCache();
             var walletA = TestUtils.GenerateTestWallet("123");
             var acc = walletA.CreateAccount();
 
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestMaliciousOnChainConflict()
         {
-            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshot();
+            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshotCache();
             var walletA = TestUtils.GenerateTestWallet("123");
             var accA = walletA.CreateAccount();
             var walletB = TestUtils.GenerateTestWallet("456");

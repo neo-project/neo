@@ -12,9 +12,10 @@
 using Akka.Actor;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.UnitTests;
 using System;
 
-namespace Neo.UnitTests
+namespace Neo.Plugins.RpcServer.Tests
 {
     public static class TestBlockchain
     {
@@ -22,7 +23,7 @@ namespace Neo.UnitTests
         public static readonly UInt160[] DefaultExtensibleWitnessWhiteList;
         private static readonly MemoryStore Store = new();
 
-        private class StoreProvider : IStoreProvider
+        internal class StoreProvider : IStoreProvider
         {
             public string Name => "TestProvider";
 
