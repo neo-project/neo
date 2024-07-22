@@ -239,7 +239,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var json = new JArray();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
             snapshot.Commit();
-            var candidates = NativeContract.NEO.GetCandidates(_neoSystem.GetSnapshot());
+            var candidates = NativeContract.NEO.GetCandidates(_neoSystem.GetSnapshotCache());
 
             foreach (var candidate in candidates)
             {
@@ -266,7 +266,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetNativeContracts()
         {
             var result = _rpcServer.GetNativeContracts(new JArray());
-            var contracts = new JArray(NativeContract.Contracts.Select(p => NativeContract.ContractManagement.GetContract(_neoSystem.GetSnapshot(), p.Hash).ToJson()));
+            var contracts = new JArray(NativeContract.Contracts.Select(p => NativeContract.ContractManagement.GetContract(_neoSystem.GetSnapshotCache(), p.Hash).ToJson()));
             Assert.AreEqual(contracts.ToString(), result.ToString());
         }
 
