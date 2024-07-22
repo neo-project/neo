@@ -33,7 +33,7 @@
     "MillisecondsPerBlock": 15000,
     "MaxTransactionsPerBlock": 512,
     "MemoryPoolMaxTransactions": 50000,
-    "MaxTraceableBlocks": 2102400,
+    "MaxTraceableBlocks": 17280,
     "InitialGasDistribution": 5200000000000000,
     "ValidatorsCount": 7,
     "StandbyCommittee": [
