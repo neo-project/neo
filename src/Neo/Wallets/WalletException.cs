@@ -15,34 +15,6 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Wallets;
 
-public enum WalletErrorType
-{
-    OpenWalletError,
-    CreateWalletError,
-    MigrateAccountError,
-    LoadWalletError,
-    CreateAccountError,
-    InvalidPrivateKey,
-    ChangePasswordError,
-    InsufficientFunds,
-    InvalidTransaction,
-    AccountLocked,
-    TransactionCreationError,
-    ExecutionFault,
-    FormatError,
-    InvalidOperation,
-    FileAlreadyExists,
-    ArgumentException,
-    ContractNotFound,
-    ContractError,
-    VerificationFailed,
-    UnsupportedOperation,
-    PasswordIncorrect,
-    UnsupportedWalletFormat,
-    ArgumentNull,
-    UnknownError
-}
-
 public class WalletException : Exception
 {
     public WalletErrorType ErrorType { get; }
