@@ -38,14 +38,14 @@ namespace Neo.UnitTests.Ledger
         {
             system = TestBlockchain.TheNeoSystem;
             senderProbe = CreateTestProbe();
-            txSample = new Transaction()
+            txSample = new Transaction
             {
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = Array.Empty<byte>(),
-                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                Witnesses = Array.Empty<Witness>()
+                Signers = [new Signer { Account = UInt160.Zero }],
+                Witnesses = []
             };
-            system.MemPool.TryAdd(txSample, TestBlockchain.GetTestSnapshot());
+            system.MemPool.TryAdd(txSample, TestBlockchain.GetTestSnapshotCache());
         }
 
         [TestCleanup]
