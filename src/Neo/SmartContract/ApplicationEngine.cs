@@ -326,8 +326,9 @@ namespace Neo.SmartContract
 
             for (int i = args.Count - 1; i >= 0; i--)
             {
-                if(!CheckItemType(args[i], method.Parameters[i].Type))
-                    throw new InvalidOperationException($"Argument {i} type mismatch.");
+                var a = args[i];
+                if(!CheckItemType(a, method.Parameters[i].Type))
+                    throw new InvalidOperationException($"The type of the argument `{args[i]}` does not match the formal parameter.");
                 context_new.EvaluationStack.Push(args[i]);
             }
 
