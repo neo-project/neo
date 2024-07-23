@@ -445,7 +445,7 @@ namespace Neo.CLI
         {
             var operand = instruction.Operand[instruction.OperandPrefixSize..].ToArray();
             var asStr = Encoding.UTF8.GetString(operand);
-            var readable = asStr.All(char.IsAscii);
+            var readable = asStr.All(char.IsAsciiLetterOrDigit);
             return instruction.OpCode switch
             {
                 VM.OpCode.JMP or
@@ -456,7 +456,7 @@ namespace Neo.CLI
                 VM.OpCode.JMPGT or
                 VM.OpCode.JMPLT or
                 VM.OpCode.CALL or
-                VM.OpCode.ENDTRY => $"[{checked(instruction.Position + instruction.AsToken<sbyte>()):X02}]",
+                VM.OpCode.ENDTRY => $"[{checked(instruction.Position + instruction.AsToken<byte>()):X08}]",
                 VM.OpCode.PUSHA or
                 VM.OpCode.JMP_L or
                 VM.OpCode.JMPIF_L or
@@ -466,10 +466,11 @@ namespace Neo.CLI
                 VM.OpCode.JMPGT_L or
                 VM.OpCode.JMPLT_L or
                 VM.OpCode.CALL_L or
-                VM.OpCode.ENDTRY_L => $"[{checked(instruction.Position + instruction.AsToken<int>()):X04}]",
-                VM.OpCode.TRY or
+                VM.OpCode.ENDTRY_L => $"[{checked(instruction.Position + instruction.AsToken<int>()):X08}]",
+                VM.OpCode.TRY => $"[{instruction.AsToken<byte>():X02}, {instruction.AsToken<byte>(1):X02}]",
                 VM.OpCode.INITSLOT => $"{instruction.AsToken<byte>()}, {instruction.AsToken<byte>(1)}",
-                VM.OpCode.TRY_L => $"[{checked(instruction.Position + instruction.AsToken<int>()):X04}, {checked(instruction.Position + instruction.AsToken<int>()):X04}]",
+                VM.OpCode.TRY_L => $"[{checked(instruction.Position + instruction.AsToken<int>()):X08}, {checked(instruction.Position + instruction.AsToken<int>()):X08}]",
+                VM.OpCode.CALLT => $"[{checked(instruction.Position + instruction.AsToken<ushort>()):X08}]",
                 VM.OpCode.NEWARRAY_T or
                 VM.OpCode.ISTYPE or
                 VM.OpCode.CONVERT => $"{instruction.AsToken<byte>():X02}",
@@ -490,7 +491,7 @@ namespace Neo.CLI
                 VM.OpCode.PUSHDATA1 or
                 VM.OpCode.PUSHDATA2 or
                 VM.OpCode.PUSHDATA4 => readable ? $"{Convert.ToHexString(operand)} // {asStr}" : Convert.ToHexString(operand),
-                _ => readable ? $"\"{asStr}\"" : $"{Convert.ToHexString(operand)} // {asStr}",
+                _ => readable ? $"\"{asStr}\"" : $"{Convert.ToHexString(operand)}",
             };
         }
 

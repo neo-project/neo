@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM;
 using System;
 using System.Buffers.Binary;
 using System.Collections;
@@ -19,7 +20,6 @@ using System.Reflection;
 
 namespace Neo.CLI
 {
-    using Neo.VM;
     using System.Runtime.CompilerServices;
 
     [DebuggerDisplay("OpCode={OpCode}, OperandSize={OperandSize}")]
