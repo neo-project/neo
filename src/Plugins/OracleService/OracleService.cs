@@ -62,8 +62,6 @@ namespace Neo.Plugins.OracleService
 
         public override string Description => "Built-in oracle plugin";
 
-        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
-
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.json");
 
         public OracleService()
@@ -236,7 +234,7 @@ namespace Neo.Plugins.OracleService
 
             finishedCache.ContainsKey(requestId).False_Or(RpcError.OracleRequestFinished);
 
-            using (var snapshot = _system.GetSnapshot())
+            using (var snapshot = _system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
@@ -328,7 +326,7 @@ namespace Neo.Plugins.OracleService
         {
             while (!cancelSource.IsCancellationRequested)
             {
-                using (var snapshot = _system.GetSnapshot())
+                using (var snapshot = _system.GetSnapshotCache())
                 {
                     SyncPendingQueue(snapshot);
                     foreach (var (id, request) in NativeContract.Oracle.GetRequests(snapshot))
@@ -431,7 +429,7 @@ namespace Neo.Plugins.OracleService
             // Calculate network fee
 
             var oracleContract = NativeContract.ContractManagement.GetContract(snapshot, NativeContract.Oracle.Hash);
-            var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings);
+            var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings);
             ContractMethodDescriptor md = oracleContract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
             engine.LoadContract(oracleContract, md, CallFlags.None);
             if (engine.Execute() != VMState.HALT) return null;
@@ -532,7 +530,7 @@ namespace Neo.Plugins.OracleService
             }
             ECPoint[] oraclesNodes = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
             int neededThreshold = oraclesNodes.Length - (oraclesNodes.Length - 1) / 3;
-            if (OracleSigns.Count >= neededThreshold && tx != null)
+            if (OracleSigns.Count >= neededThreshold)
             {
                 var contract = Contract.CreateMultiSigContract(neededThreshold, oraclesNodes);
                 ScriptBuilder sb = new ScriptBuilder();

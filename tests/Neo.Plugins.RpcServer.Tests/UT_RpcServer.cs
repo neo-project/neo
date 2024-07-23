@@ -11,9 +11,13 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.UnitTests;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
 using System.Text;
 
@@ -22,39 +26,50 @@ namespace Neo.Plugins.RpcServer.Tests
     [TestClass]
     public partial class UT_RpcServer
     {
-        private Mock<MockNeoSystem> _systemMock;
-        private SnapshotCache _snapshotCache;
-        private MemoryPool _memoryPool;
-        private RpcServerSettings _settings;
+        private NeoSystem _neoSystem;
         private RpcServer _rpcServer;
+        private TestMemoryStoreProvider _memoryStoreProvider;
+        private MemoryStore _memoryStore;
+        private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
+        private WalletAccount _walletAccount;
 
         [TestInitialize]
         public void TestSetup()
         {
-            // Mock IReadOnlyStore
-            var mockStore = new Mock<IReadOnlyStore>();
+            _memoryStore = new MemoryStore();
+            _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
+            _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
+            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default);
+            _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+        }
 
-            // Initialize SnapshotCache with the mock IReadOnlyStore
-            _snapshotCache = new SnapshotCache(mockStore.Object);
-
-            // Initialize NeoSystem
-            var neoSystem = new NeoSystem(TestProtocolSettings.Default, new TestBlockchain.StoreProvider());
-
-            // Initialize MemoryPool with the NeoSystem
-            _memoryPool = new MemoryPool(neoSystem);
-
-            // Set up the mock system with the correct constructor arguments
-            _systemMock = new Mock<MockNeoSystem>(_snapshotCache, _memoryPool);
-
-            _rpcServer = new RpcServer(_systemMock.Object, RpcServerSettings.Default);
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            // Please build and test in debug mode
+            _neoSystem.MemPool.Clear();
+            _memoryStore.Reset();
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
         }
 
         [TestMethod]
         public void TestCheckAuth_ValidCredentials_ReturnsTrue()
         {
+            // Arrange
             var context = new DefaultHttpContext();
             context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+            // Act
             var result = _rpcServer.CheckAuth(context);
+            // Assert
             Assert.IsTrue(result);
         }
     }

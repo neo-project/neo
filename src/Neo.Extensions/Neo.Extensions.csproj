@@ -9,13 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.20" />
+    <PackageReference Include="Akka" Version="1.5.26" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.IO" />
-    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+    <InternalsVisibleTo Include="Neo.UnitTests" />
   </ItemGroup>
 
 </Project>

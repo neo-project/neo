@@ -43,7 +43,7 @@ namespace Neo.UnitTests
 
         internal static DataCache GetTestSnapshot()
         {
-            return TheNeoSystem.GetSnapshot().CreateSnapshot();
+            return TheNeoSystem.GetSnapshotCache().CloneCache();
         }
     }
 }

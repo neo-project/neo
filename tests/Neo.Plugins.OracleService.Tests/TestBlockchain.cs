@@ -30,7 +30,7 @@ namespace Neo.Plugins.OracleService.Tests
 
         internal static DataCache GetTestSnapshot()
         {
-            return TheNeoSystem.GetSnapshot().CreateSnapshot();
+            return TheNeoSystem.GetSnapshotCache().CloneCache();
         }
     }
 }

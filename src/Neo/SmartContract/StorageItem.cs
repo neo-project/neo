@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.VM;
 using System;
@@ -192,6 +193,16 @@ namespace Neo.SmartContract
         {
             item.cache ??= new BigInteger(item.value.Span);
             return (BigInteger)item.cache;
+        }
+
+        public static implicit operator StorageItem(BigInteger value)
+        {
+            return new StorageItem(value);
+        }
+
+        public static implicit operator StorageItem(byte[] value)
+        {
+            return new StorageItem(value);
         }
     }
 }
