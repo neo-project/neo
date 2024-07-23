@@ -27,13 +27,13 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_GasToken
     {
-        private DataCache _snapshot;
+        private DataCache _snapshotCache;
         private Block _persistingBlock;
 
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshot = TestBlockchain.GetTestSnapshotCache();
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
             _persistingBlock = new Block { Header = new Header() };
         }
 
@@ -41,15 +41,15 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Name() => NativeContract.GAS.Name.Should().Be(nameof(GasToken));
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("GAS");
+        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshotCache).Should().Be("GAS");
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
+        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshotCache).Should().Be(8);
 
         [TestMethod]
         public async Task Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = _snapshot.CloneCache();
+            var snapshot = _snapshotCache.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
