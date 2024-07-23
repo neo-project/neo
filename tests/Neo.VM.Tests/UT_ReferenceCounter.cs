@@ -12,6 +12,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Test
 {
@@ -242,6 +244,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void TestInvalidReferenceStackItem()
         {
             var reference = new ReferenceCounter();

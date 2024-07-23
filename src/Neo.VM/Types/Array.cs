@@ -35,15 +35,12 @@ namespace Neo.VM.Types
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
                 ReferenceCounter?.RemoveReference(_array[index], this);
                 _array[index] = value;
-                if (value is CompoundType { ReferenceCounter: null } compoundType)
+                if (ReferenceCounter != null && value is CompoundType { ReferenceCounter: null })
                 {
-                    compoundType.ReferenceCounter = ReferenceCounter;
-                    ReferenceCounter?.AddReference(value.DeepCopy(), this);
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
                 }
-                else
-                {
-                    ReferenceCounter?.AddReference(value, this);
-                }
+
+                ReferenceCounter?.AddReference(value, this);
             }
         }
 
@@ -78,12 +75,18 @@ namespace Neo.VM.Types
                 List<StackItem> list => list,
                 _ => new List<StackItem>(items)
             };
-            if (referenceCounter != null)
-                foreach (var item in _array)
+
+            if (referenceCounter == null) return;
+
+            foreach (var item in _array)
+            {
+                if (item is CompoundType { ReferenceCounter: null })
                 {
-                    ReferenceCounter?.AddReference(
-                        item is CompoundType { ReferenceCounter: null } ? item.DeepCopy() : item, this);
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
                 }
+
+                referenceCounter.AddReference(item, this);
+            }
         }
 
         /// <summary>
@@ -94,15 +97,14 @@ namespace Neo.VM.Types
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             _array.Add(item);
-            if (item is CompoundType { ReferenceCounter: null } compoundType)
+
+            if (ReferenceCounter == null) return;
+
+            if (item is CompoundType { ReferenceCounter: null })
             {
-                compoundType.ReferenceCounter = ReferenceCounter;
-                ReferenceCounter?.AddReference(item.DeepCopy(), this);
+                throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
             }
-            else
-            {
-                ReferenceCounter?.AddReference(item, this);
-            }
+            ReferenceCounter.AddReference(item, this);
         }
 
         public override void Clear()

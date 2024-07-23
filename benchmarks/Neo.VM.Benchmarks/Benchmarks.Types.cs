@@ -16,17 +16,31 @@ namespace Neo.VM.Benchmark;
 
 public class Benchmarks_Types
 {
-    [Params(1, 2, 4, 8, 16, 32, 64, 128)]
-    public int Depth { get; set; }
+    public IEnumerable<(int Depth, int ElementsPerLevel)> ParamSource()
+    {
+        int[] depths = [4];
+        int[] elementsPerLevel = [6];
 
-    [Params(1, 2, 4, 8)]
-    public int ElementsPerLevel { get; set; }
+        foreach (var depth in depths)
+        {
+            foreach (var elements in elementsPerLevel)
+            {
+                if (depth <= 8 || elements <= 2)
+                {
+                    yield return (depth, elements);
+                }
+            }
+        }
+    }
+
+    [ParamsSource(nameof(ParamSource))]
+    public (int Depth, int ElementsPerLevel) Params;
 
     [Benchmark]
     public void BenchNestedArrayDeepCopy()
     {
         var root = new Array(new ReferenceCounter());
-        CreateNestedArray(root, Depth, ElementsPerLevel);
+        CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel);
         _ = root.DeepCopy();
     }
 
@@ -35,7 +49,7 @@ public class Benchmarks_Types
     {
         var referenceCounter = new ReferenceCounter();
         var root = new Array(referenceCounter);
-        CreateNestedArray(root, Depth, ElementsPerLevel, referenceCounter);
+        CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
         _ = root.DeepCopy();
     }
 
@@ -43,7 +57,7 @@ public class Benchmarks_Types
     public void BenchNestedTestArrayDeepCopy()
     {
         var root = new TestArray(new ReferenceCounter());
-        CreateNestedTestArray(root, Depth, ElementsPerLevel);
+        CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel);
         _ = root.DeepCopy();
     }
 
@@ -52,7 +66,7 @@ public class Benchmarks_Types
     {
         var referenceCounter = new ReferenceCounter();
         var root = new TestArray(referenceCounter);
-        CreateNestedTestArray(root, Depth, ElementsPerLevel, referenceCounter);
+        CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
         _ = root.DeepCopy();
     }
 
