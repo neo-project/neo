@@ -11,7 +11,7 @@
 
 namespace Neo.Plugins
 {
-    public enum UnhandledExceptionPolicy
+    public enum UnhandledExceptionPolicy : byte
     {
         Ignore = 0,
         StopPlugin = 1,
