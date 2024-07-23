@@ -97,7 +97,7 @@ namespace Neo.Plugins.RpcServer
             CheckWallet();
             // Datoshi is the smallest unit of GAS, 1 GAS = 10^8 Datoshi
             BigInteger datoshi = BigInteger.Zero;
-            using (var snapshot = system.GetSnapshot())
+            using (var snapshot = system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 foreach (UInt160 account in wallet.GetAccounts().Select(p => p.ScriptHash))
