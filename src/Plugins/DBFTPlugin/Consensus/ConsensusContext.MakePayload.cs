@@ -166,11 +166,20 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             });
         }
 
+        // Related to issue https://github.com/neo-project/neo/issues/3431
+        // Ref. https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator?view=net-8.0
+        //
+        //The System.Random class relies on a seed value that can be predictable,
+        //especially if the seed is based on the system clock or other low-entropy sources.
+        //RandomNumberGenerator, however, uses sources of entropy provided by the operating
+        //system, which are designed to be unpredictable.
         private static ulong GetNonce()
         {
-            Random _random = new();
             Span<byte> buffer = stackalloc byte[8];
-            _random.NextBytes(buffer);
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(buffer);
+            }
             return BinaryPrimitives.ReadUInt64LittleEndian(buffer);
         }
     }
