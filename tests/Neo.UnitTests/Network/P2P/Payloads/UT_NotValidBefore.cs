@@ -77,7 +77,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Verify()
         {
             var test = new NotValidBefore();
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             test.Height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
 
             Assert.IsFalse(test.Verify(snapshot, new Transaction()));
