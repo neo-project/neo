@@ -61,7 +61,7 @@ namespace Neo.Wallets
                 }
                 catch
                 {
-                    throw new WalletException(WalletErrorType.InvalidPrivateKey, nameof(privateKey));
+                    throw new WalletException(WalletErrorType.InvalidPrivateKey, $"{nameof(privateKey)}.");
                 }
 
             }

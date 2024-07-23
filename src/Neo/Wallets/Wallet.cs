@@ -374,7 +374,7 @@ namespace Neo.Wallets
             {
                 byte[] data = nep2.Base58CheckDecode();
                 if (data.Length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
-                    throw new WalletException(WalletErrorType.FormatError, "Invalid NEP-2 format");
+                    throw new WalletException(WalletErrorType.FormatError, "Invalid NEP-2 format.");
                 byte[] addresshash = new byte[4];
                 Buffer.BlockCopy(data, 3, addresshash, 0, 4);
                 byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
@@ -412,7 +412,7 @@ namespace Neo.Wallets
                 ThrowIfNull(wif, nameof(wif));
                 byte[] data = wif.Base58CheckDecode();
                 if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
-                    throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format");
+                    throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format.");
                 byte[] privateKey = new byte[32];
                 Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
                 Array.Clear(data, 0, data.Length);
@@ -420,7 +420,7 @@ namespace Neo.Wallets
             }
             catch (Exception e) when (e is not WalletException)
             {
-                throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format", e);
+                throw new WalletException(WalletErrorType.InvalidPrivateKey, "Invalid WIF format.", e);
             }
         }
 
@@ -557,7 +557,7 @@ namespace Neo.Wallets
                     }
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
                     if (sum_balance < sum)
-                        throw new WalletException(WalletErrorType.InsufficientFunds, $"Insufficient balance for asset {assetId}. Required: {sum}, Available: {sum_balance}");
+                        throw new WalletException(WalletErrorType.InsufficientFunds, $"Insufficient balance for asset {assetId}. Required: {sum}, Available: {sum_balance}.");
 
                     foreach (TransferOutput output in group)
                     {
@@ -647,7 +647,7 @@ namespace Neo.Wallets
                 {
                     if (engine.State == VMState.FAULT)
                     {
-                        throw new WalletException(WalletErrorType.ExecutionFault, $"Failed execution for '{Convert.ToBase64String(script.Span)}'", engine.FaultException);
+                        throw new WalletException(WalletErrorType.ExecutionFault, $"Failed execution for '{Convert.ToBase64String(script.Span)}'.", engine.FaultException);
                     }
                     tx.SystemFee = engine.FeeConsumed;
                 }
@@ -655,7 +655,7 @@ namespace Neo.Wallets
                 tx.NetworkFee = tx.CalculateNetworkFee(snapshot, ProtocolSettings, (a) => GetAccount(a)?.Contract?.Script, maxGas);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
-            throw new WalletException(WalletErrorType.InsufficientFunds, "Insufficient GAS");
+            throw new WalletException(WalletErrorType.InsufficientFunds, "Insufficient GAS.");
         }
 
         /// <summary>
@@ -802,7 +802,7 @@ namespace Neo.Wallets
                 }
                 catch (Exception ex)
                 {
-                    throw new WalletException(WalletErrorType.MigrateAccountError, $"Failed to migrate account {account.Address}", ex);
+                    throw new WalletException(WalletErrorType.MigrateAccountError, $"Failed to migrate account {account.Address}.", ex);
                 }
             }
 
