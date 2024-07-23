@@ -12,6 +12,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
+using Neo.UnitTests.Extensions;
+using Neo.VM;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -27,7 +30,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestNotify()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(System.Array.Empty<byte>());
             ApplicationEngine.Notify += Test_Notify1;
@@ -63,7 +66,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateDummyBlock()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot, settings: TestProtocolSettings.Default);
             engine.PersistingBlock.Version.Should().Be(0);
@@ -101,6 +104,104 @@ namespace Neo.UnitTests.SmartContract
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
             {
                 (setting[sortedHardforks[i]] > setting[sortedHardforks[i + 1]]).Should().Be(false);
+            }
+        }
+
+        [TestMethod]
+        public void TestSystem_Contract_Call_Permissions()
+        {
+            UInt160 scriptHash;
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+
+            // Setup: put a simple contract to the storage.
+            using (var script = new ScriptBuilder())
+            {
+                // Push True on stack and return.
+                script.EmitPush(true);
+                script.Emit(OpCode.RET);
+
+                // Mock contract and put it to the Managemant's storage.
+                scriptHash = script.ToArray().ToScriptHash();
+
+                snapshot.DeleteContract(scriptHash);
+                var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any));
+                contract.Manifest.Abi.Methods = new[]
+                {
+                    new ContractMethodDescriptor
+                    {
+                        Name = "disallowed",
+                        Parameters = new ContractParameterDefinition[]{}
+                    },
+                    new ContractMethodDescriptor
+                    {
+                        Name = "test",
+                        Parameters = new ContractParameterDefinition[]{}
+                    }
+                };
+                snapshot.AddContract(scriptHash, contract);
+            }
+
+            // Disallowed method call.
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
+            using (var script = new ScriptBuilder())
+            {
+                // Build call script calling disallowed method.
+                script.EmitDynamicCall(scriptHash, "disallowed");
+
+                // Mock executing state to be a contract-based.
+                engine.LoadScript(script.ToArray());
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+                {
+                    Manifest = new()
+                    {
+                        Abi = new() { },
+                        Permissions = new ContractPermission[]
+                        {
+                            new ContractPermission
+                            {
+                                Contract = ContractPermissionDescriptor.Create(scriptHash),
+                                Methods = WildcardContainer<string>.Create(new string[]{"test"}) // allowed to call only "test" method of the target contract.
+                            }
+                        }
+                    }
+                };
+                var currentScriptHash = engine.EntryScriptHash;
+
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.IsTrue(engine.FaultException.ToString().Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}"));
+            }
+
+            // Allowed method call.
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
+            using (var script = new ScriptBuilder())
+            {
+                // Build call script.
+                script.EmitDynamicCall(scriptHash, "test");
+
+                // Mock executing state to be a contract-based.
+                engine.LoadScript(script.ToArray());
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+                {
+                    Manifest = new()
+                    {
+                        Abi = new() { },
+                        Permissions = new ContractPermission[]
+                        {
+                            new ContractPermission
+                            {
+                                Contract = ContractPermissionDescriptor.Create(scriptHash),
+                                Methods = WildcardContainer<string>.Create(new string[]{"test"}) // allowed to call only "test" method of the target contract.
+                            }
+                        }
+                    }
+                };
+                var currentScriptHash = engine.EntryScriptHash;
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Boolean));
+                var res = (VM.Types.Boolean)engine.ResultStack.Pop();
+                Assert.IsTrue(res.GetBoolean());
             }
         }
     }

@@ -15,12 +15,6 @@ namespace Neo.Persistence;
 
 public static class StoreFactory
 {
-    private class MemoryStoreProvider : IStoreProvider
-    {
-        public string Name => nameof(MemoryStore);
-        public IStore GetStore(string path) => new MemoryStore();
-    }
-
     private static readonly Dictionary<string, IStoreProvider> providers = new();
 
     static StoreFactory()
@@ -38,13 +32,28 @@ public static class StoreFactory
     }
 
     /// <summary>
+    /// Get store provider by name
+    /// </summary>
+    /// <param name="name">Name</param>
+    /// <returns>Store provider</returns>
+    public static IStoreProvider GetStoreProvider(string name)
+    {
+        if (providers.TryGetValue(name, out var provider))
+        {
+            return provider;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Get store from name
     /// </summary>
-    /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
-    /// <param name="path">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
+    /// <param name="storageProvider">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+    /// <param name="path">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
     /// <returns>The storage engine.</returns>
-    public static IStore GetStore(string storageEngine, string path)
+    public static IStore GetStore(string storageProvider, string path)
     {
-        return providers[storageEngine].GetStore(path);
+        return providers[storageProvider].GetStore(path);
     }
 }

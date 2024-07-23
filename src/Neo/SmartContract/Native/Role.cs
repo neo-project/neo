@@ -29,6 +29,11 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// NeoFS Alphabet nodes.
         /// </summary>
-        NeoFSAlphabetNode = 16
+        NeoFSAlphabetNode = 16,
+
+        /// <summary>
+        /// P2P Notary nodes used to process P2P notary requests.
+        /// </summary>
+        P2PNotary = 32
     }
 }

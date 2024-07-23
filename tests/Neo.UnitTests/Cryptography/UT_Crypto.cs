@@ -14,7 +14,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Wallets;
 using System;
-using System.Linq;
 using System.Security.Cryptography;
 
 namespace Neo.UnitTests.Cryptography
@@ -54,7 +53,7 @@ namespace Neo.UnitTests.Cryptography
         public void TestVerifySignature()
         {
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
-            byte[] signature = Crypto.Sign(message, key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature = Crypto.Sign(message, key.PrivateKey);
             Crypto.VerifySignature(message, signature, key.PublicKey).Should().BeTrue();
 
             byte[] wrongKey = new byte[33];
@@ -74,16 +73,16 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestSecp256k1()
         {
-            byte[] message = System.Text.Encoding.Default.GetBytes("hello");
-            byte[] signature = "5331be791532d157df5b5620620d938bcb622ad02c81cfc184c460efdad18e695480d77440c511e9ad02ea30d773cb54e88f8cbb069644aefa283957085f38b5".HexToBytes();
-            byte[] pubKey = "03ea01cb94bdaf0cd1c01b159d474f9604f4af35a3e2196f6bdfdb33b2aa4961fa".HexToBytes();
+            byte[] privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
+            byte[] message = "2d46a712699bae19a634563d74d04cc2da497b841456da270dccb75ac2f7c4e7".HexToBytes();
+            var signature = Crypto.Sign(message, privkey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
 
+            byte[] pubKey = "04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108".HexToBytes();
             Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1)
                 .Should().BeTrue();
 
             message = System.Text.Encoding.Default.GetBytes("world");
-            signature = "b1e6ff4f40536fb7ed706b0f7567903cc227a5241a079fb86f3de51b8321c1e690f37ad0c788848605c1653567935845f0d35a8a1a37174dcbbd235caac8e969".HexToBytes();
-            pubKey = "03661b86d54eb3a8e7ea2399e0db36ab65753f95fff661da53ae0121278b881ad0".HexToBytes();
+            signature = Crypto.Sign(message, privkey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
 
             Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1)
                 .Should().BeTrue();

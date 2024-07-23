@@ -14,7 +14,6 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
@@ -57,39 +56,18 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
         /// </summary>
-        protected FungibleToken()
+        [ContractEvent(0, name: "Transfer",
+           "from", ContractParameterType.Hash160,
+           "to", ContractParameterType.Hash160,
+           "amount", ContractParameterType.Integer)]
+        protected FungibleToken() : base()
         {
-            this.Factor = BigInteger.Pow(10, Decimals);
+            Factor = BigInteger.Pow(10, Decimals);
+        }
 
-            Manifest.SupportedStandards = new[] { "NEP-17" };
-
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "Transfer",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "from",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "to",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "amount",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
+        protected override void OnManifestCompose(ContractManifest manifest)
+        {
+            manifest.SupportedStandards = new[] { "NEP-17" };
         }
 
         internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
@@ -102,7 +80,7 @@ namespace Neo.SmartContract.Native
             state.Balance += amount;
             storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            await PostTransfer(engine, null, account, amount, StackItem.Null, callOnPayment);
+            await PostTransferAsync(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
 
         internal async ContractTask Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -120,7 +98,7 @@ namespace Neo.SmartContract.Native
                 state.Balance -= amount;
             storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            await PostTransfer(engine, account, null, amount, StackItem.Null, false);
+            await PostTransferAsync(engine, account, null, amount, StackItem.Null, false);
         }
 
         /// <summary>
@@ -191,7 +169,7 @@ namespace Neo.SmartContract.Native
                     state_to.Balance += amount;
                 }
             }
-            await PostTransfer(engine, from, to, amount, data, true);
+            await PostTransferAsync(engine, from, to, amount, data, true);
             return true;
         }
 
@@ -199,7 +177,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        private protected virtual async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected virtual async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 
@@ -212,7 +190,7 @@ namespace Neo.SmartContract.Native
 
             // Call onNEP17Payment method
 
-            await engine.CallFromNativeContract(Hash, to, "onNEP17Payment", from?.ToArray() ?? StackItem.Null, amount, data);
+            await engine.CallFromNativeContractAsync(Hash, to, "onNEP17Payment", from?.ToArray() ?? StackItem.Null, amount, data);
         }
     }
 }

@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using System.Diagnostics;
@@ -20,7 +19,7 @@ namespace Neo;
 static class Benchmarks
 {
     private static readonly ProtocolSettings protocol = ProtocolSettings.Load("config.json");
-    private static readonly NeoSystem system = new(protocol, new MemoryStore());
+    private static readonly NeoSystem system = new(protocol, (string)null);
 
     public static void NeoIssue2725()
     {
@@ -68,7 +67,7 @@ static class Benchmarks
             Script = Convert.FromBase64String(poc),
             Witnesses = Array.Empty<Witness>()
         };
-        using var snapshot = system.GetSnapshot();
+        using var snapshot = system.GetSnapshotCache();
         using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, system.GenesisBlock, protocol, tx.SystemFee);
         engine.LoadScript(tx.Script);
         Stopwatch stopwatch = Stopwatch.StartNew();

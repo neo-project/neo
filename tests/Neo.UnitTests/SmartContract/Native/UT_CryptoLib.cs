@@ -11,10 +11,20 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Cryptography.BLS12_381;
+using Neo.Cryptography.ECC;
+using Neo.IO;
+using Neo.Ledger;
+using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Org.BouncyCastle.Utilities.Encoders;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -35,7 +45,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestG1()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
 
@@ -49,7 +59,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestG2()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g2);
 
@@ -63,7 +73,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestNotG1()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", not_g1);
 
@@ -75,7 +85,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestNotG2()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", not_g2);
 
@@ -86,7 +96,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBls12381Add()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
@@ -109,7 +119,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var data = new byte[32];
             data[0] = 0x03;
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using (ScriptBuilder script = new())
             {
                 script.EmitPush(false);
@@ -151,7 +161,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBls12381Pairing()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g2);
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
@@ -172,7 +182,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Bls12381Equal()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
@@ -201,7 +211,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var data = new byte[32];
             data[0] = 0x03;
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using (ScriptBuilder script = new())
             {
                 script.EmitPush(negative);
@@ -333,6 +343,571 @@ namespace Neo.UnitTests.SmartContract.Native
                 "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 BLS12381PointType.G2Proj
             );
+        }
+
+        /// <summary>
+        /// Keccak256 cases are verified in https://emn178.github.io/online-tools/keccak_256.html
+        /// </summary>
+        [TestMethod]
+        public void TestKeccak256_HelloWorld()
+        {
+            // Arrange
+            byte[] inputData = "Hello, World!"u8.ToArray();
+            string expectedHashHex = "acaf3289d7b601cbd114fb36c4d29c85bbfd5e133f14cb355c3fd8d99367964f";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Hello, World!'.");
+        }
+        [TestMethod]
+        public void TestKeccak256_Keccak()
+        {
+            // Arrange
+            byte[] inputData = "Keccak"u8.ToArray();
+            string expectedHashHex = "868c016b666c7d3698636ee1bd023f3f065621514ab61bf26f062c175fdbe7f2";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Keccak'.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_Cryptography()
+        {
+            // Arrange
+            byte[] inputData = "Cryptography"u8.ToArray();
+            string expectedHashHex = "53d49d225dd2cfe77d8c5e2112bcc9efe77bea1c7aa5e5ede5798a36e99e2d29";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Cryptography'.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_Testing123()
+        {
+            // Arrange
+            byte[] inputData = "Testing123"u8.ToArray();
+            string expectedHashHex = "3f82db7b16b0818a1c6b2c6152e265f682d5ebcf497c9aad776ad38bc39cb6ca";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Testing123'.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_LongString()
+        {
+            // Arrange
+            byte[] inputData = "This is a longer string for Keccak256 testing purposes."u8.ToArray();
+            string expectedHashHex = "24115e5c2359f85f6840b42acd2f7ea47bc239583e576d766fa173bf711bdd2f";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for the longer string.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_BlankString()
+        {
+            // Arrange
+            byte[] inputData = ""u8.ToArray();
+            string expectedHashHex = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for blank string.");
+        }
+
+        // TestVerifyWithECDsa_CustomTxWitness_SingleSig builds custom witness verification script for single Koblitz public key
+        // and ensures witness check is passed for the following message:
+        //
+        //	keccak256([4-bytes-network-magic-LE, txHash-bytes-BE])
+        //
+        // The proposed witness verification script has 110 bytes length, verification costs 2154270  * 10e-8GAS including Invocation script execution.
+        // The user has to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
+        [TestMethod]
+        public void TestVerifyWithECDsa_CustomTxWitness_SingleSig()
+        {
+            byte[] privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
+            ECPoint pubKey = ECPoint.Parse("04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108", ECCurve.Secp256k1);
+
+            // vrf is a builder of witness verification script corresponding to the public key.
+            using ScriptBuilder vrf = new();
+            vrf.EmitPush((byte)NamedCurveHash.secp256k1Keccak256); // push Koblitz curve identifier and Keccak256 hasher.
+            vrf.Emit(OpCode.SWAP); // swap curve identifier with the signature.
+            vrf.EmitPush(pubKey.EncodePoint(true)); // emit the caller's public key.
+
+            // Construct and push the signed message. The signed message is effectively the network-dependent transaction hash,
+            // i.e. msg = [4-network-magic-bytes-LE, tx-hash-BE]
+            // Firstly, retrieve network magic (it's uint32 wrapped into BigInteger and represented as Integer stackitem on stack).
+            vrf.EmitSysCall(ApplicationEngine.System_Runtime_GetNetwork); // push network magic (Integer stackitem), can have 0-5 bytes length serialized.
+
+            // Convert network magic to 4-bytes-length LE byte array representation.
+            vrf.EmitPush(0x100000000); // push 0x100000000.
+            vrf.Emit(OpCode.ADD, // the result is some new number that is 5 bytes at least when serialized, but first 4 bytes are intact network value (LE).
+                    OpCode.PUSH4, OpCode.LEFT); // cut the first 4 bytes out of a number that is at least 5 bytes long, the result is 4-bytes-length LE network representation.
+
+            // Retrieve executing transaction hash.
+            vrf.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer); // push the script container (executing transaction, actually).
+            vrf.Emit(OpCode.PUSH0, OpCode.PICKITEM); // pick 0-th transaction item (the transaction hash).
+
+            // Concatenate network magic and transaction hash.
+            vrf.Emit(OpCode.CAT); // this instruction will convert network magic to bytes using BigInteger rules of conversion.
+
+            // Continue construction of 'verifyWithECDsa' call.
+            vrf.Emit(OpCode.PUSH4, OpCode.PACK); // pack arguments for 'verifyWithECDsa' call.
+            EmitAppCallNoArgs(vrf, CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
+
+            // Account is a hash of verification script.
+            var vrfScript = vrf.ToArray();
+            var acc = vrfScript.ToScriptHash();
+
+            var tx = new Transaction
+            {
+                Attributes = [],
+                NetworkFee = 1_0000_0000,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[Transaction.MaxTransactionSize / 100],
+                Signers = [new Signer { Account = acc }],
+                SystemFee = 0,
+                ValidUntilBlock = 10,
+                Version = 0,
+                Witnesses = []
+            };
+            var tx_signature = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), privkey, ECCurve.Secp256k1, Hasher.Keccak256);
+
+            // inv is a builder of witness invocation script corresponding to the public key.
+            using ScriptBuilder inv = new();
+            inv.EmitPush(tx_signature); // push signature.
+
+            tx.Witnesses =
+            [
+                new Witness { InvocationScript = inv.ToArray(), VerificationScript = vrfScript }
+            ];
+
+            tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
+
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+
+            // Create fake balance to pay the fees.
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            _ = NativeContract.GAS.Mint(engine, acc, 5_0000_0000, false);
+            snapshot.Commit();
+
+            var txVrfContext = new TransactionVerificationContext();
+            var conflicts = new List<Transaction>();
+            tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, txVrfContext, conflicts).Should().Be(VerifyResult.Succeed);
+
+            // The resulting witness verification cost is 2154270   * 10e-8GAS.
+            // The resulting witness Invocation script (66 bytes length):
+            // NEO-VM > loadbase64 DEARoaaEjM/3VulrBDUod7eiZgWQS2iXIM0+I24iyJYmffhosZoQjfnnRymF/7+FaBPb9qvQwxLLSVo9ROlrdFdC
+            // READY: loaded 66 instructions
+            // NEO-VM 0 > ops
+            // INDEX    OPCODE       PARAMETER
+            // 0        PUSHDATA1    11a1a6848ccff756e96b04352877b7a26605904b689720cd3e236e22c896267df868b19a108df9e7472985ffbf856813dbf6abd0c312cb495a3d44e96b745742    <<
+            //
+            //
+            // The resulting witness verificaiton script (110 bytes):
+            // NEO-VM 0 > loadbase64 ABhQDCEC/QqMHOWuVXD91G51mcFrF1vw69/pwXjxq4SPsW2sdKVBxfug4AMAAAAAAQAAAJ4UjUEtUQgwEM6LFMAfDA92ZXJpZnlXaXRoRUNEc2EMFBv1dasRiWiEE2EKNaEohs3gtmxyQWJ9W1I=
+            // READY: loaded 110 instructions
+            // NEO-VM 0 > pos
+            // Error: No help topic for 'pos'
+            // NEO-VM 0 > ops
+            // INDEX    OPCODE       PARAMETER
+            // 0        PUSHINT8     122 (7a)    <<
+            // 2        SWAP
+            // 3        PUSHDATA1    02fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5
+            // 38       SYSCALL      System.Runtime.GetNetwork (c5fba0e0)
+            // 43       PUSHINT64    4294967296 (0000000001000000)
+            // 52       ADD
+            // 53       PUSH4
+            // 54       LEFT
+            // 55       SYSCALL      System.Runtime.GetScriptContainer (2d510830)
+            // 60       PUSH0
+            // 61       PICKITEM
+            // 62       CAT
+            // 63       PUSH4
+            // 64       PACK
+            // 65       PUSH0
+            // 66       PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
+            // 83       PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
+            // 105      SYSCALL      System.Contract.Call (627d5b52)
+        }
+
+        // TestVerifyWithECDsa_CustomTxWitness_MultiSig builds custom multisignature witness verification script for Koblitz public keys
+        // and ensures witness check is passed for the M out of N multisignature of message:
+        //
+        //	keccak256([4-bytes-network-magic-LE, txHash-bytes-BE])
+        //
+        // The proposed witness verification script has 264 bytes length, verification costs 8390070  * 10e-8GAS including Invocation script execution.
+        // The users have to sign the keccak256([4-bytes-network-magic-LE, txHash-bytes-BE]).
+        [TestMethod]
+        public void TestVerifyWithECDsa_CustomTxWitness_MultiSig()
+        {
+            var privkey1 = "b2dde592bfce654ef03f1ceea452d2b0112e90f9f52099bcd86697a2bd0a2b60".HexToBytes();
+            var pubKey1 = ECPoint.Parse("040486468683c112125978ffe876245b2006bfe739aca8539b67335079262cb27ad0dedc9e5583f99b61c6f46bf80b97eaec3654b87add0e5bd7106c69922a229d", ECCurve.Secp256k1);
+            var privkey2 = "b9879e26941872ee6c9e6f01045681496d8170ed2cc4a54ce617b39ae1891b3a".HexToBytes();
+            var pubKey2 = ECPoint.Parse("040d26fc2ad3b1aae20f040b5f83380670f8ef5c2b2ac921ba3bdd79fd0af0525177715fd4370b1012ddd10579698d186ab342c223da3e884ece9cab9b6638c7bb", ECCurve.Secp256k1);
+            var privkey3 = "4e1fe2561a6da01ee030589d504d62b23c26bfd56c5e07dfc9b8b74e4602832a".HexToBytes();
+            var pubKey3 = ECPoint.Parse("047b4e72ae854b6a0955b3e02d92651ab7fa641a936066776ad438f95bb674a269a63ff98544691663d91a6cfcd215831f01bfb7a226363a6c5c67ef14541dba07", ECCurve.Secp256k1);
+            var privkey4 = "6dfd066bb989d3786043aa5c1f0476215d6f5c44f5fc3392dd15e2599b67a728".HexToBytes();
+            var pubKey4 = ECPoint.Parse("04b62ac4c8a352a892feceb18d7e2e3a62c8c1ecbaae5523d89d747b0219276e225be2556a137e0e806e4915762d816cdb43f572730d23bb1b1cba750011c4edc6", ECCurve.Secp256k1);
+
+            // Public keys must be sorted, exactly like for standard CreateMultiSigRedeemScript.
+            var keys = new List<(byte[], ECPoint)>
+            {
+                (privkey1, pubKey1),
+                (privkey2, pubKey2),
+                (privkey3, pubKey3),
+                (privkey4, pubKey4),
+            }.OrderBy(k => k.Item2).ToList();
+
+            // Consider 4 users willing to sign 3/4 multisignature transaction with their Secp256k1 private keys.
+            var m = 3;
+            var n = keys.Count;
+
+            // Must ensure the following conditions are met before verification script construction:
+            n.Should().BeGreaterThan(0);
+            m.Should().BeLessThanOrEqualTo(n);
+            keys.Select(k => k.Item2).Distinct().Count().Should().Be(n);
+
+            // In fact, the following algorithm is implemented via NeoVM instructions:
+            //
+            // func Check(sigs []interop.Signature) bool {
+            // 	if m != len(sigs) {
+            // 		return false
+            // 	}
+            // 	var pubs []interop.PublicKey = []interop.PublicKey{...}
+            // 	msg := append(convert.ToBytes(runtime.GetNetwork()), runtime.GetScriptContainer().Hash...)
+            // 	var sigCnt = 0
+            // 	var pubCnt = 0
+            // 	for ; sigCnt < m && pubCnt < n; { // sigs must be sorted by pub
+            // 		sigCnt += crypto.VerifyWithECDsa(msg, pubs[pubCnt], sigs[sigCnt], crypto.Secp256k1Keccak256)
+            // 		pubCnt++
+            // 	}
+            // 	return sigCnt == m
+            // }
+
+            // vrf is a builder of M out of N multisig witness verification script corresponding to the public keys.
+            using ScriptBuilder vrf = new();
+
+            // Start the same way as regular multisig script.
+            vrf.EmitPush(m); // push m.
+            foreach (var tuple in keys)
+            {
+                vrf.EmitPush(tuple.Item2.EncodePoint(true)); // push public keys in compressed form.
+            }
+            vrf.EmitPush(n); // push n.
+
+            // Initialize slots for local variables. Locals slot scheme:
+            // LOC0 -> sigs
+            // LOC1 -> pubs
+            // LOC2 -> msg (ByteString)
+            // LOC3 -> sigCnt (Integer)
+            // LOC4 -> pubCnt (Integer)
+            // LOC5 -> n
+            // LOC6 -> m
+            vrf.Emit(OpCode.INITSLOT, new ReadOnlySpan<byte>([7, 0])); // 7 locals, no args.
+
+            // Store n.
+            vrf.Emit(OpCode.STLOC5);
+
+            // Pack public keys and store at LOC1.
+            vrf.Emit(OpCode.LDLOC5, // load n.
+                OpCode.PACK, OpCode.STLOC1); // pack pubs and store.
+
+            // Store m.
+            vrf.Emit(OpCode.STLOC6);
+
+            // Check the number of signatures is m. Abort the execution if not.
+            vrf.Emit(OpCode.DEPTH); // push the number of signatures onto stack.
+            vrf.Emit(OpCode.LDLOC6); // load m.
+            vrf.Emit(OpCode.JMPEQ, new ReadOnlySpan<byte>([0])); // here and below short jumps are sufficient. Offset will be filled later.
+            var sigsLenCheckEndOffset = vrf.Length;
+            vrf.Emit(OpCode.ABORT); // abort the execution if length of the signatures not equal to m.
+
+            // Start the verification itself.
+            var checkStartOffset = vrf.Length;
+
+            // Pack signatures and store at LOC0.
+            vrf.Emit(OpCode.LDLOC6); // load m.
+            vrf.Emit(OpCode.PACK, OpCode.STLOC0);
+
+            // Get message and store it at LOC2.
+            // msg = [4-network-magic-bytes-LE, tx-hash-BE]
+            vrf.EmitSysCall(ApplicationEngine.System_Runtime_GetNetwork); // push network magic (Integer stackitem), can have 0-5 bytes length serialized.
+            // Convert network magic to 4-bytes-length LE byte array representation.
+            vrf.EmitPush(0x100000000); // push 0x100000000.
+            vrf.Emit(OpCode.ADD, // the result is some new number that is 5 bytes at least when serialized, but first 4 bytes are intact network value (LE).
+                    OpCode.PUSH4, OpCode.LEFT); // cut the first 4 bytes out of a number that is at least 5 bytes long, the result is 4-bytes-length LE network representation.
+            // Retrieve executing transaction hash.
+            vrf.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer); // push the script container (executing transaction, actually).
+            vrf.Emit(OpCode.PUSH0, OpCode.PICKITEM); // pick 0-th transaction item (the transaction hash).
+            // Concatenate network magic and transaction hash.
+            vrf.Emit(OpCode.CAT); // this instruction will convert network magic to bytes using BigInteger rules of conversion.
+            vrf.Emit(OpCode.STLOC2); // store msg as a local variable #2.
+
+            // Initialize local variables: sigCnt, pubCnt.
+            vrf.Emit(OpCode.PUSH0, OpCode.STLOC3, // initialize sigCnt.
+            OpCode.PUSH0, OpCode.STLOC4); // initialize pubCnt.
+
+            // Loop condition check.
+            var loopStartOffset = vrf.Length;
+            vrf.Emit(OpCode.LDLOC3); // load sigCnt.
+            vrf.Emit(OpCode.LDLOC6); // load m.
+            vrf.Emit(OpCode.GE,     // sigCnt >= m
+            OpCode.LDLOC4); // load pubCnt
+            vrf.Emit(OpCode.LDLOC5);      // load n.
+            vrf.Emit(OpCode.GE, // pubCnt >= n
+            OpCode.OR); // sigCnt >= m || pubCnt >= n
+            vrf.Emit(OpCode.JMPIF, new ReadOnlySpan<byte>([0])); // jump to the end of the script if (sigCnt >= m || pubCnt >= n).
+            var loopConditionOffset = vrf.Length;
+
+            // Loop start. Prepare arguments and call CryptoLib's verifyWithECDsa.
+            vrf.EmitPush((byte)NamedCurveHash.secp256k1Keccak256); // push Koblitz curve identifier and Keccak256 hasher.
+            vrf.Emit(OpCode.LDLOC0,                // load signatures.
+                OpCode.LDLOC3,             // load sigCnt.
+                OpCode.PICKITEM,           // pick signature at index sigCnt.
+                OpCode.LDLOC1,             // load pubs.
+                OpCode.LDLOC4,             // load pubCnt.
+                OpCode.PICKITEM,           // pick pub at index pubCnt.
+                OpCode.LDLOC2,             // load msg.
+                OpCode.PUSH4, OpCode.PACK); // pack 4 arguments for 'verifyWithECDsa' call.
+            EmitAppCallNoArgs(vrf, CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
+
+            // Update loop variables.
+            vrf.Emit(OpCode.LDLOC3, OpCode.ADD, OpCode.STLOC3, // increment sigCnt if signature is valid.
+            OpCode.LDLOC4, OpCode.INC, OpCode.STLOC4); // increment pubCnt.
+
+            // End of the loop.
+            vrf.Emit(OpCode.JMP, new ReadOnlySpan<byte>([0])); // jump to the start of cycle.
+            var loopEndOffset = vrf.Length;
+            // Return condition: the number of valid signatures should be equal to m.
+            var progRetOffset = vrf.Length;
+            vrf.Emit(OpCode.LDLOC3);  // load sigCnt.
+            vrf.Emit(OpCode.LDLOC6);      // load m.
+            vrf.Emit(OpCode.NUMEQUAL); // push m == sigCnt.
+
+            var vrfScript = vrf.ToArray();
+
+            // Set JMP* instructions offsets. "-1" is for short JMP parameter offset. JMP parameters
+            // are relative offsets.
+            vrfScript[sigsLenCheckEndOffset - 1] = (byte)(checkStartOffset - sigsLenCheckEndOffset + 2);
+            vrfScript[loopEndOffset - 1] = (byte)(loopStartOffset - loopEndOffset + 2);
+            vrfScript[loopConditionOffset - 1] = (byte)(progRetOffset - loopConditionOffset + 2);
+
+            // Account is a hash of verification script.
+            var acc = vrfScript.ToScriptHash();
+
+            var tx = new Transaction
+            {
+                Attributes = [],
+                NetworkFee = 1_0000_0000,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[Transaction.MaxTransactionSize / 100],
+                Signers = [new Signer { Account = acc }],
+                SystemFee = 0,
+                ValidUntilBlock = 10,
+                Version = 0,
+                Witnesses = []
+            };
+            // inv is a builder of witness invocation script corresponding to the public key.
+            using ScriptBuilder inv = new();
+            for (var i = 0; i < n; i++)
+            {
+                if (i == 1) // Skip one key since we need only 3 signatures.
+                    continue;
+                var sig = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), keys[i].Item1, ECCurve.Secp256k1, Hasher.Keccak256);
+                inv.EmitPush(sig);
+            }
+
+            tx.Witnesses =
+            [
+                new Witness { InvocationScript = inv.ToArray(), VerificationScript = vrfScript }
+            ];
+
+            tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
+
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+
+            // Create fake balance to pay the fees.
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            _ = NativeContract.GAS.Mint(engine, acc, 5_0000_0000, false);
+
+            // We should not use commit here cause once its committed, the value we get from the snapshot can be different
+            // from the underline storage. Thought there isn't any issue triggered here, its wrong to use it this way.
+            // We should either ignore the commit, or get a new snapshot of the store after the commit.
+            // snapshot.Commit();
+
+            // Check that witness verification passes.
+            var txVrfContext = new TransactionVerificationContext();
+            var conflicts = new List<Transaction>();
+            tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, txVrfContext, conflicts).Should().Be(VerifyResult.Succeed);
+
+            // The resulting witness verification cost for 3/4 multisig is 8389470  * 10e-8GAS. Cost depends on M/N.
+            // The resulting witness Invocation script (198 bytes for 3 signatures):
+            // NEO-VM 0 > loadbase64 DEDM23XByPvDK9XRAHRhfGH7/Mp5jdaci3/GpTZ3D9SZx2Zw89tAaOtmQSIutXbCxRQA1kSeUD4AteJGoNXFhFzIDECgeHoey0rYdlFyTVfDJSsuS+VwzC5OtYGCVR2V/MttmLXWA/FWZH/MjmU0obgQXa9zoBxqYQUUJKefivZFxVcTDEAZT6L6ZFybeXbm8+RlVNS7KshusT54d2ImQ6vFvxETphhJOwcQ0yNL6qJKsrLAKAnzicY4az3ct0G35mI17/gQ
+            // READY: loaded 198 instructions
+            // NEO-VM 0 > ops
+            // INDEX    OPCODE       PARAMETER
+            // 0        PUSHDATA1    ccdb75c1c8fbc32bd5d10074617c61fbfcca798dd69c8b7fc6a536770fd499c76670f3db4068eb6641222eb576c2c51400d6449e503e00b5e246a0d5c5845cc8    <<
+            // 66       PUSHDATA1    a0787a1ecb4ad87651724d57c3252b2e4be570cc2e4eb58182551d95fccb6d98b5d603f156647fcc8e6534a1b8105daf73a01c6a61051424a79f8af645c55713
+            // 132      PUSHDATA1    194fa2fa645c9b7976e6f3e46554d4bb2ac86eb13e7877622643abc5bf1113a618493b0710d3234beaa24ab2b2c02809f389c6386b3ddcb741b7e66235eff810
+            //
+            //
+            // Resulting witness verification script (266 bytes for 3/4 multisig):
+            // NEO-VM 0 > loadbase64 EwwhAwSGRoaDwRISWXj/6HYkWyAGv+c5rKhTm2czUHkmLLJ6DCEDDSb8KtOxquIPBAtfgzgGcPjvXCsqySG6O915/QrwUlEMIQN7TnKuhUtqCVWz4C2SZRq3+mQak2Bmd2rUOPlbtnSiaQwhArYqxMijUqiS/s6xjX4uOmLIwey6rlUj2J10ewIZJ24iFFcHAHVtwHF2Q24oAzhuwHBBxfug4AMAAAAAAQAAAJ4UjUEtUQgwEM6LchBzEHRrbrhsbbiSJEIAGGhrzmlszmoUwB8MD3ZlcmlmeVdpdGhFQ0RzYQwUG/V1qxGJaIQTYQo1oSiGzeC2bHJBYn1bUmuec2ycdCK5a26z
+            // READY: loaded 264 instructions
+            // NEO-VM 0 > ops
+            // INDEX    OPCODE       PARAMETER
+            // 0        PUSH3            <<
+            // 1        PUSHDATA1    030486468683c112125978ffe876245b2006bfe739aca8539b67335079262cb27a
+            // 36       PUSHDATA1    030d26fc2ad3b1aae20f040b5f83380670f8ef5c2b2ac921ba3bdd79fd0af05251
+            // 71       PUSHDATA1    037b4e72ae854b6a0955b3e02d92651ab7fa641a936066776ad438f95bb674a269
+            // 106      PUSHDATA1    02b62ac4c8a352a892feceb18d7e2e3a62c8c1ecbaae5523d89d747b0219276e22
+            // 141      PUSH4
+            // 142      INITSLOT     7 local, 0 arg
+            // 145      STLOC5
+            // 146      LDLOC5
+            // 147      PACK
+            // 148      STLOC1
+            // 149      STLOC6
+            // 150      DEPTH
+            // 151      LDLOC6
+            // 152      JMPEQ        155 (3/03)
+            // 154      ABORT
+            // 155      LDLOC6
+            // 156      PACK
+            // 157      STLOC0
+            // 158      SYSCALL      System.Runtime.GetNetwork (c5fba0e0)
+            // 163      PUSHINT64    4294967296 (0000000001000000)
+            // 172      ADD
+            // 173      PUSH4
+            // 174      LEFT
+            // 175      SYSCALL      System.Runtime.GetScriptContainer (2d510830)
+            // 180      PUSH0
+            // 181      PICKITEM
+            // 182      CAT
+            // 183      STLOC2
+            // 184      PUSH0
+            // 185      STLOC3
+            // 186      PUSH0
+            // 187      STLOC4
+            // 188      LDLOC3
+            // 189      LDLOC6
+            // 190      GE
+            // 191      LDLOC4
+            // 192      LDLOC5
+            // 193      GE
+            // 194      OR
+            // 195      JMPIF        261 (66/42)
+            // 197      PUSHINT8     122 (7a)
+            // 199      LDLOC0
+            // 200      LDLOC3
+            // 201      PICKITEM
+            // 202      LDLOC1
+            // 203      LDLOC4
+            // 204      PICKITEM
+            // 205      LDLOC2
+            // 206      PUSH4
+            // 207      PACK
+            // 208      PUSH0
+            // 209      PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
+            // 226      PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
+            // 248      SYSCALL      System.Contract.Call (627d5b52)
+            // 253      LDLOC3
+            // 254      ADD
+            // 255      STLOC3
+            // 256      LDLOC4
+            // 257      INC
+            // 258      STLOC4
+            // 259      JMP          188 (-71/b9)
+            // 261      LDLOC3
+            // 262      LDLOC6
+            // 263      NUMEQUAL
+        }
+
+        // EmitAppCallNoArgs is a helper method that emits all parameters of System.Contract.Call interop
+        // except the method arguments.
+        private static ScriptBuilder EmitAppCallNoArgs(ScriptBuilder builder, UInt160 contractHash, string method, CallFlags f)
+        {
+            builder.EmitPush((byte)f);
+            builder.EmitPush(method);
+            builder.EmitPush(contractHash);
+            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            return builder;
+        }
+
+        [TestMethod]
+        public void TestVerifyWithECDsa()
+        {
+            byte[] privR1 = "6e63fda41e9e3aba9bb5696d58a75731f044a9bdc48fe546da571543b2fa460e".HexToBytes();
+            ECPoint pubR1 = ECPoint.Parse("04cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d736413643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
+            byte[] privK1 = "0b5fb3a050385196b327be7d86cbce6e40a04c8832445af83ad19c82103b3ed9".HexToBytes();
+            ECPoint pubK1 = ECPoint.Parse("04b6363b353c3ee1620c5af58594458aa00abf43a6d134d7c4cb2d901dc0f474fd74c94740bd7169aa0b1ef7bc657e824b1d7f4283c547e7ec18c8576acf84418a", ECCurve.Secp256k1);
+            byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
+
+            // secp256r1 + SHA256
+            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.SHA256);
+            Crypto.VerifySignature(message, signature, pubR1).Should().BeTrue(); // SHA256 hash is used by default.
+            CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1SHA256).Should().Be(true);
+
+            // secp256r1 + Keccak256
+            signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.Keccak256);
+            Crypto.VerifySignature(message, signature, pubR1, Hasher.Keccak256).Should().BeTrue();
+            CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1Keccak256).Should().Be(true);
+
+            // secp256k1 + SHA256
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.SHA256);
+            Crypto.VerifySignature(message, signature, pubK1).Should().BeTrue(); // SHA256 hash is used by default.
+            CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1SHA256).Should().Be(true);
+
+            // secp256k1 + Keccak256
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.Keccak256);
+            Crypto.VerifySignature(message, signature, pubK1, Hasher.Keccak256).Should().BeTrue();
+            CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1Keccak256).Should().Be(true);
+        }
+
+        private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using (ScriptBuilder script = new())
+            {
+                script.EmitPush((int)curveHash);
+                script.EmitPush(signature);
+                script.EmitPush(pub.EncodePoint(true));
+                script.EmitPush(message);
+                script.EmitPush(4);
+                script.Emit(OpCode.PACK);
+                script.EmitPush(CallFlags.All);
+                script.EmitPush("verifyWithECDsa");
+                script.EmitPush(NativeContract.CryptoLib.Hash);
+                script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                return engine.ResultStack.Pop().GetBoolean();
+            }
         }
     }
 }

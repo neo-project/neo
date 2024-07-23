@@ -22,7 +22,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestCachedFind_Between()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var storages = snapshot.CreateSnapshot();
             var cache = new ClonedCache(storages);
 
@@ -61,8 +61,8 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestCachedFind_Last()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var storages = snapshot.CreateSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var storages = snapshotCache.CreateSnapshot();
             var cache = new ClonedCache(storages);
 
             storages.Add
@@ -93,7 +93,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestCachedFind_Empty()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var storages = snapshot.CreateSnapshot();
             var cache = new ClonedCache(storages);
 

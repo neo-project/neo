@@ -341,10 +341,22 @@ namespace Neo.Json.UnitTests
         public void TestEqual()
         {
             var str = "hello world";
+            var str2 = "hello world2";
             var jString = new JString(str);
-            Assert.IsTrue(jString.Equals(str));
+            var jString2 = new JString(str2);
+
             Assert.IsTrue(jString == str);
-            Assert.IsTrue(jString != "hello world2");
+            Assert.IsFalse(jString == null);
+            Assert.IsTrue(jString != str2);
+            Assert.IsFalse(jString == str2);
+
+            Assert.AreEqual(str, jString.GetString());
+            Assert.IsTrue(jString.Equals(str));
+            Assert.IsFalse(jString.Equals(jString2));
+            Assert.IsFalse(jString.Equals(null));
+            Assert.IsFalse(jString.Equals(123));
+            var reference = jString;
+            Assert.IsTrue(jString.Equals(reference));
         }
     }
 }

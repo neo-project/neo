@@ -31,32 +31,35 @@ namespace Neo.SmartContract
     {
         /// <summary>
         /// The maximum GAS that can be consumed when <see cref="VerifyWitnesses"/> is called.
+        /// The unit is datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const long MaxVerificationGas = 1_50000000;
 
         /// <summary>
         /// Calculates the verification fee for a signature address.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         /// <returns>The calculated cost.</returns>
         public static long SignatureContractCost() =>
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] +
             ApplicationEngine.CheckSigPrice;
 
         /// <summary>
         /// Calculates the verification fee for a multi-signature address.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
         {
-            long fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n);
+            long fee = ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (m + n);
             using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(m).ToArray()[0]];
             using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-            fee += ApplicationEngine.OpCodePrices[OpCode.SYSCALL];
+                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(n).ToArray()[0]];
+            fee += ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL];
             fee += ApplicationEngine.CheckSigPrice * n;
             return fee;
         }
@@ -184,7 +187,14 @@ namespace Neo.SmartContract
             {
                 if (script.Length <= i + 35) return false;
                 if (script[++i] != 33) return false;
-                points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
+                try
+                {
+                    points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
+                }
+                catch (Exception) // Script may contain any data, thus exceptions are allowed on point decoding.
+                {
+                    return false;
+                }
                 i += 34;
                 ++n;
             }
@@ -278,12 +288,12 @@ namespace Neo.SmartContract
         /// <param name="verifiable">The <see cref="IVerifiable"/> to be verified.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used for the verification.</param>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="gas">The maximum GAS that can be used.</param>
+        /// <param name="datoshi">The maximum GAS that can be used, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
         /// <returns><see langword="true"/> if the <see cref="IVerifiable"/> is verified as valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long datoshi)
         {
-            if (gas < 0) return false;
-            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
+            if (datoshi < 0) return false;
+            if (datoshi > MaxVerificationGas) datoshi = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -297,14 +307,14 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
+                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], datoshi, out long fee))
                     return false;
-                gas -= fee;
+                datoshi -= fee;
             }
             return true;
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long datoshi, out long fee)
         {
             fee = 0;
             Script invocationScript;
@@ -316,13 +326,13 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, gas))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CloneCache(), null, settings, datoshi))
             {
                 if (witness.VerificationScript.Length == 0)
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
                     engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }
@@ -350,7 +360,7 @@ namespace Neo.SmartContract
 
                 if (engine.Execute() == VMState.FAULT) return false;
                 if (!engine.ResultStack.Peek().GetBoolean()) return false;
-                fee = engine.GasConsumed;
+                fee = engine.FeeConsumed;
             }
             return true;
         }

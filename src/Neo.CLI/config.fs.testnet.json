@@ -6,8 +6,8 @@
       "Active": false
     },
     "Storage": {
-      "Engine": "LevelDBStore", // Candidates [MemoryStore, LevelDBStore, RocksDBStore]
-      "Path": "Data_LevelDB_{0}" // {0} is a placeholder for the network id
+      "Engine": "LevelDBStore",
+      "Path": "Data_LevelDB_{0}"
     },
     "P2P": {
       "Port": 50333,
@@ -24,7 +24,7 @@
       "NeoNameService": "0xfb08ccf30ab534a871b7b092a49fe70c154ed678"
     },
     "Plugins": {
-      "DownloadUrl": "https://api.github.com/repos/neo-project/neo-modules/releases"
+      "DownloadUrl": "https://api.github.com/repos/neo-project/neo/releases"
     }
   },
   "ProtocolConfiguration": {
@@ -33,7 +33,7 @@
     "MillisecondsPerBlock": 15000,
     "MaxTransactionsPerBlock": 512,
     "MemoryPoolMaxTransactions": 50000,
-    "MaxTraceableBlocks": 2102400,
+    "MaxTraceableBlocks": 17280,
     "InitialGasDistribution": 5200000000000000,
     "ValidatorsCount": 7,
     "StandbyCommittee": [

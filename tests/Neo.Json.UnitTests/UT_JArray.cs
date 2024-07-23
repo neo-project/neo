@@ -322,5 +322,17 @@ namespace Neo.Json.UnitTests
             jArray.IsReadOnly.Should().BeFalse();
         }
 
+
+        public void TestClone()
+        {
+            var jArray = new JArray
+            {
+                alice,
+                bob,
+            };
+            var a = jArray.AsString();
+            var b = jArray.Clone().AsString();
+            a.Should().Be(b);
+        }
     }
 }

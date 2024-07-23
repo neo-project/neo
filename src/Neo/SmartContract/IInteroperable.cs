@@ -11,7 +11,7 @@
 
 using Neo.VM;
 using Neo.VM.Types;
-using System.Runtime.Serialization;
+using System;
 
 namespace Neo.SmartContract
 {
@@ -35,7 +35,7 @@ namespace Neo.SmartContract
 
         public IInteroperable Clone()
         {
-            IInteroperable result = (IInteroperable)FormatterServices.GetUninitializedObject(GetType());
+            var result = (IInteroperable)Activator.CreateInstance(GetType());
             result.FromStackItem(ToStackItem(null));
             return result;
         }

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyTitle>Neo.CLI</AssemblyTitle>
     <AssemblyName>neo-cli</AssemblyName>
     <OutputType>Exe</OutputType>
@@ -10,6 +10,8 @@
     <Product>Neo.CLI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
+    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>

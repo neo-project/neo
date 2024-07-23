@@ -98,6 +98,7 @@ namespace Neo
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly IStore store;
+        private readonly IStoreProvider storageProvider;
         private ChannelsConfig start_message = null;
         private int suspend = 0;
 
@@ -113,9 +114,11 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
-        /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
-        /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string? storageEngine = null, string? storagePath = null) : this(settings, StoreFactory.GetStore(storageEngine ?? nameof(MemoryStore), storagePath))
+        /// <param name="storageProvider">The storage engine used to create the <see cref="IStoreProvider"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        public NeoSystem(ProtocolSettings settings, string storageProvider = null, string storagePath = null) :
+            this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore))
+                ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath)
         {
         }
 
@@ -123,17 +126,19 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
-        /// <param name="storage">The <see cref="IStore"/> to use.</param>
-        public NeoSystem(ProtocolSettings settings, IStore storage)
+        /// <param name="storageProvider">The <see cref="IStoreProvider"/> to use.</param>
+        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
-            this.Settings = settings;
-            this.GenesisBlock = CreateGenesisBlock(settings);
-            this.store = storage;
-            this.MemPool = new MemoryPool(this);
-            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
-            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
-            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
+            Settings = settings;
+            GenesisBlock = CreateGenesisBlock(settings);
+            this.storageProvider = storageProvider;
+            store = storageProvider.GetStore(storagePath);
+            MemPool = new MemoryPool(this);
+            Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
+            LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+            TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
             Blockchain.Ask(new Blockchain.Initialize()).Wait();
@@ -219,6 +224,16 @@ namespace Neo
         }
 
         /// <summary>
+        /// Loads an <see cref="IStore"/> at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the storage.</param>
+        /// <returns>The loaded <see cref="IStore"/>.</returns>
+        public IStore LoadStore(string path)
+        {
+            return storageProvider.GetStore(path);
+        }
+
+        /// <summary>
         /// Resumes the startup process of <see cref="LocalNode"/>.
         /// </summary>
         /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>.</returns>
@@ -260,8 +275,20 @@ namespace Neo
         /// <summary>
         /// Gets a snapshot of the blockchain storage.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
+        [Obsolete("This method is obsolete, use GetSnapshotCache instead.")]
         public SnapshotCache GetSnapshot()
+        {
+            return new SnapshotCache(store.GetSnapshot());
+        }
+
+        /// <summary>
+        /// Gets a snapshot of the blockchain storage with an execution cache.
+        /// With the snapshot, we have the latest state of the blockchain, with the cache,
+        /// we can run transactions in a sandboxed environment.
+        /// </summary>
+        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
+        public SnapshotCache GetSnapshotCache()
         {
             return new SnapshotCache(store.GetSnapshot());
         }

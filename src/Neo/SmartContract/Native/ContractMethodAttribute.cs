@@ -10,15 +10,37 @@
 // modifications are permitted.
 
 using System;
+using System.Diagnostics;
 
 namespace Neo.SmartContract.Native
 {
+    [DebuggerDisplay("{Name}")]
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false)]
-    internal class ContractMethodAttribute : Attribute
+    internal class ContractMethodAttribute : Attribute, IHardforkActivable
     {
         public string Name { get; init; }
         public CallFlags RequiredCallFlags { get; init; }
         public long CpuFee { get; init; }
         public long StorageFee { get; init; }
+        public Hardfork? ActiveIn { get; init; } = null;
+        public Hardfork? DeprecatedIn { get; init; } = null;
+
+        public ContractMethodAttribute() { }
+
+        public ContractMethodAttribute(Hardfork activeIn)
+        {
+            ActiveIn = activeIn;
+        }
+
+        public ContractMethodAttribute(Hardfork activeIn, Hardfork deprecatedIn) : this(activeIn)
+        {
+            DeprecatedIn = deprecatedIn;
+        }
+
+        public ContractMethodAttribute(bool isDeprecated, Hardfork deprecatedIn)
+        {
+            if (!isDeprecated) throw new ArgumentException("isDeprecated must be true", nameof(isDeprecated));
+            DeprecatedIn = deprecatedIn;
+        }
     }
 }

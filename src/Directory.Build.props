@@ -2,10 +2,10 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <Copyright>2015-2023 The Neo Project</Copyright>
-    <VersionPrefix>3.6.2</VersionPrefix>
-    <LangVersion>11.0</LangVersion>
+    <Copyright>2015-2024 The Neo Project</Copyright>
+    <LangVersion>12.0</LangVersion>
     <Authors>The Neo Project</Authors>
+    <IsPackable>true</IsPackable>
     <PackageIcon>neo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -16,11 +16,12 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <VersionPrefix>3.7.5</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../neo.png" Pack="true" Visible="false" PackagePath=""/>
-    <None Include="../README.md" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>

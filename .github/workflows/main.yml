@@ -6,11 +6,50 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 7.0.x
+  DOTNET_VERSION: 8.0.x
 
 jobs:
 
+  Format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Check Format (*.cs)
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+
+  Test-Everything:
+    needs: [Format]
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }} 
+
+    - name: Build (Everything)
+      run: dotnet build
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install libleveldb-dev expect
+        find ./bin -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
+
+    - name: Run tests with expect
+      run: expect ./scripts/Neo.CLI/test-neo-cli.exp
+      
   Test:
+    needs: [Format]
     timeout-minutes: 15
     strategy:
       matrix:
@@ -19,127 +58,95 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Check format
+        
+    - name: Test
+      if: matrix.os != 'ubuntu-latest'
+      run: |
+        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
+        dotnet build
+        dotnet test --blame-hang --blame-crash --no-build
+
+    - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
-         dotnet format --verify-no-changes --verbosity diagnostic
-    - name: Test
-      run: |
-        find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov
+        sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
+
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests
+        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
+        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
+        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
+        dotnet test ./tests/Neo.Extensions.Tests --output ./bin/tests/Neo.Extensions.Tests
+
+        # Plugins
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
+        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
+        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
+
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@master
+      uses: coverallsapp/github-action@v2.3.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: ./coverage/lcov.net7.0.info
+        files:
+          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Json.UnitTests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Extensions.Tests/TestResults/coverage.info
 
-  # MyGet isn't working
-  # PublishMyGet:
-  #   if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-  #   needs: Test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
-  #     with:
-  #       fetch-depth: 0
-  #   - name: Setup .NET
-  #     uses: actions/setup-dotnet@v4
-  #     with:
-  #       dotnet-version: ${{ env.DOTNET_VERSION }}
-  #   - name: Set Version
-  #     run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
-  #   - name : Pack (Neo)
-  #     run: |
-  #       dotnet pack \
-  #       --configuration Debug \
-  #       --output ./out \
-  #       --version-suffix ${{ env.VERSION_SUFFIX }}
-  #   - name: Remove Unwanted Files
-  #     working-directory: ./out
-  #     run: |
-  #       rm -v Neo.CLI*
-  #       rm -v Neo.GUI*
-  #   - name: Publish to MyGet
-  #     working-directory: ./out
-  #     run: |
-  #       for filename in *.nupkg; do
-  #           dotnet nuget push "${filename}" \
-  #           --source https://www.myget.org/F/neo/api/v3/index.json \
-  #           --api-key "${{ secrets.MYGET_TOKEN }}" \
-  #           --disable-buffering \
-  #           --no-service-endpoint;
-  #       done;
-  #     shell: bash
-
-  Release:
+  PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-    needs: Test
+    needs: [Test]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Get version
-      id: get_version
-      run: |
-        sudo apt install xmlstarlet
-        find src -name Directory.Build.props | xargs xmlstarlet sel -N i=http://schemas.microsoft.com/developer/msbuild/2003 -t -v "concat('::set-output name=version::v',//i:VersionPrefix/text())" | xargs echo
-    - name: Check tag
-      id: check_tag
-      run: curl -s -I ${{ format('https://github.com/{0}/releases/tag/{1}', github.repository, steps.get_version.outputs.version) }} | head -n 1 | cut -d$' ' -f2 | xargs printf "::set-output name=statusCode::%s" | xargs echo
-    - name: Create release
-      if: steps.check_tag.outputs.statusCode == '404'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.get_version.outputs.version }}
-        release_name: ${{ steps.get_version.outputs.version }}
-        prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
-    - name: Setup .NET
-      if: steps.check_tag.outputs.statusCode == '404'
+        fetch-depth: 0
+
+    - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name : Pack (Neo)
-      if: steps.check_tag.outputs.statusCode == '404'
+
+    - name: Set Version
+      run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
+
+    - name : Pack (Everything)
       run: |
-        dotnet pack ./src/Neo \
+        dotnet pack \
         --configuration Release \
-        --output ./out
-    - name : Pack (Neo.Json)
-      if: steps.check_tag.outputs.statusCode == '404'
+        --output ./out \
+        --version-suffix ${{ env.VERSION_SUFFIX }}
+
+    - name: Publish to Github Packages
+      working-directory: ./out
       run: |
-        dotnet pack ./src/Neo.Json \
-        --configuration Release \
-        --output ./out
-    - name : Pack (Neo.VM)
-      if: steps.check_tag.outputs.statusCode == '404'
+        dotnet nuget push * \
+            --source https://nuget.pkg.github.com/neo-project/index.json \
+            --api-key "${{ secrets.GITHUB_TOKEN }}" \
+            --disable-buffering \
+            --no-service-endpoint
+
+    - name: Publish to myGet
+      working-directory: ./out
       run: |
-        dotnet pack ./src/Neo.VM \
-        --configuration Release \
-        --output ./out
-    - name : Pack (Neo.ConsoleService)
-      if: steps.check_tag.outputs.statusCode == '404'
-      run: |
-        dotnet pack ./src/Neo.ConsoleService \
-        --configuration Release \
-        --output ./out
-    - name : Pack (Neo.Cryptography.BLS12_381)
-      if: steps.check_tag.outputs.statusCode == '404'
-      run: |
-        dotnet pack ./src/Neo.Cryptography.BLS12_381 \
-        --configuration Release \
-        --output ./out
-    - name: Publish to NuGet
-      if: steps.check_tag.outputs.statusCode == '404'
-      run: |
-        dotnet nuget push out/*.nupkg -s https://api.nuget.org/v3/index.json -k ${NUGET_TOKEN}
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+        dotnet nuget push * \
+            --source https://www.myget.org/F/neo/api/v3/index.json \
+            --api-key "${{ secrets.MYGET_TOKEN }}" \
+            --disable-buffering \
+            --no-service-endpoint

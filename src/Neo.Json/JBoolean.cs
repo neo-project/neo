@@ -29,7 +29,7 @@ namespace Neo.Json
         /// <param name="value">The value of the JSON token.</param>
         public JBoolean(bool value = false)
         {
-            this.Value = value;
+            Value = value;
         }
 
         public override bool AsBoolean()
@@ -91,7 +91,7 @@ namespace Neo.Json
             }
             if (obj is JBoolean other)
             {
-                return this.Value.Equals(other.Value);
+                return Value.Equals(other.Value);
             }
             return false;
         }

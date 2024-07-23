@@ -87,7 +87,7 @@ namespace Neo.GUI
 
             try
             {
-                signedData = Crypto.Sign(raw, keys.PrivateKey, keys.PublicKey.EncodePoint(false).Skip(1).ToArray());
+                signedData = Crypto.Sign(raw, keys.PrivateKey);
             }
             catch (Exception err)
             {

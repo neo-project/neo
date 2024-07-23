@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.VM;
+using System;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract
@@ -19,6 +20,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The prices of all the opcodes.
         /// </summary>
+        [Obsolete("You should use OpCodePriceTable")]
         public static readonly IReadOnlyDictionary<OpCode, long> OpCodePrices = new Dictionary<OpCode, long>
         {
             [OpCode.PUSHINT8] = 1 << 0,
@@ -218,5 +220,24 @@ namespace Neo.SmartContract
             [OpCode.ISTYPE] = 1 << 1,
             [OpCode.CONVERT] = 1 << 13,
         };
+
+        /// <summary>
+        /// The prices of all the opcodes.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        /// </summary>
+        public static readonly long[] OpCodePriceTable = new long[byte.MaxValue];
+
+        /// <summary>
+        /// Init OpCodePrices
+        /// </summary>
+        static ApplicationEngine()
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            foreach (var entry in OpCodePrices)
+#pragma warning restore CS0618 // Type or member is obsolete
+            {
+                OpCodePriceTable[(byte)entry.Key] = entry.Value;
+            }
+        }
     }
 }

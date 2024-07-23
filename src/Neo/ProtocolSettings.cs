@@ -24,6 +24,8 @@ namespace Neo
     /// </summary>
     public record ProtocolSettings
     {
+        private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
+
         /// <summary>
         /// The magic number of the NEO network.
         /// </summary>
@@ -91,6 +93,7 @@ namespace Neo
 
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
+        /// In the unit of datoshi, 1 GAS = 1e8 datoshi
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
 
@@ -115,10 +118,10 @@ namespace Neo
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
-            Hardforks = ImmutableDictionary<Hardfork, uint>.Empty
+            Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
         };
 
-        public static ProtocolSettings? Custom { get; set; }
+        public static ProtocolSettings Custom { get; set; }
 
         /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> at the specified path.
@@ -142,7 +145,7 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(IConfigurationSection section)
         {
-            return new ProtocolSettings
+            Custom = new ProtocolSettings
             {
                 Network = section.GetValue("Network", Default.Network),
                 AddressVersion = section.GetValue("AddressVersion", Default.AddressVersion),
@@ -159,9 +162,32 @@ namespace Neo
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
-                    ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value))
+                    ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
                     : Default.Hardforks
             };
+            return Custom;
+        }
+
+        /// <summary>
+        /// Explicitly set the height of all old omitted hardforks to 0 for proper IsHardforkEnabled behaviour.
+        /// </summary>
+        /// <param name="hardForks">HardForks</param>
+        /// <returns>Processed hardfork configuration</returns>
+        private static Dictionary<Hardfork, uint> EnsureOmmitedHardforks(Dictionary<Hardfork, uint> hardForks)
+        {
+            foreach (Hardfork hf in AllHardforks)
+            {
+                if (!hardForks.ContainsKey(hf))
+                {
+                    hardForks[hf] = 0;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return hardForks;
         }
 
         private static void CheckingHardfork(ProtocolSettings settings)
@@ -169,7 +195,7 @@ namespace Neo
             var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
             // Check for continuity in configured hardforks
             var sortedHardforks = settings.Hardforks.Keys
-                .OrderBy(h => allHardforks.IndexOf(h))
+                .OrderBy(allHardforks.IndexOf)
                 .ToList();
 
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
@@ -179,7 +205,7 @@ namespace Neo
 
                 // If they aren't consecutive, return false.
                 if (nextIndex - currentIndex > 1)
-                    throw new Exception("Hardfork configuration is not continuous.");
+                    throw new ArgumentException("Hardfork configuration is not continuous.");
             }
             // Check that block numbers are not higher in earlier hardforks than in later ones
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
@@ -187,9 +213,27 @@ namespace Neo
                 if (settings.Hardforks[sortedHardforks[i]] > settings.Hardforks[sortedHardforks[i + 1]])
                 {
                     // This means the block number for the current hardfork is greater than the next one, which should not be allowed.
-                    throw new Exception($"The Hardfork configuration for {sortedHardforks[i]} is greater than for {sortedHardforks[i + 1]}");
+                    throw new ArgumentException($"The Hardfork configuration for {sortedHardforks[i]} is greater than for {sortedHardforks[i + 1]}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Check if the Hardfork is Enabled
+        /// </summary>
+        /// <param name="hardfork">Hardfork</param>
+        /// <param name="index">Block index</param>
+        /// <returns>True if enabled</returns>
+        public bool IsHardforkEnabled(Hardfork hardfork, uint index)
+        {
+            if (Hardforks.TryGetValue(hardfork, out uint height))
+            {
+                // If the hardfork has a specific height in the configuration, check the block height.
+                return index >= height;
+            }
+
+            // If the hardfork isn't specified in the configuration, return false.
+            return false;
         }
     }
 }

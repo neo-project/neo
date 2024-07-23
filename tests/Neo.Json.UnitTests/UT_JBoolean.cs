@@ -95,8 +95,10 @@ namespace Neo.Json.UnitTests
         {
             Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
             Assert.IsTrue(jTrue == new JBoolean(true));
+            Assert.IsTrue(jTrue != new JBoolean(false));
             Assert.IsTrue(jFalse.Equals(new JBoolean()));
             Assert.IsTrue(jFalse == new JBoolean());
+            Assert.IsTrue(jFalse.GetBoolean().ToString().ToLowerInvariant() == jFalse.ToString());
         }
     }
 }

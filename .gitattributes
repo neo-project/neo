@@ -2,6 +2,10 @@
 # Set default behavior to automatically normalize line endings.
 ###############################################################################
 * text eol=lf
+*.cs eol=lf
+*.csproj eol=lf
+*.props eol=lf
+*.json eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.
@@ -44,6 +48,7 @@
 *.png binary
 *.gif binary
 *.ico binary
+*.zip binary
 
 ###############################################################################
 # diff behavior for common document formats

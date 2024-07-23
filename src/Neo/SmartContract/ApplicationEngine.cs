@@ -32,8 +32,11 @@ namespace Neo.SmartContract
     /// </summary>
     public partial class ApplicationEngine : ExecutionEngine
     {
+        protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
@@ -47,9 +50,10 @@ namespace Neo.SmartContract
         /// </summary>
         public static event EventHandler<LogEventArgs> Log;
 
-        private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
         private static Dictionary<uint, InteropDescriptor> services;
-        private readonly long gas_amount;
+        // Total amount of GAS spent to execute.
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
+        private readonly long _feeAmount;
         private Dictionary<Type, object> states;
         private readonly DataCache originalSnapshot;
         private List<NotifyEventArgs> notifications;
@@ -57,6 +61,7 @@ namespace Neo.SmartContract
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         internal readonly uint ExecFeeFactor;
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
 
@@ -104,13 +109,22 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// GAS spent to execute.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
+        [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
         public long GasConsumed { get; private set; } = 0;
 
         /// <summary>
-        /// The remaining GAS that can be spent in order to complete the execution.
+        /// GAS spent to execute.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => gas_amount - GasConsumed;
+        public long FeeConsumed { get; private set; } = 0;
+
+        /// <summary>
+        /// The remaining GAS that can be spent in order to complete the execution.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
+        /// </summary>
+        public long GasLeft => _feeAmount - FeeConsumed;
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -125,7 +139,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
-        public UInt160 CallingScriptHash
+        public virtual UInt160 CallingScriptHash
         {
             get
             {
@@ -138,7 +152,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
-        public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
+        public virtual UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
         /// The notifications sent during the execution.
@@ -153,20 +167,24 @@ namespace Neo.SmartContract
         /// <param name="snapshot">The snapshot used by the engine during execution.</param>
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
+        /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        protected unsafe ApplicationEngine(
+            TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock,
+            ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
+            : base(jumpTable ?? DefaultJumpTable)
         {
-            this.Trigger = trigger;
-            this.ScriptContainer = container;
-            this.originalSnapshot = snapshot;
-            this.PersistingBlock = persistingBlock;
-            this.ProtocolSettings = settings;
-            this.gas_amount = gas;
-            this.Diagnostic = diagnostic;
-            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
-            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
-            this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            Trigger = trigger;
+            ScriptContainer = container;
+            originalSnapshot = snapshot;
+            PersistingBlock = persistingBlock;
+            ProtocolSettings = settings;
+            _feeAmount = gas;
+            Diagnostic = diagnostic;
+            ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
+            StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
+            nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
                 fixed (byte* p = nonceData)
@@ -177,14 +195,68 @@ namespace Neo.SmartContract
             diagnostic?.Initialized(this);
         }
 
-        /// <summary>
-        /// Adds GAS to <see cref="GasConsumed"/> and checks if it has exceeded the maximum limit.
-        /// </summary>
-        /// <param name="gas">The amount of GAS to be added.</param>
-        protected internal void AddGas(long gas)
+        #region JumpTable
+
+        private static JumpTable ComposeDefaultJumpTable()
         {
-            GasConsumed = checked(GasConsumed + gas);
-            if (GasConsumed > gas_amount)
+            var table = new JumpTable();
+
+            table[OpCode.SYSCALL] = OnSysCall;
+            table[OpCode.CALLT] = OnCallT;
+
+            return table;
+        }
+
+        protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        {
+            if (engine is ApplicationEngine app)
+            {
+                uint tokenId = instruction.TokenU16;
+
+                app.ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
+                ContractState contract = app.CurrentContext.GetState<ExecutionContextState>().Contract;
+                if (contract is null || tokenId >= contract.Nef.Tokens.Length)
+                    throw new InvalidOperationException();
+                MethodToken token = contract.Nef.Tokens[tokenId];
+                if (token.ParametersCount > app.CurrentContext.EvaluationStack.Count)
+                    throw new InvalidOperationException();
+                StackItem[] args = new StackItem[token.ParametersCount];
+                for (int i = 0; i < token.ParametersCount; i++)
+                    args[i] = app.Pop();
+                app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        protected static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        {
+            if (engine is ApplicationEngine app)
+            {
+                uint method = instruction.TokenU32;
+
+                app.OnSysCall(services[method]);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
+        /// </summary>
+        /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
+        protected internal void AddFee(long datoshi)
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
+#pragma warning restore CS0618 // Type or member is obsolete
+            if (FeeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -214,14 +286,18 @@ namespace Neo.SmartContract
             if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
 
+            ExecutionContext currentContext = CurrentContext;
+            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
             if (method.Safe)
             {
                 flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
             }
             else
             {
-                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
-                if (currentContract?.CanCall(contract, method.Name) == false)
+                var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
+                ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
+                : NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
 
@@ -234,8 +310,6 @@ namespace Neo.SmartContract
                 invocationCounter[contract.Hash] = 1;
             }
 
-            ExecutionContext currentContext = CurrentContext;
-            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
@@ -250,7 +324,7 @@ namespace Neo.SmartContract
             return context_new;
         }
 
-        internal ContractTask CallFromNativeContract(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+        internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
@@ -260,7 +334,7 @@ namespace Neo.SmartContract
             return task;
         }
 
-        internal ContractTask<T> CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+        internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
@@ -270,9 +344,9 @@ namespace Neo.SmartContract
             return task;
         }
 
-        protected override void ContextUnloaded(ExecutionContext context)
+        internal override void UnloadContext(ExecutionContext context)
         {
-            base.ContextUnloaded(context);
+            base.UnloadContext(context);
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
@@ -315,16 +389,19 @@ namespace Neo.SmartContract
         /// <param name="snapshot">The snapshot used by the engine during execution.</param>
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">The maximum gas used in this execution, in the unit of datoshi. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
-                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
+            // Adjust jump table according persistingBlock
+            var jumpTable = ApplicationEngine.DefaultJumpTable;
+
+            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
 
-        protected override void LoadContext(ExecutionContext context)
+        public override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
@@ -361,7 +438,7 @@ namespace Neo.SmartContract
                 });
 
             // Call initialization
-            var init = contract.Manifest.Abi.GetMethod("_initialize", 0);
+            var init = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Initialize, ContractBasicMethod.InitializePCount);
             if (init != null)
             {
                 LoadContext(context.Clone(init.Offset));
@@ -383,27 +460,12 @@ namespace Neo.SmartContract
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             ExecutionContextState state = context.GetState<ExecutionContextState>();
-            state.Snapshot = Snapshot?.CreateSnapshot();
+            state.Snapshot = Snapshot?.CloneCache();
             configureState?.Invoke(state);
 
             // Load context
             LoadContext(context);
             return context;
-        }
-
-        protected override ExecutionContext LoadToken(ushort tokenId)
-        {
-            ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
-            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
-            if (contract is null || tokenId >= contract.Nef.Tokens.Length)
-                throw new InvalidOperationException();
-            MethodToken token = contract.Nef.Tokens[tokenId];
-            if (token.ParametersCount > CurrentContext.EvaluationStack.Count)
-                throw new InvalidOperationException();
-            StackItem[] args = new StackItem[token.ParametersCount];
-            for (int i = 0; i < token.ParametersCount; i++)
-                args[i] = Pop();
-            return CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
         }
 
         /// <summary>
@@ -503,11 +565,6 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
 
-        protected override void OnSysCall(uint method)
-        {
-            OnSysCall(services[method]);
-        }
-
         /// <summary>
         /// Invokes the specified interoperable service.
         /// </summary>
@@ -515,7 +572,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddGas(descriptor.FixedPrice * ExecFeeFactor);
+            AddFee(descriptor.FixedPrice * ExecFeeFactor);
 
             object[] parameters = new object[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -529,7 +586,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddGas(ExecFeeFactor * OpCodePrices[instruction.OpCode]);
+            AddFee(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
@@ -587,7 +644,7 @@ namespace Neo.SmartContract
         /// <param name="persistingBlock">The block being persisted.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="offset">The initial position of the instruction pointer.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
@@ -606,6 +663,25 @@ namespace Neo.SmartContract
             return (T)state;
         }
 
+        public T GetState<T>(Func<T> factory)
+        {
+            if (states is null)
+            {
+                T state = factory();
+                SetState(state);
+                return state;
+            }
+            else
+            {
+                if (!states.TryGetValue(typeof(T), out object state))
+                {
+                    state = factory();
+                    SetState(state);
+                }
+                return (T)state;
+            }
+        }
+
         public void SetState<T>(T state)
         {
             states ??= new Dictionary<Type, object>();
@@ -614,28 +690,11 @@ namespace Neo.SmartContract
 
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
-            // Return true if there's no specific configuration or PersistingBlock is null
-            if (PersistingBlock is null || ProtocolSettings.Hardforks.Count == 0)
-                return true;
+            // Return true if PersistingBlock is null and Hardfork is enabled
+            if (PersistingBlock is null)
+                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
 
-            // If the hardfork isn't specified in the configuration, check if it's a new one.
-            if (!ProtocolSettings.Hardforks.ContainsKey(hardfork))
-            {
-                int currentHardforkIndex = AllHardforks.IndexOf(hardfork);
-                int lastConfiguredHardforkIndex = AllHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last());
-
-                // If it's a newer hardfork compared to the ones in the configuration, disable it.
-                if (currentHardforkIndex > lastConfiguredHardforkIndex)
-                    return false;
-            }
-
-            if (ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
-            {
-                // If the hardfork has a specific height in the configuration, check the block height.
-                return PersistingBlock.Index >= height;
-            }
-            // If no specific conditions are met, return true.
-            return true;
+            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
         }
     }
 }

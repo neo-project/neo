@@ -417,7 +417,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotCache snapshot = system.GetSnapshot())
+            using (SnapshotCache snapshot = system.GetSnapshotCache())
             {
                 List<ApplicationExecuted> all_application_executed = new();
                 TransactionState[] transactionStates;
@@ -435,7 +435,7 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
-                DataCache clonedSnapshot = snapshot.CreateSnapshot();
+                DataCache clonedSnapshot = snapshot.CloneCache();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
@@ -449,7 +449,7 @@ namespace Neo.Ledger
                     }
                     else
                     {
-                        clonedSnapshot = snapshot.CreateSnapshot();
+                        clonedSnapshot = snapshot.CloneCache();
                     }
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
