@@ -159,7 +159,7 @@ namespace Neo.Ledger
         /// <param name="hash">The hash of the <see cref="Transaction"/> to get.</param>
         /// <param name="tx">When this method returns, contains the <see cref="Transaction"/> associated with the specified hash, if the hash is found; otherwise, <see langword="null"/>.</param>
         /// <returns><see langword="true"/> if the <see cref="MemoryPool"/> contains a <see cref="Transaction"/> with the specified hash; otherwise, <see langword="false"/>.</returns>
-        public bool TryGetValue(UInt256 hash, [MaybeNullWhen(false)] out Transaction? tx)
+        public bool TryGetValue(UInt256 hash, [NotNullWhen(true)] out Transaction? tx)
         {
             _txRwLock.EnterReadLock();
             try
