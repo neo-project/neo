@@ -58,28 +58,28 @@ namespace Neo.UnitTests.SmartContract
 
                 snapshot.DeleteContract(scriptHash2);
                 var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer));
-                contract.Manifest.Abi.Events = new[]
-                {
+                contract.Manifest.Abi.Events =
+                [
                     new ContractEventDescriptor
                     {
                         Name = "testEvent2",
-                        Parameters = new[]
-                        {
+                        Parameters =
+                        [
                             new ContractParameterDefinition
                             {
                                 Type = ContractParameterType.Any
                             }
-                        }
+                        ]
                     }
-                };
-                contract.Manifest.Permissions = new ContractPermission[]
-                {
+                ];
+                contract.Manifest.Permissions =
+                [
                     new ContractPermission
                     {
                         Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                        Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                        Methods = WildcardContainer<string>.Create(["test"])
                     }
-                };
+                ];
                 snapshot.AddContract(scriptHash2, contract);
             }
 
@@ -128,29 +128,29 @@ namespace Neo.UnitTests.SmartContract
                 // Execute
 
                 engine.LoadScript(script.ToArray());
-                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+                engine.CurrentContext!.GetState<ExecutionContextState>().Contract = new ContractState
                 {
-                    Manifest = new()
+                    Manifest = new ContractManifest
                     {
-                        Abi = new()
+                        Abi = new ContractAbi
                         {
-                            Events = new[]
-                            {
+                            Events =
+                            [
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                    Parameters = []
                                 }
-                            }
+                            ]
                         },
-                        Permissions = new ContractPermission[]
-                        {
+                        Permissions =
+                        [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                                Methods = WildcardContainer<string>.Create(["test"])
                             }
-                        }
+                        ]
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
@@ -205,29 +205,29 @@ namespace Neo.UnitTests.SmartContract
                 // Execute
 
                 engine.LoadScript(script.ToArray());
-                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+                engine.CurrentContext!.GetState<ExecutionContextState>().Contract = new()
                 {
-                    Manifest = new()
+                    Manifest = new ContractManifest
                     {
-                        Abi = new()
+                        Abi = new ContractAbi
                         {
-                            Events = new[]
-                            {
+                            Events =
+                            [
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
                                     Parameters = System.Array.Empty<ContractParameterDefinition>()
                                 }
-                            }
+                            ]
                         },
-                        Permissions = new ContractPermission[]
-                        {
+                        Permissions =
+                        [
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                                Methods = WildcardContainer<string>.Create(["test"])
                             }
-                        }
+                        ]
                     }
                 };
                 var currentScriptHash = engine.EntryScriptHash;
