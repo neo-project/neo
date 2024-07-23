@@ -65,15 +65,8 @@ namespace Neo.Json.UnitTests
         public void TestComparisonsWithOtherBooleans()
         {
             Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
-            Assert.IsFalse(jFalse.Equals(new JBoolean()));
+            Assert.IsTrue(jFalse.Equals(new JBoolean()));
         }
-
-        // [TestMethod]
-        // public void TestTypeCasting()
-        // {
-        //     bool castedValue = (bool)jTrue;
-        //     Assert.AreEqual(true, castedValue);
-        // }
 
         [TestMethod]
         public void TestSerializationAndDeserialization()
@@ -82,13 +75,6 @@ namespace Neo.Json.UnitTests
             var deserialized = JsonConvert.DeserializeObject<JBoolean>(serialized);
             Assert.AreEqual(jTrue, deserialized);
         }
-
-        // [TestMethod]
-        // public void TestInteractionWithLogicalOperators()
-        // {
-        //     var result = jTrue && new JBoolean(false);
-        //     Assert.IsFalse(result.Value);
-        // }
 
         [TestMethod]
         public void TestEqual()

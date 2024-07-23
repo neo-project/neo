@@ -304,7 +304,7 @@ namespace Neo.Json.UnitTests
         public void TestClone()
         {
             var jArray = new JArray { alice, bob };
-            var clone = jArray.Clone();
+            var clone = (JArray)jArray.Clone();
 
             clone.Should().NotBeSameAs(jArray);
             clone.Count.Should().Be(jArray.Count);
@@ -313,6 +313,10 @@ namespace Neo.Json.UnitTests
             {
                 clone[i]?.AsString().Should().Be(jArray[i]?.AsString());
             }
+
+            var a = jArray.AsString();
+            var b = jArray.Clone().AsString();
+            a.Should().Be(b);
         }
 
         [TestMethod]
@@ -320,19 +324,6 @@ namespace Neo.Json.UnitTests
         {
             var jArray = new JArray();
             jArray.IsReadOnly.Should().BeFalse();
-        }
-
-
-        public void TestClone()
-        {
-            var jArray = new JArray
-            {
-                alice,
-                bob,
-            };
-            var a = jArray.AsString();
-            var b = jArray.Clone().AsString();
-            a.Should().Be(b);
         }
     }
 }
