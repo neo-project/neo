@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshot = TestBlockchain.GetTestSnapshot();
+            _snapshot = TestBlockchain.GetTestSnapshotCache();
             _persistingBlock = new Block { Header = new Header() };
         }
 
