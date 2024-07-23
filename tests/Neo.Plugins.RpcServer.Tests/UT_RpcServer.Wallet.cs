@@ -26,7 +26,6 @@ namespace Neo.Plugins.RpcServer.Tests;
 
 partial class UT_RpcServer
 {
-
     [TestMethod]
     public void TestOpenWallet()
     {
