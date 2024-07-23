@@ -20,6 +20,7 @@ using System.Reflection;
 namespace Neo.CLI
 {
     using Neo.VM;
+    using System.Runtime.CompilerServices;
 
     [DebuggerDisplay("OpCode={OpCode}, OperandSize={OperandSize}")]
     internal sealed class VMInstruction : IEnumerable<VMInstruction>
@@ -94,5 +95,19 @@ namespace Neo.CLI
 
         IEnumerator IEnumerable.GetEnumerator() =>
             GetEnumerator();
+
+        public T AsToken<T>(uint index = 0)
+            where T : unmanaged
+        {
+            var size = Unsafe.SizeOf<T>();
+
+            if (size > OperandSize)
+                throw new ArgumentOutOfRangeException(nameof(T), $"SizeOf {typeof(T).FullName} is too big for operand. OpCode: {OpCode}.");
+            if (size + index > OperandSize)
+                throw new ArgumentOutOfRangeException(nameof(index), $"SizeOf {typeof(T).FullName} + {index} is too big for operand. OpCode: {OpCode}.");
+
+            var bytes = Operand[..OperandSize].ToArray();
+            return Unsafe.As<byte, T>(ref bytes[index]);
+        }
     }
 }
