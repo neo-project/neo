@@ -9,6 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Text;
+using System.Text.Json;
+
 namespace Neo.Json.UnitTests
 {
     [TestClass]
@@ -358,5 +361,78 @@ namespace Neo.Json.UnitTests
             var reference = jString;
             Assert.IsTrue(jString.Equals(reference));
         }
+
+        [TestMethod]
+        public void TestWrite()
+        {
+            var jString = new JString("hello world");
+            using (var stream = new MemoryStream())
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                jString.Write(writer);
+                writer.Flush();
+                var json = Encoding.UTF8.GetString(stream.ToArray());
+                Assert.AreEqual("\"hello world\"", json);
+            }
+        }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var jString = new JString("hello world");
+            var clone = jString.Clone();
+            Assert.AreEqual(jString, clone);
+            Assert.AreSame(jString, clone); // Cloning should return the same instance for immutable objects
+        }
+
+        [TestMethod]
+        public void TestEqualityWithDifferentTypes()
+        {
+            var jString = new JString("hello world");
+            Assert.IsFalse(jString.Equals(123));
+            Assert.IsFalse(jString.Equals(new object()));
+            Assert.IsFalse(jString.Equals(new JBoolean()));
+        }
+
+        [TestMethod]
+        public void TestImplicitOperators()
+        {
+            JString fromEnum = EnumExample.Value;
+            Assert.AreEqual("Value", fromEnum.Value);
+
+            JString fromString = "test string";
+            Assert.AreEqual("test string", fromString.Value);
+
+            JString nullString = (string)null;
+            Assert.IsNull(nullString);
+        }
+
+        [TestMethod]
+        public void TestBoundaryAndSpecialCases()
+        {
+            JString largeString = new string('a', ushort.MaxValue);
+            Assert.AreEqual(ushort.MaxValue, largeString.Value.Length);
+
+            JString specialUnicode = "\uD83D\uDE00"; // 😀 emoji
+            Assert.AreEqual("\uD83D\uDE00", specialUnicode.Value);
+
+            JString complexJson = "{\"nested\":{\"key\":\"value\"}}";
+            Assert.AreEqual("{\"nested\":{\"key\":\"value\"}}", complexJson.Value);
+        }
+
+        [TestMethod]
+        public void TestExceptionHandling()
+        {
+            JString invalidEnum = "invalid_value";
+
+            var result = invalidEnum.AsEnum(Woo.Jerry);
+            Assert.AreEqual(Woo.Jerry, result);
+
+            Assert.ThrowsException<ArgumentException>(() => invalidEnum.GetEnum<Woo>());
+        }
+    }
+    public enum EnumExample
+    {
+        Value
     }
 }
