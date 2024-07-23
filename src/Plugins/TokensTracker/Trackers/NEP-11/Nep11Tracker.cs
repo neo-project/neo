@@ -284,7 +284,7 @@ namespace Neo.Plugins.Trackers.NEP_11
 
             using ScriptBuilder sb = new();
             sb.EmitDynamicCall(nep11Hash, "properties", CallFlags.ReadOnly, tokenId);
-            using var snapshot = _neoSystem.GetSnapshot();
+            using var snapshot = _neoSystem.GetSnapshotCache();
 
             using var engine = ApplicationEngine.Run(sb.ToArray(), snapshot, settings: _neoSystem.Settings);
             JObject json = new();

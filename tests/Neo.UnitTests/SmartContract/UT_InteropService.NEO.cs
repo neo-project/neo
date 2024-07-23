@@ -114,7 +114,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Create()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var nef = new NefFile()
             {
                 Script = Enumerable.Repeat((byte)OpCode.RET, byte.MaxValue).ToArray(),
@@ -161,7 +161,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Update()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var nef = new NefFile()
             {
                 Script = new[] { (byte)OpCode.RET },
@@ -222,7 +222,7 @@ namespace Neo.UnitTests.SmartContract
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, null, new byte[] { 0x01 }));
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nefFile.ToArray(), null));
@@ -244,7 +244,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_Find()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var state = TestUtils.GetContract();
 
             var storageItem = new StorageItem

@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshot = TestBlockchain.GetTestSnapshot();
+            _snapshot = TestBlockchain.GetTestSnapshotCache();
             _persistingBlock = new Block
             {
                 Header = new Header(),
@@ -570,7 +570,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetNextBlockValidators1()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var result = (VM.Types.Array)NativeContract.NEO.Call(snapshot, "getNextBlockValidators");
             result.Count.Should().Be(7);
             result[0].GetSpan().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
@@ -600,7 +600,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetCandidates1()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var array = (VM.Types.Array)NativeContract.NEO.Call(snapshot, "getCandidates");
             array.Count.Should().Be(0);
         }
@@ -672,7 +672,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetCommittee()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var result = (VM.Types.Array)NativeContract.NEO.Call(snapshot, "getCommittee");
             result.Count.Should().Be(21);
             result[0].GetSpan().ToHexString().Should().Be("020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639");

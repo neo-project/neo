@@ -63,8 +63,6 @@ namespace Neo.Plugins.OracleService
 
         public override string Description => "Built-in oracle plugin";
 
-        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
-
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.json");
 
         public OracleService()
@@ -237,7 +235,7 @@ namespace Neo.Plugins.OracleService
 
             finishedCache.ContainsKey(requestId).False_Or(RpcError.OracleRequestFinished);
 
-            using (var snapshot = _system.GetSnapshot())
+            using (var snapshot = _system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
@@ -329,7 +327,7 @@ namespace Neo.Plugins.OracleService
         {
             while (!cancelSource.IsCancellationRequested)
             {
-                using (var snapshot = _system.GetSnapshot())
+                using (var snapshot = _system.GetSnapshotCache())
                 {
                     SyncPendingQueue(snapshot);
                     foreach (var (id, request) in NativeContract.Oracle.GetRequests(snapshot))

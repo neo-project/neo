@@ -156,8 +156,8 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCacheOverrideIssue2572()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var storages = snapshot.CloneCache();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var storages = snapshot.CreateSnapshot();
 
             storages.Add
                 (

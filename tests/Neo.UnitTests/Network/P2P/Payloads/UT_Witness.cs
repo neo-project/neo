@@ -44,7 +44,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var address = new WalletAccount[pubKeys];
             var wallets = new NEP6Wallet[pubKeys];
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             for (int x = 0; x < pubKeys; x++)
             {
