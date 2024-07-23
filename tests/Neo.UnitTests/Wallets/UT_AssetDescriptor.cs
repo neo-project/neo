@@ -25,9 +25,9 @@ namespace Neo.UnitTests.Wallets
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
             var exception = Assert.ThrowsException<WalletException>(() =>
-             {
-                 var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
-             });
+            {
+                var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
+            });
             Assert.AreEqual(exception.ErrorType, WalletErrorType.ContractNotFound);
         }
 
