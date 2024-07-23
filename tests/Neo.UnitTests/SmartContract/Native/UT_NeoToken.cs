@@ -928,8 +928,8 @@ namespace Neo.UnitTests.SmartContract.Native
             _persistingBlock.Header.Index = 1;
             var engine = ApplicationEngine.Create(TriggerType.Application, TestBlockchain.TheNeoSystem.GenesisBlock, snapshot, _persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             ScriptBuilder sb = new();
-            var tmp = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
-            UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot)[0];
+            var tmp = engine.ScriptContainer.GetScriptHashesForVerifying(engine.SnapshotCache);
+            UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.SnapshotCache)[0];
             if (addVotes)
             {
                 snapshot.Add(CreateStorageKey(20, from.ToArray()), new StorageItem(new NeoAccountState

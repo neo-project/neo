@@ -155,7 +155,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void TestGetHashCode()
         {
-            var snapshot = GetEngine(true, true).Snapshot;
+            var snapshot = GetEngine(true, true).SnapshotCache;
             NativeContract.Ledger.GetBlock(snapshot, 0).GetHashCode().Should().Be(-626492395);
         }
 

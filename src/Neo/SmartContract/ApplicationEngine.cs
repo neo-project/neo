@@ -95,7 +95,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
+        [Obsolete("This property is deprecated. Use SnapshotCache instead.")]
         public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
+
+        /// <summary>
+        /// The snapshotcache <see cref="SnapshotCache"/> used to read or write data.
+        /// </summary>
+        public DataCache SnapshotCache => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -274,7 +280,7 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Length);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
@@ -283,7 +289,7 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
-            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+            if (NativeContract.Policy.IsBlocked(SnapshotCache, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
 
             ExecutionContext currentContext = CurrentContext;
@@ -296,7 +302,7 @@ namespace Neo.SmartContract
             {
                 var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
                 ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-                : NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
                 if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
@@ -460,7 +466,7 @@ namespace Neo.SmartContract
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             ExecutionContextState state = context.GetState<ExecutionContextState>();
-            state.Snapshot = Snapshot?.CloneCache();
+            state.Snapshot = SnapshotCache?.CloneCache();
             configureState?.Invoke(state);
 
             // Load context
