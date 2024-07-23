@@ -217,7 +217,7 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
@@ -237,7 +237,7 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
@@ -290,7 +290,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestMakeTransaction1()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
@@ -373,7 +373,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestMakeTransaction2()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             MyWallet wallet = new();
             var exception = Assert.ThrowsException<WalletException>(() => wallet.MakeTransaction(snapshot, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>()));
             Assert.AreEqual(exception.ErrorType, WalletErrorType.InsufficientFunds);

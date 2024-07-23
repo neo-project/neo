@@ -70,7 +70,7 @@ namespace Neo.Plugins.OracleService.Tests
         [TestMethod]
         public void TestCreateOracleResponseTx()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             Assert.AreEqual(executionFactor, (uint)30);
@@ -85,7 +85,7 @@ namespace Neo.Plugins.OracleService.Tests
                 Filter = "",
                 CallbackContract = UInt160.Zero,
                 CallbackMethod = "callback",
-                UserData = System.Array.Empty<byte>()
+                UserData = []
             };
             byte Prefix_Transaction = 11;
             snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, request.OriginalTxid), new StorageItem(new TransactionState()
