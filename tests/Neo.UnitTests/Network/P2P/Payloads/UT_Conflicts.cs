@@ -73,7 +73,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Verify()
         {
             var test = new Conflicts() { Hash = _u };
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var key = Ledger.UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 
             // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.

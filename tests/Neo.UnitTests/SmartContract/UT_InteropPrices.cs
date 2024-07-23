@@ -64,7 +64,7 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(System.Array.Empty<byte>());
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(value);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
@@ -128,7 +128,7 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
@@ -162,7 +162,7 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
