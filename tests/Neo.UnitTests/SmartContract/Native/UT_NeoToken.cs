@@ -23,6 +23,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -436,8 +437,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Bad inputs
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<TargetInvocationException>(() => NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<TargetInvocationException>(() => NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
 
             // More than balance
 
