@@ -32,7 +32,7 @@ namespace Neo
         /// <summary>
         /// Represents 0.
         /// </summary>
-        public static UInt160 Zero => new();
+        public readonly static UInt160 Zero = new();
 
         [FieldOffset(0)] private ulong _value1;
         [FieldOffset(8)] private ulong _value2;
