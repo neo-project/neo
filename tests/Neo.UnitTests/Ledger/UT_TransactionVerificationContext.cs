@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Ledger
         public async Task TestDuplicateOracle()
         {
             // Fake balance
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public async Task TestTransactionSenderFee()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public async Task TestTransactionSenderFeeWithConflicts()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
