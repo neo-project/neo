@@ -55,7 +55,7 @@ namespace Neo.SmartContract
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         private readonly long _feeAmount;
         private Dictionary<Type, object> states;
-        private readonly DataCache originalSnapshot;
+        private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -96,12 +96,12 @@ namespace Neo.SmartContract
         /// The snapshot used to read or write data.
         /// </summary>
         [Obsolete("This property is deprecated. Use SnapshotCache instead.")]
-        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
+        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
 
         /// <summary>
         /// The snapshotcache <see cref="SnapshotCache"/> used to read or write data.
         /// </summary>
-        public DataCache SnapshotCache => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
+        public DataCache SnapshotCache => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -170,26 +170,26 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="trigger">The trigger of the execution.</param>
         /// <param name="container">The container of the script.</param>
-        /// <param name="snapshot">The snapshot used by the engine during execution.</param>
+        /// <param name="snapshotCache">The snapshot used by the engine during execution.</param>
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
         protected unsafe ApplicationEngine(
-            TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock,
+            TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock,
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
             Trigger = trigger;
             ScriptContainer = container;
-            originalSnapshot = snapshot;
+            originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
             _feeAmount = gas;
             Diagnostic = diagnostic;
-            ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
-            StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
+            ExecFeeFactor = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+            StoragePrice = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshotCache);
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
@@ -358,7 +358,7 @@ namespace Neo.SmartContract
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (UncaughtException is null)
                 {
-                    state.Snapshot?.Commit();
+                    state.SnapshotCache?.Commit();
                     if (CurrentContext != null)
                     {
                         ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
@@ -466,7 +466,7 @@ namespace Neo.SmartContract
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             ExecutionContextState state = context.GetState<ExecutionContextState>();
-            state.Snapshot = SnapshotCache?.CloneCache();
+            state.SnapshotCache = SnapshotCache?.CloneCache();
             configureState?.Invoke(state);
 
             // Load context
