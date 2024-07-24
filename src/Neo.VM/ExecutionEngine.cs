@@ -136,14 +136,14 @@ namespace Neo.VM
                     ExecutionContext context = CurrentContext!;
                     Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
                     PreExecuteInstruction(instruction);
-#if VMPERF
+// #if VMPERF
                     Console.WriteLine("op:["
                                       + this.CurrentContext.InstructionPointer.ToString("X04")
                                       + "]"
                                       + this.CurrentContext.CurrentInstruction?.OpCode
                                       + " "
                                       + this.CurrentContext.EvaluationStack);
-#endif
+// #endif
                     try
                     {
                         JumpTable[instruction.OpCode](this, instruction);
@@ -237,12 +237,12 @@ namespace Neo.VM
         {
             State = VMState.FAULT;
 
-#if VMPERF
+// #if VMPERF
             if (ex != null)
             {
                 Console.Error.WriteLine(ex);
             }
-#endif
+// #endif
         }
 
         /// <summary>
