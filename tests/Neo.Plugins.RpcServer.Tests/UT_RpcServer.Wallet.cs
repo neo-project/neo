@@ -399,13 +399,5 @@ partial class UT_RpcServer
         snapshot.Add(storageKey, storageItem);
         snapshot.Commit();
         return state.Hash;
-        // var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-        // engine.LoadScript(new byte[] { 0x01 });
-        //
-        // engine.Get(new StorageContext
-        // {
-        //     Id = state.Id,
-        //     IsReadOnly = false
-        // }, new byte[] { 0x01 }).Value.Span.ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
     }
 }
