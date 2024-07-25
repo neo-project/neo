@@ -57,29 +57,29 @@ namespace Neo.UnitTests.SmartContract
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.DeleteContract(scriptHash2);
-                var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer));
-                contract.Manifest.Abi.Events =
-                [
+                var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer));
+                contract.Manifest.Abi.Events = new[]
+                {
                     new ContractEventDescriptor
                     {
                         Name = "testEvent2",
-                        Parameters =
-                        [
+                        Parameters = new[]
+                        {
                             new ContractParameterDefinition
                             {
                                 Type = ContractParameterType.Any
                             }
-                        ]
+                        }
                     }
-                ];
-                contract.Manifest.Permissions =
-                [
+                };
+                contract.Manifest.Permissions = new ContractPermission[]
+                {
                     new ContractPermission
                     {
                         Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                        Methods = WildcardContainer<string>.Create(["test"])
+                        Methods = WildcardContainer<string>.Create(new string[]{"test"})
                     }
-                ];
+                };
                 snapshot.AddContract(scriptHash2, contract);
             }
 
@@ -128,36 +128,144 @@ namespace Neo.UnitTests.SmartContract
                 // Execute
 
                 engine.LoadScript(script.ToArray());
-                engine.CurrentContext!.GetState<ExecutionContextState>().Contract = new ContractState
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
                 {
-                    Manifest = new ContractManifest
+                    Manifest = new()
                     {
-                        Abi = new ContractAbi
+                        Abi = new()
                         {
-                            Events =
-                            [
+                            Events = new[]
+                            {
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = []
+                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
                                 }
-                            ]
+                            }
                         },
-                        Permissions =
-                        [
+                        Permissions = new ContractPermission[]
+                        {
                             new ContractPermission
                             {
                                 Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                                Methods = WildcardContainer<string>.Create(["test"])
+                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
                             }
-                        ]
+                        }
                     }
                 };
+                var currentScriptHash = engine.EntryScriptHash;
+
                 Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.AreEqual(2, engine.Notifications.Count);
+
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Array));
+
+                var array = (VM.Types.Array)engine.ResultStack.Pop();
+
+                // Check syscall result
+
+                AssertNotification(array[1], scriptHash2, "testEvent2");
+                AssertNotification(array[0], currentScriptHash, "testEvent1");
+
+                // Check notifications
+
+                Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
+                Assert.AreEqual("testEvent2", engine.Notifications[1].EventName);
+
+                Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
+                Assert.AreEqual("testEvent1", engine.Notifications[0].EventName);
             }
+
+            // Script notifications
+
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
+            using (var script = new ScriptBuilder())
+            {
+                // Notification
+
+                script.EmitPush(0);
+                script.Emit(OpCode.NEWARRAY);
+                script.EmitPush("testEvent1");
+                script.EmitSysCall(ApplicationEngine.System_Runtime_Notify);
+
+                // Call script
+
+                script.EmitDynamicCall(scriptHash2, "test", "testEvent2", 1);
+
+                // Drop return
+
+                script.Emit(OpCode.DROP);
+
+                // Receive all notifications
+
+                script.EmitPush(scriptHash2.ToArray());
+                script.EmitSysCall(ApplicationEngine.System_Runtime_GetNotifications);
+
+                // Execute
+
+                engine.LoadScript(script.ToArray());
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+                {
+                    Manifest = new()
+                    {
+                        Abi = new()
+                        {
+                            Events = new[]
+                            {
+                                new ContractEventDescriptor
+                                {
+                                    Name = "testEvent1",
+                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                }
+                            }
+                        },
+                        Permissions = new ContractPermission[]
+                        {
+                            new ContractPermission
+                            {
+                                Contract = ContractPermissionDescriptor.Create(scriptHash2),
+                                Methods = WildcardContainer<string>.Create(new string[]{"test"})
+                            }
+                        }
+                    }
+                };
+                var currentScriptHash = engine.EntryScriptHash;
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.AreEqual(2, engine.Notifications.Count);
+
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Array));
+
+                var array = (VM.Types.Array)engine.ResultStack.Pop();
+
+                // Check syscall result
+
+                AssertNotification(array[0], scriptHash2, "testEvent2");
+
+                // Check notifications
+
+                Assert.AreEqual(scriptHash2, engine.Notifications[1].ScriptHash);
+                Assert.AreEqual("testEvent2", engine.Notifications[1].EventName);
+
+                Assert.AreEqual(currentScriptHash, engine.Notifications[0].ScriptHash);
+                Assert.AreEqual("testEvent1", engine.Notifications[0].EventName);
+            }
+
             // Clean storage
 
             snapshot.DeleteContract(scriptHash2);
+        }
+
+        private static void AssertNotification(StackItem stackItem, UInt160 scriptHash, string notification)
+        {
+            Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
+
+            var array = (VM.Types.Array)stackItem;
+            Assert.AreEqual(3, array.Count);
+            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetSpan().ToArray());
+            Assert.AreEqual(notification, array[1].GetString());
         }
 
         [TestMethod]
