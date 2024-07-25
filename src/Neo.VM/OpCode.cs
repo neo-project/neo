@@ -1683,7 +1683,7 @@ namespace Neo.VM
         /// <summary>
         /// If both a and b are not 0, the output is 1. Otherwise, 0.
         ///
-        /// <example> b && a </example>
+        /// <example> b &amp;&amp; a </example>
         ///
         /// <remarks>
         ///     Push: 1 item(s)
