@@ -1415,7 +1415,7 @@ namespace Neo.VM
         /// <summary>
         /// Boolean and between each bit in the inputs.
         ///
-        /// <example> a&b </example>
+        /// <example> a&amp;b </example>
         ///
         /// <remarks>
         ///     Push: 1 item(s)
@@ -1647,7 +1647,7 @@ namespace Neo.VM
         /// <summary>
         /// Shifts a left b bits, preserving sign.
         ///
-        /// <example> a<<b </example>
+        /// <example> a&lt;&lt;b </example>
         ///
         /// <remarks>
         ///     Push: 1 item(s)
