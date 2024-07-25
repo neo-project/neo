@@ -137,11 +137,11 @@ namespace Neo.VM
                     PreExecuteInstruction(instruction);
 #if VMPERF
                     Console.WriteLine("op:["
-                                      + CurrentContext.InstructionPointer.ToString("X04")
+                                      + this.CurrentContext.InstructionPointer.ToString("X04")
                                       + "]"
-                                      + CurrentContext.CurrentInstruction?.OpCode
+                                      + this.CurrentContext.CurrentInstruction?.OpCode
                                       + " "
-                                      + CurrentContext.EvaluationStack);
+                                      + this.CurrentContext.EvaluationStack);
 #endif
                     try
                     {
