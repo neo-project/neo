@@ -217,6 +217,9 @@ namespace Neo.VM
                 case short data:
                     builder.EmitPush(data);
                     break;
+                case char data:
+                    builder.EmitPush((short)data);
+                    break;
                 case ushort data:
                     builder.EmitPush(data);
                     break;
