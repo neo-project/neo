@@ -449,6 +449,7 @@ namespace Neo.SmartContract
         private static bool CheckItemType(StackItem item, ContractParameterType type)
         {
             StackItemType aType = item.Type;
+            if (aType == StackItemType.Any) return true;
             if (aType == StackItemType.Pointer) return false;
             switch (type)
             {
@@ -459,7 +460,7 @@ namespace Neo.SmartContract
                 case ContractParameterType.Integer:
                     return aType == StackItemType.Integer;
                 case ContractParameterType.ByteArray:
-                    return aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer;
+                    return aType is StackItemType.ByteString or StackItemType.Buffer;
                 case ContractParameterType.String:
                     {
                         if (aType is StackItemType.ByteString or StackItemType.Buffer)
@@ -474,27 +475,23 @@ namespace Neo.SmartContract
                         return false;
                     }
                 case ContractParameterType.Hash160:
-                    if (aType == StackItemType.Any) return true;
                     if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
                     return item.GetSpan().Length == UInt160.Length;
                 case ContractParameterType.Hash256:
-                    if (aType == StackItemType.Any) return true;
                     if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
                     return item.GetSpan().Length == UInt256.Length;
                 case ContractParameterType.PublicKey:
-                    if (aType == StackItemType.Any) return true;
                     if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
                     return item.GetSpan().Length == 33;
                 case ContractParameterType.Signature:
-                    if (aType == StackItemType.Any) return true;
                     if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
                     return item.GetSpan().Length == 64;
                 case ContractParameterType.Array:
-                    return aType is StackItemType.Any or StackItemType.Array or StackItemType.Struct;
+                    return aType is StackItemType.Array or StackItemType.Struct;
                 case ContractParameterType.Map:
-                    return aType is StackItemType.Any or StackItemType.Map;
+                    return aType is StackItemType.Map;
                 case ContractParameterType.InteropInterface:
-                    return aType is StackItemType.Any or StackItemType.InteropInterface;
+                    return aType is StackItemType.InteropInterface;
                 default:
                     return false;
             }

@@ -20,6 +20,7 @@ using Neo.UnitTests.Extensions;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -131,8 +132,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Bad inputs
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<TargetInvocationException>(() => NativeContract.GAS.Transfer(engine.Snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<TargetInvocationException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)
