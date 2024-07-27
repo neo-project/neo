@@ -618,7 +618,7 @@ namespace Neo.CLI
                 return;
             }
 
-            if (NeoSystem.MemPool.TryGetValue(txid, out Transaction conflictTx))
+            if (NeoSystem.MemPool.TryGetValue(txid, out var conflictTx))
             {
                 tx.NetworkFee = Math.Max(tx.NetworkFee, conflictTx.NetworkFee) + 1;
             }
