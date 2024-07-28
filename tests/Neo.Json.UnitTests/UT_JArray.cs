@@ -256,16 +256,74 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
+        public void TestCount()
+        {
+            var jArray = new JArray { alice, bob };
+            jArray.Count.Should().Be(2);
+        }
+
+        [TestMethod]
+        public void TestInvalidIndexAccess()
+        {
+            var jArray = new JArray { alice };
+            Action action = () => { var item = jArray[1]; };
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
+
+        [TestMethod]
+        public void TestEmptyEnumeration()
+        {
+            var jArray = new JArray();
+            foreach (var item in jArray)
+            {
+                Assert.Fail("Enumeration should not occur on an empty JArray");
+            }
+        }
+
+        [TestMethod]
+        public void TestImplicitConversionFromJTokenArray()
+        {
+            JToken[] jTokens = { alice, bob };
+            JArray jArray = jTokens;
+
+            jArray.Count.Should().Be(2);
+            jArray[0].Should().Be(alice);
+            jArray[1].Should().Be(bob);
+        }
+
+        [TestMethod]
+        public void TestAddNullValues()
+        {
+            var jArray = new JArray();
+            jArray.Add(null);
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().BeNull();
+        }
+
+        [TestMethod]
         public void TestClone()
         {
-            var jArray = new JArray
+            var jArray = new JArray { alice, bob };
+            var clone = (JArray)jArray.Clone();
+
+            clone.Should().NotBeSameAs(jArray);
+            clone.Count.Should().Be(jArray.Count);
+
+            for (int i = 0; i < jArray.Count; i++)
             {
-                alice,
-                bob,
-            };
+                clone[i]?.AsString().Should().Be(jArray[i]?.AsString());
+            }
+
             var a = jArray.AsString();
             var b = jArray.Clone().AsString();
             a.Should().Be(b);
+        }
+
+        [TestMethod]
+        public void TestReadOnlyBehavior()
+        {
+            var jArray = new JArray();
+            jArray.IsReadOnly.Should().BeFalse();
         }
     }
 }
