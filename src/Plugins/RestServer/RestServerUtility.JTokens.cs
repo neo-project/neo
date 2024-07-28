@@ -13,6 +13,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 
@@ -58,6 +59,7 @@ namespace Neo.Plugins.RestServer
                 block.NextConsensus,
                 Witness = WitnessToJToken(block.Witness, serializer),
                 block.Size,
+                Confirmations = NativeContract.Ledger.CurrentIndex(RestServerPlugin.NeoSystem?.StoreView) - block.Index + 1,
                 Transactions = block.Transactions.Select(s => TransactionToJToken(s, serializer)),
             }, serializer);
 
