@@ -78,8 +78,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokensTracker", "src\Plugin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RpcClient", "src\Plugins\RpcClient\RpcClient.csproj", "{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RestServer", "src\Plugins\RestServer\RestServer.csproj", "{111264B9-A342-4AFF-B959-C82561299F9B}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{B753DC70-E313-4B73-B8F0-45D54126DE92}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rest-server", "rest-server", "{40AB8866-F8A1-4DD4-868D-35F2B06ADEAB}"
@@ -88,9 +86,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rest-server", "rest-server"
 		docs\RestServer\ConfigFile.md = docs\RestServer\ConfigFile.md
 		docs\RestServer\README.md = docs\RestServer\README.md
 	EndProjectSection
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Plugins.ApplicationLogs.Tests", "tests\Neo.Plugins.ApplicationLogs.Tests\Neo.Plugins.ApplicationLogs.Tests.csproj", "{8C866DC8-2E55-4399-9563-2F47FD4602EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Tests", "tests\Neo.Extensions.Tests\Neo.Extensions.Tests.csproj", "{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Extensions.Tests", "tests\Neo.Extensions.Tests\Neo.Extensions.Tests.csproj", "{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RestServer", "src\Plugins\RestServer\RestServer.csproj", "{50447098-054A-45EC-9881-BFB78B484D30}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -230,10 +231,6 @@ Global
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{111264B9-A342-4AFF-B959-C82561299F9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{111264B9-A342-4AFF-B959-C82561299F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{111264B9-A342-4AFF-B959-C82561299F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{111264B9-A342-4AFF-B959-C82561299F9B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8C866DC8-2E55-4399-9563-2F47FD4602EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8C866DC8-2E55-4399-9563-2F47FD4602EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C866DC8-2E55-4399-9563-2F47FD4602EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -242,6 +239,10 @@ Global
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50447098-054A-45EC-9881-BFB78B484D30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50447098-054A-45EC-9881-BFB78B484D30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50447098-054A-45EC-9881-BFB78B484D30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50447098-054A-45EC-9881-BFB78B484D30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -281,10 +282,10 @@ Global
 		{FF76D8A4-356B-461A-8471-BC1B83E57BBC} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{5E4947F3-05D3-4806-B0F3-30DAC71B5986} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{185ADAFC-BFC6-413D-BC2E-97F9FB0A8AF0} = {C2DC830A-327A-42A7-807D-295216D30DBB}
-		{111264B9-A342-4AFF-B959-C82561299F9B} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 		{40AB8866-F8A1-4DD4-868D-35F2B06ADEAB} = {B753DC70-E313-4B73-B8F0-45D54126DE92}
 		{8C866DC8-2E55-4399-9563-2F47FD4602EC} = {7F257712-D033-47FF-B439-9D4320D06599}
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
+		{50447098-054A-45EC-9881-BFB78B484D30} = {C2DC830A-327A-42A7-807D-295216D30DBB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
