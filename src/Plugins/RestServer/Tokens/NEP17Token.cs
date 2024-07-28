@@ -26,16 +26,16 @@ namespace Neo.Plugins.RestServer.Tokens
         public string Symbol { get; private init; } = string.Empty;
         public byte Decimals { get; private init; }
 
-        private readonly NeoSystem _neosystem;
-        private readonly DataCache _datacache;
+        private readonly NeoSystem _neoSystem;
+        private readonly DataCache _dataCache;
 
         public NEP17Token(
             NeoSystem neoSystem,
             UInt160 scriptHash,
             DataCache? snapshot = null)
         {
-            _datacache = snapshot ?? neoSystem.GetSnapshot();
-            var contractState = NativeContract.ContractManagement.GetContract(_datacache, scriptHash) ?? throw new ArgumentException(null, nameof(scriptHash));
+            _dataCache = snapshot ?? neoSystem.GetSnapshotCache();
+            var contractState = NativeContract.ContractManagement.GetContract(_dataCache, scriptHash) ?? throw new ArgumentException(null, nameof(scriptHash));
             if (ContractHelper.IsNep17Supported(contractState) == false)
                 throw new NotSupportedException(nameof(scriptHash));
             byte[] script;
@@ -45,11 +45,11 @@ namespace Neo.Plugins.RestServer.Tokens
                 sb.EmitDynamicCall(scriptHash, "symbol", CallFlags.ReadOnly);
                 script = sb.ToArray();
             }
-            using var engine = ApplicationEngine.Run(script, _datacache, settings: neoSystem.Settings, gas: RestServerSettings.Current.MaxGasInvoke);
+            using var engine = ApplicationEngine.Run(script, _dataCache, settings: neoSystem.Settings, gas: RestServerSettings.Current.MaxGasInvoke);
             if (engine.State != VMState.HALT)
                 throw new NotSupportedException(nameof(scriptHash));
 
-            _neosystem = neoSystem;
+            _neoSystem = neoSystem;
             ScriptHash = scriptHash;
             Name = contractState.Manifest.Name;
             Symbol = engine.ResultStack.Pop().GetString() ?? string.Empty;
@@ -58,18 +58,18 @@ namespace Neo.Plugins.RestServer.Tokens
 
         public BigDecimal BalanceOf(UInt160 address)
         {
-            if (ContractHelper.GetContractMethod(_datacache, ScriptHash, "balanceOf", 1) == null)
+            if (ContractHelper.GetContractMethod(_dataCache, ScriptHash, "balanceOf", 1) == null)
                 throw new NotSupportedException(nameof(ScriptHash));
-            if (ScriptHelper.InvokeMethod(_neosystem.Settings, _datacache, ScriptHash, "balanceOf", out var result, address))
+            if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _dataCache, ScriptHash, "balanceOf", out var result, address))
                 return new BigDecimal(result[0].GetInteger(), Decimals);
             return new BigDecimal(BigInteger.Zero, Decimals);
         }
 
         public BigDecimal TotalSupply()
         {
-            if (ContractHelper.GetContractMethod(_datacache, ScriptHash, "totalSupply", 0) == null)
+            if (ContractHelper.GetContractMethod(_dataCache, ScriptHash, "totalSupply", 0) == null)
                 throw new NotSupportedException(nameof(ScriptHash));
-            if (ScriptHelper.InvokeMethod(_neosystem.Settings, _datacache, ScriptHash, "totalSupply", out var result))
+            if (ScriptHelper.InvokeMethod(_neoSystem.Settings, _dataCache, ScriptHash, "totalSupply", out var result))
                 return new BigDecimal(result[0].GetInteger(), Decimals);
             return new BigDecimal(BigInteger.Zero, Decimals);
         }

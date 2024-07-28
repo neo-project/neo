@@ -42,20 +42,20 @@ namespace Neo.Plugins.RestServer.Helpers
 
         public static ApplicationEngine InvokeScript(ReadOnlyMemory<byte> script, Signer[]? signers = null, Witness[]? witnesses = null)
         {
-            var neosystem = RestServerPlugin.NeoSystem ?? throw new InvalidOperationException();
+            var neoSystem = RestServerPlugin.NeoSystem ?? throw new InvalidOperationException();
 
-            var snapshot = neosystem.GetSnapshot();
+            var snapshot = neoSystem.GetSnapshotCache();
             Transaction? tx = signers == null ? null : new Transaction
             {
                 Version = 0,
                 Nonce = (uint)Random.Shared.Next(),
-                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + neosystem.Settings.MaxValidUntilBlockIncrement,
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + neoSystem.Settings.MaxValidUntilBlockIncrement,
                 Signers = signers,
                 Attributes = [],
                 Script = script,
                 Witnesses = witnesses
             };
-            return ApplicationEngine.Run(script, snapshot, tx, settings: neosystem.Settings, gas: RestServerSettings.Current.MaxGasInvoke);
+            return ApplicationEngine.Run(script, snapshot, tx, settings: neoSystem.Settings, gas: RestServerSettings.Current.MaxGasInvoke);
         }
     }
 }
