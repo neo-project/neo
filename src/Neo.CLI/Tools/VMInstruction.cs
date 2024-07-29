@@ -99,7 +99,12 @@ namespace Neo.CLI
         IEnumerator IEnumerable.GetEnumerator() =>
             GetEnumerator();
 
-        public override string ToString() => DecodeOperand();
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendFormat("{1:X04} {2,-10}{3}{4}", Position, OpCode, DecodeOperand());
+            return sb.ToString();
+        }
 
         public T AsToken<T>(uint index = 0)
             where T : unmanaged

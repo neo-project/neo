@@ -428,7 +428,7 @@ namespace Neo.CLI
                     if (instruct.OperandSize == 0)
                         sb.AppendFormat("L{0:D04}:{1:X04} {2}{3}", line, instruct.Position, instruct.OpCode, Environment.NewLine);
                     else
-                        sb.AppendFormat("L{0:D04}:{1:X04} {2,-10}{3}{4}", line, instruct.Position, instruct.OpCode, instruct, Environment.NewLine);
+                        sb.AppendFormat("L{0:D04}:{1:X04} {2,-10}{3}{4}", line, instruct.Position, instruct.OpCode, instruct.DecodeOperand(), Environment.NewLine);
                     line++;
                 }
 
