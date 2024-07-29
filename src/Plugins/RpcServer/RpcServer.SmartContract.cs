@@ -92,7 +92,7 @@ namespace Neo.Plugins.RpcServer
                     json["diagnostics"] = new JObject()
                     {
                         ["invokedcontracts"] = ToJson(diagnostic.InvocationTree.Root),
-                        ["storagechanges"] = ToJson(session.Engine.Snapshot.GetChangeSet())
+                        ["storagechanges"] = ToJson(session.Engine.SnapshotCache.GetChangeSet())
                     };
                 }
                 var stack = new JArray();
