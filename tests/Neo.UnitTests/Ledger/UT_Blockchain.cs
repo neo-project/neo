@@ -146,7 +146,7 @@ namespace Neo.UnitTests.Ledger
             {
                 engine2.LoadScript(onPersistScript);
                 if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
-                engine2.Snapshot.Commit();
+                engine2.SnapshotCache.Commit();
             }
             snapshot.Commit();
 
@@ -162,7 +162,7 @@ namespace Neo.UnitTests.Ledger
             {
                 engine2.LoadScript(postPersistScript);
                 if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
-                engine2.Snapshot.Commit();
+                engine2.SnapshotCache.Commit();
             }
             snapshot.Commit();
 
