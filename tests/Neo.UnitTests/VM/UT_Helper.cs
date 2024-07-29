@@ -17,6 +17,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using Org.BouncyCastle.Asn1.Tsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -151,7 +152,7 @@ namespace Neo.UnitTests.VMT
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA", true);
             byte[] tempArray = new byte[38];
             tempArray[0] = (byte)OpCode.PUSHT;
-            tempArray[1] = (byte)OpCode.PUSH1;//arg.Length 
+            tempArray[1] = (byte)OpCode.PUSH1;//arg.Length
             tempArray[2] = (byte)OpCode.PACK;
             tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
             tempArray[4] = (byte)OpCode.PUSHDATA1;
@@ -400,6 +401,7 @@ namespace Neo.UnitTests.VMT
             TestEmitPush3Byte();
             TestEmitPush3Short();
             TestEmitPush3Ushort();
+            TestEmitPush3Char();
             TestEmitPush3Int();
             TestEmitPush3Uint();
             TestEmitPush3Long();
@@ -465,6 +467,16 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             ushort temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = (byte)OpCode.PUSH0;
+            CollectionAssert.AreEqual(tempArray, sb.ToArray());
+        }
+
+        private void TestEmitPush3Char()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            char temp = char.MinValue;
             VM.Helper.EmitPush(sb, temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
@@ -628,6 +640,29 @@ namespace Neo.UnitTests.VMT
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.Array, parameter.Type);
             Assert.AreEqual(0, ((List<ContractParameter>)parameter.Value).Count);
+        }
+
+        [TestMethod]
+        public void TestCharAsUInt16()
+        {
+            Assert.AreEqual(ushort.MaxValue, char.MaxValue);
+            Assert.AreEqual(ushort.MinValue, char.MinValue);
+
+            // test every char in a loop
+            for (int i = ushort.MinValue; i < char.MinValue; i++)
+            {
+                var c = Convert.ToChar(i);
+                Assert.AreEqual(i, c);
+            }
+
+            for (int i = ushort.MinValue; i < ushort.MaxValue; i++)
+            {
+                using var sbUInt16 = new ScriptBuilder();
+                using var sbChar = new ScriptBuilder();
+                sbUInt16.EmitPush((ushort)i);
+                sbChar.EmitPush(Convert.ToChar(i));
+                CollectionAssert.AreEqual(sbUInt16.ToArray(), sbChar.ToArray());
+            }
         }
     }
 }
