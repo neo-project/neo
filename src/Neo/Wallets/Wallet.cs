@@ -636,7 +636,7 @@ namespace Neo.Wallets
 
                 // Try Smart contract verification
 
-                var contract = NativeContract.ContractManagement.GetContract(context.Snapshot, scriptHash);
+                var contract = NativeContract.ContractManagement.GetContract(context.SnapshotCache, scriptHash);
 
                 if (contract != null)
                 {
