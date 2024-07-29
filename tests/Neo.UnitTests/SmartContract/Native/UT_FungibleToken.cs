@@ -22,8 +22,8 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTotalSupply()
         {
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            NativeContract.GAS.TotalSupply(snapshot).Should().Be(5200000050000000);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            NativeContract.GAS.TotalSupply(snapshotCache).Should().Be(5200000050000000);
         }
     }
 }

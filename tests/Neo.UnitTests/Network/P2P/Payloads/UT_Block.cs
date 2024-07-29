@@ -28,9 +28,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
         {
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
-            var snapshot = hasSnapshot ? TestBlockchain.GetTestSnapshotCache() : null;
+            var snapshotCache = hasSnapshot ? TestBlockchain.GetTestSnapshotCache() : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
@@ -156,7 +156,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void TestGetHashCode()
         {
-            var snapshot = GetEngine(true, true).Snapshot;
+            var snapshot = GetEngine(true, true).SnapshotCache;
             NativeContract.Ledger.GetBlock(snapshot, 0).GetHashCode().Should().Be(-626492395);
         }
 
