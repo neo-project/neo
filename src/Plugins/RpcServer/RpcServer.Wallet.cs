@@ -229,6 +229,10 @@ namespace Neo.Plugins.RpcServer
             {
                 throw new RpcException(RpcError.WalletNotSupported.WithData("Invalid password."));
             }
+            catch (WalletException e)
+            {
+                throw new RpcException(RpcError.WalletNotSupported.WithData(e.Message));
+            }
 
             return true;
         }
