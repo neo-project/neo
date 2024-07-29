@@ -155,7 +155,7 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Computes the result of raising a number to the specified power.
+        /// Computes the remainder after dividing a by b.
         /// <see cref="OpCode.MOD"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
@@ -170,7 +170,7 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Computes the square root of the specified integer.
+        /// Computes the result of raising a number to the specified power.
         /// <see cref="OpCode.POW"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
@@ -186,7 +186,7 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// 
+        /// Returns the square root of a specified number.
         /// <see cref="OpCode.SQRT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
