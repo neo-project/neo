@@ -20,7 +20,11 @@ using System.Reflection;
 
 namespace Neo.CLI
 {
+    using Neo.SmartContract;
+    using System.Linq;
+    using System.Numerics;
     using System.Runtime.CompilerServices;
+    using System.Text;
 
     [DebuggerDisplay("OpCode={OpCode}, OperandSize={OperandSize}")]
     internal sealed class VMInstruction : IEnumerable<VMInstruction>
@@ -96,6 +100,8 @@ namespace Neo.CLI
         IEnumerator IEnumerable.GetEnumerator() =>
             GetEnumerator();
 
+        public override string ToString() => DecodeOperand();
+
         public T AsToken<T>(uint index = 0)
             where T : unmanaged
         {
@@ -108,6 +114,61 @@ namespace Neo.CLI
 
             var bytes = Operand[..OperandSize].ToArray();
             return Unsafe.As<byte, T>(ref bytes[index]);
+        }
+
+        public string DecodeOperand()
+        {
+            var operand = Operand[OperandPrefixSize..].ToArray();
+            var asStr = Encoding.UTF8.GetString(operand);
+            var readable = asStr.All(char.IsAsciiLetterOrDigit);
+
+            return OpCode switch
+            {
+                OpCode.JMP or
+                OpCode.JMPIF or
+                OpCode.JMPIFNOT or
+                OpCode.JMPEQ or
+                OpCode.JMPNE or
+                OpCode.JMPGT or
+                OpCode.JMPLT or
+                OpCode.CALL or
+                OpCode.ENDTRY => $"[{checked(Position + AsToken<byte>()):X08}]",
+                OpCode.JMP_L or
+                OpCode.JMPIF_L or
+                OpCode.PUSHA or
+                OpCode.JMPIFNOT_L or
+                OpCode.JMPEQ_L or
+                OpCode.JMPNE_L or
+                OpCode.JMPGT_L or
+                OpCode.JMPLT_L or
+                OpCode.CALL_L or
+                OpCode.ENDTRY_L => $"[{checked(Position + AsToken<int>()):X08}]",
+                OpCode.TRY => $"[{AsToken<byte>():X02}, {AsToken<byte>(1):X02}]",
+                OpCode.INITSLOT => $"{AsToken<byte>()}, {AsToken<byte>(1)}",
+                OpCode.TRY_L => $"[{checked(Position + AsToken<int>()):X08}, {checked(Position + AsToken<int>()):X08}]",
+                OpCode.CALLT => $"[{checked(Position + AsToken<ushort>()):X08}]",
+                OpCode.NEWARRAY_T or
+                OpCode.ISTYPE or
+                OpCode.CONVERT => $"{AsToken<byte>():X02}",
+                OpCode.STLOC or
+                OpCode.LDLOC or
+                OpCode.LDSFLD or
+                OpCode.STSFLD or
+                OpCode.LDARG or
+                OpCode.STARG or
+                OpCode.INITSSLOT => $"{AsToken<byte>()}",
+                OpCode.PUSHINT8 => $"{AsToken<sbyte>()}",
+                OpCode.PUSHINT16 => $"{AsToken<short>()}",
+                OpCode.PUSHINT32 => $"{AsToken<int>()}",
+                OpCode.PUSHINT64 => $"{AsToken<long>()}",
+                OpCode.PUSHINT128 or
+                OpCode.PUSHINT256 => $"{new BigInteger(operand)}",
+                OpCode.SYSCALL => $"[{ApplicationEngine.Services[Unsafe.As<byte, uint>(ref operand[0])].Name}]",
+                OpCode.PUSHDATA1 or
+                OpCode.PUSHDATA2 or
+                OpCode.PUSHDATA4 => readable ? $"{Convert.ToHexString(operand)} // {asStr}" : Convert.ToHexString(operand),
+                _ => readable ? $"\"{asStr}\"" : $"{Convert.ToHexString(operand)}",
+            };
         }
     }
 }

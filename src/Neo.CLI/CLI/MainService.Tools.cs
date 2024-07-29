@@ -20,7 +20,6 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.CLI
@@ -429,7 +428,7 @@ namespace Neo.CLI
                     if (instruct.OperandSize == 0)
                         sb.AppendFormat("L{0:D04}:{1:X04} {2}{3}", line, instruct.Position, instruct.OpCode, Environment.NewLine);
                     else
-                        sb.AppendFormat("L{0:D04}:{1:X04} {2,-10}{3}{4}", line, instruct.Position, instruct.OpCode, DecodeOperand(instruct), Environment.NewLine);
+                        sb.AppendFormat("L{0:D04}:{1:X04} {2,-10}{3}{4}", line, instruct.Position, instruct.OpCode, instruct, Environment.NewLine);
                     line++;
                 }
 
@@ -439,60 +438,6 @@ namespace Neo.CLI
             {
                 return null;
             }
-        }
-
-        private string DecodeOperand(VMInstruction instruction)
-        {
-            var operand = instruction.Operand[instruction.OperandPrefixSize..].ToArray();
-            var asStr = Encoding.UTF8.GetString(operand);
-            var readable = asStr.All(char.IsAsciiLetterOrDigit);
-            return instruction.OpCode switch
-            {
-                VM.OpCode.JMP or
-                VM.OpCode.JMPIF or
-                VM.OpCode.JMPIFNOT or
-                VM.OpCode.JMPEQ or
-                VM.OpCode.JMPNE or
-                VM.OpCode.JMPGT or
-                VM.OpCode.JMPLT or
-                VM.OpCode.CALL or
-                VM.OpCode.ENDTRY => $"[{checked(instruction.Position + instruction.AsToken<byte>()):X08}]",
-                VM.OpCode.PUSHA or
-                VM.OpCode.JMP_L or
-                VM.OpCode.JMPIF_L or
-                VM.OpCode.JMPIFNOT_L or
-                VM.OpCode.JMPEQ_L or
-                VM.OpCode.JMPNE_L or
-                VM.OpCode.JMPGT_L or
-                VM.OpCode.JMPLT_L or
-                VM.OpCode.CALL_L or
-                VM.OpCode.ENDTRY_L => $"[{checked(instruction.Position + instruction.AsToken<int>()):X08}]",
-                VM.OpCode.TRY => $"[{instruction.AsToken<byte>():X02}, {instruction.AsToken<byte>(1):X02}]",
-                VM.OpCode.INITSLOT => $"{instruction.AsToken<byte>()}, {instruction.AsToken<byte>(1)}",
-                VM.OpCode.TRY_L => $"[{checked(instruction.Position + instruction.AsToken<int>()):X08}, {checked(instruction.Position + instruction.AsToken<int>()):X08}]",
-                VM.OpCode.CALLT => $"[{checked(instruction.Position + instruction.AsToken<ushort>()):X08}]",
-                VM.OpCode.NEWARRAY_T or
-                VM.OpCode.ISTYPE or
-                VM.OpCode.CONVERT => $"{instruction.AsToken<byte>():X02}",
-                VM.OpCode.STLOC or
-                VM.OpCode.LDLOC or
-                VM.OpCode.LDSFLD or
-                VM.OpCode.STSFLD or
-                VM.OpCode.LDARG or
-                VM.OpCode.STARG or
-                VM.OpCode.INITSSLOT => $"{instruction.AsToken<byte>()}",
-                VM.OpCode.PUSHINT8 => $"{instruction.AsToken<sbyte>()}",
-                VM.OpCode.PUSHINT16 => $"{instruction.AsToken<short>()}",
-                VM.OpCode.PUSHINT32 => $"{instruction.AsToken<int>()}",
-                VM.OpCode.PUSHINT64 => $"{instruction.AsToken<long>()}",
-                VM.OpCode.PUSHINT128 or
-                VM.OpCode.PUSHINT256 => $"{new BigInteger(operand)}",
-                VM.OpCode.SYSCALL => $"[{ApplicationEngine.Services[Unsafe.As<byte, uint>(ref operand[0])].Name}]",
-                VM.OpCode.PUSHDATA1 or
-                VM.OpCode.PUSHDATA2 or
-                VM.OpCode.PUSHDATA4 => readable ? $"{Convert.ToHexString(operand)} // {asStr}" : Convert.ToHexString(operand),
-                _ => readable ? $"\"{asStr}\"" : $"{Convert.ToHexString(operand)}",
-            };
         }
 
         /// <summary>
