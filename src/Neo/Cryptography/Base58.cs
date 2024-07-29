@@ -10,10 +10,11 @@
 // modifications are permitted.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
-using static Neo.Helper;
 
 namespace Neo.Cryptography
 {
@@ -26,6 +27,9 @@ namespace Neo.Cryptography
         /// Represents the alphabet of the base-58 encoder.
         /// </summary>
         public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+        private static readonly char s_zeroChar = Alphabet[0];
+        private static readonly Lazy<IReadOnlyDictionary<char, int>> s_alphabetDic = new(() => Enumerable.Range(0, Alphabet.Length).ToDictionary(t => Alphabet[t], t => t));
 
         /// <summary>
         /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
@@ -74,19 +78,27 @@ namespace Neo.Cryptography
             var bi = BigInteger.Zero;
             for (int i = 0; i < input.Length; i++)
             {
-                int digit = Alphabet.IndexOf(input[i]);
-                if (digit < 0)
+                if (!s_alphabetDic.Value.TryGetValue(input[i], out var digit))
                     throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
                 bi = bi * Alphabet.Length + digit;
             }
 
             // Encode BigInteger to byte[]
             // Leading zero bytes get encoded as leading `1` characters
-            int leadingZeroCount = input.TakeWhile(c => c == Alphabet[0]).Count();
-            var leadingZeros = new byte[leadingZeroCount];
-            if (bi.IsZero) return leadingZeros;
-            var bytesWithoutLeadingZeros = bi.ToByteArray(isUnsigned: true, isBigEndian: true);
-            return Concat(leadingZeros, bytesWithoutLeadingZeros);
+            int leadingZeroCount = LeadingBase58Zeros(input);
+            if (bi.IsZero)
+            {
+                return new byte[leadingZeroCount];
+            }
+
+            int decodedSize = bi.GetByteCount(true) + leadingZeroCount;
+
+            Span<byte> result = decodedSize <= 128
+                ? stackalloc byte[decodedSize]
+                : new byte[decodedSize];
+
+            _ = bi.TryWriteBytes(result[leadingZeroCount..], out _, true, true);
+            return result.ToArray();
         }
 
         /// <summary>
@@ -111,9 +123,19 @@ namespace Neo.Cryptography
             // Append `1` for each leading 0 byte
             for (int i = 0; i < input.Length && input[i] == 0; i++)
             {
-                sb.Insert(0, Alphabet[0]);
+                sb.Insert(0, s_zeroChar);
             }
             return sb.ToString();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int LeadingBase58Zeros(string collection)
+        {
+            var i = 0;
+            var len = collection.Length;
+            for (; i < len && collection[i] == s_zeroChar; i++) { }
+
+            return i;
         }
     }
 }
