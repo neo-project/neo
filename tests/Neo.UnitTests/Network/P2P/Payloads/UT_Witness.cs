@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var address = new WalletAccount[pubKeys];
             var wallets = new NEP6Wallet[pubKeys];
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             for (int x = 0; x < pubKeys; x++)
             {
@@ -62,7 +62,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(snapshot, new Transaction()
+            var data = new ContractParametersContext(snapshotCache, new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = new[] {new Signer()
