@@ -70,7 +70,7 @@ namespace Neo.Plugins
 
         /// <summary>
         /// If the plugin should be stopped when an exception is thrown.
-        /// Default is <see langword="true"/>.
+        /// Default is StopNode.
         /// </summary>
         protected internal virtual UnhandledExceptionPolicy ExceptionPolicy { get; init; } = UnhandledExceptionPolicy.StopNode;
 
