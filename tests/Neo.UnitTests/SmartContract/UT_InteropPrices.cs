@@ -64,11 +64,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(System.Array.Empty<byte>());
 
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
@@ -95,11 +95,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(value);
 
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(applicationEngine);
             applicationEngine.LoadScript(script);
             debugger.StepInto();
@@ -128,11 +128,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
@@ -162,11 +162,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var snapshot = TestBlockchain.GetTestSnapshotCache();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto(); //push value
