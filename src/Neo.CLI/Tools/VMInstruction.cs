@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.SmartContract;
 using Neo.VM;
 using System;
 using System.Buffers.Binary;
@@ -16,16 +17,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Neo.CLI
 {
-    using Neo.SmartContract;
-    using System.Linq;
-    using System.Numerics;
-    using System.Runtime.CompilerServices;
-    using System.Text;
-
     [DebuggerDisplay("OpCode={OpCode}, OperandSize={OperandSize}")]
     internal sealed class VMInstruction : IEnumerable<VMInstruction>
     {
