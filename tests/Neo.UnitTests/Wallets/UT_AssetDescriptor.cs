@@ -22,10 +22,10 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestConstructorWithNonexistAssetId()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             Action action = () =>
             {
-                var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
+                var descriptor = new Neo.Wallets.AssetDescriptor(snapshotCache, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
             };
             action.Should().Throw<ArgumentException>();
         }
@@ -33,8 +33,8 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void Check_GAS()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, NativeContract.GAS.Hash);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var descriptor = new Neo.Wallets.AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.GAS.Hash);
             descriptor.AssetId.Should().Be(NativeContract.GAS.Hash);
             descriptor.AssetName.Should().Be(nameof(GasToken));
             descriptor.ToString().Should().Be(nameof(GasToken));
@@ -45,8 +45,8 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void Check_NEO()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, NativeContract.NEO.Hash);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var descriptor = new Neo.Wallets.AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.NEO.Hash);
             descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
             descriptor.AssetName.Should().Be(nameof(NeoToken));
             descriptor.ToString().Should().Be(nameof(NeoToken));
