@@ -17,8 +17,6 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo
 {
@@ -28,59 +26,6 @@ namespace Neo
     public static class Helper
     {
         private static readonly DateTime unixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int BitLen(int w)
-        {
-            return (w < 1 << 15 ? (w < 1 << 7
-                ? (w < 1 << 3 ? (w < 1 << 1
-                ? (w < 1 << 0 ? (w < 0 ? 32 : 0) : 1)
-                : (w < 1 << 2 ? 2 : 3)) : (w < 1 << 5
-                ? (w < 1 << 4 ? 4 : 5)
-                : (w < 1 << 6 ? 6 : 7)))
-                : (w < 1 << 11
-                ? (w < 1 << 9 ? (w < 1 << 8 ? 8 : 9) : (w < 1 << 10 ? 10 : 11))
-                : (w < 1 << 13 ? (w < 1 << 12 ? 12 : 13) : (w < 1 << 14 ? 14 : 15)))) : (w < 1 << 23 ? (w < 1 << 19
-                ? (w < 1 << 17 ? (w < 1 << 16 ? 16 : 17) : (w < 1 << 18 ? 18 : 19))
-                : (w < 1 << 21 ? (w < 1 << 20 ? 20 : 21) : (w < 1 << 22 ? 22 : 23))) : (w < 1 << 27
-                ? (w < 1 << 25 ? (w < 1 << 24 ? 24 : 25) : (w < 1 << 26 ? 26 : 27))
-                : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
-        }
-
-        /// <summary>
-        /// Concatenates the specified byte arrays.
-        /// </summary>
-        /// <param name="buffers">The byte arrays to concatenate.</param>
-        /// <returns>The concatenated byte array.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Concat(params byte[][] buffers)
-        {
-            int length = 0;
-            for (int i = 0; i < buffers.Length; i++)
-                length += buffers[i].Length;
-            byte[] dst = new byte[length];
-            int p = 0;
-            foreach (byte[] src in buffers)
-            {
-                Buffer.BlockCopy(src, 0, dst, p, src.Length);
-                p += src.Length;
-            }
-            return dst;
-        }
-
-        /// <summary>
-        /// Concatenates two byte arrays.
-        /// </summary>
-        /// <param name="a">The first byte array to concatenate.</param>
-        /// <param name="b">The second byte array to concatenate.</param>
-        /// <returns>The concatenated byte array.</returns>
-        public static byte[] Concat(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
-        {
-            byte[] buffer = new byte[a.Length + b.Length];
-            a.CopyTo(buffer);
-            b.CopyTo(buffer.AsSpan(a.Length));
-            return buffer;
-        }
 
         internal static void Remove<T>(this HashSet<T> set, ISet<T> other)
         {
@@ -156,46 +101,6 @@ namespace Neo
             else
                 b[^1] &= (byte)((1 << sizeInBits % 8) - 1);
             return new BigInteger(b);
-        }
-
-        /// <summary>
-        /// Converts a byte array to hex <see cref="string"/>.
-        /// </summary>
-        /// <param name="value">The byte array to convert.</param>
-        /// <returns>The converted hex <see cref="string"/>.</returns>
-        public static string ToHexString(this byte[] value)
-        {
-            StringBuilder sb = new();
-            foreach (byte b in value)
-                sb.AppendFormat("{0:x2}", b);
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Converts a byte array to hex <see cref="string"/>.
-        /// </summary>
-        /// <param name="value">The byte array to convert.</param>
-        /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
-        /// <returns>The converted hex <see cref="string"/>.</returns>
-        public static string ToHexString(this byte[] value, bool reverse = false)
-        {
-            StringBuilder sb = new();
-            for (int i = 0; i < value.Length; i++)
-                sb.AppendFormat("{0:x2}", value[reverse ? value.Length - i - 1 : i]);
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Converts a byte array to hex <see cref="string"/>.
-        /// </summary>
-        /// <param name="value">The byte array to convert.</param>
-        /// <returns>The converted hex <see cref="string"/>.</returns>
-        public static string ToHexString(this ReadOnlySpan<byte> value)
-        {
-            StringBuilder sb = new();
-            foreach (byte b in value)
-                sb.AppendFormat("{0:x2}", b);
-            return sb.ToString();
         }
 
         /// <summary>
