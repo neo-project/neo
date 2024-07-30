@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Org.BouncyCastle.Crypto.Generators;
 
 namespace Neo.UnitTests.Cryptography
