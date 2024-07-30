@@ -155,8 +155,8 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCacheOverrideIssue2572()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var storages = snapshot.CloneCache();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var storages = snapshotCache.CreateSnapshot();
 
             storages.Add
                 (
@@ -174,10 +174,10 @@ namespace Neo.UnitTests.IO.Caching
             var item = storages.GetAndChange(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
             item.Value = new byte[] { 0x06 };
 
-            var res = snapshot.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            var res = snapshotCache.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
             Assert.AreEqual("05", res.Value.Span.ToHexString());
             storages.Commit();
-            res = snapshot.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            res = snapshotCache.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
             Assert.AreEqual("06", res.Value.Span.ToHexString());
         }
     }
