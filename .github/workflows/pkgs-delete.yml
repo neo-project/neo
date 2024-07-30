@@ -102,7 +102,7 @@ jobs:
         delete-only-pre-release-versions: "true"
         token: "${{ secrets.GITHUB_TOKEN }}"
 
-    - name: Delete Neo Package
+    - name: Delete Neo Package (nuget)
       uses: actions/delete-package-versions@v4
       with:
         package-name: Neo
@@ -110,6 +110,16 @@ jobs:
         min-versions-to-keep: 3
         delete-only-pre-release-versions: "true"
         token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: Delete Neo Package (docker)
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo
+        package-type: docker
+        min-versions-to-keep: 1
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"
+
     - name: Delete Neo.ConsoleService Package
       uses: actions/delete-package-versions@v4
       with:
@@ -118,6 +128,7 @@ jobs:
         min-versions-to-keep: 3
         delete-only-pre-release-versions: "true"
         token: "${{ secrets.GITHUB_TOKEN }}"
+
     - name: Delete Neo.Extensions Package
       uses: actions/delete-package-versions@v4
       with:

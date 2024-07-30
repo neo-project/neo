@@ -59,8 +59,8 @@ namespace Neo.UnitTests.SmartContract
 
         class TestEngine : ApplicationEngine
         {
-            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
-                : base(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
+            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
+                : base(trigger, container, snapshotCache, persistingBlock, settings, gas, diagnostic, jumpTable)
             {
             }
         }

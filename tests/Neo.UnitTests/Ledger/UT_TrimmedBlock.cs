@@ -49,7 +49,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlock()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var tx1 = TestUtils.GetTransaction(UInt160.Zero);
             tx1.Script = new byte[] { 0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,
@@ -70,13 +70,13 @@ namespace Neo.UnitTests.Ledger
                 Transaction = tx2,
                 BlockIndex = 1
             };
-            TestUtils.TransactionAdd(snapshot, state1, state2);
+            TestUtils.TransactionAdd(snapshotCache, state1, state2);
 
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
-            TestUtils.BlocksAdd(snapshot, tblock.Hash, tblock);
+            TestUtils.BlocksAdd(snapshotCache, tblock.Hash, tblock);
 
-            Block block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
+            Block block = NativeContract.Ledger.GetBlock(snapshotCache, tblock.Hash);
 
             block.Index.Should().Be(1);
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));

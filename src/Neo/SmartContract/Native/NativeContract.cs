@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Native
             {
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
-                uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) : engine.PersistingBlock.Index;
+                uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.SnapshotCache) : engine.PersistingBlock.Index;
                 CacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings.IsHardforkEnabled, index);
                 NativeContracts[native.Id] = methods;
                 return methods;
@@ -343,7 +343,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected static bool CheckCommittee(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
+            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.SnapshotCache);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
@@ -386,7 +386,7 @@ namespace Neo.SmartContract.Native
                 engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
                 List<object> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
-                if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
+                if (method.NeedSnapshot) parameters.Add(engine.SnapshotCache);
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
                 object returnValue = method.Handler.Invoke(this, parameters.ToArray());

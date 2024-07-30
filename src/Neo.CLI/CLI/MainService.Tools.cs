@@ -14,7 +14,6 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -57,7 +56,8 @@ namespace Neo.CLI
 
                 if (result != null)
                 {
-                    Console.WriteLine($"{pair.Key,-30}\t{result}");
+                    ConsoleHelper.Info("", "-----", pair.Key, "-----");
+                    ConsoleHelper.Info("", result, Environment.NewLine);
                     any = true;
                 }
             }
@@ -418,62 +418,27 @@ namespace Neo.CLI
         [ParseFunction("Base64 Smart Contract Script Analysis")]
         private string? ScriptsToOpCode(string base64)
         {
-            Script script;
             try
             {
-                var scriptData = Convert.FromBase64String(base64);
-                script = new Script(scriptData.ToArray(), true);
+                var bytes = Convert.FromBase64String(base64);
+                var sb = new StringBuilder();
+                var line = 0;
+
+                foreach (var instruct in new VMInstruction(bytes))
+                {
+                    if (instruct.OperandSize == 0)
+                        sb.AppendFormat("L{0:D04}:{1:X04} {2}{3}", line, instruct.Position, instruct.OpCode, Environment.NewLine);
+                    else
+                        sb.AppendFormat("L{0:D04}:{1:X04} {2,-10}{3}{4}", line, instruct.Position, instruct.OpCode, instruct.DecodeOperand(), Environment.NewLine);
+                    line++;
+                }
+
+                return sb.ToString();
             }
-            catch (Exception)
+            catch
             {
                 return null;
             }
-            return ScriptsToOpCode(script);
-        }
-
-        private string ScriptsToOpCode(Script script)
-        {
-            //Initialize all InteropService
-            var dic = new Dictionary<uint, string>();
-            ApplicationEngine.Services.ToList().ForEach(p => dic.Add(p.Value.Hash, p.Value.Name));
-
-            //Analyzing Scripts
-            var ip = 0;
-            Instruction instruction;
-            var result = new List<string>();
-            while (ip < script.Length && (instruction = script.GetInstruction(ip)) != null)
-            {
-                ip += instruction.Size;
-
-                var op = instruction.OpCode;
-
-                if (op.ToString().StartsWith("PUSHINT"))
-                {
-                    var operand = instruction.Operand.ToArray();
-                    result.Add($"{op} {new BigInteger(operand)}");
-                }
-                else if (op == OpCode.SYSCALL)
-                {
-                    var operand = instruction.Operand.ToArray();
-                    result.Add($"{op} {dic[BitConverter.ToUInt32(operand)]}");
-                }
-                else
-                {
-                    if (!instruction.Operand.IsEmpty && instruction.Operand.Length > 0)
-                    {
-                        var operand = instruction.Operand.ToArray();
-                        var ascii = Encoding.Default.GetString(operand);
-                        ascii = ascii.Any(p => p < '0' || p > 'z') ? operand.ToHexString() : ascii;
-
-                        result.Add($"{op} {(operand.Length == 20 ? new UInt160(operand).ToString() : ascii)}");
-                    }
-                    else
-                    {
-                        result.Add($"{op}");
-                    }
-                }
-            }
-            return Environment.NewLine + string.Join("\r\n", result.ToArray());
         }
 
         /// <summary>

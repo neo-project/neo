@@ -235,7 +235,7 @@ namespace Neo.Plugins.OracleService
 
             finishedCache.ContainsKey(requestId).False_Or(RpcError.OracleRequestFinished);
 
-            using (var snapshot = _system.GetSnapshot())
+            using (var snapshot = _system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
@@ -327,7 +327,7 @@ namespace Neo.Plugins.OracleService
         {
             while (!cancelSource.IsCancellationRequested)
             {
-                using (var snapshot = _system.GetSnapshot())
+                using (var snapshot = _system.GetSnapshotCache())
                 {
                     SyncPendingQueue(snapshot);
                     foreach (var (id, request) in NativeContract.Oracle.GetRequests(snapshot))

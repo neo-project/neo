@@ -53,11 +53,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TrimTest()
         {
             UInt256 val256 = UInt256.Zero;
-            var snapshot = TestBlockchain.GetTestSnapshot().CreateSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache().CreateSnapshot();
             TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
 
-            TestUtils.BlocksAdd(snapshot, uut.Hash, new TrimmedBlock()
+            TestUtils.BlocksAdd(snapshotCache, uut.Hash, new TrimmedBlock()
             {
                 Header = new Header
                 {
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Hashes = Array.Empty<UInt256>()
             });
 
-            var trim = NativeContract.Ledger.GetTrimmedBlock(snapshot, uut.Hash);
+            var trim = NativeContract.Ledger.GetTrimmedBlock(snapshotCache, uut.Hash);
             var header = trim.Header;
 
             header.Version.Should().Be(uut.Version);
