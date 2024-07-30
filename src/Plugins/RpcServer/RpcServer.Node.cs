@@ -139,6 +139,8 @@ namespace Neo.Plugins.RpcServer
                 forkJson["blockheight"] = hf.Value;
                 return forkJson;
             }));
+            protocol["standbycommittee"] = new JArray(system.Settings.StandbyCommittee.Select(u => new JString(u.ToString())));
+            protocol["seedlist"] = new JArray(system.Settings.SeedList.Select(u => new JString(u)));
             json["rpc"] = rpc;
             json["protocol"] = protocol;
             return json;
