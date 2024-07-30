@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using static Neo.Helper;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -57,7 +56,7 @@ namespace Neo.Cryptography.MPTTrie
                             if (node.Next.Type == NodeType.ExtensionNode)
                             {
                                 if (!full) cache.DeleteNode(node.Next.Hash);
-                                node.Key = Concat(node.Key.Span, node.Next.Key.Span);
+                                node.Key = new([.. node.Key.Span, .. node.Next.Key.Span]);
                                 node.Next = node.Next.Next;
                             }
                             node.SetDirty();
@@ -107,7 +106,7 @@ namespace Neo.Cryptography.MPTTrie
                         if (lastChild.Type == NodeType.ExtensionNode)
                         {
                             if (!full) cache.DeleteNode(lastChild.Hash);
-                            lastChild.Key = Concat(childrenIndexes.ToArray(), lastChild.Key.Span);
+                            lastChild.Key = new([.. childrenIndexes.ToArray(), .. lastChild.Key.Span]);
                             lastChild.SetDirty();
                             cache.PutNode(lastChild);
                             node = lastChild;
