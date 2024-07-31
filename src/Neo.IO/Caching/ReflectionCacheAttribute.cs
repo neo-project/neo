@@ -13,21 +13,17 @@ using System;
 
 namespace Neo.IO.Caching
 {
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="type">Type</param>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
-    internal class ReflectionCacheAttribute : Attribute
+    internal class ReflectionCacheAttribute
+        (Type type) : Attribute
     {
         /// <summary>
         /// Type
         /// </summary>
-        public Type Type { get; }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="type">Type</param>
-        public ReflectionCacheAttribute(Type type)
-        {
-            Type = type;
-        }
+        public Type Type { get; } = type;
     }
 }

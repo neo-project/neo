@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
+using Neo.Ledger;
 using Neo.Persistence;
 using System;
 
@@ -16,21 +18,36 @@ namespace Neo.Plugins.OracleService.Tests
 {
     public static class TestBlockchain
     {
-        public static readonly NeoSystem TheNeoSystem;
+        private static readonly NeoSystem s_theNeoSystem;
+        private static readonly MemoryStore s_store = new();
+
+        private class StoreProvider : IStoreProvider
+        {
+            public string Name => "TestProvider";
+
+            public IStore GetStore(string path) => s_store;
+        }
 
         static TestBlockchain()
         {
             Console.WriteLine("initialize NeoSystem");
-            TheNeoSystem = new NeoSystem(ProtocolSettings.Load("config.json"), new MemoryStoreProvider());
+            s_theNeoSystem = new NeoSystem(ProtocolSettings.Load("config.json"), new StoreProvider());
         }
 
         public static void InitializeMockNeoSystem()
         {
         }
 
-        internal static DataCache GetTestSnapshot()
+        internal static void ResetStore()
         {
-            return TheNeoSystem.GetSnapshot().CreateSnapshot();
+            s_store.Reset();
+            s_theNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
+        }
+
+        internal static SnapshotCache GetTestSnapshotCache()
+        {
+            ResetStore();
+            return s_theNeoSystem.GetSnapshot();
         }
     }
 }

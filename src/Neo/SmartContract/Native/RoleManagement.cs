@@ -72,13 +72,13 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             uint index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
-            if (engine.Snapshot.Contains(key))
+            if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException();
             NodeList list = new();
             list.AddRange(nodes);
             list.Sort();
-            engine.Snapshot.Add(key, new StorageItem(list));
-
+            engine.SnapshotCache.Add(key, new StorageItem(list));
+            
             if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
             {
                 var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.Snapshot, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));

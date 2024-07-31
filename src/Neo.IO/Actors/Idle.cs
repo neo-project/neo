@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UnhandledExceptionPolicy.cs file belongs to the neo project and is free
+// Idle.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,12 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Plugins
+namespace Neo.IO.Actors
 {
-    public enum UnhandledExceptionPolicy
+    internal sealed class Idle
     {
-        Ignore = 0,
-        StopPlugin = 1,
-        StopNode = 2,
+        public static Idle Instance { get; } = new();
     }
 }
