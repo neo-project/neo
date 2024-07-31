@@ -158,8 +158,6 @@ namespace Neo.Wallets
                                 case ContractParameterType.Array:
                                     script.Emit(OpCode.NEWARRAY0);
                                     break;
-                                default:
-                                    throw new ArgumentException("The verify method requires parameters that need to be passed via the witness' invocation script.");
                             }
                         }
                         invocationScript = script.ToArray();
