@@ -42,6 +42,8 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(protocol.ContainsProperty("maxvaliduntilblockincrement"));
             Assert.IsTrue(protocol.ContainsProperty("maxtransactionsperblock"));
             Assert.IsTrue(protocol.ContainsProperty("memorypoolmaxtransactions"));
+            Assert.IsTrue(protocol.ContainsProperty("standbycommittee"));
+            Assert.IsTrue(protocol.ContainsProperty("seedlist"));
         }
 
         #region SendRawTransaction Tests
