@@ -15,6 +15,9 @@ namespace Neo.Benchmark;
 
 public class Benchmarks_UInt160
 {
+    static readonly OldUInt160 s_oldUInt160 = new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    static readonly UInt160 s_newUInt160 = new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+
     [Benchmark]
     public void TestOldUInt160Gernerator1()
     {
@@ -30,23 +33,17 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestOldUInt160CompareTo()
     {
-        byte[] temp = new byte[20];
-        temp[19] = 0x01;
-        OldUInt160 result = new OldUInt160(temp);
         OldUInt160.Zero.CompareTo(OldUInt160.Zero);
-        OldUInt160.Zero.CompareTo(result);
-        result.CompareTo(OldUInt160.Zero);
+        OldUInt160.Zero.CompareTo(s_oldUInt160);
+        s_oldUInt160.CompareTo(OldUInt160.Zero);
     }
 
     [Benchmark]
     public void TestOldUInt160Equals()
     {
-        byte[] temp = new byte[20];
-        temp[19] = 0x01;
-        OldUInt160 result = new OldUInt160(temp);
         OldUInt160.Zero.Equals(OldUInt160.Zero);
-        OldUInt160.Zero.Equals(result);
-        result.Equals(null);
+        OldUInt160.Zero.Equals(s_oldUInt160);
+        s_oldUInt160.Equals(null);
     }
 
     [Benchmark]
@@ -69,25 +66,25 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestOldUInt160OperatorLarger()
     {
-        _ = OldUInt160.Zero > OldUInt160.Zero;
+        _ = s_oldUInt160 > OldUInt160.Zero;
     }
 
     [Benchmark]
     public void TestOldUInt160OperatorLargerAndEqual()
     {
-        _ = OldUInt160.Zero >= OldUInt160.Zero;
+        _ = s_oldUInt160 >= OldUInt160.Zero;
     }
 
     [Benchmark]
     public void TestOldUInt160OperatorSmaller()
     {
-        _ = OldUInt160.Zero < OldUInt160.Zero;
+        _ = s_oldUInt160 < OldUInt160.Zero;
     }
 
     [Benchmark]
     public void TestOldUInt160OperatorSmallerAndEqual()
     {
-        _ = OldUInt160.Zero <= OldUInt160.Zero;
+        _ = s_oldUInt160 <= OldUInt160.Zero;
     }
 
     [Benchmark]
@@ -105,23 +102,17 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestCompareTo()
     {
-        byte[] temp = new byte[20];
-        temp[19] = 0x01;
-        UInt160 result = new UInt160(temp);
         UInt160.Zero.CompareTo(UInt160.Zero);
-        UInt160.Zero.CompareTo(result);
-        result.CompareTo(UInt160.Zero);
+        UInt160.Zero.CompareTo(s_newUInt160);
+        s_newUInt160.CompareTo(UInt160.Zero);
     }
 
     [Benchmark]
     public void TestEquals()
     {
-        byte[] temp = new byte[20];
-        temp[19] = 0x01;
-        UInt160 result = new UInt160(temp);
         UInt160.Zero.Equals(UInt160.Zero);
-        UInt160.Zero.Equals(result);
-        result.Equals(null);
+        UInt160.Zero.Equals(s_newUInt160);
+        s_newUInt160.Equals(null);
     }
 
     [Benchmark]
@@ -144,24 +135,24 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestOperatorLarger()
     {
-        _ = UInt160.Zero > UInt160.Zero;
+        _ = s_newUInt160 > UInt160.Zero;
     }
 
     [Benchmark]
     public void TestOperatorLargerAndEqual()
     {
-        _ = UInt160.Zero >= UInt160.Zero;
+        _ = s_newUInt160 >= UInt160.Zero;
     }
 
     [Benchmark]
     public void TestOperatorSmaller()
     {
-        _ = UInt160.Zero < UInt160.Zero;
+        _ = s_newUInt160 < UInt160.Zero;
     }
 
     [Benchmark]
     public void TestOperatorSmallerAndEqual()
     {
-        _ = UInt160.Zero <= UInt160.Zero;
+        _ = s_newUInt160 <= UInt160.Zero;
     }
 }

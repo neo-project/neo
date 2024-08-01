@@ -12,6 +12,7 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -145,7 +146,7 @@ namespace Neo
             try
             {
                 var data = Enumerable.Range(0, Length)
-                    .Select(s => Convert.ToByte(str.Substring(s * 2, 2), 16))
+                    .Select(s => byte.Parse(str.Substring(s * 2, 2), NumberStyles.HexNumber))
                     .Reverse()
                     .ToArray();
 
