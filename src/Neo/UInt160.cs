@@ -15,7 +15,6 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Neo
@@ -51,15 +50,18 @@ namespace Neo
         /// Initializes a new instance of the <see cref="UInt160"/> class.
         /// </summary>
         /// <param name="value">The value of the <see cref="UInt160"/>.</param>
-        public UInt160(ReadOnlySpan<byte> value)
+        public unsafe UInt160(ReadOnlySpan<byte> value)
         {
             if (value.Length != Length)
                 throw new FormatException();
 
-            var bytes = value.ToArray();
-            _value1 = Unsafe.As<byte, ulong>(ref bytes[0]);
-            _value2 = Unsafe.As<byte, ulong>(ref bytes[8]);
-            _value3 = Unsafe.As<byte, uint>(ref bytes[16]);
+            fixed (void* dstPointer = &_value1)
+            {
+                fixed (void* srcPointer = value)
+                {
+                    Buffer.MemoryCopy(srcPointer, dstPointer, Length, Length);
+                }
+            }
         }
 
         public int CompareTo(UInt160 other)
@@ -80,6 +82,9 @@ namespace Neo
 
         public override bool Equals(object obj)
         {
+            if (ReferenceEquals(this, obj))
+                return true;
+
             if (obj == null)
                 return false;
 
@@ -138,18 +143,16 @@ namespace Neo
 
             if (string.IsNullOrWhiteSpace(str)) return false;
 
-            if (str.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+            if (str.StartsWith("0x", StringComparison.InvariantCulture))
                 str = str[2..];
 
             if (str.Length != Length * 2) return false;
 
             try
             {
-                var data = Enumerable.Range(0, Length)
-                    .Select(s => byte.Parse(str.Substring(s * 2, 2), NumberStyles.HexNumber))
-                    .Reverse()
-                    .ToArray();
-
+                var data = new byte[Length];
+                for (var i = 0; i < Length; i++)
+                    data[Length - i - 1] = byte.Parse(str.Substring(i * 2, 2), NumberStyles.HexNumber);
                 result = new(data);
                 return true;
             }
@@ -171,7 +174,6 @@ namespace Neo
 
         public static bool operator ==(UInt160 left, UInt160 right)
         {
-            if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null)
                 return Equals(left, right);
             return left.Equals(right);
@@ -179,7 +181,6 @@ namespace Neo
 
         public static bool operator !=(UInt160 left, UInt160 right)
         {
-            if (ReferenceEquals(left, right)) return false;
             if (left is null || right is null)
                 return !Equals(left, right);
             return !left.Equals(right);

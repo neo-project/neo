@@ -21,13 +21,13 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestOldUInt160Gernerator1()
     {
-        OldUInt160 uInt160 = new OldUInt160();
+        _ = new OldUInt160();
     }
 
     [Benchmark]
     public void TestOldUInt160Gernerator2()
     {
-        OldUInt160 uInt160 = new OldUInt160(new byte[20]);
+        _ = new OldUInt160(new byte[20]);
     }
 
     [Benchmark]
@@ -49,8 +49,8 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestOldUInt160Parse()
     {
-        OldUInt160 result = OldUInt160.Parse("0x0000000000000000000000000000000000000000");
-        OldUInt160 result1 = OldUInt160.Parse("0000000000000000000000000000000000000000");
+        _ = OldUInt160.Parse("0x0000000000000000000000000000000000000000");
+        _ = OldUInt160.Parse("0000000000000000000000000000000000000000");
     }
 
     [Benchmark]
@@ -60,7 +60,6 @@ public class Benchmarks_UInt160
         OldUInt160.TryParse("0x0000000000000000000000000000000000000000", out var temp);
         OldUInt160.TryParse("0x1230000000000000000000000000000000000000", out temp);
         OldUInt160.TryParse("000000000000000000000000000000000000000", out _);
-        OldUInt160.TryParse("0xKK00000000000000000000000000000000000000", out _);
     }
 
     [Benchmark]
@@ -90,13 +89,13 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestGernerator1()
     {
-        UInt160 uInt160 = new UInt160();
+        _ = new UInt160();
     }
 
     [Benchmark]
     public void TestGernerator2()
     {
-        UInt160 uInt160 = new UInt160(new byte[20]);
+        _ = new UInt160(new byte[20]);
     }
 
     [Benchmark]
@@ -118,8 +117,8 @@ public class Benchmarks_UInt160
     [Benchmark]
     public void TestParse()
     {
-        UInt160 result = UInt160.Parse("0x0000000000000000000000000000000000000000");
-        UInt160 result1 = UInt160.Parse("0000000000000000000000000000000000000000");
+        _ = UInt160.Parse("0x0000000000000000000000000000000000000000");
+        _ = UInt160.Parse("0000000000000000000000000000000000000000");
     }
 
     [Benchmark]
@@ -129,7 +128,6 @@ public class Benchmarks_UInt160
         UInt160.TryParse("0x0000000000000000000000000000000000000000", out var temp);
         UInt160.TryParse("0x1230000000000000000000000000000000000000", out temp);
         UInt160.TryParse("000000000000000000000000000000000000000", out _);
-        UInt160.TryParse("0xKK00000000000000000000000000000000000000", out _);
     }
 
     [Benchmark]
