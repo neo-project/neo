@@ -56,7 +56,7 @@ namespace Neo.VM.Types
                         ReferenceCounter.AddReference(key, this);
                     if (value is CompoundType { ReferenceCounter: null })
                     {
-                        throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+                        throw new InvalidOperationException("Can not set a Map without a ReferenceCounter.");
                     }
                     ReferenceCounter.AddReference(value, this);
                 }
