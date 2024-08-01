@@ -55,12 +55,10 @@ namespace Neo
             if (value.Length != Length)
                 throw new FormatException();
 
-            fixed (void* dstPointer = &_value1)
+            fixed (void* p = &_value1)
             {
-                fixed (void* srcPointer = value)
-                {
-                    Buffer.MemoryCopy(srcPointer, dstPointer, Length, Length);
-                }
+                Span<byte> dst = new(p, Length);
+                value[..Length].CopyTo(dst);
             }
         }
 
@@ -82,16 +80,8 @@ namespace Neo
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(this, obj))
-                return true;
-
-            if (obj == null)
-                return false;
-
-            var other = obj as UInt160;
-            if (other == null)
-                return false;
-            return Equals(other);
+            if (ReferenceEquals(obj, this)) return true;
+            return Equals(obj as UInt160);
         }
 
         public bool Equals(UInt160 other)
@@ -152,7 +142,10 @@ namespace Neo
             {
                 var data = new byte[Length];
                 for (var i = 0; i < Length; i++)
-                    data[Length - i - 1] = byte.Parse(str.Substring(i * 2, 2), NumberStyles.HexNumber);
+                {
+                    if (!byte.TryParse(str.AsSpan(i * 2, 2), NumberStyles.HexNumber, null, out data[Length - i - 1]))
+                        return false;
+                }
                 result = new(data);
                 return true;
             }
