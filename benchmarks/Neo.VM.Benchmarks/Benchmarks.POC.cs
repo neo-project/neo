@@ -17,7 +17,7 @@ namespace Neo.VM.Benchmark
     public class Benchmarks_PoCs
     {
         [Benchmark]
-        public static void NeoIssue2528()
+        public void NeoIssue2528()
         {
             // https://github.com/neo-project/neo/issues/2528
             // L01: INITSLOT 1, 0
@@ -50,7 +50,7 @@ namespace Neo.VM.Benchmark
         }
 
         [Benchmark]
-        public static void NeoVMIssue418()
+        public void NeoVMIssue418()
         {
             // https://github.com/neo-project/neo-vm/issues/418
             // L00: NEWARRAY0
@@ -85,7 +85,7 @@ namespace Neo.VM.Benchmark
         }
 
         [Benchmark]
-        public static void NeoIssue2723()
+        public void NeoIssue2723()
         {
             // L00: INITSSLOT 1
             // L01: PUSHINT32 130000
@@ -106,11 +106,8 @@ namespace Neo.VM.Benchmark
             byte[] script = Convert.FromBase64String(poc);
             using ExecutionEngine engine = new();
             engine.LoadScript(script);
-            Stopwatch stopwatch = Stopwatch.StartNew();
             engine.Execute();
-            stopwatch.Stop();
             Debug.Assert(engine.State == VMState.HALT);
-            Console.WriteLine($"Benchmark: {name},\tTime: {stopwatch.Elapsed}");
         }
     }
 }

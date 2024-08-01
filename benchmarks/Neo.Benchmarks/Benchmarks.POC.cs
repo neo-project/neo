@@ -23,7 +23,7 @@ public class Benchmarks_PoCs
     private static readonly NeoSystem system = new(protocol, (string)null);
 
     [Benchmark]
-    public static void NeoIssue2725()
+    public void NeoIssue2725()
     {
         // https://github.com/neo-project/neo/issues/2725
         // L00: INITSSLOT 1
@@ -72,10 +72,7 @@ public class Benchmarks_PoCs
         using var snapshot = system.GetSnapshotCache();
         using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, system.GenesisBlock, protocol, tx.SystemFee);
         engine.LoadScript(tx.Script);
-        Stopwatch stopwatch = Stopwatch.StartNew();
         engine.Execute();
-        stopwatch.Stop();
         Debug.Assert(engine.State == VMState.FAULT);
-        Console.WriteLine($"Benchmark: {name},\tTime: {stopwatch.Elapsed}");
     }
 }

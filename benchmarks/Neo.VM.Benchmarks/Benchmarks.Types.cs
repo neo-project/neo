@@ -18,8 +18,8 @@ public class Benchmarks_Types
 {
     public IEnumerable<(int Depth, int ElementsPerLevel)> ParamSource()
     {
-        int[] depths = [4];
-        int[] elementsPerLevel = [6];
+        int[] depths = [2, 4];
+        int[] elementsPerLevel = [2, 4, 6];
 
         foreach (var depth in depths)
         {
