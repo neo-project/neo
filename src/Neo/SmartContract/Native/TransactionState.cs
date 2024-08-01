@@ -38,6 +38,11 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public VMState State;
 
+        /// <summary>
+        /// The merkle root of the notifications.
+        /// </summary>
+        public UInt256 NotificationMerkleRoot;
+
         private ReadOnlyMemory<byte> _rawTransaction;
 
         IInteroperable IInteroperable.Clone()
@@ -47,6 +52,7 @@ namespace Neo.SmartContract.Native
                 BlockIndex = BlockIndex,
                 Transaction = Transaction,
                 State = State,
+                NotificationMerkleRoot = NotificationMerkleRoot,
                 _rawTransaction = _rawTransaction
             };
         }
@@ -57,6 +63,7 @@ namespace Neo.SmartContract.Native
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
+            NotificationMerkleRoot = from.NotificationMerkleRoot;
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = from._rawTransaction;
         }
@@ -73,6 +80,7 @@ namespace Neo.SmartContract.Native
             _rawTransaction = ((ByteString)@struct[1]).Memory;
             Transaction = _rawTransaction.AsSerializable<Transaction>();
             State = (VMState)(byte)@struct[2].GetInteger();
+            NotificationMerkleRoot = new UInt256(@struct[3].GetSpan());
         }
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
@@ -81,7 +89,7 @@ namespace Neo.SmartContract.Native
                 return new Struct(referenceCounter) { BlockIndex };
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = Transaction.ToArray();
-            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
+            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State, NotificationMerkleRoot.ToArray() };
         }
     }
 }
