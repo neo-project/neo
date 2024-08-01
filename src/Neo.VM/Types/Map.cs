@@ -58,7 +58,7 @@ namespace Neo.VM.Types
                     {
                         throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
                     }
-                    ReferenceCounter?.AddReference(value, this);
+                    ReferenceCounter.AddReference(value, this);
 
                 }
                 dictionary[key] = value;
