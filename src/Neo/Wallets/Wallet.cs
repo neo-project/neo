@@ -141,7 +141,7 @@ namespace Neo.Wallets
         {
             var privateKey = new byte[32];
             using var rng = RandomNumberGenerator.Create();
-            var maxTry = 10;
+            var maxTry = 30;
 
             do
             {
