@@ -239,6 +239,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Size(ExecutionEngine engine, Instruction instruction)
         {
+            // TODO: we should be able to optimize by using peek instead of dup and pop
             var x = engine.Pop();
             switch (x)
             {
@@ -410,7 +411,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <remarks>Pop 1, Push 1</remarks>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Append(ExecutionEngine engine, Instruction instruction)
         {
