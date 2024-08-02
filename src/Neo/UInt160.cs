@@ -139,7 +139,7 @@ namespace Neo
 
             if (string.IsNullOrWhiteSpace(str)) return false;
 
-            if (str.StartsWith("0x", StringComparison.InvariantCulture))
+            if (str.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
                 startIndex = 2;
 
             if ((str.Length - startIndex) != Length * 2) return false;
