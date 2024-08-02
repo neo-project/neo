@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence;
 using System;
@@ -26,7 +27,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         private byte[] StoreKey(byte[] key)
         {
-            return Concat(key);
+            return [.. key];
         }
 
         public void Put(byte[] key, byte[] value)
@@ -65,7 +66,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         private void PutToStore(IStore store, Node node)
         {
-            store.Put(Concat(new byte[] { 0xf0 }, node.Hash.ToArray()), node.ToArray());
+            store.Put([.. new byte[] { 0xf0 }, .. node.Hash.ToArray()], node.ToArray());
         }
 
         [TestInitialize]

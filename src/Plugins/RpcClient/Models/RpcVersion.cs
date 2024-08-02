@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography.ECC;
 using Neo.Json;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,8 @@ namespace Neo.Network.RPC.Models
             public int MemoryPoolMaxTransactions { get; set; }
             public ulong InitialGasDistribution { get; set; }
             public IReadOnlyDictionary<Hardfork, uint> Hardforks { get; set; }
+            public IReadOnlyList<string> SeedList { get; set; }
+            public IReadOnlyList<ECPoint> StandbyCommittee { get; set; }
 
             public JObject ToJson()
             {
@@ -49,6 +52,8 @@ namespace Neo.Network.RPC.Models
                     ["name"] = StripPrefix(s.Key.ToString(), "HF_"),
                     ["blockheight"] = s.Value,
                 }));
+                json["standbycommittee"] = new JArray(StandbyCommittee.Select(u => new JString(u.ToString())));
+                json["seedlist"] = new JArray(SeedList.Select(u => new JString(u)));
                 return json;
             }
 
@@ -71,6 +76,14 @@ namespace Neo.Network.RPC.Models
                         // Add HF_ prefix to the hardfork response for proper Hardfork enum parsing.
                         return new KeyValuePair<Hardfork, uint>(Enum.Parse<Hardfork>(name.StartsWith("HF_") ? name : $"HF_{name}"), (uint)s["blockheight"].AsNumber());
                     })),
+                    SeedList = new List<string>(((JArray)json["seedlist"]).Select(s =>
+                    {
+                        return s.AsString();
+                    })),
+                    StandbyCommittee = new List<ECPoint>(((JArray)json["standbycommittee"]).Select(s =>
+                    {
+                        return ECPoint.Parse(s.AsString(), ECCurve.Secp256r1);
+                    }))
                 };
             }
 
