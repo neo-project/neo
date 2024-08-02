@@ -15,6 +15,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Neo
@@ -62,6 +63,7 @@ namespace Neo
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareTo(UInt160 other)
         {
             var result = _value3.CompareTo(other._value3);
@@ -78,12 +80,14 @@ namespace Neo
             _value3 = reader.ReadUInt32();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(obj, this)) return true;
             return Equals(obj as UInt160);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(UInt160 other)
         {
             if (other == null) return false;
@@ -129,21 +133,23 @@ namespace Neo
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string str, out UInt160 result)
         {
+            var startIndex = 0;
+
             result = null;
 
             if (string.IsNullOrWhiteSpace(str)) return false;
 
             if (str.StartsWith("0x", StringComparison.InvariantCulture))
-                str = str[2..];
+                startIndex = 2;
 
-            if (str.Length != Length * 2) return false;
+            if ((str.Length - startIndex) != Length * 2) return false;
 
             try
             {
                 var data = new byte[Length];
                 for (var i = 0; i < Length; i++)
                 {
-                    if (!byte.TryParse(str.AsSpan(i * 2, 2), NumberStyles.HexNumber, null, out data[Length - i - 1]))
+                    if (!byte.TryParse(str.AsSpan(i * 2 + startIndex, 2), NumberStyles.HexNumber, null, out data[Length - i - 1]))
                         return false;
                 }
                 result = new(data);
