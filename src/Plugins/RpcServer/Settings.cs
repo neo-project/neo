@@ -18,11 +18,11 @@ using System.Net;
 
 namespace Neo.Plugins.RpcServer
 {
-    class Settings : PluginSettings
+    class Settings
     {
         public IReadOnlyList<RpcServerSettings> Servers { get; init; }
 
-        public Settings(IConfigurationSection section) : base(section)
+        public Settings(IConfigurationSection section)
         {
             Servers = section.GetSection(nameof(Servers)).GetChildren().Select(p => RpcServerSettings.Load(p)).ToArray();
         }

@@ -63,12 +63,12 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             uint index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
-            if (engine.Snapshot.Contains(key))
+            if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException();
             NodeList list = new();
             list.AddRange(nodes);
             list.Sort();
-            engine.Snapshot.Add(key, new StorageItem(list));
+            engine.SnapshotCache.Add(key, new StorageItem(list));
             engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock.Index }));
         }
 

@@ -193,7 +193,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (viewNumber == 0)
             {
                 Snapshot?.Dispose();
-                Snapshot = neoSystem.GetSnapshot();
+                Snapshot = neoSystem.GetSnapshotCache();
                 uint height = NativeContract.Ledger.CurrentIndex(Snapshot);
                 Block = new Block
                 {

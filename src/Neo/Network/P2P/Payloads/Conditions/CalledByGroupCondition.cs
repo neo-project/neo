@@ -40,7 +40,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override bool Match(ApplicationEngine engine)
         {
             engine.ValidateCallFlags(CallFlags.ReadStates);
-            ContractState contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash);
             return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey.Equals(Group));
         }
 

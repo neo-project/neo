@@ -27,21 +27,21 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_PolicyContract
     {
-        private DataCache _snapshot;
+        private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshot = TestBlockchain.GetTestSnapshot();
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshot, new Block { Header = new Header() }, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshotCache, new Block { Header = new Header() }, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             NativeContract.ContractManagement.OnPersistAsync(engine);
         }
 
         [TestMethod]
         public void Check_Default()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -57,7 +57,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetAttributeFee()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Fake blockchain
             Block block = new()
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetFeePerByte()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Fake blockchain
 
@@ -155,7 +155,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetBaseExecFee()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Fake blockchain
 
@@ -205,7 +205,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetStoragePrice()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Fake blockchain
 
@@ -255,7 +255,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_BlockAccount()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Fake blockchain
 
@@ -311,7 +311,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_Block_UnblockAccount()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Fake blockchain
 

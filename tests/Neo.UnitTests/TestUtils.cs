@@ -25,6 +25,7 @@ using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -46,53 +47,6 @@ namespace Neo.UnitTests
             byte[] data = new byte[20];
             TestRandom.NextBytes(data);
             return new UInt160(data);
-        }
-
-        public static ContractManifest CreateDefaultManifest()
-        {
-            return new ContractManifest()
-            {
-                Name = "testManifest",
-                Groups = new ContractGroup[0],
-                SupportedStandards = Array.Empty<string>(),
-                Abi = new ContractAbi()
-                {
-                    Events = new ContractEventDescriptor[0],
-                    Methods = new[]
-                    {
-                        new ContractMethodDescriptor
-                        {
-                            Name = "testMethod",
-                            Parameters = new ContractParameterDefinition[0],
-                            ReturnType = ContractParameterType.Void,
-                            Offset = 0,
-                            Safe = true
-                        }
-                    }
-                },
-                Permissions = new[] { ContractPermission.DefaultPermission },
-                Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
-                Extra = null
-            };
-        }
-
-        public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
-        {
-            ContractManifest manifest = CreateDefaultManifest();
-            manifest.Abi.Methods = new ContractMethodDescriptor[]
-            {
-                new ContractMethodDescriptor()
-                {
-                    Name = method,
-                    Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
-                    {
-                        Name = $"p{i}",
-                        Type = p
-                    }).ToArray(),
-                    ReturnType = returnType
-                }
-            };
-            return manifest;
         }
 
         public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key = null)
@@ -130,97 +84,6 @@ namespace Neo.UnitTests
             return new NEP6Wallet(null, password, TestProtocolSettings.Default, wallet);
         }
 
-        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, WalletAccount account)
-        {
-            return CreateValidTx(snapshot, wallet, account.ScriptHash, (uint)new Random().Next());
-        }
-
-        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
-        {
-            var tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
-                {
-                    new TransferOutput()
-                    {
-                        AssetId = NativeContract.GAS.Hash,
-                        ScriptHash = account,
-                        Value = new BigDecimal(BigInteger.One,8)
-                    }
-                },
-                account);
-
-            tx.Nonce = nonce;
-
-            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            Assert.IsNull(data.GetSignatures(tx.Sender));
-            Assert.IsTrue(wallet.Sign(data));
-            Assert.IsTrue(data.Completed);
-            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count());
-
-            tx.Witnesses = data.GetWitnesses();
-            return tx;
-        }
-
-
-        public static Transaction GetTransaction(UInt160 sender)
-        {
-            return new Transaction
-            {
-                Script = new byte[] { (byte)OpCode.PUSH2 },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new[]{ new Signer()
-                {
-                    Account = sender,
-                    Scopes = WitnessScope.CalledByEntry,
-                    AllowedContracts = Array.Empty<UInt160>(),
-                    AllowedGroups = Array.Empty<ECPoint>(),
-                    Rules = Array.Empty<WitnessRule>(),
-                } },
-                Witnesses = new Witness[]{ new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                } }
-            };
-        }
-
-        public static ContractState GetContract(string method = "test", int parametersCount = 0)
-        {
-            NefFile nef = new()
-            {
-                Compiler = "",
-                Source = "",
-                Tokens = Array.Empty<MethodToken>(),
-                Script = new byte[] { 0x01, 0x01, 0x01, 0x01 }
-            };
-            nef.CheckSum = NefFile.ComputeChecksum(nef);
-            return new ContractState
-            {
-                Id = 0x43000000,
-                Nef = nef,
-                Hash = nef.Script.Span.ToScriptHash(),
-                Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
-            };
-        }
-
-        internal static ContractState GetContract(byte[] script, ContractManifest manifest = null)
-        {
-            NefFile nef = new()
-            {
-                Compiler = "",
-                Source = "",
-                Tokens = Array.Empty<MethodToken>(),
-                Script = script
-            };
-            nef.CheckSum = NefFile.ComputeChecksum(nef);
-            return new ContractState
-            {
-                Id = 1,
-                Hash = script.ToScriptHash(),
-                Nef = nef,
-                Manifest = manifest ?? CreateDefaultManifest()
-            };
-        }
-
         internal static StorageItem GetStorageItem(byte[] value)
         {
             return new StorageItem
@@ -247,24 +110,13 @@ namespace Neo.UnitTests
             }, new StorageItem(value));
         }
 
-        public static Transaction CreateRandomHashTransaction()
+        public static void FillMemoryPool(DataCache snapshot, NeoSystem system, NEP6Wallet wallet, WalletAccount account)
         {
-            var randomBytes = new byte[16];
-            TestRandom.NextBytes(randomBytes);
-            return new Transaction
+            for (int i = 0; i < system.Settings.MemoryPoolMaxTransactions; i++)
             {
-                Script = randomBytes,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new byte[0]
-                    }
-                }
-            };
+                var tx = CreateValidTx(snapshot, wallet, account);
+                system.MemPool.TryAdd(tx, snapshot);
+            }
         }
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable
