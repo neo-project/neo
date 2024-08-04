@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Helper.cs file belongs to the neo project and is free
+// ContractParameterExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.VM.Types;
 using System;
@@ -19,12 +18,9 @@ using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.VM
+namespace Neo.Extensions
 {
-    /// <summary>
-    /// A helper class related to NeoVM.
-    /// </summary>
-    public static class Helper
+    public static class ContractParameterExtensions
     {
         /// <summary>
         /// Converts the <see cref="ContractParameter"/> to a <see cref="StackItem"/>.
@@ -45,7 +41,7 @@ namespace Neo.VM
             {
                 case ContractParameterType.Array:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
                     if (stackItem is null)
@@ -56,7 +52,7 @@ namespace Neo.VM
                     break;
                 case ContractParameterType.Map:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
                     if (stackItem is null)
