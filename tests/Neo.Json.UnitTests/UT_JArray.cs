@@ -252,7 +252,7 @@ namespace Neo.Json.UnitTests
                 bob,
             };
             var s = jArray.AsString();
-            Assert.AreEqual(s, "{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}");
+            Assert.AreEqual(s, "[{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
         }
 
         [TestMethod]
@@ -329,8 +329,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAddNull()
         {
-            var jArray = new JArray();
-            jArray.Add(null);
+            var jArray = new JArray { null };
 
             jArray.Count.Should().Be(1);
             jArray[0].Should().BeNull();
@@ -392,6 +391,31 @@ namespace Neo.Json.UnitTests
 
             jObjects[0].Should().BeNull();
             jObjects[1].Should().Be(alice);
+        }
+
+        [TestMethod]
+        public void TestToStringWithNull()
+        {
+            var jArray = new JArray { null, alice, bob };
+            var jsonString = jArray.ToString();
+            var asString = jArray.AsString();
+            // JSON string should properly represent the null value
+            jsonString.Should().Be("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
+            asString.Should().Be("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
+        }
+
+        [TestMethod]
+        public void TestFromStringWithNull()
+        {
+            var jsonString = "[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]";
+            var jArray = (JArray)JArray.Parse(jsonString);
+
+            jArray.Count.Should().Be(3);
+            jArray[0].Should().BeNull();
+
+            // Checking the second and third elements
+            jArray[1]["name"].AsString().Should().Be("alice");
+            jArray[2]["name"].AsString().Should().Be("bob");
         }
     }
 }
