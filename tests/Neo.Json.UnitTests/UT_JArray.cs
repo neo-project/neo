@@ -325,5 +325,73 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray();
             jArray.IsReadOnly.Should().BeFalse();
         }
+
+        [TestMethod]
+        public void TestAddNull()
+        {
+            var jArray = new JArray();
+            jArray.Add(null);
+
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestSetNull()
+        {
+            var jArray = new JArray { alice };
+            jArray[0] = null;
+
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestInsertNull()
+        {
+            var jArray = new JArray { alice };
+            jArray.Insert(0, null);
+
+            jArray.Count.Should().Be(2);
+            jArray[0].Should().BeNull();
+            jArray[1].Should().Be(alice);
+        }
+
+        [TestMethod]
+        public void TestRemoveNull()
+        {
+            var jArray = new JArray { null, alice };
+            jArray.Remove(null);
+
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().Be(alice);
+        }
+
+        [TestMethod]
+        public void TestContainsNull()
+        {
+            var jArray = new JArray { null, alice };
+            jArray.Contains(null).Should().BeTrue();
+            jArray.Contains(bob).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestIndexOfNull()
+        {
+            var jArray = new JArray { null, alice };
+            jArray.IndexOf(null).Should().Be(0);
+            jArray.IndexOf(alice).Should().Be(1);
+        }
+
+        [TestMethod]
+        public void TestCopyToWithNull()
+        {
+            var jArray = new JArray { null, alice };
+            JObject[] jObjects = new JObject[2];
+            jArray.CopyTo(jObjects, 0);
+
+            jObjects[0].Should().BeNull();
+            jObjects[1].Should().Be(alice);
+        }
     }
 }
