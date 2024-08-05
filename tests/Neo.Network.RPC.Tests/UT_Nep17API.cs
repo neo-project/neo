@@ -20,7 +20,6 @@ using Neo.Wallets;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
-using static Neo.Extensions.HashSetExtensions;
 
 namespace Neo.Network.RPC.Tests
 {
