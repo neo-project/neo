@@ -261,17 +261,70 @@ namespace Neo.Plugins.RpcServer
         private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
-            JToken @params = request["params"] ?? new JArray();
+            var @params = request["params"] ?? new JArray();
             if (!request.ContainsProperty("method") || @params is not JArray)
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidRequest);
             }
-            JObject response = CreateResponse(request["id"]);
+
+            var parameters = (JArray)@params;
+            var pa = parameters[0];
+
+            var response = CreateResponse(request["id"]);
             try
             {
-                string method = request["method"].AsString();
+                var method = request["method"].AsString();
                 (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
                 methods.TryGetValue(method, out var func).True_Or(RpcErrorFactory.MethodNotFound(method));
+                var paramInfos = func.Method.GetParameters();
+                var args = new object[paramInfos.Length];
+
+                for (var i = 0; i < paramInfos.Length; i++)
+                {
+                    var param = paramInfos[i];
+
+
+                    if (parameters.Count > i && parameters[i] != null && parameters[i].Type != JTokenType.Null)
+                    {
+                        try
+                        {
+                            args[i] = ConvertParameter(parameters[i], param.ParameterType);
+                        }
+                        catch (Exception e)
+                        {
+                            // 如果转换失败，检查参数是否可选或有默认值
+                            if (param.IsOptional)
+                            {
+                                args[i] = param.DefaultValue;
+                            }
+                            else
+                            {
+                                // 如果参数不是可选的，且转换失败，则抛出异常
+                                throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // 如果参数未提供
+                        if (param.IsOptional)
+                        {
+                            // 如果参数是可选的，使用默认值
+                            args[i] = param.DefaultValue;
+                        }
+                        else if (param.ParameterType.IsValueType && Nullable.GetUnderlyingType(param.ParameterType) == null)
+                        {
+                            // 如果参数是非可空值类型，且未提供值，抛出异常
+                            throw new ArgumentException($"Required parameter '{param.Name}' is missing");
+                        }
+                        else
+                        {
+                            // 对于引用类型或可空值类型，设置为 null
+                            args[i] = null;
+                        }
+                    }
+                }
+
                 response["result"] = func((JArray)@params) switch
                 {
                     JToken result => result,
@@ -308,5 +361,45 @@ namespace Neo.Plugins.RpcServer
                 methods[name] = method.CreateDelegate<Func<JArray, object>>(handler);
             }
         }
+
+        private string GetJsonPropertyName(ParameterInfo param)
+        {
+            var attr = param.GetCustomAttribute<JsonPropertyNameAttribute>();
+            return attr != null ? attr.Name : param.Name;
+        }
+
+
+        private object ConvertParameter(JToken token, Type targetType)
+        {
+            if (targetType == typeof(string))
+            {
+                return token.ToString();
+            }
+            else if (targetType == typeof(int))
+            {
+                return token.Value<int>();
+            }
+            else if (targetType == typeof(long))
+            {
+                return token.Value<long>();
+            }
+            else if (targetType == typeof(double))
+            {
+                return token.Value<double>();
+            }
+            else if (targetType == typeof(bool))
+            {
+                return token.Value<bool>();
+            }
+            else if (targetType == typeof(UInt160))
+            {
+                return UInt160.Parse(token.ToString());
+            }
+            // 添加其他类型的转换...
+
+            // 如果是复杂类型，可以使用 JSON 反序列化
+            return token.ToObject(targetType);
+        }
+
     }
 }
