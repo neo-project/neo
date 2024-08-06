@@ -11,7 +11,7 @@
 
 using System.Data.Common;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     public class LevelDBException : DbException
     {
