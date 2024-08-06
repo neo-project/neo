@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.ObjectPool;
-using NamedPipeService;
 using Neo.Plugins.Configuration;
 using System;
 using System.Buffers;

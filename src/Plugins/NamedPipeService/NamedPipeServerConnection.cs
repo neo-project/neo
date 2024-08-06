@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using NamedPipeService;
 using Neo.Plugins.Models;
 using System;
 using System.IO.Pipelines;

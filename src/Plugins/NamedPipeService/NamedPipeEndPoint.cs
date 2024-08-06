@@ -12,7 +12,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
-namespace NamedPipeService
+namespace Neo.Plugins
 {
     internal class NamedPipeEndPoint(
         string pipeName,
