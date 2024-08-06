@@ -80,9 +80,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RpcClient", "src\Plugins\Rp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Plugins.ApplicationLogs.Tests", "tests\Neo.Plugins.ApplicationLogs.Tests\Neo.Plugins.ApplicationLogs.Tests.csproj", "{8C866DC8-2E55-4399-9563-2F47FD4602EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Tests", "tests\Neo.Extensions.Tests\Neo.Extensions.Tests.csproj", "{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Extensions.Tests", "tests\Neo.Extensions.Tests\Neo.Extensions.Tests.csproj", "{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamedPipeService", "src\Plugins\NamedPipeService\NamedPipeService.csproj", "{DACD4CFA-3D24-4329-A1D3-D5EE9E268CE3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NamedPipeService", "src\Plugins\NamedPipeService\NamedPipeService.csproj", "{DACD4CFA-3D24-4329-A1D3-D5EE9E268CE3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Plugins.NamedPipeService.Tests", "tests\Neo.Plugins.NamedPipeService.Tests\Neo.Plugins.NamedPipeService.Tests.csproj", "{38599EC3-D97C-408C-BD3B-E712831955D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -234,6 +236,10 @@ Global
 		{DACD4CFA-3D24-4329-A1D3-D5EE9E268CE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DACD4CFA-3D24-4329-A1D3-D5EE9E268CE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DACD4CFA-3D24-4329-A1D3-D5EE9E268CE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38599EC3-D97C-408C-BD3B-E712831955D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38599EC3-D97C-408C-BD3B-E712831955D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38599EC3-D97C-408C-BD3B-E712831955D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38599EC3-D97C-408C-BD3B-E712831955D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -276,6 +282,7 @@ Global
 		{8C866DC8-2E55-4399-9563-2F47FD4602EC} = {7F257712-D033-47FF-B439-9D4320D06599}
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{DACD4CFA-3D24-4329-A1D3-D5EE9E268CE3} = {C2DC830A-327A-42A7-807D-295216D30DBB}
+		{38599EC3-D97C-408C-BD3B-E712831955D0} = {7F257712-D033-47FF-B439-9D4320D06599}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
