@@ -14,7 +14,7 @@ using System.Globalization;
 
 namespace Neo.Extensions
 {
-    public static class StringExtensdions
+    public static class StringExtensions
     {
         /// <summary>
         /// Converts a hex <see cref="string"/> to byte array.
