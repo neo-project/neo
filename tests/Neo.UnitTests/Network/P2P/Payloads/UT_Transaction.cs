@@ -580,7 +580,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // expects FAULT on execution of 'transfer' Application script
             // due to lack of a valid witness validation
             Transaction tx = null;
-            Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            var exception = Assert.ThrowsException<WalletException>(() => tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ExecutionFault);
             Assert.IsNull(tx);
         }
 
@@ -711,7 +712,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // expects FAULT on execution of 'transfer' Application script
             // due to lack of a valid witness validation
             Transaction tx = null;
-            Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers, attributes));
+            var exception = Assert.ThrowsException<WalletException>(() => tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers, attributes));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ExecutionFault);
             Assert.IsNull(tx);
         }
 
@@ -761,7 +763,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // expects ArgumentException on execution of 'CalculateNetworkFee' due to
             // null witness_script (no account in the wallet, no corresponding witness
             // and no verification contract for the signer)
-            Assert.ThrowsException<ArgumentException>(() => walletWithoutAcc.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            var exception = Assert.ThrowsException<WalletException>(() => walletWithoutAcc.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ContractNotFound);
             Assert.IsNull(tx);
         }
 
@@ -1016,7 +1019,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     Scopes =  WitnessScope.None
                 } };
 
-            Assert.ThrowsException<InvalidOperationException>(() => wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            var exception = Assert.ThrowsException<WalletException>(() => wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            Assert.AreEqual(exception.ErrorType, WalletErrorType.ExecutionFault);
 
             // change to global scope
             signers[0].Scopes = WitnessScope.Global;
