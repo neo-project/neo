@@ -44,7 +44,7 @@ namespace Neo.Plugins.Storage
             return new Snapshot(db);
         }
 
-        public void Put(byte[] key, byte[] value)
+        public virtual void Put(byte[] key, byte[] value)
         {
             db.Put(WriteOptions.Default, key, value);
         }
