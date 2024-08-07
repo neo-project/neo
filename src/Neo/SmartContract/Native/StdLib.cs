@@ -169,7 +169,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="s">The base58 <see cref="string"/>.</param>
         /// <returns>The decoded byte array.</returns>
-        [ContractMethod(CpuFee = 1 << 16)]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 16)]
         public static byte[] Base58CheckDecode([MaxLength(MaxInputLength)] string s)
         {
             return Base58.Base58CheckDecode(s);
@@ -180,7 +180,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="data">The byte array to be encoded.</param>
         /// <returns>The encoded base64Url string.</returns>
-        [ContractMethod(CpuFee = 1 << 5)]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 5)]
         public static string Base64UrlEncode([MaxLength(MaxInputLength)] byte[] data)
         {
             string base64 = Convert.ToBase64String(data);
