@@ -24,7 +24,7 @@ namespace Neo.VM.Types
         /// <summary>
         /// The reference counter used to count the items in the VM object.
         /// </summary>
-        protected readonly ReferenceCounter? ReferenceCounter;
+        protected internal readonly ReferenceCounter? ReferenceCounter;
 
         /// <summary>
         /// Create a new <see cref="CompoundType"/> with the specified reference counter.

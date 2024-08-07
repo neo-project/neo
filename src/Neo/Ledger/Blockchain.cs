@@ -16,6 +16,7 @@ using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -24,6 +25,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Ledger
 {
@@ -468,16 +470,66 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                Committing?.Invoke(system, block, snapshot, all_application_executed);
+                InvokeCommitting(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
-            Committed?.Invoke(system, block);
+            InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             if (system.HeaderCache.TryRemoveFirst(out Header header))
                 Debug.Assert(header.Index == block.Index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        {
+            InvokeHandlers(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeCommitted(NeoSystem system, Block block)
+        {
+            InvokeHandlers(Committed?.GetInvocationList(), h => ((CommittedHandler)h)(system, block));
+        }
+
+        private static void InvokeHandlers(Delegate[] handlers, Action<Delegate> handlerAction)
+        {
+            if (handlers == null) return;
+
+            foreach (var handler in handlers)
+            {
+                try
+                {
+                    // skip stopped plugin.
+                    if (handler.Target is Plugin { IsStopped: true })
+                    {
+                        continue;
+                    }
+
+                    handlerAction(handler);
+                }
+                catch (Exception ex) when (handler.Target is Plugin plugin)
+                {
+                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case UnhandledExceptionPolicy.StopNode:
+                            throw;
+                        case UnhandledExceptionPolicy.StopPlugin:
+                            //Stop plugin on exception
+                            plugin.IsStopped = true;
+                            break;
+                        case UnhandledExceptionPolicy.Ignore:
+                            // Log the exception and continue with the next handler
+                            break;
+                        default:
+                            throw new InvalidCastException(
+                                $"The exception policy {plugin.ExceptionPolicy} is not valid.");
+                    }
+                }
+            }
         }
 
         /// <summary>
