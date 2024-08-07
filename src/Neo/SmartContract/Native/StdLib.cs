@@ -175,6 +175,35 @@ namespace Neo.SmartContract.Native
             return Base58.Base58CheckDecode(s);
         }
 
+        /// <summary>
+        /// Encodes a byte array into a base64Url string.
+        /// </summary>
+        /// <param name="data">The byte array to be encoded.</param>
+        /// <returns>The encoded base64Url string.</returns>
+        [ContractMethod(CpuFee = 1 << 5)]
+        public static string Base64UrlEncode([MaxLength(MaxInputLength)] byte[] data)
+        {
+            string base64 = Convert.ToBase64String(data);
+            return base64.TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        }
+
+        /// <summary>
+        /// Decodes a byte array from a base64Url string.
+        /// </summary>
+        /// <param name="s">The base64Url string.</param>
+        /// <returns>The decoded byte array.</returns>
+        [ContractMethod(CpuFee = 1 << 5)]
+        public static byte[] Base64UrlDecode([MaxLength(MaxInputLength)] string s)
+        {
+            var padded = s.Replace('-', '+').Replace('_', '/');
+            switch (padded.Length % 4)
+            {
+                case 2: padded += "=="; break;
+                case 3: padded += "="; break;
+            }
+            return Convert.FromBase64String(padded);
+        }
+
         [ContractMethod(CpuFee = 1 << 5)]
         private static int MemoryCompare([MaxLength(MaxInputLength)] byte[] str1, [MaxLength(MaxInputLength)] byte[] str2)
         {
