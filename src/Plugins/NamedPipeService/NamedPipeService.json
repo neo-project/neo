@@ -1,6 +1,6 @@
 {
   "PluginConfiguration": {
-    "Network": 860833102,
-    "PipeName": "NeoPipe"
+    "PipeName": "NeoNodeService",
+    "PipeCount": 1
   }
 }
