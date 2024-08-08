@@ -414,18 +414,16 @@ namespace Neo.UnitTests.SmartContract.Native
             using (var script = new ScriptBuilder())
             {
                 // Test encoding
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlEncode", new byte[] { 1, 2, 3, 4 });
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "AQIDBA");
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlEncode", new byte[] { 251, 252, 253, 254, 255 });
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlEncode", "Subject=test@example.com&Issuer=https://example.com");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t");
 
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(3, engine.ResultStack.Count);
-                Assert.AreEqual("-_z9_v8", engine.ResultStack.Pop<ByteString>().GetString());
-                CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
-                Assert.AreEqual("AQIDBA", engine.ResultStack.Pop<ByteString>().GetString());
+                Assert.AreEqual(2, engine.ResultStack.Count);
+                Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
+                Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
             }
         }
     }

@@ -11,6 +11,7 @@
 
 #pragma warning disable IDE0051
 
+using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
 using Neo.Json;
 using Neo.VM.Types;
@@ -134,30 +135,23 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Encodes a byte array into a base64Url string.
         /// </summary>
-        /// <param name="data">The byte array to be encoded.</param>
+        /// <param name="data">The base64Url to be encoded.</param>
         /// <returns>The encoded base64Url string.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 5)]
-        public static string Base64UrlEncode([MaxLength(MaxInputLength)] byte[] data)
+        public static string Base64UrlEncode([MaxLength(MaxInputLength)] string data)
         {
-            string base64 = Convert.ToBase64String(data);
-            return base64.TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            return Base64UrlEncoder.Encode(data);
         }
 
         /// <summary>
         /// Decodes a byte array from a base64Url string.
         /// </summary>
         /// <param name="s">The base64Url string.</param>
-        /// <returns>The decoded byte array.</returns>
+        /// <returns>The decoded base64Url string.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 5)]
-        public static byte[] Base64UrlDecode([MaxLength(MaxInputLength)] string s)
+        public static string Base64UrlDecode([MaxLength(MaxInputLength)] string s)
         {
-            var padded = s.Replace('-', '+').Replace('_', '/');
-            switch (padded.Length % 4)
-            {
-                case 2: padded += "=="; break;
-                case 3: padded += "="; break;
-            }
-            return Convert.FromBase64String(padded);
+            return Base64UrlEncoder.Decode(s);
         }
 
         /// <summary>
