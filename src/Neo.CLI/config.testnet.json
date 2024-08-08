@@ -39,7 +39,7 @@
       "HF_Basilisk": 2680000,
       "HF_Cockatrice": 3967000,
       "HF_Domovoi": 4144000,
-      "HF_Echidna": 0
+      "HF_Echidna": 4144001
     },
     "InitialGasDistribution": 5200000000000000,
     "ValidatorsCount": 7,
