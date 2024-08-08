@@ -81,6 +81,24 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestActiveDeprecatedInRoleManagement()
+        {
+            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Echidna\": 20");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            File.Delete(file);
+
+            var before = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 19);
+            var after = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 20);
+
+            Assert.AreEqual(2, before.Manifest.Abi.Events[0].Parameters.Length);
+            Assert.AreEqual(1, before.Manifest.Abi.Events.Length);
+            Assert.AreEqual(4, after.Manifest.Abi.Events[0].Parameters.Length);
+            Assert.AreEqual(1, after.Manifest.Abi.Events.Length);
+        }
+
+        [TestMethod]
         public void TestGetContract()
         {
             Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Hash));
