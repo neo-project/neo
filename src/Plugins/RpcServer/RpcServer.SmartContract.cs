@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -189,7 +190,7 @@ namespace Neo.Plugins.RpcServer
 
             // Validate format
 
-            _ = IO.Helper.ToByteArray(ret).AsSerializableArray<Signer>();
+            _ = ret.ToByteArray().AsSerializableArray<Signer>();
 
             return ret;
         }
