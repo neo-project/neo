@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
@@ -30,7 +31,14 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// </summary>
         public WitnessCondition[] Expressions;
 
-        public override int Size => base.Size + Expressions.GetVarSize();
+        public override int Size
+        {
+            get
+            {
+                return base.Size + Expressions.GetVarSize();
+            }
+        }
+
         public override WitnessConditionType Type => WitnessConditionType.Or;
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
