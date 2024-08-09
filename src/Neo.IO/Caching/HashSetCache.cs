@@ -15,7 +15,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
+    internal class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
         /// <summary>
         /// Sets where the Hashes are stored
