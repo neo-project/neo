@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
@@ -34,6 +35,6 @@ namespace Neo.Plugins
             other.PipeName == PipeName;
 
         public override int GetHashCode() =>
-            ServerName.GetHashCode() ^ PipeName.GetHashCode();
+            HashCode.Combine(ServerName, PipeName);
     }
 }
