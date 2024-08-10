@@ -1,6 +1,6 @@
 {
   "PluginConfiguration": {
     "PipeName": "NeoNodeService",
-    "PipeCount": 1
+    "PipeCount": 4
   }
 }

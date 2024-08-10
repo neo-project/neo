@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Plugins.Configuration;
+using System;
 
 namespace Neo.Plugins
 {
@@ -18,29 +19,27 @@ namespace Neo.Plugins
     {
         public NamedPipeEndPoint PipeName { get; private init; }
 
-        public int PipeCount { get; private init; }
-
         public NamedPipeServerTransportOptions TransportOptions { get; private init; }
 
         public static NamedPipeServiceSettings Default { get; private set; } = new()
         {
             PipeName = new("NeoNodeService"),
-            PipeCount = 1,
-            TransportOptions = new()
+            TransportOptions = new(),
         };
 
         public NamedPipeServiceSettings()
         {
             PipeName = Default.PipeName;
-            PipeCount = Default.PipeCount;
             TransportOptions = Default.TransportOptions;
         }
 
         private NamedPipeServiceSettings(IConfigurationSection section)
         {
             PipeName = section.GetValue(nameof(PipeName), Default.PipeName)!;
-            PipeCount = section.GetValue(nameof(PipeCount), Default.PipeCount);
-            TransportOptions = Default.TransportOptions;
+            TransportOptions = new()
+            {
+                ListenerQueueCount = Math.Min(section.GetValue("PipeCount", Environment.ProcessorCount), 16),
+            };
         }
 
         public static NamedPipeServiceSettings Load(IConfigurationSection section) =>
