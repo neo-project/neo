@@ -20,7 +20,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
     [TestClass]
     public class UT_NamedPipeConnectionListener
     {
-        private static readonly IPipeMessage s_testPipeMessage = PipeMessage.Create(1, PipeCommand.Nack, PipeMessage.Null);
+        private static readonly IPipeMessage s_testPipeMessage = PipeMessage.Create(1, PipeCommand.NAck, PipeMessage.Null);
 
         [TestMethod]
         public async Task BidirectionalStream_ServerReadsDataAndCompletes_GracefullyClosed()

@@ -36,7 +36,7 @@ namespace Neo.Plugins.Models
         public PipeMessage()
         {
             Payload = new PipeNullPayload();
-            Command = PipeCommand.Nack;
+            Command = PipeCommand.NAck;
         }
 
         static PipeMessage()

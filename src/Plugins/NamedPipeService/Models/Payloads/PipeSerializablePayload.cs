@@ -23,7 +23,7 @@ namespace Neo.Plugins.Models.Payloads
 
         public int Size =>
             sizeof(int) +         // Array length
-            Value?.Size ?? 0;     // Block size in bytes
+            (Value?.Size ?? 0);     // Block size in bytes
 
         public void FromArray(byte[] buffer)
         {

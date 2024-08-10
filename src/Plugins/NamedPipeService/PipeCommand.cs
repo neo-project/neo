@@ -28,10 +28,16 @@ namespace Neo.Plugins
         [PipeProtocol(typeof(PipeSerializablePayload<Block>))]
         Block = 0x03,
 
+        [PipeProtocol(typeof(PipeSerializablePayload<UInt256>))]
+        GetTransaction = 0x04,
+
+        [PipeProtocol(typeof(PipeSerializablePayload<Transaction>))]
+        Transaction = 0x05,
+
         [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xe0,
 
         [PipeProtocol(typeof(PipeNullPayload))]
-        Nack = 0xf0, // NULL ACK
+        NAck = 0xf0, // NULL ACK
     }
 }
