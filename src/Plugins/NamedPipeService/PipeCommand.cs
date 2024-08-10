@@ -9,12 +9,25 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Network.P2P.Payloads;
 using Neo.Plugins.Models.Payloads;
 
 namespace Neo.Plugins
 {
     internal enum PipeCommand : byte
     {
+        [PipeProtocol(typeof(PipeNullPayload))]
+        GetBlockHeight = 0x00,
+
+        [PipeProtocol(typeof(PipeUnmanagedPayload<uint>))]
+        BlockHeight = 0x01,
+
+        [PipeProtocol(typeof(PipeUnmanagedPayload<uint>))]
+        GetBlock = 0x02,
+
+        [PipeProtocol(typeof(PipeSerializablePayload<Block>))]
+        Block = 0x03,
+
         [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xe0,
 

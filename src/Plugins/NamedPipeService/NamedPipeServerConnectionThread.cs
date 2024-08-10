@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Plugins
 {
-    internal sealed class NamedPipeServerConnectionThread(
+    internal sealed partial class NamedPipeServerConnectionThread(
         NeoSystem system,
         NamedPipeServerConnection connection) : IThreadPoolWorkItem, IAsyncDisposable
     {
@@ -71,6 +71,8 @@ namespace Neo.Plugins
         {
             var responseMessage = message.Command switch
             {
+                PipeCommand.GetBlockHeight => OnBlockHeight(message),
+                PipeCommand.GetBlock => OnBlock(message),
                 _ => CreateErrorResponse(message.RequestId, new InvalidDataException()),
             };
 
