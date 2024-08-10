@@ -35,6 +35,6 @@ namespace Neo.Plugins
             other.PipeName == PipeName;
 
         public override int GetHashCode() =>
-            HashCode.Combine(ServerName, PipeName);
+            HashCode.Combine(ServerName.GetHashCode(), PipeName.GetHashCode());
     }
 }
