@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.BLS12_381;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -45,11 +46,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestG1()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
@@ -59,11 +60,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestG2()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g2);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
@@ -73,11 +74,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestNotG1()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", not_g1);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.FAULT, engine.Execute());
         }
@@ -85,18 +86,18 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestNotG2()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", not_g2);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.FAULT, engine.Execute());
         }
         [TestMethod]
         public void TestBls12381Add()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", gt);
@@ -107,7 +108,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitPush(NativeContract.CryptoLib.Hash);
             script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
@@ -119,7 +120,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var data = new byte[32];
             data[0] = 0x03;
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using (ScriptBuilder script = new())
             {
                 script.EmitPush(false);
@@ -132,7 +133,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitPush(NativeContract.CryptoLib.Hash);
                 script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 var result = engine.ResultStack.Pop();
@@ -150,7 +151,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitPush(NativeContract.CryptoLib.Hash);
                 script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 var result = engine.ResultStack.Pop();
@@ -161,7 +162,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBls12381Pairing()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g2);
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
@@ -172,7 +173,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitPush(NativeContract.CryptoLib.Hash);
             script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
@@ -182,7 +183,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Bls12381Equal()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g1);
@@ -193,7 +194,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitPush(NativeContract.CryptoLib.Hash);
             script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
@@ -211,7 +212,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var data = new byte[32];
             data[0] = 0x03;
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             using (ScriptBuilder script = new())
             {
                 script.EmitPush(negative);
@@ -224,7 +225,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitPush(NativeContract.CryptoLib.Hash);
                 script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 var result = engine.ResultStack.Pop();
@@ -506,16 +507,16 @@ namespace Neo.UnitTests.SmartContract.Native
 
             tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             // Create fake balance to pay the fees.
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             _ = NativeContract.GAS.Mint(engine, acc, 5_0000_0000, false);
-            snapshot.Commit();
+            snapshotCache.Commit();
 
             var txVrfContext = new TransactionVerificationContext();
             var conflicts = new List<Transaction>();
-            tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, txVrfContext, conflicts).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, txVrfContext, conflicts).Should().Be(VerifyResult.Succeed);
 
             // The resulting witness verification cost is 2154270   * 10e-8GAS.
             // The resulting witness Invocation script (66 bytes length):
@@ -534,19 +535,19 @@ namespace Neo.UnitTests.SmartContract.Native
             // NEO-VM 0 > ops
             // INDEX    OPCODE       PARAMETER
             // 0        PUSHINT8     122 (7a)    <<
-            // 2        SWAP         
+            // 2        SWAP
             // 3        PUSHDATA1    02fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5
             // 38       SYSCALL      System.Runtime.GetNetwork (c5fba0e0)
             // 43       PUSHINT64    4294967296 (0000000001000000)
-            // 52       ADD          
-            // 53       PUSH4        
-            // 54       LEFT         
+            // 52       ADD
+            // 53       PUSH4
+            // 54       LEFT
             // 55       SYSCALL      System.Runtime.GetScriptContainer (2d510830)
-            // 60       PUSH0        
-            // 61       PICKITEM     
-            // 62       CAT          
-            // 63       PUSH4        
-            // 64       PACK         
+            // 60       PUSH0
+            // 61       PICKITEM
+            // 62       CAT
+            // 63       PUSH4
+            // 64       PACK
             // 65       PUSH0
             // 66       PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
             // 83       PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
@@ -563,17 +564,17 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestVerifyWithECDsa_CustomTxWitness_MultiSig()
         {
-            byte[] privkey1 = "b2dde592bfce654ef03f1ceea452d2b0112e90f9f52099bcd86697a2bd0a2b60".HexToBytes();
-            ECPoint pubKey1 = ECPoint.Parse("040486468683c112125978ffe876245b2006bfe739aca8539b67335079262cb27ad0dedc9e5583f99b61c6f46bf80b97eaec3654b87add0e5bd7106c69922a229d", ECCurve.Secp256k1);
-            byte[] privkey2 = "b9879e26941872ee6c9e6f01045681496d8170ed2cc4a54ce617b39ae1891b3a".HexToBytes();
-            ECPoint pubKey2 = ECPoint.Parse("040d26fc2ad3b1aae20f040b5f83380670f8ef5c2b2ac921ba3bdd79fd0af0525177715fd4370b1012ddd10579698d186ab342c223da3e884ece9cab9b6638c7bb", ECCurve.Secp256k1);
-            byte[] privkey3 = "4e1fe2561a6da01ee030589d504d62b23c26bfd56c5e07dfc9b8b74e4602832a".HexToBytes();
-            ECPoint pubKey3 = ECPoint.Parse("047b4e72ae854b6a0955b3e02d92651ab7fa641a936066776ad438f95bb674a269a63ff98544691663d91a6cfcd215831f01bfb7a226363a6c5c67ef14541dba07", ECCurve.Secp256k1);
-            byte[] privkey4 = "6dfd066bb989d3786043aa5c1f0476215d6f5c44f5fc3392dd15e2599b67a728".HexToBytes();
-            ECPoint pubKey4 = ECPoint.Parse("04b62ac4c8a352a892feceb18d7e2e3a62c8c1ecbaae5523d89d747b0219276e225be2556a137e0e806e4915762d816cdb43f572730d23bb1b1cba750011c4edc6", ECCurve.Secp256k1);
+            var privkey1 = "b2dde592bfce654ef03f1ceea452d2b0112e90f9f52099bcd86697a2bd0a2b60".HexToBytes();
+            var pubKey1 = ECPoint.Parse("040486468683c112125978ffe876245b2006bfe739aca8539b67335079262cb27ad0dedc9e5583f99b61c6f46bf80b97eaec3654b87add0e5bd7106c69922a229d", ECCurve.Secp256k1);
+            var privkey2 = "b9879e26941872ee6c9e6f01045681496d8170ed2cc4a54ce617b39ae1891b3a".HexToBytes();
+            var pubKey2 = ECPoint.Parse("040d26fc2ad3b1aae20f040b5f83380670f8ef5c2b2ac921ba3bdd79fd0af0525177715fd4370b1012ddd10579698d186ab342c223da3e884ece9cab9b6638c7bb", ECCurve.Secp256k1);
+            var privkey3 = "4e1fe2561a6da01ee030589d504d62b23c26bfd56c5e07dfc9b8b74e4602832a".HexToBytes();
+            var pubKey3 = ECPoint.Parse("047b4e72ae854b6a0955b3e02d92651ab7fa641a936066776ad438f95bb674a269a63ff98544691663d91a6cfcd215831f01bfb7a226363a6c5c67ef14541dba07", ECCurve.Secp256k1);
+            var privkey4 = "6dfd066bb989d3786043aa5c1f0476215d6f5c44f5fc3392dd15e2599b67a728".HexToBytes();
+            var pubKey4 = ECPoint.Parse("04b62ac4c8a352a892feceb18d7e2e3a62c8c1ecbaae5523d89d747b0219276e225be2556a137e0e806e4915762d816cdb43f572730d23bb1b1cba750011c4edc6", ECCurve.Secp256k1);
 
-            // Public keys must be sorted, exactly like for standard CreateMultiSigRedeemScript. 
-            var keys = new List<(byte[], ECPoint)>()
+            // Public keys must be sorted, exactly like for standard CreateMultiSigRedeemScript.
+            var keys = new List<(byte[], ECPoint)>
             {
                 (privkey1, pubKey1),
                 (privkey2, pubKey2),
@@ -583,7 +584,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Consider 4 users willing to sign 3/4 multisignature transaction with their Secp256k1 private keys.
             var m = 3;
-            var n = keys.Count();
+            var n = keys.Count;
 
             // Must ensure the following conditions are met before verification script construction:
             n.Should().BeGreaterThan(0);
@@ -607,7 +608,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // 	return sigCnt == m
             // }
 
-            // vrf is a builder of M out of N multisig witness verification script corresponding to the public keys.        
+            // vrf is a builder of M out of N multisig witness verification script corresponding to the public keys.
             using ScriptBuilder vrf = new();
 
             // Start the same way as regular multisig script.
@@ -747,17 +748,21 @@ namespace Neo.UnitTests.SmartContract.Native
 
             tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             // Create fake balance to pay the fees.
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             _ = NativeContract.GAS.Mint(engine, acc, 5_0000_0000, false);
-            snapshot.Commit();
+
+            // We should not use commit here cause once its committed, the value we get from the snapshot can be different
+            // from the underline storage. Thought there isn't any issue triggered here, its wrong to use it this way.
+            // We should either ignore the commit, or get a new snapshot of the store after the commit.
+            // snapshot.Commit();
 
             // Check that witness verification passes.
             var txVrfContext = new TransactionVerificationContext();
             var conflicts = new List<Transaction>();
-            tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, txVrfContext, conflicts).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, txVrfContext, conflicts).Should().Be(VerifyResult.Succeed);
 
             // The resulting witness verification cost for 3/4 multisig is 8389470  * 10e-8GAS. Cost depends on M/N.
             // The resulting witness Invocation script (198 bytes for 3 signatures):
@@ -780,65 +785,65 @@ namespace Neo.UnitTests.SmartContract.Native
             // 36       PUSHDATA1    030d26fc2ad3b1aae20f040b5f83380670f8ef5c2b2ac921ba3bdd79fd0af05251
             // 71       PUSHDATA1    037b4e72ae854b6a0955b3e02d92651ab7fa641a936066776ad438f95bb674a269
             // 106      PUSHDATA1    02b62ac4c8a352a892feceb18d7e2e3a62c8c1ecbaae5523d89d747b0219276e22
-            // 141      PUSH4        
+            // 141      PUSH4
             // 142      INITSLOT     7 local, 0 arg
-            // 145      STLOC5       
-            // 146      LDLOC5       
-            // 147      PACK         
-            // 148      STLOC1       
-            // 149      STLOC6       
-            // 150      DEPTH        
-            // 151      LDLOC6       
+            // 145      STLOC5
+            // 146      LDLOC5
+            // 147      PACK
+            // 148      STLOC1
+            // 149      STLOC6
+            // 150      DEPTH
+            // 151      LDLOC6
             // 152      JMPEQ        155 (3/03)
-            // 154      ABORT        
-            // 155      LDLOC6       
-            // 156      PACK         
-            // 157      STLOC0       
+            // 154      ABORT
+            // 155      LDLOC6
+            // 156      PACK
+            // 157      STLOC0
             // 158      SYSCALL      System.Runtime.GetNetwork (c5fba0e0)
             // 163      PUSHINT64    4294967296 (0000000001000000)
-            // 172      ADD          
-            // 173      PUSH4        
-            // 174      LEFT         
+            // 172      ADD
+            // 173      PUSH4
+            // 174      LEFT
             // 175      SYSCALL      System.Runtime.GetScriptContainer (2d510830)
-            // 180      PUSH0        
-            // 181      PICKITEM     
-            // 182      CAT          
-            // 183      STLOC2       
-            // 184      PUSH0        
-            // 185      STLOC3       
-            // 186      PUSH0        
-            // 187      STLOC4       
-            // 188      LDLOC3       
-            // 189      LDLOC6       
-            // 190      GE           
-            // 191      LDLOC4       
-            // 192      LDLOC5       
-            // 193      GE           
-            // 194      OR           
+            // 180      PUSH0
+            // 181      PICKITEM
+            // 182      CAT
+            // 183      STLOC2
+            // 184      PUSH0
+            // 185      STLOC3
+            // 186      PUSH0
+            // 187      STLOC4
+            // 188      LDLOC3
+            // 189      LDLOC6
+            // 190      GE
+            // 191      LDLOC4
+            // 192      LDLOC5
+            // 193      GE
+            // 194      OR
             // 195      JMPIF        261 (66/42)
             // 197      PUSHINT8     122 (7a)
-            // 199      LDLOC0       
-            // 200      LDLOC3       
-            // 201      PICKITEM     
-            // 202      LDLOC1       
-            // 203      LDLOC4       
-            // 204      PICKITEM     
-            // 205      LDLOC2       
-            // 206      PUSH4        
-            // 207      PACK         
+            // 199      LDLOC0
+            // 200      LDLOC3
+            // 201      PICKITEM
+            // 202      LDLOC1
+            // 203      LDLOC4
+            // 204      PICKITEM
+            // 205      LDLOC2
+            // 206      PUSH4
+            // 207      PACK
             // 208      PUSH0
             // 209      PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
             // 226      PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
             // 248      SYSCALL      System.Contract.Call (627d5b52)
-            // 253      LDLOC3       
-            // 254      ADD          
-            // 255      STLOC3       
-            // 256      LDLOC4       
-            // 257      INC          
-            // 258      STLOC4       
+            // 253      LDLOC3
+            // 254      ADD
+            // 255      STLOC3
+            // 256      LDLOC4
+            // 257      INC
+            // 258      STLOC4
             // 259      JMP          188 (-71/b9)
-            // 261      LDLOC3       
-            // 262      LDLOC6       
+            // 261      LDLOC3
+            // 262      LDLOC6
             // 263      NUMEQUAL
         }
 
@@ -885,7 +890,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         private bool CallVerifyWithECDsa(byte[] message, ECPoint pub, byte[] signature, NamedCurveHash curveHash)
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             using (ScriptBuilder script = new())
             {
                 script.EmitPush((int)curveHash);

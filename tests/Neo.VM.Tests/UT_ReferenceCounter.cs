@@ -12,6 +12,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Test
 {
@@ -239,6 +241,23 @@ namespace Neo.Test
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void TestInvalidReferenceStackItem()
+        {
+            var reference = new ReferenceCounter();
+            var arr = new Array(reference);
+            var arr2 = new Array();
+
+            for (var i = 0; i < 10; i++)
+            {
+                arr2.Add(i);
+            }
+
+            arr.Add(arr2);
+            Assert.AreEqual(11, reference.Count);
         }
     }
 }

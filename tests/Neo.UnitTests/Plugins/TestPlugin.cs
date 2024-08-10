@@ -36,12 +36,12 @@ namespace Neo.UnitTests.Plugins
             Blockchain.Committed += OnCommitted;
         }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        private static void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             throw new NotImplementedException("Test exception from OnCommitting");
         }
 
-        private void OnCommitted(NeoSystem system, Block block)
+        private static void OnCommitted(NeoSystem system, Block block)
         {
             throw new NotImplementedException("Test exception from OnCommitted");
         }
@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Plugins
         private readonly UnhandledExceptionPolicy _exceptionPolicy;
         protected internal override UnhandledExceptionPolicy ExceptionPolicy => _exceptionPolicy;
 
-        public TestPlugin(UnhandledExceptionPolicy exceptionPolicy = UnhandledExceptionPolicy.StopPlugin) : base()
+        public TestPlugin(UnhandledExceptionPolicy exceptionPolicy = UnhandledExceptionPolicy.StopPlugin)
         {
             Blockchain.Committing += OnCommitting;
             Blockchain.Committed += OnCommitted;

@@ -252,20 +252,170 @@ namespace Neo.Json.UnitTests
                 bob,
             };
             var s = jArray.AsString();
-            Assert.AreEqual(s, "{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}");
+            Assert.AreEqual(s, "[{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
+        }
+
+        [TestMethod]
+        public void TestCount()
+        {
+            var jArray = new JArray { alice, bob };
+            jArray.Count.Should().Be(2);
+        }
+
+        [TestMethod]
+        public void TestInvalidIndexAccess()
+        {
+            var jArray = new JArray { alice };
+            Action action = () => { var item = jArray[1]; };
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
+
+        [TestMethod]
+        public void TestEmptyEnumeration()
+        {
+            var jArray = new JArray();
+            foreach (var item in jArray)
+            {
+                Assert.Fail("Enumeration should not occur on an empty JArray");
+            }
+        }
+
+        [TestMethod]
+        public void TestImplicitConversionFromJTokenArray()
+        {
+            JToken[] jTokens = { alice, bob };
+            JArray jArray = jTokens;
+
+            jArray.Count.Should().Be(2);
+            jArray[0].Should().Be(alice);
+            jArray[1].Should().Be(bob);
+        }
+
+        [TestMethod]
+        public void TestAddNullValues()
+        {
+            var jArray = new JArray();
+            jArray.Add(null);
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().BeNull();
         }
 
         [TestMethod]
         public void TestClone()
         {
-            var jArray = new JArray
+            var jArray = new JArray { alice, bob };
+            var clone = (JArray)jArray.Clone();
+
+            clone.Should().NotBeSameAs(jArray);
+            clone.Count.Should().Be(jArray.Count);
+
+            for (int i = 0; i < jArray.Count; i++)
             {
-                alice,
-                bob,
-            };
+                clone[i]?.AsString().Should().Be(jArray[i]?.AsString());
+            }
+
             var a = jArray.AsString();
             var b = jArray.Clone().AsString();
             a.Should().Be(b);
+        }
+
+        [TestMethod]
+        public void TestReadOnlyBehavior()
+        {
+            var jArray = new JArray();
+            jArray.IsReadOnly.Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestAddNull()
+        {
+            var jArray = new JArray { null };
+
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestSetNull()
+        {
+            var jArray = new JArray { alice };
+            jArray[0] = null;
+
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestInsertNull()
+        {
+            var jArray = new JArray { alice };
+            jArray.Insert(0, null);
+
+            jArray.Count.Should().Be(2);
+            jArray[0].Should().BeNull();
+            jArray[1].Should().Be(alice);
+        }
+
+        [TestMethod]
+        public void TestRemoveNull()
+        {
+            var jArray = new JArray { null, alice };
+            jArray.Remove(null);
+
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().Be(alice);
+        }
+
+        [TestMethod]
+        public void TestContainsNull()
+        {
+            var jArray = new JArray { null, alice };
+            jArray.Contains(null).Should().BeTrue();
+            jArray.Contains(bob).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestIndexOfNull()
+        {
+            var jArray = new JArray { null, alice };
+            jArray.IndexOf(null).Should().Be(0);
+            jArray.IndexOf(alice).Should().Be(1);
+        }
+
+        [TestMethod]
+        public void TestCopyToWithNull()
+        {
+            var jArray = new JArray { null, alice };
+            JObject[] jObjects = new JObject[2];
+            jArray.CopyTo(jObjects, 0);
+
+            jObjects[0].Should().BeNull();
+            jObjects[1].Should().Be(alice);
+        }
+
+        [TestMethod]
+        public void TestToStringWithNull()
+        {
+            var jArray = new JArray { null, alice, bob };
+            var jsonString = jArray.ToString();
+            var asString = jArray.AsString();
+            // JSON string should properly represent the null value
+            jsonString.Should().Be("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
+            asString.Should().Be("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
+        }
+
+        [TestMethod]
+        public void TestFromStringWithNull()
+        {
+            var jsonString = "[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]";
+            var jArray = (JArray)JArray.Parse(jsonString);
+
+            jArray.Count.Should().Be(3);
+            jArray[0].Should().BeNull();
+
+            // Checking the second and third elements
+            jArray[1]["name"].AsString().Should().Be("alice");
+            jArray[2]["name"].AsString().Should().Be("bob");
         }
     }
 }

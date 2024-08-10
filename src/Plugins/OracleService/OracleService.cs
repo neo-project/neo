@@ -14,6 +14,7 @@ using Akka.Util.Internal;
 using Neo.ConsoleService;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IEventHandlers;
 using Neo.IO;
 using Neo.Json;
@@ -236,13 +237,13 @@ namespace Neo.Plugins.OracleService
 
             finishedCache.ContainsKey(requestId).False_Or(RpcError.OracleRequestFinished);
 
-            using (var snapshot = _system.GetSnapshot())
+            using (var snapshot = _system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
                 oracles.Any(p => p.Equals(oraclePub)).True_Or(RpcErrorFactory.OracleNotDesignatedNode(oraclePub));
                 NativeContract.Oracle.GetRequest(snapshot, requestId).NotNull_Or(RpcError.OracleRequestNotFound);
-                var data = Neo.Helper.Concat(oraclePub.ToArray(), BitConverter.GetBytes(requestId), txSign);
+                byte[] data = [.. oraclePub.ToArray(), .. BitConverter.GetBytes(requestId), .. txSign];
                 Crypto.VerifySignature(data, msgSign, oraclePub).True_Or(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
                 AddResponseTxSign(snapshot, requestId, oraclePub, txSign);
             }
@@ -264,7 +265,7 @@ namespace Neo.Plugins.OracleService
 
         private async Task SendResponseSignatureAsync(ulong requestId, byte[] txSign, KeyPair keyPair)
         {
-            var message = Neo.Helper.Concat(keyPair.PublicKey.ToArray(), BitConverter.GetBytes(requestId), txSign);
+            byte[] message = [.. keyPair.PublicKey.ToArray(), .. BitConverter.GetBytes(requestId), .. txSign];
             var sign = Crypto.Sign(message, keyPair.PrivateKey);
             var param = "\"" + Convert.ToBase64String(keyPair.PublicKey.ToArray()) + "\", " + requestId + ", \"" + Convert.ToBase64String(txSign) + "\",\"" + Convert.ToBase64String(sign) + "\"";
             var content = "{\"id\":" + Interlocked.Increment(ref counter) + ",\"jsonrpc\":\"2.0\",\"method\":\"submitoracleresponse\",\"params\":[" + param + "]}";
@@ -328,7 +329,7 @@ namespace Neo.Plugins.OracleService
         {
             while (!cancelSource.IsCancellationRequested)
             {
-                using (var snapshot = _system.GetSnapshot())
+                using (var snapshot = _system.GetSnapshotCache())
                 {
                     SyncPendingQueue(snapshot);
                     foreach (var (id, request) in NativeContract.Oracle.GetRequests(snapshot))
