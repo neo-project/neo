@@ -47,13 +47,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         {
             var expectedPayload = new PipeArrayPayload<PipeUnmanagedPayload<int>>()
             {
-                Value = [new()
-                {
-                    Value = 1,
-                }, new()
-                {
-                    Value = 2,
-                }],
+                Value = [new() { Value = 1, }, new() { Value = 2, }],
             };
             var expectedBytes = expectedPayload.ToArray();
 
@@ -73,25 +67,13 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         {
             var expectedPayload = new PipeArrayPayload<PipeUnmanagedPayload<int>>()
             {
-                Value = [new()
-                {
-                    Value = 1,
-                }, new()
-                {
-                    Value = 2,
-                }],
+                Value = [new() { Value = 1, }, new() { Value = 2, }],
             };
             var expectedBytes = expectedPayload.ToArray();
 
             var actualPayload = new PipeArrayPayload<PipeUnmanagedPayload<int>>()
             {
-                Value = [new()
-                {
-                    Value = 1,
-                }, new()
-                {
-                    Value = 2,
-                }],
+                Value = [new() { Value = 1, }, new() { Value = 2, }],
             };
             var actualBytes = actualPayload.ToArray();
 
