@@ -108,7 +108,7 @@ namespace Neo.Plugins
                 if (_stopping == 1)
                     throw new InvalidOperationException($"{nameof(NamedPipeServicePlugin)} has already been stopped.");
 
-                if (_listener is null)
+                if (_system is null || _listener is null)
                     throw new InvalidOperationException($"{nameof(NamedPipeServicePlugin)} has not been started.");
 
                 while (true)
