@@ -1,0 +1,44 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ContractHashOrId.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+namespace Neo.Plugins.RpcServer.Model;
+
+public class ContractHashOrId
+{
+    private readonly object _value;
+
+    public ContractHashOrId(int id)
+    {
+        _value = id;
+    }
+
+    public ContractHashOrId(UInt160 hash)
+    {
+        _value = hash;
+    }
+
+    public bool IsId => _value is int;
+    public bool IsHash => _value is UInt160;
+
+    public int AsId()
+    {
+        if (_value is int intValue)
+            return intValue;
+        throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid contract id"));
+    }
+
+    public UInt160 AsHash()
+    {
+        if (_value is UInt160 hash)
+            return hash;
+        throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid contract hash"));
+    }
+}

@@ -18,11 +18,14 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.Json;
 using Neo.Network.P2P;
+using Neo.Plugins.RpcServer.Model;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
@@ -36,6 +39,7 @@ namespace Neo.Plugins.RpcServer
         private const int MaxParamsDepth = 32;
 
         private readonly Dictionary<string, Func<JArray, object>> methods = new();
+        private readonly Dictionary<string, Delegate> _methodsWithParams = new();
 
         private IWebHost host;
         private RpcServerSettings settings;
@@ -258,6 +262,7 @@ namespace Neo.Plugins.RpcServer
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
+
         private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
@@ -267,71 +272,77 @@ namespace Neo.Plugins.RpcServer
                 return CreateErrorResponse(request["id"], RpcError.InvalidRequest);
             }
 
-            var parameters = (JArray)@params;
-            var pa = parameters[0];
-
+            var jsonParameters = (JArray)@params;
             var response = CreateResponse(request["id"]);
             try
             {
                 var method = request["method"].AsString();
                 (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
-                methods.TryGetValue(method, out var func).True_Or(RpcErrorFactory.MethodNotFound(method));
-                var paramInfos = func.Method.GetParameters();
-                var args = new object[paramInfos.Length];
 
-                for (var i = 0; i < paramInfos.Length; i++)
+                if (methods.TryGetValue(method, out var func))
                 {
-                    var param = paramInfos[i];
-
-
-                    if (parameters.Count > i && parameters[i] != null && parameters[i].Type != JTokenType.Null)
+                    response["result"] = func(jsonParameters) switch
                     {
-                        try
+                        JToken result => result,
+                        Task<JToken> task => await task,
+                        _ => throw new NotSupportedException()
+                    };
+                    return response;
+                }
+
+                if (_methodsWithParams.TryGetValue(method, out var func2))
+                {
+                    var paramInfos = func2.Method.GetParameters();
+                    var args = new object[paramInfos.Length];
+
+                    for (var i = 0; i < paramInfos.Length; i++)
+                    {
+                        var param = paramInfos[i];
+                        if (jsonParameters.Count > i && jsonParameters[i] != null)
                         {
-                            args[i] = ConvertParameter(parameters[i], param.ParameterType);
+                            try
+                            {
+                                args[i] = ConvertParameter(jsonParameters[i], param.ParameterType);
+                            }
+                            catch (Exception e)
+                            {
+                                if (param.IsOptional)
+                                {
+                                    args[i] = param.DefaultValue;
+                                }
+                                else
+                                {
+                                    throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
+                                }
+                            }
                         }
-                        catch (Exception e)
+                        else
                         {
-                            // 如果转换失败，检查参数是否可选或有默认值
                             if (param.IsOptional)
                             {
                                 args[i] = param.DefaultValue;
                             }
+                            else if (param.ParameterType.IsValueType && Nullable.GetUnderlyingType(param.ParameterType) == null)
+                            {
+                                throw new ArgumentException($"Required parameter '{param.Name}' is missing");
+                            }
                             else
                             {
-                                // 如果参数不是可选的，且转换失败，则抛出异常
-                                throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
+                                args[i] = null;
                             }
                         }
                     }
-                    else
+
+                    response["result"] = func2.DynamicInvoke(args) switch
                     {
-                        // 如果参数未提供
-                        if (param.IsOptional)
-                        {
-                            // 如果参数是可选的，使用默认值
-                            args[i] = param.DefaultValue;
-                        }
-                        else if (param.ParameterType.IsValueType && Nullable.GetUnderlyingType(param.ParameterType) == null)
-                        {
-                            // 如果参数是非可空值类型，且未提供值，抛出异常
-                            throw new ArgumentException($"Required parameter '{param.Name}' is missing");
-                        }
-                        else
-                        {
-                            // 对于引用类型或可空值类型，设置为 null
-                            args[i] = null;
-                        }
-                    }
+                        JToken result => result,
+                        Task<JToken> task => await task,
+                        _ => throw new NotSupportedException()
+                    };
+                    return response;
                 }
 
-                response["result"] = func((JArray)@params) switch
-                {
-                    JToken result => result,
-                    Task<JToken> task => await task,
-                    _ => throw new NotSupportedException()
-                };
-                return response;
+                throw new RpcException(RpcError.MethodNotFound.WithData(method));
             }
             catch (FormatException ex)
             {
@@ -341,33 +352,42 @@ namespace Neo.Plugins.RpcServer
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RpcException)
             {
 #if DEBUG
                 return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
 #else
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
+        return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
 #endif
             }
         }
 
         public void RegisterMethods(object handler)
         {
-            foreach (MethodInfo method in handler.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            foreach (var method in handler.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                RpcMethodAttribute attribute = method.GetCustomAttribute<RpcMethodAttribute>();
-                if (attribute is null) continue;
-                string name = string.IsNullOrEmpty(attribute.Name) ? method.Name.ToLowerInvariant() : attribute.Name;
-                methods[name] = method.CreateDelegate<Func<JArray, object>>(handler);
+                var attribute = method.GetCustomAttribute<RpcMethodAttribute>();
+                var attributeWithParams = method.GetCustomAttribute<RpcMethodWithParamsAttribute>();
+                if (attribute is null && attributeWithParams is null) continue;
+                if (attribute is not null && attributeWithParams is not null) throw new InvalidOperationException("Method cannot have both RpcMethodAttribute and RpcMethodWithParamsAttribute");
+
+                if (attribute is not null)
+                {
+                    var name = string.IsNullOrEmpty(attribute.Name) ? method.Name.ToLowerInvariant() : attribute.Name;
+                    methods[name] = method.CreateDelegate<Func<JArray, object>>(handler);
+                }
+
+                if (attributeWithParams is not null)
+                {
+                    var name = string.IsNullOrEmpty(attributeWithParams.Name) ? method.Name.ToLowerInvariant() : attributeWithParams.Name;
+
+                    var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
+                    var delegateType = Expression.GetDelegateType(parameters.Concat([method.ReturnType]).ToArray());
+
+                    _methodsWithParams[name] = Delegate.CreateDelegate(delegateType, handler, method);
+                }
             }
         }
-
-        private string GetJsonPropertyName(ParameterInfo param)
-        {
-            var attr = param.GetCustomAttribute<JsonPropertyNameAttribute>();
-            return attr != null ? attr.Name : param.Name;
-        }
-
 
         private object ConvertParameter(JToken token, Type targetType)
         {
@@ -375,31 +395,77 @@ namespace Neo.Plugins.RpcServer
             {
                 return token.ToString();
             }
-            else if (targetType == typeof(int))
-            {
-                return token.Value<int>();
-            }
-            else if (targetType == typeof(long))
-            {
-                return token.Value<long>();
-            }
-            else if (targetType == typeof(double))
-            {
-                return token.Value<double>();
-            }
-            else if (targetType == typeof(bool))
-            {
-                return token.Value<bool>();
-            }
-            else if (targetType == typeof(UInt160))
-            {
-                return UInt160.Parse(token.ToString());
-            }
-            // 添加其他类型的转换...
 
-            // 如果是复杂类型，可以使用 JSON 反序列化
-            return token.ToObject(targetType);
+            if (targetType == typeof(int))
+            {
+                return token.GetInt32();
+            }
+
+            if (targetType == typeof(long) || targetType == typeof(uint))
+            {
+                return token.GetNumber();
+            }
+
+            if (targetType == typeof(double))
+            {
+                return token.GetNumber();
+            }
+
+            if (targetType == typeof(bool))
+            {
+                return token.GetBoolean();
+            }
+
+            if (targetType == typeof(UInt160))
+            {
+                var value = token.AsString();
+                if (UInt160.TryParse(value, out var scriptHash))
+                {
+                    return scriptHash;
+                }
+
+                return Result.Ok_Or(() => value.ToScriptHash(system.Settings.AddressVersion),
+                    RpcError.InvalidParams.WithData($"Invalid UInt160 Format: {token}"));
+            }
+
+            if (targetType == typeof(UInt256))
+            {
+                return Result.Ok_Or(() => UInt256.Parse(token.AsString()),
+                    RpcError.InvalidParams.WithData($"Invalid UInt256 Format: {token}"));
+            }
+
+            if (targetType == typeof(ContractHashOrId))
+            {
+                var value = token.AsString();
+                if (int.TryParse(value, out var id))
+                {
+                    return new ContractHashOrId(id);
+                }
+
+                if (UInt160.TryParse(value, out var hash))
+                {
+                    return new ContractHashOrId(hash);
+                }
+
+                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid contract hash or id Format: {token}"));
+            }
+
+            if (targetType == typeof(BlockHashOrIndex))
+            {
+                var value = token.AsString();
+                if (uint.TryParse(value, out var index))
+                {
+                    return new BlockHashOrIndex(index);
+                }
+
+                if (UInt256.TryParse(value, out var hash))
+                {
+                    return new BlockHashOrIndex(hash);
+                }
+
+                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid block hash or index Format: {token}"));
+            }
+            return null;
         }
-
     }
 }
