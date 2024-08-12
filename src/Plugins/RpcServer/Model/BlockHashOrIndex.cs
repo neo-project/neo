@@ -13,7 +13,6 @@ namespace Neo.Plugins.RpcServer.Model;
 
 public class BlockHashOrIndex
 {
-
     private readonly object _value;
 
     public BlockHashOrIndex(uint index)
