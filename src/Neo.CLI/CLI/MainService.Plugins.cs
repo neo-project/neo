@@ -113,7 +113,6 @@ namespace Neo.CLI
 
                 if (jsonRelease != null)
                 {
-
                     var latestVersion = Version.Parse(jsonRelease["tag_name"]!.GetValue<string>()[1..]);
                     if (latestVersion < pluginVersion)
                     {
