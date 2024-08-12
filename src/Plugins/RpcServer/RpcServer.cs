@@ -434,17 +434,22 @@ namespace Neo.Plugins.RpcServer
                     RpcError.InvalidParams.WithData($"Invalid UInt256 Format: {token}"));
             }
 
-            if (targetType == typeof(ContractHashOrId))
+            if (targetType == typeof(ContractNameOrHashOrId))
             {
                 var value = token.AsString();
                 if (int.TryParse(value, out var id))
                 {
-                    return new ContractHashOrId(id);
+                    return new ContractNameOrHashOrId(id);
                 }
 
                 if (UInt160.TryParse(value, out var hash))
                 {
-                    return new ContractHashOrId(hash);
+                    return new ContractNameOrHashOrId(hash);
+                }
+
+                if (value.Length > 0)
+                {
+                    return new ContractNameOrHashOrId(value);
                 }
 
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid contract hash or id Format: {token}"));

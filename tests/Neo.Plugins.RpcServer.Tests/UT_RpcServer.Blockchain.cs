@@ -129,7 +129,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var contractState = TestUtils.GetContract();
             snapshot.AddContract(contractState.Hash, contractState);
             snapshot.Commit();
-            var result = _rpcServer.GetContractState(new ContractHashOrId(contractState.Hash));
+            var result = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
 
             Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
         }
@@ -171,7 +171,7 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
             snapshot.Commit();
 
-            var result = _rpcServer.GetStorage(new ContractHashOrId(contractState.Hash), Convert.ToBase64String(key));
+            var result = _rpcServer.GetStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
             Assert.AreEqual(Convert.ToBase64String(value), result.AsString());
         }
 
@@ -185,7 +185,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var value = new byte[] { 0x02 };
             TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
             snapshot.Commit();
-            var result = _rpcServer.FindStorage(new ContractHashOrId(contractState.Hash), Convert.ToBase64String(key), 0);
+            var result = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key), 0);
 
             var json = new JObject();
             var jarr = new JArray();
@@ -360,7 +360,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var randomHash = TestUtils.RandomUInt160();
             try
             {
-                _rpcServer.GetContractState(new ContractHashOrId(randomHash));
+                _rpcServer.GetContractState(new ContractNameOrHashOrId(randomHash));
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -377,7 +377,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var key = new byte[] { 0x01 };
             try
             {
-                _rpcServer.GetStorage(new ContractHashOrId(randomHash), Convert.ToBase64String(key));
+                _rpcServer.GetStorage(new ContractNameOrHashOrId(randomHash), Convert.ToBase64String(key));
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -397,7 +397,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var key = new byte[] { 0x01 };
             try
             {
-                _rpcServer.GetStorage(new ContractHashOrId(contractState.Hash), Convert.ToBase64String(key));
+                _rpcServer.GetStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)

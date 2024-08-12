@@ -18,6 +18,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,8 +47,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethodWithParams]
         protected internal virtual JToken GetBlock(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
-            // JToken key = Result.Ok_Or(() => _params[0], RpcError.InvalidParams.WithData($"Invalid Block Hash or Index: {_params[0]}"));
-            // bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
+
             using var snapshot = system.GetSnapshotCache();
             var block = blockHashOrIndex.IsIndex ? NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsIndex()) : NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsHash());
             block.NotNull_Or(RpcError.UnknownBlock);
@@ -139,18 +139,19 @@ namespace Neo.Plugins.RpcServer
         /// <summary>
         /// Gets the state of a contract by its ID or script hash or (only for native contracts) by case-insensitive name.
         /// </summary>
-        /// <param name="contractHashOrId">Contract script hash or the native contract id.</param>
+        /// <param name="contractNameOrHashOrId">Contract name or script hash or the native contract id.</param>
         /// <returns>The contract state in json format as a <see cref="JToken"/>.</returns>
         [RpcMethodWithParams]
-        protected internal virtual JToken GetContractState(ContractHashOrId contractHashOrId)
+        protected internal virtual JToken GetContractState(ContractNameOrHashOrId contractNameOrHashOrId)
         {
-            if (contractHashOrId.IsId)
+            if (contractNameOrHashOrId.IsId)
             {
-                var contractState = NativeContract.ContractManagement.GetContractById(system.StoreView, contractHashOrId.AsId());
+                var contractState = NativeContract.ContractManagement.GetContractById(system.StoreView, contractNameOrHashOrId.AsId());
                 return contractState.NotNull_Or(RpcError.UnknownContract).ToJson();
             }
 
-            var contract = NativeContract.ContractManagement.GetContract(system.StoreView, contractHashOrId.AsHash());
+            var hash = contractNameOrHashOrId.IsName ? ToScriptHash(contractNameOrHashOrId.AsName()) : contractNameOrHashOrId.AsHash();
+            var contract = NativeContract.ContractManagement.GetContract(system.StoreView, hash);
             return contract.NotNull_Or(RpcError.UnknownContract).ToJson();
         }
 
@@ -216,23 +217,23 @@ namespace Neo.Plugins.RpcServer
         /// <summary>
         /// Gets the storage item by contract ID or script hash and key.
         /// </summary>
-        /// <param name="contractHashOrId">The contract ID or script hash.</param>
+        /// <param name="contractNameOrHashOrId">The contract ID or script hash.</param>
         /// <param name="base64Key">The Base64-encoded storage key.</param>
         /// <returns>The storage item as a <see cref="JToken"/>.</returns>
         [RpcMethodWithParams]
-        protected internal virtual JToken GetStorage(ContractHashOrId contractHashOrId, string base64Key)
+        protected internal virtual JToken GetStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64Key)
         {
             using var snapshot = system.GetSnapshotCache();
             int id;
-            if (contractHashOrId.IsHash)
+            if (contractNameOrHashOrId.IsHash)
             {
-                var hash = contractHashOrId.AsHash();
+                var hash = contractNameOrHashOrId.AsHash();
                 var contract = NativeContract.ContractManagement.GetContract(snapshot, hash).NotNull_Or(RpcError.UnknownContract);
                 id = contract.Id;
             }
             else
             {
-                id = contractHashOrId.AsId();
+                id = contractNameOrHashOrId.AsId();
             }
             var key = Convert.FromBase64String(base64Key);
             var item = snapshot.TryGet(new StorageKey
@@ -253,18 +254,18 @@ namespace Neo.Plugins.RpcServer
         /// </param>
         /// <returns>The found storage items <see cref="StorageItem"/> as a <see cref="JToken"/>.</returns>
         [RpcMethodWithParams]
-        protected internal virtual JToken FindStorage(ContractHashOrId contractHashOrId, string base64KeyPrefix, int start = 0)
+        protected internal virtual JToken FindStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64KeyPrefix, int start = 0)
         {
             using var snapshot = system.GetSnapshotCache();
             int id;
-            if (contractHashOrId.IsHash)
+            if (contractNameOrHashOrId.IsHash)
             {
-                ContractState contract = NativeContract.ContractManagement.GetContract(snapshot, contractHashOrId.AsHash()).NotNull_Or(RpcError.UnknownContract);
+                ContractState contract = NativeContract.ContractManagement.GetContract(snapshot, contractNameOrHashOrId.AsHash()).NotNull_Or(RpcError.UnknownContract);
                 id = contract.Id;
             }
             else
             {
-                id = contractHashOrId.AsId();
+                id = contractNameOrHashOrId.AsId();
             }
 
             byte[] prefix = Result.Ok_Or(() => Convert.FromBase64String(base64KeyPrefix), RpcError.InvalidParams.WithData($"Invalid Base64 string{base64KeyPrefix}"));
