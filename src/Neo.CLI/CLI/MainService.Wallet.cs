@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -618,7 +619,7 @@ namespace Neo.CLI
                 return;
             }
 
-            if (NeoSystem.MemPool.TryGetValue(txid, out Transaction conflictTx))
+            if (NeoSystem.MemPool.TryGetValue(txid, out var conflictTx))
             {
                 tx.NetworkFee = Math.Max(tx.NetworkFee, conflictTx.NetworkFee) + 1;
             }

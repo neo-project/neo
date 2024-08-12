@@ -4,7 +4,7 @@
     <PackageId>Neo.Plugins.ApplicationLogs</PackageId>
     <RootNamespace>Neo.Plugins</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
-    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
+    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
   
   <ItemGroup>
@@ -14,9 +14,14 @@
       <ExcludeAssets>runtime</ExcludeAssets>
     </ProjectReference>
   </ItemGroup>
+
   <ItemGroup>
     <None Update="ApplicationLogs.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(PackageId).Tests" />
   </ItemGroup>
 </Project>

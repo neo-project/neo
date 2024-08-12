@@ -14,6 +14,8 @@ using Akka.Util.Internal;
 using Neo.ConsoleService;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
+using Neo.IEventHandlers;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -37,7 +39,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Plugins.OracleService
 {
-    public class OracleService : Plugin
+    public class OracleService : Plugin, ICommittingHandler, IServiceAddedHandler, IWalletChangedHandler
     {
         private const int RefreshIntervalMilliSeconds = 1000 * 60 * 3;
 
@@ -61,11 +63,13 @@ namespace Neo.Plugins.OracleService
 
         public override string Description => "Built-in oracle plugin";
 
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
+
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.json");
 
         public OracleService()
         {
-            Blockchain.Committing += OnCommitting;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
         }
 
         protected override void Configure()
@@ -79,32 +83,33 @@ namespace Neo.Plugins.OracleService
         {
             if (system.Settings.Network != Settings.Default.Network) return;
             _system = system;
-            _system.ServiceAdded += NeoSystem_ServiceAdded;
+            _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
         }
 
-        private void NeoSystem_ServiceAdded(object sender, object service)
+
+        void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)
         {
             if (service is IWalletProvider)
             {
                 walletProvider = service as IWalletProvider;
-                _system.ServiceAdded -= NeoSystem_ServiceAdded;
+                _system.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
                 if (Settings.Default.AutoStart)
                 {
-                    walletProvider.WalletChanged += WalletProvider_WalletChanged;
+                    walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
                 }
             }
         }
 
-        private void WalletProvider_WalletChanged(object sender, Wallet wallet)
+        void IWalletChangedHandler.IWalletProvider_WalletChanged_Handler(object sender, Wallet wallet)
         {
-            walletProvider.WalletChanged -= WalletProvider_WalletChanged;
+            walletProvider.WalletChanged -= ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
             Start(wallet);
         }
 
         public override void Dispose()
         {
-            Blockchain.Committing -= OnCommitting;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
             OnStop();
             while (status != OracleStatus.Stopped)
                 Thread.Sleep(100);
@@ -166,7 +171,7 @@ namespace Neo.Plugins.OracleService
             ConsoleHelper.Info($"Oracle status: ", $"{status}");
         }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
 
@@ -232,13 +237,13 @@ namespace Neo.Plugins.OracleService
 
             finishedCache.ContainsKey(requestId).False_Or(RpcError.OracleRequestFinished);
 
-            using (var snapshot = _system.GetSnapshot())
+            using (var snapshot = _system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
                 oracles.Any(p => p.Equals(oraclePub)).True_Or(RpcErrorFactory.OracleNotDesignatedNode(oraclePub));
                 NativeContract.Oracle.GetRequest(snapshot, requestId).NotNull_Or(RpcError.OracleRequestNotFound);
-                var data = Neo.Helper.Concat(oraclePub.ToArray(), BitConverter.GetBytes(requestId), txSign);
+                byte[] data = [.. oraclePub.ToArray(), .. BitConverter.GetBytes(requestId), .. txSign];
                 Crypto.VerifySignature(data, msgSign, oraclePub).True_Or(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
                 AddResponseTxSign(snapshot, requestId, oraclePub, txSign);
             }
@@ -260,7 +265,7 @@ namespace Neo.Plugins.OracleService
 
         private async Task SendResponseSignatureAsync(ulong requestId, byte[] txSign, KeyPair keyPair)
         {
-            var message = Neo.Helper.Concat(keyPair.PublicKey.ToArray(), BitConverter.GetBytes(requestId), txSign);
+            byte[] message = [.. keyPair.PublicKey.ToArray(), .. BitConverter.GetBytes(requestId), .. txSign];
             var sign = Crypto.Sign(message, keyPair.PrivateKey);
             var param = "\"" + Convert.ToBase64String(keyPair.PublicKey.ToArray()) + "\", " + requestId + ", \"" + Convert.ToBase64String(txSign) + "\",\"" + Convert.ToBase64String(sign) + "\"";
             var content = "{\"id\":" + Interlocked.Increment(ref counter) + ",\"jsonrpc\":\"2.0\",\"method\":\"submitoracleresponse\",\"params\":[" + param + "]}";
@@ -324,7 +329,7 @@ namespace Neo.Plugins.OracleService
         {
             while (!cancelSource.IsCancellationRequested)
             {
-                using (var snapshot = _system.GetSnapshot())
+                using (var snapshot = _system.GetSnapshotCache())
                 {
                     SyncPendingQueue(snapshot);
                     foreach (var (id, request) in NativeContract.Oracle.GetRequests(snapshot))
@@ -427,7 +432,7 @@ namespace Neo.Plugins.OracleService
             // Calculate network fee
 
             var oracleContract = NativeContract.ContractManagement.GetContract(snapshot, NativeContract.Oracle.Hash);
-            var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings);
+            var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings);
             ContractMethodDescriptor md = oracleContract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
             engine.LoadContract(oracleContract, md, CallFlags.None);
             if (engine.Execute() != VMState.HALT) return null;
@@ -528,7 +533,7 @@ namespace Neo.Plugins.OracleService
             }
             ECPoint[] oraclesNodes = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
             int neededThreshold = oraclesNodes.Length - (oraclesNodes.Length - 1) / 3;
-            if (OracleSigns.Count >= neededThreshold && tx != null)
+            if (OracleSigns.Count >= neededThreshold)
             {
                 var contract = Contract.CreateMultiSigContract(neededThreshold, oraclesNodes);
                 ScriptBuilder sb = new ScriptBuilder();

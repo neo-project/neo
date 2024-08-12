@@ -3,9 +3,9 @@
 
   <PropertyGroup>
     <Copyright>2015-2024 The Neo Project</Copyright>
-    <VersionPrefix>3.7.4</VersionPrefix>
     <LangVersion>12.0</LangVersion>
     <Authors>The Neo Project</Authors>
+    <IsPackable>true</IsPackable>
     <PackageIcon>neo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -16,6 +16,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <VersionPrefix>3.7.5</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>

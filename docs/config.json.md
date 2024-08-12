@@ -1,6 +1,6 @@
 # README for Application and Protocol Configuration JSON File
 
-This README provides an explanation for each field in the JSON configuration file for a NEO node.
+This README provides an explanation for each field in the JSON configuration file for a Neo node.
 
 ## ApplicationConfiguration
 
@@ -31,15 +31,15 @@ This README provides an explanation for each field in the JSON configuration fil
 - **NeoNameService**: Script hash of the Neo Name Service contract. MainNet is `0x50ac1c37690cc2cfc594472833cf57505d5f46de`, TestNet is `0x50ac1c37690cc2cfc594472833cf57505d5f46de`.
 
 ### Plugins
-- **DownloadUrl**: URL to download plugins, typically from the NEO project's GitHub releases. Default is `https://api.github.com/repos/neo-project/neo/releases`.
+- **DownloadUrl**: URL to download plugins, typically from the Neo project's GitHub releases. Default is `https://api.github.com/repos/neo-project/neo/releases`.
 
 ## ProtocolConfiguration
 
 ### Network
-- **Network**: Network ID for the NEO network. MainNet is `860833102`, TestNet is `894710606`
+- **Network**: Network ID for the Neo network. MainNet is `860833102`, TestNet is `894710606`
 
 ### AddressVersion
-- **AddressVersion**: Version byte used in NEO address generation. Default is `53`.
+- **AddressVersion**: Version byte used in Neo address generation. Default is `53`.
 
 ### MillisecondsPerBlock
 - **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `15000` (15 seconds).
@@ -82,4 +82,4 @@ This README provides an explanation for each field in the JSON configuration fil
       - `seed4t5.neo.org:20333`
       - `seed5t5.neo.org:20333`
 
-This configuration file is essential for setting up and running a NEO node, ensuring proper logging, storage, network connectivity, and consensus protocol parameters.
+This configuration file is essential for setting up and running a Neo node, ensuring proper logging, storage, network connectivity, and consensus protocol parameters.

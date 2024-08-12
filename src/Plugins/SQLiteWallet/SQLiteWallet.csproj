@@ -5,11 +5,11 @@
     <RootNamespace>Neo.Wallets.SQLite</RootNamespace>
     <PackageId>Neo.Wallets.SQLite</PackageId>
     <ImplicitUsings>enable</ImplicitUsings>
-    <BaseOutputPath>$(SolutionDir)/bin/$(PackageId)</BaseOutputPath>
+    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.7" />
   </ItemGroup>
 
 </Project>

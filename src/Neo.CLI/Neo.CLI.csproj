@@ -10,7 +10,8 @@
     <Product>Neo.CLI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
-    <BaseOutputPath>$(SolutionDir)/bin/$(AssemblyTitle)</BaseOutputPath>
+    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo\Neo.csproj" />
   </ItemGroup>
 

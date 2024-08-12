@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -131,10 +132,10 @@ namespace Neo.CLI
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
 
-            var cliV = Assembly.GetAssembly(typeof(Program))!.GetVersion();
-            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetVersion();
-            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetVersion();
-            Console.WriteLine($"{ServiceName} v{cliV}  -  NEO v{neoV}  -  NEO-VM v{vmV}");
+            var cliV = Assembly.GetAssembly(typeof(Program))!.GetName().Version;
+            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetName().Version;
+            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetName().Version;
+            Console.WriteLine($"{ServiceName} v{cliV?.ToString(3)}  -  NEO v{neoV?.ToString(3)}  -  NEO-VM v{vmV?.ToString(3)}");
             Console.WriteLine();
 
             base.RunConsole();
@@ -375,7 +376,50 @@ namespace Neo.CLI
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
-            NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            try
+            {
+                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
+                    string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            }
+            catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    if (File.Exists("libleveldb.dll"))
+                    {
+                        DisplayError("Dependency DLL not found, please install Microsoft Visual C++ Redistributable.",
+                            "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
+                    }
+                    else
+                    {
+                        DisplayError("DLL not found, please get libleveldb.dll.",
+                            "Download from https://github.com/neo-ngd/leveldb/releases");
+                    }
+                }
+                else if (OperatingSystem.IsLinux())
+                {
+                    DisplayError("Shared library libleveldb.so not found, please get libleveldb.so.",
+                        "Use command \"sudo apt-get install libleveldb-dev\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
+                }
+                else if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
+                {
+                    DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
+                        "Use command \"brew install leveldb\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
+                }
+                else
+                {
+                    DisplayError("Neo CLI is broken, please reinstall it.",
+                        "Download from https://github.com/neo-project/neo/releases");
+                }
+                return;
+            }
+            catch (DllNotFoundException)
+            {
+                DisplayError("Neo CLI is broken, please reinstall it.",
+                    "Download from https://github.com/neo-project/neo/releases");
+                return;
+            }
+
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
@@ -447,6 +491,17 @@ namespace Neo.CLI
                 {
                     ConsoleHelper.Error(ex.GetBaseException().Message);
                 }
+            }
+
+            return;
+
+            void DisplayError(string primaryMessage, string? secondaryMessage = null)
+            {
+                ConsoleHelper.Error(primaryMessage + Environment.NewLine +
+                                    (secondaryMessage != null ? secondaryMessage + Environment.NewLine : "") +
+                                    "Press any key to exit.");
+                Console.ReadKey();
+                Environment.Exit(-1);
             }
         }
 

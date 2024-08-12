@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.SmartContract;
@@ -48,22 +49,6 @@ namespace Neo.UnitTests
             byte[] testByteArray = TestUtils.GetByteArray(64, 0x42);
             UInt160 res = testByteArray.ToScriptHash();
             res.Should().Be(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
-        }
-
-        [TestMethod]
-        public void TestGetLowestSetBit()
-        {
-            var big1 = new BigInteger(0);
-            big1.GetLowestSetBit().Should().Be(-1);
-
-            var big2 = new BigInteger(512);
-            big2.GetLowestSetBit().Should().Be(9);
-
-            var big3 = new BigInteger(int.MinValue);
-            big3.GetLowestSetBit().Should().Be(31);
-
-            var big4 = new BigInteger(long.MinValue);
-            big4.GetLowestSetBit().Should().Be(63);
         }
 
         [TestMethod]
@@ -163,22 +148,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestToHexString()
-        {
-            byte[] nullStr = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
-            byte[] empty = Array.Empty<byte>();
-            empty.ToHexString().Should().Be("");
-            empty.ToHexString(false).Should().Be("");
-            empty.ToHexString(true).Should().Be("");
-
-            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
-            str1.ToHexString().Should().Be("6e656f");
-            str1.ToHexString(false).Should().Be("6e656f");
-            str1.ToHexString(true).Should().Be("6f656e");
-        }
-
-        [TestMethod]
         public void TestGetVersion()
         {
             // assembly without version
@@ -188,16 +157,6 @@ namespace Neo.UnitTests
                 .FirstOrDefault();
             string version = asm?.GetVersion() ?? "";
             version.Should().Be("0.0.0");
-        }
-
-        [TestMethod]
-        public void TestToByteArrayStandard()
-        {
-            BigInteger number = BigInteger.Zero;
-            Assert.AreEqual("", number.ToByteArrayStandard().ToHexString());
-
-            number = BigInteger.One;
-            Assert.AreEqual("01", number.ToByteArrayStandard().ToHexString());
         }
 
         [TestMethod]
