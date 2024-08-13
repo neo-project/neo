@@ -428,7 +428,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             ulong temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -438,7 +438,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             long temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -448,7 +448,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             uint temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -458,7 +458,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             int temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -468,7 +468,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             ushort temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -478,7 +478,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             char temp = char.MinValue;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -488,7 +488,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             short temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -498,7 +498,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             byte temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -508,7 +508,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sbyte temp = 0;
-            VM.Helper.EmitPush(sb, temp);
+            sb.EmitPush(temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());

@@ -13,6 +13,7 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
