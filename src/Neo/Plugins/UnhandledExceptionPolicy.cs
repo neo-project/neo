@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// JsonPropertyNameAttribute.cs file belongs to the neo project and is free
+// UnhandledExceptionPolicy.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,12 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
-namespace Neo.Plugins.RpcServer;
-
-[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
-public class JsonPropertyNameAttribute(string name) : Attribute
+namespace Neo.Plugins
 {
-    public string Name { get; } = name;
+    public enum UnhandledExceptionPolicy : byte
+    {
+        Ignore = 0,
+        StopPlugin = 1,
+        StopNode = 2,
+    }
 }

@@ -262,7 +262,6 @@ namespace Neo.Plugins.RpcServer
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-
         private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
@@ -306,14 +305,7 @@ namespace Neo.Plugins.RpcServer
                             }
                             catch (Exception e)
                             {
-                                if (param.IsOptional)
-                                {
-                                    args[i] = param.DefaultValue;
-                                }
-                                else
-                                {
-                                    throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
-                                }
+                                throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
                             }
                         }
                         else
@@ -391,6 +383,8 @@ namespace Neo.Plugins.RpcServer
 
         private object ConvertParameter(JToken token, Type targetType)
         {
+
+
             if (targetType == typeof(string))
             {
                 return token.ToString();
@@ -430,26 +424,20 @@ namespace Neo.Plugins.RpcServer
 
             if (targetType == typeof(UInt256))
             {
-                return Result.Ok_Or(() => UInt256.Parse(token.AsString()),
-                    RpcError.InvalidParams.WithData($"Invalid UInt256 Format: {token}"));
+
+                if (UInt256.TryParse(token.AsString(), out var hash))
+                {
+                    return hash;
+                }
+
+                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid UInt256 Format: {token}"));
             }
 
             if (targetType == typeof(ContractNameOrHashOrId))
             {
-                var value = token.AsString();
-                if (int.TryParse(value, out var id))
+                if (ContractNameOrHashOrId.TryParse(token.AsString(), out var contractNameOrHashOrId))
                 {
-                    return new ContractNameOrHashOrId(id);
-                }
-
-                if (UInt160.TryParse(value, out var hash))
-                {
-                    return new ContractNameOrHashOrId(hash);
-                }
-
-                if (value.Length > 0)
-                {
-                    return new ContractNameOrHashOrId(value);
+                    return contractNameOrHashOrId;
                 }
 
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid contract hash or id Format: {token}"));
@@ -457,15 +445,9 @@ namespace Neo.Plugins.RpcServer
 
             if (targetType == typeof(BlockHashOrIndex))
             {
-                var value = token.AsString();
-                if (uint.TryParse(value, out var index))
+                if (BlockHashOrIndex.TryParse(token.AsString(), out var blockHashOrIndex))
                 {
-                    return new BlockHashOrIndex(index);
-                }
-
-                if (UInt256.TryParse(value, out var hash))
-                {
-                    return new BlockHashOrIndex(hash);
+                    return blockHashOrIndex;
                 }
 
                 throw new RpcException(RpcError.InvalidParams.WithData($"Invalid block hash or index Format: {token}"));

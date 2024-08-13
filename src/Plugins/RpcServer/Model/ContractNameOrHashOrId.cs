@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Neo.Plugins.RpcServer.Model;
 
 public class ContractNameOrHashOrId
@@ -33,6 +35,28 @@ public class ContractNameOrHashOrId
     public bool IsId => _value is int;
     public bool IsHash => _value is UInt160;
     public bool IsName => _value is string;
+
+    public static bool TryParse(string value, [NotNullWhen(true)] out ContractNameOrHashOrId? contractNameOrHashOrId)
+    {
+        if (int.TryParse(value, out var id))
+        {
+            contractNameOrHashOrId = new ContractNameOrHashOrId(id);
+            return true;
+        }
+        if (UInt160.TryParse(value, out var hash))
+        {
+            contractNameOrHashOrId = new ContractNameOrHashOrId(hash);
+            return true;
+        }
+
+        if (value.Length > 0)
+        {
+            contractNameOrHashOrId = new ContractNameOrHashOrId(value);
+            return true;
+        }
+        contractNameOrHashOrId = null;
+        return false;
+    }
 
     public int AsId()
     {

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Org.BouncyCastle.Asn1;
 using System;
 
 namespace Neo.Plugins.RpcServer;

@@ -9,11 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Neo.Plugins.RpcServer.Model;
 
 public class BlockHashOrIndex
 {
-
     private readonly object _value;
 
     public BlockHashOrIndex(uint index)
@@ -27,7 +28,22 @@ public class BlockHashOrIndex
     }
 
     public bool IsIndex => _value is uint;
-    public bool IsHash => _value is UInt256;
+
+    public static bool TryParse(string value, [NotNullWhen(true)] out BlockHashOrIndex? blockHashOrIndex)
+    {
+        if (uint.TryParse(value, out var index))
+        {
+            blockHashOrIndex = new BlockHashOrIndex(index);
+            return true;
+        }
+        if (UInt256.TryParse(value, out var hash))
+        {
+            blockHashOrIndex = new BlockHashOrIndex(hash);
+            return true;
+        }
+        blockHashOrIndex = null;
+        return false;
+    }
 
     public uint AsIndex()
     {

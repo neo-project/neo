@@ -47,7 +47,6 @@ namespace Neo.Plugins.RpcServer
         [RpcMethodWithParams]
         protected internal virtual JToken GetBlock(BlockHashOrIndex blockHashOrIndex, bool verbose = false)
         {
-
             using var snapshot = system.GetSnapshotCache();
             var block = blockHashOrIndex.IsIndex ? NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsIndex()) : NativeContract.Ledger.GetBlock(snapshot, blockHashOrIndex.AsHash());
             block.NotNull_Or(RpcError.UnknownBlock);
