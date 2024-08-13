@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
+using Neo.Extensions;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
