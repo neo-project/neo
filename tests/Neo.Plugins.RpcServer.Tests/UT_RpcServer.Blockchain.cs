@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.Util.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
