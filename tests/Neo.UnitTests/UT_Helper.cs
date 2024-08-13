@@ -148,6 +148,22 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestToHexString()
+        {
+            byte[] nullStr = null;
+            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
+            byte[] empty = Array.Empty<byte>();
+            empty.ToHexString().Should().Be("");
+            empty.ToHexString(false).Should().Be("");
+            empty.ToHexString(true).Should().Be("");
+
+            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
+            str1.ToHexString().Should().Be("6e656f");
+            str1.ToHexString(false).Should().Be("6e656f");
+            str1.ToHexString(true).Should().Be("6f656e");
+        }
+
+        [TestMethod]
         public void TestGetVersion()
         {
             // assembly without version
@@ -157,6 +173,16 @@ namespace Neo.UnitTests
                 .FirstOrDefault();
             string version = asm?.GetVersion() ?? "";
             version.Should().Be("0.0.0");
+        }
+
+        [TestMethod]
+        public void TestToByteArrayStandard()
+        {
+            BigInteger number = BigInteger.Zero;
+            Assert.AreEqual("", number.ToByteArrayStandard().ToHexString());
+
+            number = BigInteger.One;
+            Assert.AreEqual("01", number.ToByteArrayStandard().ToHexString());
         }
 
         [TestMethod]
@@ -175,10 +201,10 @@ namespace Neo.UnitTests
         public void TestUnmapForIPAddress()
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
-            addr.Unmap().Should().Be(addr);
+            addr.UnMap().Should().Be(addr);
 
             var addr2 = addr.MapToIPv6();
-            addr2.Unmap().Should().Be(addr);
+            addr2.UnMap().Should().Be(addr);
         }
 
         [TestMethod]
@@ -186,11 +212,11 @@ namespace Neo.UnitTests
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
             var endPoint = new IPEndPoint(addr, 8888);
-            endPoint.Unmap().Should().Be(endPoint);
+            endPoint.UnMap().Should().Be(endPoint);
 
             var addr2 = addr.MapToIPv6();
             var endPoint2 = new IPEndPoint(addr2, 8888);
-            endPoint2.Unmap().Should().Be(endPoint);
+            endPoint2.UnMap().Should().Be(endPoint);
         }
     }
 }
