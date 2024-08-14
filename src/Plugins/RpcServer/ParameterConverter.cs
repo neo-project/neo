@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Json;
 using Neo.Plugins.RpcServer.Model;
 using Neo.Wallets;
 using System;
@@ -19,11 +20,11 @@ namespace Neo.Plugins.RpcServer;
 
 public static class ParameterConverter
 {
-    private static readonly Dictionary<Type, Func<JToken, object>> _conversionStrategies;
+    private static readonly Dictionary<Type, Func<JToken, object>> s_conversionStrategies;
 
     static ParameterConverter()
     {
-        _conversionStrategies = new Dictionary<Type, Func<JToken, object>>
+        s_conversionStrategies = new Dictionary<Type, Func<JToken, object>>
         {
             { typeof(string), token => Result.Ok_Or(token.AsString, CreateInvalidParamError<string>(token)) },
             { typeof(byte), ConvertNumeric<byte> },
@@ -44,7 +45,7 @@ public static class ParameterConverter
 
     internal static object ConvertParameter(JToken token, Type targetType)
     {
-        if (_conversionStrategies.TryGetValue(targetType, out var conversionStrategy))
+        if (s_conversionStrategies.TryGetValue(targetType, out var conversionStrategy))
             return conversionStrategy(token);
         throw new RpcException(RpcError.InvalidParams.WithData($"Unsupported parameter type: {targetType}"));
     }
@@ -73,7 +74,7 @@ public static class ParameterConverter
                 return false;
             }
 
-            if (!typeof(T).IsFloatingPoint() && Math.Floor(value) != value)
+            if (!typeof(T).IsFloatingPoint() && !IsValidInteger(value))
             {
                 return false;
             }
@@ -85,6 +86,14 @@ public static class ParameterConverter
         {
             return false;
         }
+    }
+
+    private static bool IsValidInteger(double value)
+    {
+        // Integer values are safe if they are within the range of MIN_SAFE_INTEGER and MAX_SAFE_INTEGER
+        if (value < JNumber.MIN_SAFE_INTEGER || value > JNumber.MAX_SAFE_INTEGER)
+            return false;
+        return Math.Abs(value % 1) <= double.Epsilon;
     }
 
     internal static object ConvertUInt160(JToken token, byte addressVersion)

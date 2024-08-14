@@ -18,8 +18,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.Json;
 using Neo.Network.P2P;
-using Neo.Plugins.RpcServer.Model;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
