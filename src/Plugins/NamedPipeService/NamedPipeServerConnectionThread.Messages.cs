@@ -40,5 +40,16 @@ namespace Neo.Plugins
 
             return PipeMessage.Create(message.RequestId, PipeCommand.Block, payload);
         }
+
+        private PipeMessage OnMemoryPool(PipeMessage message)
+        {
+            if (message.Payload is not PipeNullPayload)
+                return CreateErrorResponse(message.RequestId, new InvalidDataException());
+
+            _system.MemPool.GetVerifiedAndUnverifiedTransactions(out var vtx, out var utx);
+            var payload = new PipeMemoryPoolPayload() { VerifiedTransactions = [.. vtx], UnVerifiedTransactions = [.. utx] };
+
+            return PipeMessage.Create(message.RequestId, PipeCommand.MemoryPool, payload);
+        }
     }
 }

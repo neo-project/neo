@@ -73,6 +73,7 @@ namespace Neo.Plugins
             {
                 PipeCommand.GetBlockHeight => OnBlockHeight(message),
                 PipeCommand.GetBlock => OnBlock(message),
+                PipeCommand.GetMemoryPool => OnMemoryPool(message),
                 _ => CreateErrorResponse(message.RequestId, new InvalidDataException()),
             };
 

@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Plugins.Models;
@@ -66,6 +67,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
             Assert.AreNotEqual(0, message.Size);
             Assert.AreEqual(PipeCommand.BlockHeight, message.Command);
             Assert.AreEqual(rid, message.RequestId);
+            Assert.IsInstanceOfType<PipeUnmanagedPayload<uint>>(message.Payload);
         }
 
         [TestMethod]
@@ -88,6 +90,30 @@ namespace Neo.Plugins.NamedPipeService.Tests
             Assert.AreNotEqual(0, message.Size);
             Assert.AreEqual(PipeCommand.Block, message.Command);
             Assert.AreEqual(rid, message.RequestId);
+            Assert.IsInstanceOfType<PipeSerializablePayload<Block>>(message.Payload);
+        }
+
+        [TestMethod]
+        public async Task SendAndReceive_Messages_GetMemoryPool()
+        {
+            var rid = Random.Shared.Next();
+
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPool, new PipeNullPayload());
+
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+
+            var buffer = new byte[1024];
+            var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
+
+            var message = PipeMessage.Create(buffer);
+            var memPool = message.Payload as PipeMemoryPoolPayload;
+
+            Assert.AreNotEqual(0, message.Size);
+            Assert.AreEqual(PipeCommand.MemoryPool, message.Command);
+            Assert.AreEqual(rid, message.RequestId);
+            Assert.IsInstanceOfType<PipeMemoryPoolPayload>(message.Payload);
+            Assert.AreEqual(0, memPool.VerifiedTransactions.Length);
+            Assert.AreEqual(0, memPool.UnVerifiedTransactions.Length);
         }
     }
 }
