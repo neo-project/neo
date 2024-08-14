@@ -14,6 +14,7 @@ using Neo.Plugins.Models;
 using Neo.Plugins.Models.Payloads;
 using Neo.SmartContract.Native;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Plugins
 {
@@ -41,15 +42,32 @@ namespace Neo.Plugins
             return PipeMessage.Create(message.RequestId, PipeCommand.Block, payload);
         }
 
-        private PipeMessage OnMemoryPool(PipeMessage message)
+        private PipeMessage OnMemoryPoolUnVerified(PipeMessage message)
         {
             if (message.Payload is not PipeNullPayload)
                 return CreateErrorResponse(message.RequestId, new InvalidDataException());
 
-            _system.MemPool.GetVerifiedAndUnverifiedTransactions(out var vtx, out var utx);
-            var payload = new PipeMemoryPoolPayload() { VerifiedTransactions = [.. vtx], UnVerifiedTransactions = [.. utx] };
+            _system.MemPool.GetVerifiedAndUnverifiedTransactions(out _, out var utx);
+            var payload = new PipeArrayPayload<PipeSerializablePayload<Transaction>>()
+            {
+                Value = [.. utx.Select(s => new PipeSerializablePayload<Transaction>() { Value = s })],
+            };
 
-            return PipeMessage.Create(message.RequestId, PipeCommand.MemoryPool, payload);
+            return PipeMessage.Create(message.RequestId, PipeCommand.MemoryPoolUnVerified, payload);
+        }
+
+        private PipeMessage OnMemoryPoolVerified(PipeMessage message)
+        {
+            if (message.Payload is not PipeNullPayload)
+                return CreateErrorResponse(message.RequestId, new InvalidDataException());
+
+            _system.MemPool.GetVerifiedAndUnverifiedTransactions(out var vtx, out _);
+            var payload = new PipeArrayPayload<PipeSerializablePayload<Transaction>>()
+            {
+                Value = [.. vtx.Select(s => new PipeSerializablePayload<Transaction>() { Value = s })],
+            };
+
+            return PipeMessage.Create(message.RequestId, PipeCommand.MemoryPoolVerified, payload);
         }
     }
 }

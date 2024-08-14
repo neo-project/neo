@@ -63,11 +63,14 @@ namespace Neo.Plugins.NamedPipeService.Tests
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
 
             var message = PipeMessage.Create(buffer);
+            var payload = message.Payload as PipeUnmanagedPayload<uint>;
 
             Assert.AreNotEqual(0, message.Size);
             Assert.AreEqual(PipeCommand.BlockHeight, message.Command);
             Assert.AreEqual(rid, message.RequestId);
             Assert.IsInstanceOfType<PipeUnmanagedPayload<uint>>(message.Payload);
+            Assert.AreEqual(0u, payload.Value);
+
         }
 
         [TestMethod]
@@ -86,19 +89,21 @@ namespace Neo.Plugins.NamedPipeService.Tests
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
 
             var message = PipeMessage.Create(buffer);
+            var payload = message.Payload as PipeSerializablePayload<Block>;
 
             Assert.AreNotEqual(0, message.Size);
             Assert.AreEqual(PipeCommand.Block, message.Command);
             Assert.AreEqual(rid, message.RequestId);
             Assert.IsInstanceOfType<PipeSerializablePayload<Block>>(message.Payload);
+            Assert.AreEqual(0u, payload.Value.Index);
         }
 
         [TestMethod]
-        public async Task SendAndReceive_Messages_GetMemoryPool()
+        public async Task SendAndReceive_Messages_GetMemoryPoolUnVerified()
         {
             var rid = Random.Shared.Next();
 
-            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPool, new PipeNullPayload());
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolUnVerified, new PipeNullPayload());
 
             var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
 
@@ -106,14 +111,35 @@ namespace Neo.Plugins.NamedPipeService.Tests
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
 
             var message = PipeMessage.Create(buffer);
-            var memPool = message.Payload as PipeMemoryPoolPayload;
+            var memPool = message.Payload as PipeArrayPayload<PipeSerializablePayload<Transaction>>;
 
             Assert.AreNotEqual(0, message.Size);
-            Assert.AreEqual(PipeCommand.MemoryPool, message.Command);
+            Assert.AreEqual(PipeCommand.MemoryPoolUnVerified, message.Command);
             Assert.AreEqual(rid, message.RequestId);
-            Assert.IsInstanceOfType<PipeMemoryPoolPayload>(message.Payload);
-            Assert.AreEqual(0, memPool.VerifiedTransactions.Length);
-            Assert.AreEqual(0, memPool.UnVerifiedTransactions.Length);
+            Assert.IsInstanceOfType<PipeArrayPayload<PipeSerializablePayload<Transaction>>>(message.Payload);
+            Assert.AreEqual(0, memPool.Value.Length);
+        }
+
+        [TestMethod]
+        public async Task SendAndReceive_Messages_GetMemoryPoolVerified()
+        {
+            var rid = Random.Shared.Next();
+
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolVerified, new PipeNullPayload());
+
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+
+            var buffer = new byte[1024];
+            var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
+
+            var message = PipeMessage.Create(buffer);
+            var memPool = message.Payload as PipeArrayPayload<PipeSerializablePayload<Transaction>>;
+
+            Assert.AreNotEqual(0, message.Size);
+            Assert.AreEqual(PipeCommand.MemoryPoolVerified, message.Command);
+            Assert.AreEqual(rid, message.RequestId);
+            Assert.IsInstanceOfType<PipeArrayPayload<PipeSerializablePayload<Transaction>>>(message.Payload);
+            Assert.AreEqual(0, memPool.Value.Length);
         }
     }
 }

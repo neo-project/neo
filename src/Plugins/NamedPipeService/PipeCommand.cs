@@ -35,10 +35,16 @@ namespace Neo.Plugins
         Transaction = 0x05,
 
         [PipeProtocol(typeof(PipeNullPayload))]
-        GetMemoryPool = 0x06,
+        GetMemoryPoolUnVerified = 0x06,
 
-        [PipeProtocol(typeof(PipeMemoryPoolPayload))]
-        MemoryPool = 0x07,
+        [PipeProtocol(typeof(PipeArrayPayload<PipeSerializablePayload<Transaction>>))]
+        MemoryPoolUnVerified = 0x07,
+
+        [PipeProtocol(typeof(PipeNullPayload))]
+        GetMemoryPoolVerified = 0x08,
+
+        [PipeProtocol(typeof(PipeArrayPayload<PipeSerializablePayload<Transaction>>))]
+        MemoryPoolVerified = 0x09,
 
         [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xe0,
