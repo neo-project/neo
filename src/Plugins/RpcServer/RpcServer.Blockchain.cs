@@ -18,7 +18,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
