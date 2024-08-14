@@ -245,11 +245,9 @@ namespace Neo.Plugins.RpcServer
         /// <summary>
         /// Finds storage items by contract ID or script hash and prefix.
         /// </summary>
-        /// <param name="_params">
-        /// An array containing the contract ID or script hash as the first element,
-        /// the Base64-encoded storage key prefix as the second element,
-        /// and an optional start index as the third element.
-        /// </param>
+        /// <param name="contractNameOrHashOrId">The contract ID (int) or script hash (UInt160).</param>
+        /// <param name="base64KeyPrefix">The Base64-encoded storage key prefix.</param>
+        /// <param name="start">The start index.</param>
         /// <returns>The found storage items <see cref="StorageItem"/> as a <see cref="JToken"/>.</returns>
         [RpcMethodWithParams]
         protected internal virtual JToken FindStorage(ContractNameOrHashOrId contractNameOrHashOrId, string base64KeyPrefix, int start = 0)

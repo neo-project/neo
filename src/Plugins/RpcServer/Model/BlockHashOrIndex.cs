@@ -29,7 +29,7 @@ public class BlockHashOrIndex
 
     public bool IsIndex => _value is uint;
 
-    public static bool TryParse(string value, [NotNullWhen(true)] out BlockHashOrIndex? blockHashOrIndex)
+    public static bool TryParse(string value, [NotNullWhen(true)] out BlockHashOrIndex blockHashOrIndex)
     {
         if (uint.TryParse(value, out var index))
         {

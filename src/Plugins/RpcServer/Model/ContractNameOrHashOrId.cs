@@ -36,7 +36,7 @@ public class ContractNameOrHashOrId
     public bool IsHash => _value is UInt160;
     public bool IsName => _value is string;
 
-    public static bool TryParse(string value, [NotNullWhen(true)] out ContractNameOrHashOrId? contractNameOrHashOrId)
+    public static bool TryParse(string value, [NotNullWhen(true)] out ContractNameOrHashOrId contractNameOrHashOrId)
     {
         if (int.TryParse(value, out var id))
         {
