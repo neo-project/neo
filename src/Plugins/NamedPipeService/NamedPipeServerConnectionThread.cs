@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
+using Neo.Network.P2P;
 using Neo.Plugins.Models;
 using Neo.Plugins.Models.Payloads;
 using System;
@@ -24,6 +26,7 @@ namespace Neo.Plugins
     {
         private readonly NeoSystem _system = system;
         private readonly NamedPipeServerConnection _connection = connection;
+        private readonly LocalNode _localNode = system.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).GetAwaiter().GetResult();
 
         private Exception? _shutdownException;
 
@@ -75,6 +78,7 @@ namespace Neo.Plugins
                 PipeCommand.GetBlock => OnBlock(message),
                 PipeCommand.GetMemoryPoolUnVerified => OnMemoryPoolUnVerified(message),
                 PipeCommand.GetMemoryPoolVerified => OnMemoryPoolVerified(message),
+                PipeCommand.GetRemoteNodes => OnRemoteNodes(message),
                 _ => CreateErrorResponse(message.RequestId, new InvalidDataException()),
             };
 

@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.Models.Payloads;
 
@@ -46,10 +47,19 @@ namespace Neo.Plugins
         [PipeProtocol(typeof(PipeArrayPayload<PipeSerializablePayload<Transaction>>))]
         MemoryPoolVerified = 0x09,
 
+        [PipeProtocol(typeof(PipeNullPayload))]
+        GetRemoteNodes = 0x10,
+
+        [PipeProtocol(typeof(PipeArrayPayload<PipeRemoteNodePayload>))]
+        RemoteNodes = 0x11,
+
         [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xe0,
 
         [PipeProtocol(typeof(PipeNullPayload))]
         NAck = 0xf0, // NULL ACK
+
+        [PipeProtocol(typeof(PipeSerializablePayload<Message>))]
+        Tell = 0xf1, // Tell remote connections on localNode
     }
 }
