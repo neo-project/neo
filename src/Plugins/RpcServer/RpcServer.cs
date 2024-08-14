@@ -407,7 +407,7 @@ namespace Neo.Plugins.RpcServer
 
             if (targetType == typeof(bool))
             {
-                return token.GetBoolean();
+                return token.AsBoolean();
             }
 
             if (targetType == typeof(UInt160))
