@@ -301,9 +301,16 @@ namespace Neo.Plugins.RpcServer
                         {
                             try
                             {
-                                args[i] = ConvertParameter(jsonParameters[i], param.ParameterType);
+                                if (param.ParameterType == typeof(UInt160))
+                                {
+                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i], system.Settings.AddressVersion);
+                                }
+                                else
+                                {
+                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i], param.ParameterType);
+                                }
                             }
-                            catch (Exception e)
+                            catch (Exception e) when (e is not RpcException)
                             {
                                 throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
                             }
@@ -379,80 +386,6 @@ namespace Neo.Plugins.RpcServer
                     _methodsWithParams[name] = Delegate.CreateDelegate(delegateType, handler, method);
                 }
             }
-        }
-
-        private object ConvertParameter(JToken token, Type targetType)
-        {
-
-
-            if (targetType == typeof(string))
-            {
-                return token.ToString();
-            }
-
-            if (targetType == typeof(int))
-            {
-                return token.GetInt32();
-            }
-
-            if (targetType == typeof(long) || targetType == typeof(uint))
-            {
-                return token.GetNumber();
-            }
-
-            if (targetType == typeof(double))
-            {
-                return token.GetNumber();
-            }
-
-            if (targetType == typeof(bool))
-            {
-                return token.AsBoolean();
-            }
-
-            if (targetType == typeof(UInt160))
-            {
-                var value = token.AsString();
-                if (UInt160.TryParse(value, out var scriptHash))
-                {
-                    return scriptHash;
-                }
-
-                return Result.Ok_Or(() => value.ToScriptHash(system.Settings.AddressVersion),
-                    RpcError.InvalidParams.WithData($"Invalid UInt160 Format: {token}"));
-            }
-
-            if (targetType == typeof(UInt256))
-            {
-
-                if (UInt256.TryParse(token.AsString(), out var hash))
-                {
-                    return hash;
-                }
-
-                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid UInt256 Format: {token}"));
-            }
-
-            if (targetType == typeof(ContractNameOrHashOrId))
-            {
-                if (ContractNameOrHashOrId.TryParse(token.AsString(), out var contractNameOrHashOrId))
-                {
-                    return contractNameOrHashOrId;
-                }
-
-                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid contract hash or id Format: {token}"));
-            }
-
-            if (targetType == typeof(BlockHashOrIndex))
-            {
-                if (BlockHashOrIndex.TryParse(token.AsString(), out var blockHashOrIndex))
-                {
-                    return blockHashOrIndex;
-                }
-
-                throw new RpcException(RpcError.InvalidParams.WithData($"Invalid block hash or index Format: {token}"));
-            }
-            return null;
         }
     }
 }
