@@ -79,7 +79,9 @@ namespace Neo.Plugins
             {
                 RemoteEndPoint = s.Remote,
                 Version = s.Version,
+                LastBlockIndex = s.LastBlockIndex,
             });
+
             var payload = new PipeArrayPayload<PipeRemoteNodePayload>()
             {
                 Value = [.. remoteAddresses],

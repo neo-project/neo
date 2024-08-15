@@ -51,6 +51,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(payload1.RemoteEndPoint, payload2.RemoteEndPoint);
+            Assert.AreEqual(payload1.LastBlockIndex, payload2.LastBlockIndex);
             Assert.AreEqual(payload1.Version, payload2.Version);
         }
 
@@ -60,6 +61,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             var payload1 = new PipeRemoteNodePayload()
             {
                 RemoteEndPoint = new(IPAddress.Loopback, 0),
+                LastBlockIndex = 666,
                 Version = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
             var expectedBytes = payload1.ToArray();
@@ -67,6 +69,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             var payload2 = new PipeRemoteNodePayload()
             {
                 RemoteEndPoint = new(IPAddress.Loopback, 0),
+                LastBlockIndex = 666,
                 Version = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
             var actualBytes = payload2.ToArray();
@@ -81,6 +84,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             var payload1 = new PipeRemoteNodePayload()
             {
                 RemoteEndPoint = new(IPAddress.Loopback, 0),
+                LastBlockIndex = 666,
                 Version = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
             var expectedBytes = payload1.ToArray();
@@ -92,6 +96,8 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(payload1.RemoteEndPoint, payload2.RemoteEndPoint);
+            Assert.AreEqual(666u, payload2.LastBlockIndex);
+            Assert.AreEqual(payload1.LastBlockIndex, payload2.LastBlockIndex);
             Assert.AreEqual(payload1.Version.Version, payload2.Version.Version);
             Assert.AreEqual(payload1.Version.UserAgent, payload2.Version.UserAgent);
             Assert.AreEqual(payload1.Version.Nonce, payload2.Version.Nonce);

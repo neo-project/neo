@@ -22,6 +22,7 @@ namespace Neo.Plugins.Models.Payloads
     {
         public IPEndPoint? RemoteEndPoint { get; set; }
         public VersionPayload? Version { get; set; }
+        public uint LastBlockIndex { get; set; }
 
         public int Size =>
             sizeof(int) +
@@ -34,6 +35,7 @@ namespace Neo.Plugins.Models.Payloads
             var wrapper = new Stuffer(buffer);
 
             RemoteEndPoint = wrapper.TryCatch(t => IPEndPoint.Parse(t.ReadString()), default);
+            LastBlockIndex = wrapper.TryCatch(t => t.Read<uint>(), default);
 
             var bytes = wrapper.TryCatch(t => t.ReadArray<byte>(), default);
             Version = bytes.TryCatch(t => t.AsSerializable<VersionPayload>(), default);
@@ -44,6 +46,7 @@ namespace Neo.Plugins.Models.Payloads
             var wrapper = new Stuffer(Size);
 
             wrapper.Write($"{RemoteEndPoint}");
+            wrapper.Write(LastBlockIndex);
 
             _ = wrapper.TryCatch(t => t.Write(Version.ToArray()), default);
 
