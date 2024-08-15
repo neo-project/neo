@@ -18,8 +18,6 @@ using System;
 
 namespace Neo.Plugins.RpcServer.Tests;
 
-// ConvertParameter
-
 [TestClass]
 public class UT_Parameters
 {
@@ -53,8 +51,6 @@ public class UT_Parameters
 
         JToken token4 = "0xabc";
         Assert.ThrowsException<RpcException>(() => ((ContractNameOrHashOrId)ParameterConverter.ConvertParameter(token4, typeof(ContractNameOrHashOrId))).AsHash());
-
-
     }
 
     [TestMethod]
