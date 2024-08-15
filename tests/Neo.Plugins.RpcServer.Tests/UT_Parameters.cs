@@ -21,14 +21,7 @@ namespace Neo.Plugins.RpcServer.Tests;
 [TestClass]
 public class UT_Parameters
 {
-    private NeoSystem _neoSystem;
-
-    [TestInitialize]
-    public void TestSetup()
-    {
-        var _neoSystem = new NeoSystem(TestProtocolSettings.Default, new TestBlockchain.StoreProvider());
-    }
-
+    
     [TestMethod]
     public void TestTryParse_ContractNameOrHashOrId()
     {
