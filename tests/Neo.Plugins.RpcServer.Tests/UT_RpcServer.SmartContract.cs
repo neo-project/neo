@@ -65,4 +65,23 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["stack"][0]["type"], "Integer");
         Assert.AreEqual(resp["stack"][0]["value"], "100000000");
     }
+
+    [TestMethod]
+    public void TestTraverseIterator()
+    {
+        JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(neoScriptHash, "getAllCandidates", new JArray([]), signers, true));
+        string sessionId = resp["session"].AsString();
+        string iteratorId = resp["stack"][0]["id"].AsString();
+        JArray respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        Assert.AreEqual(respArray.Count, 0);
+        _rpcServer.TerminateSession([sessionId]);
+        try
+        {
+            respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        }
+        catch (RpcException e)
+        {
+            Assert.AreEqual(e.Message, "Unknown session");
+        }
+    }
 }
