@@ -151,8 +151,11 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.AddContract(contractState.Hash, contractState);
             snapshot.Commit();
             var result = _rpcServer.GetContractState(new JArray(contractState.Hash.ToString()));
-
             Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
+
+            //Test Faild
+            //result = _rpcServer.GetContractState(new JArray(contractState.Id));
+            //Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
         }
 
         [TestMethod]
@@ -164,8 +167,10 @@ namespace Neo.Plugins.RpcServer.Tests
             _neoSystem.MemPool.TryAdd(tx, snapshot);
 
             var result = _rpcServer.GetRawMemPool(new JArray());
-
             Assert.IsTrue(((JArray)result).Any(p => p.AsString() == tx.Hash.ToString()));
+
+            result = _rpcServer.GetRawMemPool(new JArray("true"));
+            Assert.IsTrue(((JArray)result["verified"]).Any(p => p.AsString() == tx.Hash.ToString()));
         }
 
         [TestMethod]
