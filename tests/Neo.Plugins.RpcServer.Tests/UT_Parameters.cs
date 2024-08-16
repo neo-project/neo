@@ -21,7 +21,6 @@ namespace Neo.Plugins.RpcServer.Tests;
 [TestClass]
 public class UT_Parameters
 {
-
     [TestMethod]
     public void TestTryParse_ContractNameOrHashOrId()
     {

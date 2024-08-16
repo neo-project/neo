@@ -71,6 +71,7 @@ public class ContractNameOrHashOrId
             return hash;
         throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid contract hash"));
     }
+
     public string AsName()
     {
         if (_value is string name)
