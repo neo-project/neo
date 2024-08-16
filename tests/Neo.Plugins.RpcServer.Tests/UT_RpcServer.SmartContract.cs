@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
@@ -19,6 +20,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
+using Neo.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -83,5 +85,16 @@ public partial class UT_RpcServer
         {
             Assert.AreEqual(e.Message, "Unknown session");
         }
+    }
+
+    [TestMethod]
+    public void TestGetUnclaimedGas()
+    {
+        string address = Contract
+            .CreateSignatureRedeemScript(TestProtocolSettings.SoleNode.StandbyCommittee[0])
+            .ToScriptHash().ToAddress(ProtocolSettings.Default.AddressVersion);
+        JObject resp = (JObject)_rpcServer.GetUnclaimedGas([address]);
+        Assert.AreEqual(resp["unclaimed"], "0");
+        Assert.AreEqual(resp["address"], address);
     }
 }
