@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.Models.Payloads;
 
@@ -58,8 +57,5 @@ namespace Neo.Plugins
 
         [PipeProtocol(typeof(PipeNullPayload))]
         NAck = 0xf0, // NULL ACK
-
-        [PipeProtocol(typeof(PipeSerializablePayload<Message>))]
-        Tell = 0xf1, // Tell remote connections on localNode
     }
 }
