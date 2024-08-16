@@ -47,10 +47,10 @@ namespace Neo.Plugins
         MemoryPoolVerified = 0x09,
 
         [PipeProtocol(typeof(PipeNullPayload))]
-        GetRemoteNodes = 0x10,
+        GetState = 0x10,
 
-        [PipeProtocol(typeof(PipeArrayPayload<PipeRemoteNodePayload>))]
-        RemoteNodes = 0x11,
+        [PipeProtocol(typeof(PipeArrayPayload<PipeShowStatePayload>))]
+        State = 0x11,
 
         [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xe0,

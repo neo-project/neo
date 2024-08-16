@@ -70,24 +70,30 @@ namespace Neo.Plugins
             return PipeMessage.Create(message.RequestId, PipeCommand.MemoryPoolVerified, payload);
         }
 
-        private PipeMessage OnRemoteNodes(PipeMessage message)
+        private PipeMessage OnShowState(PipeMessage message)
         {
             if (message.Payload is not PipeNullPayload)
                 return CreateErrorResponse(message.RequestId, new InvalidDataException());
 
-            var remoteAddresses = _localNode.GetRemoteNodes().Select(s => new PipeRemoteNodePayload()
+            var height = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+            var remoteAddresses = _localNode.GetRemoteNodes().Select(s => new PipeShowStatePayload()
             {
                 RemoteEndPoint = s.Remote,
-                Version = s.Version,
+                ListenerTcpPort = s.ListenerTcpPort,
+                ConnectedCount = _localNode.ConnectedCount,
+                UnconnectedCount = _localNode.ConnectedCount,
+                Height = height,
+                HeaderHeight = _system.HeaderCache.Last?.Index ?? height,
                 LastBlockIndex = s.LastBlockIndex,
+                Version = s.Version,
             });
 
-            var payload = new PipeArrayPayload<PipeRemoteNodePayload>()
+            var payload = new PipeArrayPayload<PipeShowStatePayload>()
             {
                 Value = [.. remoteAddresses],
             };
 
-            return PipeMessage.Create(message.RequestId, PipeCommand.RemoteNodes, payload);
+            return PipeMessage.Create(message.RequestId, PipeCommand.State, payload);
         }
     }
 }

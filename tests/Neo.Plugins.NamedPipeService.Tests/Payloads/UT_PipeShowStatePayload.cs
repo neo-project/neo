@@ -23,15 +23,15 @@ using System.Threading.Tasks;
 namespace Neo.Plugins.NamedPipeService.Tests.Payloads
 {
     [TestClass]
-    public class UT_PipeRemoteNodePayload
+    public class UT_PipeShowStatePayload
     {
         [TestMethod]
         public void IPipeMessage_ToArray_Null()
         {
-            var payload1 = new PipeRemoteNodePayload();
+            var payload1 = new PipeShowStatePayload();
             var expectedBytes = payload1.ToArray();
 
-            var payload2 = new PipeRemoteNodePayload();
+            var payload2 = new PipeShowStatePayload();
             var actualBytes = payload2.ToArray();
             var actualBytesWithoutHeader = actualBytes;
 
@@ -41,10 +41,10 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         [TestMethod]
         public void IPipeMessage_FromArray_Null()
         {
-            var payload1 = new PipeRemoteNodePayload();
+            var payload1 = new PipeShowStatePayload();
             var expectedBytes = payload1.ToArray();
 
-            var payload2 = new PipeRemoteNodePayload();
+            var payload2 = new PipeShowStatePayload();
             payload2.FromArray(expectedBytes);
 
             var actualBytes = payload2.ToArray();
@@ -58,19 +58,29 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         [TestMethod]
         public void IPipeMessage_ToArray_Data()
         {
-            var payload1 = new PipeRemoteNodePayload()
+            var payload1 = new PipeShowStatePayload()
             {
                 RemoteEndPoint = new(IPAddress.Loopback, 0),
-                LastBlockIndex = 666,
-                Version = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
+                ListenerTcpPort = 999,
+                ConnectedCount = 1,
+                UnconnectedCount = 20,
+                Height = 777u,
+                HeaderHeight = 1000u,
+                LastBlockIndex = 666u,
+                Version = VersionPayload.Create(123u, 456u, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
             var expectedBytes = payload1.ToArray();
 
-            var payload2 = new PipeRemoteNodePayload()
+            var payload2 = new PipeShowStatePayload()
             {
                 RemoteEndPoint = new(IPAddress.Loopback, 0),
-                LastBlockIndex = 666,
-                Version = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
+                ListenerTcpPort = 999,
+                ConnectedCount = 1,
+                UnconnectedCount = 20,
+                Height = 777u,
+                HeaderHeight = 1000u,
+                LastBlockIndex = 666u,
+                Version = VersionPayload.Create(123u, 456u, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
             var actualBytes = payload2.ToArray();
             var actualBytesWithoutHeader = actualBytes;
@@ -81,21 +91,31 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         [TestMethod]
         public void IPipeMessage_FromArray_Data()
         {
-            var payload1 = new PipeRemoteNodePayload()
+            var payload1 = new PipeShowStatePayload()
             {
                 RemoteEndPoint = new(IPAddress.Loopback, 0),
-                LastBlockIndex = 666,
-                Version = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
+                ListenerTcpPort = 999,
+                ConnectedCount = 1,
+                UnconnectedCount = 20,
+                Height = 777u,
+                HeaderHeight = 1000u,
+                LastBlockIndex = 666u,
+                Version = VersionPayload.Create(123u, 456u, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
             var expectedBytes = payload1.ToArray();
 
-            var payload2 = new PipeRemoteNodePayload();
+            var payload2 = new PipeShowStatePayload();
             payload2.FromArray(expectedBytes);
 
             var actualBytes = payload2.ToArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(payload1.RemoteEndPoint, payload2.RemoteEndPoint);
+            Assert.AreEqual(999, payload2.ListenerTcpPort);
+            Assert.AreEqual(1, payload2.ConnectedCount);
+            Assert.AreEqual(20, payload2.UnconnectedCount);
+            Assert.AreEqual(777u, payload2.Height);
+            Assert.AreEqual(1000u, payload2.HeaderHeight);
             Assert.AreEqual(666u, payload2.LastBlockIndex);
             Assert.AreEqual(payload1.LastBlockIndex, payload2.LastBlockIndex);
             Assert.AreEqual(payload1.Version.Version, payload2.Version.Version);

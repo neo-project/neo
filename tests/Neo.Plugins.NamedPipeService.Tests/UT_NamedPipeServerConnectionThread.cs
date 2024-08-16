@@ -143,11 +143,11 @@ namespace Neo.Plugins.NamedPipeService.Tests
         }
 
         [TestMethod]
-        public async Task SendAndReceive_Messages_GetRemoteNodes()
+        public async Task SendAndReceive_Messages_GetState()
         {
             var rid = Random.Shared.Next();
 
-            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetRemoteNodes, new PipeNullPayload());
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetState, new PipeNullPayload());
 
             var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
 
@@ -155,12 +155,12 @@ namespace Neo.Plugins.NamedPipeService.Tests
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
 
             var message = PipeMessage.Create(buffer);
-            var remoteNodes = message.Payload as PipeArrayPayload<PipeRemoteNodePayload>;
+            var remoteNodes = message.Payload as PipeArrayPayload<PipeShowStatePayload>;
 
             Assert.AreNotEqual(0, message.Size);
-            Assert.AreEqual(PipeCommand.RemoteNodes, message.Command);
+            Assert.AreEqual(PipeCommand.State, message.Command);
             Assert.AreEqual(rid, message.RequestId);
-            Assert.IsInstanceOfType<PipeArrayPayload<PipeRemoteNodePayload>>(message.Payload);
+            Assert.IsInstanceOfType<PipeArrayPayload<PipeShowStatePayload>>(message.Payload);
             Assert.AreEqual(0, remoteNodes.Value.Length);
         }
     }
