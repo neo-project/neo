@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Akka.Util.Internal;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
@@ -61,6 +62,12 @@ namespace Neo.Plugins.RpcServer.Tests
             {
                 Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
             });
+
+            parameters = new JArray(block.Hash.ToString(), true);
+            result = _rpcServer.GetBlock(parameters);
+            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
+            result.ToString().Should().Be(block3.ToString());
         }
 
         [TestMethod]
@@ -79,6 +86,12 @@ namespace Neo.Plugins.RpcServer.Tests
             {
                 Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
             });
+
+            parameters = new JArray(block.Index, true);
+            result = _rpcServer.GetBlock(parameters);
+            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
+            result.ToString().Should().Be(block3.ToString());
         }
 
         [TestMethod]
@@ -122,6 +135,12 @@ namespace Neo.Plugins.RpcServer.Tests
             var header = block.Header.ToJson(_neoSystem.Settings);
             header["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
             Assert.AreEqual(header.ToString(), result.ToString());
+
+            parameters = new JArray(block.Index, false);
+            result = _rpcServer.GetBlockHeader(parameters);
+            var headerArr = Convert.FromBase64String(result.AsString());
+            var header2 = headerArr.AsSerializable<Header>();
+            header2.ToJson(_neoSystem.Settings).ToString().Should().Be(block.Header.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
