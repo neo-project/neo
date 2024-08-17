@@ -40,28 +40,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
-            _rpcServer = new RpcServer(_neoSystem, new RpcServerSettings
-            {
-                Network = 5195086u,
-                BindAddress = IPAddress.None,
-                SslCert = string.Empty,
-                SslCertPassword = string.Empty,
-                MaxGasInvoke = (long)new BigDecimal(10M, NativeContract.GAS.Decimals).Value,
-                MaxFee = (long)new BigDecimal(0.1M, NativeContract.GAS.Decimals).Value,
-                TrustedAuthorities = Array.Empty<string>(),
-                EnableCors = true,
-                AllowOrigins = Array.Empty<string>(),
-                KeepAliveTimeout = 60,
-                RequestHeadersTimeout = 15,
-                MaxIteratorResultItems = 100,
-                MaxStackSize = ushort.MaxValue,
-                DisabledMethods = Array.Empty<string>(),
-                MaxConcurrentConnections = 40,
-                MaxRequestBodySize = 5 * 1024 * 1024,
-                SessionEnabled = true,
-                SessionExpirationTime = TimeSpan.FromSeconds(60),
-                FindStoragePageSize = 50
-            });
+            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default with { SessionEnabled = true });
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var snapshot = _neoSystem.GetSnapshotCache();
