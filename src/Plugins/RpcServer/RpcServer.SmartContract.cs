@@ -215,6 +215,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken InvokeFunction(JArray _params)
         {
+            Result.True_Or(_params.Count >= 2 || _params.Count <= 4, RpcError.InvalidParams.WithData("Invalid params, need a script hash, an operation, an array of parameters, a signers(optional)."));
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
             string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
             ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : System.Array.Empty<ContractParameter>();
@@ -233,6 +234,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken InvokeScript(JArray _params)
         {
+            Result.True_Or(_params.Count == 1 || _params.Count == 2, RpcError.InvalidParams.WithData("Invalid params, need a script, a signers(optional)."));
             byte[] script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
             Signer[] signers = _params.Count >= 2 ? SignersFromJson((JArray)_params[1], system.Settings) : null;
             Witness[] witnesses = _params.Count >= 2 ? WitnessesFromJson((JArray)_params[1]) : null;
@@ -243,6 +245,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken TraverseIterator(JArray _params)
         {
+            Result.True_Or(_params.Count == 3, RpcError.InvalidParams.WithData("Invalid params, need a session, an iterator id, a count."));
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
             Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData($"Invalid session id {nameof(sid)}"));
             Guid iid = Result.Ok_Or(() => Guid.Parse(_params[1].GetString()), RpcError.InvalidParams.WithData($"Invliad iterator id {nameof(iid)}"));
@@ -280,6 +283,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetUnclaimedGas(JArray _params)
         {
+            Result.True_Or(_params.Count == 1, RpcError.InvalidParams.WithData("Invalid params, need an address."));
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invalid address {nameof(address)}"));
             JObject json = new();
             UInt160 script_hash = Result.Ok_Or(() => AddressToScriptHash(address, system.Settings.AddressVersion), RpcError.InvalidParams);

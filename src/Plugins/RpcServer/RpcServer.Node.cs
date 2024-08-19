@@ -114,6 +114,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetVersion(JArray _params)
         {
+            Result.True_Or(_params.Count == 0, RpcError.InvalidParams.WithData("No parameters required."));
             JObject json = new();
             json["tcpport"] = localNode.ListenerTcpPort;
             json["nonce"] = LocalNode.Nonce;
@@ -156,6 +157,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken SendRawTransaction(JArray _params)
         {
+            Result.True_Or(_params.Count == 1, RpcError.InvalidParams.WithData("Invalid params, need a raw transaction."));
             Transaction tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()).AsSerializable<Transaction>(), RpcError.InvalidParams.WithData($"Invalid Transaction Format: {_params[0]}"));
             RelayResult reason = system.Blockchain.Ask<RelayResult>(tx).Result;
             return GetRelayResult(reason.Result, tx.Hash);
@@ -164,6 +166,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken SubmitBlock(JArray _params)
         {
+            Result.True_Or(_params.Count == 1, RpcError.InvalidParams.WithData("Invalid params, need a raw block."));
             Block block = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()).AsSerializable<Block>(), RpcError.InvalidParams.WithData($"Invalid Block Format: {_params[0]}"));
             RelayResult reason = system.Blockchain.Ask<RelayResult>(block).Result;
             return GetRelayResult(reason.Result, block.Hash);

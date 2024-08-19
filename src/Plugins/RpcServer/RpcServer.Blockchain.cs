@@ -223,6 +223,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetRawTransaction(JArray _params)
         {
+            Result.True_Or(_params.Count == 1 || _params.Count == 2, RpcError.InvalidParams.WithData("Invalid params, need a txid, a verbose(optional)."));
             UInt256 hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid Transaction Hash: {_params[0]}"));
             bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
             if (system.MemPool.TryGetValue(hash, out Transaction tx) && !verbose)
@@ -254,6 +255,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetStorage(JArray _params)
         {
+            Result.True_Or(_params.Count == 2, RpcError.InvalidParams.WithData("Invalid params, need a contract hash / contract id, a key."));
             using var snapshot = system.GetSnapshotCache();
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
@@ -338,6 +340,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetTransactionHeight(JArray _params)
         {
+            Result.True_Or(_params.Count == 1, RpcError.InvalidParams.WithData("Invalid params, need a txid."));
             UInt256 hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid Transaction Hash: {_params[0]}"));
             uint? height = NativeContract.Ledger.GetTransactionState(system.StoreView, hash)?.BlockIndex;
             if (height.HasValue) return height.Value;
