@@ -106,7 +106,7 @@ namespace Neo.UnitTests.Extensions
             snapshot.Add(key, new StorageItem(state));
             //key: id, value: hash
             var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(state.Id);
-            snapshot.Add(key2, new StorageItem(hash.ToArray()));
+            if(!snapshot.Contains(key2)) snapshot.Add(key2, new StorageItem(hash.ToArray()));
         }
 
         public static void DeleteContract(this DataCache snapshot, UInt160 hash)
