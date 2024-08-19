@@ -153,9 +153,12 @@ namespace Neo.Plugins.RpcServer.Tests
             var result = _rpcServer.GetContractState(new JArray(contractState.Hash.ToString()));
             Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
 
-            //Test Faild
-            //result = _rpcServer.GetContractState(new JArray(contractState.Id));
-            //Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
+            result = _rpcServer.GetContractState(new JArray(contractState.Id));
+            Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
+
+            var byId = _rpcServer.GetContractState(new JArray(-1));
+            var byName = _rpcServer.GetContractState(new JArray("ContractManagement"));
+            byId.ToString().Should().Be(byName.ToString());
         }
 
         [TestMethod]
@@ -224,6 +227,17 @@ namespace Neo.Plugins.RpcServer.Tests
             json["next"] = 1;
             json["results"] = jarr;
             Assert.AreEqual(json.ToString(), result.ToString());
+
+            var result2 = _rpcServer.FindStorage(new JArray(contractState.Hash.ToString(), Convert.ToBase64String(key), "x"));
+            var result3 = _rpcServer.FindStorage(new JArray(contractState.Hash.ToString(), Convert.ToBase64String(key)));
+            result2.ToString().Should().Be(result.ToString());
+            result3.ToString().Should().Be(result.ToString());
+
+            Enumerable.Range(0, 51).ToList().ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, new byte[] { 0x01, (byte)i }, new byte[] { 0x02 }));
+            snapshot.Commit();
+            var result4 = _rpcServer.FindStorage(new JArray(contractState.Hash.ToString(), Convert.ToBase64String(new byte[] { 0x01 }), 0));
+            result4["next"].Should().Be(RpcServerSettings.Default.FindStoragePageSize);
+            (result4["truncated"]).AsBoolean().Should().Be(true);
         }
 
         [TestMethod]

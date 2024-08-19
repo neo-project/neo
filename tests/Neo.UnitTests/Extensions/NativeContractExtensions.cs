@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -100,8 +101,12 @@ namespace Neo.UnitTests.Extensions
 
         public static void AddContract(this DataCache snapshot, UInt160 hash, ContractState state)
         {
+            //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
             snapshot.Add(key, new StorageItem(state));
+            //key: id, value: hash
+            var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(state.Id);
+            snapshot.Add(key2, new StorageItem(hash.ToArray()));
         }
 
         public static void DeleteContract(this DataCache snapshot, UInt160 hash)
