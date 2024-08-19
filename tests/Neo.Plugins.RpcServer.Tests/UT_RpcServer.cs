@@ -40,7 +40,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
-            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default with { SessionEnabled = true });
+            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default with { SessionEnabled = true, Network = TestProtocolSettings.SoleNode.Network });
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var snapshot = _neoSystem.GetSnapshotCache();

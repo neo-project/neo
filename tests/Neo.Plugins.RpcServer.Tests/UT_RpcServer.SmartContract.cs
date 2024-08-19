@@ -55,8 +55,9 @@ public partial class UT_RpcServer
     [TestMethod]
     public void TestInvokeFunction()
     {
+        _rpcServer.wallet = _wallet;
         JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "totalSupply", new JArray([]), validatorSigner, true));
-        Assert.AreEqual(resp.Count, 7);
+        Assert.AreEqual(resp.Count, 8);
         Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
@@ -67,6 +68,8 @@ public partial class UT_RpcServer
         Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
         Assert.AreEqual(resp["stack"][0]["type"], "Integer");
         Assert.AreEqual(resp["stack"][0]["value"], "100000000");
+        Assert.IsTrue(resp.ContainsProperty("tx"));
+        _rpcServer.wallet = null;
 
         // This call triggers not only NEO but also unclaimed GAS
         resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "transfer", new JArray([
@@ -86,10 +89,10 @@ public partial class UT_RpcServer
         Assert.AreEqual(notifications.Count, 2);
         Assert.AreEqual(notifications[0]["eventname"].AsString(), "Transfer");
         Assert.AreEqual(notifications[0]["contract"].AsString(), NeoScriptHash);
-        Assert.AreEqual(((JArray)resp["notifications"])[0]["state"]["value"][2]["value"], "1");
+        Assert.AreEqual(notifications[0]["state"]["value"][2]["value"], "1");
         Assert.AreEqual(notifications[1]["eventname"].AsString(), "Transfer");
         Assert.AreEqual(notifications[1]["contract"].AsString(), GasScriptHash);
-        Assert.AreEqual(((JArray)resp["notifications"])[1]["state"]["value"][2]["value"], "50000000");
+        Assert.AreEqual(notifications[1]["state"]["value"][2]["value"], "50000000");
     }
 
     [TestMethod]
