@@ -114,11 +114,14 @@ namespace Neo.UnitTests.Extensions
         {
             //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
-            var value = snapshot.TryGet(key).GetInteroperable<ContractState>();
+            var value = snapshot.TryGet(key)?.GetInteroperable<ContractState>();
             snapshot.Delete(key);
-            //key: id, value: hash
-            var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(value.Id);
-            snapshot.Delete(key2);
+            if (value != null)
+            {
+                //key: id, value: hash
+                var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(value.Id);
+                snapshot.Delete(key2);
+            }
         }
 
         public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, params ContractParameter[] args)
