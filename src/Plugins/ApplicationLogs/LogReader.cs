@@ -90,8 +90,7 @@ namespace Neo.Plugins.ApplicationLogs
         [RpcMethod]
         public JToken GetApplicationLog(JArray _params)
         {
-            if (_params == null || _params.Count == 0)
-                throw new RpcException(RpcError.InvalidParams);
+            Result.True_Or(_params.Count == 1 || _params.Count == 2, RpcError.InvalidParams.WithData("Invalid params, need a txid, a trigger type(optional)."));
             if (UInt256.TryParse(_params[0].AsString(), out var hash))
             {
                 var raw = BlockToJObject(hash);

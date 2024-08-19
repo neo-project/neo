@@ -289,6 +289,7 @@ namespace Neo.Plugins.StateService
         [RpcMethod]
         public JToken FindStates(JArray _params)
         {
+            Result.True_Or(_params.Count >= 3 || _params.Count <= 5, RpcError.InvalidParams.WithData("Invalid params, need a root hash, a script hash, a prefix, a key(optional), a count(optional)."));
             var root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
             (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
             var script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));

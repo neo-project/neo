@@ -48,6 +48,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetBlock(JArray _params)
         {
+            Result.True_Or(_params.Count == 1 || _params.Count == 2, RpcError.InvalidParams.WithData("Invalid params, need a block hash string or block index, a verbose(optional)."));
             JToken key = Result.Ok_Or(() => _params[0], RpcError.InvalidParams.WithData($"Invalid Block Hash or Index: {_params[0]}"));
             bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
             using var snapshot = system.GetSnapshotCache();
@@ -274,6 +275,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken FindStorage(JArray _params)
         {
+            Result.True_Or(_params.Count >= 2 || _params.Count <= 3, RpcError.InvalidParams.WithData("Invalid params, need a script hash / contract id / native contract name, a base64-encoded storage key prefix, a start index(optional)."));
             using var snapshot = system.GetSnapshotCache();
             if (!int.TryParse(_params[0].AsString(), out int id))
             {
