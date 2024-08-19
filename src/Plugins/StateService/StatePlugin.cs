@@ -229,6 +229,7 @@ namespace Neo.Plugins.StateService
         [RpcMethod]
         public JToken GetProof(JArray _params)
         {
+            Result.True_Or(_params.Count == 3, RpcError.InvalidParams.WithData("Invalid params, need a root hash, a script hash, a key."));
             UInt256 root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
             byte[] key = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[2]}"));

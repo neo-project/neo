@@ -26,12 +26,14 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected virtual JToken GetConnectionCount(JArray _params)
         {
+            Result.True_Or(_params.Count == 0, RpcError.InvalidParams.WithData("No parameters required."));
             return localNode.ConnectedCount;
         }
 
         [RpcMethod]
         protected virtual JToken GetPeers(JArray _params)
         {
+            Result.True_Or(_params.Count == 0, RpcError.InvalidParams.WithData("No parameters required."));
             JObject json = new();
             json["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
             {

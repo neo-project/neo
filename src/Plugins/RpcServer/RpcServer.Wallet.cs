@@ -96,6 +96,7 @@ namespace Neo.Plugins.RpcServer
         [RpcMethod]
         protected internal virtual JToken GetNewAddress(JArray _params)
         {
+            Result.True_Or(_params.Count == 0, RpcError.InvalidParams.WithData("No parameters required."));
             CheckWallet();
             WalletAccount account = wallet.CreateAccount();
             if (wallet is NEP6Wallet nep6)

@@ -197,6 +197,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         [RpcMethod]
         public JToken GetNep11Transfers(JArray _params)
         {
+            Result.True_Or(_params.Count >= 1 || _params.Count <= 3, RpcError.InvalidParams.WithData("Invalid params, need an address, a startTime(optional), a endTime(optional)."));
             _shouldTrackHistory.True_Or(RpcError.MethodNotFound);
             UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
             // If start time not present, default to 1 week of history.
@@ -219,6 +220,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         [RpcMethod]
         public JToken GetNep11Balances(JArray _params)
         {
+            Result.True_Or(_params.Count == 1, RpcError.InvalidParams.WithData("Invalid params, need an address."));
             UInt160 userScriptHash = GetScriptHashFromParam(_params[0].AsString());
 
             JObject json = new();
@@ -279,6 +281,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         [RpcMethod]
         public JToken GetNep11Properties(JArray _params)
         {
+            Result.True_Or(_params.Count == 2, RpcError.InvalidParams.WithData("Invalid params, need a contract hash, a tokenId."));
             UInt160 nep11Hash = GetScriptHashFromParam(_params[0].AsString());
             var tokenId = _params[1].AsString().HexToBytes();
 
