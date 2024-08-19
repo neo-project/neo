@@ -150,6 +150,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var contractState = TestUtils.GetContract();
             snapshot.AddContract(contractState.Hash, contractState);
             snapshot.Commit();
+
             var result = _rpcServer.GetContractState(new JArray(contractState.Hash.ToString()));
             Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
 
@@ -159,6 +160,11 @@ namespace Neo.Plugins.RpcServer.Tests
             var byId = _rpcServer.GetContractState(new JArray(-1));
             var byName = _rpcServer.GetContractState(new JArray("ContractManagement"));
             byId.ToString().Should().Be(byName.ToString());
+
+            snapshot.DeleteContract(contractState.Hash);
+            snapshot.Commit();
+            Assert.ThrowsException<RpcException>(() => _rpcServer.GetContractState(new JArray(contractState.Hash.ToString())), RpcError.UnknownContract.Message);
+            Assert.ThrowsException<RpcException>(() => _rpcServer.GetContractState(new JArray(contractState.Id)), RpcError.UnknownContract.Message);
         }
 
         [TestMethod]
