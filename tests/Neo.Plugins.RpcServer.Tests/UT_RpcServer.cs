@@ -52,7 +52,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _rpcServerSettings = RpcServerSettings.Default with
             {
                 SessionEnabled = true,
-                SessionExpirationTime = TimeSpan.FromSeconds(1),
+                SessionExpirationTime = TimeSpan.FromSeconds(0.3),
                 MaxGasInvoke = 1500_0000_0000,
                 Network = TestProtocolSettings.SoleNode.Network,
             };

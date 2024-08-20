@@ -203,12 +203,12 @@ public partial class UT_RpcServer
         Assert.AreEqual(respArray.Count, 0);
 
         // Mocking session timeout
-        Thread.Sleep(_rpcServerSettings.SessionExpirationTime.Milliseconds + 1);
-        _rpcServer.OnTimer(new object());
+        Thread.Sleep((int)_rpcServerSettings.SessionExpirationTime.TotalMilliseconds + 1);
         // build another session that did not expire
         resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
         string notExpiredSessionId = resp["session"].AsString();
         string notExpiredIteratorId = resp["stack"][0]["id"].AsString();
+        _rpcServer.OnTimer(new object());
         try
         {
             respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
