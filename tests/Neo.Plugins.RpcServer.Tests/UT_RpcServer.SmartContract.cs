@@ -24,6 +24,7 @@ using Neo.Wallets;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Neo.Plugins.RpcServer.Tests;
 
@@ -32,6 +33,7 @@ public partial class UT_RpcServer
     static readonly string NeoScriptHash = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5";
     static readonly string GasScriptHash = "0xd2a4cff31913016155e38e474a2c06d08be276cf";
     static readonly string NeoTotalSupplyScript = "wh8MC3RvdGFsU3VwcGx5DBT1Y\u002BpAvCg9TQ4FxI6jBbPyoHNA70FifVtS";
+    static readonly string NeoTransferScript = "CxEMFPlu76Cuc\u002BbgteStE4ozsOWTNUdrDBQtYNweHko3YcnMFOes3ceblcI/lRTAHwwIdHJhbnNmZXIMFPVj6kC8KD1NDgXEjqMFs/Kgc0DvQWJ9W1I=";
     static readonly UInt160 ValidatorScriptHash = Contract
         .CreateSignatureRedeemScript(TestProtocolSettings.SoleNode.StandbyCommittee[0])
         .ToScriptHash();
@@ -71,6 +73,16 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["stack"][0]["value"], "100000000");
         Assert.IsTrue(resp.ContainsProperty("tx"));
 
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "symbol"));
+        Assert.AreEqual(resp.Count, 6);
+        Assert.IsTrue(resp.ContainsProperty("script"));
+        Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
+        Assert.AreEqual(resp["state"], "HALT");
+        Assert.AreEqual(resp["exception"], null);
+        Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
+        Assert.AreEqual(resp["stack"][0]["type"], "ByteString");
+        Assert.AreEqual(resp["stack"][0]["value"], Convert.ToBase64String(Encoding.UTF8.GetBytes("NEO")));
+
         // This call triggers not only NEO but also unclaimed GAS
         resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "transfer", new JArray([
             new JObject() { ["type"] = "Hash160", ["value"] = MultisigScriptHash.ToString() },
@@ -79,6 +91,7 @@ public partial class UT_RpcServer
             new JObject() { ["type"] = "Any" },
         ]), multisigSigner, true));
         Assert.AreEqual(resp.Count, 7);
+        Assert.AreEqual(resp["script"], NeoTransferScript);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
         Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoScriptHash);
@@ -110,6 +123,11 @@ public partial class UT_RpcServer
         Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
         Assert.AreEqual(resp["stack"][0]["type"], "Integer");
         Assert.AreEqual(resp["stack"][0]["value"], "100000000");
+
+        resp = (JObject)_rpcServer.InvokeScript(new JArray(NeoTransferScript));
+        Assert.AreEqual(resp.Count, 6);
+        Assert.AreEqual(resp["stack"][0]["type"], "Boolean");
+        Assert.AreEqual(resp["stack"][0]["value"], false);
     }
 
     [TestMethod]
