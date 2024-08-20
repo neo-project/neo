@@ -11,6 +11,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -19,7 +20,9 @@ using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Linq;
 using System.Net;
+using System.Numerics;
 using System.Text;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -28,11 +31,17 @@ namespace Neo.Plugins.RpcServer.Tests
     public partial class UT_RpcServer
     {
         private NeoSystem _neoSystem;
+        private RpcServerSettings _rpcServerSettings;
         private RpcServer _rpcServer;
         private TestMemoryStoreProvider _memoryStoreProvider;
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
+
+        static readonly UInt160 NeoScriptHash = UInt160.Parse("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5");
+        static readonly UInt160 GasScriptHash = UInt160.Parse("0xd2a4cff31913016155e38e474a2c06d08be276cf");
+        const byte NativePrefixAccount = 20;
+        const byte NativePrefixTotalSupply = 11;
 
         [TestInitialize]
         public void TestSetup()
@@ -40,7 +49,14 @@ namespace Neo.Plugins.RpcServer.Tests
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
-            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default with { SessionEnabled = true, Network = TestProtocolSettings.SoleNode.Network });
+            _rpcServerSettings = RpcServerSettings.Default with
+            {
+                SessionEnabled = true,
+                SessionExpirationTime = TimeSpan.FromSeconds(1),
+                MaxGasInvoke = 1500_0000_0000,
+                Network = TestProtocolSettings.SoleNode.Network,
+            };
+            _rpcServer = new RpcServer(_neoSystem, _rpcServerSettings);
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var snapshot = _neoSystem.GetSnapshotCache();

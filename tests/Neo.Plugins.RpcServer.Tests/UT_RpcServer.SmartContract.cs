@@ -13,9 +13,11 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -25,13 +27,12 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Neo.Plugins.RpcServer.Tests;
 
 public partial class UT_RpcServer
 {
-    static readonly string NeoScriptHash = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5";
-    static readonly string GasScriptHash = "0xd2a4cff31913016155e38e474a2c06d08be276cf";
     static readonly string NeoTotalSupplyScript = "wh8MC3RvdGFsU3VwcGx5DBT1Y\u002BpAvCg9TQ4FxI6jBbPyoHNA70FifVtS";
     static readonly string NeoTransferScript = "CxEMFPlu76Cuc\u002BbgteStE4ozsOWTNUdrDBQtYNweHko3YcnMFOes3ceblcI/lRTAHwwIdHJhbnNmZXIMFPVj6kC8KD1NDgXEjqMFs/Kgc0DvQWJ9W1I=";
     static readonly UInt160 ValidatorScriptHash = Contract
@@ -59,12 +60,12 @@ public partial class UT_RpcServer
     {
         _rpcServer.wallet = _wallet;
 
-        JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "totalSupply", new JArray([]), validatorSigner, true));
+        JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "totalSupply", new JArray([]), validatorSigner, true));
         Assert.AreEqual(resp.Count, 8);
         Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
-        Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoScriptHash);
+        Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoScriptHash.ToString());
         Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 0);
         Assert.AreEqual(resp["state"], "HALT");
         Assert.AreEqual(resp["exception"], null);
@@ -73,7 +74,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["stack"][0]["value"], "100000000");
         Assert.IsTrue(resp.ContainsProperty("tx"));
 
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "symbol"));
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "symbol"));
         Assert.AreEqual(resp.Count, 6);
         Assert.IsTrue(resp.ContainsProperty("script"));
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
@@ -84,7 +85,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["stack"][0]["value"], Convert.ToBase64String(Encoding.UTF8.GetBytes("NEO")));
 
         // This call triggers not only NEO but also unclaimed GAS
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "transfer", new JArray([
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "transfer", new JArray([
             new JObject() { ["type"] = "Hash160", ["value"] = MultisigScriptHash.ToString() },
             new JObject() { ["type"] = "Hash160", ["value"] = ValidatorScriptHash.ToString() },
             new JObject() { ["type"] = "Integer", ["value"] = "1" },
@@ -94,17 +95,17 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["script"], NeoTransferScript);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
-        Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoScriptHash);
+        Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoScriptHash.ToString());
         Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 4);
         Assert.AreEqual(resp["state"], "HALT");
         Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash.ToString()} is not found");
         JArray notifications = (JArray)resp["notifications"];
         Assert.AreEqual(notifications.Count, 2);
         Assert.AreEqual(notifications[0]["eventname"].AsString(), "Transfer");
-        Assert.AreEqual(notifications[0]["contract"].AsString(), NeoScriptHash);
+        Assert.AreEqual(notifications[0]["contract"].AsString(), NeoScriptHash.ToString());
         Assert.AreEqual(notifications[0]["state"]["value"][2]["value"], "1");
         Assert.AreEqual(notifications[1]["eventname"].AsString(), "Transfer");
-        Assert.AreEqual(notifications[1]["contract"].AsString(), GasScriptHash);
+        Assert.AreEqual(notifications[1]["contract"].AsString(), GasScriptHash.ToString());
         Assert.AreEqual(notifications[1]["state"]["value"][2]["value"], "50000000");
 
         _rpcServer.wallet = null;
@@ -117,7 +118,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp.Count, 7);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
-        Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoScriptHash);
+        Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoScriptHash.ToString());
         Assert.AreEqual(resp["state"], "HALT");
         Assert.AreEqual(resp["exception"], null);
         Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
@@ -133,12 +134,87 @@ public partial class UT_RpcServer
     [TestMethod]
     public void TestTraverseIterator()
     {
-        JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash, "getAllCandidates", new JArray([]), validatorSigner, true));
+        // GetAllCandidates that should return 0 candidates
+        JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
         string sessionId = resp["session"].AsString();
         string iteratorId = resp["stack"][0]["id"].AsString();
         JArray respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
         Assert.AreEqual(respArray.Count, 0);
         _rpcServer.TerminateSession([sessionId]);
+        try
+        {
+            respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        }
+        catch (RpcException e)
+        {
+            Assert.AreEqual(e.Message, "Unknown session");
+        }
+
+        // register candidate in snapshot
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "registerCandidate",
+            new JArray([new JObject()
+            {
+                ["type"] = "PublicKey",
+                ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
+            }]), validatorSigner, true));
+        Assert.AreEqual(resp["state"], "HALT");
+        SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
+        Transaction? tx = new Transaction
+        {
+            Nonce = 233,
+            ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,
+            Signers = [new Signer() { Account = ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
+            Attributes = Array.Empty<TransactionAttribute>(),
+            Script = Convert.FromBase64String(resp["script"].AsString()),
+            Witnesses = null,
+        };
+        ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: _neoSystem.Settings, gas: 1200_0000_0000);
+        engine.SnapshotCache.Commit();
+
+        // GetAllCandidates that should return 1 candidate
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        sessionId = resp["session"].AsString();
+        iteratorId = resp["stack"][0]["id"].AsString();
+        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        Assert.AreEqual(respArray.Count, 1);
+        Assert.AreEqual(respArray[0]["type"], "Struct");
+        JArray value = (JArray)respArray[0]["value"];
+        Assert.AreEqual(value.Count, 2);
+        Assert.AreEqual(value[0]["type"], "ByteString");
+        Assert.AreEqual(value[0]["value"], Convert.ToBase64String(TestProtocolSettings.SoleNode.StandbyCommittee[0].ToArray()));
+        Assert.AreEqual(value[1]["type"], "Integer");
+        Assert.AreEqual(value[1]["value"], "0");
+
+        // No result when traversed again
+        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        Assert.AreEqual(respArray.Count, 0);
+
+        // GetAllCandidates again
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        sessionId = resp["session"].AsString();
+        iteratorId = resp["stack"][0]["id"].AsString();
+
+        // Insufficient result count limit
+        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 0]);
+        Assert.AreEqual(respArray.Count, 0);
+
+        // Mocking session timeout
+        Thread.Sleep(_rpcServerSettings.SessionExpirationTime.Milliseconds + 1);
+        _rpcServer.OnTimer(new object());
+        try
+        {
+            respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        }
+        catch (RpcException e)
+        {
+            Assert.AreEqual(e.Message, "Unknown session");
+        }
+
+        // Mocking disposal
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        sessionId = resp["session"].AsString();
+        iteratorId = resp["stack"][0]["id"].AsString();
+        _rpcServer.Dispose_SmartContract();
         try
         {
             respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
