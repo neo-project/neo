@@ -197,10 +197,18 @@ public partial class UT_RpcServer
         // Insufficient result count limit
         respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 0]);
         Assert.AreEqual(respArray.Count, 0);
+        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 1]);
+        Assert.AreEqual(respArray.Count, 1);
+        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 1]);
+        Assert.AreEqual(respArray.Count, 0);
 
         // Mocking session timeout
         Thread.Sleep(_rpcServerSettings.SessionExpirationTime.Milliseconds + 1);
         _rpcServer.OnTimer(new object());
+        // build another session that did not expire
+        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        string notExpiredSessionId = resp["session"].AsString();
+        string notExpiredIteratorId = resp["stack"][0]["id"].AsString();
         try
         {
             respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
@@ -209,6 +217,8 @@ public partial class UT_RpcServer
         {
             Assert.AreEqual(e.Message, "Unknown session");
         }
+        respArray = (JArray)_rpcServer.TraverseIterator([notExpiredSessionId, notExpiredIteratorId, 1]);
+        Assert.AreEqual(respArray.Count, 1);
 
         // Mocking disposal
         resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
