@@ -48,6 +48,9 @@ public partial class UT_RpcServer
     {
         ["account"] = ValidatorScriptHash.ToString(),
         ["scopes"] = "CalledByEntry",
+        ["allowedcontracts"] = new JArray([NeoScriptHash.ToString(), GasScriptHash.ToString()]),
+        ["allowedgroups"] = new JArray([TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString()]),
+        ["rules"] = new JArray([new JObject() { ["action"] = "Allow", ["condition"] = new JObject { ["type"] = "CalledByEntry" } }]),
     }];
     static readonly JArray multisigSigner = [new JObject()
     {
