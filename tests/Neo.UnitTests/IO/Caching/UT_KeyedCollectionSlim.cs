@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
@@ -34,9 +35,9 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item);
 
             // Assert
-            Assert.AreEqual(1, collection.Count);
-            Assert.IsTrue(collection.Contains(1));
-            Assert.AreEqual(item, collection.First);
+            collection.Count.Should().Be(1);
+            collection.Contains(1).Should().BeTrue();
+            collection.First.Should().Be(item);
         }
 
         [TestMethod]
@@ -51,7 +52,8 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item1);
 
             // Assert
-            Assert.ThrowsException<ArgumentException>(() => collection.Add(item2));
+            var act = (() => collection.Add(item2));
+            act.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
@@ -66,8 +68,8 @@ namespace Neo.UnitTests.IO.Caching
             collection.Remove(1);
 
             // Assert
-            Assert.AreEqual(0, collection.Count);
-            Assert.IsFalse(collection.Contains(1));
+            collection.Count.Should().Be(0);
+            collection.Contains(1).Should().BeFalse();
         }
 
         [TestMethod]
@@ -84,14 +86,15 @@ namespace Neo.UnitTests.IO.Caching
             collection.RemoveFirst();
 
             // Assert
-            Assert.AreEqual(1, collection.Count);
-            Assert.IsFalse(collection.Contains(1));
-            Assert.IsTrue(collection.Contains(2));
+            collection.Count.Should().Be(1);
+            collection.Contains(1).Should().BeFalse();
+            collection.Contains(2).Should().BeTrue();
         }
 
         public class TestItem : IStructuralEquatable, IStructuralComparable, IComparable
         {
             public int Id { get; set; }
+
             public string Name { get; set; }
 
             public int CompareTo(object? obj)
