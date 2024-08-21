@@ -9,9 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -21,6 +23,24 @@ namespace Neo.Plugins.RpcServer.Tests
 {
     partial class UT_RpcServer
     {
+        [TestMethod]
+        public void TestGetConnectionCount()
+        {
+            var result = _rpcServer.GetConnectionCount(new JArray());
+            result.GetType().Should().Be(typeof(JNumber));
+        }
+
+        [TestMethod]
+        public void TestGetPeers()
+        {
+            var result = _rpcServer.GetPeers(new JArray());
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            var json = (JObject)result;
+            json.ContainsProperty("unconnected").Should().BeTrue();
+            json.ContainsProperty("bad").Should().BeTrue();
+            json.ContainsProperty("connected").Should().BeTrue();
+        }
+
         [TestMethod]
         public void TestGetVersion()
         {
