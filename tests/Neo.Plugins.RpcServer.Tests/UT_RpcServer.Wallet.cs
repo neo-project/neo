@@ -63,7 +63,7 @@ partial class UT_RpcServer
         File.WriteAllText(Path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.OpenWallet(paramsArray), "Should throw RpcException for unsupported wallet");
         Assert.AreEqual(RpcError.WalletNotSupported.Code, exception.HResult);
-        Assert.AreEqual(exception.Message, "Wallet not supported - Invalid password.");
+        Assert.AreEqual(exception.Message, "Wallet not supported - Failed to load wallet file.");
         File.Delete(Path);
     }
 

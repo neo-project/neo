@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Json;
+using System;
 
 namespace Neo.Wallets.NEP6
 {
@@ -58,7 +59,14 @@ namespace Neo.Wallets.NEP6
         /// <returns>The converted parameters.</returns>
         public static ScryptParameters FromJson(JObject json)
         {
-            return new ScryptParameters((int)json["n"].AsNumber(), (int)json["r"].AsNumber(), (int)json["p"].AsNumber());
+            try
+            {
+                return new ScryptParameters((int)json["n"].AsNumber(), (int)json["r"].AsNumber(), (int)json["p"].AsNumber());
+            }
+            catch (Exception e)
+            {
+                throw WalletException.FromException(e);
+            }
         }
 
         /// <summary>
@@ -67,10 +75,7 @@ namespace Neo.Wallets.NEP6
         /// <returns>The parameters represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            JObject json = new();
-            json["n"] = N;
-            json["r"] = R;
-            json["p"] = P;
+            JObject json = new() { ["n"] = N, ["r"] = R, ["p"] = P };
             return json;
         }
     }
