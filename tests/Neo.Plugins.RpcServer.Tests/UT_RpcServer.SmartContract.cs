@@ -144,14 +144,7 @@ public partial class UT_RpcServer
         JArray respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
         Assert.AreEqual(respArray.Count, 0);
         _rpcServer.TerminateSession([sessionId]);
-        try
-        {
-            respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
-        }
-        catch (RpcException e)
-        {
-            Assert.AreEqual(e.Message, "Unknown session");
-        }
+        Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
 
         // register candidate in snapshot
         resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoScriptHash.ToString(), "registerCandidate",
@@ -212,14 +205,9 @@ public partial class UT_RpcServer
         string notExpiredSessionId = resp["session"].AsString();
         string notExpiredIteratorId = resp["stack"][0]["id"].AsString();
         _rpcServer.OnTimer(new object());
-        try
-        {
-            respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
-        }
-        catch (RpcException e)
-        {
-            Assert.AreEqual(e.Message, "Unknown session");
-        }
+        Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
+        // If you want to run the following line without exception,
+        // DO NOT BREAK IN THE DEBUGGER, because the session expires quickly
         respArray = (JArray)_rpcServer.TraverseIterator([notExpiredSessionId, notExpiredIteratorId, 1]);
         Assert.AreEqual(respArray.Count, 1);
 
@@ -228,14 +216,7 @@ public partial class UT_RpcServer
         sessionId = resp["session"].AsString();
         iteratorId = resp["stack"][0]["id"].AsString();
         _rpcServer.Dispose_SmartContract();
-        try
-        {
-            respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
-        }
-        catch (RpcException e)
-        {
-            Assert.AreEqual(e.Message, "Unknown session");
-        }
+        Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
     }
 
     [TestMethod]
