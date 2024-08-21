@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -212,6 +213,16 @@ partial class UT_RpcServer
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendFrom(paramsArray));
         Assert.AreEqual(exception.HResult, RpcError.InvalidRequest.Code);
         TestUtilCloseWallet();
+
+        _rpcServer.wallet = _wallet;
+        JObject resp = (JObject)_rpcServer.SendFrom(paramsArray);
+        Assert.AreEqual(resp.Count, 12);
+        Assert.AreEqual(resp["sender"], ValidatorAddress);
+        JArray signers = (JArray)resp["signers"];
+        Assert.AreEqual(signers.Count, 1);
+        Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
+        Assert.AreEqual(signers[0]["scopes"], "CalledByEntry");
+        _rpcServer.wallet = null;
     }
 
     [TestMethod]
@@ -222,6 +233,16 @@ partial class UT_RpcServer
         var paramsArray = new JArray(from, to);
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendMany(paramsArray), "Should throw RpcException for insufficient funds");
         Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+
+        _rpcServer.wallet = _wallet;
+        JObject resp = (JObject)_rpcServer.SendMany(paramsArray);
+        Assert.AreEqual(resp.Count, 12);
+        Assert.AreEqual(resp["sender"], ValidatorAddress);
+        JArray signers = (JArray)resp["signers"];
+        Assert.AreEqual(signers.Count, 1);
+        Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
+        Assert.AreEqual(signers[0]["scopes"], "CalledByEntry");
+        _rpcServer.wallet = null;
     }
 
     [TestMethod]
@@ -233,6 +254,16 @@ partial class UT_RpcServer
         var paramsArray = new JArray(assetId.ToString(), to, amount);
         var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendToAddress(paramsArray), "Should throw RpcException for insufficient funds");
         Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+
+        _rpcServer.wallet = _wallet;
+        JObject resp = (JObject)_rpcServer.SendToAddress(paramsArray);
+        Assert.AreEqual(resp.Count, 12);
+        Assert.AreEqual(resp["sender"], ValidatorAddress);
+        JArray signers = (JArray)resp["signers"];
+        Assert.AreEqual(signers.Count, 1);
+        Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
+        Assert.AreEqual(signers[0]["scopes"], "CalledByEntry");
+        _rpcServer.wallet = null;
     }
 
     [TestMethod]
