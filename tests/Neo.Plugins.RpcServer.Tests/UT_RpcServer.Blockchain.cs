@@ -13,6 +13,7 @@ using Akka.Actor;
 using Akka.Util.Internal;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -23,6 +24,8 @@ using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
 using System;
 using System.Linq;
+using System.Security.Policy;
+using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -188,12 +191,17 @@ namespace Neo.Plugins.RpcServer.Tests
             var snapshot = _neoSystem.GetSnapshotCache();
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             _neoSystem.MemPool.TryAdd(tx, snapshot);
-            var parameters = new JArray(tx.Hash.ToString(), true);
             snapshot.Commit();
+            var parameters = new JArray(tx.Hash.ToString(), true);
             var result = _rpcServer.GetRawTransaction(parameters);
 
             var json = Utility.TransactionToJson(tx, _neoSystem.Settings);
             Assert.AreEqual(json.ToString(), result.ToString());
+
+            parameters = new JArray(tx.Hash.ToString(), false);
+            result = _rpcServer.GetRawTransaction(parameters);
+            var tx2 = Convert.FromBase64String(result.AsString()).AsSerializable<Transaction>();
+            tx2.ToJson(_neoSystem.Settings).ToString().Should().Be(tx.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
@@ -279,11 +287,14 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetCandidates()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
-            var result = _rpcServer.GetCandidates(new JArray());
             var json = new JArray();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
+
+            var key = new KeyBuilder(NativeContract.NEO.Id, 33).Add(ECPoint.Parse("02237309a0633ff930d51856db01d17c829a5b2e5cc2638e9c03b4cfa8e9c9f971", ECCurve.Secp256r1));
+            snapshot.Add(key, new StorageItem(new CandidateState() { Registered = true, Votes = 10000 }));
             snapshot.Commit();
             var candidates = NativeContract.NEO.GetCandidates(_neoSystem.GetSnapshotCache());
+            var result = _rpcServer.GetCandidates(new JArray());
 
             foreach (var candidate in candidates)
             {
