@@ -36,7 +36,7 @@ public partial class UT_RpcServer
         resp = (JArray)_rpcServer.ListPlugins([]);
         Assert.AreEqual(resp.Count, 2);
         foreach (JObject p in resp)
-            Assert.AreEqual(p["name"], "RpcServer");
+            Assert.AreEqual(p["name"], nameof(RpcServer));
     }
 
     [TestMethod]

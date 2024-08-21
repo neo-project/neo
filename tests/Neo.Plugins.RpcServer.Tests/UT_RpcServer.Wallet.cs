@@ -221,7 +221,7 @@ partial class UT_RpcServer
         JArray signers = (JArray)resp["signers"];
         Assert.AreEqual(signers.Count, 1);
         Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessConditionType.CalledByEntry));
+        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
         _rpcServer.wallet = null;
     }
 
@@ -241,7 +241,7 @@ partial class UT_RpcServer
         JArray signers = (JArray)resp["signers"];
         Assert.AreEqual(signers.Count, 1);
         Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessConditionType.CalledByEntry));
+        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
         _rpcServer.wallet = null;
     }
 
@@ -262,7 +262,7 @@ partial class UT_RpcServer
         JArray signers = (JArray)resp["signers"];
         Assert.AreEqual(signers.Count, 1);
         Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessConditionType.CalledByEntry));
+        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
         _rpcServer.wallet = null;
     }
 
@@ -364,6 +364,20 @@ partial class UT_RpcServer
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.CancelTransaction(paramsArray), "Should throw RpcException for no opened wallet");
         Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
         TestUtilCloseWallet();
+
+        // Test valid cancel
+        _rpcServer.wallet = _wallet;
+        JObject resp = (JObject)_rpcServer.SendFrom(new JArray(NativeContract.GAS.Hash.ToString(), _walletAccount.Address, _walletAccount.Address, "1"));
+        string txHash = resp["hash"].AsString();
+        resp = (JObject)_rpcServer.CancelTransaction(new JArray(txHash, new JArray(ValidatorAddress), "1"));
+        Assert.AreEqual(resp.Count, 12);
+        Assert.AreEqual(resp["sender"], ValidatorAddress);
+        JArray signers = (JArray)resp["signers"];
+        Assert.AreEqual(signers.Count, 1);
+        Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
+        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.None));
+        Assert.AreEqual(resp["attributes"][0]["type"], nameof(TransactionAttributeType.Conflicts));
+        _rpcServer.wallet = null;
     }
 
     [TestMethod]
