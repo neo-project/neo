@@ -445,6 +445,9 @@ namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
         resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]);
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
+        // invoke verify with 2 param (which does not exist); should throw Exception
+        Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),
+            $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.");
     }
 
 

@@ -494,7 +494,7 @@ namespace Neo.Plugins.RpcServer
         {
             using var snapshot = system.GetSnapshotCache();
             var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash).NotNull_Or(RpcError.UnknownContract);
-            var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, args.Count()).NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash));
+            var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, args.Count()).NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash, args.Count()));
             (md.ReturnType == ContractParameterType.Boolean).True_Or(RpcErrorFactory.InvalidContractVerification("The verify method doesn't return boolean value."));
             Transaction tx = new()
             {
