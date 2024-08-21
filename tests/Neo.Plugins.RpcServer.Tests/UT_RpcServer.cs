@@ -38,8 +38,6 @@ namespace Neo.Plugins.RpcServer.Tests
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
 
-        static readonly UInt160 NeoScriptHash = UInt160.Parse("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5");
-        static readonly UInt160 GasScriptHash = UInt160.Parse("0xd2a4cff31913016155e38e474a2c06d08be276cf");
         const byte NativePrefixAccount = 20;
         const byte NativePrefixTotalSupply = 11;
 

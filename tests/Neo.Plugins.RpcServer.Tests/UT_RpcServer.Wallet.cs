@@ -221,7 +221,7 @@ partial class UT_RpcServer
         JArray signers = (JArray)resp["signers"];
         Assert.AreEqual(signers.Count, 1);
         Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-        Assert.AreEqual(signers[0]["scopes"], "CalledByEntry");
+        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessConditionType.CalledByEntry));
         _rpcServer.wallet = null;
     }
 
@@ -241,7 +241,7 @@ partial class UT_RpcServer
         JArray signers = (JArray)resp["signers"];
         Assert.AreEqual(signers.Count, 1);
         Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-        Assert.AreEqual(signers[0]["scopes"], "CalledByEntry");
+        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessConditionType.CalledByEntry));
         _rpcServer.wallet = null;
     }
 
@@ -262,7 +262,7 @@ partial class UT_RpcServer
         JArray signers = (JArray)resp["signers"];
         Assert.AreEqual(signers.Count, 1);
         Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
-        Assert.AreEqual(signers[0]["scopes"], "CalledByEntry");
+        Assert.AreEqual(signers[0]["scopes"], nameof(WitnessConditionType.CalledByEntry));
         _rpcServer.wallet = null;
     }
 
