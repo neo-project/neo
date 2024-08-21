@@ -15,6 +15,7 @@ using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -391,6 +392,59 @@ partial class UT_RpcServer
         var invalidParamsArray = new JArray("invalid_script_hash");
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify(invalidParamsArray), "Should throw RpcException for invalid script hash");
         Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
+
+        // deploy a contract with `Verify` method; 
+        string _contractSourceCode = """
+using Neo;using Neo.SmartContract.Framework;using Neo.SmartContract.Framework.Services;
+namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
+        const byte PREFIX_OWNER = 0x20;
+        public static void _deploy(object data, bool update) {
+            if (update) return;
+            Storage.Put(Storage.CurrentContext, new byte[] { PREFIX_OWNER },
+                ((Transaction)Runtime.ScriptContainer).Sender);}
+        public static bool Verify() => Runtime.CheckWitness((UInt160)Storage.Get(Storage.CurrentContext, new byte[] { PREFIX_OWNER }));
+        public static bool Verify(byte prefix) => Runtime.CheckWitness((UInt160)Storage.Get(Storage.CurrentContext, new byte[] { prefix }));}}
+""";
+        string base64NefFile = "TkVGM05lby5Db21waWxlci5DU2hhcnAgMy43LjQrNjAzNGExODIxY2E3MDk0NjBlYzMxMzZjNzBjMmRjYzNiZWEuLi4AAAAAAGNXAAJ5JgQiGEEtUQgwE84MASDbMEGb9mfOQeY/GIRADAEg2zBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEBXAAERiEoQeNBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEDo2WhC";
+        string manifest = """{"name":"ContractWithVerify","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"_deploy","parameters":[{"name":"data","type":"Any"},{"name":"update","type":"Boolean"}],"returntype":"Void","offset":0,"safe":false},{"name":"verify","parameters":[],"returntype":"Boolean","offset":31,"safe":false},{"name":"verify","parameters":[{"name":"prefix","type":"Integer"}],"returntype":"Boolean","offset":63,"safe":false}],"events":[]},"permissions":[],"trusts":[],"extra":{"nef":{"optimization":"All"}}}""";
+        JObject deployResp = (JObject)_rpcServer.InvokeFunction(new JArray([ContractManagement.ContractManagement.Hash.ToString(),
+            "deploy",
+            new JArray([
+                new JObject() { ["type"] = nameof(ContractParameterType.ByteArray), ["value"] = base64NefFile },
+                new JObject() { ["type"] = nameof(ContractParameterType.String), ["value"] = manifest },
+            ]),
+            validatorSigner]));
+        Assert.AreEqual(deployResp["state"], nameof(VM.VMState.HALT));
+        UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
+        SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
+        Transaction? tx = new Transaction
+        {
+            Nonce = 233,
+            ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,
+            Signers = [new Signer() { Account = ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
+            Attributes = Array.Empty<TransactionAttribute>(),
+            Script = Convert.FromBase64String(deployResp["script"].AsString()),
+            Witnesses = null,
+        };
+        ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: _neoSystem.Settings, gas: 1200_0000_0000);
+        engine.SnapshotCache.Commit();
+
+        // invoke verify without signer; should return false
+        JObject resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString()]);
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+        Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), false);
+        // invoke verify with signer; should return true
+        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([]), validatorSigner]);
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+        Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
+        // invoke verify with wrong input value; should FAULT
+        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]), validatorSigner]);
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.FAULT));
+        Assert.AreEqual(resp["exception"], "Object reference not set to an instance of an object.");
+        // invoke verify with 1 param and signer; should return true
+        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]);
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+        Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
     }
 
 

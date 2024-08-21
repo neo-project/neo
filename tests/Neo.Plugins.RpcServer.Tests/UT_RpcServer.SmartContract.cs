@@ -71,7 +71,7 @@ public partial class UT_RpcServer
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
         Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
         Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 0);
-        Assert.AreEqual(resp["state"], "HALT");
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["exception"], null);
         Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
         Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Integer));
@@ -82,7 +82,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp.Count, 6);
         Assert.IsTrue(resp.ContainsProperty("script"));
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
-        Assert.AreEqual(resp["state"], "HALT");
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["exception"], null);
         Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
         Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.ByteString));
@@ -101,7 +101,7 @@ public partial class UT_RpcServer
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
         Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
         Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 4);
-        Assert.AreEqual(resp["state"], "HALT");
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash.ToString()} is not found");
         JArray notifications = (JArray)resp["notifications"];
         Assert.AreEqual(notifications.Count, 2);
@@ -123,7 +123,7 @@ public partial class UT_RpcServer
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
         Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
-        Assert.AreEqual(resp["state"], "HALT");
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["exception"], null);
         Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
         Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Integer));
@@ -154,7 +154,7 @@ public partial class UT_RpcServer
                 ["type"] = nameof(ContractParameterType.PublicKey),
                 ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
             }]), validatorSigner, true));
-        Assert.AreEqual(resp["state"], "HALT");
+        Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
         Transaction? tx = new Transaction
         {
