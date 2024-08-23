@@ -26,7 +26,6 @@ namespace Neo.Extensions.Tests
             var expected = "Hello World";
             var expectedSecureString = expected.ToSecureString();
 
-
             var actual = expectedSecureString.GetClearText();
 
             Assert.IsTrue(expectedSecureString.IsReadOnly());
