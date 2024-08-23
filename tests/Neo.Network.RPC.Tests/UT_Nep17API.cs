@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -19,7 +20,6 @@ using Neo.Wallets;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
-using static Neo.Helper;
 
 namespace Neo.Network.RPC.Tests
 {

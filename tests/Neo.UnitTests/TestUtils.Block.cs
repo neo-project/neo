@@ -11,6 +11,7 @@
 
 using Akka.Util.Internal;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
