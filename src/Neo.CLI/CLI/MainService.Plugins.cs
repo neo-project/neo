@@ -93,7 +93,7 @@ namespace Neo.CLI
             var jsonRelease = json.AsArray()
                 .FirstOrDefault(s =>
                     s?["tag_name"]?.GetValue<string>() == pluginVersionString &&
-                    s["prerelease"]?.GetValue<bool>() == prerelease);
+                    s?["prerelease"]?.GetValue<bool>() == prerelease);
 
             if (jsonRelease == null)
             {
