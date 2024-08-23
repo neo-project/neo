@@ -60,7 +60,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             _account.ChangePasswordPrepare("b", "Satoshi").Should().BeTrue();
             _account.ChangePasswordCommit();
             _account.ChangePasswordPrepare("Satoshi", "b").Should().BeTrue();
-            _account.ChangePasswordRoolback();
+            _account.ChangePasswordRollback();
             _account.VerifyPassword("Satoshi").Should().BeTrue();
         }
 
