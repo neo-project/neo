@@ -49,6 +49,5 @@ namespace Neo.Extensions
                 }
             }
         }
-
     }
 }
