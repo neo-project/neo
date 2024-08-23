@@ -18,7 +18,7 @@ namespace Neo.Plugins.RpcServer
     partial class RpcServer
     {
         [RpcMethod]
-        protected virtual JToken ListPlugins(JArray _params)
+        protected internal virtual JToken ListPlugins(JArray _params)
         {
             return new JArray(Plugin.Plugins
                 .OrderBy(u => u.Name)
@@ -34,7 +34,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken ValidateAddress(JArray _params)
+        protected internal virtual JToken ValidateAddress(JArray _params)
         {
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invlid address format: {_params[0]}"));
             JObject json = new();
