@@ -285,7 +285,8 @@ namespace Neo.Plugins.RpcServer
             byte[] prefix = Result.Ok_Or(() => Convert.FromBase64String(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid Base64 string{_params[1]}"));
             byte[] prefix_key = StorageKey.CreateSearchPrefix(id, prefix);
 
-            if (!int.TryParse(_params[2].AsString(), out int start))
+            int start = 0;
+            if (_params.Count > 2 && !int.TryParse(_params[2].AsString(), out start))
             {
                 start = 0;
             }
