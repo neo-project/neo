@@ -67,7 +67,7 @@ namespace Neo.Json
 
         public override string AsString()
         {
-            return string.Join(",", items.Select(p => p?.AsString()));
+            return ToString();
         }
 
         public override void Clear()
