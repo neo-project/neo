@@ -102,7 +102,8 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
         Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 4);
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
-        Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash.ToString()} is not found");
+        Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash} ({MultisigAddress}) is not found. " +
+                            $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");
         JArray notifications = (JArray)resp["notifications"];
         Assert.AreEqual(notifications.Count, 2);
         Assert.AreEqual(notifications[0]["eventname"].AsString(), "Transfer");
