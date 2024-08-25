@@ -95,5 +95,16 @@ namespace Neo.Plugins
 
             return PipeMessage.Create(message.RequestId, PipeCommand.State, payload);
         }
+
+        private PipeMessage OnShowContractState(PipeMessage message)
+        {
+            if (message.Payload is not PipeSerializablePayload<UInt160> hashPayload)
+                return CreateErrorResponse(message.RequestId, new InvalidDataException());
+
+            var contractState = NativeContract.ContractManagement.GetContract(_system.StoreView, hashPayload.Value);
+            var payload = new PipeContractState(contractState);
+
+            return PipeMessage.Create(message.RequestId, PipeCommand.ContractState, payload);
+        }
     }
 }

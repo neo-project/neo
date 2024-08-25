@@ -52,6 +52,12 @@ namespace Neo.Plugins
         [PipeProtocol(typeof(PipeArrayPayload<PipeShowStatePayload>))]
         State = 0x11,
 
+        [PipeProtocol(typeof(PipeSerializablePayload<UInt160>))]
+        GetContractState = 0x12,
+
+        [PipeProtocol(typeof(PipeContractState))]
+        ContractState = 0x13,
+
         [PipeProtocol(typeof(PipeExceptionPayload))]
         Exception = 0xe0,
 

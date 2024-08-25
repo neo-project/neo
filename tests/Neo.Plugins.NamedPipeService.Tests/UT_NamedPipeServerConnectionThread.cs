@@ -16,6 +16,7 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Plugins.Models;
 using Neo.Plugins.Models.Payloads;
+using Neo.SmartContract.Manifest;
 using System;
 using System.IO.Pipes;
 using System.Threading;
@@ -176,6 +177,34 @@ namespace Neo.Plugins.NamedPipeService.Tests
             Assert.AreEqual(rid, message.RequestId);
             Assert.IsInstanceOfType<PipeArrayPayload<PipeShowStatePayload>>(message.Payload);
             Assert.AreEqual(0, remoteNodes.Value.Length);
+        }
+
+        [TestMethod]
+        public async Task SendAndReceive_Messages_GetContractState()
+        {
+            var rid = Random.Shared.Next();
+
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetContractState, new PipeSerializablePayload<UInt160>() { Value = UInt160.Parse("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5") });
+
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+
+            var buffer = new byte[4096];
+            var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
+
+            var message = PipeMessage.Create(buffer);
+            var contractState = message.Payload as PipeContractState;
+
+            Assert.AreNotEqual(0, message.Size);
+            Assert.AreEqual(PipeCommand.ContractState, message.Command);
+            Assert.AreEqual(rid, message.RequestId);
+            Assert.IsInstanceOfType<PipeContractState>(message.Payload);
+            Assert.AreEqual(UInt160.Parse("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"), contractState.Hash);
+            Assert.AreEqual(-5, contractState.Id);
+            Assert.AreEqual(0, contractState.UpdateCounter);
+            Assert.AreNotEqual(0, contractState.Nef.Size);
+            Assert.AreEqual("neo-core-v3.0", contractState.Nef.Compiler);
+            Assert.AreEqual(1325686241u, contractState.Nef.CheckSum);
+            Assert.IsInstanceOfType<ContractManifest>(contractState.Manifest);
         }
     }
 }
