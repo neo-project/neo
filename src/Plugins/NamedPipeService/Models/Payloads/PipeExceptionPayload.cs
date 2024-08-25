@@ -40,6 +40,7 @@ namespace Neo.Plugins.Models.Payloads
         public bool IsEmpty =>
             string.IsNullOrEmpty(Message) &&
             string.IsNullOrEmpty(StackTrace);
+
         public int Size =>
             Stuffer.SizeOf(Type) +
             Stuffer.SizeOf(Message) +

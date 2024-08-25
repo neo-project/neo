@@ -54,14 +54,15 @@ namespace Neo.Plugins.NamedPipeService.Tests
         [TestMethod]
         public async Task Send_Damaged_Packet()
         {
-            var damagedMessage = new byte[100];
+            var damagedMessage = new byte[PipeMessage.HeaderSize];
             Random.Shared.NextBytes(damagedMessage);
 
             var writeTask = _clientConnection.WriteAsync(damagedMessage);
 
             var buffer = new byte[1024];
             // No data should be returned
-            Assert.ThrowsExceptionAsync<TimeoutException>(async () => await _clientConnection.ReadAsync(buffer).DefaultTimeout());
+            Assert.ThrowsExceptionAsync<TimeoutException>(async () =>
+                    await _clientConnection.ReadAsync(buffer).TimeoutAfter(TimeSpan.FromSeconds(1)));
         }
 
         [TestMethod]

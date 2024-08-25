@@ -50,13 +50,16 @@ namespace Neo.Plugins.Models
             }
         }
 
-        public int Size =>
+        public static int HeaderSize =>
             sizeof(ulong) +         // Magic
             sizeof(byte) +          // Version
             sizeof(uint) +          // CRC32
             sizeof(PipeCommand) +   // Command
             sizeof(int) +           // RequestId
-            sizeof(int) +           // Payload Size in bytes
+            sizeof(int);            // Payload Size in bytes
+
+        public int Size =>
+            HeaderSize +            // Header Size
             Payload.Size;           // Payload
 
         public static PipeMessage Create(int requestId, PipeCommand command, IPipeMessage payload) =>
