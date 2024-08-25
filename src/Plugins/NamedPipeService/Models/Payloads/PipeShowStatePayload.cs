@@ -36,8 +36,6 @@ namespace Neo.Plugins.Models.Payloads
 
         public uint LastBlockIndex { get; set; }
 
-
-
         public int Size =>
             sizeof(int) +
             Encoding.UTF8.GetByteCount($"{RemoteEndPoint}") +
@@ -49,12 +47,12 @@ namespace Neo.Plugins.Models.Payloads
             var wrapper = new Stuffer(buffer);
 
             RemoteEndPoint = wrapper.TryCatch(t => IPEndPoint.Parse(t.ReadString()), default);
-            ListenerTcpPort = wrapper.TryCatch(t => t.Read<int>(), default);
-            ConnectedCount = wrapper.TryCatch(t => t.Read<int>(), default);
-            UnconnectedCount = wrapper.TryCatch(t => t.Read<int>(), default);
-            Height = wrapper.TryCatch(t => t.Read<uint>(), default);
-            HeaderHeight = wrapper.TryCatch(t => t.Read<uint>(), default);
-            LastBlockIndex = wrapper.TryCatch(t => t.Read<uint>(), default);
+            ListenerTcpPort = wrapper.Read<int>();
+            ConnectedCount = wrapper.Read<int>();
+            UnconnectedCount = wrapper.Read<int>();
+            Height = wrapper.Read<uint>();
+            HeaderHeight = wrapper.Read<uint>();
+            LastBlockIndex = wrapper.Read<uint>();
 
             var bytes = wrapper.TryCatch(t => t.ReadArray<byte>(), default);
             Version = bytes.TryCatch(t => t.AsSerializable<VersionPayload>(), default);

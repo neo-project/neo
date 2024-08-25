@@ -110,7 +110,8 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             var actualBytes = payload2.ToArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
-            Assert.AreEqual(payload1.RemoteEndPoint, payload2.RemoteEndPoint);
+            Assert.AreEqual(payload1.RemoteEndPoint.Address, payload2.RemoteEndPoint.Address);
+            Assert.AreEqual(payload1.RemoteEndPoint.Port, payload2.RemoteEndPoint.Port);
             Assert.AreEqual(999, payload2.ListenerTcpPort);
             Assert.AreEqual(1, payload2.ConnectedCount);
             Assert.AreEqual(20, payload2.UnconnectedCount);
