@@ -39,7 +39,7 @@ namespace Neo.Plugins.RpcServer
                 timer = new(OnTimer, null, settings.SessionExpirationTime, settings.SessionExpirationTime);
         }
 
-        private void Dispose_SmartContract()
+        internal void Dispose_SmartContract()
         {
             timer?.Dispose();
             Session[] toBeDestroyed;
@@ -52,7 +52,7 @@ namespace Neo.Plugins.RpcServer
                 session.Dispose();
         }
 
-        private void OnTimer(object state)
+        internal void OnTimer(object state)
         {
             List<(Guid Id, Session Session)> toBeDestroyed = new();
             lock (sessions)
