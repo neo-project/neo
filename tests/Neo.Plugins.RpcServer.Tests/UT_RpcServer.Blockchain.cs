@@ -11,7 +11,9 @@
 
 using Akka.Actor;
 using Akka.Util.Internal;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -23,6 +25,8 @@ using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
 using System;
 using System.Linq;
+using System.Security.Policy;
+using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -61,6 +65,11 @@ namespace Neo.Plugins.RpcServer.Tests
             {
                 Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
             });
+
+            result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Hash), true);
+            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
+            result.ToString().Should().Be(block3.ToString());
         }
 
         [TestMethod]
@@ -78,6 +87,11 @@ namespace Neo.Plugins.RpcServer.Tests
             {
                 Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
             });
+
+            result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), true);
+            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
+            result.ToString().Should().Be(block3.ToString());
         }
 
         [TestMethod]
@@ -120,6 +134,11 @@ namespace Neo.Plugins.RpcServer.Tests
             var header = block.Header.ToJson(_neoSystem.Settings);
             header["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
             Assert.AreEqual(header.ToString(), result.ToString());
+
+            result = _rpcServer.GetBlockHeader(new BlockHashOrIndex(block.Hash), false);
+            var headerArr = Convert.FromBase64String(result.AsString());
+            var header2 = headerArr.AsSerializable<Header>();
+            header2.ToJson(_neoSystem.Settings).ToString().Should().Be(block.Header.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
@@ -129,9 +148,23 @@ namespace Neo.Plugins.RpcServer.Tests
             var contractState = TestUtils.GetContract();
             snapshot.AddContract(contractState.Hash, contractState);
             snapshot.Commit();
-            var result = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
 
+            var result = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
             Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
+
+            result = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id));
+            Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
+
+            var byId = _rpcServer.GetContractState(new ContractNameOrHashOrId(-1));
+            var byName = _rpcServer.GetContractState(new ContractNameOrHashOrId("ContractManagement"));
+            byId.ToString().Should().Be(byName.ToString());
+
+            snapshot.DeleteContract(contractState.Hash);
+            snapshot.Commit();
+            Action act = () => _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
+            act.Should().Throw<RpcException>().WithMessage(RpcError.UnknownContract.Message);
+            act = () => _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id));
+            act.Should().Throw<RpcException>().WithMessage(RpcError.UnknownContract.Message);
         }
 
         [TestMethod]
@@ -143,8 +176,10 @@ namespace Neo.Plugins.RpcServer.Tests
             _neoSystem.MemPool.TryAdd(tx, snapshot);
 
             var result = _rpcServer.GetRawMemPool();
-
             Assert.IsTrue(((JArray)result).Any(p => p.AsString() == tx.Hash.ToString()));
+
+            result = _rpcServer.GetRawMemPool(true);
+            Assert.IsTrue(((JArray)result["verified"]).Any(p => p.AsString() == tx.Hash.ToString()));
         }
 
         [TestMethod]
@@ -154,10 +189,14 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             _neoSystem.MemPool.TryAdd(tx, snapshot);
             snapshot.Commit();
-            var result = _rpcServer.GetRawTransaction(tx.Hash, true);
 
+            var result = _rpcServer.GetRawTransaction(tx.Hash, true);
             var json = Utility.TransactionToJson(tx, _neoSystem.Settings);
             Assert.AreEqual(json.ToString(), result.ToString());
+
+            result = _rpcServer.GetRawTransaction(tx.Hash, false);
+            var tx2 = Convert.FromBase64String(result.AsString()).AsSerializable<Transaction>();
+            tx2.ToJson(_neoSystem.Settings).ToString().Should().Be(tx.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
@@ -197,6 +236,15 @@ namespace Neo.Plugins.RpcServer.Tests
             json["next"] = 1;
             json["results"] = jarr;
             Assert.AreEqual(json.ToString(), result.ToString());
+
+            var result2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
+            result2.ToString().Should().Be(result.ToString());
+
+            Enumerable.Range(0, 51).ToList().ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, new byte[] { 0x01, (byte)i }, new byte[] { 0x02 }));
+            snapshot.Commit();
+            var result4 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(new byte[] { 0x01 }), 0);
+            result4["next"].Should().Be(RpcServerSettings.Default.FindStoragePageSize);
+            (result4["truncated"]).AsBoolean().Should().Be(true);
         }
 
         [TestMethod]
@@ -232,12 +280,16 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetCandidates()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
+
             var result = _rpcServer.GetCandidates();
             var json = new JArray();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
+
+            var key = new KeyBuilder(NativeContract.NEO.Id, 33).Add(ECPoint.Parse("02237309a0633ff930d51856db01d17c829a5b2e5cc2638e9c03b4cfa8e9c9f971", ECCurve.Secp256r1));
+            snapshot.Add(key, new StorageItem(new CandidateState() { Registered = true, Votes = 10000 }));
             snapshot.Commit();
             var candidates = NativeContract.NEO.GetCandidates(_neoSystem.GetSnapshotCache());
-
+            result = _rpcServer.GetCandidates();
             foreach (var candidate in candidates)
             {
                 var item = new JObject();
@@ -350,7 +402,8 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
-            Assert.ThrowsException<RpcException>(() => _rpcServer.GetBlockHash(block.Index + 1));
+            Action act = () => _rpcServer.GetBlockHash(block.Index + 1);
+            act.Should().Throw<RpcException>();
         }
 
         [TestMethod]

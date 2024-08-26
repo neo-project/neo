@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -100,14 +102,28 @@ namespace Neo.UnitTests.Extensions
 
         public static void AddContract(this DataCache snapshot, UInt160 hash, ContractState state)
         {
-            var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
-            snapshot.Add(key, new StorageItem(state));
+            {
+                //key: hash, value: ContractState
+                var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
+                snapshot.Add(key, new StorageItem(state));
+                //key: id, value: hash
+                var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(state.Id);
+                if (!snapshot.Contains(key2)) snapshot.Add(key2, new StorageItem(hash.ToArray()));
+            }
         }
 
         public static void DeleteContract(this DataCache snapshot, UInt160 hash)
         {
+            //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
+            var value = snapshot.TryGet(key)?.GetInteroperable<ContractState>();
             snapshot.Delete(key);
+            if (value != null)
+            {
+                //key: id, value: hash
+                var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(value.Id);
+                snapshot.Delete(key2);
+            }
         }
 
         public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, params ContractParameter[] args)
