@@ -27,8 +27,8 @@ namespace Neo.Plugins.NamedPipeService.Tests
         [TestMethod]
         public void PipeMessage_Message_Sizes()
         {
-            var message1 = PipeMessage.Create(1, PipeCommand.NAck, new PipeNullPayload());
-            var message2 = PipeMessage.Create(1, PipeCommand.Exception, new PipeNullPayload());
+            var message1 = PipeMessage.Create(1, PipeCommand.NAck, PipeMessage.Null);
+            var message2 = PipeMessage.Create(1, PipeCommand.Exception, PipeMessage.Null);
             var message3 = PipeMessage.Create(1, PipeCommand.Exception, new PipeExceptionPayload()
             {
                 Message = "Hello World",
@@ -46,6 +46,30 @@ namespace Neo.Plugins.NamedPipeService.Tests
             Assert.AreEqual(PipeMessage.HeaderSize, msg1Bytes.Length - message1.Payload.Size);
             Assert.AreEqual(PipeMessage.HeaderSize, msg2Bytes.Length - message2.Payload.Size);
             Assert.AreEqual(PipeMessage.HeaderSize, msg3Bytes.Length - message3.Payload.Size);
+        }
+
+        [TestMethod]
+        public void PipeMessage_FromArray_ToArray()
+        {
+            var expected = PipeMessage.Create(0, PipeCommand.NAck, PipeMessage.Null);
+            var expectedBytes = expected.ToArray();
+
+            var actual = PipeMessage.Create(expectedBytes);
+            var actualBytes = actual.ToArray();
+
+            CollectionAssert.AreEqual(expectedBytes, actualBytes);
+            Assert.AreEqual(expected.RequestId, actual.RequestId);
+            Assert.AreEqual(expected.Command, actual.Command);
+            Assert.IsInstanceOfType<PipeNullPayload>(expected.Payload);
+        }
+
+        [TestMethod]
+        public void PipeMessage_FromArray_InvalidCommand()
+        {
+            var expected = PipeMessage.Create(0, (PipeCommand)0xff, PipeMessage.Null);
+            var expectedBytes = expected.ToArray();
+
+            Assert.ThrowsException<FormatException>(() => PipeMessage.Create(expectedBytes));
         }
     }
 }

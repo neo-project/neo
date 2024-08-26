@@ -15,6 +15,7 @@ using Neo.Plugins.Models.Payloads;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace Neo.Plugins.Models
@@ -27,6 +28,7 @@ namespace Neo.Plugins.Models
         public static readonly IPipeMessage Null = new PipeNullPayload();
 
         private static readonly ConcurrentDictionary<PipeCommand, Type> s_commandTypes = new();
+        private static readonly byte[] s_commandValues;
 
         public int RequestId { get; private set; }
         public PipeCommand Command { get; private set; }
@@ -41,6 +43,8 @@ namespace Neo.Plugins.Models
 
         static PipeMessage()
         {
+            s_commandValues = (byte[])Enum.GetValuesAsUnderlyingType<PipeCommand>();
+
             foreach (var pipeProtocolField in typeof(PipeCommand).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
                 var attr = pipeProtocolField.GetCustomAttribute<PipeProtocolAttribute>();
@@ -98,6 +102,10 @@ namespace Neo.Plugins.Models
             RequestId = wrapper.Read<int>();
 
             var command = wrapper.Read<PipeCommand>();
+
+            if (s_commandValues.Contains((byte)command) == false)
+                throw new FormatException($"Pipe command is incorrect: {command}");
+
             var payloadBytes = wrapper.ReadArray<byte>();
 
             if (crc32 != Crc32.Compute(payloadBytes))
