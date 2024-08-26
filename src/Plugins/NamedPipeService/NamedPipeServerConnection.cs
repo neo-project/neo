@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Plugins.Models;
-using Neo.Plugins.Models.Payloads;
 using System;
 using System.IO.Pipelines;
 using System.IO.Pipes;
@@ -276,18 +275,14 @@ namespace Neo.Plugins
 
         private async Task QueueMessageAsync(ReadOnlyMemory<byte> buffer)
         {
+            if (buffer.IsEmpty)
+                return;
 
-            var message = PipeMessage.Create(0, PipeCommand.NAck, new PipeNullPayload());
+            var message = PipeMessage.Create(0, PipeCommand.NAck, PipeMessage.Null);
 
             try
             {
-                if (buffer.IsEmpty)
-                    return;
-
                 message = PipeMessage.Create(buffer);
-
-                if (message is null)
-                    return;
             }
             finally
             {
