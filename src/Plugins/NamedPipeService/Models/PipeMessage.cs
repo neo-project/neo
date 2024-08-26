@@ -106,6 +106,9 @@ namespace Neo.Plugins.Models
             Command = command;
             Payload = CreateEmptyPayload(command) ?? throw new InvalidDataException($"Unknown command: {command}");
             Payload.FromArray(payloadBytes);
+
+            if (wrapper.Position != Size)
+                throw new FormatException($"Message size is incorrect: {wrapper.Position}");
         }
 
         public byte[] ToArray()

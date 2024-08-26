@@ -42,6 +42,17 @@ namespace Neo.Plugins
             return PipeMessage.Create(message.RequestId, PipeCommand.Block, payload);
         }
 
+        private PipeMessage OnTransaction(PipeMessage message)
+        {
+            if (message.Payload is not PipeSerializablePayload<UInt256> txHash)
+                return CreateErrorResponse(message.RequestId, new InvalidDataException());
+
+            var tx = NativeContract.Ledger.GetTransaction(_system.StoreView, txHash.Value);
+            var payload = new PipeSerializablePayload<Transaction>() { Value = tx };
+
+            return PipeMessage.Create(message.RequestId, PipeCommand.Transaction, payload);
+        }
+
         private PipeMessage OnMemoryPoolUnVerified(PipeMessage message)
         {
             if (message.Payload is not PipeNullPayload)

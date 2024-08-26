@@ -53,7 +53,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
         }
 
         [TestMethod]
-        public async Task Send_Damaged_Packet()
+        public async Task Send_Random_Data()
         {
             var damagedMessage = new byte[PipeMessage.HeaderSize];
             Random.Shared.NextBytes(damagedMessage);
@@ -111,6 +111,31 @@ namespace Neo.Plugins.NamedPipeService.Tests
             Assert.AreEqual(rid, message.RequestId);
             Assert.IsInstanceOfType<PipeSerializablePayload<Block>>(message.Payload);
             Assert.AreEqual(0u, payload.Value.Index);
+        }
+
+        [TestMethod]
+        public async Task SendAndReceive_Messages_GetTransaction()
+        {
+            var rid = Random.Shared.Next();
+
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetTransaction, new PipeSerializablePayload<UInt256>()
+            {
+                Value = UInt256.Zero,
+            });
+
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+
+            var buffer = new byte[1024];
+            var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
+
+            var message = PipeMessage.Create(buffer);
+            var payload = message.Payload as PipeSerializablePayload<Transaction>;
+
+            Assert.AreNotEqual(0, message.Size);
+            Assert.AreEqual(PipeCommand.Transaction, message.Command);
+            Assert.AreEqual(rid, message.RequestId);
+            Assert.IsInstanceOfType<PipeSerializablePayload<Transaction>>(message.Payload);
+            Assert.IsNull(payload.Value);
         }
 
         [TestMethod]

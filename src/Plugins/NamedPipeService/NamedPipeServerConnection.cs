@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Plugins.Models;
+using Neo.Plugins.Models.Payloads;
 using System;
 using System.IO.Pipelines;
 using System.IO.Pipes;
@@ -275,33 +276,26 @@ namespace Neo.Plugins
 
         private async Task QueueMessageAsync(ReadOnlyMemory<byte> buffer)
         {
+
+            var message = PipeMessage.Create(0, PipeCommand.NAck, new PipeNullPayload());
+
             try
             {
                 if (buffer.IsEmpty)
                     return;
 
-                var message = PipeMessage.Create(buffer);
+                message = PipeMessage.Create(buffer);
 
                 if (message is null)
                     return;
-
+            }
+            finally
+            {
                 if (_messageQueue.Writer.TryWrite(message) == false)
                 {
                     if (await _messageQueue.Writer.WaitToWriteAsync(_connectionClosedToken) == false)
-                        throw new InvalidOperationException("Message queue writer was unexpectedly closed.");
+                        Utility.Log(nameof(NamedPipeServerConnection), LogLevel.Error, "Message queue writer was unexpectedly closed.");
                 }
-            }
-            catch (IndexOutOfRangeException) // NULL message or Empty message
-            {
-
-            }
-            catch (FormatException) // Normally invalid or corrupt message
-            {
-
-            }
-            catch (Exception ex)
-            {
-                Utility.Log(nameof(NamedPipeServerConnection), LogLevel.Error, ex.ToString());
             }
         }
 

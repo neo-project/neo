@@ -76,6 +76,7 @@ namespace Neo.Plugins
             {
                 PipeCommand.GetBlockHeight => OnBlockHeight(message),
                 PipeCommand.GetBlock => OnBlock(message),
+                PipeCommand.GetTransaction => OnTransaction(message),
                 PipeCommand.GetMemoryPoolUnVerified => OnMemoryPoolUnVerified(message),
                 PipeCommand.GetMemoryPoolVerified => OnMemoryPoolVerified(message),
                 PipeCommand.GetState => OnShowState(message),
