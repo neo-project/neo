@@ -20,8 +20,6 @@ namespace Neo.Plugins.NamedPipeService.Tests
     [TestClass]
     public class UT_NamedPipeConnectionListener
     {
-        private static readonly IPipeMessage s_testPipeMessage = PipeMessage.Create(1, PipeCommand.NAck, PipeMessage.Null);
-
         [TestMethod]
         public async Task BidirectionalStream_ServerReadsDataAndCompletes_GracefullyClosed()
         {
@@ -38,7 +36,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
             var serverConnectionTask = connectionListener.AcceptAsync();
 
             // Client sending data
-            var bytes = s_testPipeMessage.ToArray();
+            var bytes = new byte[1];
             var writeTask = clientConnection.WriteAsync(bytes);
 
             var serverConnection = await serverConnectionTask.DefaultTimeout();

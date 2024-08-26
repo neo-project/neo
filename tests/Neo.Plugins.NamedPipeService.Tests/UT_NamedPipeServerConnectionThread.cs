@@ -143,7 +143,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
         {
             var rid = Random.Shared.Next();
 
-            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolUnVerified, new PipeNullPayload());
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolUnVerified, PipeMessage.Null);
 
             var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
 
@@ -165,7 +165,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
         {
             var rid = Random.Shared.Next();
 
-            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolVerified, new PipeNullPayload());
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolVerified, PipeMessage.Null);
 
             var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
 
@@ -187,7 +187,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
         {
             var rid = Random.Shared.Next();
 
-            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetState, new PipeNullPayload());
+            var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetState, PipeMessage.Null);
 
             var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
 
