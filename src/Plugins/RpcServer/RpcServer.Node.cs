@@ -24,13 +24,13 @@ namespace Neo.Plugins.RpcServer
     partial class RpcServer
     {
         [RpcMethod]
-        protected virtual JToken GetConnectionCount(JArray _params)
+        protected internal virtual JToken GetConnectionCount(JArray _params)
         {
             return localNode.ConnectedCount;
         }
 
         [RpcMethod]
-        protected virtual JToken GetPeers(JArray _params)
+        protected internal virtual JToken GetPeers(JArray _params)
         {
             JObject json = new();
             json["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
