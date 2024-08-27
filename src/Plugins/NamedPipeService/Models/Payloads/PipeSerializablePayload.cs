@@ -11,7 +11,6 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Plugins.Buffers;
 using System.Linq;
 
 namespace Neo.Plugins.Models.Payloads
@@ -22,31 +21,16 @@ namespace Neo.Plugins.Models.Payloads
         public T? Value { get; set; }
 
         public int Size =>
-            sizeof(int) +         // Array length
-            (Value?.Size ?? 0);     // Block size in bytes
+            Value?.Size ?? 0; // Block size in bytes
 
-        public void FromArray(byte[] buffer)
+        public void FromByteArray(byte[] buffer, int position = 0)
         {
-            var wrapper = new Stuffer(buffer);
-
-            var blockBytes = wrapper.ReadArray<byte>();
-
-            Value = blockBytes.TryCatch(t => t.AsSerializable<T>(), default);
+            Value = buffer.TryCatch(t => t.AsSerializable<T>(position), default);
         }
 
-        public byte[] ToArray()
+        public byte[] ToByteArray()
         {
-            try
-            {
-                var wrapper = new Stuffer(Size);
-
-                wrapper.Write(Value?.ToArray() ?? []);
-
-                return [.. wrapper];
-            }
-            catch { }
-
-            return [0, 0, 0, 0];
+            return Value?.ToArray() ?? [];
         }
     }
 }

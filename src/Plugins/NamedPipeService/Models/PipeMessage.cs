@@ -77,7 +77,7 @@ namespace Neo.Plugins.Models
         public static PipeMessage Create(ReadOnlyMemory<byte> memory)
         {
             var message = new PipeMessage();
-            message.FromArray(memory.ToArray());
+            message.FromByteArray(memory.ToArray());
             return message;
         }
 
@@ -86,7 +86,7 @@ namespace Neo.Plugins.Models
                 ? Activator.CreateInstance(t) as IPipeMessage
                 : null;
 
-        public void FromArray(byte[] buffer)
+        public void FromByteArray(byte[] buffer, int position = 0)
         {
             var wrapper = new Stuffer(buffer);
 
@@ -113,17 +113,17 @@ namespace Neo.Plugins.Models
 
             Command = command;
             Payload = CreateEmptyPayload(command) ?? throw new InvalidDataException($"Unknown command: {command}");
-            Payload.FromArray(payloadBytes);
+            Payload.FromByteArray(payloadBytes);
 
             if (wrapper.Position != Size)
                 throw new FormatException($"Message size is incorrect: {wrapper.Position}");
         }
 
-        public byte[] ToArray()
+        public byte[] ToByteArray()
         {
             var wrapper = new Stuffer(Size);
 
-            var payloadBytes = Payload.ToArray();
+            var payloadBytes = Payload.ToByteArray();
 
             wrapper.Write(Magic);
             wrapper.Write(Version);

@@ -29,14 +29,14 @@ namespace Neo.Plugins.Models.Payloads
                 throw new InvalidOperationException("You can't use 'System.Char'.");
         }
 
-        public void FromArray(byte[] buffer)
+        public void FromByteArray(byte[] buffer, int position = 0)
         {
-            var wrapper = new Stuffer(buffer);
+            var wrapper = new Stuffer(buffer, position);
 
             Value = wrapper.Read<T>();
         }
 
-        public byte[] ToArray()
+        public byte[] ToByteArray()
         {
             var wrapper = new Stuffer(Size);
 

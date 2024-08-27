@@ -26,10 +26,10 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_ToArray_Null()
         {
             var payload1 = new PipeStringPayload() { Value = string.Empty };
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeStringPayload() { Value = string.Empty };
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
             var actualBytesWithoutHeader = actualBytes;
 
             CollectionAssert.AreEqual(expectedBytes, actualBytesWithoutHeader);
@@ -39,12 +39,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_FromArray_Null()
         {
             var payload1 = new PipeStringPayload() { Value = string.Empty };
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeStringPayload();
-            payload2.FromArray(expectedBytes);
+            payload2.FromByteArray(expectedBytes);
 
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(string.Empty, payload2.Value);
@@ -54,10 +54,10 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_ToArray_Data()
         {
             var payload1 = new PipeStringPayload() { Value = "漢字文化圈" };
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeStringPayload() { Value = "漢字文化圈" };
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
             var actualBytesWithoutHeader = actualBytes;
 
             CollectionAssert.AreEqual(expectedBytes, actualBytesWithoutHeader);
@@ -67,12 +67,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_FromArray_Data()
         {
             var payload1 = new PipeStringPayload() { Value = "漢字文化圈" };
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeStringPayload();
-            payload2.FromArray(expectedBytes);
+            payload2.FromByteArray(expectedBytes);
 
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual("漢字文化圈", payload2.Value);

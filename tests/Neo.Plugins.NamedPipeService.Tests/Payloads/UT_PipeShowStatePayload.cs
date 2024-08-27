@@ -29,10 +29,10 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_ToArray_Null()
         {
             var payload1 = new PipeShowStatePayload();
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeShowStatePayload();
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
             var actualBytesWithoutHeader = actualBytes;
 
             CollectionAssert.AreEqual(expectedBytes, actualBytesWithoutHeader);
@@ -42,12 +42,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_FromArray_Null()
         {
             var payload1 = new PipeShowStatePayload();
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeShowStatePayload();
-            payload2.FromArray(expectedBytes);
+            payload2.FromByteArray(expectedBytes);
 
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(payload1.RemoteEndPoint, payload2.RemoteEndPoint);
@@ -69,7 +69,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 LastBlockIndex = 666u,
                 Version = VersionPayload.Create(123u, 456u, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeShowStatePayload()
             {
@@ -82,7 +82,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 LastBlockIndex = 666u,
                 Version = VersionPayload.Create(123u, 456u, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
             var actualBytesWithoutHeader = actualBytes;
 
             CollectionAssert.AreEqual(expectedBytes, actualBytesWithoutHeader);
@@ -102,12 +102,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 LastBlockIndex = 666u,
                 Version = VersionPayload.Create(123u, 456u, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) }),
             };
-            var expectedBytes = payload1.ToArray();
+            var expectedBytes = payload1.ToByteArray();
 
             var payload2 = new PipeShowStatePayload();
-            payload2.FromArray(expectedBytes);
+            payload2.FromByteArray(expectedBytes);
 
-            var actualBytes = payload2.ToArray();
+            var actualBytes = payload2.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(payload1.RemoteEndPoint.Address, payload2.RemoteEndPoint.Address);

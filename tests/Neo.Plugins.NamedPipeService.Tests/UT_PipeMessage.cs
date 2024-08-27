@@ -35,9 +35,9 @@ namespace Neo.Plugins.NamedPipeService.Tests
                 StackTrace = "Program.cs<Main>() line 99"
             });
 
-            var msg1Bytes = message1.ToArray();
-            var msg2Bytes = message2.ToArray();
-            var msg3Bytes = message3.ToArray();
+            var msg1Bytes = message1.ToByteArray();
+            var msg2Bytes = message2.ToByteArray();
+            var msg3Bytes = message3.ToByteArray();
 
             Assert.AreEqual(msg1Bytes.Length, message1.Size);
             Assert.AreEqual(msg2Bytes.Length, message2.Size);
@@ -52,10 +52,10 @@ namespace Neo.Plugins.NamedPipeService.Tests
         public void PipeMessage_FromArray_ToArray()
         {
             var expected = PipeMessage.Create(0, PipeCommand.NAck, PipeMessage.Null);
-            var expectedBytes = expected.ToArray();
+            var expectedBytes = expected.ToByteArray();
 
             var actual = PipeMessage.Create(expectedBytes);
-            var actualBytes = actual.ToArray();
+            var actualBytes = actual.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expected.RequestId, actual.RequestId);
@@ -67,7 +67,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
         public void PipeMessage_FromArray_InvalidCommand()
         {
             var expected = PipeMessage.Create(0, (PipeCommand)0xff, PipeMessage.Null);
-            var expectedBytes = expected.ToArray();
+            var expectedBytes = expected.ToByteArray();
 
             Assert.ThrowsException<FormatException>(() => PipeMessage.Create(expectedBytes));
         }

@@ -22,14 +22,14 @@ namespace Neo.Plugins.Models.Payloads
             sizeof(int) + // Size in bytes
             Encoding.UTF8.GetByteCount(Value); // size of the string
 
-        public void FromArray(byte[] buffer)
+        public void FromByteArray(byte[] buffer, int position = 0)
         {
-            var wrapper = new Stuffer(buffer);
+            var wrapper = new Stuffer(buffer, position);
 
             Value = wrapper.ReadString();
         }
 
-        public byte[] ToArray()
+        public byte[] ToByteArray()
         {
             var wrapper = new Stuffer(Size);
 

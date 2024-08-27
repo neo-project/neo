@@ -26,12 +26,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_FromArray_And_ToArray_Int32()
         {
             var expected = new PipeUnmanagedPayload<int>() { Value = 1 };
-            var expectedBytes = expected.ToArray();
+            var expectedBytes = expected.ToByteArray();
 
             var actual = new PipeUnmanagedPayload<int>();
-            actual.FromArray(expectedBytes);
+            actual.FromByteArray(expectedBytes);
 
-            var actualBytes = actual.ToArray();
+            var actualBytes = actual.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(1, actual.Value);

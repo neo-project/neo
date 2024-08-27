@@ -14,7 +14,7 @@ namespace Neo.Plugins.Models
     internal interface IPipeMessage
     {
         int Size { get; }
-        void FromArray(byte[] buffer);
-        byte[] ToArray();
+        void FromByteArray(byte[] buffer, int position = 0);
+        byte[] ToByteArray();
     }
 }

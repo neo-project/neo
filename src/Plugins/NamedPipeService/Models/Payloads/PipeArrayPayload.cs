@@ -21,31 +21,36 @@ namespace Neo.Plugins.Models.Payloads
 
         public int Size =>
             sizeof(int) +                         // Item Count
-            Value.Sum(s => s.Size + sizeof(int)); // Size in bytes for item as ByteArray
+            Value.Sum(s => s.Size); // Size in bytes for item as ByteArray
 
-        public void FromArray(byte[] buffer)
+        public void FromByteArray(byte[] buffer, int position = 0)
         {
-            var wrapper = new Stuffer(buffer);
+            var wrapper = new Stuffer(buffer, position);
 
             var size = wrapper.Read<int>();
             Value = new T[size];
 
+            var pos = wrapper.Position;
             for (var i = 0; i < size; i++)
             {
                 Value[i] = new T();
-                Value[i].FromArray(wrapper.ReadArray<byte>());
+                Value[i].FromByteArray(buffer, pos);
+                pos += Value[i].Size;
             }
 
         }
 
-        public byte[] ToArray()
+        public byte[] ToByteArray()
         {
-            var wrapper = new Stuffer(Size);
+            var wrapper = new Stuffer();
             wrapper.Write(Value.Length);
-            foreach (var item in Value)
-                wrapper.Write(item.ToArray());
 
-            return [.. wrapper];
+            byte[] bytes = [.. wrapper];
+
+            foreach (var item in Value)
+                bytes = [.. bytes, .. item.ToByteArray()];
+
+            return bytes;
         }
     }
 }

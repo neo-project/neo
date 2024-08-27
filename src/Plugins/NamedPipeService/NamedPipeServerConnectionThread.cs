@@ -89,7 +89,7 @@ namespace Neo.Plugins
 
         private async Task WriteAsync(PipeMessage message)
         {
-            var memory = message.ToArray().AsMemory();
+            var memory = message.ToByteArray().AsMemory();
 
             _ = await _connection.Writer.WriteAsync(memory);
         }

@@ -72,7 +72,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
             var rid = Random.Shared.Next();
             var getBlockHeightPayload = PipeMessage.Create(rid, PipeCommand.GetBlockHeight, PipeMessage.Null);
 
-            var writeTask = _clientConnection.WriteAsync(getBlockHeightPayload.ToArray());
+            var writeTask = _clientConnection.WriteAsync(getBlockHeightPayload.ToByteArray());
 
             var buffer = new byte[1024];
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
@@ -98,7 +98,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
                 Value = 0,
             });
 
-            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToByteArray());
 
             var buffer = new byte[1024];
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
@@ -123,7 +123,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
                 Value = UInt256.Zero,
             });
 
-            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToByteArray());
 
             var buffer = new byte[1024];
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
@@ -145,7 +145,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
 
             var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolUnVerified, PipeMessage.Null);
 
-            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToByteArray());
 
             var buffer = new byte[1024];
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
@@ -167,7 +167,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
 
             var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetMemoryPoolVerified, PipeMessage.Null);
 
-            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToByteArray());
 
             var buffer = new byte[1024];
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
@@ -189,7 +189,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
 
             var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetState, PipeMessage.Null);
 
-            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToByteArray());
 
             var buffer = new byte[1024];
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();
@@ -211,7 +211,7 @@ namespace Neo.Plugins.NamedPipeService.Tests
 
             var getBlockPayload = PipeMessage.Create(rid, PipeCommand.GetContractState, new PipeSerializablePayload<UInt160>() { Value = UInt160.Parse("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5") });
 
-            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToArray());
+            var writeTask = _clientConnection.WriteAsync(getBlockPayload.ToByteArray());
 
             var buffer = new byte[4096];
             var count = await _clientConnection.ReadAsync(buffer).DefaultTimeout();

@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.Models;
 using Neo.Plugins.Models.Payloads;
 using System;
 
@@ -23,10 +24,10 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_ToArray_Null()
         {
             var block1 = new PipeSerializablePayload<Block>() { Value = null };
-            var expectedBytes = block1.ToArray();
+            var expectedBytes = block1.ToByteArray();
 
             var block2 = new PipeSerializablePayload<Block>() { Value = null };
-            var actualBytes = block2.ToArray();
+            var actualBytes = block2.ToByteArray();
             var actualBytesWithoutHeader = actualBytes;
 
             CollectionAssert.AreEqual(expectedBytes, actualBytesWithoutHeader);
@@ -36,12 +37,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_FromArray_Null()
         {
             var block1 = new PipeSerializablePayload<Block>() { Value = null };
-            var expectedBytes = block1.ToArray();
+            var expectedBytes = block1.ToByteArray();
 
             var block2 = new PipeSerializablePayload<Block>();
-            block2.FromArray(expectedBytes);
+            block2.FromByteArray(expectedBytes);
 
-            var actualBytes = block2.ToArray();
+            var actualBytes = block2.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.IsNull(block2.Value);
@@ -51,12 +52,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_FromArray_Data()
         {
             var block1 = CreateEmptyPipeBlock();
-            var expectedBytes = block1.ToArray();
+            var expectedBytes = block1.ToByteArray();
 
             var block2 = new PipeSerializablePayload<Block>();
-            block2.FromArray(expectedBytes);
+            block2.FromByteArray(expectedBytes);
 
-            var actualBytes = block2.ToArray();
+            var actualBytes = block2.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(block1.Size, block2.Size);
@@ -67,13 +68,26 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_ToArray_Data()
         {
             var block1 = CreateEmptyPipeBlock();
-            var expectedBytes = block1.ToArray();
+            var expectedBytes = block1.ToByteArray();
 
             var block2 = CreateEmptyPipeBlock();
-            var actualBytes = block2.ToArray();
-            var actualBytesWithoutHeader = actualBytes;
+            var actualBytes = block2.ToByteArray();
 
-            CollectionAssert.AreEqual(expectedBytes, actualBytesWithoutHeader);
+            CollectionAssert.AreEqual(expectedBytes, actualBytes);
+        }
+
+        [TestMethod]
+        public void IPipeMessage_Position()
+        {
+            var expected = CreateEmptyPipeBlock();
+            var expectedMessage = PipeMessage.Create(0, PipeCommand.Block, expected);
+            var expectedBytes = expectedMessage.ToByteArray();
+
+            var actual = new PipeSerializablePayload<Block>();
+            actual.FromByteArray(expectedBytes, PipeMessage.HeaderSize);
+
+            Assert.AreEqual(expected.Size, actual.Size);
+            Assert.AreEqual(expected.Value.Hash, actual.Value.Hash);
         }
 
         private static PipeSerializablePayload<Block> CreateEmptyPipeBlock() =>

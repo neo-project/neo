@@ -29,12 +29,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             {
                 Value = [],
             };
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeArrayPayload<PipeUnmanagedPayload<int>>();
-            actualPayload.FromArray(expectedBytes);
+            actualPayload.FromByteArray(expectedBytes);
 
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
@@ -49,12 +49,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             {
                 Value = [new() { Value = 1, }, new() { Value = 2, }],
             };
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeArrayPayload<PipeUnmanagedPayload<int>>();
-            actualPayload.FromArray(expectedBytes);
+            actualPayload.FromByteArray(expectedBytes);
 
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
@@ -69,13 +69,13 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             {
                 Value = [new() { Value = 1, }, new() { Value = 2, }],
             };
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeArrayPayload<PipeUnmanagedPayload<int>>()
             {
                 Value = [new() { Value = 1, }, new() { Value = 2, }],
             };
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
@@ -90,17 +90,19 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             {
                 Value = [new(new Exception("Hello")), new(new Exception("World"))],
             };
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeArrayPayload<PipeExceptionPayload>();
-            actualPayload.FromArray(expectedBytes);
+            actualPayload.FromByteArray(expectedBytes);
 
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
             Assert.AreEqual(expectedPayload.Size, actualBytes.Length);
             Assert.AreEqual(expectedPayload.Size, expectedBytes.Length);
+            Assert.AreEqual("Hello", expectedPayload.Value[0].Message);
+            Assert.AreEqual("World", expectedPayload.Value[1].Message);
         }
 
         [TestMethod]
@@ -110,18 +112,20 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
             {
                 Value = [new(new Exception("Hello")), new(new Exception("World"))],
             };
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeArrayPayload<PipeExceptionPayload>()
             {
                 Value = [new(new Exception("Hello")), new(new Exception("World"))],
             };
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
             Assert.AreEqual(expectedPayload.Size, actualBytes.Length);
             Assert.AreEqual(expectedPayload.Size, expectedBytes.Length);
+            Assert.AreEqual(expectedPayload.Value[0].Message, actualPayload.Value[0].Message);
+            Assert.AreEqual(expectedPayload.Value[1].Message, actualPayload.Value[1].Message);
         }
     }
 }

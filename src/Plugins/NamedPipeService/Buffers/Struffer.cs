@@ -36,6 +36,12 @@ namespace Neo.Plugins.Buffers
             _data = buffer;
         }
 
+        public Stuffer(byte[] buffer, int position)
+        {
+            _data = buffer;
+            Position = position;
+        }
+
         public Stuffer(int capacity)
         {
             _data = GC.AllocateUninitializedArray<byte>(capacity);

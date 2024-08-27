@@ -26,12 +26,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
         public void IPipeMessage_FromArray_Null()
         {
             var expectedPayload = new PipeContractState();
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeContractState();
-            actualPayload.FromArray(expectedBytes);
+            actualPayload.FromByteArray(expectedBytes);
 
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
@@ -50,12 +50,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 Nef = null,
                 Manifest = null,
             };
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeContractState();
-            actualPayload.FromArray(expectedBytes);
+            actualPayload.FromByteArray(expectedBytes);
 
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
@@ -82,7 +82,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 Nef = null,
                 Manifest = null,
             };
-            var expectedBytes = expectedPayload.ToArray();
+            var expectedBytes = expectedPayload.ToByteArray();
 
             var actualPayload = new PipeContractState()
             {
@@ -92,7 +92,7 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 Nef = null,
                 Manifest = null,
             };
-            var actualBytes = actualPayload.ToArray();
+            var actualBytes = actualPayload.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);

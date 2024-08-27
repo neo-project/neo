@@ -19,12 +19,12 @@ namespace Neo.Plugins.Models.Payloads
 
         public void CopyFrom(Stream stream) { }
 
-        public void FromArray(byte[] buffer) { }
+        public void FromByteArray(byte[] buffer, int position = 0) { }
 
         public void CopyTo(Stream stream) { }
 
         public void CopyTo(byte[] buffer) { }
 
-        public byte[] ToArray() => [];
+        public byte[] ToByteArray() => [];
     }
 }

@@ -29,12 +29,12 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
             };
-            var expectedBytes = exception1.ToArray();
+            var expectedBytes = exception1.ToByteArray();
 
             var exception2 = new PipeExceptionPayload();
-            exception2.FromArray(expectedBytes);
+            exception2.FromByteArray(expectedBytes);
 
-            var actualBytes = exception2.ToArray();
+            var actualBytes = exception2.ToByteArray();
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(exception1.IsEmpty, exception2.IsEmpty);
@@ -50,14 +50,14 @@ namespace Neo.Plugins.NamedPipeService.Tests.Payloads
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
             };
-            var expectedBytes = exception1.ToArray();
+            var expectedBytes = exception1.ToByteArray();
 
             var exception2 = new PipeExceptionPayload()
             {
                 Message = s_exceptionMessage,
                 StackTrace = s_exceptionStackTrace
             };
-            var actualBytes = exception2.ToArray();
+            var actualBytes = exception2.ToByteArray();
             var actualBytesWithoutHeader = actualBytes;
 
             CollectionAssert.AreEqual(expectedBytes, actualBytesWithoutHeader);

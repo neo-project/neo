@@ -57,9 +57,9 @@ namespace Neo.Plugins.Models.Payloads
             (Nef?.Size ?? 0) +              // Script
             (manifestBytes?.Length ?? 0);   // Manifest
 
-        public void FromArray(byte[] buffer)
+        public void FromByteArray(byte[] buffer, int position = 0)
         {
-            var wrapper = new Stuffer(buffer);
+            var wrapper = new Stuffer(buffer, position);
 
             Id = wrapper.Read<int>();
             UpdateCounter = wrapper.Read<ushort>();
@@ -74,7 +74,7 @@ namespace Neo.Plugins.Models.Payloads
             Manifest = manifestBytes.TryCatch(t => ContractManifest.Parse(t), default);
         }
 
-        public byte[] ToArray()
+        public byte[] ToByteArray()
         {
             var wrapper = new Stuffer(Size);
 
