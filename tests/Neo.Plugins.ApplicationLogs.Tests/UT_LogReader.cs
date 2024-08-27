@@ -20,6 +20,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.ApplicationLogs;
 using Neo.Plugins.ApplicationLogs.Store;
+using Neo.Plugins.ApplicationLogs.Store.Models;
 using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.Plugins.ApplicationsLogs.Tests.Setup;
 using Neo.SmartContract;
@@ -134,7 +135,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         }
 
         [Fact]
-        async public void Test_GetApplicationLog()
+        public async Task Test_GetApplicationLog()
         {
             NeoSystem system = _neoSystemFixture._neoSystem;
             Block block = _neoSystemFixture.block;
@@ -175,7 +176,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         }
 
         [Fact]
-        async public void Test_Commands()
+        public async Task Test_Commands()
         {
             NeoSystem system = _neoSystemFixture._neoSystem;
             Block block = _neoSystemFixture.block;
@@ -185,6 +186,28 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             _neoSystemFixture.logReader.OnGetBlockCommand(block.Hash.ToString());
             _neoSystemFixture.logReader.OnGetContractCommand(NeoToken.NEO.Hash);
             _neoSystemFixture.logReader.OnGetTransactionCommand(_neoSystemFixture.txs[0].Hash);
+
+            BlockchainExecutionModel blockLog = _neoSystemFixture.logReader._neostore.GetBlockLog(block.Hash, TriggerType.Application);
+            BlockchainExecutionModel transactionLog = _neoSystemFixture.logReader._neostore.GetTransactionLog(_neoSystemFixture.txs[0].Hash);
+            foreach (BlockchainExecutionModel log in new BlockchainExecutionModel[] { blockLog, transactionLog })
+            {
+                Assert.Equal(log.VmState, VMState.HALT);
+                Assert.Equal(log.Stack[0].GetBoolean(), true);
+                Assert.Equal(log.Notifications.Count(), 2);
+                Assert.Equal(log.Notifications[0].EventName, "Transfer");
+                Assert.Equal(log.Notifications[0].ScriptHash, NeoToken.NEO.Hash);
+                Assert.Equal(log.Notifications[0].State[2], 1);
+                Assert.Equal(log.Notifications[1].EventName, "Transfer");
+                Assert.Equal(log.Notifications[1].ScriptHash, GasToken.GAS.Hash);
+                Assert.Equal(log.Notifications[1].State[2], 50000000);
+            }
+
+            List<(BlockchainEventModel eventLog, UInt256 txHash)> neoLogs = _neoSystemFixture.logReader._neostore.GetContractLog(NeoToken.NEO.Hash, TriggerType.Application).ToList();
+            Assert.Equal(neoLogs.Count, 1);
+            Assert.Equal(neoLogs[0].txHash, _neoSystemFixture.txs[0].Hash);
+            Assert.Equal(neoLogs[0].eventLog.EventName, "Transfer");
+            Assert.Equal(neoLogs[0].eventLog.ScriptHash, NeoToken.NEO.Hash);
+            Assert.Equal(neoLogs[0].eventLog.State[2], 1);
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Neo.Plugins.ApplicationLogs
     {
         #region Globals
 
-        private NeoStore _neostore;
+        internal NeoStore _neostore;
         private NeoSystem _neosystem;
         private readonly List<LogEventArgs> _logEvents;
 
