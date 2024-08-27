@@ -135,7 +135,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             };
             await system.Blockchain.Ask(block);  // persist the block
 
-            JObject blockJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString(), true]);
+            JObject blockJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString()]);
             Assert.Equal(blockJson["blockhash"], block.Hash.ToString());
             JArray executions = (JArray)blockJson["executions"];
             Assert.Equal(executions.Count, 2);
@@ -149,7 +149,12 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             Assert.Equal(Convert.FromBase64String(notifications[0]["state"]["value"][1]["value"].AsString()), ValidatorScriptHash.ToArray());
             Assert.Equal(notifications[0]["state"]["value"][2]["value"], "50000000");
 
-            JObject transactionJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([txs[0].Hash.ToString(), true]);
+            blockJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString(), "PostPersist"]);
+            executions = (JArray)blockJson["executions"];
+            Assert.Equal(executions.Count, 1);
+            Assert.Equal(executions[0]["trigger"], "PostPersist");
+
+            JObject transactionJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([txs[0].Hash.ToString(), true]);  // "true" is invalid but still works
             executions = (JArray)transactionJson["executions"];
             Assert.Equal(executions.Count, 1);
             Assert.Equal(executions[0]["vmstate"], nameof(VMState.HALT));
