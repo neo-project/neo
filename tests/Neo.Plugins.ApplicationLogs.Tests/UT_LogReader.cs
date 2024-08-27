@@ -64,6 +64,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             public MemoryStore _memoryStore;
             public readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
             public WalletAccount _walletAccount;
+            public Transaction[] txs;
+            public Block block;
             public LogReader logReader;
 
             public NeoSystemFixture()
@@ -74,6 +76,46 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 Plugin.Plugins.Add(logReader);  // initialize before NeoSystem to let NeoSystem load the plugin
                 _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode with { Network = ApplicationLogs.Settings.Default.Network }, _memoryStoreProvider);
                 _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
+
+                NeoSystem system = _neoSystem;
+                txs = [
+                    new Transaction
+                    {
+                        Nonce = 233,
+                        ValidUntilBlock = NativeContract.Ledger.CurrentIndex(system.GetSnapshotCache()) + system.Settings.MaxValidUntilBlockIncrement,
+                        Signers = [new Signer() { Account = MultisigScriptHash, Scopes = WitnessScope.CalledByEntry }],
+                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Script = Convert.FromBase64String(NeoTransferScript),
+                        NetworkFee = 1000_0000,
+                        SystemFee = 1000_0000,
+                    }
+                ];
+                byte[] signature = txs[0].Sign(_walletAccount.GetKey(), ApplicationLogs.Settings.Default.Network);
+                txs[0].Witnesses = [new Witness
+                {
+                    InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),
+                    VerificationScript = MultisigScript,
+                }];
+                block = new Block
+                {
+                    Header = new Header
+                    {
+                        Version = 0,
+                        PrevHash = _neoSystem.GenesisBlock.Hash,
+                        MerkleRoot = new UInt256(),
+                        Timestamp = _neoSystem.GenesisBlock.Timestamp + 15_000,
+                        Index = 1,
+                        NextConsensus = _neoSystem.GenesisBlock.NextConsensus,
+                    },
+                    Transactions = txs,
+                };
+                block.Header.MerkleRoot ??= MerkleTree.ComputeRoot(block.Transactions.Select(t => t.Hash).ToArray());
+                signature = block.Sign(_walletAccount.GetKey(), ApplicationLogs.Settings.Default.Network);
+                block.Header.Witness = new Witness
+                {
+                    InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),
+                    VerificationScript = MultisigScript,
+                };
             }
 
             public void Dispose()
@@ -95,44 +137,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         async public void Test_GetApplicationLog()
         {
             NeoSystem system = _neoSystemFixture._neoSystem;
-            Transaction[] txs = [
-                new Transaction
-                {
-                    Nonce = 233,
-                    ValidUntilBlock = NativeContract.Ledger.CurrentIndex(system.GetSnapshotCache()) + system.Settings.MaxValidUntilBlockIncrement,
-                    Signers = [new Signer() { Account = MultisigScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                    Attributes = Array.Empty<TransactionAttribute>(),
-                    Script = Convert.FromBase64String(NeoTransferScript),
-                    NetworkFee = 1000_0000,
-                    SystemFee = 1000_0000,
-                }
-            ];
-            byte[] signature = txs[0].Sign(_neoSystemFixture._walletAccount.GetKey(), ApplicationLogs.Settings.Default.Network);
-            txs[0].Witnesses = [new Witness
-            {
-                InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),
-                VerificationScript = MultisigScript,
-            }];
-            Block block = new Block
-            {
-                Header = new Header
-                {
-                    Version = 0,
-                    PrevHash = _neoSystemFixture._neoSystem.GenesisBlock.Hash,
-                    MerkleRoot = new UInt256(),
-                    Timestamp = _neoSystemFixture._neoSystem.GenesisBlock.Timestamp + 15_000,
-                    Index = 1,
-                    NextConsensus = _neoSystemFixture._neoSystem.GenesisBlock.NextConsensus,
-                },
-                Transactions = txs,
-            };
-            block.Header.MerkleRoot ??= MerkleTree.ComputeRoot(block.Transactions.Select(t => t.Hash).ToArray());
-            signature = block.Sign(_neoSystemFixture._walletAccount.GetKey(), ApplicationLogs.Settings.Default.Network);
-            block.Header.Witness = new Witness
-            {
-                InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),
-                VerificationScript = MultisigScript,
-            };
+            Block block = _neoSystemFixture.block;
             await system.Blockchain.Ask(block);  // persist the block
 
             JObject blockJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString()]);
@@ -154,7 +159,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             Assert.Equal(executions.Count, 1);
             Assert.Equal(executions[0]["trigger"], "PostPersist");
 
-            JObject transactionJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([txs[0].Hash.ToString(), true]);  // "true" is invalid but still works
+            JObject transactionJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([_neoSystemFixture.txs[0].Hash.ToString(), true]);  // "true" is invalid but still works
             executions = (JArray)transactionJson["executions"];
             Assert.Equal(executions.Count, 1);
             Assert.Equal(executions[0]["vmstate"], nameof(VMState.HALT));
@@ -167,6 +172,19 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             Assert.Equal(notifications[1]["eventname"].AsString(), "Transfer");
             Assert.Equal(notifications[1]["contract"].AsString(), GasToken.GAS.Hash.ToString());
             Assert.Equal(notifications[1]["state"]["value"][2]["value"], "50000000");
+        }
+
+        [Fact]
+        async public void Test_Commands()
+        {
+            NeoSystem system = _neoSystemFixture._neoSystem;
+            Block block = _neoSystemFixture.block;
+            await system.Blockchain.Ask(block);  // persist the block
+
+            _neoSystemFixture.logReader.OnGetBlockCommand("1");
+            _neoSystemFixture.logReader.OnGetBlockCommand(block.Hash.ToString());
+            _neoSystemFixture.logReader.OnGetContractCommand(NeoToken.NEO.Hash);
+            _neoSystemFixture.logReader.OnGetTransactionCommand(_neoSystemFixture.txs[0].Hash);
         }
     }
 }
