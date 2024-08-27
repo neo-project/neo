@@ -86,12 +86,29 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestMod_EdgeCases()
         {
-            BigInteger.Zero.Mod(5).Should().Be(0);
-            BigInteger.MinusOne.Mod(5).Should().Be(4);
-            new BigInteger(long.MinValue).Mod(long.MaxValue).Should().Be(9223372036854775806);
-            // Sign of the result: % can return negative values, while Mod always returns non-negative values.
-            var longMod = long.MinValue % long.MaxValue;
-            new BigInteger(long.MinValue).Mod(long.MaxValue).Should().NotBe(longMod);
+            // Test case 1: Mod of zero
+            BigInteger.Zero.Mod(5).Should().Be(0, "Mod of zero should always be zero");
+
+            // Test case 2: Mod of -1
+            BigInteger.MinusOne.Mod(5).Should().Be(4, "Mod of -1 should return the modulus minus 1");
+
+            // Test case 3: Mod with large numbers
+            BigInteger minValue = new BigInteger(long.MinValue);
+            BigInteger maxValue = new BigInteger(long.MaxValue);
+            minValue.Mod(maxValue).Should().Be(9223372036854775806, "Mod with large numbers should be calculated correctly");
+
+            // Test case 4: Comparing Mod with % operator
+            BigInteger result = minValue.Mod(maxValue);
+            result.Should().NotBe(long.MinValue % long.MaxValue, "Mod should always return non-negative values, unlike % operator");
+
+            // Test case 5: Verifying % operator behavior
+            (long.MinValue % long.MaxValue).Should().Be((long)(minValue % maxValue), "% operator should behave consistently for BigInteger and long");
+
+            // Test case 6: Mod with prime numbers
+            new BigInteger(17).Mod(19).Should().Be(17, "Mod with a larger prime should return the original number");
+
+            // Test case 7: Mod with powers of 2
+            new BigInteger(1024).Mod(16).Should().Be(0, "Mod with powers of 2 should utilize bitwise operations efficiently");
         }
 
         [TestMethod]
