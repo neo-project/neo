@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -51,6 +51,9 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
             snapshot.Commit();
+
+
+
         }
 
         [TestCleanup]
@@ -67,15 +70,14 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         }
 
         [TestMethod]
-        public void TestCheckAuth_ValidCredentials_ReturnsTrue()
+        public void ConsensusService_SingleNodeActors_OnStart_PrepReq_PrepResponses_Commits()
         {
-            // Arrange
-            var context = new DefaultHttpContext();
-            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
-            // Act
-            var result = true;
-            // Assert
-            Assert.IsTrue(result);
+
+            var mockNeoSystem = new Mock<TestNeoSystem>();
+            var mockWallet = new Mock<Wallet>();
+            var mockContext = new Mock<ConsensusContext>(mockNeoSystem.Object, mockWallet.Object, ProtocolSettings.Default);
         }
     }
+
+
 }

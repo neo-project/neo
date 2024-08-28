@@ -15,7 +15,7 @@ using Neo.Persistence;
 using Neo.UnitTests;
 using System;
 
-namespace Neo.Plugins.RpcServer.Tests
+namespace Neo.Plugins.DBFTPlugin.Tests
 {
     public static class TestBlockchain
     {
