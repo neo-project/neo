@@ -16,7 +16,7 @@ using System;
 
 namespace Neo.UnitTests
 {
-    class TestWalletAccount : WalletAccount
+    public class TestWalletAccount : WalletAccount
     {
         private static readonly KeyPair key;
 

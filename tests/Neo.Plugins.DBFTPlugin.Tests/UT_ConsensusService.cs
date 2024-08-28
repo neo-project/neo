@@ -24,6 +24,8 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Text;
+using Neo.Plugins.DBFTPlugin.Consensus;
+using Neo.UnitTests;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -75,6 +77,9 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             var mockNeoSystem = new Mock<TestNeoSystem>();
             var mockWallet = new Mock<Wallet>();
+            mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
+            Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
+
             var mockContext = new Mock<ConsensusContext>(mockNeoSystem.Object, mockWallet.Object, ProtocolSettings.Default);
         }
     }
