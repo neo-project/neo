@@ -14,8 +14,10 @@ using Moq;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.Plugins.DBFTPlugin.Consensus;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests;
 using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
@@ -24,8 +26,6 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Text;
-using Neo.Plugins.DBFTPlugin.Consensus;
-using Neo.UnitTests;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -74,13 +74,25 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         [TestMethod]
         public void ConsensusService_SingleNodeActors_OnStart_PrepReq_PrepResponses_Commits()
         {
-
             var mockNeoSystem = new Mock<TestNeoSystem>();
+
             var mockWallet = new Mock<Wallet>();
             mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
             Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
 
             var mockContext = new Mock<ConsensusContext>(mockNeoSystem.Object, mockWallet.Object, ProtocolSettings.Default);
+
+            var timeValues = new[] {
+            new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
+            new DateTime(1980, 06, 01, 0, 0, 3, 001, DateTimeKind.Utc),  // For receiving block
+            new DateTime(1980, 05, 01, 0, 0, 5, 001, DateTimeKind.Utc),  // For Initialize
+            new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
+                    };
+            for (var i = 0; i < timeValues.Length; i++)
+                Console.WriteLine($"time {i}: {timeValues[i]} ");
+
+
+
         }
     }
 
