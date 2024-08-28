@@ -12,11 +12,13 @@
     <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.5.0" />
     <PackageReference Include="MSTest.TestFramework" Version="3.5.0" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.26" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.26" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
-    <ProjectReference Include="..\..\src\Plugins\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\DBFTPlugin\DBFTPlugin.csproj" />
     <ProjectReference Include="..\Neo.UnitTests\Neo.UnitTests.csproj" />
   </ItemGroup>
 
