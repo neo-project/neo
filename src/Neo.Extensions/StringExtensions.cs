@@ -43,6 +43,5 @@ namespace Neo.Extensions
             var size = Utility.StrictUTF8.GetByteCount(value);
             return UnsafeData.GetVarSize(size) + size;
         }
-
     }
 }
