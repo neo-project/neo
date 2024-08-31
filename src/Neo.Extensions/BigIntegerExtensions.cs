@@ -43,6 +43,11 @@ namespace Neo.Extensions
 
         public static BigInteger ModInverse(this BigInteger a, BigInteger n)
         {
+            if (BigInteger.GreatestCommonDivisor(a, n) != 1)
+            {
+                throw new ArithmeticException("No modular inverse exists for the given inputs.");
+            }
+
             BigInteger i = n, v = 0, d = 1;
             while (a > 0)
             {
