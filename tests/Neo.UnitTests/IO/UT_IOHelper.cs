@@ -110,26 +110,9 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializable()
         {
-            byte[] caseArray = [0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-                0x00];
+            byte[] caseArray = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
             ISerializable result = caseArray.AsSerializable<UInt160>();
             Assert.AreEqual(UInt160.Zero, result);
         }
