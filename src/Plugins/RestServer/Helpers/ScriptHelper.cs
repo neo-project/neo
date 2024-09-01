@@ -16,6 +16,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Linq;
 
 namespace Neo.Plugins.RestServer.Helpers
 {
@@ -31,11 +32,21 @@ namespace Neo.Plugins.RestServer.Helpers
             return engine.State == VMState.HALT;
         }
 
-        public static ApplicationEngine InvokeMethod(ProtocolSettings protocolSettings, DataCache snapshot, UInt160 scriptHash, string method, ContractParameter[] args, out byte[] script)
+        public static ApplicationEngine InvokeMethod(ProtocolSettings protocolSettings, DataCache snapshot, UInt160 scriptHash, string method, ContractParameter[] args, Signer[]? signers, out byte[] script)
         {
             using var scriptBuilder = new ScriptBuilder();
             scriptBuilder.EmitDynamicCall(scriptHash, method, CallFlags.ReadOnly, args);
             script = scriptBuilder.ToArray();
+            var tx = signers == null ? null : new Transaction
+            {
+                Version = 0,
+                Nonce = (uint)Random.Shared.Next(),
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + protocolSettings.MaxValidUntilBlockIncrement,
+                Signers = signers,
+                Attributes = [],
+                Script = script,
+                Witnesses = [.. signers.Select(s => new Witness())],
+            };
             using var engine = ApplicationEngine.Run(script, snapshot, settings: protocolSettings, gas: RestServerSettings.Current.MaxGasInvoke);
             return engine;
         }
@@ -45,7 +56,7 @@ namespace Neo.Plugins.RestServer.Helpers
             var neoSystem = RestServerPlugin.NeoSystem ?? throw new InvalidOperationException();
 
             var snapshot = neoSystem.GetSnapshotCache();
-            Transaction? tx = signers == null ? null : new Transaction
+            var tx = signers == null ? null : new Transaction
             {
                 Version = 0,
                 Nonce = (uint)Random.Shared.Next(),

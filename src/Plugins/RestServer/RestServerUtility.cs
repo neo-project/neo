@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
+using Neo.Plugins.RestServer.Models.Contract;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -244,6 +246,53 @@ namespace Neo.Plugins.RestServer
                     throw new NotSupportedException($"StackItemType({item.Type}) is not supported to JSON.");
             }
             return o;
+        }
+
+        public static InvokeParams ContractInvokeParametersFromJToken(JToken token)
+        {
+            if (token is null)
+                throw new ArgumentNullException();
+            if (token.Type != JTokenType.Object)
+                throw new FormatException();
+
+            var obj = (JObject)token;
+            var contractParametersProp = obj
+                .Properties()
+                .SingleOrDefault(a => a.Name.Equals("contractParameters", StringComparison.InvariantCultureIgnoreCase));
+            var signersProp = obj
+                .Properties()
+                .SingleOrDefault(a => a.Name.Equals("signers", StringComparison.InvariantCultureIgnoreCase));
+
+            return new()
+            {
+                ContractParameters = [.. contractParametersProp!.Value.Select(ContractParameterFromJToken)],
+                Signers = [.. signersProp!.Value.Select(SignerFromJToken)],
+            };
+        }
+
+        public static Signer SignerFromJToken(JToken? token)
+        {
+            if (token is null)
+                throw new ArgumentNullException();
+            if (token.Type != JTokenType.Object)
+                throw new FormatException();
+
+            var obj = (JObject)token;
+            var accountProp = obj
+                .Properties()
+                .SingleOrDefault(a => a.Name.Equals("account", StringComparison.InvariantCultureIgnoreCase));
+            var scopesProp = obj
+                .Properties()
+                .SingleOrDefault(a => a.Name.Equals("scopes", StringComparison.InvariantCultureIgnoreCase));
+
+            if (accountProp == null || scopesProp == null)
+                throw new FormatException();
+
+            return new()
+            {
+                Account = UInt160.Parse(accountProp.ToObject<string>()),
+                Scopes = Enum.Parse<WitnessScope>(scopesProp.ToObject<string>()!),
+            };
         }
 
         public static ContractParameter ContractParameterFromJToken(JToken? token)

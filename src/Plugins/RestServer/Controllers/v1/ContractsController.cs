@@ -15,6 +15,7 @@ using Neo.Plugins.RestServer.Exceptions;
 using Neo.Plugins.RestServer.Extensions;
 using Neo.Plugins.RestServer.Helpers;
 using Neo.Plugins.RestServer.Models;
+using Neo.Plugins.RestServer.Models.Contract;
 using Neo.Plugins.RestServer.Models.Error;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -187,7 +188,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         /// </summary>
         /// <param name="scriptHash" example="0xed7cc6f5f2dd842d384f254bc0c2d58fb69a4761">ScriptHash</param>
         /// <param name="method" example="balanceOf">method name</param>
-        /// <param name="contractParameters">JArray of the contract parameters.</param>
+        /// <param name="invokeParameters">JArray of the contract parameters.</param>
         /// <returns>Execution Engine object.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
@@ -199,7 +200,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromQuery(Name = "method")]
             string method,
             [FromBody]
-            ContractParameter[] contractParameters)
+            InvokeParams invokeParameters)
         {
             var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contracts == null)
@@ -208,7 +209,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
                 throw new QueryParameterNotFoundException(nameof(method));
             try
             {
-                var engine = ScriptHelper.InvokeMethod(_neoSystem.Settings, _neoSystem.StoreView, contracts.Hash, method, contractParameters, out var script);
+                var engine = ScriptHelper.InvokeMethod(_neoSystem.Settings, _neoSystem.StoreView, contracts.Hash, method, invokeParameters.ContractParameters, invokeParameters.Signers, out var script);
                 return Ok(engine.ToModel());
             }
             catch (Exception ex)

@@ -6,7 +6,7 @@
       "Active": false
     },
     "Storage": {
-      "Engine": "LevelDBStore",
+      "Engine": "MemoryStore",
       "Path": "Data_LevelDB_{0}"
     },
     "P2P": {

@@ -30,13 +30,13 @@ namespace Neo.Plugins.RestServer.Controllers.v1
     [ApiController]
     public class NodeController : ControllerBase
     {
-        private readonly LocalNode _neolocalnode;
-        private readonly NeoSystem _neosystem;
+        private readonly LocalNode _neoLocalNode;
+        private readonly NeoSystem _neoSystem;
 
         public NodeController()
         {
-            _neolocalnode = RestServerPlugin.LocalNode ?? throw new InvalidOperationException();
-            _neosystem = RestServerPlugin.NeoSystem ?? throw new InvalidOperationException();
+            _neoLocalNode = RestServerPlugin.LocalNode ?? throw new InvalidOperationException();
+            _neoSystem = RestServerPlugin.NeoSystem ?? throw new InvalidOperationException();
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RemoteNodeModel[]))]
         public IActionResult GetPeers()
         {
-            var rNodes = _neolocalnode
+            var rNodes = _neoLocalNode
                 .GetRemoteNodes()
                 .OrderByDescending(o => o.LastBlockIndex)
                 .ToArray();
@@ -83,6 +83,6 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [HttpGet("settings", Name = "GetNodeProtocolSettings")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProtocolSettingsModel))]
         public IActionResult GetSettings() =>
-            Ok(_neosystem.Settings.ToModel());
+            Ok(_neoSystem.Settings.ToModel());
     }
 }

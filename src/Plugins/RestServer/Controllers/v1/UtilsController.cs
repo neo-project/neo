@@ -28,11 +28,11 @@ namespace Neo.Plugins.RestServer.Controllers.v1
     [ApiController]
     public class UtilsController : ControllerBase
     {
-        private readonly NeoSystem _neosystem;
+        private readonly NeoSystem _neoSystem;
 
         public UtilsController()
         {
-            _neosystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
+            _neoSystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
         }
 
         #region Validation
@@ -52,7 +52,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             try
             {
-                return Ok(new UtilsAddressModel() { Address = ScriptHash.ToAddress(_neosystem.Settings.AddressVersion) });
+                return Ok(new UtilsAddressModel() { Address = ScriptHash.ToAddress(_neoSystem.Settings.AddressVersion) });
             }
             catch (FormatException)
             {
@@ -75,7 +75,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             try
             {
-                return Ok(new UtilsScriptHashModel() { ScriptHash = address.ToScriptHash(_neosystem.Settings.AddressVersion) });
+                return Ok(new UtilsScriptHashModel() { ScriptHash = address.ToScriptHash(_neoSystem.Settings.AddressVersion) });
             }
             catch (FormatException)
             {
@@ -99,7 +99,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             return Ok(new UtilsAddressIsValidModel()
             {
                 Address = AddressOrScriptHash,
-                IsValid = RestServerUtility.TryConvertToScriptHash(AddressOrScriptHash, _neosystem.Settings, out _),
+                IsValid = RestServerUtility.TryConvertToScriptHash(AddressOrScriptHash, _neoSystem.Settings, out _),
             });
         }
 

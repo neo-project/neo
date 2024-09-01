@@ -34,11 +34,11 @@ namespace Neo.Plugins.RestServer.Controllers.v1
     [ApiController]
     public class TokensController : ControllerBase
     {
-        private readonly NeoSystem _neosystem;
+        private readonly NeoSystem _neoSystem;
 
         public TokensController()
         {
-            _neosystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
+            _neoSystem = RestServerPlugin.NeoSystem ?? throw new NodeNetworkException();
         }
 
         #region NEP-17
@@ -63,7 +63,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 1 || take < 1 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            var tokenList = NativeContract.ContractManagement.ListContracts(_neosystem.StoreView);
+            var tokenList = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
             var vaildContracts = tokenList
                 .Where(ContractHelper.IsNep17Supported)
                 .OrderBy(o => o.Manifest.Name)
@@ -76,7 +76,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             {
                 try
                 {
-                    var token = new NEP17Token(_neosystem, contract.Hash);
+                    var token = new NEP17Token(_neoSystem, contract.Hash);
                     listResults.Add(token.ToModel());
                 }
                 catch
@@ -100,7 +100,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             return Ok(new CountModel()
             {
-                Count = NativeContract.ContractManagement.ListContracts(_neosystem.StoreView).Count(ContractHelper.IsNep17Supported)
+                Count = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView).Count(ContractHelper.IsNep17Supported)
             });
         }
 
@@ -120,13 +120,13 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "address")]
             UInt160 lookupAddressOrScripthash)
         {
-            var contract = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, tokenAddessOrScripthash) ??
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, tokenAddessOrScripthash) ??
                 throw new ContractNotFoundException(tokenAddessOrScripthash);
             if (ContractHelper.IsNep17Supported(contract) == false)
                 throw new Nep17NotSupportedException(tokenAddessOrScripthash);
             try
             {
-                var token = new NEP17Token(_neosystem, tokenAddessOrScripthash);
+                var token = new NEP17Token(_neoSystem, tokenAddessOrScripthash);
                 return Ok(new TokenBalanceModel()
                 {
                     Name = token.Name,
@@ -167,7 +167,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 1 || take < 1 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            var tokenList = NativeContract.ContractManagement.ListContracts(_neosystem.StoreView);
+            var tokenList = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
             var vaildContracts = tokenList
                 .Where(ContractHelper.IsNep11Supported)
                 .OrderBy(o => o.Manifest.Name)
@@ -180,7 +180,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             {
                 try
                 {
-                    var token = new NEP11Token(_neosystem, contract.Hash);
+                    var token = new NEP11Token(_neoSystem, contract.Hash);
                     listResults.Add(token.ToModel());
                 }
                 catch
@@ -202,7 +202,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CountModel))]
         public IActionResult GetNEP11Count()
         {
-            return Ok(new CountModel() { Count = NativeContract.ContractManagement.ListContracts(_neosystem.StoreView).Count(ContractHelper.IsNep11Supported) });
+            return Ok(new CountModel() { Count = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView).Count(ContractHelper.IsNep11Supported) });
         }
 
         /// <summary>
@@ -221,13 +221,13 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "address")]
             UInt160 addressHash)
         {
-            var contract = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, sAddressHash) ??
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, sAddressHash) ??
                 throw new ContractNotFoundException(sAddressHash);
             if (ContractHelper.IsNep11Supported(contract) == false)
                 throw new Nep11NotSupportedException(sAddressHash);
             try
             {
-                var token = new NEP11Token(_neosystem, sAddressHash);
+                var token = new NEP11Token(_neoSystem, sAddressHash);
                 return Ok(new TokenBalanceModel()
                 {
                     Name = token.Name,
@@ -259,7 +259,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "address")]
             UInt160 addressOrScripthash)
         {
-            var tokenList = NativeContract.ContractManagement.ListContracts(_neosystem.StoreView);
+            var tokenList = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
             var validContracts = tokenList
                 .Where(w => ContractHelper.IsNep17Supported(w) || ContractHelper.IsNep11Supported(w))
                 .OrderBy(o => o.Manifest.Name);
@@ -268,7 +268,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             {
                 try
                 {
-                    var token = new NEP17Token(_neosystem, contract.Hash);
+                    var token = new NEP17Token(_neoSystem, contract.Hash);
                     var balance = token.BalanceOf(addressOrScripthash).Value;
                     if (balance == 0)
                         continue;
@@ -282,7 +282,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
                         TotalSupply = token.TotalSupply().Value,
                     });
 
-                    var nft = new NEP11Token(_neosystem, contract.Hash);
+                    var nft = new NEP11Token(_neoSystem, contract.Hash);
                     balance = nft.BalanceOf(addressOrScripthash).Value;
                     if (balance == 0)
                         continue;

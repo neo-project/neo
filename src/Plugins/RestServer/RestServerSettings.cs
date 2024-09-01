@@ -78,8 +78,8 @@ namespace Neo.Plugins.RestServer
                 MissingMemberHandling = MissingMemberHandling.Error,
                 NullValueHandling = NullValueHandling.Include,
                 Formatting = Formatting.None,
-                Converters = new JsonConverter[]
-                {
+                Converters =
+                [
                     new StringEnumConverter(),
                     new BigDecimalJsonConverter(),
                     new BlockHeaderJsonConverter(),
@@ -87,6 +87,7 @@ namespace Neo.Plugins.RestServer
                     new ContractAbiJsonConverter(),
                     new ContractEventDescriptorJsonConverter(),
                     new ContractGroupJsonConverter(),
+                    new ContractInvokeParametersJsonConverter(),
                     new ContractJsonConverter(),
                     new ContractManifestJsonConverter(),
                     new ContractMethodJsonConverter(),
@@ -119,7 +120,7 @@ namespace Neo.Plugins.RestServer
                     new WitnessConditionJsonConverter(),
                     new WitnessJsonConverter(),
                     new WitnessRuleJsonConverter(),
-                },
+                ],
             },
         };
 
