@@ -22,6 +22,7 @@ using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Numerics;
@@ -37,6 +38,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
+        private Mock<NEP6Wallet> _mockWallet;
 
         const byte NativePrefixAccount = 20;
         const byte NativePrefixTotalSupply = 11;
@@ -48,14 +50,13 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
+            _mockWallet = new Mock<NEP6Wallet>(Path.GetRandomFileName(), "12345678", ProtocolSettings.Default, string.Empty);
+            _mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns(_walletAccount);
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var snapshot = _neoSystem.GetSnapshotCache();
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
             snapshot.Commit();
-
-
-
         }
 
         [TestCleanup]
@@ -74,13 +75,9 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         [TestMethod]
         public void ConsensusService_SingleNodeActors_OnStart_PrepReq_PrepResponses_Commits()
         {
-            var mockNeoSystem = new Mock<TestNeoSystem>();
+            Console.WriteLine($"\n(UT-Consensus) Wallet is: {_mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
 
-            var mockWallet = new Mock<Wallet>();
-            mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
-            Console.WriteLine($"\n(UT-Consensus) Wallet is: {mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
-
-            var mockContext = new Mock<ConsensusContext>(mockNeoSystem.Object, mockWallet.Object, ProtocolSettings.Default);
+            var mockContext = new Mock<ConsensusContext>(_neoSystem, ProtocolSettings.Default, _mockWallet.Object);
 
             var timeValues = new[] {
             new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For tests, used below
@@ -90,9 +87,6 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     };
             for (var i = 0; i < timeValues.Length; i++)
                 Console.WriteLine($"time {i}: {timeValues[i]} ");
-
-
-
         }
     }
 
