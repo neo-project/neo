@@ -9,6 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
+using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -19,7 +24,6 @@ using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin.Consensus;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.UnitTests;
 using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
@@ -98,6 +102,24 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             ulong defaultTimestamp = 328665601001;
             TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(defaultTimestamp); //1980-06-01 00:00:15:001
 
+
+            /* ============================ */
+            /* From Here we need to fix HEADER AND TEST PROBE AND TESTACTORREF */
+            /* ============================ */
+            
+            // Creating a test block
+            Header header = new Header();
+            //TestUtilsConsensus.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            //header.Size.Should().Be(105);
+            //Console.WriteLine($"header {header} hash {header.Hash} {header.PrevHash} timestamp {timestampVal}");
+            //timestampVal.Should().Be(defaultTimestamp);
+
+
+            TestProbe subscriber = CreateTestProbe();
+
+            TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
+                Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, subscriber, mockContext.Object }, null))
+            );
 
         }
     }
