@@ -35,7 +35,7 @@ using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
-using Xunit;
+//using Xunit;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
@@ -111,11 +111,19 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             /* ============================ */
 
             // Creating a test block
-            Header header = new Header();
-            //TestUtilsConsensus.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
-            //header.Size.Should().Be(105);
-            //Console.WriteLine($"header {header} hash {header.Hash} {header.PrevHash} timestamp {timestampVal}");
-            //timestampVal.Should().Be(defaultTimestamp);
+            Header myUTHeader = new Header();
+            TestUtilsConsensus.SetupHeaderWithValues(
+    myUTHeader,
+    UInt256.Zero,
+    out UInt256 merkRootVal,
+    out UInt160 val160,
+    out ulong timestampVal,
+    out ulong nonceVal,  // Add this line
+    out uint indexVal,
+    out Witness scriptVal);
+            myUTHeader.Size.Should().Be(113);
+            Console.WriteLine($"header {myUTHeader} hash {myUTHeader.Hash} {myUTHeader.PrevHash} timestamp {timestampVal}");
+            timestampVal.Should().Be(defaultTimestamp);
 
 
             TestProbe subscriber = CreateTestProbe();
@@ -124,6 +132,38 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                 Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, subscriber, mockContext.Object }, null))
             );
 
+            var testPersistCompleted = new Blockchain.PersistCompleted
+            {
+                Block = new Block
+                {
+                    Header = myUTHeader,
+                    Transactions = new Transaction[0]
+                }
+            };
+            Console.WriteLine("\n==========================");
+            Console.WriteLine("Telling a new block to actor consensus...");
+            Console.WriteLine("will trigger OnPersistCompleted !");
+            // OnPersist will not launch timer, we need OnStart
+            actorConsensus.Tell(testPersistCompleted);
+            Console.WriteLine("\n==========================");
+
+            Console.WriteLine("\n==========================");
+            Console.WriteLine("will start consensus!");
+            actorConsensus.Tell(new ConsensusService.Start { });
+
+            Console.WriteLine("Waiting for subscriber recovery message...");
+            // The next line force a waits, then, subscriber keeps running its thread
+            // In the next case it waits for a Msg of type LocalNode.SendDirectly
+            // As we may expect, as soon as consensus start it sends a RecoveryRequest of this aforementioned type
+            //var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            //Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
+
+            // Enable to fail test
+            //TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(0);
+
+            Console.WriteLine("Finalizing consensus service actor.");
+            Sys.Stop(actorConsensus);
+            Console.WriteLine("Actor actorConsensus Stopped.\n");
         }
     }
 

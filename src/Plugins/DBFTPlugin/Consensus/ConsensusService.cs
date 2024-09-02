@@ -81,6 +81,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void InitializeConsensus(byte viewNumber)
         {
+            Console.WriteLine("InitializeConsensus...");
             context.Reset(viewNumber);
             if (viewNumber > 0)
                 Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
@@ -114,6 +115,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         protected override void OnReceive(object message)
         {
+            Console.WriteLine("OnReceive some message");
             if (message is Start)
             {
                 if (started) return;
@@ -143,6 +145,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void OnStart()
         {
+            Console.WriteLine("OnStart - First Log ConsensusService");
             Log("OnStart");
             started = true;
             if (!dbftSettings.IgnoreRecoveryLogs && context.Load())
