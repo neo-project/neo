@@ -9,9 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.IO;
 using Akka.Actor;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
+using Xunit;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -33,11 +35,12 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Text;
+using System.Reflection;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
     [TestClass]
-    public partial class UT_ConsensusService
+    public partial class UT_ConsensusService : TestKit
     {
         private NeoSystem _neoSystem;
         private TestMemoryStoreProvider _memoryStoreProvider;

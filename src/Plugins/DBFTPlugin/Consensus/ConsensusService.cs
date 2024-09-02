@@ -25,7 +25,7 @@ using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
-    partial class ConsensusService : UntypedActor
+    public partial class ConsensusService : UntypedActor
     {
         public class Start { }
         private class Timer { public uint Height; public byte ViewNumber; }
