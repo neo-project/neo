@@ -9,11 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.IO;
 using Akka.Actor;
+using Akka.IO;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
-using Xunit;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -34,8 +33,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Numerics;
-using System.Text;
 using System.Reflection;
+using System.Text;
+using Xunit;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
