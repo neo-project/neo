@@ -9,8 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -75,6 +77,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         [TestMethod]
         public void ConsensusService_SingleNodeActors_OnStart_PrepReq_PrepResponses_Commits()
         {
+            // dotnet test /workspaces/neo/tests/Neo.Plugins.DBFTPlugin.Tests/Neo.Plugins.DBFTPlugin.Tests.csproj /property:GenerateFullPaths=true /p:Configuration=Debug /p:Platform="AnyCPU"
             Console.WriteLine($"\n(UT-Consensus) Wallet is: {_mockWallet.Object.GetAccount(UInt160.Zero).GetKey().PublicKey}");
 
             var mockContext = new Mock<ConsensusContext>(_neoSystem, ProtocolSettings.Default, _mockWallet.Object);
@@ -87,6 +90,15 @@ namespace Neo.Plugins.DBFTPlugin.Tests
                     };
             for (var i = 0; i < timeValues.Length; i++)
                 Console.WriteLine($"time {i}: {timeValues[i]} ");
+
+            int timeIndex = 0;
+            var timeMock = new Mock<TestTimeProvider>();
+            timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[0]);
+            TestTimeProvider.Current = timeMock.Object;
+            ulong defaultTimestamp = 328665601001;
+            TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(defaultTimestamp); //1980-06-01 00:00:15:001
+
+
         }
     }
 

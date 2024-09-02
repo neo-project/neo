@@ -24,6 +24,24 @@ namespace Neo.Plugins.DBFTPlugin.Tests
         {
         }
     }
+
+    public class TestTimeProvider
+    {
+
+        private static readonly TestTimeProvider Default = new TestTimeProvider();
+
+        /// <summary>
+        /// The currently used <see cref="T:Neo.TimeProvider" /> instance.
+        /// </summary>
+        public static TestTimeProvider Current { get; internal set; } = TestTimeProvider.Default;
+
+        /// <summary>
+        /// Gets the current time expressed as the Coordinated Universal Time (UTC).
+        /// </summary>
+        public virtual DateTime UtcNow => DateTime.UtcNow;
+
+        internal static void ResetToDefault() => TestTimeProvider.Current = TestTimeProvider.Default;
+    }
 }
 
 
