@@ -9,16 +9,38 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.CLI;
+using Microsoft.Extensions.Hosting;
+using Neo.CLI.Commands;
+using Neo.CLI.Extensions;
+using System.CommandLine.Builder;
+using System.CommandLine.Hosting;
+using System.CommandLine.Parsing;
+using System.Threading.Tasks;
 
-namespace Neo
+namespace Neo.CLI
 {
     static class Program
     {
-        static void Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            var mainService = new MainService();
-            mainService.Run(args);
+            var rootCommand = new ProgramRootCommand();
+            var parser = new CommandLineBuilder(rootCommand)
+                .UseHost(builder =>
+                {
+                    builder.UseNeoAppConfiguration();
+                    builder.UseNeoHostConfiguration();
+                    builder.UseNeoSystem();
+
+                    // Command handlers below <Here>
+                    builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();
+
+                    builder.UseSystemd();
+                    builder.UseWindowsService();
+                })
+                .UseDefaults()
+                .Build();
+
+            return await parser.InvokeAsync(args);
         }
     }
 }
