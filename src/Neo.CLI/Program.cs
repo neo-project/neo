@@ -38,6 +38,7 @@ namespace Neo.CLI
                     builder.UseWindowsService();
                 })
                 .UseDefaults()
+                .CancelOnProcessTermination()
                 .Build();
 
             return await parser.InvokeAsync(args);

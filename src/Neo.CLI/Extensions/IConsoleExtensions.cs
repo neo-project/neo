@@ -12,6 +12,7 @@
 using Neo.CLI.CommandLine;
 using System;
 using System.CommandLine;
+using System.Diagnostics.CodeAnalysis;
 using System.Security;
 
 namespace Neo.CLI.Extensions
@@ -20,33 +21,30 @@ namespace Neo.CLI.Extensions
     {
         private static readonly bool s_colorsAreSupported = GetColorsAreSupported();
 
-        public static void SetTerminalForegroundColor(this IConsole _, ConsoleColor consoleColor)
-        {
+        public static void SetTerminalForegroundColor(this IConsole _, ConsoleColor consoleColor) =>
             Console.ForegroundColor = consoleColor;
-        }
 
-        public static void SetTerminalBackgroundColor(this IConsole _, ConsoleColor consoleColor)
-        {
+        public static void SetTerminalBackgroundColor(this IConsole _, ConsoleColor consoleColor) =>
             Console.BackgroundColor = consoleColor;
-        }
 
-        public static void ResetColor(this IConsole _)
-        {
+        public static void ResetColor(this IConsole _) =>
             Console.ResetColor();
-        }
 
         public static void Clear(this IConsole _) =>
             Console.Clear();
 
+        public static void SetCursorPosition(this IConsole _, int left, int right) =>
+            Console.SetCursorPosition(left, right);
+
         public static void WriteLine(this IConsole _) =>
             Console.WriteLine();
 
-        public static void Write(this IConsole console, string value, params object[] args)
+        public static void Write(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string value, params object[] args)
         {
             Console.Write(value, args);
         }
 
-        public static void WriteLine(this IConsole console, string value, params object[] args)
+        public static void WriteLine(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string value, params object[] args)
         {
             Console.WriteLine(value, args);
         }
@@ -112,7 +110,7 @@ namespace Neo.CLI.Extensions
             console.ResetColor();
         }
 
-        public static ConsoleInput PromptConfirm(this IConsole console, string format, params object[] args)
+        public static ConsoleInput PromptConfirm(this IConsole console, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, params object[] args)
         {
             var isRedirect = Console.IsInputRedirected;
 
