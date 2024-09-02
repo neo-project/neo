@@ -33,8 +33,8 @@ namespace Neo.CLI.Hosting.Services
 
             while (stoppingToken.IsCancellationRequested == false)
             {
-                uint height = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
-                uint headerHeight = _neoSystem.HeaderCache.Last?.Index ?? height;
+                var height = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
+                var headerHeight = _neoSystem.HeaderCache.Last?.Index ?? height;
 
                 _console.SetCursorPosition(0, 0);
                 Console.CursorVisible = false;
