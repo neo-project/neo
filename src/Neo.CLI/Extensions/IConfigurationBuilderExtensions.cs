@@ -34,7 +34,7 @@ namespace Neo.CLI.Extensions
             try
             {
                 // Set location: %CurrentDirectory%
-                builder.SetBasePath(Environment.CurrentDirectory);
+                builder.SetBasePath(AppContext.BaseDirectory);
                 // "config.json" settings **FILE MUST EXIST**
                 builder.AddJsonFile(NeoDefaults.ConfigurationFileName, optional: false);
             }
