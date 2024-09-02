@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Neo.CLI.Hosting;
 using Neo.CLI.Hosting.Services;
@@ -54,8 +55,8 @@ namespace Neo.CLI.Extensions
             hostBuilder.ConfigureServices((context, services) =>
             {
                 services.ConfigureOptions<NeoOptionsSetup>();
-                services.AddSingleton<NeoSystemHostedService>();
-                services.AddHostedService(provider => provider.GetRequiredService<NeoSystemHostedService>());
+                services.TryAddSingleton<NeoSystemHostedService>();
+                //services.AddHostedService(provider => provider.GetRequiredService<NeoSystemHostedService>());
             });
             return hostBuilder;
         }

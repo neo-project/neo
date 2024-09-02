@@ -87,10 +87,10 @@ namespace Neo.CLI.Hosting.Services
                 _hasStarted = true;
 
                 _neoSystem = new(_protocolSettings, _neoOptions.Storage.Engine, string.Format(_neoOptions.Storage.Path, _protocolSettings.Network.ToString("X8")));
-                _localNode = await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance());
+                _localNode = await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken);
                 _neoSystem.StartNode(new()
                 {
-                    Tcp = new(IPAddress.Loopback, _neoOptions.P2P.Port),
+                    Tcp = new(IPAddress.Parse(_neoOptions.P2P.Listen), _neoOptions.P2P.Port),
                     MaxConnections = _neoOptions.P2P.MaxConnections,
                     MaxConnectionsPerAddress = _neoOptions.P2P.MaxConnectionsPerAddress,
                     MinDesiredConnections = _neoOptions.P2P.MinDesiredConnections,

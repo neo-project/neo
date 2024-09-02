@@ -20,7 +20,7 @@ namespace Neo.CLI.Hosting
     {
         public void Configure(NeoOptions options)
         {
-            configuration.Bind(options);
+            configuration.GetSection(NeoConfigurationSectionNames.ApplicationConfiguration).Bind(options);
         }
     }
 }

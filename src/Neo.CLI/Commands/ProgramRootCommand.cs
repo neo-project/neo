@@ -9,11 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.CLI.Commands.Prompt;
 using Neo.CLI.Extensions;
+using Neo.CLI.Hosting;
 using Neo.CLI.Hosting.Services;
 using System;
 using System.CommandLine;
+using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.CLI.Commands
@@ -33,10 +38,49 @@ namespace Neo.CLI.Commands
                 throw new NotImplementedException();
             }
 
-            public Task<int> InvokeAsync(InvocationContext context)
+            public async Task<int> InvokeAsync(InvocationContext context)
             {
-                context.Console.WriteLine(neoSystemService.GetHelloWorld());
-                return Task.FromResult(0);
+                await neoSystemService.StartAsync(context.GetCancellationToken());
+                return await RunConsolePrompt(context, context.GetCancellationToken());
+            }
+
+            private static void PrintPrompt(IConsole console)
+            {
+                console.SetTerminalForegroundColor(ConsoleColor.Green);
+                console.Write($"{NeoDefaults.ConsolePromptName} ");
+                console.SetTerminalForegroundColor(ConsoleColor.White);
+                console.ResetColor();
+            }
+
+            private async Task<int> RunConsolePrompt(
+                InvocationContext context,
+                CancellationToken cancellationToken)
+            {
+                context.Console.Clear();
+
+                var rootCommand = new PromptRootCommand();
+                var parser = new CommandLineBuilder(rootCommand)
+                    .UseParseErrorReporting()
+                    .Build();
+
+                var exitCode = 0;
+
+                while (cancellationToken.IsCancellationRequested == false)
+                {
+                    PrintPrompt(context.Console);
+
+                    var line = context.Console.ReadLine()?.Trim() ?? default;
+
+                    if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    exitCode = await parser.InvokeAsync(line, context.Console);
+
+                    if (exitCode < 0)
+                        break;
+                }
+
+                return exitCode;
             }
         }
     }

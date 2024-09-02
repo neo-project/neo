@@ -14,8 +14,6 @@ using Neo.CLI.Hosting;
 using Neo.Extensions;
 using Neo.Network.P2P;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Security;
 
 namespace Neo.CLI.Configuration
@@ -26,8 +24,8 @@ namespace Neo.CLI.Configuration
         public P2POptions P2P { get; set; } = new();
         public ContractOptions Contract { get; set; } = new("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
         public PluginOptions Plugin { get; set; } = new();
-        public NamedPipeOptions NamedPipe { get; set; } = new();
-        public List<WalletOptions> Wallets { get; set; } = [];
+        public NeoLoggerOptions Logger { get; set; } = new();
+        public WalletOptions UnlockWallet { get; set; } = new();
     }
 
     internal sealed class StorageOptions
@@ -72,18 +70,20 @@ namespace Neo.CLI.Configuration
         public Version Version { get; set; } = new(0, 0);
     }
 
-    internal sealed class NamedPipeOptions
+    internal sealed class NeoLoggerOptions
     {
-        public string Name { get; set; } = default!;
+        public string Path { get; set; } = default!;
+        public bool ConsoleOutput { get; set; } = false;
+        public bool Active { get; set; } = false;
     }
 
     internal sealed class WalletOptions
     {
-        public string Name { get; set; } = string.Empty;
-        public FileInfo Path { get; set; } = new(Directory.GetCurrentDirectory());
+        public string Name { get; set; } = default!;
+        public string Path { get; set; } = default!;
         public bool IsActive { get; set; } = false;
 
-        public required string? Password
+        public string? Password
         {
             get => _encryptedPassword.GetClearText();
             set

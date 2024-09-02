@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NeoDefaults.cs file belongs to the neo project and is free
+// NeoConfigurationSectionNames.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,10 +11,8 @@
 
 namespace Neo.CLI.Hosting
 {
-    internal static class NeoDefaults
+    internal static class NeoConfigurationSectionNames
     {
-        public static readonly string StoreProviderName = "LevelDBStore";
-        public static readonly string ConfigurationFileName = "config.json";
-        public static readonly string ConsolePromptName = "neo:~$";
+        public static readonly string ApplicationConfiguration = "ApplicationConfiguration";
     }
 }

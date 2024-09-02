@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NeoDefaults.cs file belongs to the neo project and is free
+// QuitCommand.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,12 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.CLI.Hosting
+using System.CommandLine;
+
+namespace Neo.CLI.Commands.Prompt
 {
-    internal static class NeoDefaults
+    internal sealed class QuitCommand : Command
     {
-        public static readonly string StoreProviderName = "LevelDBStore";
-        public static readonly string ConfigurationFileName = "config.json";
-        public static readonly string ConsolePromptName = "neo:~$";
+        public QuitCommand() : base("quit", $"Exits application.")
+        {
+            AddAlias("exit");
+            this.SetHandler(context => context.ExitCode = -1);
+        }
     }
 }
