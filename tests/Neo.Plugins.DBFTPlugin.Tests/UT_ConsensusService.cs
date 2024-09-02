@@ -12,14 +12,14 @@
 using Akka.Actor;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
-using Neo.Network.P2P;
-using Neo.Network.P2P.Payloads;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin.Consensus;
 using Neo.SmartContract;
@@ -106,7 +106,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             /* ============================ */
             /* From Here we need to fix HEADER AND TEST PROBE AND TESTACTORREF */
             /* ============================ */
-            
+
             // Creating a test block
             Header header = new Header();
             //TestUtilsConsensus.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
