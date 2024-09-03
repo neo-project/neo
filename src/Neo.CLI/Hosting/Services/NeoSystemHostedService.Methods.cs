@@ -29,7 +29,7 @@ namespace Neo.CLI.Hosting.Services
             if (_neoSystem is null || _localNode is null)
                 throw new InvalidOperationException($"{nameof(NeoSystemHostedService)} has not been started.");
 
-            _ = PingAllClientsAsync(stoppingToken);
+            _ = PingRemoteClientsAsync(stoppingToken);
 
             _console.Clear();
 
@@ -53,7 +53,7 @@ namespace Neo.CLI.Hosting.Services
             }
         }
 
-        public async Task PingAllClientsAsync(CancellationToken stoppingToken = default)
+        public async Task PingRemoteClientsAsync(CancellationToken stoppingToken = default)
         {
             if (_neoSystem is null)
                 throw new InvalidOperationException($"{nameof(NeoSystemHostedService)} has not been started.");
@@ -63,6 +63,71 @@ namespace Neo.CLI.Hosting.Services
                 _neoSystem.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView))));
                 await Task.Delay(_protocolSettings.TimePerBlock, stoppingToken);
             }
+        }
+
+        public void ShowBlock(string indexOrHash)
+        {
+            if (_neoSystem is null)
+                throw new InvalidOperationException($"{nameof(NeoSystemHostedService)} has not been started.");
+
+            Block? block = null;
+
+            if (uint.TryParse(indexOrHash, out var index))
+                block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, index);
+            else if (UInt256.TryParse(indexOrHash, out var hash))
+                block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, hash);
+            else
+            {
+                _console.ErrorMessage("Enter a valid block index or hash.");
+                return;
+            }
+
+            if (block is null)
+            {
+                _console.ErrorMessage($"Block {indexOrHash} doesn't exist.");
+                return;
+            }
+
+            DateTime blockDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            blockDatetime = blockDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
+
+            _console.WriteLine("-------------Block-------------");
+            _console.WriteLine();
+            _console.WriteLine($"      Timestamp: {blockDatetime}");
+            _console.WriteLine($"          Index: {block.Index}");
+            _console.WriteLine($"           Hash: {block.Hash}");
+            _console.WriteLine($"          Nonce: {block.Nonce}");
+            _console.WriteLine($"     MerkleRoot: {block.MerkleRoot}");
+            _console.WriteLine($"       PrevHash: {block.PrevHash}");
+            _console.WriteLine($"  NextConsensus: {block.NextConsensus}");
+            _console.WriteLine($"   PrimaryIndex: {block.PrimaryIndex}");
+            _console.WriteLine($"  PrimaryPubKey: {NativeContract.NEO.GetCommittee(_neoSystem.StoreView)[block.PrimaryIndex]}");
+            _console.WriteLine($"        Version: {block.Version}");
+            _console.WriteLine($"           Size: {block.Size} Byte(s)");
+            _console.WriteLine();
+
+            _console.WriteLine("-------------Witness-------------");
+            _console.WriteLine();
+            _console.WriteLine($"    Invocation Script: {Convert.ToBase64String(block.Witness.InvocationScript.Span)}");
+            _console.WriteLine($"  Verification Script: {Convert.ToBase64String(block.Witness.VerificationScript.Span)}");
+            _console.WriteLine($"           ScriptHash: {block.Witness.ScriptHash}");
+            _console.WriteLine($"                 Size: {block.Witness.Size} Byte(s)");
+            _console.WriteLine();
+
+            _console.WriteLine("------------Transaction(s)------------");
+            _console.WriteLine();
+
+            if (block.Transactions.Length == 0)
+            {
+                _console.WriteLine("  No Transaction(s)");
+            }
+            else
+            {
+                foreach (var tx in block.Transactions)
+                    _console.WriteLine($"  {tx.Hash}");
+            }
+            _console.WriteLine();
+            _console.WriteLine("--------------------------------------");
         }
     }
 }

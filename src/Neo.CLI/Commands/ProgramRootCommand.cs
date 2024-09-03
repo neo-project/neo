@@ -81,7 +81,7 @@ namespace Neo.CLI.Commands
 
                     exitCode = await parser.InvokeAsync(line, context.Console);
 
-                    if (exitCode != 0)
+                    if (exitCode < 0)
                         break;
                 }
 

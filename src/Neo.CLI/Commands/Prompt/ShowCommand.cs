@@ -25,25 +25,29 @@ namespace Neo.CLI.Commands.Prompt
             CancellationToken cancellationToken,
             IConsole console) : base("show", "Show node information.")
         {
-            var stateCommand = new StateCommand
+            var stateCommand = new StateCommand()
             {
-                Handler = CommandHandler.Create(async () =>
+                Handler = CommandHandler.Create(() =>
                 {
                     var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    var stateTask = neoSystemService.ShowStateAsync(cts.Token);
+                    _ = neoSystemService.ShowStateAsync(cts.Token);
 
                     Console.CursorVisible = false;
 
                     console.ReadLine();
                     cts.Cancel();
 
-                    //await stateTask; // crashes thread
-
                     Console.CursorVisible = true;
                 }),
             };
 
+            var blockCommand = new BlockCommand()
+            {
+                Handler = CommandHandler.Create<string>(neoSystemService.ShowBlock),
+            };
+
             AddCommand(stateCommand);
+            AddCommand(blockCommand);
         }
     }
 }

@@ -17,9 +17,16 @@ namespace Neo.CLI.Commands.Prompt
     {
         private class StateCommand : Command
         {
-            public StateCommand() : base("state", "Show the current state of the node.")
-            {
+            public StateCommand() : base("state", "Show the current state of the node.") { }
+        }
 
+        private class BlockCommand : Command
+        {
+            public BlockCommand() : base("block", "Show block state.")
+            {
+                var indexOrHashArgument = new Argument<string>("indexOrHash", "The block index or hash.");
+
+                AddArgument(indexOrHashArgument);
             }
         }
     }
