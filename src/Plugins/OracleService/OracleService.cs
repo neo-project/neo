@@ -125,23 +125,23 @@ namespace Neo.Plugins.OracleService
 
         public Task Start(Wallet wallet)
         {
-            if (status == OracleStatus.Running) return null;
+            if (status == OracleStatus.Running) return Task.CompletedTask;
 
             if (wallet is null)
             {
                 ConsoleHelper.Warning("Please open wallet first!");
-                return null;
+                return Task.CompletedTask;
             }
 
             if (!CheckOracleAvailable(_system.StoreView, out ECPoint[] oracles))
             {
                 ConsoleHelper.Warning("The oracle service is unavailable");
-                return null;
+                return Task.CompletedTask;
             }
             if (!CheckOracleAccount(wallet, oracles))
             {
                 ConsoleHelper.Warning("There is no oracle account in wallet");
-                return null;
+                return Task.CompletedTask;
             }
 
             this.wallet = wallet;
