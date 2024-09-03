@@ -53,7 +53,7 @@ namespace Neo.Plugins.OracleService
         private readonly ConcurrentDictionary<ulong, OracleTask> pendingQueue = new ConcurrentDictionary<ulong, OracleTask>();
         private readonly ConcurrentDictionary<ulong, DateTime> finishedCache = new ConcurrentDictionary<ulong, DateTime>();
         private Timer timer;
-        public readonly CancellationTokenSource cancelSource = new CancellationTokenSource();
+        internal readonly CancellationTokenSource cancelSource = new CancellationTokenSource();
         private OracleStatus status = OracleStatus.Unstarted;
         private IWalletProvider walletProvider;
         private int counter;
