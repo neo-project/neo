@@ -31,13 +31,14 @@ namespace Neo.CLI.Hosting.Services
 
             _ = PingAllClientsAsync(stoppingToken);
 
+            _console.Clear();
+
             while (stoppingToken.IsCancellationRequested == false)
             {
                 var height = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
                 var headerHeight = _neoSystem.HeaderCache.Last?.Index ?? height;
 
                 _console.SetCursorPosition(0, 0);
-                Console.CursorVisible = false;
 
                 _console.WriteLine($"Block: {height}/{headerHeight} Connected: {_localNode.ConnectedCount} Unconnected: {_localNode.UnconnectedCount}");
                 foreach (var node in _localNode.GetRemoteNodes()
