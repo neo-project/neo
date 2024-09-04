@@ -18,15 +18,13 @@ namespace Neo.Builders
     public sealed class TransactionBuilder
     {
 
-        private byte _version = 0;
-        private uint _nonce = (uint)new Random().Next();
-        private uint _systemFee = 0;
-        private uint _networkFee = 0;
-        private uint _validUntilBlock = 0;
-        private byte[] _script = [];
-        private TransactionAttribute[] _attributes = [];
-        private Signer[] _signers = [];
-        private Witness[] _witnesses = [];
+        private readonly Transaction _tx = new()
+        {
+            Script = new[] { (byte)OpCode.RET },
+            Attributes = [],
+            Signers = [],
+            Witnesses = [],
+        };
 
         private TransactionBuilder() { }
 
@@ -37,72 +35,69 @@ namespace Neo.Builders
 
         public TransactionBuilder Version(byte version)
         {
-            _version = version;
+            _tx.Version = version;
             return this;
         }
 
         public TransactionBuilder Nonce(uint nonce)
         {
-            _nonce = nonce;
+            _tx.Nonce = nonce;
             return this;
         }
 
         public TransactionBuilder SystemFee(uint systemFee)
         {
-            _systemFee = systemFee;
+            _tx.SystemFee = systemFee;
             return this;
         }
 
         public TransactionBuilder NetworkFee(uint networkFee)
         {
-            _networkFee = networkFee;
+            _tx.NetworkFee = networkFee;
             return this;
         }
 
         public TransactionBuilder ValidUntil(uint blockIndex)
         {
-            _validUntilBlock = blockIndex;
+            _tx.ValidUntilBlock = blockIndex;
             return this;
         }
 
-        public TransactionBuilder AttachSystem(Action<ScriptBuilder> scriptBuilder)
+        public TransactionBuilder AttachSystem(Action<ScriptBuilder> action)
         {
             var sb = new ScriptBuilder();
-            scriptBuilder(sb);
-            _script = sb.ToArray();
+            action(sb);
+            _tx.Script = sb.ToArray();
             return this;
         }
 
-        public TransactionBuilder AddAttributes(Action<TransactionAttributesBuilder> transactionAttributeBuilder)
+        public TransactionBuilder AddAttributes(Action<TransactionAttributesBuilder> action)
         {
             var ab = TransactionAttributesBuilder.CreateEmpty();
-            transactionAttributeBuilder(ab);
-            _attributes = ab.Build();
+            action(ab);
+            _tx.Attributes = ab.Build();
             return this;
         }
 
-        public TransactionBuilder AddWitness(Action<WitnessBuilder> witnessBuilder)
+        public TransactionBuilder AddWitness(Action<WitnessBuilder> action)
         {
             var wb = WitnessBuilder.CreateEmpty();
-            witnessBuilder(wb);
-            _witnesses = [.. _witnesses, wb.Build()];
+            action(wb);
+            _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
+            return this;
+        }
+
+        public TransactionBuilder AddWitness(Action<WitnessBuilder, Transaction> action)
+        {
+            var wb = WitnessBuilder.CreateEmpty();
+            action(wb, _tx);
+            _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
             return this;
         }
 
         public Transaction Build()
         {
-            return new Transaction()
-            {
-                Version = _version,
-                Nonce = _nonce,
-                SystemFee = _systemFee,
-                NetworkFee = _networkFee,
-                ValidUntilBlock = _validUntilBlock,
-                Script = _script,
-                Attributes = _attributes,
-                Signers = _signers,
-                Witnesses = _witnesses
-            };
+            return _tx;
         }
     }
 }

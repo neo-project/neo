@@ -1,0 +1,55 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// SignerBuilder.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
+
+namespace Neo.Builders
+{
+    public sealed class SignerBuilder
+    {
+        private readonly Signer _signer = new Signer()
+        {
+            AllowedContracts = [],
+            AllowedGroups = [],
+            Rules = [],
+            Scopes = WitnessScope.None,
+        };
+
+        private SignerBuilder(UInt160 scriptHash)
+        {
+            _signer.Account = scriptHash;
+        }
+
+        public static SignerBuilder Create(UInt160 scriptHash)
+        {
+            return new SignerBuilder(scriptHash);
+        }
+
+        public SignerBuilder AllowContract(UInt160 contractHash)
+        {
+            _signer.AllowedContracts = [.. _signer.AllowedContracts, contractHash];
+            return this;
+        }
+
+        public SignerBuilder AllowGroup(ECPoint publicKey)
+        {
+            _signer.AllowedGroups = [.. _signer.AllowedGroups, publicKey];
+            return this;
+        }
+
+        public SignerBuilder AddWitnessScope(WitnessScope scope)
+        {
+            _signer.Scopes |= scope;
+            return this;
+        }
+    }
+}

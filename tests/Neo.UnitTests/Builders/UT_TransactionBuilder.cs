@@ -11,6 +11,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
+using Neo.Network.P2P.Payloads;
+using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,6 +82,70 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.AreEqual(expectedValidUntilBlock, tx.ValidUntilBlock);
+            Assert.IsNotNull(tx.Hash);
+        }
+
+        [TestMethod]
+        public void TestAttachScript()
+        {
+            byte[] expectedScript = [(byte)OpCode.NOP];
+            var tx = TransactionBuilder.CreateEmpty()
+                .AttachSystem(sb => sb.Emit(OpCode.NOP))
+                .Build();
+
+            CollectionAssert.AreEqual(expectedScript, tx.Script.ToArray());
+            Assert.IsNotNull(tx.Hash);
+        }
+
+        [TestMethod]
+        public void TestTransactionAttributes()
+        {
+            var tx = TransactionBuilder.CreateEmpty()
+                .AddAttributes(ab => ab.AddHighPriority())
+                .Build();
+
+            Assert.AreEqual(1, tx.Attributes.Length);
+            Assert.IsInstanceOfType<HighPriorityAttribute>(tx.Attributes[0]);
+            Assert.IsNotNull(tx.Hash);
+        }
+
+        [TestMethod]
+        public void TestWitness()
+        {
+            var tx = TransactionBuilder.CreateEmpty()
+                .AddWitness(wb =>
+                {
+                    // Contract signature
+                    wb.AddInvocation([]);
+                    wb.AddVerification([]);
+                })
+                .Build();
+
+            Assert.AreEqual(1, tx.Witnesses.Length);
+            Assert.AreEqual(0, tx.Witnesses[0].InvocationScript.Length);
+            Assert.AreEqual(0, tx.Witnesses[0].VerificationScript.Length);
+            Assert.IsNotNull(tx.Hash);
+        }
+
+        [TestMethod]
+        public void TestWitnessWithTransactionParameter()
+        {
+            var tx = TransactionBuilder.CreateEmpty()
+                .AddWitness((wb, tx) =>
+                {
+                    // Checks to make sure the transaction is hash able
+                    // NOTE: transaction can be used for signing here
+                    Assert.IsNotNull(tx.Hash);
+                })
+                .Build();
+        }
+
+        [TestMethod]
+        public void TestEmptyTransaction()
+        {
+            var tx = TransactionBuilder.CreateEmpty()
+                .Build();
+
             Assert.IsNotNull(tx.Hash);
         }
     }

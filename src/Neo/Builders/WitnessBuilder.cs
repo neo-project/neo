@@ -9,9 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.VM;
 using System;
 
@@ -37,7 +35,13 @@ namespace Neo.Builders
             return this;
         }
 
-        public WitnessBuilder AddSigner(Action<ScriptBuilder> scriptBuilder)
+        public WitnessBuilder AddInvocation(byte[] bytes)
+        {
+            _invocationScript = bytes;
+            return this;
+        }
+
+        public WitnessBuilder AddVerification(Action<ScriptBuilder> scriptBuilder)
         {
             var sb = new ScriptBuilder();
             scriptBuilder(sb);
@@ -45,17 +49,9 @@ namespace Neo.Builders
             return this;
         }
 
-        public WitnessBuilder AddSigner(Action<Contract> contract)
+        public WitnessBuilder AddVerification(byte[] bytes)
         {
-            var c = new Contract();
-            contract(c);
-            _verificationScript = c.Script;
-            return this;
-        }
-
-        public WitnessBuilder AddSigner(ECPoint publicKey)
-        {
-            _verificationScript = Contract.CreateSignatureRedeemScript(publicKey);
+            _verificationScript = bytes;
             return this;
         }
 
@@ -64,7 +60,7 @@ namespace Neo.Builders
             return new Witness()
             {
                 InvocationScript = _invocationScript,
-                VerificationScript = _verificationScript
+                VerificationScript = _verificationScript,
             };
         }
     }
