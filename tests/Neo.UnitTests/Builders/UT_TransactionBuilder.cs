@@ -11,7 +11,11 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
+using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads.Conditions;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -147,6 +151,43 @@ namespace Neo.UnitTests.Builders
                 .Build();
 
             Assert.IsNotNull(tx.Hash);
+        }
+
+        [TestMethod]
+        public void TestSigner()
+        {
+            var expectedPublicKey = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
+            var expectedContractHash = UInt160.Zero;
+
+            var tx = TransactionBuilder.CreateEmpty()
+                .AddSigner((sb, tx) =>
+                {
+                    sb.Account(expectedContractHash);
+                    sb.AllowContract(expectedContractHash);
+                    sb.AllowGroup(expectedPublicKey);
+                    sb.AddWitnessScope(WitnessScope.WitnessRules);
+                    sb.AddWitnessRule(WitnessRuleAction.Deny, wrb =>
+                    {
+                        wrb.AddCondition(cb =>
+                        {
+                            cb.ScriptHash(expectedContractHash);
+                        });
+                    });
+                })
+                .Build();
+
+            Assert.IsNotNull(tx.Hash);
+            Assert.AreEqual(1, tx.Signers.Length);
+            Assert.AreEqual(expectedContractHash, tx.Signers[0].Account);
+            Assert.AreEqual(1, tx.Signers[0].AllowedContracts.Length);
+            Assert.AreEqual(expectedContractHash, tx.Signers[0].AllowedContracts[0]);
+            Assert.AreEqual(1, tx.Signers[0].AllowedGroups.Length);
+            Assert.AreEqual(expectedPublicKey, tx.Signers[0].AllowedGroups[0]);
+            Assert.AreEqual(WitnessScope.WitnessRules, tx.Signers[0].Scopes);
+            Assert.AreEqual(1, tx.Signers[0].Rules.Length);
+            Assert.AreEqual(WitnessRuleAction.Deny, tx.Signers[0].Rules[0].Action);
+            Assert.IsNotNull(tx.Signers[0].Rules[0].Condition);
+            Assert.IsInstanceOfType<ScriptHashCondition>(tx.Signers[0].Rules[0].Condition);
         }
     }
 }

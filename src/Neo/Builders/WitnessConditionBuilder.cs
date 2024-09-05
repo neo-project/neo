@@ -117,6 +117,9 @@ namespace Neo.Builders
 
         public WitnessCondition Build()
         {
+            if (_condition is null)
+                return new BooleanCondition() { Expression = false };
+
             return _condition;
         }
 
