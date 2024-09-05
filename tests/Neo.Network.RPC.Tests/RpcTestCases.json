@@ -355,7 +355,7 @@
       "jsonrpc": "2.0",
       "id": 1,
       "result": {
-        "id": -4,
+        "id": -6,
         "updatecounter": 0,
         "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
         "nef": {
@@ -363,8 +363,8 @@
           "compiler": "neo-core-v3.0",
           "source": "",
           "tokens": [],
-          "script": "APxBGvd7Zw==",
-          "checksum": 3155977747
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 2663858513
         },
         "manifest": {
           "name": "GasToken",
@@ -391,21 +391,21 @@
                 "name": "decimals",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 7,
                 "safe": true
               },
               {
                 "name": "symbol",
                 "parameters": [],
                 "returntype": "String",
-                "offset": 0,
+                "offset": 14,
                 "safe": true
               },
               {
                 "name": "totalSupply",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 21,
                 "safe": true
               },
               {
@@ -429,7 +429,129 @@
                   }
                 ],
                 "returntype": "Boolean",
+                "offset": 28,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getcontractstate",
+      "params": [ -6 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -6,
+        "updatecounter": 0,
+        "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 2663858513
+        },
+        "manifest": {
+          "name": "GasToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
                 "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 28,
                 "safe": false
               }
             ],
@@ -477,7 +599,7 @@
       "jsonrpc": "2.0",
       "id": 1,
       "result": {
-        "id": -4,
+        "id": -6,
         "updatecounter": 0,
         "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
         "nef": {
@@ -485,8 +607,8 @@
           "compiler": "neo-core-v3.0",
           "source": "",
           "tokens": [],
-          "script": "APxBGvd7Zw==",
-          "checksum": 3155977747
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 2663858513
         },
         "manifest": {
           "name": "GasToken",
@@ -513,21 +635,21 @@
                 "name": "decimals",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 7,
                 "safe": true
               },
               {
                 "name": "symbol",
                 "parameters": [],
                 "returntype": "String",
-                "offset": 0,
+                "offset": 14,
                 "safe": true
               },
               {
                 "name": "totalSupply",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 21,
                 "safe": true
               },
               {
@@ -551,7 +673,7 @@
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 28,
                 "safe": false
               }
             ],
@@ -599,16 +721,16 @@
       "jsonrpc": "2.0",
       "id": 1,
       "result": {
-        "id": -3,
-        "updatecounter": 0,
+        "id": -5,
+        "updatecounter": 1,
         "hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
         "nef": {
           "magic": 860243278,
           "compiler": "neo-core-v3.0",
           "source": "",
           "tokens": [],
-          "script": "AP1BGvd7Zw==",
-          "checksum": 3921333105
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 1325686241
         },
         "manifest": {
           "name": "NeoToken",
@@ -635,35 +757,80 @@
                 "name": "decimals",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "getAccountState",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Array",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "getAllCandidates",
+                "parameters": [],
+                "returntype": "InteropInterface",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "getCandidateVote",
+                "parameters": [
+                  {
+                    "name": "pubKey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 28,
                 "safe": true
               },
               {
                 "name": "getCandidates",
                 "parameters": [],
                 "returntype": "Array",
-                "offset": 0,
+                "offset": 35,
                 "safe": true
               },
               {
                 "name": "getCommittee",
                 "parameters": [],
                 "returntype": "Array",
-                "offset": 0,
+                "offset": 42,
+                "safe": true
+              },
+              {
+                "name": "getCommitteeAddress",
+                "parameters": [],
+                "returntype": "Hash160",
+                "offset": 49,
                 "safe": true
               },
               {
                 "name": "getGasPerBlock",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 56,
                 "safe": true
               },
               {
                 "name": "getNextBlockValidators",
                 "parameters": [],
                 "returntype": "Array",
-                "offset": 0,
+                "offset": 63,
+                "safe": true
+              },
+              {
+                "name": "getRegisterPrice",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 70,
                 "safe": true
               },
               {
@@ -671,11 +838,11 @@
                 "parameters": [
                   {
                     "name": "pubkey",
-                    "type": "ByteArray"
+                    "type": "PublicKey"
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 77,
                 "safe": false
               },
               {
@@ -686,22 +853,34 @@
                     "type": "Integer"
                   }
                 ],
-                "returntype": "Boolean",
-                "offset": 0,
+                "returntype": "Void",
+                "offset": 84,
+                "safe": false
+              },
+              {
+                "name": "setRegisterPrice",
+                "parameters": [
+                  {
+                    "name": "registerPrice",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 91,
                 "safe": false
               },
               {
                 "name": "symbol",
                 "parameters": [],
                 "returntype": "String",
-                "offset": 0,
+                "offset": 98,
                 "safe": true
               },
               {
                 "name": "totalSupply",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 105,
                 "safe": true
               },
               {
@@ -725,7 +904,7 @@
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 112,
                 "safe": false
               },
               {
@@ -741,7 +920,7 @@
                   }
                 ],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 119,
                 "safe": true
               },
               {
@@ -749,11 +928,11 @@
                 "parameters": [
                   {
                     "name": "pubkey",
-                    "type": "ByteArray"
+                    "type": "PublicKey"
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 126,
                 "safe": false
               },
               {
@@ -765,11 +944,11 @@
                   },
                   {
                     "name": "voteTo",
-                    "type": "ByteArray"
+                    "type": "PublicKey"
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 133,
                 "safe": false
               }
             ],
@@ -788,6 +967,383 @@
                   {
                     "name": "amount",
                     "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CandidateStateChanged",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "registered",
+                    "type": "Boolean"
+                  },
+                  {
+                    "name": "votes",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "Vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "from",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "to",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CommitteeChanged",
+                "parameters": [
+                  {
+                    "name": "old",
+                    "type": "Array"
+                  },
+                  {
+                    "name": "new",
+                    "type": "Array"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getcontractstate",
+      "params": [ -5 ]
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -5,
+        "updatecounter": 1,
+        "hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 1325686241
+        },
+        "manifest": {
+          "name": "NeoToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "getAccountState",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Array",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "getAllCandidates",
+                "parameters": [],
+                "returntype": "InteropInterface",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "getCandidateVote",
+                "parameters": [
+                  {
+                    "name": "pubKey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 28,
+                "safe": true
+              },
+              {
+                "name": "getCandidates",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 35,
+                "safe": true
+              },
+              {
+                "name": "getCommittee",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 42,
+                "safe": true
+              },
+              {
+                "name": "getCommitteeAddress",
+                "parameters": [],
+                "returntype": "Hash160",
+                "offset": 49,
+                "safe": true
+              },
+              {
+                "name": "getGasPerBlock",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 56,
+                "safe": true
+              },
+              {
+                "name": "getNextBlockValidators",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 63,
+                "safe": true
+              },
+              {
+                "name": "getRegisterPrice",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 70,
+                "safe": true
+              },
+              {
+                "name": "registerCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 77,
+                "safe": false
+              },
+              {
+                "name": "setGasPerBlock",
+                "parameters": [
+                  {
+                    "name": "gasPerBlock",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 84,
+                "safe": false
+              },
+              {
+                "name": "setRegisterPrice",
+                "parameters": [
+                  {
+                    "name": "registerPrice",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 91,
+                "safe": false
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 98,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 105,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 112,
+                "safe": false
+              },
+              {
+                "name": "unclaimedGas",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "end",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 119,
+                "safe": true
+              },
+              {
+                "name": "unregisterCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 126,
+                "safe": false
+              },
+              {
+                "name": "vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "voteTo",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 133,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CandidateStateChanged",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "registered",
+                    "type": "Boolean"
+                  },
+                  {
+                    "name": "votes",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "Vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "from",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "to",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CommitteeChanged",
+                "parameters": [
+                  {
+                    "name": "old",
+                    "type": "Array"
+                  },
+                  {
+                    "name": "new",
+                    "type": "Array"
                   }
                 ]
               }
@@ -817,16 +1373,16 @@
       "jsonrpc": "2.0",
       "id": 1,
       "result": {
-        "id": -3,
-        "updatecounter": 0,
+        "id": -5,
+        "updatecounter": 1,
         "hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
         "nef": {
           "magic": 860243278,
           "compiler": "neo-core-v3.0",
           "source": "",
           "tokens": [],
-          "script": "AP1BGvd7Zw==",
-          "checksum": 3921333105
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 1325686241
         },
         "manifest": {
           "name": "NeoToken",
@@ -853,35 +1409,80 @@
                 "name": "decimals",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "getAccountState",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Array",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "getAllCandidates",
+                "parameters": [],
+                "returntype": "InteropInterface",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "getCandidateVote",
+                "parameters": [
+                  {
+                    "name": "pubKey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 28,
                 "safe": true
               },
               {
                 "name": "getCandidates",
                 "parameters": [],
                 "returntype": "Array",
-                "offset": 0,
+                "offset": 35,
                 "safe": true
               },
               {
                 "name": "getCommittee",
                 "parameters": [],
                 "returntype": "Array",
-                "offset": 0,
+                "offset": 42,
+                "safe": true
+              },
+              {
+                "name": "getCommitteeAddress",
+                "parameters": [],
+                "returntype": "Hash160",
+                "offset": 49,
                 "safe": true
               },
               {
                 "name": "getGasPerBlock",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 56,
                 "safe": true
               },
               {
                 "name": "getNextBlockValidators",
                 "parameters": [],
                 "returntype": "Array",
-                "offset": 0,
+                "offset": 63,
+                "safe": true
+              },
+              {
+                "name": "getRegisterPrice",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 70,
                 "safe": true
               },
               {
@@ -889,11 +1490,11 @@
                 "parameters": [
                   {
                     "name": "pubkey",
-                    "type": "ByteArray"
+                    "type": "PublicKey"
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 77,
                 "safe": false
               },
               {
@@ -904,22 +1505,34 @@
                     "type": "Integer"
                   }
                 ],
-                "returntype": "Boolean",
-                "offset": 0,
+                "returntype": "Void",
+                "offset": 84,
+                "safe": false
+              },
+              {
+                "name": "setRegisterPrice",
+                "parameters": [
+                  {
+                    "name": "registerPrice",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 91,
                 "safe": false
               },
               {
                 "name": "symbol",
                 "parameters": [],
                 "returntype": "String",
-                "offset": 0,
+                "offset": 98,
                 "safe": true
               },
               {
                 "name": "totalSupply",
                 "parameters": [],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 105,
                 "safe": true
               },
               {
@@ -943,7 +1556,7 @@
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 112,
                 "safe": false
               },
               {
@@ -959,7 +1572,7 @@
                   }
                 ],
                 "returntype": "Integer",
-                "offset": 0,
+                "offset": 119,
                 "safe": true
               },
               {
@@ -967,11 +1580,11 @@
                 "parameters": [
                   {
                     "name": "pubkey",
-                    "type": "ByteArray"
+                    "type": "PublicKey"
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 126,
                 "safe": false
               },
               {
@@ -983,11 +1596,11 @@
                   },
                   {
                     "name": "voteTo",
-                    "type": "ByteArray"
+                    "type": "PublicKey"
                   }
                 ],
                 "returntype": "Boolean",
-                "offset": 0,
+                "offset": 133,
                 "safe": false
               }
             ],
@@ -1006,6 +1619,57 @@
                   {
                     "name": "amount",
                     "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CandidateStateChanged",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "registered",
+                    "type": "Boolean"
+                  },
+                  {
+                    "name": "votes",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "Vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "from",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "to",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CommitteeChanged",
+                "parameters": [
+                  {
+                    "name": "old",
+                    "type": "Array"
+                  },
+                  {
+                    "name": "new",
+                    "type": "Array"
                   }
                 ]
               }
