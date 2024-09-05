@@ -19,20 +19,24 @@ namespace Neo.Builders
     {
         private readonly Signer _signer = new Signer()
         {
+            Account = UInt160.Zero,
             AllowedContracts = [],
             AllowedGroups = [],
             Rules = [],
             Scopes = WitnessScope.None,
         };
 
-        private SignerBuilder(UInt160 scriptHash)
+        private SignerBuilder() { }
+
+        public static SignerBuilder CreateEmpty()
         {
-            _signer.Account = scriptHash;
+            return new SignerBuilder();
         }
 
-        public static SignerBuilder Create(UInt160 scriptHash)
+        public SignerBuilder Account(UInt160 scriptHash)
         {
-            return new SignerBuilder(scriptHash);
+            _signer.Account = scriptHash;
+            return this;
         }
 
         public SignerBuilder AllowContract(UInt160 contractHash)

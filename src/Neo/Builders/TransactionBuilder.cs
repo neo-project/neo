@@ -95,6 +95,14 @@ namespace Neo.Builders
             return this;
         }
 
+        public TransactionBuilder AddSigner(Action<SignerBuilder, Transaction> config)
+        {
+            var wb = SignerBuilder.CreateEmpty();
+            config(wb, _tx);
+            _tx.Signers = [.. _tx.Signers, wb.Build()];
+            return this;
+        }
+
         public Transaction Build()
         {
             return _tx;
