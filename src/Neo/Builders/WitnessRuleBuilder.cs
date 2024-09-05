@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Network.P2P.Payloads;
+using System;
 
 namespace Neo.Builders
 {
@@ -27,9 +28,16 @@ namespace Neo.Builders
             return new WitnessRuleBuilder(action);
         }
 
-        public WitnessRuleBuilder AddCondition(UInt160 contractHash)
+        public void AddCondition(Action<WitnessConditionBuilder> config)
         {
-            return this;
+            var cb = WitnessConditionBuilder.Create();
+            config(cb);
+            _rule.Condition = cb.Build();
+        }
+
+        public WitnessRule Build()
+        {
+            return _rule;
         }
     }
 }

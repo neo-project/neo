@@ -63,34 +63,34 @@ namespace Neo.Builders
             return this;
         }
 
-        public TransactionBuilder AttachSystem(Action<ScriptBuilder> action)
+        public TransactionBuilder AttachSystem(Action<ScriptBuilder> config)
         {
             var sb = new ScriptBuilder();
-            action(sb);
+            config(sb);
             _tx.Script = sb.ToArray();
             return this;
         }
 
-        public TransactionBuilder AddAttributes(Action<TransactionAttributesBuilder> action)
+        public TransactionBuilder AddAttributes(Action<TransactionAttributesBuilder> config)
         {
             var ab = TransactionAttributesBuilder.CreateEmpty();
-            action(ab);
+            config(ab);
             _tx.Attributes = ab.Build();
             return this;
         }
 
-        public TransactionBuilder AddWitness(Action<WitnessBuilder> action)
+        public TransactionBuilder AddWitness(Action<WitnessBuilder> config)
         {
             var wb = WitnessBuilder.CreateEmpty();
-            action(wb);
+            config(wb);
             _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
             return this;
         }
 
-        public TransactionBuilder AddWitness(Action<WitnessBuilder, Transaction> action)
+        public TransactionBuilder AddWitness(Action<WitnessBuilder, Transaction> config)
         {
             var wb = WitnessBuilder.CreateEmpty();
-            action(wb, _tx);
+            config(wb, _tx);
             _tx.Witnesses = [.. _tx.Witnesses, wb.Build()];
             return this;
         }

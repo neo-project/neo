@@ -11,6 +11,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
+using System;
 
 namespace Neo.Builders
 {
@@ -50,6 +51,19 @@ namespace Neo.Builders
         {
             _signer.Scopes |= scope;
             return this;
+        }
+
+        public SignerBuilder AddWitnessRule(WitnessRuleAction action, Action<WitnessRuleBuilder> config)
+        {
+            var rb = WitnessRuleBuilder.Create(action);
+            config(rb);
+            _signer.Rules = [.. _signer.Rules, rb.Build()];
+            return this;
+        }
+
+        public Signer Build()
+        {
+            return _signer;
         }
     }
 }

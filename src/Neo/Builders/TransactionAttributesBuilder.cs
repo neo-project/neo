@@ -26,18 +26,18 @@ namespace Neo.Builders
             return new TransactionAttributesBuilder();
         }
 
-        public TransactionAttributesBuilder AddConflict(Action<Conflicts> conflictAction)
+        public TransactionAttributesBuilder AddConflict(Action<Conflicts> config)
         {
             var conflicts = new Conflicts();
-            conflictAction(conflicts);
+            config(conflicts);
             _attributes = [.. _attributes, conflicts];
             return this;
         }
 
-        public TransactionAttributesBuilder AddOracleResponse(Action<OracleResponse> oracleResponseAction)
+        public TransactionAttributesBuilder AddOracleResponse(Action<OracleResponse> config)
         {
             var oracleResponse = new OracleResponse();
-            oracleResponseAction(oracleResponse);
+            config(oracleResponse);
             _attributes = [.. _attributes, oracleResponse];
             return this;
         }
