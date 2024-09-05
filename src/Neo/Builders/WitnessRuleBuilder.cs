@@ -28,11 +28,12 @@ namespace Neo.Builders
             return new WitnessRuleBuilder(action);
         }
 
-        public void AddCondition(Action<WitnessConditionBuilder> config)
+        public WitnessRuleBuilder AddCondition(Action<WitnessConditionBuilder> config)
         {
             var cb = WitnessConditionBuilder.Create();
             config(cb);
             _rule.Condition = cb.Build();
+            return this;
         }
 
         public WitnessRule Build()

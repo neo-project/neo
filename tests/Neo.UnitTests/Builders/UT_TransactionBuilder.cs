@@ -30,6 +30,23 @@ namespace Neo.UnitTests.Builders
     public class UT_TransactionBuilder
     {
         [TestMethod]
+        public void TestCreateEmpty()
+        {
+            var builder = TransactionBuilder.CreateEmpty();
+
+            Assert.IsNotNull(builder);
+        }
+
+        [TestMethod]
+        public void TestEmptyTransaction()
+        {
+            var tx = TransactionBuilder.CreateEmpty()
+                .Build();
+
+            Assert.IsNotNull(tx.Hash);
+        }
+
+        [TestMethod]
         public void TestVersion()
         {
             byte expectedVersion = 1;
@@ -142,15 +159,6 @@ namespace Neo.UnitTests.Builders
                     Assert.IsNotNull(tx.Hash);
                 })
                 .Build();
-        }
-
-        [TestMethod]
-        public void TestEmptyTransaction()
-        {
-            var tx = TransactionBuilder.CreateEmpty()
-                .Build();
-
-            Assert.IsNotNull(tx.Hash);
         }
 
         [TestMethod]
