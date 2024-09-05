@@ -26,5 +26,10 @@ namespace Neo.Builders
         {
             return new WitnessRuleBuilder(action);
         }
+
+        public WitnessRuleBuilder AddCondition(UInt160 contractHash)
+        {
+            return this;
+        }
     }
 }
