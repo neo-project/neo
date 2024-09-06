@@ -24,4 +24,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.Plugins.OracleService.Tests" />
+  </ItemGroup>
+
 </Project>
