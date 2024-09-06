@@ -17,7 +17,6 @@ namespace Neo.Builders
 {
     public sealed class TransactionBuilder
     {
-
         private readonly Transaction _tx = new()
         {
             Script = new[] { (byte)OpCode.RET },
