@@ -24,13 +24,13 @@ namespace Neo.Plugins.RpcServer
     partial class RpcServer
     {
         [RpcMethod]
-        protected virtual JToken GetConnectionCount(JArray _params)
+        protected internal virtual JToken GetConnectionCount(JArray _params)
         {
             return localNode.ConnectedCount;
         }
 
         [RpcMethod]
-        protected virtual JToken GetPeers(JArray _params)
+        protected internal virtual JToken GetPeers(JArray _params)
         {
             JObject json = new();
             json["unconnected"] = new JArray(localNode.GetUnconnectedPeers().Select(p =>
@@ -139,6 +139,8 @@ namespace Neo.Plugins.RpcServer
                 forkJson["blockheight"] = hf.Value;
                 return forkJson;
             }));
+            protocol["standbycommittee"] = new JArray(system.Settings.StandbyCommittee.Select(u => new JString(u.ToString())));
+            protocol["seedlist"] = new JArray(system.Settings.SeedList.Select(u => new JString(u)));
             json["rpc"] = rpc;
             json["protocol"] = protocol;
             return json;

@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
@@ -36,6 +37,7 @@ namespace Neo.Plugins.RpcServer
         private const int MaxParamsDepth = 32;
 
         private readonly Dictionary<string, Func<JArray, object>> methods = new();
+        private readonly Dictionary<string, Delegate> _methodsWithParams = new();
 
         private IWebHost host;
         private RpcServerSettings settings;
@@ -261,24 +263,83 @@ namespace Neo.Plugins.RpcServer
         private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
-            JToken @params = request["params"] ?? new JArray();
+            var @params = request["params"] ?? new JArray();
             if (!request.ContainsProperty("method") || @params is not JArray)
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidRequest);
             }
-            JObject response = CreateResponse(request["id"]);
+
+            var jsonParameters = (JArray)@params;
+            var response = CreateResponse(request["id"]);
             try
             {
-                string method = request["method"].AsString();
+                var method = request["method"].AsString();
                 (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
-                methods.TryGetValue(method, out var func).True_Or(RpcErrorFactory.MethodNotFound(method));
-                response["result"] = func((JArray)@params) switch
+
+                if (methods.TryGetValue(method, out var func))
                 {
-                    JToken result => result,
-                    Task<JToken> task => await task,
-                    _ => throw new NotSupportedException()
-                };
-                return response;
+                    response["result"] = func(jsonParameters) switch
+                    {
+                        JToken result => result,
+                        Task<JToken> task => await task,
+                        _ => throw new NotSupportedException()
+                    };
+                    return response;
+                }
+
+                if (_methodsWithParams.TryGetValue(method, out var func2))
+                {
+                    var paramInfos = func2.Method.GetParameters();
+                    var args = new object[paramInfos.Length];
+
+                    for (var i = 0; i < paramInfos.Length; i++)
+                    {
+                        var param = paramInfos[i];
+                        if (jsonParameters.Count > i && jsonParameters[i] != null)
+                        {
+                            try
+                            {
+                                if (param.ParameterType == typeof(UInt160))
+                                {
+                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i], system.Settings.AddressVersion);
+                                }
+                                else
+                                {
+                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i], param.ParameterType);
+                                }
+                            }
+                            catch (Exception e) when (e is not RpcException)
+                            {
+                                throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
+                            }
+                        }
+                        else
+                        {
+                            if (param.IsOptional)
+                            {
+                                args[i] = param.DefaultValue;
+                            }
+                            else if (param.ParameterType.IsValueType && Nullable.GetUnderlyingType(param.ParameterType) == null)
+                            {
+                                throw new ArgumentException($"Required parameter '{param.Name}' is missing");
+                            }
+                            else
+                            {
+                                args[i] = null;
+                            }
+                        }
+                    }
+
+                    response["result"] = func2.DynamicInvoke(args) switch
+                    {
+                        JToken result => result,
+                        Task<JToken> task => await task,
+                        _ => throw new NotSupportedException()
+                    };
+                    return response;
+                }
+
+                throw new RpcException(RpcError.MethodNotFound.WithData(method));
             }
             catch (FormatException ex)
             {
@@ -288,24 +349,40 @@ namespace Neo.Plugins.RpcServer
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RpcException)
             {
 #if DEBUG
                 return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
 #else
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
+        return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
 #endif
             }
         }
 
         public void RegisterMethods(object handler)
         {
-            foreach (MethodInfo method in handler.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            foreach (var method in handler.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                RpcMethodAttribute attribute = method.GetCustomAttribute<RpcMethodAttribute>();
-                if (attribute is null) continue;
-                string name = string.IsNullOrEmpty(attribute.Name) ? method.Name.ToLowerInvariant() : attribute.Name;
-                methods[name] = method.CreateDelegate<Func<JArray, object>>(handler);
+                var attribute = method.GetCustomAttribute<RpcMethodAttribute>();
+                var attributeWithParams = method.GetCustomAttribute<RpcMethodWithParamsAttribute>();
+                if (attribute is null && attributeWithParams is null) continue;
+                if (attribute is not null && attributeWithParams is not null) throw new InvalidOperationException("Method cannot have both RpcMethodAttribute and RpcMethodWithParamsAttribute");
+
+                if (attribute is not null)
+                {
+                    var name = string.IsNullOrEmpty(attribute.Name) ? method.Name.ToLowerInvariant() : attribute.Name;
+                    methods[name] = method.CreateDelegate<Func<JArray, object>>(handler);
+                }
+
+                if (attributeWithParams is not null)
+                {
+                    var name = string.IsNullOrEmpty(attributeWithParams.Name) ? method.Name.ToLowerInvariant() : attributeWithParams.Name;
+
+                    var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
+                    var delegateType = Expression.GetDelegateType(parameters.Concat([method.ReturnType]).ToArray());
+
+                    _methodsWithParams[name] = Delegate.CreateDelegate(delegateType, handler, method);
+                }
             }
         }
     }

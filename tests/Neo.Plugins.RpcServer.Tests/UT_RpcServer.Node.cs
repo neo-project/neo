@@ -9,18 +9,50 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using System;
+using System.Collections.Generic;
+using System.Net;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
     partial class UT_RpcServer
     {
+        [TestMethod]
+        public void TestGetConnectionCount()
+        {
+            var result = _rpcServer.GetConnectionCount(new JArray());
+            result.GetType().Should().Be(typeof(JNumber));
+        }
+
+        [TestMethod]
+        public void TestGetPeers()
+        {
+            var settings = TestProtocolSettings.SoleNode;
+            var neoSystem = new NeoSystem(settings, _memoryStoreProvider);
+            var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 11332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 12332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 13332) });
+            var rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
+
+            var result = rpcServer.GetPeers(new JArray());
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            var json = (JObject)result;
+            json.ContainsProperty("unconnected").Should().BeTrue();
+            (json["unconnected"] as JArray).Count.Should().Be(3);
+            json.ContainsProperty("bad").Should().BeTrue();
+            json.ContainsProperty("connected").Should().BeTrue();
+        }
+
         [TestMethod]
         public void TestGetVersion()
         {
@@ -42,6 +74,8 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(protocol.ContainsProperty("maxvaliduntilblockincrement"));
             Assert.IsTrue(protocol.ContainsProperty("maxtransactionsperblock"));
             Assert.IsTrue(protocol.ContainsProperty("memorypoolmaxtransactions"));
+            Assert.IsTrue(protocol.ContainsProperty("standbycommittee"));
+            Assert.IsTrue(protocol.ContainsProperty("seedlist"));
         }
 
         #region SendRawTransaction Tests
