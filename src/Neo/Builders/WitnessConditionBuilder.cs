@@ -11,6 +11,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads.Conditions;
+using System;
 
 namespace Neo.Builders
 {
@@ -20,19 +21,22 @@ namespace Neo.Builders
 
         private WitnessConditionBuilder() { }
 
+        private WitnessConditionBuilder(WitnessCondition condition)
+        {
+            _condition = condition;
+        }
+
         public static WitnessConditionBuilder Create()
         {
             return new WitnessConditionBuilder();
         }
 
-        public WitnessConditionBuilder And()
+        public WitnessConditionBuilder And(Action<AndConditionBuilder> config)
         {
-            var condition = new AndCondition() { Expressions = [] };
+            var acb = AndConditionBuilder.CreateEmpty();
+            config(acb);
 
-            if (_condition is NotCondition notCondition)
-                notCondition.Expression = condition;
-            else
-                _condition = condition;
+            _condition = acb.Build();
 
             return this;
         }
@@ -41,7 +45,7 @@ namespace Neo.Builders
         {
             var condition = new BooleanCondition() { Expression = expression };
 
-            SetConditionWithOtherConditions(condition);
+            _condition = condition;
 
             return this;
         }
@@ -50,7 +54,7 @@ namespace Neo.Builders
         {
             var condition = new CalledByContractCondition() { Hash = hash };
 
-            SetConditionWithOtherConditions(condition);
+            _condition = condition;
 
             return this;
         }
@@ -59,7 +63,7 @@ namespace Neo.Builders
         {
             var condition = new CalledByEntryCondition();
 
-            SetConditionWithOtherConditions(condition);
+            _condition = condition;
 
             return this;
         }
@@ -68,7 +72,7 @@ namespace Neo.Builders
         {
             var condition = new CalledByGroupCondition() { Group = publicKey };
 
-            SetConditionWithOtherConditions(condition);
+            _condition = condition;
 
             return this;
         }
@@ -77,31 +81,32 @@ namespace Neo.Builders
         {
             var condition = new GroupCondition() { Group = publicKey };
 
-            SetConditionWithOtherConditions(condition);
+            _condition = condition;
 
             return this;
         }
 
-        public WitnessConditionBuilder Not()
+        public WitnessConditionBuilder Not(Action<WitnessConditionBuilder> config)
         {
-            var condition = new NotCondition();
+            var wcb = new WitnessConditionBuilder();
+            config(wcb);
 
-            if (_condition is AndCondition andCondition)
-                andCondition.Expressions = [.. andCondition.Expressions, condition];
-            else
-                _condition = condition;
+            var condition = new NotCondition()
+            {
+                Expression = wcb.Build()
+            };
+
+            _condition = condition;
 
             return this;
         }
 
-        public WitnessConditionBuilder Or()
+        public WitnessConditionBuilder Or(Action<OrConditionBuilder> config)
         {
-            var condition = new OrCondition() { Expressions = [] };
+            var ocb = OrConditionBuilder.CreateEmpty();
+            config(ocb);
 
-            if (_condition is NotCondition notCondition)
-                notCondition.Expression = condition;
-            else
-                _condition = condition;
+            _condition = ocb.Build();
 
             return this;
         }
@@ -110,7 +115,7 @@ namespace Neo.Builders
         {
             var condition = new ScriptHashCondition() { Hash = scriptHash };
 
-            SetConditionWithOtherConditions(condition);
+            _condition = condition;
 
             return this;
         }
@@ -118,26 +123,9 @@ namespace Neo.Builders
         public WitnessCondition Build()
         {
             if (_condition is null)
-                return new BooleanCondition() { Expression = false };
+                return new BooleanCondition() { Expression = true };
 
             return _condition;
-        }
-
-        private void SetConditionWithOtherConditions(WitnessCondition condition)
-        {
-            if (_condition is AndCondition andCondition)
-                andCondition.Expressions = [.. andCondition.Expressions, condition];
-            else if (_condition is OrCondition orCondition)
-                orCondition.Expressions = [.. orCondition.Expressions, condition];
-            else if (_condition is NotCondition notCondition)
-            {
-                if (notCondition.Expression is AndCondition a)
-                    a.Expressions = [.. a.Expressions, condition];
-                else if (notCondition.Expression is OrCondition o)
-                    o.Expressions = [.. o.Expressions, condition];
-            }
-            else
-                _condition = condition;
         }
     }
 }

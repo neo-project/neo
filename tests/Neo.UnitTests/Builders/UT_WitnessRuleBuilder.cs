@@ -46,5 +46,24 @@ namespace Neo.UnitTests.Builders
             Assert.IsInstanceOfType<ScriptHashCondition>(rule.Condition);
             Assert.AreEqual(UInt160.Zero, ((ScriptHashCondition)rule.Condition).Hash);
         }
+
+        [TestMethod]
+        public void TestCondition2()
+        {
+            var rule = WitnessRuleBuilder.Create(WitnessRuleAction.Allow)
+                .AddCondition(wcb =>
+                {
+                    wcb.And(and =>
+                    {
+                        and.ScriptHash(UInt160.Zero);
+                    });
+                }).Build();
+
+            Assert.IsNotNull(rule.Condition);
+            Assert.AreEqual(WitnessRuleAction.Allow, rule.Action);
+            Assert.IsInstanceOfType<AndCondition>(rule.Condition);
+            Assert.IsInstanceOfType<ScriptHashCondition>((rule.Condition as AndCondition).Expressions[0]);
+            Assert.AreEqual(UInt160.Zero, ((rule.Condition as AndCondition).Expressions[0] as ScriptHashCondition).Hash);
+        }
     }
 }

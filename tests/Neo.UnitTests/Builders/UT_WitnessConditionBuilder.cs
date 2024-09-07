@@ -30,15 +30,41 @@ namespace Neo.UnitTests.Builders
             var expectedPublicKey = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
             var expectedContractHash = UInt160.Zero;
             var condition = WitnessConditionBuilder.Create()
-                .And()
-                .CalledByContract(expectedContractHash)
-                .CalledByGroup(expectedPublicKey)
+                .And(and =>
+                {
+                    and.CalledByContract(expectedContractHash);
+                    and.CalledByGroup(expectedPublicKey);
+                })
                 .Build();
 
             var actual = condition as AndCondition;
 
             Assert.IsNotNull(actual);
             Assert.IsInstanceOfType<AndCondition>(condition);
+            Assert.AreEqual(2, actual.Expressions.Length);
+            Assert.IsInstanceOfType<CalledByContractCondition>(actual.Expressions[0]);
+            Assert.IsInstanceOfType<CalledByGroupCondition>(actual.Expressions[1]);
+            Assert.AreEqual(expectedContractHash, (actual.Expressions[0] as CalledByContractCondition).Hash);
+            Assert.AreEqual(expectedPublicKey, (actual.Expressions[1] as CalledByGroupCondition).Group);
+        }
+
+        [TestMethod]
+        public void TestOrCondition()
+        {
+            var expectedPublicKey = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
+            var expectedContractHash = UInt160.Zero;
+            var condition = WitnessConditionBuilder.Create()
+                .Or(or =>
+                {
+                    or.CalledByContract(expectedContractHash);
+                    or.CalledByGroup(expectedPublicKey);
+                })
+                .Build();
+
+            var actual = condition as OrCondition;
+
+            Assert.IsNotNull(actual);
+            Assert.IsInstanceOfType<OrCondition>(condition);
             Assert.AreEqual(2, actual.Expressions.Length);
             Assert.IsInstanceOfType<CalledByContractCondition>(actual.Expressions[0]);
             Assert.IsInstanceOfType<CalledByGroupCondition>(actual.Expressions[1]);
@@ -139,10 +165,14 @@ namespace Neo.UnitTests.Builders
             var expectedPublicKey = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
             var expectedContractHash = UInt160.Zero;
             var condition = WitnessConditionBuilder.Create()
-                .Not()
-                .And()
-                .CalledByContract(expectedContractHash)
-                .CalledByGroup(expectedPublicKey)
+                .Not(not =>
+                {
+                    not.And(and =>
+                    {
+                        and.CalledByContract(expectedContractHash);
+                        and.CalledByGroup(expectedPublicKey);
+                    });
+                })
                 .Build();
 
             var actual = condition as NotCondition;
@@ -164,10 +194,14 @@ namespace Neo.UnitTests.Builders
             var expectedPublicKey = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
             var expectedContractHash = UInt160.Zero;
             var condition = WitnessConditionBuilder.Create()
-                .Not()
-                .Or()
-                .CalledByContract(expectedContractHash)
-                .CalledByGroup(expectedPublicKey)
+                .Not(not =>
+                {
+                    not.Or(or =>
+                    {
+                        or.CalledByContract(expectedContractHash);
+                        or.CalledByGroup(expectedPublicKey);
+                    });
+                })
                 .Build();
 
             var actual = condition as NotCondition;
