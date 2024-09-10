@@ -1973,7 +1973,7 @@ namespace Neo.VM
         /// The item on top of main stack is removed and appended to the second item on top of the main stack.
         /// When we use this opcode, we should dup the second item on top of the main stack before using it.
         ///
-        /// <example> a a b -> a.concat(b)</example>
+        /// <example> a b -> a.concat(b)</example>
         ///
         /// <remarks>
         ///     Push: 0 item(s)
@@ -2028,7 +2028,7 @@ namespace Neo.VM
         /// Using this opcode will need to dup the array before using it.
         ///
         /// <remarks>
-        ///     Push: 0 item(s)
+        ///     Push: 1 item(s)
         ///     Pop: 1 item(s)
         /// </remarks>
         /// </summary>
