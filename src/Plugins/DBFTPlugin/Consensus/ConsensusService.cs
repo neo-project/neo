@@ -54,13 +54,13 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// This variable is only true during OnRecoveryMessageReceived
         /// </summary>
         private bool isRecovering = false;
-        private readonly Settings dbftSettings;
+        private readonly DBFTPluginSettings dbftSettings;
         private readonly NeoSystem neoSystem;
 
-        public ConsensusService(NeoSystem neoSystem, Settings settings, Wallet wallet)
+        public ConsensusService(NeoSystem neoSystem, DBFTPluginSettings settings, Wallet wallet)
             : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, wallet)) { }
 
-        internal ConsensusService(NeoSystem neoSystem, Settings settings, ConsensusContext context)
+        internal ConsensusService(NeoSystem neoSystem, DBFTPluginSettings settings, ConsensusContext context)
         {
             this.neoSystem = neoSystem;
             localNode = neoSystem.LocalNode;
@@ -334,7 +334,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             base.PostStop();
         }
 
-        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, Wallet wallet)
+        public static Props Props(NeoSystem neoSystem, DBFTPluginSettings dbftSettings, Wallet wallet)
         {
             return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, wallet));
         }

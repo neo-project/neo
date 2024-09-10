@@ -57,7 +57,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private KeyPair keyPair;
         private int _witnessSize;
         private readonly NeoSystem neoSystem;
-        private readonly Settings dbftSettings;
+        private readonly DBFTPluginSettings dbftSettings;
         private readonly Wallet wallet;
         private readonly IStore store;
         private Dictionary<UInt256, ConsensusMessage> cachedMessages;
@@ -111,7 +111,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(NeoSystem neoSystem, Settings settings, Wallet wallet)
+        public ConsensusContext(NeoSystem neoSystem, DBFTPluginSettings settings, Wallet wallet)
         {
             this.wallet = wallet;
             this.neoSystem = neoSystem;

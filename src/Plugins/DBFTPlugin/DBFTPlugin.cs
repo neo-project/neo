@@ -25,7 +25,7 @@ namespace Neo.Plugins.DBFTPlugin
         private IActorRef consensus;
         private bool started = false;
         private NeoSystem neoSystem;
-        private Settings settings;
+        private DBFTPluginSettings settings;
 
         public override string Description => "Consensus plugin with dBFT algorithm.";
 
@@ -38,7 +38,7 @@ namespace Neo.Plugins.DBFTPlugin
             RemoteNode.MessageReceived += ((IMessageReceivedHandler)this).RemoteNode_MessageReceived_Handler;
         }
 
-        public DBFTPlugin(Settings settings) : this()
+        public DBFTPlugin(DBFTPluginSettings settings) : this()
         {
             this.settings = settings;
         }
@@ -50,7 +50,7 @@ namespace Neo.Plugins.DBFTPlugin
 
         protected override void Configure()
         {
-            settings ??= new Settings(GetConfiguration());
+            settings ??= new DBFTPluginSettings(GetConfiguration());
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
