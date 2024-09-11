@@ -26,7 +26,7 @@ public static class ConstantTimeUtility
         for (int i = 0; i < a_u64.Length; i++)
             f |= a_u64[i] ^ b_u64[i];
         for (int i = a_u64.Length * sizeof(ulong); i < a_bytes.Length; i++)
-            f |= (ulong)a_bytes[i] ^ a_bytes[i];
+            f |= (ulong)a_bytes[i] ^ b_bytes[i];
         return f == 0;
     }
 

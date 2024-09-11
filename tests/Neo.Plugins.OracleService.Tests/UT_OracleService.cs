@@ -21,12 +21,6 @@ namespace Neo.Plugins.OracleService.Tests
     [TestClass]
     public class UT_OracleService : TestKit
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestFilter()
         {

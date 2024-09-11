@@ -53,7 +53,7 @@ namespace Neo.Plugins.OracleService
         private readonly ConcurrentDictionary<ulong, OracleTask> pendingQueue = new ConcurrentDictionary<ulong, OracleTask>();
         private readonly ConcurrentDictionary<ulong, DateTime> finishedCache = new ConcurrentDictionary<ulong, DateTime>();
         private Timer timer;
-        private readonly CancellationTokenSource cancelSource = new CancellationTokenSource();
+        internal readonly CancellationTokenSource cancelSource = new CancellationTokenSource();
         private OracleStatus status = OracleStatus.Unstarted;
         private IWalletProvider walletProvider;
         private int counter;
@@ -123,25 +123,25 @@ namespace Neo.Plugins.OracleService
             Start(walletProvider?.GetWallet());
         }
 
-        public void Start(Wallet wallet)
+        public Task Start(Wallet wallet)
         {
-            if (status == OracleStatus.Running) return;
+            if (status == OracleStatus.Running) return Task.CompletedTask;
 
             if (wallet is null)
             {
                 ConsoleHelper.Warning("Please open wallet first!");
-                return;
+                return Task.CompletedTask;
             }
 
-            if (!CheckOracleAvaiblable(_system.StoreView, out ECPoint[] oracles))
+            if (!CheckOracleAvailable(_system.StoreView, out ECPoint[] oracles))
             {
                 ConsoleHelper.Warning("The oracle service is unavailable");
-                return;
+                return Task.CompletedTask;
             }
             if (!CheckOracleAccount(wallet, oracles))
             {
                 ConsoleHelper.Warning("There is no oracle account in wallet");
-                return;
+                return Task.CompletedTask;
             }
 
             this.wallet = wallet;
@@ -150,7 +150,7 @@ namespace Neo.Plugins.OracleService
             status = OracleStatus.Running;
             timer = new Timer(OnTimer, null, RefreshIntervalMilliSeconds, Timeout.Infinite);
             ConsoleHelper.Info($"Oracle started");
-            ProcessRequestsAsync();
+            return ProcessRequestsAsync();
         }
 
         [ConsoleCommand("stop oracle", Category = "Oracle", Description = "Stop oracle service")]
@@ -180,7 +180,7 @@ namespace Neo.Plugins.OracleService
                 OnStart();
             }
             if (status != OracleStatus.Running) return;
-            if (!CheckOracleAvaiblable(snapshot, out ECPoint[] oracles) || !CheckOracleAccount(wallet, oracles))
+            if (!CheckOracleAvailable(snapshot, out ECPoint[] oracles) || !CheckOracleAccount(wallet, oracles))
                 OnStop();
         }
 
@@ -325,7 +325,7 @@ namespace Neo.Plugins.OracleService
             }
         }
 
-        private async void ProcessRequestsAsync()
+        private async Task ProcessRequestsAsync()
         {
             while (!cancelSource.IsCancellationRequested)
             {
@@ -553,7 +553,7 @@ namespace Neo.Plugins.OracleService
             return false;
         }
 
-        private static bool CheckOracleAvaiblable(DataCache snapshot, out ECPoint[] oracles)
+        private static bool CheckOracleAvailable(DataCache snapshot, out ECPoint[] oracles)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
             oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
