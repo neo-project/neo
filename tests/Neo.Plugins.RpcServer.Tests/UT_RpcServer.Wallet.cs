@@ -416,7 +416,7 @@ namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
 """;
         string base64NefFile = "TkVGM05lby5Db21waWxlci5DU2hhcnAgMy43LjQrNjAzNGExODIxY2E3MDk0NjBlYzMxMzZjNzBjMmRjYzNiZWEuLi4AAAAAAGNXAAJ5JgQiGEEtUQgwE84MASDbMEGb9mfOQeY/GIRADAEg2zBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEBXAAERiEoQeNBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEDo2WhC";
         string manifest = """{"name":"ContractWithVerify","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"_deploy","parameters":[{"name":"data","type":"Any"},{"name":"update","type":"Boolean"}],"returntype":"Void","offset":0,"safe":false},{"name":"verify","parameters":[],"returntype":"Boolean","offset":31,"safe":false},{"name":"verify","parameters":[{"name":"prefix","type":"Integer"}],"returntype":"Boolean","offset":63,"safe":false}],"events":[]},"permissions":[],"trusts":[],"extra":{"nef":{"optimization":"All"}}}""";
-        JObject deployResp = (JObject)_rpcServer.InvokeFunction(ContractManagement.ContractManagement.Hash,
+        JObject deployResp = (JObject)_rpcServer.InvokeFunction(ContractManagement.ContractManagement.Hash.ToString(),
             "deploy",
             [
                 new ContractParameter { Type = ContractParameterType.ByteArray, Value = Convert.FromBase64String(base64NefFile) },
