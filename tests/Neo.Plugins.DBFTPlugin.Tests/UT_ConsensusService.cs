@@ -43,6 +43,7 @@ namespace Neo.Plugins.DBFTPlugin.Tests
     public partial class UT_ConsensusService : TestKit
     {
         private NeoSystem _neoSystem;
+        private Settings _dbftSettings;
         private TestMemoryStoreProvider _memoryStoreProvider;
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
@@ -59,6 +60,10 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
             _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
+
+            _dbftSettings = new Settings();
+
+
             _mockWallet = new Mock<NEP6Wallet>(Path.GetRandomFileName(), "12345678", ProtocolSettings.Default, string.Empty);
             _mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns(_walletAccount);
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
@@ -128,9 +133,21 @@ namespace Neo.Plugins.DBFTPlugin.Tests
 
             TestProbe subscriber = CreateTestProbe();
 
-            TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
-                Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, subscriber, mockContext.Object }, null))
-            );
+            TestActorRef<ConsensusService> actorConsensus =
+                ActorOfAsTestActorRef<ConsensusService>(
+                    Akka.Actor.Props.Create(() =>
+                        (ConsensusService)Activator.CreateInstance(
+                            typeof(ConsensusService),
+                            BindingFlags.Instance | BindingFlags.NonPublic,
+                            null,
+                            new object[] { _neoSystem, _dbftSettings, mockContext.Object },
+                            null
+                        )
+                    )
+                );
+
+            // internal ConsensusService(NeoSystem neoSystem, Settings settings, ConsensusContext context)
+            //public ConsensusService(IActorRef localNode, IActorRef taskManager, IActorRef blockchain, IStore store, Wallet wallet)
 
             var testPersistCompleted = new Blockchain.PersistCompleted
             {
@@ -155,15 +172,18 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             // The next line force a waits, then, subscriber keeps running its thread
             // In the next case it waits for a Msg of type LocalNode.SendDirectly
             // As we may expect, as soon as consensus start it sends a RecoveryRequest of this aforementioned type
-            //var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            //Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
+            var askingForInitialRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            Console.WriteLine($"Recovery Message I: {askingForInitialRecovery}");
 
-            // Enable to fail test
-            //TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(0);
+
 
             Console.WriteLine("Finalizing consensus service actor.");
             Sys.Stop(actorConsensus);
             Console.WriteLine("Actor actorConsensus Stopped.\n");
+
+
+            // Enable to fail test
+            TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(0);
         }
     }
 
