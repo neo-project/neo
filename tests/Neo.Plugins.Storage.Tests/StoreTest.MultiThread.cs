@@ -67,12 +67,6 @@ partial class StoreTest
                 Task.WaitAll(tasks);
                 threadCount++;
             }
-            catch (AggregateException)
-            {
-                // AggregateException is expected due to concurrent access
-                Console.WriteLine($"AggregateException caught with {threadCount} threads.");
-                throw;
-            }
             catch (LevelDBException ex)
             {
                 // LevelDBException is also possible due to LevelDB being thread-unsafe
@@ -117,12 +111,6 @@ partial class StoreTest
                 // Attempt to commit the changes
                 snapshot.Commit();
                 threadCount++;
-            }
-            catch (AggregateException ex)
-            {
-                // AggregateException is expected due to concurrent access
-                Console.WriteLine($"AggregateException caught with {threadCount} threads.");
-                break;
             }
             catch (LevelDBException ex)
             {
