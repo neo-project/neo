@@ -141,11 +141,11 @@ public partial class UT_RpcServer
     {
         // GetAllCandidates that should return 0 candidates
         JObject resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
-        string sessionId = resp["session"].AsString();
-        string iteratorId = resp["stack"][0]["id"].AsString();
+        Guid sessionId = Guid.Parse(resp["session"].AsString());
+        Guid iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         JArray respArray = (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 100);
         Assert.AreEqual(respArray.Count, 0);
-        _rpcServer.TerminateSession(Guid.Parse(sessionId));
+        _rpcServer.TerminateSession(sessionId);
         Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 100), "Unknown session");
 
         // register candidate in snapshot
@@ -171,8 +171,8 @@ public partial class UT_RpcServer
 
         // GetAllCandidates that should return 1 candidate
         resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
-        sessionId = resp["session"].AsString();
-        iteratorId = resp["stack"][0]["id"].AsString();
+        sessionId = Guid.Parse(resp["session"].AsString());
+        iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         respArray = (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 100);
         Assert.AreEqual(respArray.Count, 1);
         Assert.AreEqual(respArray[0]["type"], nameof(Neo.VM.Types.Struct));
@@ -189,8 +189,8 @@ public partial class UT_RpcServer
 
         // GetAllCandidates again
         resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
-        sessionId = resp["session"].AsString();
-        iteratorId = resp["stack"][0]["id"].AsString();
+        sessionId = Guid.Parse(resp["session"].AsString());
+        iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
 
         // Insufficient result count limit
         respArray = (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 0);
@@ -204,8 +204,8 @@ public partial class UT_RpcServer
         Thread.Sleep((int)_rpcServerSettings.SessionExpirationTime.TotalMilliseconds + 1);
         // build another session that did not expire
         resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
-        string notExpiredSessionId = resp["session"].AsString();
-        string notExpiredIteratorId = resp["stack"][0]["id"].AsString();
+        Guid notExpiredSessionId = Guid.Parse(resp["session"].AsString());
+        Guid notExpiredIteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         _rpcServer.OnTimer(new object());
         Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 100), "Unknown session");
         // If you want to run the following line without exception,
@@ -215,8 +215,8 @@ public partial class UT_RpcServer
 
         // Mocking disposal
         resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
-        sessionId = resp["session"].AsString();
-        iteratorId = resp["stack"][0]["id"].AsString();
+        sessionId = Guid.Parse(resp["session"].AsString());
+        iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         _rpcServer.Dispose_SmartContract();
         Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 100), "Unknown session");
     }

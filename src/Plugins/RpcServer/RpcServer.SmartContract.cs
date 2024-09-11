@@ -276,20 +276,18 @@ namespace Neo.Plugins.RpcServer
         /// <param name="count">The number of values returned. It cannot exceed the value of the MaxIteratorResultItems field in config.json of the RpcServer plug-in.</param>
         /// <returns>A JToken containing the iterator values.</returns>
         [RpcMethodWithParams]
-        protected internal virtual JToken TraverseIterator(string session, string iteratorId, int count)
+        protected internal virtual JToken TraverseIterator(Guid session, Guid iteratorId, int count)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
-            Guid sid = Result.Ok_Or(() => Guid.Parse(session), RpcError.InvalidParams.WithData($"Invalid session id"));
-            Guid iid = Result.Ok_Or(() => Guid.Parse(iteratorId), RpcError.InvalidParams.WithData($"Invalid iterator id"));
             Result.True_Or(() => count <= settings.MaxIteratorResultItems, RpcError.InvalidParams.WithData($"Invalid iterator items count: {count}"));
 
             Session currentSession;
             lock (sessions)
             {
-                currentSession = Result.Ok_Or(() => sessions[sid], RpcError.UnknownSession);
+                currentSession = Result.Ok_Or(() => sessions[session], RpcError.UnknownSession);
                 currentSession.ResetExpiration();
             }
-            IIterator iterator = Result.Ok_Or(() => currentSession.Iterators[iid], RpcError.UnknownIterator);
+            IIterator iterator = Result.Ok_Or(() => currentSession.Iterators[iteratorId], RpcError.UnknownIterator);
             JArray json = new();
             while (count-- > 0 && iterator.Next())
                 json.Add(iterator.Value(null).ToJson());
