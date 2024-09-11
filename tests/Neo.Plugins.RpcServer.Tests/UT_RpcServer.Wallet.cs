@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
@@ -21,6 +20,7 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
 using System;
+using System.Buffers.Text;
 using System.IO;
 using System.Linq;
 
@@ -28,6 +28,15 @@ namespace Neo.Plugins.RpcServer.Tests;
 
 partial class UT_RpcServer
 {
+    private static readonly JArray ValidatorSigner = [new JObject()
+    {
+        ["account"] = ValidatorScriptHash.ToString(),
+        ["scopes"] = nameof(WitnessScope.CalledByEntry),
+        ["allowedcontracts"] = new JArray([NeoToken.NEO.Hash.ToString(), GasToken.GAS.Hash.ToString()]),
+        ["allowedgroups"] = new JArray([TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString()]),
+        ["rules"] = new JArray([new JObject() { ["action"] = nameof(WitnessRuleAction.Allow), ["condition"] = new JObject { ["type"] = nameof(WitnessConditionType.CalledByEntry) } }]),
+    }];
+
     [TestMethod]
     public void TestOpenWallet()
     {
@@ -393,7 +402,7 @@ partial class UT_RpcServer
         exception = Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify(invalidParamsArray), "Should throw RpcException for invalid script hash");
         Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
 
-        // deploy a contract with `Verify` method; 
+        // deploy a contract with `Verify` method;
         string _contractSourceCode = """
 using Neo;using Neo.SmartContract.Framework;using Neo.SmartContract.Framework.Services;
 namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
@@ -407,13 +416,13 @@ namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
 """;
         string base64NefFile = "TkVGM05lby5Db21waWxlci5DU2hhcnAgMy43LjQrNjAzNGExODIxY2E3MDk0NjBlYzMxMzZjNzBjMmRjYzNiZWEuLi4AAAAAAGNXAAJ5JgQiGEEtUQgwE84MASDbMEGb9mfOQeY/GIRADAEg2zBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEBXAAERiEoQeNBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEDo2WhC";
         string manifest = """{"name":"ContractWithVerify","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"_deploy","parameters":[{"name":"data","type":"Any"},{"name":"update","type":"Boolean"}],"returntype":"Void","offset":0,"safe":false},{"name":"verify","parameters":[],"returntype":"Boolean","offset":31,"safe":false},{"name":"verify","parameters":[{"name":"prefix","type":"Integer"}],"returntype":"Boolean","offset":63,"safe":false}],"events":[]},"permissions":[],"trusts":[],"extra":{"nef":{"optimization":"All"}}}""";
-        JObject deployResp = (JObject)_rpcServer.InvokeFunction(new JArray([ContractManagement.ContractManagement.Hash.ToString(),
+        JObject deployResp = (JObject)_rpcServer.InvokeFunction(ContractManagement.ContractManagement.Hash,
             "deploy",
-            new JArray([
-                new JObject() { ["type"] = nameof(ContractParameterType.ByteArray), ["value"] = base64NefFile },
-                new JObject() { ["type"] = nameof(ContractParameterType.String), ["value"] = manifest },
-            ]),
-            validatorSigner]));
+            [
+                new ContractParameter { Type = ContractParameterType.ByteArray, Value = Convert.FromBase64String(base64NefFile) },
+                new ContractParameter { Type = ContractParameterType.String, Value = manifest },
+            ],
+            validatorSigner);
         Assert.AreEqual(deployResp["state"], nameof(VM.VMState.HALT));
         UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
         SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
@@ -434,19 +443,19 @@ namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), false);
         // invoke verify with signer; should return true
-        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([]), validatorSigner]);
+        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([]), ValidatorSigner]);
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
         // invoke verify with wrong input value; should FAULT
-        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]), validatorSigner]);
+        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]), ValidatorSigner]);
         Assert.AreEqual(resp["state"], nameof(VM.VMState.FAULT));
         Assert.AreEqual(resp["exception"], "Object reference not set to an instance of an object.");
         // invoke verify with 1 param and signer; should return true
-        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]);
+        resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), ValidatorSigner]);
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
         // invoke verify with 2 param (which does not exist); should throw Exception
-        Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),
+        Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), ValidatorSigner]),
             $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.");
     }
 

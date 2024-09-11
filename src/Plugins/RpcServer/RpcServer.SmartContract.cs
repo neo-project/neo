@@ -212,81 +212,124 @@ namespace Neo.Plugins.RpcServer
             }).ToArray();
         }
 
-        [RpcMethod]
-        protected internal virtual JToken InvokeFunction(JArray _params)
+        /// <summary>
+        /// Invokes a smart contract with its scripthash based on the specified operation and parameters and returns the result.
+        /// </summary>
+        /// <remarks>
+        /// This method is used to test your VM script as if they ran on the blockchain at that point in time.
+        /// This RPC call does not affect the blockchain in any way.
+        /// </remarks>
+        /// <param name="scriptHash">Smart contract scripthash. Use big endian for Hash160, little endian for ByteArray.</param>
+        /// <param name="operation">The operation name (string)</param>
+        /// <param name="args">Optional. The parameters to be passed into the smart contract operation</param>
+        /// <param name="signers">Optional. List of contract signature accounts.</param>
+        /// <param name="useDiagnostic">Optional. Flag to enable diagnostic information.</param>
+        /// <returns>A JToken containing the result of the invocation.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken InvokeFunction(string scriptHash, string operation, ContractParameter[] args = null, Signer[] signers = null, bool useDiagnostic = false)
         {
-            UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
-            string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : System.Array.Empty<ContractParameter>();
-            Signer[] signers = _params.Count >= 4 ? SignersFromJson((JArray)_params[3], system.Settings) : null;
-            Witness[] witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
-            bool useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
-
+            UInt160 contractHash = Result.Ok_Or(() => UInt160.Parse(scriptHash), RpcError.InvalidParams);
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                script = sb.EmitDynamicCall(script_hash, operation, args).ToArray();
+                script = sb.EmitDynamicCall(contractHash, operation, args ?? Array.Empty<ContractParameter>()).ToArray();
             }
-            return GetInvokeResult(script, signers, witnesses, useDiagnostic);
+            return GetInvokeResult(script, signers, [], useDiagnostic);
         }
 
-        [RpcMethod]
-        protected internal virtual JToken InvokeScript(JArray _params)
+        /// <summary>
+        /// Returns the result after passing a script through the VM.
+        /// </summary>
+        /// <remarks>
+        /// This method is to test your VM script as if they ran on the blockchain at that point in time.
+        /// This RPC call does not affect the blockchain in any way.
+        /// You must install the plugin RpcServer before you can invoke the method.
+        /// </remarks>
+        /// <param name="scriptBase64">A script runnable in the VM, encoded as Base64. e.g. "AQIDBAUGBwgJCgsMDQ4PEA=="</param>
+        /// <param name="signers">Optional. The list of contract signature accounts.</param>
+        /// <param name="witnesses">Optional. The list of witnesses for the transaction.</param>
+        /// <param name="useDiagnostic">Optional. Flag to enable diagnostic information.</param>
+        /// <returns>A JToken containing the result of the invocation.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken InvokeScript(string scriptBase64, Signer[] signers = null, Witness[] witnesses = null, bool useDiagnostic = false)
         {
-            byte[] script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
-            Signer[] signers = _params.Count >= 2 ? SignersFromJson((JArray)_params[1], system.Settings) : null;
-            Witness[] witnesses = _params.Count >= 2 ? WitnessesFromJson((JArray)_params[1]) : null;
-            bool useDiagnostic = _params.Count >= 3 && _params[2].GetBoolean();
+            byte[] script = Result.Ok_Or(() => Convert.FromBase64String(scriptBase64), RpcError.InvalidParams);
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }
 
-        [RpcMethod]
-        protected internal virtual JToken TraverseIterator(JArray _params)
+        /// <summary>
+        /// Gets the Iterator value from session and Iterator id returned by invokefunction or invokescript.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method queries Iterator type data and does not affect the blockchain data.
+        /// You must install the plugin RpcServer before you can invoke the method.
+        /// Before you can use the method, make sure that the SessionEnabled value in config.json of the plugin RpcServer is true,
+        /// and you have obtained Iterator id and session by invoking invokefunction or invokescript.
+        /// </para>
+        /// <para>
+        /// The validity of the session and iterator id is set by SessionExpirationTime in the config.json file of the RpcServer plug-in, in seconds.
+        /// </para>
+        /// </remarks>
+        /// <param name="session">Cache id. It is session returned by invokefunction or invokescript. e.g. "c5b628b6-10d9-4cc5-b850-3cfc0b659fcf"</param>
+        /// <param name="iteratorId">Iterator data id. It is the id of stack returned by invokefunction or invokescript. e.g. "593b02c6-138d-4945-846d-1e5974091daa"</param>
+        /// <param name="count">The number of values returned. It cannot exceed the value of the MaxIteratorResultItems field in config.json of the RpcServer plug-in.</param>
+        /// <returns>A JToken containing the iterator values.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken TraverseIterator(string session, string iteratorId, int count)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
-            Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData($"Invalid session id {nameof(sid)}"));
-            Guid iid = Result.Ok_Or(() => Guid.Parse(_params[1].GetString()), RpcError.InvalidParams.WithData($"Invliad iterator id {nameof(iid)}"));
-            int count = _params[2].GetInt32();
-            Result.True_Or(() => count <= settings.MaxIteratorResultItems, RpcError.InvalidParams.WithData($"Invalid iterator items count {nameof(count)}"));
-            Session session;
+            Guid sid = Result.Ok_Or(() => Guid.Parse(session), RpcError.InvalidParams.WithData($"Invalid session id"));
+            Guid iid = Result.Ok_Or(() => Guid.Parse(iteratorId), RpcError.InvalidParams.WithData($"Invalid iterator id"));
+            Result.True_Or(() => count <= settings.MaxIteratorResultItems, RpcError.InvalidParams.WithData($"Invalid iterator items count: {count}"));
+
+            Session currentSession;
             lock (sessions)
             {
-                session = Result.Ok_Or(() => sessions[sid], RpcError.UnknownSession);
-                session.ResetExpiration();
+                currentSession = Result.Ok_Or(() => sessions[sid], RpcError.UnknownSession);
+                currentSession.ResetExpiration();
             }
-            IIterator iterator = Result.Ok_Or(() => session.Iterators[iid], RpcError.UnknownIterator);
+            IIterator iterator = Result.Ok_Or(() => currentSession.Iterators[iid], RpcError.UnknownIterator);
             JArray json = new();
             while (count-- > 0 && iterator.Next())
                 json.Add(iterator.Value(null).ToJson());
             return json;
         }
 
-        [RpcMethod]
-        protected internal virtual JToken TerminateSession(JArray _params)
+        /// <summary>
+        /// Terminates a session with the specified GUID.
+        /// </summary>
+        /// <param name="guid">The GUID of the session to terminate. e.g. "00000000-0000-0000-0000-000000000000"</param>
+        /// <returns>A JToken indicating whether the session was successfully terminated.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken TerminateSession(Guid guid)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
-            Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData("Invalid session id"));
 
             Session session = null;
             bool result;
             lock (sessions)
             {
-                result = Result.Ok_Or(() => sessions.Remove(sid, out session), RpcError.UnknownSession);
+                result = Result.Ok_Or(() => sessions.Remove(guid, out session), RpcError.UnknownSession);
             }
             if (result) session.Dispose();
             return result;
         }
 
-        [RpcMethod]
-        protected internal virtual JToken GetUnclaimedGas(JArray _params)
+        /// <summary>
+        /// Gets the unclaimed GAS for the specified address.
+        /// </summary>
+        /// <param name="account">The account to check for unclaimed GAS. e.g. "NQ5D43HX4QBXZ3XZ4QBXZ3XZ4QBXZ3XZ"</param>
+        /// <returns>A JToken containing the unclaimed GAS amount and the address.</returns>
+        [RpcMethodWithParams]
+        protected internal virtual JToken GetUnclaimedGas(string account)
         {
-            string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invalid address {nameof(address)}"));
             JObject json = new();
-            UInt160 script_hash = Result.Ok_Or(() => AddressToScriptHash(address, system.Settings.AddressVersion), RpcError.InvalidParams);
+            var scriptHash = Result.Ok_Or(() => AddressToScriptHash(account, system.Settings.AddressVersion), RpcError.InvalidParams) ?? throw new ArgumentNullException("Result.Ok_Or(() => AddressToScriptHash(account, system.Settings.AddressVersion), RpcError.InvalidParams)");
 
             var snapshot = system.StoreView;
-            json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, script_hash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();
-            json["address"] = script_hash.ToAddress(system.Settings.AddressVersion);
+            json["unclaimed"] = NativeContract.NEO.UnclaimedGas(snapshot, scriptHash, NativeContract.Ledger.CurrentIndex(snapshot) + 1).ToString();
+            json["address"] = scriptHash.ToAddress(system.Settings.AddressVersion);
             return json;
         }
 
