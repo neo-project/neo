@@ -90,9 +90,9 @@ namespace Neo.Plugins.OracleService.Tests
                     ValidUntilBlock = 1
                 }
             }));
-            OracleResponse response = new OracleResponse() { Id = 1, Code = OracleResponseCode.Success, Result = new byte[] { 0x00 } };
+            OracleResponseAttribute responseAttribute = new OracleResponseAttribute() { Id = 1, Code = OracleResponseCode.Success, Result = new byte[] { 0x00 } };
             ECPoint[] oracleNodes = new ECPoint[] { ECCurve.Secp256r1.G };
-            var tx = OracleService.CreateResponseTx(snapshotCache, request, response, oracleNodes, ProtocolSettings.Default);
+            var tx = OracleService.CreateResponseTx(snapshotCache, request, responseAttribute, oracleNodes, ProtocolSettings.Default);
 
             Assert.AreEqual(166, tx.Size);
             Assert.AreEqual(2198650, tx.NetworkFee);
@@ -101,10 +101,10 @@ namespace Neo.Plugins.OracleService.Tests
             // case (2) The size of attribute exceed the maximum limit
 
             request.GasForResponse = 0_10000000;
-            response.Result = new byte[10250];
-            tx = OracleService.CreateResponseTx(snapshotCache, request, response, oracleNodes, ProtocolSettings.Default);
+            responseAttribute.Result = new byte[10250];
+            tx = OracleService.CreateResponseTx(snapshotCache, request, responseAttribute, oracleNodes, ProtocolSettings.Default);
             Assert.AreEqual(165, tx.Size);
-            Assert.AreEqual(OracleResponseCode.InsufficientFunds, response.Code);
+            Assert.AreEqual(OracleResponseCode.InsufficientFunds, responseAttribute.Code);
             Assert.AreEqual(2197650, tx.NetworkFee);
             Assert.AreEqual(7802350, tx.SystemFee);
         }

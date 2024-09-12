@@ -71,13 +71,13 @@ namespace Neo.UnitTests.Ledger
             // Test
             TransactionVerificationContext verificationContext = new();
             var tx = CreateTransactionWithFee(1, 2);
-            tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
+            tx.Attributes = new TransactionAttribute[] { new OracleResponseAttribute() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
             var conflicts = new List<Transaction>();
             verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue();
             verificationContext.AddTransaction(tx);
 
             tx = CreateTransactionWithFee(2, 1);
-            tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
+            tx.Attributes = new TransactionAttribute[] { new OracleResponseAttribute() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
             verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeFalse();
         }
 

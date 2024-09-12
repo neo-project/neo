@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native
 
                 // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
-                foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
+                foreach (var attr in tx.Transaction.GetAttributes<ConflictsAttribute>())
                 {
                     engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     foreach (var signer in conflictingSigners)

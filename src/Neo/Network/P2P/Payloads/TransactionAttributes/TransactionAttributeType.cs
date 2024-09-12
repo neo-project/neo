@@ -14,7 +14,7 @@ using Neo.IO.Caching;
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
-    /// Represents the type of a <see cref="TransactionAttribute"/>.
+    /// Represents the type of <see cref="TransactionAttribute"/>.
     /// </summary>
     public enum TransactionAttributeType : byte
     {
@@ -27,19 +27,19 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Indicates that the transaction is an oracle response.
         /// </summary>
-        [ReflectionCache(typeof(OracleResponse))]
+        [ReflectionCache(typeof(OracleResponseAttribute))]
         OracleResponse = 0x11,
 
         /// <summary>
-        /// Indicates that the transaction is not valid before <see cref="NotValidBefore.Height"/>.
+        /// Indicates that the transaction is not valid before <see cref="NotValidBeforeAttribute.Height"/>.
         /// </summary>
-        [ReflectionCache(typeof(NotValidBefore))]
+        [ReflectionCache(typeof(NotValidBeforeAttribute))]
         NotValidBefore = 0x20,
 
         /// <summary>
-        /// Indicates that the transaction conflicts with <see cref="Conflicts.Hash"/>.
+        /// Indicates that the transaction conflicts with <see cref="ConflictsAttribute.Hash"/>.
         /// </summary>
-        [ReflectionCache(typeof(Conflicts))]
+        [ReflectionCache(typeof(ConflictsAttribute))]
         Conflicts = 0x21
     }
 }

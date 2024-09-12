@@ -1104,12 +1104,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = [],
             };
 
-            Assert.IsNull(tx.GetAttribute<OracleResponse>());
+            Assert.IsNull(tx.GetAttribute<OracleResponseAttribute>());
             Assert.IsNull(tx.GetAttribute<HighPriorityAttribute>());
 
             tx.Attributes = [new HighPriorityAttribute()];
 
-            Assert.IsNull(tx.GetAttribute<OracleResponse>());
+            Assert.IsNull(tx.GetAttribute<OracleResponseAttribute>());
             Assert.IsNotNull(tx.GetAttribute<HighPriorityAttribute>());
         }
 

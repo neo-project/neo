@@ -581,7 +581,7 @@ namespace Neo.CLI
                 return;
             }
 
-            var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
+            var conflict = new TransactionAttribute[] { new ConflictsAttribute() { Hash = txid } };
             Signer[] signers = Array.Empty<Signer>();
             if (sender != null)
             {

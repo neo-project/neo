@@ -34,14 +34,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = new ConflictsAttribute() { Hash = _u };
             test.Size.Should().Be(1 + 32);
         }
 
         [TestMethod]
         public void ToJson()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = new ConflictsAttribute() { Hash = _u };
             var json = test.ToJson().ToString();
             Assert.AreEqual(@"{""type"":""Conflicts"",""hash"":""0x0101010101010101010101010101010101010101010101010101010101010101""}", json);
         }
@@ -49,15 +49,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = new ConflictsAttribute() { Hash = _u };
 
-            var clone = test.ToArray().AsSerializable<Conflicts>();
+            var clone = test.ToArray().AsSerializable<ConflictsAttribute>();
             Assert.AreEqual(clone.Type, test.Type);
 
             // As transactionAttribute
             byte[] buffer = test.ToArray();
             var reader = new MemoryReader(buffer);
-            clone = TransactionAttribute.DeserializeFrom(ref reader) as Conflicts;
+            clone = TransactionAttribute.DeserializeFrom(ref reader) as ConflictsAttribute;
             Assert.AreEqual(clone.Type, test.Type);
 
             // Wrong type
@@ -72,7 +72,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Verify()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = new ConflictsAttribute() { Hash = _u };
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var key = Ledger.UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 

@@ -300,9 +300,9 @@ namespace Neo.Plugins.OracleService
                         Log($"[{req.OriginalTxid}] Filter '{request.Filter}' error:{ex.Message}");
                     }
                 }
-                var response = new OracleResponse() { Id = requestId, Code = code, Result = result };
+                var response = new OracleResponseAttribute() { Id = requestId, Code = code, Result = result };
                 var responseTx = CreateResponseTx(snapshot, request, response, oracleNodes, _system.Settings);
-                var backupTx = CreateResponseTx(snapshot, request, new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = requestId, Result = Array.Empty<byte>() }, oracleNodes, _system.Settings, true);
+                var backupTx = CreateResponseTx(snapshot, request, new OracleResponseAttribute() { Code = OracleResponseCode.ConsensusUnreachable, Id = requestId, Result = Array.Empty<byte>() }, oracleNodes, _system.Settings, true);
 
                 Log($"[{req.OriginalTxid}]-({requestId}) Built response tx[[{responseTx.Hash}]], responseCode:{code}, result:{result.ToHexString()}, validUntilBlock:{responseTx.ValidUntilBlock}, backupTx:{backupTx.Hash}-{backupTx.ValidUntilBlock}");
 
@@ -377,7 +377,7 @@ namespace Neo.Plugins.OracleService
             }
         }
 
-        public static Transaction CreateResponseTx(DataCache snapshot, OracleRequest request, OracleResponse response, ECPoint[] oracleNodes, ProtocolSettings settings, bool useCurrentHeight = false)
+        public static Transaction CreateResponseTx(DataCache snapshot, OracleRequest request, OracleResponseAttribute responseAttribute, ECPoint[] oracleNodes, ProtocolSettings settings, bool useCurrentHeight = false)
         {
             var requestTx = NativeContract.Ledger.GetTransactionState(snapshot, request.OriginalTxid);
             var n = oracleNodes.Length;
@@ -392,7 +392,7 @@ namespace Neo.Plugins.OracleService
             var tx = new Transaction()
             {
                 Version = 0,
-                Nonce = unchecked((uint)response.Id),
+                Nonce = unchecked((uint)responseAttribute.Id),
                 ValidUntilBlock = validUntilBlock,
                 Signers = new[]
                 {
@@ -407,8 +407,8 @@ namespace Neo.Plugins.OracleService
                         Scopes = WitnessScope.None
                     }
                 },
-                Attributes = new[] { response },
-                Script = OracleResponse.FixedScript,
+                Attributes = new[] { responseAttribute },
+                Script = OracleResponseAttribute.FixedScript,
                 Witnesses = new Witness[2]
             };
             Dictionary<UInt160, Witness> witnessDict = new Dictionary<UInt160, Witness>
@@ -450,15 +450,15 @@ namespace Neo.Plugins.OracleService
                 + IO.Helper.GetVarSize(size_inv) + size_inv + oracleSignContract.Script.GetVarSize();
 
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
-            if (response.Result.Length > OracleResponse.MaxResultSize)
+            if (responseAttribute.Result.Length > OracleResponseAttribute.MaxResultSize)
             {
-                response.Code = OracleResponseCode.ResponseTooLarge;
-                response.Result = Array.Empty<byte>();
+                responseAttribute.Code = OracleResponseCode.ResponseTooLarge;
+                responseAttribute.Result = Array.Empty<byte>();
             }
             else if (tx.NetworkFee + (size + tx.Attributes.GetVarSize()) * feePerByte > request.GasForResponse)
             {
-                response.Code = OracleResponseCode.InsufficientFunds;
-                response.Result = Array.Empty<byte>();
+                responseAttribute.Code = OracleResponseCode.InsufficientFunds;
+                responseAttribute.Result = Array.Empty<byte>();
             }
             size += tx.Attributes.GetVarSize();
             tx.NetworkFee += size * feePerByte;

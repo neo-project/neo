@@ -193,17 +193,17 @@ namespace Neo.Network.RPC
             return usage switch
             {
                 TransactionAttributeType.HighPriority => new HighPriorityAttribute(),
-                TransactionAttributeType.OracleResponse => new OracleResponse()
+                TransactionAttributeType.OracleResponse => new OracleResponseAttribute()
                 {
                     Id = (ulong)json["id"].AsNumber(),
                     Code = Enum.Parse<OracleResponseCode>(json["code"].AsString()),
                     Result = Convert.FromBase64String(json["result"].AsString()),
                 },
-                TransactionAttributeType.NotValidBefore => new NotValidBefore()
+                TransactionAttributeType.NotValidBefore => new NotValidBeforeAttribute()
                 {
                     Height = (uint)json["height"].AsNumber(),
                 },
-                TransactionAttributeType.Conflicts => new Conflicts()
+                TransactionAttributeType.Conflicts => new ConflictsAttribute()
                 {
                     Hash = UInt256.Parse(json["hash"].AsString())
                 },

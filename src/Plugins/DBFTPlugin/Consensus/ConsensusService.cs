@@ -267,7 +267,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 VerifyResult result;
 
                 // Firstly, check whether tx has Conlicts attribute with the hash of one of the context's transactions.
-                foreach (var h in tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
+                foreach (var h in tx.GetAttributes<ConflictsAttribute>().Select(attr => attr.Hash))
                 {
                     if (context.TransactionHashes.Contains(h))
                     {
@@ -280,7 +280,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 // After that, check whether context's transactions have Conflicts attribute with tx's hash.
                 foreach (var pooledTx in context.Transactions.Values)
                 {
-                    if (pooledTx.GetAttributes<Conflicts>().Select(attr => attr.Hash).Contains(tx.Hash))
+                    if (pooledTx.GetAttributes<ConflictsAttribute>().Select(attr => attr.Hash).Contains(tx.Hash))
                     {
                         result = VerifyResult.HasConflicts;
                         Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);

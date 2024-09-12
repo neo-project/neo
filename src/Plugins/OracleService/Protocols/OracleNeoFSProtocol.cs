@@ -99,7 +99,7 @@ namespace Neo.Plugins.OracleService
         {
             var objReader = client.GetObjectInit(addr, options: new CallOptions { Ttl = 2 }, context: cancellation);
             var obj = objReader.ReadHeader();
-            if (obj.PayloadSize > OracleResponse.MaxResultSize)
+            if (obj.PayloadSize > OracleResponseAttribute.MaxResultSize)
                 return (OracleResponseCode.ResponseTooLarge, "");
             var payload = new byte[obj.PayloadSize];
             int offset = 0;
@@ -118,7 +118,7 @@ namespace Neo.Plugins.OracleService
         {
             if (ps.Length == 0) throw new FormatException("missing object range (expected 'Offset|Length')");
             Range range = ParseRange(ps[0]);
-            if (range.Length > OracleResponse.MaxResultSize) return (OracleResponseCode.ResponseTooLarge, "");
+            if (range.Length > OracleResponseAttribute.MaxResultSize) return (OracleResponseCode.ResponseTooLarge, "");
             var res = await client.GetObjectPayloadRangeData(addr, range, options: new CallOptions { Ttl = 2 }, context: cancellation);
             return (OracleResponseCode.Success, Utility.StrictUTF8.GetString(res));
         }

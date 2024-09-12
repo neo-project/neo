@@ -193,12 +193,12 @@ namespace Neo.CLI
                     {
                         switch (attribute)
                         {
-                            case Conflicts c:
+                            case ConflictsAttribute c:
                                 ConsoleHelper.Info("", "  Type: ", $"{c.Type}");
                                 ConsoleHelper.Info("", "  Hash: ", $"{c.Hash}");
                                 ConsoleHelper.Info("", "  Size: ", $"{c.Size} Byte(s)");
                                 break;
-                            case OracleResponse o:
+                            case OracleResponseAttribute o:
                                 ConsoleHelper.Info("", "    Type: ", $"{o.Type}");
                                 ConsoleHelper.Info("", "      Id: ", $"{o.Id}");
                                 ConsoleHelper.Info("", "    Code: ", $"{o.Code}");
@@ -208,7 +208,7 @@ namespace Neo.CLI
                             case HighPriorityAttribute p:
                                 ConsoleHelper.Info("", "    Type: ", $"{p.Type}");
                                 break;
-                            case NotValidBefore n:
+                            case NotValidBeforeAttribute n:
                                 ConsoleHelper.Info("", "    Type: ", $"{n.Type}");
                                 ConsoleHelper.Info("", "  Height: ", $"{n.Height}");
                                 break;

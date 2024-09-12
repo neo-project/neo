@@ -94,13 +94,13 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public void TestTransactionAttribute()
         {
-            var attribute = new Conflicts();
+            var attribute = new ConflictsAttribute();
             attribute.Hash = UInt256.Zero;
             var json = attribute.ToJson();
             var result = Utility.TransactionAttributeFromJson(json).ToJson();
             result.ToString().Should().Be(json.ToString());
 
-            var attribute2 = new OracleResponse();
+            var attribute2 = new OracleResponseAttribute();
             attribute2.Id = 1234;
             attribute2.Code = 0;
             attribute2.Result = new ReadOnlyMemory<byte> { };
@@ -108,7 +108,7 @@ namespace Neo.Network.RPC.Tests
             result = Utility.TransactionAttributeFromJson(json).ToJson();
             result.ToString().Should().Be(json.ToString());
 
-            var attribute3 = new NotValidBefore();
+            var attribute3 = new NotValidBeforeAttribute();
             attribute3.Height = 10000;
             json = attribute3.ToJson();
             result = Utility.TransactionAttributeFromJson(json).ToJson();

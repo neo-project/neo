@@ -317,7 +317,7 @@ namespace Neo.Ledger
                         VerificationContext.RemoveTransaction(conflict.Tx);
                 }
                 removedTransactions = conflictsToBeRemoved.Select(itm => itm.Tx).ToList();
-                foreach (var attr in tx.GetAttributes<Conflicts>())
+                foreach (var attr in tx.GetAttributes<ConflictsAttribute>())
                 {
                     if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                     {
@@ -371,7 +371,7 @@ namespace Neo.Ledger
                 }
             }
             // Step 2: check if unsorted transactions were in `tx`'s Conflicts attributes.
-            foreach (var hash in tx.GetAttributes<Conflicts>().Select(p => p.Hash))
+            foreach (var hash in tx.GetAttributes<ConflictsAttribute>().Select(p => p.Hash))
             {
                 if (_unsortedTransactions.TryGetValue(hash, out var unsortedTx))
                 {
@@ -429,7 +429,7 @@ namespace Neo.Ledger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void RemoveConflictsOfVerified(PoolItem item)
         {
-            foreach (var h in item.Tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
+            foreach (var h in item.Tx.GetAttributes<ConflictsAttribute>().Select(attr => attr.Hash))
             {
                 if (_conflicts.TryGetValue(h, out var conflicts))
                 {
@@ -483,7 +483,7 @@ namespace Neo.Ledger
                 {
                     if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
                     var conflictingSigners = tx.Signers.Select(s => s.Account);
-                    foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
+                    foreach (var h in tx.GetAttributes<ConflictsAttribute>().Select(a => a.Hash))
                     {
                         if (conflicts.TryGetValue(h, out var signersList))
                         {
@@ -501,7 +501,7 @@ namespace Neo.Ledger
                 var stale = new List<UInt256>();
                 foreach (var item in _sortedTransactions)
                 {
-                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && signersList.Intersect(item.Tx.Signers.Select(s => s.Account)).Any()) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
+                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && signersList.Intersect(item.Tx.Signers.Select(s => s.Account)).Any()) || item.Tx.GetAttributes<ConflictsAttribute>().Select(a => a.Hash).Intersect(persisted).Any())
                     {
                         stale.Add(item.Tx.Hash);
                         conflictingItems.Add(item.Tx);
@@ -569,7 +569,7 @@ namespace Neo.Ledger
                         if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                         {
                             verifiedSortedTxPool.Add(item);
-                            foreach (var attr in item.Tx.GetAttributes<Conflicts>())
+                            foreach (var attr in item.Tx.GetAttributes<ConflictsAttribute>())
                             {
                                 if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                                 {

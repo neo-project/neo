@@ -39,7 +39,7 @@ namespace Neo.Ledger
         /// <param name="tx">The verified <see cref="Transaction"/>.</param>
         public void AddTransaction(Transaction tx)
         {
-            var oracle = tx.GetAttribute<OracleResponse>();
+            var oracle = tx.GetAttribute<OracleResponseAttribute>();
             if (oracle != null) oracleResponses.Add(oracle.Id, tx.Hash);
 
             if (senderFee.TryGetValue(tx.Sender, out var value))
@@ -65,7 +65,7 @@ namespace Neo.Ledger
                 expectedFee -= (conflictTx.NetworkFee + conflictTx.SystemFee);
             if (balance < expectedFee) return false;
 
-            var oracle = tx.GetAttribute<OracleResponse>();
+            var oracle = tx.GetAttribute<OracleResponseAttribute>();
             if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
                 return false;
 
@@ -80,7 +80,7 @@ namespace Neo.Ledger
         {
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
 
-            var oracle = tx.GetAttribute<OracleResponse>();
+            var oracle = tx.GetAttribute<OracleResponseAttribute>();
             if (oracle != null) oracleResponses.Remove(oracle.Id);
         }
     }

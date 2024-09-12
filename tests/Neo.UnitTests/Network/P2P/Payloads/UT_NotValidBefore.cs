@@ -24,14 +24,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var test = new NotValidBefore();
+            var test = new NotValidBeforeAttribute();
             test.Size.Should().Be(5);
         }
 
         [TestMethod]
         public void ToJson()
         {
-            var test = new NotValidBefore
+            var test = new NotValidBeforeAttribute
             {
                 Height = 42
             };
@@ -42,16 +42,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = new NotValidBefore();
+            var test = new NotValidBeforeAttribute();
 
-            var clone = test.ToArray().AsSerializable<NotValidBefore>();
+            var clone = test.ToArray().AsSerializable<NotValidBeforeAttribute>();
             Assert.AreEqual(clone.Type, test.Type);
 
             // As transactionAttribute
 
             byte[] buffer = test.ToArray();
             var reader = new MemoryReader(buffer);
-            clone = TransactionAttribute.DeserializeFrom(ref reader) as NotValidBefore;
+            clone = TransactionAttribute.DeserializeFrom(ref reader) as NotValidBeforeAttribute;
             Assert.AreEqual(clone.Type, test.Type);
 
             // Wrong type
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             reader = new MemoryReader(buffer);
             try
             {
-                new NotValidBefore().Deserialize(ref reader);
+                new NotValidBeforeAttribute().Deserialize(ref reader);
                 Assert.Fail();
             }
             catch (FormatException) { }
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Verify()
         {
-            var test = new NotValidBefore();
+            var test = new NotValidBeforeAttribute();
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             test.Height = NativeContract.Ledger.CurrentIndex(snapshotCache) + 1;
 

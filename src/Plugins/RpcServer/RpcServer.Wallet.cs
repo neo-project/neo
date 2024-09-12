@@ -439,7 +439,7 @@ namespace Neo.Plugins.RpcServer
             var txid = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid txid: {_params[0]}"));
             NativeContract.Ledger.GetTransactionState(system.StoreView, txid).Null_Or(RpcErrorFactory.AlreadyExists("This tx is already confirmed, can't be cancelled."));
 
-            var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
+            var conflict = new TransactionAttribute[] { new ConflictsAttribute() { Hash = txid } };
             Signer[] signers = _params.Count >= 2 ? ((JArray)_params[1]).Select(j => new Signer() { Account = AddressToScriptHash(j.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.None }).ToArray() : Array.Empty<Signer>();
             signers.Any().True_Or(RpcErrorFactory.BadRequest("No signer."));
             Transaction tx = new Transaction

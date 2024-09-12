@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// OracleResponse.cs file belongs to the neo project and is free
+// OracleResponseAttribute.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
     /// <summary>
     /// Indicates that the transaction is an oracle response.
     /// </summary>
-    public class OracleResponse : TransactionAttribute
+    public class OracleResponseAttribute : TransactionAttribute
     {
         /// <summary>
         /// Indicates the maximum size of the <see cref="Result"/> field.
@@ -59,7 +59,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(OracleResponseCode) +    //ResponseCode
             Result.GetVarSize();            //Result
 
-        static OracleResponse()
+        static OracleResponseAttribute()
         {
             using ScriptBuilder sb = new();
             sb.EmitDynamicCall(NativeContract.Oracle.Hash, "finish");

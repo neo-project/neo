@@ -253,14 +253,14 @@ namespace Neo.SmartContract
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
-                OracleResponse response = tx.GetAttribute<OracleResponse>();
-                if (response is null)
+                OracleResponseAttribute responseAttribute = tx.GetAttribute<OracleResponseAttribute>();
+                if (responseAttribute is null)
                 {
                     signers = tx.Signers;
                 }
                 else
                 {
-                    OracleRequest request = NativeContract.Oracle.GetRequest(SnapshotCache, response.Id);
+                    OracleRequest request = NativeContract.Oracle.GetRequest(SnapshotCache, responseAttribute.Id);
                     signers = NativeContract.Ledger.GetTransaction(SnapshotCache, request.OriginalTxid).Signers;
                 }
                 Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));

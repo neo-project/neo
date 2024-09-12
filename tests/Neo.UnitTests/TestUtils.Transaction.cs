@@ -69,7 +69,7 @@ public partial class TestUtils
                 }
             ],
             account);
-        tx.Attributes = conflicts.Select(conflict => new Conflicts { Hash = conflict }).ToArray();
+        tx.Attributes = conflicts.Select(conflict => new ConflictsAttribute { Hash = conflict }).ToArray();
         tx.Nonce = nonce;
         tx.Signers = [new Signer { Account = account, Scopes = WitnessScope.CalledByEntry }];
         var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
@@ -169,7 +169,7 @@ public partial class TestUtils
             case InvalidTransactionType.Conflicting:
                 // To create a conflicting transaction, we'd need another valid transaction.
                 // For simplicity, we'll just add a Conflicts attribute with a random hash.
-                tx.Attributes = [new Conflicts { Hash = conflict }];
+                tx.Attributes = [new ConflictsAttribute { Hash = conflict }];
                 break;
         }
 

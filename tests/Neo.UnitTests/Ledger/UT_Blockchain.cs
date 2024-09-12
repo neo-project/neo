@@ -121,7 +121,7 @@ namespace Neo.UnitTests.Ledger
             var tx2 = TestUtils.CreateValidTx(snapshot, walletA, accA.ScriptHash, 1);
             var tx3 = TestUtils.CreateValidTx(snapshot, walletB, accB.ScriptHash, 2);
 
-            tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash }, new Conflicts() { Hash = tx3.Hash } };
+            tx1.Attributes = new TransactionAttribute[] { new ConflictsAttribute() { Hash = tx2.Hash }, new ConflictsAttribute() { Hash = tx3.Hash } };
 
             // Persist tx1.
             var block = new Block
