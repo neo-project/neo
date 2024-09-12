@@ -18,6 +18,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -33,6 +34,8 @@ namespace Neo.CLI
         [ConsoleCommand("parse", Category = "Base Commands", Description = "Parse a value to its possible conversions.")]
         private void OnParseCommand(string value)
         {
+            if (File.Exists(value))
+                value = Convert.ToBase64String(File.ReadAllBytes(value));
             value = Base64Fixed(value);
 
             var parseFunctions = new Dictionary<string, Func<string, string?>>();
