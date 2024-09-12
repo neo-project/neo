@@ -34,8 +34,6 @@ namespace Neo.CLI
         [ConsoleCommand("parse", Category = "Base Commands", Description = "Parse a value to its possible conversions.")]
         private void OnParseCommand(string value)
         {
-            if (File.Exists(value))
-                value = Convert.ToBase64String(File.ReadAllBytes(value));
             value = Base64Fixed(value);
 
             var parseFunctions = new Dictionary<string, Func<string, string?>>();
@@ -69,6 +67,16 @@ namespace Neo.CLI
             {
                 ConsoleHelper.Warning($"Was not possible to convert: '{value}'");
             }
+        }
+
+        /// <summary>
+        /// Read file from path and print its content in base64
+        /// </summary>
+        [ParseFunction("File path to content base64")]
+        private string? FilePathToContentBase64(string path)
+        {
+            if (!File.Exists(path)) return null;
+            return Convert.ToBase64String(File.ReadAllBytes(path));
         }
 
         /// <summary>
