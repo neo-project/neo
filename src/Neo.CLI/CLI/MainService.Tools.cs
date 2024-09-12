@@ -19,6 +19,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -449,11 +450,16 @@ namespace Neo.CLI
         private string? NefFileAnalyis(string base64)
         {
             byte[] nefData;
-            try
+            if (File.Exists(base64))  // extension name not considered
+                nefData = File.ReadAllBytes(base64);
+            else
             {
-                nefData = Convert.FromBase64String(base64);
+                try
+                {
+                    nefData = Convert.FromBase64String(base64);
+                }
+                catch { return null; }
             }
-            catch { return null; }
             NefFile nef;
             Script script;
             bool verifyChecksum = false;
