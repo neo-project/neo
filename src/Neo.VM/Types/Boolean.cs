@@ -62,6 +62,11 @@ namespace Neo.VM.Types
             return value ? BigInteger.One : BigInteger.Zero;
         }
 
+        public override string? GetString()
+        {
+            return value ? bool.TrueString : bool.FalseString;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Boolean(bool value)
         {
