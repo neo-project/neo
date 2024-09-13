@@ -114,7 +114,7 @@ public static class ParameterConverter
         return Result.Ok_Or(() => value.ToScriptHash(addressVersion),
             RpcError.InvalidParams.WithData($"Invalid UInt160 Format: {token}"));
     }
-    
+
     internal static object ConvertSignerOrWitnessArray(JToken token, ProtocolSettings settings)
     {
         if (token is JArray jArray)
