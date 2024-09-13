@@ -54,18 +54,18 @@ public partial class UT_RpcServer
         AllowedGroups = [TestProtocolSettings.SoleNode.StandbyCommittee[0]],
         Rules = [new WitnessRule { Action = WitnessRuleAction.Allow, Condition = new CalledByEntryCondition() }],
     })];
-    static readonly Signer[] multisigSigner = [new()
+    static readonly SignerOrWitness[] multisigSigner = [new(new Signer
     {
         Account = MultisigScriptHash,
         Scopes = WitnessScope.CalledByEntry,
-    }];
+    })];
 
     [TestMethod]
     public void TestInvokeFunction()
     {
         _rpcServer.wallet = _wallet;
 
-        JObject resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "totalSupply", [], validatorSigner.Select(u => u.AsSigner()).ToArray(), true);
+        JObject resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "totalSupply", [], validatorSigner, true);
         Assert.AreEqual(resp.Count, 8);
         Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
@@ -141,7 +141,7 @@ public partial class UT_RpcServer
     public void TestTraverseIterator()
     {
         // GetAllCandidates that should return 0 candidates
-        JObject resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner.Select(u => u.AsSigner()).ToArray(), true);
+        JObject resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
         Guid sessionId = Guid.Parse(resp["session"].AsString());
         Guid iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         JArray respArray = (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 100);
@@ -155,7 +155,7 @@ public partial class UT_RpcServer
             {
                 Type = ContractParameterType.PublicKey,
                 Value = TestProtocolSettings.SoleNode.StandbyCommittee[0],
-            }], validatorSigner.Select(u => u.AsSigner()).ToArray(), true);
+            }], validatorSigner, true);
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
         Transaction? tx = new Transaction
@@ -171,7 +171,7 @@ public partial class UT_RpcServer
         engine.SnapshotCache.Commit();
 
         // GetAllCandidates that should return 1 candidate
-        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner.Select(u => u.AsSigner()).ToArray(), true);
+        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
         sessionId = Guid.Parse(resp["session"].AsString());
         iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         respArray = (JArray)_rpcServer.TraverseIterator(sessionId, iteratorId, 100);
@@ -189,7 +189,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(respArray.Count, 0);
 
         // GetAllCandidates again
-        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner.Select(u => u.AsSigner()).ToArray(), true);
+        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
         sessionId = Guid.Parse(resp["session"].AsString());
         iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
 
@@ -204,7 +204,7 @@ public partial class UT_RpcServer
         // Mocking session timeout
         Thread.Sleep((int)_rpcServerSettings.SessionExpirationTime.TotalMilliseconds + 1);
         // build another session that did not expire
-        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner.Select(u => u.AsSigner()).ToArray(), true);
+        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
         Guid notExpiredSessionId = Guid.Parse(resp["session"].AsString());
         Guid notExpiredIteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         _rpcServer.OnTimer(new object());
@@ -215,7 +215,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(respArray.Count, 1);
 
         // Mocking disposal
-        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner.Select(u => u.AsSigner()).ToArray(), true);
+        resp = (JObject)_rpcServer.InvokeFunction(NeoToken.NEO.Hash.ToString(), "getAllCandidates", [], validatorSigner, true);
         sessionId = Guid.Parse(resp["session"].AsString());
         iteratorId = Guid.Parse(resp["stack"][0]["id"].AsString());
         _rpcServer.Dispose_SmartContract();

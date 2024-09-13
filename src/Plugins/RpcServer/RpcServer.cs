@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.Json;
 using Neo.Network.P2P;
+using Neo.Plugins.RpcServer.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -302,6 +303,10 @@ namespace Neo.Plugins.RpcServer
                                 if (param.ParameterType == typeof(UInt160))
                                 {
                                     args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i], system.Settings.AddressVersion);
+                                }
+                                else if (param.ParameterType == typeof(SignerOrWitness))
+                                {
+                                    args[i] = ParameterConverter.ConvertSignerOrWitnessArray(jsonParameters[i], system.Settings);
                                 }
                                 else
                                 {

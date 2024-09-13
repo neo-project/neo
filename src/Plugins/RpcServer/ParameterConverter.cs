@@ -114,6 +114,22 @@ public static class ParameterConverter
         return Result.Ok_Or(() => value.ToScriptHash(addressVersion),
             RpcError.InvalidParams.WithData($"Invalid UInt160 Format: {token}"));
     }
+    
+    internal static object ConvertSignerOrWitnessArray(JToken token, ProtocolSettings settings)
+    {
+        if (token is JArray jArray)
+        {
+            return SignerOrWitness.ParseArray(jArray, settings);
+        }
+        else if (token is JObject jObject)
+        {
+            if (SignerOrWitness.TryParse(jObject, settings, out var signerOrWitness))
+            {
+                return new[] { signerOrWitness };
+            }
+        }
+        throw new RpcException(RpcError.InvalidParams.WithData($"Invalid SignerOrWitness format: {token}"));
+    }
 
     private static object ConvertUInt256(JToken token)
     {
