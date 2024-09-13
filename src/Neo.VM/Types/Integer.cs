@@ -67,6 +67,11 @@ namespace Neo.VM.Types
             return !value.IsZero;
         }
 
+        public override string? GetString()
+        {
+            return value.ToString();
+        }
+
         public override int GetHashCode()
         {
             return HashCode.Combine(value);
