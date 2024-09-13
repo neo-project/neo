@@ -2028,7 +2028,7 @@ namespace Neo.VM
         /// Using this opcode will need to dup the array before using it.
         ///
         /// <remarks>
-        ///     Push: 0 item(s)
+        ///     Push: 1 item(s)
         ///     Pop: 1 item(s)
         /// </remarks>
         /// </summary>
