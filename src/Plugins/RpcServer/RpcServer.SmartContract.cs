@@ -14,6 +14,7 @@ using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
@@ -171,47 +172,6 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static Signer[] SignersFromJson(JArray _params, ProtocolSettings settings)
-        {
-            if (_params.Count > Transaction.MaxTransactionAttributes)
-            {
-                throw new RpcException(RpcError.InvalidParams.WithData("Max allowed witness exceeded."));
-            }
-
-            var ret = _params.Select(u => new Signer
-            {
-                Account = AddressToScriptHash(u["account"].AsString(), settings.AddressVersion),
-                Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), u["scopes"]?.AsString()),
-                AllowedContracts = ((JArray)u["allowedcontracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray() ?? Array.Empty<UInt160>(),
-                AllowedGroups = ((JArray)u["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray() ?? Array.Empty<ECPoint>(),
-                Rules = ((JArray)u["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? Array.Empty<WitnessRule>(),
-            }).ToArray();
-
-            // Validate format
-
-            _ = IO.Helper.ToByteArray(ret).AsSerializableArray<Signer>();
-
-            return ret;
-        }
-
-        private static Witness[] WitnessesFromJson(JArray _params)
-        {
-            if (_params.Count > Transaction.MaxTransactionAttributes)
-            {
-                throw new RpcException(RpcError.InvalidParams.WithData("Max allowed witness exceeded."));
-            }
-
-            return _params.Select(u => new
-            {
-                Invocation = u["invocation"]?.AsString(),
-                Verification = u["verification"]?.AsString()
-            }).Where(x => x.Invocation != null || x.Verification != null).Select(x => new Witness()
-            {
-                InvocationScript = Convert.FromBase64String(x.Invocation ?? string.Empty),
-                VerificationScript = Convert.FromBase64String(x.Verification ?? string.Empty)
-            }).ToArray();
-        }
-
         /// <summary>
         /// Invokes a smart contract with its scripthash based on the specified operation and parameters and returns the result.
         /// </summary>
@@ -246,14 +206,16 @@ namespace Neo.Plugins.RpcServer
         /// You must install the plugin RpcServer before you can invoke the method.
         /// </remarks>
         /// <param name="scriptBase64">A script runnable in the VM, encoded as Base64. e.g. "AQIDBAUGBwgJCgsMDQ4PEA=="</param>
-        /// <param name="signers">Optional. The list of contract signature accounts.</param>
-        /// <param name="witnesses">Optional. The list of witnesses for the transaction.</param>
+        /// <param name="signerOrWitnesses">Optional. The list of contract signature accounts or witnesses for the transaction.</param>
         /// <param name="useDiagnostic">Optional. Flag to enable diagnostic information.</param>
         /// <returns>A JToken containing the result of the invocation.</returns>
         [RpcMethodWithParams]
-        protected internal virtual JToken InvokeScript(string scriptBase64, Signer[] signers = null, Witness[] witnesses = null, bool useDiagnostic = false)
+        protected internal virtual JToken InvokeScript(string scriptBase64, SignerOrWitness[] signerOrWitnesses = null, bool useDiagnostic = false)
         {
-            byte[] script = Result.Ok_Or(() => Convert.FromBase64String(scriptBase64), RpcError.InvalidParams);
+            var script = Result.Ok_Or(() => Convert.FromBase64String(scriptBase64), RpcError.InvalidParams);
+            var signers = signerOrWitnesses?.Where(u => u.IsSigner).Select(u => u.AsSigner()).ToArray() ?? [];
+            var witnesses = signerOrWitnesses?.Where(u => !u.IsSigner).Select(u => u.AsWitness()).ToArray() ?? [];
+
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }
 

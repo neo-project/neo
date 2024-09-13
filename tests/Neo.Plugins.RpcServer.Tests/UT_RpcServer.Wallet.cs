@@ -422,7 +422,7 @@ namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
                 new ContractParameter { Type = ContractParameterType.ByteArray, Value = Convert.FromBase64String(base64NefFile) },
                 new ContractParameter { Type = ContractParameterType.String, Value = manifest },
             ],
-            validatorSigner);
+            validatorSigner.Select(u => u.AsSigner()).ToArray());
         Assert.AreEqual(deployResp["state"], nameof(VM.VMState.HALT));
         UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
         SnapshotCache snapshot = _neoSystem.GetSnapshotCache();

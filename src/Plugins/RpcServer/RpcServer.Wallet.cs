@@ -14,6 +14,7 @@ using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -477,8 +478,8 @@ namespace Neo.Plugins.RpcServer
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
             ContractParameter[] args = _params.Count >= 2 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : Array.Empty<ContractParameter>();
-            Signer[] signers = _params.Count >= 3 ? SignersFromJson((JArray)_params[2], system.Settings) : null;
-            Witness[] witnesses = _params.Count >= 3 ? WitnessesFromJson((JArray)_params[2]) : null;
+            Signer[] signers = _params.Count >= 3 ? SignerOrWitness.ParseArray((JArray)_params[2], system.Settings).Where(u => u.IsSigner).Select(u => u.AsSigner()).ToArray() : null;
+            Witness[] witnesses = _params.Count >= 3 ? SignerOrWitness.ParseArray((JArray)_params[2], system.Settings).Where(u => !u.IsSigner).Select(u => u.AsWitness()).ToArray() : null;
             return GetVerificationResult(script_hash, args, signers, witnesses);
         }
 
