@@ -93,8 +93,7 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(BigInteger value)
         {
-            if (value >= 0 && value <= 16) return Emit(OpCode.PUSH0 + (byte)(int)value);
-            if (value == -1) return Emit(OpCode.PUSHM1);
+            if (value >= -1 && value <= 16) return Emit(OpCode.PUSH0 + (byte)(int)value);
             Span<byte> buffer = stackalloc byte[32];
             if (!value.TryWriteBytes(buffer, out int bytesWritten, isUnsigned: false, isBigEndian: false))
                 throw new ArgumentOutOfRangeException(nameof(value));
