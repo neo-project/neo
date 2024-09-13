@@ -144,7 +144,7 @@ namespace Neo.Test
         public void TestEmitPushBigInteger()
         {
             // Test small integers (0 to 16)
-            for (var i = 0; i <= 16; i++)
+            for (var i = -1; i <= 16; i++)
             {
                 using ScriptBuilder script = new();
                 script.EmitPush(new BigInteger(i));
