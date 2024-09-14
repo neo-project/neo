@@ -18,7 +18,7 @@ namespace Neo.Extensions
     /// <summary>
     /// A helper class that provides common functions.
     /// </summary>
-    public static class HashSetExtensions2
+    public static class HashSetExtensions
     {
         internal static void Remove<T>(this HashSet<T> set, HashSetCache<T> other)
             where T : IEquatable<T>

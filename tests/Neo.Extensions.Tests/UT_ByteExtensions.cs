@@ -33,5 +33,29 @@ namespace Neo.Extensions.Tests
             str1.ToHexString(false).Should().Be("6e656f");
             str1.ToHexString(true).Should().Be("6f656e");
         }
+
+        [TestMethod]
+        public void TestReadOnlySpanToHexString()
+        {
+            byte[] input = { 0x0F, 0xA4, 0x3B };
+            var span = new ReadOnlySpan<byte>(input);
+            string result = span.ToHexString();
+            result.Should().Be("0fa43b");
+
+            input = Array.Empty<byte>();
+            span = new ReadOnlySpan<byte>(input);
+            result = span.ToHexString();
+            result.Should().BeEmpty();
+
+            input = new byte[] { 0x5A };
+            span = new ReadOnlySpan<byte>(input);
+            result = span.ToHexString();
+            result.Should().Be("5a");
+
+            input = new byte[] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
+            span = new ReadOnlySpan<byte>(input);
+            result = span.ToHexString();
+            result.Should().Be("0123456789abcdef");
+        }
     }
 }

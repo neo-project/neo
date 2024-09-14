@@ -221,8 +221,17 @@ namespace Neo.Network.RPC.Tests
             var tests = TestUtils.RpcTestCases.Where(p => p.Name == nameof(rpc.GetContractStateAsync).ToLower());
             foreach (var test in tests)
             {
-                var result = await rpc.GetContractStateAsync(test.Request.Params[0].AsString());
-                Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
+                var type = test.Request.Params[0].GetType().Name;
+                if (type == "JString")
+                {
+                    var result = await rpc.GetContractStateAsync(test.Request.Params[0].AsString());
+                    Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
+                }
+                if (type == "JNumber")
+                {
+                    var result = await rpc.GetContractStateAsync((int)test.Request.Params[0].AsNumber());
+                    Assert.AreEqual(test.Response.Result.ToString(), result.ToJson().ToString());
+                }
             }
         }
 
