@@ -182,11 +182,11 @@ namespace Neo.Plugins.RpcServer
         /// <param name="scriptHash">Smart contract scripthash. Use big endian for Hash160, little endian for ByteArray.</param>
         /// <param name="operation">The operation name (string)</param>
         /// <param name="args">Optional. The parameters to be passed into the smart contract operation</param>
-        /// <param name="signerOrWitnesses">Optional. List of contract signature accounts or witnesses.</param>
+        /// <param name="signerWithWitnesses">Optional. List of signers and/or witnesses.</param>
         /// <param name="useDiagnostic">Optional. Flag to enable diagnostic information.</param>
         /// <returns>A JToken containing the result of the invocation.</returns>
         [RpcMethodWithParams]
-        protected internal virtual JToken InvokeFunction(string scriptHash, string operation, ContractParameter[] args = null, SignerOrWitness[] signerOrWitnesses = null, bool useDiagnostic = false)
+        protected internal virtual JToken InvokeFunction(string scriptHash, string operation, ContractParameter[] args = null, SignerWithWitness[] signerWithWitnesses = null, bool useDiagnostic = false)
         {
             UInt160 contractHash = Result.Ok_Or(() => UInt160.Parse(scriptHash), RpcError.InvalidParams);
             byte[] script;
@@ -194,8 +194,8 @@ namespace Neo.Plugins.RpcServer
             {
                 script = sb.EmitDynamicCall(contractHash, operation, args ?? Array.Empty<ContractParameter>()).ToArray();
             }
-            var signers = signerOrWitnesses?.Where(u => u.IsSigner).Select(u => u.AsSigner()).ToArray() ?? [];
-            var witnesses = signerOrWitnesses?.Where(u => !u.IsSigner).Select(u => u.AsWitness()).ToArray() ?? [];
+            var signers = signerWithWitnesses?.Where(u => u.Signer != null).Select(u => u.Signer).ToArray() ?? [];
+            var witnesses = signerWithWitnesses?.Where(u => u.Witness != null).Select(u => u.Witness).ToArray() ?? [];
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }
 
@@ -208,15 +208,15 @@ namespace Neo.Plugins.RpcServer
         /// You must install the plugin RpcServer before you can invoke the method.
         /// </remarks>
         /// <param name="scriptBase64">A script runnable in the VM, encoded as Base64. e.g. "AQIDBAUGBwgJCgsMDQ4PEA=="</param>
-        /// <param name="signerOrWitnesses">Optional. The list of contract signature accounts or witnesses for the transaction.</param>
+        /// <param name="signerWithWitnesses">Optional. The list of contract signature accounts and/or witnesses for the transaction.</param>
         /// <param name="useDiagnostic">Optional. Flag to enable diagnostic information.</param>
         /// <returns>A JToken containing the result of the invocation.</returns>
         [RpcMethodWithParams]
-        protected internal virtual JToken InvokeScript(string scriptBase64, SignerOrWitness[] signerOrWitnesses = null, bool useDiagnostic = false)
+        protected internal virtual JToken InvokeScript(string scriptBase64, SignerWithWitness[] signerWithWitnesses = null, bool useDiagnostic = false)
         {
             var script = Result.Ok_Or(() => Convert.FromBase64String(scriptBase64), RpcError.InvalidParams);
-            var signers = signerOrWitnesses?.Where(u => u.IsSigner).Select(u => u.AsSigner()).ToArray() ?? [];
-            var witnesses = signerOrWitnesses?.Where(u => !u.IsSigner).Select(u => u.AsWitness()).ToArray() ?? [];
+            var signers = signerWithWitnesses?.Where(u => u.Signer != null).Select(u => u.Signer).ToArray() ?? [];
+            var witnesses = signerWithWitnesses?.Where(u => u.Witness != null).Select(u => u.Witness).ToArray() ?? [];
 
             return GetInvokeResult(script, signers, witnesses, useDiagnostic);
         }

@@ -119,11 +119,11 @@ public static class ParameterConverter
     {
         if (token is JArray jArray)
         {
-            return SignerOrWitness.ParseArray(jArray, settings);
+            return SignerWithWitness.ParseArray(jArray, settings);
         }
         else if (token is JObject jObject)
         {
-            if (SignerOrWitness.TryParse(jObject, settings, out var signerOrWitness))
+            if (SignerWithWitness.TryParse(jObject, settings, out var signerOrWitness))
             {
                 return new[] { signerOrWitness };
             }

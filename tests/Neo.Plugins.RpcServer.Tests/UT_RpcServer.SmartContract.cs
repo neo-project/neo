@@ -46,19 +46,19 @@ public partial class UT_RpcServer
         .ToScriptHash();
     static readonly string MultisigAddress = MultisigScriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
 
-    static readonly SignerOrWitness[] validatorSigner = [new(new Signer
+    static readonly SignerWithWitness[] validatorSigner = [new(new Signer
     {
         Account = ValidatorScriptHash.ToString(),
         Scopes = WitnessScope.CalledByEntry,
         AllowedContracts = [NeoToken.NEO.Hash, GasToken.GAS.Hash],
         AllowedGroups = [TestProtocolSettings.SoleNode.StandbyCommittee[0]],
         Rules = [new WitnessRule { Action = WitnessRuleAction.Allow, Condition = new CalledByEntryCondition() }],
-    })];
-    static readonly SignerOrWitness[] multisigSigner = [new(new Signer
+    }, null)];
+    static readonly SignerWithWitness[] multisigSigner = [new(new Signer
     {
         Account = MultisigScriptHash,
         Scopes = WitnessScope.CalledByEntry,
-    })];
+    }, null)];
 
     [TestMethod]
     public void TestInvokeFunction()

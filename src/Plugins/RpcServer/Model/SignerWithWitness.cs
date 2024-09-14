@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// SignerOrWitness.cs file belongs to the neo project and is free
+// SignerWithWitness.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -19,39 +19,35 @@ using System.Linq;
 
 namespace Neo.Plugins.RpcServer.Model;
 
-public class SignerOrWitness
+public class SignerWithWitness(Signer? signer, Witness? witness)
 {
-    private readonly object _value;
+    public Signer? Signer { get; } = signer;
+    public Witness? Witness { get; } = witness;
 
-    public SignerOrWitness(Signer signer)
+    public static bool TryParse(JToken value, ProtocolSettings settings, [NotNullWhen(true)] out SignerWithWitness? signerWithWitness)
     {
-        _value = signer ?? throw new ArgumentNullException(nameof(signer));
-    }
-
-    public SignerOrWitness(Witness witness)
-    {
-        _value = witness ?? throw new ArgumentNullException(nameof(witness));
-    }
-
-    public bool IsSigner => _value is Signer;
-
-    public static bool TryParse(JToken value, ProtocolSettings settings, [NotNullWhen(true)] out SignerOrWitness? signerOrWitness)
-    {
-        signerOrWitness = null;
+        signerWithWitness = null;
 
         if (value == null)
             return false;
 
         if (value is JObject jObject)
         {
+            Signer? signer = null;
+            Witness? witness = null;
+
             if (jObject.ContainsProperty("account"))
             {
-                signerOrWitness = new SignerOrWitness(SignerFromJson(jObject, settings));
-                return true;
+                signer = SignerFromJson(jObject, settings);
             }
-            else if (jObject.ContainsProperty("invocation") || jObject.ContainsProperty("verification"))
+            if (jObject.ContainsProperty("invocation") || jObject.ContainsProperty("verification"))
             {
-                signerOrWitness = new SignerOrWitness(WitnessFromJson(jObject));
+                witness = WitnessFromJson(jObject);
+            }
+
+            if (signer != null || witness != null)
+            {
+                signerWithWitness = new SignerWithWitness(signer, witness);
                 return true;
             }
         }
@@ -82,7 +78,7 @@ public class SignerOrWitness
         };
     }
 
-    public static SignerOrWitness[] ParseArray(JArray array, ProtocolSettings settings)
+    public static SignerWithWitness[] ParseArray(JArray array, ProtocolSettings settings)
     {
         if (array == null)
             throw new ArgumentNullException(nameof(array));
@@ -92,20 +88,10 @@ public class SignerOrWitness
 
         return array.Select(item =>
         {
-            if (TryParse(item, settings, out var signerOrWitness))
-                return signerOrWitness;
+            if (TryParse(item, settings, out var signerWithWitness))
+                return signerWithWitness;
             throw new ArgumentException($"Invalid signer or witness format: {item}");
         }).ToArray();
-    }
-
-    public Signer AsSigner()
-    {
-        return _value as Signer ?? throw new InvalidOperationException("The value is not a Signer.");
-    }
-
-    public Witness AsWitness()
-    {
-        return _value as Witness ?? throw new InvalidOperationException("The value is not a Witness.");
     }
 
     private static UInt160 AddressToScriptHash(string address, byte version)

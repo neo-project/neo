@@ -304,7 +304,7 @@ namespace Neo.Plugins.RpcServer
                                 {
                                     args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i], system.Settings.AddressVersion);
                                 }
-                                else if (param.ParameterType == typeof(SignerOrWitness))
+                                else if (param.ParameterType == typeof(SignerWithWitness))
                                 {
                                     args[i] = ParameterConverter.ConvertSignerOrWitnessArray(jsonParameters[i], system.Settings);
                                 }
