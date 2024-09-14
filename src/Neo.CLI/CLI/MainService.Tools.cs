@@ -70,11 +70,12 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Read file from path and print its content in base64
+        /// Read .nef file from path and print its content in base64
         /// </summary>
-        [ParseFunction("File path to content base64")]
-        private string? FilePathToContentBase64(string path)
+        [ParseFunction(".nef file path to content base64")]
+        private string? NefPathToContentBase64(string path)
         {
+            if (Path.GetExtension(path).ToLower() != ".nef") return null;
             if (!File.Exists(path)) return null;
             return Convert.ToBase64String(File.ReadAllBytes(path));
         }
