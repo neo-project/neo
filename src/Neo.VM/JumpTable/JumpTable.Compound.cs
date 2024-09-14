@@ -540,7 +540,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <remarks>Pop 1, Push 0</remarks>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PopItem(ExecutionEngine engine, Instruction instruction)
         {
