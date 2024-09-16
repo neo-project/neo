@@ -29,7 +29,7 @@ namespace Neo.Builders
 
         public WitnessBuilder AddInvocation(Action<ScriptBuilder> config)
         {
-            var sb = new ScriptBuilder();
+            using var sb = new ScriptBuilder();
             config(sb);
             _invocationScript = sb.ToArray();
             return this;
@@ -43,7 +43,7 @@ namespace Neo.Builders
 
         public WitnessBuilder AddVerification(Action<ScriptBuilder> config)
         {
-            var sb = new ScriptBuilder();
+            using var sb = new ScriptBuilder();
             config(sb);
             _verificationScript = sb.ToArray();
             return this;

@@ -64,9 +64,15 @@ namespace Neo.Builders
 
         public TransactionBuilder AttachSystem(Action<ScriptBuilder> config)
         {
-            var sb = new ScriptBuilder();
+            using var sb = new ScriptBuilder();
             config(sb);
             _tx.Script = sb.ToArray();
+            return this;
+        }
+
+        public TransactionBuilder AttachSystem(byte[] script)
+        {
+            _tx.Script = script;
             return this;
         }
 
