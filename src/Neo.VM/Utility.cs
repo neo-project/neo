@@ -27,6 +27,23 @@ namespace Neo.VM
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
+        public static bool NotZero(this ReadOnlySpan<byte> x)
+        {
+            int i;
+            for (i = 0; i + 7 < x.Length; i += 8)
+            {
+                if ((x[i] | x[i + 1] | x[i + 2] | x[i + 3] | x[i + 4] | x[i + 5] | x[i + 6] | x[i + 7]) != 0)
+                    return true;
+            }
+
+            for (; i < x.Length; i++)
+            {
+                if (x[i] != 0) return true;
+            }
+
+            return false;
+        }
+
         public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
         {
             try

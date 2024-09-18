@@ -101,5 +101,22 @@ namespace Neo.Test
 
             Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
         }
+
+        [TestMethod]
+        public void TestNotZero()
+        {
+            Assert.IsFalse(new ReadOnlySpan<byte>(System.Array.Empty<byte>()).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[4]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[7]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[8]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[9]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[11]).NotZero());
+
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[4] { 0x00, 0x00, 0x00, 0x01 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[7] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[9] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[11] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
+        }
     }
 }
