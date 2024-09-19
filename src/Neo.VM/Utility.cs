@@ -20,11 +20,6 @@ namespace Neo.VM
     {
         public static Encoding StrictUTF8 { get; }
 
-        /// <summary>
-        ///  A zero byte array. Length is 32 because it compares to short bytes now.
-        /// </summary>
-        private static readonly byte[] Zeros = new byte[32];
-
         static Utility()
         {
             StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
@@ -40,19 +35,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(this ReadOnlySpan<byte> x)
         {
-            var zeros = Zeros.AsSpan();
-            for (; x.Length > 0;)
-            {
-                int once = Math.Min(zeros.Length, x.Length);
-                if (!zeros[..once].SequenceEqual(x[..once]))
-                {
-                    return true;
-                }
-
-                x = x[once..];
-            }
-
-            return false;
+            return x.ContainsAnyExcept((byte)0);
         }
 
         public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
