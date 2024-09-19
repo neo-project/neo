@@ -117,6 +117,20 @@ namespace Neo.Test
             Assert.IsTrue(new ReadOnlySpan<byte>(new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
             Assert.IsTrue(new ReadOnlySpan<byte>(new byte[9] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00 }).NotZero());
             Assert.IsTrue(new ReadOnlySpan<byte>(new byte[11] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
+
+            var bytes = new byte[64];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                ReadOnlySpan<byte> span = bytes.AsSpan();
+                Assert.IsFalse(span[i..].NotZero());
+  
+                for (int j = i; j < bytes.Length; j++)
+                {
+                    bytes[j] = 0x01;
+                    Assert.IsTrue(span[i..].NotZero());
+                    bytes[j] = 0x00;
+                }
+            }
         }
     }
 }

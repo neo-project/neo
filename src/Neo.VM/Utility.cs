@@ -20,6 +20,11 @@ namespace Neo.VM
     {
         public static Encoding StrictUTF8 { get; }
 
+        /// <summary>
+        ///  A zero byte array. Length is 32 because it compares to short bytes now.
+        /// </summary>
+        private static readonly byte[] Zeros = new byte[32];
+
         static Utility()
         {
             StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
@@ -27,18 +32,24 @@ namespace Neo.VM
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
+        /// <summary>
+        /// All bytes are zero or not in a byte array
+        /// </summary>
+        /// <param name="x">The byte array</param>
+        /// <returns>true if all bytes are zero, otherwise it returns false</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(this ReadOnlySpan<byte> x)
         {
-            int i;
-            for (i = 0; i + 7 < x.Length; i += 8)
+            var zeros = Zeros.AsSpan();
+            for (; x.Length > 0;)
             {
-                if ((x[i] | x[i + 1] | x[i + 2] | x[i + 3] | x[i + 4] | x[i + 5] | x[i + 6] | x[i + 7]) != 0)
+                int once = Math.Min(zeros.Length, x.Length);
+                if (!zeros[..once].SequenceEqual(x[..once]))
+                {
                     return true;
-            }
+                }
 
-            for (; i < x.Length; i++)
-            {
-                if (x[i] != 0) return true;
+                x = x[once..];
             }
 
             return false;
