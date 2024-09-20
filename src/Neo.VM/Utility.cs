@@ -35,7 +35,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(this ReadOnlySpan<byte> x)
         {
-            return x.ContainsAnyExcept((byte)0);
+            return x.IndexOfAnyExcept((byte)0) >= 0;
         }
 
         public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
