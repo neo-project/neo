@@ -54,18 +54,50 @@ namespace Neo.VM
         /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
         /// <param name="map">The key/value pairs of the map.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IEnumerable<KeyValuePair<TKey, TValue>> map)
+            where TKey : notnull
+            where TValue : notnull
         {
-            builder.Emit(OpCode.NEWMAP);
-            if (map != null)
-                foreach (var p in map)
-                {
-                    builder.Emit(OpCode.DUP);
-                    builder.EmitPush(p.Key);
-                    builder.EmitPush(p.Value);
-                    builder.Emit(OpCode.SETITEM);
-                }
-            return builder;
+            var count = map.Count();
+
+            if (count == 0)
+                return builder.Emit(OpCode.NEWMAP);
+
+            foreach (var (key, value) in map)
+            {
+                builder.EmitPush(value);
+                builder.EmitPush(key);
+            }
+            builder.EmitPush(count);
+            return builder.Emit(OpCode.PACKMAP);
+        }
+
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IReadOnlyDictionary<TKey, TValue> map)
+            where TKey : notnull
+            where TValue : notnull
+        {
+            if (map.Count == 0)
+                return builder.Emit(OpCode.NEWMAP);
+
+            foreach (var (key, value) in map)
+            {
+                builder.EmitPush(value);
+                builder.EmitPush(key);
+            }
+            builder.EmitPush(map.Count);
+            return builder.Emit(OpCode.PACKMAP);
+        }
+
+
+        public static ScriptBuilder CreateStruct<T>(this ScriptBuilder builder, IReadOnlyList<T> array)
+            where T : notnull
+        {
+            if (array.Count == 0)
+                return builder.Emit(OpCode.NEWSTRUCT0);
+            for (var i = array.Count - 1; i >= 0; i--)
+                builder.EmitPush(array[i]);
+            builder.EmitPush(array.Count);
+            return builder.Emit(OpCode.PACKSTRUCT);
         }
 
         /// <summary>
@@ -218,7 +250,7 @@ namespace Neo.VM
                     builder.EmitPush(data);
                     break;
                 case char data:
-                    builder.EmitPush((ushort)data);
+                    builder.EmitPush(data);
                     break;
                 case ushort data:
                     builder.EmitPush(data);
