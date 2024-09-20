@@ -123,7 +123,7 @@ namespace Neo.Test
             {
                 ReadOnlySpan<byte> span = bytes.AsSpan();
                 Assert.IsFalse(span[i..].NotZero());
-  
+
                 for (int j = i; j < bytes.Length; j++)
                 {
                     bytes[j] = 0x01;
