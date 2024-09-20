@@ -31,7 +31,7 @@ namespace Neo.VM
         /// All bytes are zero or not in a byte array
         /// </summary>
         /// <param name="x">The byte array</param>
-        /// <returns>true if all bytes are zero, otherwise it returns false</returns>
+        /// <returns>false if all bytes are zero, true otherwise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(this ReadOnlySpan<byte> x)
         {
