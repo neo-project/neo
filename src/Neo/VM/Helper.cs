@@ -63,7 +63,7 @@ namespace Neo.VM
             if (count == 0)
                 return builder.Emit(OpCode.NEWMAP);
 
-            foreach (var (key, value) in map)
+            foreach (var (key, value) in map.Reverse())
             {
                 builder.EmitPush(value);
                 builder.EmitPush(key);
@@ -72,6 +72,14 @@ namespace Neo.VM
             return builder.Emit(OpCode.PACKMAP);
         }
 
+        /// <summary>
+        /// Emits the opcodes for creating a map.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key of the map.</typeparam>
+        /// <typeparam name="TValue">The type of the value of the map.</typeparam>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="map">The key/value pairs of the map.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
         public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IReadOnlyDictionary<TKey, TValue> map)
             where TKey : notnull
             where TValue : notnull
@@ -79,7 +87,7 @@ namespace Neo.VM
             if (map.Count == 0)
                 return builder.Emit(OpCode.NEWMAP);
 
-            foreach (var (key, value) in map)
+            foreach (var (key, value) in map.Reverse())
             {
                 builder.EmitPush(value);
                 builder.EmitPush(key);
@@ -88,7 +96,13 @@ namespace Neo.VM
             return builder.Emit(OpCode.PACKMAP);
         }
 
-
+        /// <summary>
+        /// Emits the opcodes for creating a struct.
+        /// </summary>
+        /// <typeparam name="T">The type of the property.</typeparam>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="array">The list of properties.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
         public static ScriptBuilder CreateStruct<T>(this ScriptBuilder builder, IReadOnlyList<T> array)
             where T : notnull
         {
