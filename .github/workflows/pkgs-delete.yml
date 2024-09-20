@@ -1,8 +1,6 @@
 name: Package Cleanup
 
 on:
-  push:
-    branches: ["fix/github-packages"]
   schedule:
     - cron: '0 0 * * *' # Run every day at 24:00
 
