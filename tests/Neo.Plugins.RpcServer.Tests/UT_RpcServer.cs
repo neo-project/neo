@@ -11,6 +11,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -32,7 +33,9 @@ namespace Neo.Plugins.RpcServer.Tests
     {
         private NeoSystem _neoSystem;
         private RpcServerSettings _rpcServerSettings;
-        private RpcServer _rpcServer;
+        private RpcServerMock _rpcServer;
+        private Mock<HttpContext> _mockHttpContext;
+
         private TestMemoryStoreProvider _memoryStoreProvider;
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
@@ -54,7 +57,10 @@ namespace Neo.Plugins.RpcServer.Tests
                 MaxGasInvoke = 1500_0000_0000,
                 Network = TestProtocolSettings.SoleNode.Network,
             };
-            _rpcServer = new RpcServer(_neoSystem, _rpcServerSettings);
+            _rpcServer = new RpcServerMock(_neoSystem, _rpcServerSettings);
+            _mockHttpContext = new Mock<HttpContext>();
+            _mockHttpContext.Setup(c => c.Request.Headers).Returns(new HeaderDictionary());
+            _mockHttpContext.Setup(c => c.Response.Headers).Returns(new HeaderDictionary());
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var snapshot = _neoSystem.GetSnapshotCache();

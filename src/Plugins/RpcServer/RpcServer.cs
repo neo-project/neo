@@ -261,7 +261,7 @@ namespace Neo.Plugins.RpcServer
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-        private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
+        protected async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
             var @params = request["params"] ?? new JArray();
@@ -304,9 +304,9 @@ namespace Neo.Plugins.RpcServer
                                 {
                                     args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i], system.Settings.AddressVersion);
                                 }
-                                else if (param.ParameterType == typeof(SignerWithWitness))
+                                else if (param.ParameterType == typeof(SignerWithWitness[]))
                                 {
-                                    args[i] = ParameterConverter.ConvertSignerOrWitnessArray(jsonParameters[i], system.Settings);
+                                    args[i] = ParameterConverter.ConvertSignerWithWitnessArray(jsonParameters[i], system.Settings);
                                 }
                                 else
                                 {

@@ -15,6 +15,7 @@ using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.Persistence;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -422,7 +423,14 @@ namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
                 new ContractParameter { Type = ContractParameterType.ByteArray, Value = Convert.FromBase64String(base64NefFile) },
                 new ContractParameter { Type = ContractParameterType.String, Value = manifest },
             ],
-            validatorSigner);
+          [new SignerWithWitness(new Signer
+          {
+              Account = ValidatorScriptHash.ToString(),
+              Scopes = WitnessScope.CalledByEntry,
+              AllowedContracts = [NeoToken.NEO.Hash, GasToken.GAS.Hash],
+              AllowedGroups = [TestProtocolSettings.SoleNode.StandbyCommittee[0]],
+              Rules = [new WitnessRule { Action = WitnessRuleAction.Allow, Condition = new CalledByEntryCondition() }],
+          }, null)]);
         Assert.AreEqual(deployResp["state"], nameof(VM.VMState.HALT));
         UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
         SnapshotCache snapshot = _neoSystem.GetSnapshotCache();

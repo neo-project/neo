@@ -60,12 +60,10 @@ public class SignerWithWitness(Signer? signer, Witness? witness)
         return new Signer
         {
             Account = AddressToScriptHash(jObject["account"].AsString(), settings.AddressVersion),
-            Scopes = jObject.ContainsProperty("scopes")
-                ? (WitnessScope)Enum.Parse(typeof(WitnessScope), jObject["scopes"].AsString())
-                : WitnessScope.CalledByEntry,
+            Scopes = (WitnessScope)Enum.Parse(typeof(WitnessScope), jObject["scopes"]?.AsString()),
             AllowedContracts = ((JArray)jObject["allowedcontracts"])?.Select(p => UInt160.Parse(p.AsString())).ToArray() ?? Array.Empty<UInt160>(),
             AllowedGroups = ((JArray)jObject["allowedgroups"])?.Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray() ?? Array.Empty<ECPoint>(),
-            Rules = ((JArray)jObject["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? Array.Empty<WitnessRule>()
+            Rules = ((JArray)jObject["rules"])?.Select(r => WitnessRule.FromJson((JObject)r)).ToArray() ?? Array.Empty<WitnessRule>(),
         };
     }
 
