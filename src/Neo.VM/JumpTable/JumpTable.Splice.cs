@@ -102,14 +102,8 @@ namespace Neo.VM
                 throw new InvalidOperationException($"The value of index {index} is out of range.");
 
             var x = engine.Pop().GetSpan();
-            if (count > x.Length)
-                throw new InvalidOperationException($"The value of count {count} is out of range.");
-
-            if (index >= x.Length)
-                throw new InvalidOperationException($"The value of index {index} is out of range.");
-
             if (checked(index + count) > x.Length)
-                throw new InvalidOperationException($"The value of index + count {index + count} is out of range.");
+                throw new InvalidOperationException($"The value of index {index} + count {count} is out of range.");
 
             Types.Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
