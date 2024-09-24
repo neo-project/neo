@@ -450,7 +450,7 @@ namespace Neo.Ledger
             {
                 if (!_unverifiedTransactions.TryGetValue(hash, out item))
                     return false;
-        
+
                 _unverifiedTransactions.Remove(hash);
                 _unverifiedSortedTransactions.Remove(item);
                 return true;
