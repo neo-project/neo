@@ -448,23 +448,16 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                return TryRemoveUnVerifiedLocked(hash, out item);
+                if (!_unverifiedTransactions.TryGetValue(hash, out item))
+                    return false;
+        
+                _unverifiedTransactions.Remove(hash);
+                _unverifiedSortedTransactions.Remove(item);
             }
             finally
             {
                 _txRwLock.ExitWriteLock();
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryRemoveUnVerifiedLocked(UInt256 hash, [MaybeNullWhen(false)] out PoolItem? item)
-        {
-            if (!_unverifiedTransactions.TryGetValue(hash, out item))
-                return false;
-
-            _unverifiedTransactions.Remove(hash);
-            _unverifiedSortedTransactions.Remove(item);
-            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
