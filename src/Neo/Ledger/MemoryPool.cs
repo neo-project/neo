@@ -489,7 +489,7 @@ namespace Neo.Ledger
                 // No need to modify VerificationContext as it will be reset afterwards.
                 foreach (Transaction tx in block.Transactions)
                 {
-                    if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerifiedLocked(tx.Hash, out _);
+                    if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
                     var conflictingSigners = tx.Signers.Select(s => s.Account);
                     foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
                     {
@@ -517,7 +517,7 @@ namespace Neo.Ledger
                 }
                 foreach (var h in stale)
                 {
-                    if (!TryRemoveVerified(h, out _)) TryRemoveUnVerifiedLocked(h, out _);
+                    if (!TryRemoveVerified(h, out _)) TryRemoveUnVerified(h, out _);
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions and clear mempool conflicts list.
