@@ -453,6 +453,7 @@ namespace Neo.Ledger
         
                 _unverifiedTransactions.Remove(hash);
                 _unverifiedSortedTransactions.Remove(item);
+            return true;
             }
             finally
             {
