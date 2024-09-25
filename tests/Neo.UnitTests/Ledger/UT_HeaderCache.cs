@@ -21,7 +21,6 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_HeaderCache
     {
-
         [TestMethod]
         public void TestHeaderCache()
         {
