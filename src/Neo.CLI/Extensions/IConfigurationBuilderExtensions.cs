@@ -19,6 +19,11 @@ namespace Neo.CLI.Extensions
 {
     internal static class IConfigurationBuilderExtensions
     {
+        /// <summary>
+        /// Add Neo configuration settings to the configuration builder.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
         public static IConfigurationBuilder AddNeoConfiguration(this IConfigurationBuilder builder)
         {
             builder.AddInMemoryCollection(
@@ -29,6 +34,11 @@ namespace Neo.CLI.Extensions
             return builder;
         }
 
+        /// <summary>
+        /// Add Neo default configuration files to the configuration builder.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
         public static IConfigurationBuilder AddNeoDefaultFiles(this IConfigurationBuilder builder)
         {
             try

@@ -50,6 +50,11 @@ namespace Neo.CLI.Extensions
             return hostBuilder;
         }
 
+        /// <summary>
+        /// Injects the NeoSystem into the application.
+        /// </summary>
+        /// <param name="hostBuilder"></param>
+        /// <returns></returns>
         public static IHostBuilder UseNeoSystem(this IHostBuilder hostBuilder)
         {
             hostBuilder.ConfigureServices((context, services) =>

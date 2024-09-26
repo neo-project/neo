@@ -15,6 +15,12 @@ namespace Neo.CLI.Hosting
     {
         public static readonly string StoreProviderName = "LevelDBStore";
         public static readonly string ConfigurationFileName = "config.json";
+
         public static readonly string ConsolePromptName = "neo>";
+
+        public static readonly string NeoNameService = "0x50ac1c37690cc2cfc594472833cf57505d5f46de";
+        public static readonly string GitHubReleasesAPI = "https://api.github.com/repos/neo-project/neo/releases";
+        public static readonly string StorePathFormat = "Data_LevelDB_{0:X2}";
+        public static readonly string ArchiveFileName = "chain.0.acc";
     }
 }

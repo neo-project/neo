@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.CLI.Helpers;
 using Neo.CLI.Hosting;
 using Neo.Extensions;
 using Neo.Network.P2P;
@@ -22,7 +21,7 @@ namespace Neo.CLI.Configuration
     {
         public StorageOptions Storage { get; set; } = new();
         public P2POptions P2P { get; set; } = new();
-        public ContractOptions Contract { get; set; } = new("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
+        public ContractOptions Contract { get; set; } = new();
         public PluginOptions Plugin { get; set; } = new();
         public NeoLoggerOptions Logger { get; set; } = new();
         public WalletOptions UnlockWallet { get; set; } = new();
@@ -33,11 +32,11 @@ namespace Neo.CLI.Configuration
         public class ArchiveSettings
         {
             public string Path { get; set; } = AppContext.BaseDirectory;
-            public string FileName { get; set; } = "chain.0.acc";
+            public string FileName { get; set; } = NeoDefaults.ArchiveFileName;
         }
 
         public string Engine { get; set; } = NeoDefaults.StoreProviderName;
-        public string Path { get; set; } = "Data_LevelDB_{0:X2}";
+        public string Path { get; set; } = NeoDefaults.StorePathFormat;
         public bool Verify { get; set; } = true;
         public ArchiveSettings Archive { get; set; } = new();
     }
@@ -52,20 +51,13 @@ namespace Neo.CLI.Configuration
     }
 
     internal sealed class ContractOptions
-        (string neoNameService)
     {
-        private UInt160 _neoNameService = UInt160.Parse("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
-
-        public UInt160 NeoNameService
-        {
-            get => _neoNameService;
-            set => _neoNameService = ParseUtility.TryParseUInt160(neoNameService) ?? UInt160.Parse("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
-        }
+        public string? NeoNameService { get; set; } = NeoDefaults.NeoNameService;
     }
 
     internal sealed class PluginOptions
     {
-        public string DownloadUrl { get; set; } = "https://api.github.com/repos/neo-project/neo/releases";
+        public string DownloadUrl { get; set; } = NeoDefaults.GitHubReleasesAPI;
         public bool Prerelease { get; set; } = false;
         public Version Version { get; set; } = new(0, 0);
     }
