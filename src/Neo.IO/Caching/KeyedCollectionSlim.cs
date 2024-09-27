@@ -15,7 +15,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching;
 
-abstract class KeyedCollectionSlim<TKey, TItem>
+internal abstract class KeyedCollectionSlim<TKey, TItem>
     where TKey : notnull
     where TItem : class, IStructuralEquatable, IStructuralComparable, IComparable
 {

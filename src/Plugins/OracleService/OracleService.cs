@@ -14,6 +14,7 @@ using Akka.Util.Internal;
 using Neo.ConsoleService;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IEventHandlers;
 using Neo.IO;
 using Neo.Json;
@@ -52,7 +53,7 @@ namespace Neo.Plugins.OracleService
         private readonly ConcurrentDictionary<ulong, OracleTask> pendingQueue = new ConcurrentDictionary<ulong, OracleTask>();
         private readonly ConcurrentDictionary<ulong, DateTime> finishedCache = new ConcurrentDictionary<ulong, DateTime>();
         private Timer timer;
-        private readonly CancellationTokenSource cancelSource = new CancellationTokenSource();
+        internal readonly CancellationTokenSource cancelSource = new CancellationTokenSource();
         private OracleStatus status = OracleStatus.Unstarted;
         private IWalletProvider walletProvider;
         private int counter;
@@ -61,6 +62,8 @@ namespace Neo.Plugins.OracleService
         private readonly Dictionary<string, IOracleProtocol> protocols = new Dictionary<string, IOracleProtocol>();
 
         public override string Description => "Built-in oracle plugin";
+
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "OracleService.json");
 
@@ -120,25 +123,25 @@ namespace Neo.Plugins.OracleService
             Start(walletProvider?.GetWallet());
         }
 
-        public void Start(Wallet wallet)
+        public Task Start(Wallet wallet)
         {
-            if (status == OracleStatus.Running) return;
+            if (status == OracleStatus.Running) return Task.CompletedTask;
 
             if (wallet is null)
             {
                 ConsoleHelper.Warning("Please open wallet first!");
-                return;
+                return Task.CompletedTask;
             }
 
-            if (!CheckOracleAvaiblable(_system.StoreView, out ECPoint[] oracles))
+            if (!CheckOracleAvailable(_system.StoreView, out ECPoint[] oracles))
             {
                 ConsoleHelper.Warning("The oracle service is unavailable");
-                return;
+                return Task.CompletedTask;
             }
             if (!CheckOracleAccount(wallet, oracles))
             {
                 ConsoleHelper.Warning("There is no oracle account in wallet");
-                return;
+                return Task.CompletedTask;
             }
 
             this.wallet = wallet;
@@ -147,7 +150,7 @@ namespace Neo.Plugins.OracleService
             status = OracleStatus.Running;
             timer = new Timer(OnTimer, null, RefreshIntervalMilliSeconds, Timeout.Infinite);
             ConsoleHelper.Info($"Oracle started");
-            ProcessRequestsAsync();
+            return ProcessRequestsAsync();
         }
 
         [ConsoleCommand("stop oracle", Category = "Oracle", Description = "Stop oracle service")]
@@ -177,7 +180,7 @@ namespace Neo.Plugins.OracleService
                 OnStart();
             }
             if (status != OracleStatus.Running) return;
-            if (!CheckOracleAvaiblable(snapshot, out ECPoint[] oracles) || !CheckOracleAccount(wallet, oracles))
+            if (!CheckOracleAvailable(snapshot, out ECPoint[] oracles) || !CheckOracleAccount(wallet, oracles))
                 OnStop();
         }
 
@@ -240,7 +243,7 @@ namespace Neo.Plugins.OracleService
                 var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
                 oracles.Any(p => p.Equals(oraclePub)).True_Or(RpcErrorFactory.OracleNotDesignatedNode(oraclePub));
                 NativeContract.Oracle.GetRequest(snapshot, requestId).NotNull_Or(RpcError.OracleRequestNotFound);
-                var data = Neo.Helper.Concat(oraclePub.ToArray(), BitConverter.GetBytes(requestId), txSign);
+                byte[] data = [.. oraclePub.ToArray(), .. BitConverter.GetBytes(requestId), .. txSign];
                 Crypto.VerifySignature(data, msgSign, oraclePub).True_Or(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
                 AddResponseTxSign(snapshot, requestId, oraclePub, txSign);
             }
@@ -262,7 +265,7 @@ namespace Neo.Plugins.OracleService
 
         private async Task SendResponseSignatureAsync(ulong requestId, byte[] txSign, KeyPair keyPair)
         {
-            var message = Neo.Helper.Concat(keyPair.PublicKey.ToArray(), BitConverter.GetBytes(requestId), txSign);
+            byte[] message = [.. keyPair.PublicKey.ToArray(), .. BitConverter.GetBytes(requestId), .. txSign];
             var sign = Crypto.Sign(message, keyPair.PrivateKey);
             var param = "\"" + Convert.ToBase64String(keyPair.PublicKey.ToArray()) + "\", " + requestId + ", \"" + Convert.ToBase64String(txSign) + "\",\"" + Convert.ToBase64String(sign) + "\"";
             var content = "{\"id\":" + Interlocked.Increment(ref counter) + ",\"jsonrpc\":\"2.0\",\"method\":\"submitoracleresponse\",\"params\":[" + param + "]}";
@@ -322,7 +325,7 @@ namespace Neo.Plugins.OracleService
             }
         }
 
-        private async void ProcessRequestsAsync()
+        private async Task ProcessRequestsAsync()
         {
             while (!cancelSource.IsCancellationRequested)
             {
@@ -550,7 +553,7 @@ namespace Neo.Plugins.OracleService
             return false;
         }
 
-        private static bool CheckOracleAvaiblable(DataCache snapshot, out ECPoint[] oracles)
+        private static bool CheckOracleAvailable(DataCache snapshot, out ECPoint[] oracles)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
             oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);

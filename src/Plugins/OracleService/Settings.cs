@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace Neo.Plugins.OracleService
         }
     }
 
-    class Settings
+    class Settings : PluginSettings
     {
         public uint Network { get; }
         public Uri[] Nodes { get; }
@@ -51,7 +52,7 @@ namespace Neo.Plugins.OracleService
 
         public static Settings Default { get; private set; }
 
-        private Settings(IConfigurationSection section)
+        private Settings(IConfigurationSection section) : base(section)
         {
             Network = section.GetValue("Network", 5195086u);
             Nodes = section.GetSection("Nodes").GetChildren().Select(p => new Uri(p.Get<string>(), UriKind.Absolute)).ToArray();
@@ -59,6 +60,8 @@ namespace Neo.Plugins.OracleService
             MaxOracleTimeout = TimeSpan.FromMilliseconds(section.GetValue("MaxOracleTimeout", 15000));
             AllowPrivateHost = section.GetValue("AllowPrivateHost", false);
             AllowedContentTypes = section.GetSection("AllowedContentTypes").GetChildren().Select(p => p.Get<string>()).ToArray();
+            if (AllowedContentTypes.Count() == 0)
+                AllowedContentTypes = AllowedContentTypes.Concat("application/json").ToArray();
             Https = new HttpsSettings(section.GetSection("Https"));
             NeoFS = new NeoFSSettings(section.GetSection("NeoFS"));
             AutoStart = section.GetValue("AutoStart", false);
