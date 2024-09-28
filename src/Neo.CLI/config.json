@@ -6,10 +6,17 @@
       "Active": false
     },
     "Storage": {
+      "Archive": {
+        "Path": "Backups",
+        "FileName": "chain.{0}.acc",
+        "CompressFile":  false
+      },
       "Engine": "LevelDBStore",
-      "Path": "Data_LevelDB_{0}"
+      "Path": "Data_LevelDB_{0}",
+      "Verify": true
     },
     "P2P": {
+      "Listen": "0.0.0.0",
       "Port": 10333,
       "MinDesiredConnections": 10,
       "MaxConnections": 40,

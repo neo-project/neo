@@ -32,7 +32,8 @@ namespace Neo.CLI.Configuration
         public class ArchiveSettings
         {
             public string Path { get; set; } = AppContext.BaseDirectory;
-            public string FileName { get; set; } = NeoDefaults.ArchiveFileName;
+            public string FileName { get; set; } = NeoDefaults.ArchiveFileNameFormat;
+            public bool CompressFile { get; set; } = false;
         }
 
         public string Engine { get; set; } = NeoDefaults.StoreProviderName;
