@@ -32,7 +32,6 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public WitnessCondition[] Expressions;
 
         public override int Size => base.Size + Expressions.GetVarSize();
-
         public override WitnessConditionType Type => WitnessConditionType.Or;
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
