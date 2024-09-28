@@ -31,13 +31,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// </summary>
         public WitnessCondition[] Expressions;
 
-        public override int Size
-        {
-            get
-            {
-                return base.Size + Expressions.GetVarSize();
-            }
-        }
+        public override int Size => base.Size + Expressions.GetVarSize();
 
         public override WitnessConditionType Type => WitnessConditionType.Or;
 

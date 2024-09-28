@@ -47,18 +47,18 @@ namespace Neo.Plugins.RpcServer.Tests
         static readonly string MultisigAddress = MultisigScriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
 
         static readonly JArray validatorSigner = [new JObject()
-    {
-        ["account"] = ValidatorScriptHash.ToString(),
-        ["scopes"] = nameof(WitnessScope.CalledByEntry),
-        ["allowedcontracts"] = new JArray([NeoToken.NEO.Hash.ToString(), GasToken.GAS.Hash.ToString()]),
-        ["allowedgroups"] = new JArray([TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString()]),
-        ["rules"] = new JArray([new JObject() { ["action"] = nameof(WitnessRuleAction.Allow), ["condition"] = new JObject { ["type"] = nameof(WitnessConditionType.CalledByEntry) } }]),
-    }];
+        {
+            ["account"] = ValidatorScriptHash.ToString(),
+            ["scopes"] = nameof(WitnessScope.CalledByEntry),
+            ["allowedcontracts"] = new JArray([NeoToken.NEO.Hash.ToString(), GasToken.GAS.Hash.ToString()]),
+            ["allowedgroups"] = new JArray([TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString()]),
+            ["rules"] = new JArray([new JObject() { ["action"] = nameof(WitnessRuleAction.Allow), ["condition"] = new JObject { ["type"] = nameof(WitnessConditionType.CalledByEntry) } }]),
+        }];
         static readonly JArray multisigSigner = [new JObject()
-    {
-        ["account"] = MultisigScriptHash.ToString(),
-        ["scopes"] = nameof(WitnessScope.CalledByEntry),
-    }];
+        {
+            ["account"] = MultisigScriptHash.ToString(),
+            ["scopes"] = nameof(WitnessScope.CalledByEntry),
+        }];
 
         [TestMethod]
         public void TestInvokeFunction()
@@ -92,10 +92,10 @@ namespace Neo.Plugins.RpcServer.Tests
             // This call triggers not only NEO but also unclaimed GAS
             resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "transfer", new JArray([
                 new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = MultisigScriptHash.ToString() },
-            new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = ValidatorScriptHash.ToString() },
-            new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "1" },
-            new JObject() { ["type"] = nameof(ContractParameterType.Any) },
-        ]), multisigSigner, true));
+                new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = ValidatorScriptHash.ToString() },
+                new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "1" },
+                new JObject() { ["type"] = nameof(ContractParameterType.Any) },
+            ]), multisigSigner, true));
             Assert.AreEqual(resp.Count, 7);
             Assert.AreEqual(resp["script"], NeoTransferScript);
             Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
@@ -152,10 +152,10 @@ namespace Neo.Plugins.RpcServer.Tests
             // register candidate in snapshot
             resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "registerCandidate",
                 new JArray([new JObject()
-            {
-                ["type"] = nameof(ContractParameterType.PublicKey),
-                ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
-            }]), validatorSigner, true));
+                {
+                    ["type"] = nameof(ContractParameterType.PublicKey),
+                    ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
+                }]), validatorSigner, true));
             Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
             SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
             Transaction? tx = new Transaction
