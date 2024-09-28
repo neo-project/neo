@@ -446,8 +446,8 @@ namespace Neo.Plugins.OracleService
 
             int size_inv = 66 * m;
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Script.GetVarSize()
-                + IO.Helper.GetVarSize(hashes.Length) + witnessDict[NativeContract.Oracle.Hash].Size
-                + IO.Helper.GetVarSize(size_inv) + size_inv + oracleSignContract.Script.GetVarSize();
+                + UnsafeData.GetVarSize(hashes.Length) + witnessDict[NativeContract.Oracle.Hash].Size
+                + UnsafeData.GetVarSize(size_inv) + size_inv + oracleSignContract.Script.GetVarSize();
 
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
             if (response.Result.Length > OracleResponse.MaxResultSize)

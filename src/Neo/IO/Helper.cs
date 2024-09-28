@@ -14,9 +14,6 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace Neo.IO
 {
@@ -36,35 +33,6 @@ namespace Neo.IO
         {
             MemoryReader reader = new(value.AsMemory(start));
             return reader.ReadSerializable<T>();
-        }
-
-        /// <summary>
-        /// Converts a byte array to an <see cref="ISerializable"/> object.
-        /// </summary>
-        /// <typeparam name="T">The type to convert to.</typeparam>
-        /// <param name="value">The byte array to be converted.</param>
-        /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static T AsSerializable<T>(this ReadOnlyMemory<byte> value) where T : ISerializable, new()
-        {
-            if (value.IsEmpty) throw new FormatException();
-            MemoryReader reader = new(value);
-            return reader.ReadSerializable<T>();
-        }
-
-        /// <summary>
-        /// Converts a byte array to an <see cref="ISerializable"/> object.
-        /// </summary>
-        /// <param name="value">The byte array to be converted.</param>
-        /// <param name="type">The type to convert to.</param>
-        /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static ISerializable AsSerializable(this ReadOnlyMemory<byte> value, Type type)
-        {
-            if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
-                throw new InvalidCastException();
-            ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
-            MemoryReader reader = new(value);
-            serializable.Deserialize(ref reader);
-            return serializable;
         }
 
         /// <summary>
@@ -122,77 +90,6 @@ namespace Neo.IO
             if (LZ4Codec.Decode(data[4..], result) != length)
                 throw new FormatException();
             return result;
-        }
-
-        /// <summary>
-        /// Gets the size of variable-length of the data.
-        /// </summary>
-        /// <param name="value">The length of the data.</param>
-        /// <returns>The size of variable-length of the data.</returns>
-        public static int GetVarSize(int value)
-        {
-            if (value < 0xFD)
-                return sizeof(byte);
-            else if (value <= 0xFFFF)
-                return sizeof(byte) + sizeof(ushort);
-            else
-                return sizeof(byte) + sizeof(uint);
-        }
-
-        /// <summary>
-        /// Gets the size of the specified array encoded in variable-length encoding.
-        /// </summary>
-        /// <typeparam name="T">The type of the array element.</typeparam>
-        /// <param name="value">The specified array.</param>
-        /// <returns>The size of the array.</returns>
-        public static int GetVarSize<T>(this IReadOnlyCollection<T> value)
-        {
-            int value_size;
-            Type t = typeof(T);
-            if (typeof(ISerializable).IsAssignableFrom(t))
-            {
-                value_size = value.OfType<ISerializable>().Sum(p => p.Size);
-            }
-            else if (t.GetTypeInfo().IsEnum)
-            {
-                int element_size;
-                Type u = t.GetTypeInfo().GetEnumUnderlyingType();
-                if (u == typeof(sbyte) || u == typeof(byte))
-                    element_size = 1;
-                else if (u == typeof(short) || u == typeof(ushort))
-                    element_size = 2;
-                else if (u == typeof(int) || u == typeof(uint))
-                    element_size = 4;
-                else //if (u == typeof(long) || u == typeof(ulong))
-                    element_size = 8;
-                value_size = value.Count * element_size;
-            }
-            else
-            {
-                value_size = value.Count * Marshal.SizeOf<T>();
-            }
-            return GetVarSize(value.Count) + value_size;
-        }
-
-        /// <summary>
-        /// Gets the size of the specified array encoded in variable-length encoding.
-        /// </summary>
-        /// <param name="value">The specified array.</param>
-        /// <returns>The size of the array.</returns>
-        public static int GetVarSize(this ReadOnlyMemory<byte> value)
-        {
-            return GetVarSize(value.Length) + value.Length;
-        }
-
-        /// <summary>
-        /// Gets the size of the specified <see cref="string"/> encoded in variable-length encoding.
-        /// </summary>
-        /// <param name="value">The specified <see cref="string"/>.</param>
-        /// <returns>The size of the <see cref="string"/>.</returns>
-        public static int GetVarSize(this string value)
-        {
-            int size = Utility.StrictUTF8.GetByteCount(value);
-            return GetVarSize(size) + size;
         }
 
         /// <summary>
@@ -311,21 +208,6 @@ namespace Neo.IO
             using MemoryStream ms = new();
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             value.Serialize(writer);
-            writer.Flush();
-            return ms.ToArray();
-        }
-
-        /// <summary>
-        /// Converts an <see cref="ISerializable"/> array to a byte array.
-        /// </summary>
-        /// <typeparam name="T">The type of the array element.</typeparam>
-        /// <param name="value">The <see cref="ISerializable"/> array to be converted.</param>
-        /// <returns>The converted byte array.</returns>
-        public static byte[] ToByteArray<T>(this IReadOnlyCollection<T> value) where T : ISerializable
-        {
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            writer.Write(value);
             writer.Flush();
             return ms.ToArray();
         }
