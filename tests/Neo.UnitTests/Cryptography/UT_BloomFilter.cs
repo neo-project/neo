@@ -78,5 +78,17 @@ namespace Neo.UnitTests.Cryptography
             foreach (byte value in result)
                 value.Should().Be(0);
         }
+
+        [TestMethod]
+        public void TestZeroLengthBits()
+        {
+            int m = 0, n = 3;
+            uint nTweak = 123456;
+            BloomFilter filter = new BloomFilter(m, n, nTweak);
+
+            filter.Add(new byte[] { 1, 2, 3 });
+            filter.Check(new byte[] { 1, 2, 3 }).Should().BeTrue();
+            filter.Check(new byte[] { 1, 2, 3, 4 }).Should().BeTrue(); // FPR is 100% when length is 0 or 1
+        }
     }
 }
