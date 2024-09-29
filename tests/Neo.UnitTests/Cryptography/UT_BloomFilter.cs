@@ -80,15 +80,14 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
-        public void TestZeroLengthBits()
+        public void TestInvalidArguments()
         {
-            int m = 0, n = 3;
             uint nTweak = 123456;
-            BloomFilter filter = new BloomFilter(m, n, nTweak);
+            Action action = () => new BloomFilter(0, 3, nTweak);
+            action.Should().Throw<ArgumentOutOfRangeException>();
 
-            filter.Add(new byte[] { 1, 2, 3 });
-            filter.Check(new byte[] { 1, 2, 3 }).Should().BeTrue();
-            filter.Check(new byte[] { 1, 2, 3, 4 }).Should().BeTrue(); // FPR is 100% when length is 0 or 1
+            action = () => new BloomFilter(3, 0, nTweak);
+            action.Should().Throw<ArgumentOutOfRangeException>();
         }
     }
 }

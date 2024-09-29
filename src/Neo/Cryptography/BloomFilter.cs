@@ -41,12 +41,13 @@ namespace Neo.Cryptography
         /// <summary>
         /// Initializes a new instance of the <see cref="BloomFilter"/> class.
         /// </summary>
-        /// <param name="m">The size of the bit array used by the bloom filter.</param>
-        /// <param name="k">The number of hash functions used by the bloom filter.</param>
+        /// <param name="m">The size of the bit array used by the bloom filter, and must be greater than 0.</param>
+        /// <param name="k">The number of hash functions used by the bloom filter, and must be greater than 0.</param>
         /// <param name="nTweak">Used to generate the seeds of the murmur hash functions.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak)
         {
-            if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
+            if (k <= 0 || m <= 0) throw new ArgumentOutOfRangeException();
             seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
             bits = new BitArray(m)
             {
@@ -58,13 +59,14 @@ namespace Neo.Cryptography
         /// <summary>
         /// Initializes a new instance of the <see cref="BloomFilter"/> class.
         /// </summary>
-        /// <param name="m">The size of the bit array used by the bloom filter.</param>
-        /// <param name="k">The number of hash functions used by the bloom filter.</param>
+        /// <param name="m">The size of the bit array used by the bloom filter, and must be greater than 0.</param>
+        /// <param name="k">The number of hash functions used by the bloom filter, and must be greater than 0.</param>
         /// <param name="nTweak">Used to generate the seeds of the murmur hash functions.</param>
         /// <param name="elements">The initial elements contained in this <see cref="BloomFilter"/> object.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak, ReadOnlyMemory<byte> elements)
         {
-            if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
+            if (k <= 0 || m <= 0) throw new ArgumentOutOfRangeException();
             seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
             bits = new BitArray(elements.ToArray())
             {
@@ -79,8 +81,6 @@ namespace Neo.Cryptography
         /// <param name="element">The object to add to the <see cref="BloomFilter"/>.</param>
         public void Add(ReadOnlyMemory<byte> element)
         {
-            if (bits.Length == 0) return;
-
             foreach (uint i in seeds.AsParallel().Select(s => element.Span.Murmur32(s)))
                 bits.Set((int)(i % (uint)bits.Length), true);
         }
@@ -92,8 +92,6 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if <paramref name="element"/> is found in the <see cref="BloomFilter"/>; otherwise, <see langword="false"/>.</returns>
         public bool Check(byte[] element)
         {
-            if (bits.Length == 0) return true; // FPR is 100% when length is 0
-
             foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
                 if (!bits.Get((int)(i % (uint)bits.Length)))
                     return false;
