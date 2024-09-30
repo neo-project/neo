@@ -747,6 +747,25 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
         }
 
+        [TestMethod]
+        public void TestTryRemoveUnVerified()
+        {
+            AddTransactions(32);
+            _unit.SortedTxCount.Should().Be(32);
+
+            var txs = _unit.GetSortedVerifiedTransactions().ToArray();
+            _unit.InvalidateVerifiedTransactions();
+
+            _unit.SortedTxCount.Should().Be(0);
+
+            foreach (var tx in txs)
+            {
+                _unit.TryRemoveUnVerified(tx.Hash, out _);
+            }
+
+            _unit.UnVerifiedCount.Should().Be(0);
+        }
+
         public static StorageKey CreateStorageKey(int id, byte prefix, byte[] key = null)
         {
             byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
