@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.SmartContract;
@@ -110,7 +111,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 sizeof(byte) +      // PrimaryIndex
                 UInt160.Length +    // NextConsensus
                 1 + _witnessSize +  // Witness
-                IO.Helper.GetVarSize(expectedTransactions);
+                UnsafeData.GetVarSize(expectedTransactions);
         }
     }
 }
