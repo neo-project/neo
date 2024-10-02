@@ -17,4 +17,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.Plugins.DBFTPlugin.Tests" />
+  </ItemGroup>
+
 </Project>

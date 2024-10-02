@@ -14,6 +14,7 @@
     <PackageReference Include="MSTest.TestFramework" Version="3.5.0" />
     <PackageReference Include="Akka.TestKit" Version="1.5.26" />
     <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.26" />
+    <PackageReference Include="NeoFS.API" Version="3.5.0" />
   </ItemGroup>
 
   <ItemGroup>

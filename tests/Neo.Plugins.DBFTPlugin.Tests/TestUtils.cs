@@ -22,12 +22,6 @@ using System;
 
 namespace Neo.Plugins.DBFTPlugin.Tests
 {
-    public class TestNeoSystem : NeoSystem
-    {
-        public TestNeoSystem() : base(ProtocolSettings.Default)
-        {
-        }
-    }
 
     public class TestTimeProvider
     {

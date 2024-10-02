@@ -11,6 +11,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -54,6 +55,13 @@ namespace Neo.Plugins.RpcServer.Tests
                 MaxGasInvoke = 1500_0000_0000,
                 Network = TestProtocolSettings.SoleNode.Network,
             };
+
+            foreach (var (storeKey, storeValue) in _memoryStore._innerData)
+            {
+                Console.WriteLine(storeKey.ToHexString());
+                Console.WriteLine(storeValue.ToHexString());
+            }
+
             _rpcServer = new RpcServer(_neoSystem, _rpcServerSettings);
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);

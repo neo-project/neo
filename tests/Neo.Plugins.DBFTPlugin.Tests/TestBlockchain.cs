@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Neo.Ledger;
 using Neo.Persistence;
-using Neo.UnitTests;
 using System;
 
 namespace Neo.Plugins.DBFTPlugin.Tests

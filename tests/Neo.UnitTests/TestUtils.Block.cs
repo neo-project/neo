@@ -13,6 +13,7 @@ using Akka.Util.Internal;
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -99,6 +100,7 @@ public partial class TestUtils
         var block = new Block();
         var header = new Header();
         var state = snapshot.TryGet(NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)).GetInteroperable<HashIndexState>();
+
         SetupHeaderWithValues(snapshot, header, state.Hash, out _, out _, out _, out _, out _, out _);
 
         block.Header = header;

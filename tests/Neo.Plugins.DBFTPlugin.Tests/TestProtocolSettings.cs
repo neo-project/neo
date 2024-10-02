@@ -11,7 +11,7 @@
 
 using Neo.Cryptography.ECC;
 
-namespace Neo.UnitTests
+namespace Neo.Plugins.DBFTPlugin.Tests
 {
     public static class TestProtocolSettings
     {
@@ -19,16 +19,17 @@ namespace Neo.UnitTests
         {
             Network = 5195086u,
             AddressVersion = ProtocolSettings.Default.AddressVersion,
-            StandbyCommittee =
-            [
+            StandbyCommittee = new[]
+            {
                 //Validators
-                ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1),
-                ECPoint.Parse("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093", ECCurve.Secp256r1),
-                ECPoint.Parse("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a", ECCurve.Secp256r1),
-                ECPoint.Parse("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554", ECCurve.Secp256r1),
-                ECPoint.Parse("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", ECCurve.Secp256r1),
-                ECPoint.Parse("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", ECCurve.Secp256r1),
-                ECPoint.Parse("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", ECCurve.Secp256r1),
+                ECPoint.Parse("0327708fd7a39d384cd1cc48803a084a43d3b5013ada9de299a12e7b7afccfa013", ECCurve.Secp256r1),
+                ECPoint.Parse("02e691f222d1867098643aca188a3d290c2da98af9e1bcf94b35d67322c034988d", ECCurve.Secp256r1),
+                ECPoint.Parse("03e556db7d519f65f43437251e8fd7df476f2d02a0e3ef3052c298791b7b1d812d", ECCurve.Secp256r1),
+                ECPoint.Parse("030459831e43793a1f7a104692cd944eaa475b03a0c5298d9fbbca136c8268f978", ECCurve.Secp256r1),
+                ECPoint.Parse("03f01c078f19887a525897ec6503f310170deab72c4ae672eef0ac45f46b082eee", ECCurve.Secp256r1),
+                ECPoint.Parse("02226db3e9fe07d83ccedae8fd8f8cc12aff4ef541f06fedf9caa1828683829b9e", ECCurve.Secp256r1),
+                ECPoint.Parse("03cce2da0e69b79d1aa5bec1378497be41567feac5f2dfb754b46fa421ec08c49e", ECCurve.Secp256r1),
+
                 //Other Members
                 ECPoint.Parse("023a36c72844610b4d34d1968662424011bf783ca9d984efa19a20babf5582f3fe", ECCurve.Secp256r1),
                 ECPoint.Parse("03708b860c1de5d87f5b151a12c2a99feebd2e8b315ee8e7cf8aa19692a9e18379", ECCurve.Secp256r1),
@@ -44,15 +45,17 @@ namespace Neo.UnitTests
                 ECPoint.Parse("0226933336f1b75baa42d42b71d9091508b638046d19abd67f4e119bf64a7cfb4d", ECCurve.Secp256r1),
                 ECPoint.Parse("03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc", ECCurve.Secp256r1),
                 ECPoint.Parse("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a", ECCurve.Secp256r1)
-            ],
+            },
             ValidatorsCount = 7,
             SeedList =
             [
-                "seed1.neo.org:10333",
-                "seed2.neo.org:10333",
-                "seed3.neo.org:10333",
-                "seed4.neo.org:10333",
-                "seed5.neo.org:10333"
+                "127.0.0.1:30333",
+                "127.0.0.1:30334",
+                "127.0.0.1:30335",
+                "127.0.0.1:30336",
+                "127.0.0.1:30337",
+                "127.0.0.1:30338",
+                "127.0.0.1:30339",
             ],
             MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
             MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,

@@ -186,6 +186,4 @@ namespace Neo.Plugins.DBFTPlugin.Tests
             TestTimeProvider.Current.UtcNow.ToTimestampMS().Should().Be(0);
         }
     }
-
-
 }

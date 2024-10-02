@@ -28,9 +28,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
     public partial class ConsensusService : UntypedActor
     {
         public class Start { }
-        private class Timer { public uint Height; public byte ViewNumber; }
+        internal class Timer { public uint Height; public byte ViewNumber; }
 
-        private readonly ConsensusContext context;
+        internal readonly ConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
         private readonly IActorRef blockchain;
@@ -38,6 +38,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private DateTime block_received_time;
         private uint block_received_index;
         private bool started = false;
+
+        internal bool IsStarted => started;
 
         /// <summary>
         /// This will record the information from last scheduled timer
