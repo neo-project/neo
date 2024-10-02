@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2024 The Neo Project.
 //
 // Ed25519.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,11 +10,11 @@
 // modifications are permitted.
 
 using Org.BouncyCastle.Crypto.Generators;
-using System;
-using System.Linq;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Security;
+using System;
+using System.Linq;
 
 namespace Neo.Cryptography;
 
