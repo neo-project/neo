@@ -257,3 +257,7 @@ paket-files/
 PublishProfiles
 /.vscode
 launchSettings.json
+
+# UT coverage report
+/coverages
+**/.DS_Store
