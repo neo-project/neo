@@ -35,5 +35,12 @@ namespace Neo.Extensions.Tests
             byte[] bytes = str2.HexToBytes();
             bytes.ToHexString().Should().Be(new byte[] { 0x01, 0x02 }.ToHexString());
         }
+
+        [TestMethod]
+        public void TestGetVarSizeString()
+        {
+            int result = "AA".GetVarSize();
+            Assert.AreEqual(3, result);
+        }
     }
 }

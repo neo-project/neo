@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.IO;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Caching;
 using System;
