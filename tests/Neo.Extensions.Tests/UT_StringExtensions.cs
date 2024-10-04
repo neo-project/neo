@@ -42,5 +42,29 @@ namespace Neo.Extensions.Tests
             int result = "AA".GetVarSize();
             Assert.AreEqual(3, result);
         }
+
+        [TestMethod]
+        public void TestConstantTimeEquals()
+        {
+            string str1 = "AA";
+            string str2 = "AA";
+            str1.ConstantTimeEquals(str2).Should().BeTrue();
+
+            str1 = "AB";
+            str2 = "AA";
+            str1.ConstantTimeEquals(str2).Should().BeFalse();
+
+            str1 = "AB";
+            str2 = null;
+            str1.ConstantTimeEquals(str2).Should().BeFalse();
+
+            str1 = null;
+            str2 = "AA";
+            str1.ConstantTimeEquals(str2).Should().BeFalse();
+
+            str1 = null;
+            str2 = null;
+            str1.ConstantTimeEquals(str2).Should().BeTrue();
+        }
     }
 }

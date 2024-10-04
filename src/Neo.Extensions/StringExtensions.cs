@@ -43,5 +43,30 @@ namespace Neo.Extensions
             var size = Utility.StrictUTF8.GetByteCount(value);
             return UnsafeData.GetVarSize(size) + size;
         }
+
+        /// <summary>
+        /// Compares two <see cref="string"/>s for equality in constant time.
+        /// </summary>
+        /// <param name="left">The left <see cref="string"/>.</param>
+        /// <param name="right">The right <see cref="string"/>.</param>
+        /// <returns>True if the two <see cref="string"/>s are equal, false otherwise.</returns>
+        public static bool ConstantTimeEquals(this string left, string right)
+        {
+            if (left == null && right == null)
+                return true;
+
+            if (left == null || right == null)
+                return false;
+
+            if (left.Length != right.Length)
+                return false;
+
+            var lhs = left.AsSpan();
+            var rhs = right.AsSpan();
+            var result = 0;
+            for (var i = 0; i < lhs.Length; i++)
+                result |= lhs[i] ^ rhs[i];
+            return result == 0;
+        }
     }
 }

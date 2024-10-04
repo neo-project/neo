@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P;
 using System;
@@ -79,7 +80,7 @@ namespace Neo.Plugins.RpcServer
             if (authvalues.Length < 2)
                 return false;
 
-            return authvalues[0] == settings.RpcUser && authvalues[1] == settings.RpcPass;
+            return authvalues[0].ConstantTimeEquals(settings.RpcUser) && authvalues[1].ConstantTimeEquals(settings.RpcPass);
         }
 
         private static JObject CreateErrorResponse(JToken id, RpcError rpcError)
