@@ -154,12 +154,12 @@ namespace Neo
             store = storageProvider.GetStore(null);
             MemPool = new MemoryPool(this);
 
-/* Unmerged change from project 'Neo(net8.0)'
-Before:
-            Blockchain =blockchain;
-After:
-            Blockchain = blockchain;
-*/
+            /* Unmerged change from project 'Neo(net8.0)'
+            Before:
+                        Blockchain =blockchain;
+            After:
+                        Blockchain = blockchain;
+            */
             Blockchain = blockchain;
             LocalNode = localNode;
             TaskManager = taskManager;

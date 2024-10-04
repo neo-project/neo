@@ -39,7 +39,7 @@ public partial class UT_DBFT
     private readonly ECPoint[] _testValidators;
     private UInt160 _testNextConsensus;
     private int _primaryIndex = 0;
-    private const int CurrentIndex = 0;
+    private static int s_currentIndex = 0;
 
     private TestWalletProvider[] _walletProviders;
     private readonly NEP6Wallet[] _wallets;
@@ -84,8 +84,8 @@ public partial class UT_DBFT
         SetupMocks();
         SetupTaskManagerMock();
         SetupTxRouterMock();
-        _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider, _mockLocalNode.TestActor, _mockBlockchain.TestActor, _mockTaskManager.Object, _txRouter.Object);
-        _consensusService = ActorOfAsTestActorRef<ConsensusService>(ConsensusService.Props(_neoSystem, _testSettings, _wallets[CurrentIndex]));
+        _neoSystem = new NeoSystem(TestProtocolSettings.Default, _memoryStoreProvider, _mockLocalNode.TestActor, _mockBlockchain.TestActor, _mockTaskManager.Object, _txRouter.Object);
+        _consensusService = ActorOfAsTestActorRef<ConsensusService>(ConsensusService.Props(_neoSystem, _testSettings, _wallets[s_currentIndex]));
     }
 
     private ConsensusContext ConsensusContext

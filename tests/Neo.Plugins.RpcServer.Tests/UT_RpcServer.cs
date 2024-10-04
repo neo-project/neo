@@ -47,28 +47,29 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
-            _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
+            _neoSystem = new NeoSystem(TestProtocolSettings.Default, _memoryStoreProvider);
             _rpcServerSettings = RpcServerSettings.Default with
             {
                 SessionEnabled = true,
                 SessionExpirationTime = TimeSpan.FromSeconds(0.3),
                 MaxGasInvoke = 1500_0000_0000,
-                Network = TestProtocolSettings.SoleNode.Network,
+                Network = TestProtocolSettings.Default.Network,
             };
+
+
+            _rpcServer = new RpcServer(_neoSystem, _rpcServerSettings);
+            _walletAccount = _wallet.Import("L4Bh3SH8btGSXDGwjhmpCsNhkYctahNgkuTF1uDJpKkeyZFJpsEi");
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
 
             foreach (var (storeKey, storeValue) in _memoryStore._innerData)
             {
                 Console.WriteLine(storeKey.ToHexString());
                 Console.WriteLine(storeValue.ToHexString());
             }
-
-            _rpcServer = new RpcServer(_neoSystem, _rpcServerSettings);
-            _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
-            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
-            var snapshot = _neoSystem.GetSnapshotCache();
-            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
-            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
-            snapshot.Commit();
         }
 
         [TestCleanup]
