@@ -24,6 +24,10 @@ public class Ed25519
     private const int PrivateKeySize = 32;
     internal const int SignatureSize = 64;
 
+    /// <summary>
+    /// Generates a new Ed25519 key pair.
+    /// </summary>
+    /// <returns>A byte array containing the private key.</returns>
     public static byte[] GenerateKeyPair()
     {
         var keyPairGenerator = new Ed25519KeyPairGenerator();
@@ -32,6 +36,12 @@ public class Ed25519
         return ((Ed25519PrivateKeyParameters)keyPair.Private).GetEncoded();
     }
 
+    /// <summary>
+    /// Derives the public key from a given private key.
+    /// </summary>
+    /// <param name="privateKey">The private key as a byte array.</param>
+    /// <returns>The corresponding public key as a byte array.</returns>
+    /// <exception cref="ArgumentException">Thrown when the private key size is invalid.</exception>
     public static byte[] GetPublicKey(byte[] privateKey)
     {
         if (privateKey.Length != PrivateKeySize)
@@ -41,7 +51,17 @@ public class Ed25519
         return privateKeyParams.GeneratePublicKey().GetEncoded();
     }
 
-    public static byte[] Sign(byte[] message, byte[] privateKey)
+    /// <summary>
+    /// Signs a message using the provided private key.
+    /// Parameters are in the same order as the sample in the Ed25519 specification
+    /// Ed25519.sign(privkey, pubkey, msg) with pubkey omitted
+    /// ref. https://datatracker.ietf.org/doc/html/rfc8032.
+    /// </summary>
+    /// <param name="privateKey">The private key used for signing.</param>
+    /// <param name="message">The message to be signed.</param>
+    /// <returns>The signature as a byte array.</returns>
+    /// <exception cref="ArgumentException">Thrown when the private key size is invalid.</exception>
+    public static byte[] Sign(byte[] privateKey, byte[] message)
     {
         if (privateKey.Length != PrivateKeySize)
             throw new ArgumentException("Invalid private key size", nameof(privateKey));
@@ -52,7 +72,18 @@ public class Ed25519
         return signer.GenerateSignature();
     }
 
-    public static bool Verify(byte[] message, byte[] signature, byte[] publicKey)
+    /// <summary>
+    /// Verifies an Ed25519 signature for a given message using the provided public key.
+    /// Parameters are in the same order as the sample in the Ed25519 specification
+    /// Ed25519.verify(public, msg, signature)
+    /// ref. https://datatracker.ietf.org/doc/html/rfc8032.
+    /// </summary>
+    /// <param name="publicKey">The 32-byte public key used for verification.</param>
+    /// <param name="message">The message that was signed.</param>
+    /// <param name="signature">The 64-byte signature to verify.</param>
+    /// <returns>True if the signature is valid for the given message and public key; otherwise, false.</returns>
+    /// <exception cref="ArgumentException">Thrown when the signature or public key size is invalid.</exception>
+    public static bool Verify(byte[] publicKey, byte[] message, byte[] signature)
     {
         if (signature.Length != SignatureSize)
             throw new ArgumentException("Invalid signature size", nameof(signature));

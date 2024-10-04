@@ -55,8 +55,39 @@ namespace Neo.UnitTests.Cryptography
             signature.Should().NotBeNull();
             signature.Length.Should().Be(Ed25519.SignatureSize);
 
-            bool isValid = Ed25519.Verify(message, signature, publicKey);
+            bool isValid = Ed25519.Verify(publicKey, message, signature);
             isValid.Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void TestFailedVerify()
+        {
+            byte[] privateKey = Ed25519.GenerateKeyPair();
+            byte[] publicKey = Ed25519.GetPublicKey(privateKey);
+            byte[] message = Encoding.UTF8.GetBytes("Hello, Neo!");
+
+            byte[] signature = Ed25519.Sign(message, privateKey);
+
+            // Tamper with the message
+            byte[] tamperedMessage = Encoding.UTF8.GetBytes("Hello, Neo?");
+
+            bool isValid = Ed25519.Verify(publicKey, tamperedMessage, signature);
+            isValid.Should().BeFalse();
+
+            // Tamper with the signature
+            byte[] tamperedSignature = new byte[signature.Length];
+            Array.Copy(signature, tamperedSignature, signature.Length);
+            tamperedSignature[0] ^= 0x01; // Flip one bit
+
+            isValid = Ed25519.Verify(publicKey, message, tamperedSignature);
+            isValid.Should().BeFalse();
+
+            // Use wrong public key
+            byte[] wrongPrivateKey = Ed25519.GenerateKeyPair();
+            byte[] wrongPublicKey = Ed25519.GetPublicKey(wrongPrivateKey);
+
+            isValid = Ed25519.Verify(wrongPublicKey, message, signature);
+            isValid.Should().BeFalse();
         }
 
         [TestMethod]
@@ -73,7 +104,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] message = Encoding.UTF8.GetBytes("Test message");
             byte[] invalidSignature = new byte[63]; // Invalid size
             byte[] publicKey = new byte[Ed25519.PublicKeySize];
-            Action act = () => Ed25519.Verify(message, invalidSignature, publicKey);
+            Action act = () => Ed25519.Verify(publicKey, message, invalidSignature);
             act.Should().Throw<ArgumentException>().WithMessage("Invalid signature size*");
         }
 
@@ -83,7 +114,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] message = Encoding.UTF8.GetBytes("Test message");
             byte[] signature = new byte[Ed25519.SignatureSize];
             byte[] invalidPublicKey = new byte[31]; // Invalid size
-            Action act = () => Ed25519.Verify(message, signature, invalidPublicKey);
+            Action act = () => Ed25519.Verify(invalidPublicKey, message, signature);
             act.Should().Throw<ArgumentException>().WithMessage("Invalid public key size*");
         }
 
@@ -101,7 +132,7 @@ namespace Neo.UnitTests.Cryptography
 
             Ed25519.GetPublicKey(privateKey).Should().Equal(publicKey);
             Ed25519.Sign(message, privateKey).Should().Equal(signature);
-            Ed25519.Verify(message, signature, publicKey).Should().BeTrue();
+            Ed25519.Verify(publicKey, message, signature).Should().BeTrue();
         }
 
         [TestMethod]
@@ -115,7 +146,7 @@ namespace Neo.UnitTests.Cryptography
 
             Ed25519.GetPublicKey(privateKey).Should().Equal(publicKey);
             Ed25519.Sign(message, privateKey).Should().Equal(signature);
-            Ed25519.Verify(message, signature, publicKey).Should().BeTrue();
+            Ed25519.Verify(publicKey, message, signature).Should().BeTrue();
         }
 
         [TestMethod]
@@ -123,13 +154,13 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] privateKey = "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7".HexToBytes();
             byte[] publicKey = "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025".HexToBytes();
-            byte[] message = new byte[] { 0xaf, 0x82 };
+            byte[] message = [0xaf, 0x82];
             byte[] signature = ("6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac" +
                                 "18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a").HexToBytes();
 
             Ed25519.GetPublicKey(privateKey).Should().Equal(publicKey);
             Ed25519.Sign(message, privateKey).Should().Equal(signature);
-            Ed25519.Verify(message, signature, publicKey).Should().BeTrue();
+            Ed25519.Verify(publicKey, message, signature).Should().BeTrue();
         }
     }
 }

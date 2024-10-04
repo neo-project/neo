@@ -122,22 +122,29 @@ namespace Neo.SmartContract.Native
         /// Verifies that a digital signature is appropriate for the provided key and message using the Ed25519 algorithm.
         /// </summary>
         /// <param name="message">The signed message.</param>
+        /// <param name="publicKey">The Ed25519 public key to be used.</param>
         /// <param name="signature">The signature to be verified.</param>
-        /// <param name="publicKey">The public key to be used.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15)]
-        public static bool VerifyWithEd25519(byte[] message, byte[] signature, byte[] publicKey)
+        public static bool VerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
         {
             if (signature.Length != Ed25519.SignatureSize)
-                throw new ArgumentException("Invalid signature size", nameof(signature));
+                return false;
 
             if (publicKey.Length != Ed25519.PublicKeySize)
-                throw new ArgumentException("Invalid public key size", nameof(publicKey));
+                return false;
 
-            var verifier = new Ed25519Signer();
-            verifier.Init(false, new Ed25519PublicKeyParameters(publicKey, 0));
-            verifier.BlockUpdate(message, 0, message.Length);
-            return verifier.VerifySignature(signature);
+            try
+            {
+                var verifier = new Ed25519Signer();
+                verifier.Init(false, new Ed25519PublicKeyParameters(publicKey, 0));
+                verifier.BlockUpdate(message, 0, message.Length);
+                return verifier.VerifySignature(signature);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }
