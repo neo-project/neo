@@ -27,6 +27,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Security;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,10 +46,18 @@ namespace Neo.Plugins.RpcServer
         private readonly NeoSystem system;
         private readonly LocalNode localNode;
 
+        // avoid GetBytes every time
+        private readonly byte[] _rpcUser;
+        private readonly byte[] _rpcPass;
+
         public RpcServer(NeoSystem system, RpcServerSettings settings)
         {
             this.system = system;
             this.settings = settings;
+
+            _rpcUser = settings.RpcUser is not null ? Encoding.UTF8.GetBytes(settings.RpcUser) : [];
+            _rpcPass = settings.RpcPass is not null ? Encoding.UTF8.GetBytes(settings.RpcPass) : [];
+
             localNode = system.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
             RegisterMethods(this);
             Initialize_SmartContract();
@@ -66,21 +75,24 @@ namespace Neo.Plugins.RpcServer
                 return false;
             }
 
-            string authstring;
+            byte[] auths;
             try
             {
-                authstring = Encoding.UTF8.GetString(Convert.FromBase64String(reqauth.Replace("Basic ", "").Trim()));
+                auths = Convert.FromBase64String(reqauth.Replace("Basic ", "").Trim());
             }
             catch
             {
                 return false;
             }
 
-            string[] authvalues = authstring.Split(new string[] { ":" }, StringSplitOptions.RemoveEmptyEntries);
-            if (authvalues.Length < 2)
+            int colonIndex = Array.IndexOf(auths, (byte)':');
+            if (colonIndex == -1)
                 return false;
 
-            return authvalues[0].ConstantTimeEquals(settings.RpcUser) && authvalues[1].ConstantTimeEquals(settings.RpcPass);
+            byte[] user = auths[..colonIndex];
+            byte[] pass = auths[(colonIndex + 1)..];
+
+            return CryptographicOperations.FixedTimeEquals(user, _rpcUser) && CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
         }
 
         private static JObject CreateErrorResponse(JToken id, RpcError rpcError)
