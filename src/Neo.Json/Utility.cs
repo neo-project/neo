@@ -11,16 +11,17 @@
 
 using System.Text;
 
-namespace Neo.Json;
-
-static class Utility
+namespace Neo.Json
 {
-    public static Encoding StrictUTF8 { get; }
-
-    static Utility()
+    static class Utility
     {
-        StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
-        StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
-        StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
+        public static Encoding StrictUTF8 { get; }
+
+        static Utility()
+        {
+            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
+            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
+            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
+        }
     }
 }

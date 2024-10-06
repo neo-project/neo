@@ -12,63 +12,64 @@
 using System.Runtime.CompilerServices;
 using static Neo.Cryptography.BLS12_381.MillerLoopUtility;
 
-namespace Neo.Cryptography.BLS12_381;
-
-partial class G2Prepared
+namespace Neo.Cryptography.BLS12_381
 {
-    class Adder : IMillerLoopDriver<object?>
+    partial class G2Prepared
     {
-        public G2Projective Curve;
-        public readonly G2Affine Base;
-        public readonly List<(Fp2, Fp2, Fp2)> Coeffs;
-
-        public Adder(in G2Affine q)
+        class Adder : IMillerLoopDriver<object?>
         {
-            Curve = new G2Projective(in q);
-            Base = q;
-            Coeffs = new(68);
-        }
+            public G2Projective Curve;
+            public readonly G2Affine Base;
+            public readonly List<(Fp2, Fp2, Fp2)> Coeffs;
 
-        object? IMillerLoopDriver<object?>.DoublingStep(in object? f)
-        {
-            var coeffs = DoublingStep(ref Curve);
-            Coeffs.Add(coeffs);
-            return null;
-        }
+            public Adder(in G2Affine q)
+            {
+                Curve = new G2Projective(in q);
+                Base = q;
+                Coeffs = new(68);
+            }
 
-        object? IMillerLoopDriver<object?>.AdditionStep(in object? f)
-        {
-            var coeffs = AdditionStep(ref Curve, in Base);
-            Coeffs.Add(coeffs);
-            return null;
-        }
+            object? IMillerLoopDriver<object?>.DoublingStep(in object? f)
+            {
+                var coeffs = DoublingStep(ref Curve);
+                Coeffs.Add(coeffs);
+                return null;
+            }
 
-        #region IMillerLoopDriver<T>
+            object? IMillerLoopDriver<object?>.AdditionStep(in object? f)
+            {
+                var coeffs = AdditionStep(ref Curve, in Base);
+                Coeffs.Add(coeffs);
+                return null;
+            }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object? Square(in object? f) => null;
+            #region IMillerLoopDriver<T>
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object? Conjugate(in object? f) => null;
-
-        public static object? One
-        {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => null;
-        }
+            public static object? Square(in object? f) => null;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        object? IMillerLoopDriver<object?>.Square(in object? f) => null;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        object? IMillerLoopDriver<object?>.Conjugate(in object? f) => null;
-
-        object? IMillerLoopDriver<object?>.One
-        {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => null;
-        }
+            public static object? Conjugate(in object? f) => null;
 
-        #endregion
+            public static object? One
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => null;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            object? IMillerLoopDriver<object?>.Square(in object? f) => null;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            object? IMillerLoopDriver<object?>.Conjugate(in object? f) => null;
+
+            object? IMillerLoopDriver<object?>.One
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => null;
+            }
+
+            #endregion
+        }
     }
 }

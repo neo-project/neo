@@ -11,51 +11,52 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Neo.Plugins.RpcServer.Model;
-
-public class BlockHashOrIndex
+namespace Neo.Plugins.RpcServer.Model
 {
-    private readonly object _value;
-
-    public BlockHashOrIndex(uint index)
+    public class BlockHashOrIndex
     {
-        _value = index;
-    }
+        private readonly object _value;
 
-    public BlockHashOrIndex(UInt256 hash)
-    {
-        _value = hash;
-    }
-
-    public bool IsIndex => _value is uint;
-
-    public static bool TryParse(string value, [NotNullWhen(true)] out BlockHashOrIndex blockHashOrIndex)
-    {
-        if (uint.TryParse(value, out var index))
+        public BlockHashOrIndex(uint index)
         {
-            blockHashOrIndex = new BlockHashOrIndex(index);
-            return true;
+            _value = index;
         }
-        if (UInt256.TryParse(value, out var hash))
+
+        public BlockHashOrIndex(UInt256 hash)
         {
-            blockHashOrIndex = new BlockHashOrIndex(hash);
-            return true;
+            _value = hash;
         }
-        blockHashOrIndex = null;
-        return false;
-    }
 
-    public uint AsIndex()
-    {
-        if (_value is uint intValue)
-            return intValue;
-        throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid block index"));
-    }
+        public bool IsIndex => _value is uint;
 
-    public UInt256 AsHash()
-    {
-        if (_value is UInt256 hash)
-            return hash;
-        throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid block hash"));
+        public static bool TryParse(string value, [NotNullWhen(true)] out BlockHashOrIndex blockHashOrIndex)
+        {
+            if (uint.TryParse(value, out var index))
+            {
+                blockHashOrIndex = new BlockHashOrIndex(index);
+                return true;
+            }
+            if (UInt256.TryParse(value, out var hash))
+            {
+                blockHashOrIndex = new BlockHashOrIndex(hash);
+                return true;
+            }
+            blockHashOrIndex = null;
+            return false;
+        }
+
+        public uint AsIndex()
+        {
+            if (_value is uint intValue)
+                return intValue;
+            throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid block index"));
+        }
+
+        public UInt256 AsHash()
+        {
+            if (_value is UInt256 hash)
+                return hash;
+            throw new RpcException(RpcError.InvalidParams.WithData($"Value {_value} is not a valid block hash"));
+        }
     }
 }

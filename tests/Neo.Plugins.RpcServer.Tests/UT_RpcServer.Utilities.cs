@@ -23,32 +23,33 @@ using System;
 using System.IO;
 using System.Linq;
 
-namespace Neo.Plugins.RpcServer.Tests;
-
-public partial class UT_RpcServer
+namespace Neo.Plugins.RpcServer.Tests
 {
-    [TestMethod]
-    public void TestListPlugins()
+    public partial class UT_RpcServer
     {
-        JArray resp = (JArray)_rpcServer.ListPlugins([]);
-        Assert.AreEqual(resp.Count, 0);
-        Plugins.Plugin.Plugins.Add(new RpcServerPlugin());
-        resp = (JArray)_rpcServer.ListPlugins([]);
-        Assert.AreEqual(resp.Count, 2);
-        foreach (JObject p in resp)
-            Assert.AreEqual(p["name"], nameof(RpcServer));
-    }
+        [TestMethod]
+        public void TestListPlugins()
+        {
+            JArray resp = (JArray)_rpcServer.ListPlugins([]);
+            Assert.AreEqual(resp.Count, 0);
+            Plugins.Plugin.Plugins.Add(new RpcServerPlugin());
+            resp = (JArray)_rpcServer.ListPlugins([]);
+            Assert.AreEqual(resp.Count, 2);
+            foreach (JObject p in resp)
+                Assert.AreEqual(p["name"], nameof(RpcServer));
+        }
 
-    [TestMethod]
-    public void TestValidateAddress()
-    {
-        string validAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP";
-        JObject resp = (JObject)_rpcServer.ValidateAddress([validAddr]);
-        Assert.AreEqual(resp["address"], validAddr);
-        Assert.AreEqual(resp["isvalid"], true);
-        string invalidAddr = "ANeo2toNeo3MigrationAddressxwPB2Hz";
-        resp = (JObject)_rpcServer.ValidateAddress([invalidAddr]);
-        Assert.AreEqual(resp["address"], invalidAddr);
-        Assert.AreEqual(resp["isvalid"], false);
+        [TestMethod]
+        public void TestValidateAddress()
+        {
+            string validAddr = "NM7Aky765FG8NhhwtxjXRx7jEL1cnw7PBP";
+            JObject resp = (JObject)_rpcServer.ValidateAddress([validAddr]);
+            Assert.AreEqual(resp["address"], validAddr);
+            Assert.AreEqual(resp["isvalid"], true);
+            string invalidAddr = "ANeo2toNeo3MigrationAddressxwPB2Hz";
+            resp = (JObject)_rpcServer.ValidateAddress([invalidAddr]);
+            Assert.AreEqual(resp["address"], invalidAddr);
+            Assert.AreEqual(resp["isvalid"], false);
+        }
     }
 }

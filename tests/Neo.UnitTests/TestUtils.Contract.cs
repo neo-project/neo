@@ -14,92 +14,93 @@ using Neo.SmartContract.Manifest;
 using System;
 using System.Linq;
 
-namespace Neo.UnitTests;
-
-partial class TestUtils
+namespace Neo.UnitTests
 {
-    public static ContractManifest CreateDefaultManifest()
+    partial class TestUtils
     {
-        return new ContractManifest
+        public static ContractManifest CreateDefaultManifest()
         {
-            Name = "testManifest",
-            Groups = [],
-            SupportedStandards = [],
-            Abi = new ContractAbi
+            return new ContractManifest
             {
-                Events = [],
-                Methods =
-                [
-                    new ContractMethodDescriptor
-                    {
-                        Name = "testMethod",
-                        Parameters = [],
-                        ReturnType = ContractParameterType.Void,
-                        Offset = 0,
-                        Safe = true
-                    }
-                ]
-            },
-            Permissions = [ContractPermission.DefaultPermission],
-            Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
-            Extra = null
-        };
-    }
-
-    public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
-    {
-        var manifest = CreateDefaultManifest();
-        manifest.Abi.Methods =
-        [
-            new ContractMethodDescriptor()
-            {
-                Name = method,
-                Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                Name = "testManifest",
+                Groups = [],
+                SupportedStandards = [],
+                Abi = new ContractAbi
                 {
-                    Name = $"p{i}",
-                    Type = p
-                }).ToArray(),
-                ReturnType = returnType
-            }
-        ];
-        return manifest;
-    }
+                    Events = [],
+                    Methods =
+                    [
+                        new ContractMethodDescriptor
+                        {
+                            Name = "testMethod",
+                            Parameters = [],
+                            ReturnType = ContractParameterType.Void,
+                            Offset = 0,
+                            Safe = true
+                        }
+                    ]
+                },
+                Permissions = [ContractPermission.DefaultPermission],
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
+                Extra = null
+            };
+        }
 
-    public static ContractState GetContract(string method = "test", int parametersCount = 0)
-    {
-        NefFile nef = new()
+        public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
         {
-            Compiler = "",
-            Source = "",
-            Tokens = [],
-            Script = new byte[] { 0x01, 0x01, 0x01, 0x01 }
-        };
-        nef.CheckSum = NefFile.ComputeChecksum(nef);
-        return new ContractState
-        {
-            Id = 0x43000000,
-            Nef = nef,
-            Hash = nef.Script.Span.ToScriptHash(),
-            Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
-        };
-    }
+            var manifest = CreateDefaultManifest();
+            manifest.Abi.Methods =
+            [
+                new ContractMethodDescriptor()
+                {
+                    Name = method,
+                    Parameters = parameterTypes.Select((p, i) => new ContractParameterDefinition
+                    {
+                        Name = $"p{i}",
+                        Type = p
+                    }).ToArray(),
+                    ReturnType = returnType
+                }
+            ];
+            return manifest;
+        }
 
-    internal static ContractState GetContract(byte[] script, ContractManifest manifest = null)
-    {
-        NefFile nef = new()
+        public static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
-            Compiler = "",
-            Source = "",
-            Tokens = [],
-            Script = script
-        };
-        nef.CheckSum = NefFile.ComputeChecksum(nef);
-        return new ContractState
+            NefFile nef = new()
+            {
+                Compiler = "",
+                Source = "",
+                Tokens = [],
+                Script = new byte[] { 0x01, 0x01, 0x01, 0x01 }
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
+            return new ContractState
+            {
+                Id = 0x43000000,
+                Nef = nef,
+                Hash = nef.Script.Span.ToScriptHash(),
+                Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
+            };
+        }
+
+        internal static ContractState GetContract(byte[] script, ContractManifest manifest = null)
         {
-            Id = 1,
-            Hash = script.ToScriptHash(),
-            Nef = nef,
-            Manifest = manifest ?? CreateDefaultManifest()
-        };
+            NefFile nef = new()
+            {
+                Compiler = "",
+                Source = "",
+                Tokens = [],
+                Script = script
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
+            return new ContractState
+            {
+                Id = 1,
+                Hash = script.ToScriptHash(),
+                Nef = nef,
+                Manifest = manifest ?? CreateDefaultManifest()
+            };
+        }
     }
 }

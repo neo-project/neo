@@ -9,21 +9,22 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Wallets.SQLite;
-
-sealed class SQLiteWalletAccount : WalletAccount
+namespace Neo.Wallets.SQLite
 {
-    public KeyPair Key;
-
-    public override bool HasKey => Key != null;
-
-    public SQLiteWalletAccount(UInt160 scriptHash, ProtocolSettings settings)
-        : base(scriptHash, settings)
+    sealed class SQLiteWalletAccount : WalletAccount
     {
-    }
+        public KeyPair Key;
 
-    public override KeyPair GetKey()
-    {
-        return Key;
+        public override bool HasKey => Key != null;
+
+        public SQLiteWalletAccount(UInt160 scriptHash, ProtocolSettings settings)
+            : base(scriptHash, settings)
+        {
+        }
+
+        public override KeyPair GetKey()
+        {
+            return Key;
+        }
     }
 }

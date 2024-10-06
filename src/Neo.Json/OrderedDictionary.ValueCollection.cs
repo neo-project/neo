@@ -11,41 +11,42 @@
 
 using System.Collections;
 
-namespace Neo.Json;
-
-partial class OrderedDictionary<TKey, TValue>
+namespace Neo.Json
 {
-    class ValueCollection : ICollection<TValue>, IReadOnlyList<TValue>
+    partial class OrderedDictionary<TKey, TValue>
     {
-        private readonly InternalCollection internalCollection;
-
-        public ValueCollection(InternalCollection internalCollection)
+        class ValueCollection : ICollection<TValue>, IReadOnlyList<TValue>
         {
-            this.internalCollection = internalCollection;
+            private readonly InternalCollection internalCollection;
+
+            public ValueCollection(InternalCollection internalCollection)
+            {
+                this.internalCollection = internalCollection;
+            }
+
+            public TValue this[int index] => internalCollection[index].Value;
+
+            public int Count => internalCollection.Count;
+
+            public bool IsReadOnly => true;
+
+            public void Add(TValue item) => throw new NotSupportedException();
+
+            public void Clear() => throw new NotSupportedException();
+
+            public bool Contains(TValue item) => item is null ? internalCollection.Any(p => p is null) : internalCollection.Any(p => item.Equals(p.Value));
+
+            public void CopyTo(TValue[] array, int arrayIndex)
+            {
+                for (int i = 0; i < internalCollection.Count && i + arrayIndex < array.Length; i++)
+                    array[i + arrayIndex] = internalCollection[i].Value;
+            }
+
+            public IEnumerator<TValue> GetEnumerator() => internalCollection.Select(p => p.Value).GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            public bool Remove(TValue item) => throw new NotSupportedException();
         }
-
-        public TValue this[int index] => internalCollection[index].Value;
-
-        public int Count => internalCollection.Count;
-
-        public bool IsReadOnly => true;
-
-        public void Add(TValue item) => throw new NotSupportedException();
-
-        public void Clear() => throw new NotSupportedException();
-
-        public bool Contains(TValue item) => item is null ? internalCollection.Any(p => p is null) : internalCollection.Any(p => item.Equals(p.Value));
-
-        public void CopyTo(TValue[] array, int arrayIndex)
-        {
-            for (int i = 0; i < internalCollection.Count && i + arrayIndex < array.Length; i++)
-                array[i + arrayIndex] = internalCollection[i].Value;
-        }
-
-        public IEnumerator<TValue> GetEnumerator() => internalCollection.Select(p => p.Value).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public bool Remove(TValue item) => throw new NotSupportedException();
     }
 }

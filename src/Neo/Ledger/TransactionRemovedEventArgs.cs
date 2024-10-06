@@ -12,20 +12,21 @@
 using Neo.Network.P2P.Payloads;
 using System.Collections.Generic;
 
-namespace Neo.Ledger;
-
-/// <summary>
-/// Represents the event data of <see cref="MemoryPool.TransactionRemoved"/>.
-/// </summary>
-public sealed class TransactionRemovedEventArgs
+namespace Neo.Ledger
 {
     /// <summary>
-    /// The <see cref="Transaction"/>s that is being removed.
+    /// Represents the event data of <see cref="MemoryPool.TransactionRemoved"/>.
     /// </summary>
-    public IReadOnlyCollection<Transaction> Transactions { get; init; }
+    public sealed class TransactionRemovedEventArgs
+    {
+        /// <summary>
+        /// The <see cref="Transaction"/>s that is being removed.
+        /// </summary>
+        public IReadOnlyCollection<Transaction> Transactions { get; init; }
 
-    /// <summary>
-    /// The reason a transaction was removed.
-    /// </summary>
-    public TransactionRemovalReason Reason { get; init; }
+        /// <summary>
+        /// The reason a transaction was removed.
+        /// </summary>
+        public TransactionRemovalReason Reason { get; init; }
+    }
 }
