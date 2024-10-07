@@ -68,8 +68,18 @@ public class BenchmarkEngine : TestEngine
     {
         while (State != VMState.HALT && State != VMState.FAULT)
         {
+#if DEBUG
+            var stopwatch = Stopwatch.StartNew();
+#endif
             ExecuteNext();
+#if DEBUG
+            stopwatch.Stop();
+            UpdateOpcodeStats(CurrentContext!.CurrentInstruction!.OpCode, stopwatch.Elapsed);
+#endif
         }
+#if DEBUG
+        PrintOpcodeStats();
+#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -83,8 +93,18 @@ public class BenchmarkEngine : TestEngine
             {
                 State = VMState.HALT;
             }
+#if DEBUG
+            var stopwatch = Stopwatch.StartNew();
+#endif
             ExecuteNext();
+#if DEBUG
+            stopwatch.Stop();
+            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+#endif
         }
+#if DEBUG
+        PrintOpcodeStats();
+#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -98,8 +118,18 @@ public class BenchmarkEngine : TestEngine
             {
                 State = VMState.HALT;
             }
+#if DEBUG
+            var stopwatch = Stopwatch.StartNew();
+#endif
             ExecuteNext();
+#if DEBUG
+            stopwatch.Stop();
+            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+#endif
         }
+#if DEBUG
+        PrintOpcodeStats();
+#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -113,12 +143,18 @@ public class BenchmarkEngine : TestEngine
             {
                 State = VMState.HALT;
             }
+#if DEBUG
             var stopwatch = Stopwatch.StartNew();
+#endif
             ExecuteNext();
+#if DEBUG
             stopwatch.Stop();
             UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+#endif
         }
+#if DEBUG
         PrintOpcodeStats();
+#endif
     }
 
     protected override void OnFault(Exception ex)

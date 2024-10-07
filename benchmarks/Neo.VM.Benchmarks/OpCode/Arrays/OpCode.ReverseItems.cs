@@ -51,4 +51,9 @@ public class OpCode_ReverseItems : OpCodeBase
     /// </summary>
     [Benchmark]
     public void Bench_OneGasReverseItems() => Benchmark_Opcode.LoadScript(multiScript).ExecuteOneGASBenchmark();
+
+    protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
+    {
+        throw new NotImplementedException();
+    }
 }

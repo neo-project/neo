@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using Neo.VM.Benchmark;
 using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
@@ -32,6 +32,19 @@ var benchmarkType = typeof(OpCode_ReverseN);
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 
+// Explanation:
+// Benchmark methods must contain no parameters to be valid.
+// This is because we need to be able to invoke these methods repeatedly
+// without any external input. All necessary data should be set up in the Setup method
+// or as properties of the benchmark class.
+
+// Example:
+
+// [Benchmark]
+// public void BenchmarkMethod()
+// {
+//     // Benchmark code here
+// }
 if (Environment.GetEnvironmentVariable("NEO_VM_BENCHMARK") != null || runBenchmark)
 {
     BenchmarkRunner.Run(benchmarkType);
@@ -39,7 +52,8 @@ if (Environment.GetEnvironmentVariable("NEO_VM_BENCHMARK") != null || runBenchma
 else
 {
     var instance = Activator.CreateInstance(benchmarkType);
-    var setupMethod = benchmarkType.GetMethod("Setup", BindingFlags.Public | BindingFlags.Instance);
+    var setupMethod = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        .FirstOrDefault(m => m.GetCustomAttribute<GlobalSetupAttribute>() != null);
     if (setupMethod != null)
     {
         setupMethod.Invoke(instance, null);
@@ -49,7 +63,7 @@ else
 
     foreach (var method in methods)
     {
-        if (method.DeclaringType == benchmarkType && method.Name != "Setup")
+        if (method.DeclaringType == benchmarkType && !method.GetCustomAttributes<GlobalSetupAttribute>().Any())
         {
             method.Invoke(instance, null);
         }

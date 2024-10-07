@@ -30,4 +30,9 @@ public class OpCode_Pack : OpCodeBase
 
     [Benchmark]
     public void Bench_Pack() => Benchmark_Opcode.RunScript(script);
+
+    protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
+    {
+        throw new NotImplementedException();
+    }
 }

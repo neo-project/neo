@@ -61,4 +61,9 @@ public class OpCode_Append : OpCodeBase
     /// </summary>
     [Benchmark]
     public void Bench_OneGasAppend() => Benchmark_Opcode.LoadScript(multiScript).ExecuteOneGASBenchmark();
+
+    protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
+    {
+        throw new NotImplementedException();
+    }
 }

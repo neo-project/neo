@@ -54,4 +54,9 @@ public class OpCode_UnPack : OpCodeBase
     /// </summary>
     [Benchmark]
     public void Bench_OneGasUnpack() => Benchmark_Opcode.LoadScript(multiScript).ExecuteOneGASBenchmark();
+
+    protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
+    {
+        throw new NotImplementedException();
+    }
 }

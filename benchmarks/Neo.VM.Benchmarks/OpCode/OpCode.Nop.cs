@@ -29,4 +29,9 @@ public class OpCode_Nop : OpCodeBase
     /// </summary>
     [Benchmark]
     public void Bench_Nop() => Benchmark_Opcode.RunScript(script);
+
+    protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
+    {
+        throw new NotImplementedException();
+    }
 }
