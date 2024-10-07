@@ -1,0 +1,32 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// OpCode.Nop.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using BenchmarkDotNet.Attributes;
+
+namespace Neo.VM.Benchmark.OpCode;
+
+public class OpCode_Nop : OpCodeBase
+{
+    [GlobalSetup]
+    public void Setup()
+    {
+        var scriptBuilder = new InstructionBuilder();
+        scriptBuilder.AddInstruction(VM.OpCode.NOP);
+
+        script = scriptBuilder.ToArray();
+    }
+
+    /// <summary>
+    /// This benchmark serves as the benchmark baseline since Nop is the simplest opcode.
+    /// </summary>
+    [Benchmark]
+    public void Bench_Nop() => Benchmark_Opcode.RunScript(script);
+}
