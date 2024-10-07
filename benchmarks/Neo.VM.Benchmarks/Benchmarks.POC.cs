@@ -381,7 +381,7 @@ namespace Neo.VM.Benchmark
             // SYSCALL System.Runtime.GetScriptContainer
             // DROP
             // JMP fa
-            Run( "QS1RCDBFIvo=");
+            Run("QS1RCDBFIvo=");
         }
 
         private static void Run(string poc)
