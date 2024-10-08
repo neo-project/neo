@@ -92,7 +92,8 @@ namespace Neo.Plugins.RpcServer
             byte[] user = auths[..colonIndex];
             byte[] pass = auths[(colonIndex + 1)..];
 
-            return CryptographicOperations.FixedTimeEquals(user, _rpcUser) && CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
+            // Execute both checks always but both must be true
+            return CryptographicOperations.FixedTimeEquals(user, _rpcUser) & CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
         }
 
         private static JObject CreateErrorResponse(JToken id, RpcError rpcError)
