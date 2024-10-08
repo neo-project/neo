@@ -92,7 +92,7 @@ namespace Neo.Plugins.RpcServer
             byte[] user = auths[..colonIndex];
             byte[] pass = auths[(colonIndex + 1)..];
 
-            // Execute both checks always but both must be true
+            // Always execute both checks, but both must evaluate to true
             return CryptographicOperations.FixedTimeEquals(user, _rpcUser) & CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
         }
 
