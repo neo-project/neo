@@ -160,7 +160,7 @@ public class BenchmarkEngine : TestEngine
     protected override void OnFault(Exception ex)
     {
         base.OnFault(ex);
-        throw ex;
+        // throw ex;
     }
 
     private void UpdateOpcodeStats(VM.OpCode opcode, TimeSpan elapsed)

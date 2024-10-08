@@ -24,12 +24,6 @@ public class OpCode_Nop : OpCodeBase
         script = scriptBuilder.ToArray();
     }
 
-    /// <summary>
-    /// This benchmark serves as the benchmark baseline since Nop is the simplest opcode.
-    /// </summary>
-    [Benchmark]
-    public void Bench_Nop() => Benchmark_Opcode.RunScript(script);
-
     protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
     {
         throw new NotImplementedException();

@@ -9,27 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using BenchmarkDotNet.Attributes;
-
 namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_Pack : OpCodeBase
 {
-    [GlobalSetup]
-    public void Setup()
-    {
-        var scriptBuilder = new ScriptBuilder();
-        for (var i = 0; i < ItemCount; i++)
-            scriptBuilder.EmitPush(i);
-
-        scriptBuilder.EmitPush(ItemCount);
-        scriptBuilder.Emit(VM.OpCode.PACK);
-
-        script = scriptBuilder.ToArray();
-    }
-
-    [Benchmark]
-    public void Bench_Pack() => Benchmark_Opcode.RunScript(script);
 
     protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
     {

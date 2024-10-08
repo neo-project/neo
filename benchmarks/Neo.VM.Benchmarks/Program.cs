@@ -11,6 +11,7 @@
 
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Neo.VM.Benchmark;
 using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
@@ -19,7 +20,7 @@ using System.Reflection;
 var runBenchmark = true;
 
 // Define the benchmark or execute class
-var benchmarkType = typeof(OpCode_ReverseN);
+var benchmarkType = typeof(Benchmarks_PoCs);
 
 
 /*

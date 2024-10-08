@@ -9,21 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using BenchmarkDotNet.Attributes;
-
 namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_ReverseN : OpCodeBase
 {
-
-    [Benchmark]
-    public void Bench_ReverseN() => Benchmark_Opcode.RunScript(script);
-
-    /// <summary>
-    /// Benchmark how long 1 GAS can run OpCode.REVERSEN.
-    /// </summary>
-    [Benchmark]
-    public void Bench_OneGasReverseN() => Benchmark_Opcode.LoadScript(multiScript).ExecuteOneGASBenchmark();
 
     protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
     {
