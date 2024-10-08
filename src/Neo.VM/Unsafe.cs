@@ -14,7 +14,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
-    unsafe internal static class Unsafe
+    unsafe public static class Unsafe
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(ReadOnlySpan<byte> x)
