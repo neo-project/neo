@@ -17,7 +17,7 @@ using System.Linq;
 namespace Neo.Plugins.Storage.Tests
 {
     [TestClass]
-    public class StoreTest
+    public partial class StoreTest
     {
         private const string path_leveldb = "Data_LevelDB_UT";
         private const string path_rocksdb = "Data_RocksDB_UT";
