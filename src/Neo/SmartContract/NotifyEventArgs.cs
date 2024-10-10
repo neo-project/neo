@@ -63,7 +63,7 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
                 {
@@ -73,7 +73,7 @@ namespace Neo.SmartContract
                 };
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter, ApplicationEngine engine)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter, ApplicationEngine engine)
         {
             if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {

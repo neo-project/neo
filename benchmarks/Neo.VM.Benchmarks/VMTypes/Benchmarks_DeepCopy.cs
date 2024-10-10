@@ -70,7 +70,7 @@ public class Benchmarks_DeepCopy
         _ = root.DeepCopy();
     }
 
-    private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, ReferenceCounter? referenceCounter = null)
+    private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
     {
         if (depth < 0)
         {
@@ -95,7 +95,7 @@ public class Benchmarks_DeepCopy
         }
     }
 
-    private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, ReferenceCounter referenceCounter = null)
+    private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter referenceCounter = null)
     {
         if (depth < 0)
         {

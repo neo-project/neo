@@ -66,7 +66,7 @@ namespace Neo.VM.Types
         /// </summary>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> to be used by this array.</param>
         /// <param name="items">The items to be included in the array.</param>
-        public Array(ReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
+        public Array(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
             : base(referenceCounter)
         {
             _array = items switch

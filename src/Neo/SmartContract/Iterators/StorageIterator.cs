@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Iterators
             return enumerator.MoveNext();
         }
 
-        public StackItem Value(ReferenceCounter referenceCounter)
+        public StackItem Value(IReferenceCounter referenceCounter)
         {
             ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
             ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
