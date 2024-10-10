@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Test.Types;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Benchmark.OpCode;
