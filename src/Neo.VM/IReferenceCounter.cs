@@ -23,5 +23,6 @@ namespace Neo.VM
 
         void AddStackReference(StackItem item, int count = 1);
         void RemoveStackReference(StackItem item);
+        int CheckZeroReferred();
     }
 }

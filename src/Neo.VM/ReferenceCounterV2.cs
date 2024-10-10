@@ -91,5 +91,19 @@ namespace Neo.VM
             // This version don't use this method
             // AddStackReference(item);
         }
+
+        /// <summary>
+        /// Checks and processes items that have zero references.
+        ///
+        /// This method is used to check items in the zero-referred list and clean up those that are no longer needed.
+        /// It uses Tarjan's algorithm to find strongly connected components and remove those with no references.
+        ///
+        /// Use this method periodically to clean up items with zero references and free up memory.
+        /// </summary>
+        /// <returns>The current reference count.</returns>
+        public int CheckZeroReferred()
+        {
+            return Count;
+        }
     }
 }

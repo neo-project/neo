@@ -23,65 +23,65 @@ namespace Neo.VM
     /// </summary>
     public sealed class EvaluationStack : IReadOnlyList<StackItem>
     {
-        private readonly List<StackItem> _innerList = [];
-        private readonly IReferenceCounter _referenceCounter;
+        private readonly List<StackItem> innerList = [];
+        private readonly IReferenceCounter referenceCounter;
 
-        internal IReferenceCounter ReferenceCounter => _referenceCounter;
+        internal IReferenceCounter ReferenceCounter => referenceCounter;
 
         internal EvaluationStack(IReferenceCounter referenceCounter)
         {
-            _referenceCounter = referenceCounter;
+            this.referenceCounter = referenceCounter;
         }
 
         /// <summary>
         /// Gets the number of items on the stack.
         /// </summary>
-        public int Count => _innerList.Count;
+        public int Count => innerList.Count;
 
         internal void Clear()
         {
-            foreach (var item in _innerList)
-                _referenceCounter.RemoveStackReference(item);
-            _innerList.Clear();
+            foreach (var item in innerList)
+                referenceCounter.RemoveStackReference(item);
+            innerList.Clear();
         }
 
         internal void CopyTo(EvaluationStack stack, int count = -1)
         {
-            if (count < -1 || count > _innerList.Count)
+            if (count < -1 || count > innerList.Count)
                 throw new ArgumentOutOfRangeException(nameof(count));
             if (count == 0) return;
-            if (count == -1 || count == _innerList.Count)
-                stack._innerList.AddRange(_innerList);
+            if (count == -1 || count == innerList.Count)
+                stack.innerList.AddRange(innerList);
             else
-                stack._innerList.AddRange(_innerList.Skip(_innerList.Count - count));
+                stack.innerList.AddRange(innerList.Skip(innerList.Count - count));
         }
 
         public IEnumerator<StackItem> GetEnumerator()
         {
-            return _innerList.GetEnumerator();
+            return innerList.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return _innerList.GetEnumerator();
+            return innerList.GetEnumerator();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Insert(int index, StackItem item)
         {
-            if (index > _innerList.Count) throw new InvalidOperationException($"Insert out of bounds: {index}/{_innerList.Count}");
-            _innerList.Insert(_innerList.Count - index, item);
-            _referenceCounter.AddStackReference(item);
+            if (index > innerList.Count) throw new InvalidOperationException($"Insert out of bounds: {index}/{innerList.Count}");
+            innerList.Insert(innerList.Count - index, item);
+            referenceCounter.AddStackReference(item);
         }
 
         internal void MoveTo(EvaluationStack stack, int count = -1)
         {
             if (count == 0) return;
             CopyTo(stack, count);
-            if (count == -1 || count == _innerList.Count)
-                _innerList.Clear();
+            if (count == -1 || count == innerList.Count)
+                innerList.Clear();
             else
-                _innerList.RemoveRange(_innerList.Count - count, count);
+                innerList.RemoveRange(innerList.Count - count, count);
         }
 
         /// <summary>
@@ -92,13 +92,13 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public StackItem Peek(int index = 0)
         {
-            if (index >= _innerList.Count) throw new InvalidOperationException($"Peek out of bounds: {index}/{_innerList.Count}");
+            if (index >= innerList.Count) throw new InvalidOperationException($"Peek out of bounds: {index}/{innerList.Count}");
             if (index < 0)
             {
-                index += _innerList.Count;
-                if (index < 0) throw new InvalidOperationException($"Peek out of bounds: {index}/{_innerList.Count}");
+                index += innerList.Count;
+                if (index < 0) throw new InvalidOperationException($"Peek out of bounds: {index}/{innerList.Count}");
             }
-            return _innerList[_innerList.Count - index - 1];
+            return innerList[innerList.Count - index - 1];
         }
 
         StackItem IReadOnlyList<StackItem>.this[int index] => Peek(index);
@@ -110,17 +110,17 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Push(StackItem item)
         {
-            _innerList.Add(item);
-            _referenceCounter.AddStackReference(item);
+            innerList.Add(item);
+            referenceCounter.AddStackReference(item);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Reverse(int n)
         {
-            if (n < 0 || n > _innerList.Count)
+            if (n < 0 || n > innerList.Count)
                 throw new ArgumentOutOfRangeException(nameof(n));
             if (n <= 1) return;
-            _innerList.Reverse(_innerList.Count - n, n);
+            innerList.Reverse(innerList.Count - n, n);
         }
 
         /// <summary>
@@ -146,25 +146,25 @@ namespace Neo.VM
 
         internal T Remove<T>(int index) where T : StackItem
         {
-            if (index >= _innerList.Count)
+            if (index >= innerList.Count)
                 throw new ArgumentOutOfRangeException(nameof(index));
             if (index < 0)
             {
-                index += _innerList.Count;
+                index += innerList.Count;
                 if (index < 0)
                     throw new ArgumentOutOfRangeException(nameof(index));
             }
-            index = _innerList.Count - index - 1;
-            if (_innerList[index] is not T item)
+            index = innerList.Count - index - 1;
+            if (innerList[index] is not T item)
                 throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
-            _innerList.RemoveAt(index);
-            _referenceCounter.RemoveStackReference(item);
+            innerList.RemoveAt(index);
+            referenceCounter.RemoveStackReference(item);
             return item;
         }
 
         public override string ToString()
         {
-            return $"[{string.Join(", ", _innerList.Select(p => $"{p.Type}({p})"))}]";
+            return $"[{string.Join(", ", innerList.Select(p => $"{p.Type}({p})"))}]";
         }
     }
 }

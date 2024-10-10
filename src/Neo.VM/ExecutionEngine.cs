@@ -34,12 +34,7 @@ namespace Neo.VM
         /// <summary>
         /// Used for reference counting of objects in the VM.
         /// </summary>
-        public ReferenceCounter ReferenceCounter { get; }
-
-        /// <summary>
-        /// Used for reference counting of objects in the VM.
-        /// </summary>
-        public ReferenceCounterV2 ReferenceCounterV2 { get; }
+        public IReferenceCounter ReferenceCounter { get; }
 
         /// <summary>
         /// The invocation stack of the VM.

@@ -158,7 +158,7 @@ namespace Neo.VM
         /// Use this method periodically to clean up items with zero references and free up memory.
         /// </summary>
         /// <returns>The current reference count.</returns>
-        internal int CheckZeroReferred()
+        public int CheckZeroReferred()
         {
             // If there are items with zero references, process them.
             if (_zeroReferred.Count > 0)
