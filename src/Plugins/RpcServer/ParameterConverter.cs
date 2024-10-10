@@ -10,10 +10,13 @@
 // modifications are permitted.
 
 using Neo.Json;
+using Neo.Network.P2P.Payloads;
 using Neo.Plugins.RpcServer.Model;
+using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using JToken = Neo.Json.JToken;
 
 namespace Neo.Plugins.RpcServer;
@@ -39,7 +42,12 @@ public static class ParameterConverter
             { typeof(bool), token => Result.Ok_Or(token.AsBoolean, CreateInvalidParamError<bool>(token)) },
             { typeof(UInt256), ConvertUInt256 },
             { typeof(ContractNameOrHashOrId), ConvertContractNameOrHashOrId },
-            { typeof(BlockHashOrIndex), ConvertBlockHashOrIndex }
+            { typeof(BlockHashOrIndex), ConvertBlockHashOrIndex },
+            { typeof(Signer), ConvertSigner },
+            { typeof(ContractParameter), ConvertContractParameter },
+            { typeof(Signer[]), ConvertSignerArray },
+            { typeof(ContractParameter[]), ConvertContractParameterArray },
+            { typeof(Guid), ConvertGuid }
         };
     }
 
@@ -107,6 +115,23 @@ public static class ParameterConverter
             RpcError.InvalidParams.WithData($"Invalid UInt160 Format: {token}"));
     }
 
+    internal static object ConvertSignerWithWitnessArray(JToken token, ProtocolSettings settings)
+    {
+        if (token is JArray jArray)
+        {
+            return SignerWithWitness.ParseArray(jArray, settings);
+        }
+
+        if (token is JObject jObject)
+        {
+            if (SignerWithWitness.TryParse(jObject, settings, out var signerWithWitness))
+            {
+                return new[] { signerWithWitness };
+            }
+        }
+        throw new RpcException(RpcError.InvalidParams.WithData($"Invalid SignerWithWitness format: {token}"));
+    }
+
     private static object ConvertUInt256(JToken token)
     {
         if (UInt256.TryParse(token.AsString(), out var hash))
@@ -132,6 +157,79 @@ public static class ParameterConverter
             return blockHashOrIndex;
         }
         throw new RpcException(RpcError.InvalidParams.WithData($"Invalid block hash or index Format: {token}"));
+    }
+
+    private static object ConvertSigner(JToken token)
+    {
+        if (token is JObject jObject)
+        {
+            try
+            {
+                return Signer.FromJson(jObject);
+            }
+            catch (FormatException)
+            {
+                throw new RpcException(CreateInvalidParamError<Signer>(token));
+            }
+        }
+        throw new RpcException(CreateInvalidParamError<Signer>(token));
+    }
+
+    private static object ConvertContractParameter(JToken token)
+    {
+        if (token is JObject jObject)
+        {
+            try
+            {
+                return ContractParameter.FromJson(jObject);
+            }
+            catch (FormatException)
+            {
+                throw new RpcException(CreateInvalidParamError<ContractParameter>(token));
+            }
+        }
+        throw new RpcException(CreateInvalidParamError<ContractParameter>(token));
+    }
+
+    private static object ConvertSignerArray(JToken token)
+    {
+        if (token is JArray jArray)
+        {
+            try
+            {
+                return jArray.Select(t => Signer.FromJson(t as JObject)).ToArray();
+            }
+            catch (FormatException)
+            {
+                throw new RpcException(CreateInvalidParamError<Signer[]>(token));
+            }
+        }
+        throw new RpcException(CreateInvalidParamError<Signer[]>(token));
+    }
+
+    private static object ConvertContractParameterArray(JToken token)
+    {
+        if (token is JArray jArray)
+        {
+            try
+            {
+                return jArray.Select(t => ContractParameter.FromJson(t as JObject)).ToArray();
+            }
+            catch (FormatException)
+            {
+                throw new RpcException(CreateInvalidParamError<ContractParameter[]>(token));
+            }
+        }
+        throw new RpcException(CreateInvalidParamError<ContractParameter[]>(token));
+    }
+
+    private static object ConvertGuid(JToken token)
+    {
+        if (Guid.TryParse(token.AsString(), out var guid))
+        {
+            return guid;
+        }
+        throw new RpcException(CreateInvalidParamError<Guid>(token));
     }
 
     private static RpcError CreateInvalidParamError<T>(JToken token)
