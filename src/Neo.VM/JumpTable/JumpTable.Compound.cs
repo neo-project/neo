@@ -210,10 +210,8 @@ namespace Neo.VM
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
                 throw new InvalidOperationException($"MaxStackSize exceed: {n}");
-            Struct result = new(engine.ReferenceCounter);
-            for (var i = 0; i < n; i++)
-                result.Add(StackItem.Null);
-            engine.Push(result);
+
+            engine.Push(new Struct(engine.ReferenceCounter, Enumerable.Repeat(StackItem.Null, n)));
         }
 
         /// <summary>
