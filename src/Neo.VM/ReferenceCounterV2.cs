@@ -76,12 +76,12 @@ namespace Neo.VM
             Count--;
         }
 
-        public void AddReference(StackItem item, CompoundType compoundType)
+        public void AddReference(StackItem item, CompoundType parent)
         {
             AddStackReference(item);
         }
 
-        public void RemoveReference(StackItem item, CompoundType compoundType)
+        public void RemoveReference(StackItem item, CompoundType parent)
         {
             RemoveStackReference(item);
         }
@@ -94,11 +94,6 @@ namespace Neo.VM
 
         /// <summary>
         /// Checks and processes items that have zero references.
-        ///
-        /// This method is used to check items in the zero-referred list and clean up those that are no longer needed.
-        /// It uses Tarjan's algorithm to find strongly connected components and remove those with no references.
-        ///
-        /// Use this method periodically to clean up items with zero references and free up memory.
         /// </summary>
         /// <returns>The current reference count.</returns>
         public int CheckZeroReferred()

@@ -51,7 +51,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="data">The byte array to parse.</param>
         /// <param name="limits">The limits for the deserialization.</param>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits, IReferenceCounter referenceCounter = null)
         {
@@ -64,7 +64,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="limits">The limits for the deserialization.</param>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits, IReferenceCounter referenceCounter = null)
         {
@@ -77,7 +77,7 @@ namespace Neo.SmartContract
         /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="maxSize">The maximum size of the result.</param>
         /// <param name="maxItems">The max of items to serialize</param>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, IReferenceCounter referenceCounter = null)
         {

@@ -163,7 +163,7 @@ namespace Neo.SmartContract
         /// <param name="engine">The <see cref="ApplicationEngine"/> used.</param>
         /// <param name="json">The <see cref="JToken"/> to deserialize.</param>
         /// <param name="limits">The limits for the deserialization.</param>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits, IReferenceCounter referenceCounter = null)
         {
