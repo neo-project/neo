@@ -18,7 +18,7 @@ namespace Neo.VM
     /// <summary>
     /// Used for reference counting of objects in the VM.
     /// </summary>
-    public sealed class ReferenceCounterV2
+    public sealed class ReferenceCounterV2 : IReferenceCounter
     {
         private class Counter
         {
@@ -27,37 +27,36 @@ namespace Neo.VM
 
         private readonly Dictionary<StackItem, Counter> _items = new(ReferenceEqualityComparer.Instance);
 
-        private int _referencesCount = 0;
-
         /// <summary>
         /// Gets the count of references.
         /// </summary>
-        public int Count => _referencesCount;
+        public int Count { get; private set; }
 
         /// <summary>
         /// Adds item to Reference Counter
         /// </summary>
         /// <param name="item">The item to add.</param>
-        public void Add(StackItem item)
+        /// <param name="count">Number of similar entries</param>
+        public void AddStackReference(StackItem item, int count = 1)
         {
             if (!_items.TryGetValue(item, out var referencesCount))
             {
-                _items[item] = new Counter() { Count = 1 };
+                _items[item] = new Counter() { Count = count };
             }
             else
             {
-                referencesCount.Count++;
+                referencesCount.Count += count;
             }
 
             // Increment the reference count.
-            _referencesCount++;
+            Count += count;
         }
 
         /// <summary>
         /// Removes item from Reference Counter
         /// </summary>
         /// <param name="item">The item to remove.</param>
-        public void Remove(StackItem item)
+        public void RemoveStackReference(StackItem item)
         {
             if (!_items.TryGetValue(item, out var referencesCount))
             {
@@ -74,7 +73,23 @@ namespace Neo.VM
             }
 
             // Decrement the reference count.
-            _referencesCount--;
+            Count--;
+        }
+
+        public void AddReference(StackItem item, CompoundType compoundType)
+        {
+            AddStackReference(item);
+        }
+
+        public void RemoveReference(StackItem item, CompoundType compoundType)
+        {
+            RemoveStackReference(item);
+        }
+
+        public void AddZeroReferred(StackItem item)
+        {
+            // This version don't use this method
+            // AddStackReference(item);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace Neo.VM.Types
         /// </summary>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> to be used by this structure.</param>
         /// <param name="fields">The fields to be included in the structure.</param>
-        public Struct(ReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
+        public Struct(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
             : base(referenceCounter, fields)
         {
         }

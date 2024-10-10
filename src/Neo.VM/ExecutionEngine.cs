@@ -37,6 +37,11 @@ namespace Neo.VM
         public ReferenceCounter ReferenceCounter { get; }
 
         /// <summary>
+        /// Used for reference counting of objects in the VM.
+        /// </summary>
+        public ReferenceCounterV2 ReferenceCounterV2 { get; }
+
+        /// <summary>
         /// The invocation stack of the VM.
         /// </summary>
         public Stack<ExecutionContext> InvocationStack { get; } = new Stack<ExecutionContext>();
