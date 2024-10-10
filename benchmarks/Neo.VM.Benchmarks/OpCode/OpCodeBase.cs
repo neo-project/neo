@@ -32,7 +32,6 @@ public abstract class OpCodeBase
     [Benchmark(Baseline = true)]
     public void Bench_BaseLine() => Benchmark_Opcode.RunScript(baseLineScript);
 
-
     [Benchmark]
     public void Bench_OneOpCode() => Benchmark_Opcode.RunScript(script);
 
@@ -41,7 +40,6 @@ public abstract class OpCodeBase
     /// </summary>
     [Benchmark]
     public void Bench_OneGAS() => Benchmark_Opcode.LoadScript(multiScript).ExecuteOneGASBenchmark();
-
 
     protected abstract byte[] CreateScript(BenchmarkMode benchmarkMode);
 }

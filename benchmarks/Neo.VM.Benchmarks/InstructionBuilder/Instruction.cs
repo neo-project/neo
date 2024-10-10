@@ -10,13 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.CodeAnalysis;
-using Neo.Extensions;
-using Neo.VM.Types;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using System.Reflection;
-using System.Text;
 
 namespace Neo.VM.Benchmark;
 

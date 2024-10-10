@@ -13,7 +13,6 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_Append : OpCodeBase
 {
-
     protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
     {
         throw new NotImplementedException();

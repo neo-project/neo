@@ -12,7 +12,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Neo.VM.Benchmark;
-using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
 // Flag to determine if running benchmark or running methods
@@ -21,7 +20,6 @@ var runBenchmark = true;
 
 // Define the benchmark or execute class
 var benchmarkType = typeof(Benchmarks_PoCs);
-
 
 /*
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

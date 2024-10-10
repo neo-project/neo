@@ -13,7 +13,6 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_NewArray : OpCodeBase
 {
-
     protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
     {
         var builder = new InstructionBuilder();
@@ -40,7 +39,6 @@ public class OpCode_NewArray : OpCodeBase
         return builder.ToArray();
     }
 }
-
 
 // BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.4249/23H2/2023Update/SunValley3)
 // Intel Core i9-14900HX, 1 CPU, 32 logical and 24 physical cores

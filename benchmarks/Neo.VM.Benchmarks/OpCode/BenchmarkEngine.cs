@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Test.Types;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Benchmark.OpCode;
@@ -55,7 +54,7 @@ public class BenchmarkEngine : TestEngine
                 var instruction = CurrentContext!.CurrentInstruction!.OpCode;
                 if (instruction == opCode) break;
             }
-            catch (Exception e)
+            catch
             {
                 break;
             }

@@ -13,7 +13,6 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_ReverseN : OpCodeBase
 {
-
     protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
     {
         var builder = new InstructionBuilder();
