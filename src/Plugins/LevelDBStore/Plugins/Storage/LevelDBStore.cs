@@ -12,7 +12,10 @@
 using Neo.IO.Data.LevelDB;
 using Neo.Persistence;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Plugins.Storage
 {
@@ -27,7 +30,7 @@ namespace Neo.Plugins.Storage
 
         public IStore GetStore(string path)
         {
-            if (Environment.CommandLine.Split(' ').Any(p => p == "/repair" || p == "--repair"))
+            if (Environment.CommandLine.Split(' ').Any(p => p is "/repair" or "--repair"))
                 DB.Repair(path, Options.Default);
             return new Store(path);
         }
