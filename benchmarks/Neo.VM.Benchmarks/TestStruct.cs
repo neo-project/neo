@@ -31,7 +31,7 @@ public class TestStruct : TestArray
     /// </summary>
     /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> to be used by this structure.</param>
     /// <param name="fields">The fields to be included in the structure.</param>
-    public TestStruct(ReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
+    public TestStruct(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
         : base(referenceCounter, fields)
     {
     }
