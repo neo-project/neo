@@ -261,5 +261,24 @@ namespace Neo.Test
             arr.Add(arr2);
             Assert.AreEqual(11, reference.Count);
         }
+
+        [TestMethod]
+        public void TestDup()
+        {
+            using ScriptBuilder sb = new();
+            sb.Emit(OpCode.PUSH1);
+            sb.Emit(OpCode.DUP);
+
+            using ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default);
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            engine.ExecuteNext();
+            Assert.AreEqual(1, engine.ReferenceCounter.Count);
+            engine.ExecuteNext();
+            Assert.AreEqual(2, engine.ReferenceCounter.Count);
+            engine.ExecuteNext();
+            Assert.AreEqual(2, engine.ReferenceCounter.Count);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+        }
     }
 }
