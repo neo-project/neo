@@ -11,7 +11,6 @@
 
 using BenchmarkDotNet.Attributes;
 using Neo.VM.Types;
-using System.Collections.Generic;
 using Array = Neo.VM.Types.Array;
 using Buffer = Neo.VM.Types.Buffer;
 
