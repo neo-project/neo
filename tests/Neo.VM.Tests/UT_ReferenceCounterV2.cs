@@ -18,7 +18,7 @@ using Array = Neo.VM.Types.Array;
 namespace Neo.Test
 {
     [TestClass]
-    public class UT_ReferenceCounter
+    public class UT_ReferenceCounterV2
     {
         [TestMethod]
         public void TestCircularReferences()
@@ -55,7 +55,7 @@ namespace Neo.Test
             sb.Emit(OpCode.STSFLD0); //{}|{A[A]}:2
             sb.Emit(OpCode.RET); //{}:0
 
-            using ExecutionEngine engine = new();
+            using ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default);
             Debugger debugger = new(engine);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
@@ -136,7 +136,7 @@ namespace Neo.Test
             sb.Emit(OpCode.DROP); //{}|{B[]}:1
             sb.Emit(OpCode.RET); //{}:0
 
-            using ExecutionEngine engine = new();
+            using ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default);
             Debugger debugger = new(engine);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
@@ -173,7 +173,7 @@ namespace Neo.Test
 
             // Good with MaxStackSize
 
-            using (ExecutionEngine engine = new())
+            using (ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default))
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -186,7 +186,7 @@ namespace Neo.Test
 
             sb.Emit(OpCode.PUSH1);
 
-            using (ExecutionEngine engine = new())
+            using (ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default))
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -206,7 +206,7 @@ namespace Neo.Test
 
             // Good with MaxStackSize
 
-            using (ExecutionEngine engine = new())
+            using (ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default))
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -219,7 +219,7 @@ namespace Neo.Test
 
             sb.Emit(OpCode.PUSH1);
 
-            using (ExecutionEngine engine = new())
+            using (ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default))
             {
                 engine.LoadScript(sb.ToArray());
                 Assert.AreEqual(0, engine.ReferenceCounter.Count);
@@ -234,7 +234,8 @@ namespace Neo.Test
         {
             using ScriptBuilder sb = new();
             sb.Emit(OpCode.RET);
-            using ExecutionEngine engine = new();
+
+            using ExecutionEngine engine = new(null, new ReferenceCounterV2(), ExecutionEngineLimits.Default);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(0, engine.ReferenceCounter.Count);
 
@@ -248,7 +249,7 @@ namespace Neo.Test
         [ExpectedException(typeof(InvalidOperationException))]
         public void TestInvalidReferenceStackItem()
         {
-            var reference = new ReferenceCounter();
+            var reference = new ReferenceCounterV2();
             var arr = new Array(reference);
             var arr2 = new Array();
 
