@@ -57,7 +57,7 @@ public class TestArray : CompoundType, IReadOnlyList<StackItem>
     /// </summary>
     /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> to be used by this array.</param>
     /// <param name="items">The items to be included in the array.</param>
-    public TestArray(ReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
+    public TestArray(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
         : base(referenceCounter)
     {
         _array = items switch
