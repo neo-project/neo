@@ -351,26 +351,28 @@ namespace Neo.Wallets.NEP6
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
             bool succeed = true;
+            NEP6Account[] accountsValues;
             lock (accounts)
             {
-                Parallel.ForEach(accounts.Values, (account, state) =>
-                {
-                    if (!account.ChangePasswordPrepare(oldPassword, newPassword))
-                    {
-                        state.Stop();
-                        succeed = false;
-                    }
-                });
+                accountsValues = accounts.Values.ToArray();
             }
+            Parallel.ForEach(accountsValues, (account, state) =>
+            {
+                if (!account.ChangePasswordPrepare(oldPassword, newPassword))
+                {
+                    state.Stop();
+                    succeed = false;
+                }
+            });
             if (succeed)
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (NEP6Account account in accountsValues)
                     account.ChangePasswordCommit();
                 password = newPassword.ToSecureString();
             }
             else
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (NEP6Account account in accountsValues)
                     account.ChangePasswordRollback();
             }
             return succeed;
