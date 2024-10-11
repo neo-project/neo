@@ -28,7 +28,7 @@ namespace Neo.IO.Storage.LevelDB
         /// An iterator is either positioned at a key/value pair, or
         /// not valid.  
         /// </summary>
-        /// <returns>This method returns true iff the iterator is valid.</returns>
+        /// <returns>This method returns true if the iterator is valid.</returns>
         public bool IsValid()
         {
             return Native.leveldb_iter_valid(Handle);
@@ -36,7 +36,7 @@ namespace Neo.IO.Storage.LevelDB
 
         /// <summary>
         /// Position at the first key in the source.  
-        /// The iterator is Valid() after this call iff the source is not empty.
+        /// The iterator is Valid() after this call if the source is not empty.
         /// </summary>
         public void SeekToFirst()
         {
@@ -46,7 +46,7 @@ namespace Neo.IO.Storage.LevelDB
 
         /// <summary>
         /// Position at the last key in the source.  
-        /// The iterator is Valid() after this call iff the source is not empty.
+        /// The iterator is Valid() after this call if the source is not empty.
         /// </summary>
         public void SeekToLast()
         {
@@ -56,7 +56,7 @@ namespace Neo.IO.Storage.LevelDB
 
         /// <summary>
         /// Position at the first key in the source that at or past target
-        /// The iterator is Valid() after this call iff the source contains
+        /// The iterator is Valid() after this call if the source contains
         /// an entry that comes at or past target.
         /// </summary>
         public void Seek(byte[] key)
@@ -67,7 +67,7 @@ namespace Neo.IO.Storage.LevelDB
 
         /// <summary>
         /// Moves to the next entry in the source.  
-        /// After this call, Valid() is true iff the iterator was not positioned at the last entry in the source.
+        /// After this call, Valid() is true if the iterator was not positioned at the last entry in the source.
         /// REQUIRES: Valid()
         /// </summary>
         public void Next()
@@ -78,7 +78,7 @@ namespace Neo.IO.Storage.LevelDB
 
         /// <summary>
         /// Moves to the previous entry in the source.  
-        /// After this call, Valid() is true iff the iterator was not positioned at the first entry in source.
+        /// After this call, Valid() is true if the iterator was not positioned at the first entry in source.
         /// REQUIRES: Valid()
         /// </summary>
         public void Prev()
