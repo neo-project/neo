@@ -293,10 +293,10 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public JObject ToJson()
         {
-            JObject[] values;
+            NEP6Account[] accountValues;
             lock (accounts)
             {
-                values = accounts.Values.Select(p => p.ToJson()).ToArray();
+                accountValues = accounts.Values.ToArray();
             }
 
             return new()
@@ -304,7 +304,7 @@ namespace Neo.Wallets.NEP6
                 ["name"] = name,
                 ["version"] = version.ToString(),
                 ["scrypt"] = Scrypt.ToJson(),
-                ["accounts"] = values,
+                ["accounts"] = accountValues.Select(p => p.ToJson()).ToArray(),
                 ["extra"] = extra
             };
         }
