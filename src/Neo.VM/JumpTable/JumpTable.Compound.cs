@@ -182,9 +182,9 @@ namespace Neo.VM
                 (byte)StackItemType.ByteString => ByteString.Empty,
                 _ => StackItem.Null
             };
-            var nullArray = new StackItem[n];
-            Array.Fill(nullArray, item);
-            engine.Push(new VMArray(engine.ReferenceCounter, nullArray));
+            var itemArray = new StackItem[n];
+            Array.Fill(itemArray, item);
+            engine.Push(new VMArray(engine.ReferenceCounter, itemArray));
         }
 
         /// <summary>
