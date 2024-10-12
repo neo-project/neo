@@ -70,7 +70,7 @@ namespace Neo.IO.Storage.LevelDB
         ///
         /// Default: 4MB
         /// </summary>
-        public long WriteBufferSize
+        public nuint WriteBufferSize
         {
             set { Native.leveldb_options_set_write_buffer_size(Handle, value); }
         }
@@ -95,7 +95,7 @@ namespace Neo.IO.Storage.LevelDB
         ///
         /// Default: 4K
         /// </summary>
-        public long BlockSize
+        public nuint BlockSize
         {
             set { Native.leveldb_options_set_block_size(Handle, value); }
         }

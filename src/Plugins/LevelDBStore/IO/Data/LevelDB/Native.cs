@@ -111,10 +111,10 @@ namespace Neo.IO.Storage.LevelDB
         public static extern void leveldb_iter_seek_to_last(nint /*Iterator*/ iterator);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void leveldb_iter_seek(nint /*Iterator*/ iterator, byte[] key, int length);
+        public static extern void leveldb_iter_seek(nint /*Iterator*/ iterator, byte[] key, nint length);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void leveldb_iter_seek(nint /*Iterator*/ iterator, ref int key, int length);
+        public static extern void leveldb_iter_seek(nint /*Iterator*/ iterator, ref int key, nint length);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_iter_next(nint /*Iterator*/ iterator);
@@ -155,7 +155,7 @@ namespace Neo.IO.Storage.LevelDB
         public static extern void leveldb_options_set_env(nint /*Options*/ options, nint /*Env*/ env);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void leveldb_options_set_write_buffer_size(nint /*Options*/ options, long size);
+        public static extern void leveldb_options_set_write_buffer_size(nint /*Options*/ options, nuint size);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_options_set_max_open_files(nint /*Options*/ options, int max);
@@ -164,7 +164,7 @@ namespace Neo.IO.Storage.LevelDB
         public static extern void leveldb_options_set_cache(nint /*Options*/ options, nint /*Cache*/ cache);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void leveldb_options_set_block_size(nint /*Options*/ options, long size);
+        public static extern void leveldb_options_set_block_size(nint /*Options*/ options, nuint size);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_options_set_block_restart_interval(nint /*Options*/ options, int interval);
