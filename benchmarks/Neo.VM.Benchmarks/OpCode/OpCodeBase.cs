@@ -15,7 +15,7 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public abstract class OpCodeBase
 {
-    [Params(1, 32, 128, 1024, 2040)]
+    [Params(2, 32, 128, 1024, 2040)]
     public int ItemCount { get; set; } = 2040;
     protected byte[] baseLineScript;
     protected byte[] script;
@@ -27,19 +27,11 @@ public abstract class OpCodeBase
 
     protected abstract VM.OpCode Opcode { get; }
 
-    [GlobalSetup]
-    public void Setup()
-    {
-        var builder = CreateBaseLineScript();
-        baseLineScript = builder.ToArray();
-        script = CreateOneOpCodeScript(ref builder);
-    }
-
     [IterationSetup]
     public void IterationSetup()
     {
         engine = new BenchmarkEngine();
-        engine.LoadScript(script);
+        engine.LoadScript(CreateOneOpCodeScript());
         engine.ExecuteUntil(Opcode);
     }
 
@@ -53,15 +45,8 @@ public abstract class OpCodeBase
     public void Bench_OneOpCode() =>
         engine.ExecuteNext();
 
-    /// <summary>
-    /// Benchmark how long 1 GAS can run.
-    /// </summary>
-    // [Benchmark]
-    // public void Bench_OneGAS() => Benchmark_Opcode.LoadScript(multiScript).ExecuteOneGASBenchmark();
+    protected abstract byte[] CreateOneOpCodeScript();
 
-    protected abstract InstructionBuilder CreateBaseLineScript();
-
-    protected abstract byte[] CreateOneOpCodeScript(ref InstructionBuilder builder);
     protected abstract byte[] CreateOneGASScript(InstructionBuilder builder);
 }
 

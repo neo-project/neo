@@ -17,7 +17,7 @@ public class OpCode_REMOVE : OpCodeBase
 {
     protected override VM.OpCode Opcode => VM.OpCode.REMOVE;
 
-    protected override InstructionBuilder CreateBaseLineScript()
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
@@ -36,11 +36,6 @@ public class OpCode_REMOVE : OpCodeBase
         builder.Push(ItemCount);
         builder.AddInstruction(VM.OpCode.PACK);
         builder.Push(0);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(Opcode);
         return builder.ToArray();
     }

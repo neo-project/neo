@@ -88,6 +88,7 @@ namespace Neo.VM
         }
 
         /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddStackReference(StackItem item, int count = 1)
         {
             // Increment the reference count by the specified count.
@@ -130,6 +131,7 @@ namespace Neo.VM
         /// Use this method periodically to clean up items with zero references and free up memory.
         /// </summary>
         /// <returns>The current reference count.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CheckZeroReferred()
         {
             // If there are items with zero references, process them.
@@ -147,37 +149,50 @@ namespace Neo.VM
                 }
 
                 // Reset all tracked items' Tarjan algorithm-related fields (DFN, LowLink, and OnStack).
-                foreach (StackItem item in _trackedItems)
+                foreach (var item in _trackedItems)
                     item.Reset();
 
                 // Process each SCC in the cached_components list.
                 for (var node = _cachedComponents.First; node != null;)
                 {
                     var component = node.Value;
-                    bool on_stack = false;
+                    var onStack = false;
 
                     // Check if any item in the SCC is still on the stack.
-                    foreach (StackItem item in component)
+                    foreach (var item in component)
                     {
                         // An item is considered 'on stack' if it has stack references or if its parent items are still on stack.
-                        if (item.StackReferences > 0 || item.ObjectReferences?.Values.Any(p => p.References > 0 && p.Item.OnStack) == true)
+                        if (item.StackReferences > 0)
                         {
-                            on_stack = true;
+                            onStack = true;
                             break;
+                        }
+
+                        if (item.ObjectReferences != null)
+                        {
+                            foreach (var entry in item.ObjectReferences.Values)
+                            {
+                                if (entry.References > 0 && entry.Item.OnStack)
+                                {
+                                    onStack = true;
+                                    break;
+                                }
+                            }
+                            if (onStack) break;
                         }
                     }
 
                     // If any item in the component is on stack, mark all items in the component as on stack.
-                    if (on_stack)
+                    if (onStack)
                     {
-                        foreach (StackItem item in component)
+                        foreach (var item in component)
                             item.OnStack = true;
                         node = node.Next;
                     }
                     else
                     {
                         // Otherwise, remove the component and clean up the items.
-                        foreach (StackItem item in component)
+                        foreach (var item in component)
                         {
                             _trackedItems.Remove(item);
 
@@ -186,7 +201,7 @@ namespace Neo.VM
                             {
                                 // Decrease the reference count by the number of sub-items.
                                 _referencesCount -= compound.SubItemsCount;
-                                foreach (StackItem subitem in compound.SubItems)
+                                foreach (var subitem in compound.SubItems)
                                 {
                                     // Skip sub-items that are in the same component or don't need tracking.
                                     if (component.Contains(subitem)) continue;
@@ -234,6 +249,7 @@ namespace Neo.VM
         }
 
         /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveStackReference(StackItem item)
         {
             // Decrement the reference count.

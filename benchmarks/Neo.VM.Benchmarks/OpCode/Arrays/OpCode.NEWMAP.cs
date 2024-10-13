@@ -14,15 +14,11 @@ namespace Neo.VM.Benchmark.OpCode;
 public class OpCode_NEWMAP : OpCodeBase
 {
     protected override VM.OpCode Opcode => VM.OpCode.NEWMAP;
-    protected override InstructionBuilder CreateBaseLineScript()
+
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         builder.Push(ItemCount);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(VM.OpCode.NEWMAP);
         return builder.ToArray();
     }

@@ -15,7 +15,8 @@ public class OpCode_VALUES : OpCodeBase
 {
 
     protected override VM.OpCode Opcode => VM.OpCode.VALUES;
-    protected override InstructionBuilder CreateBaseLineScript()
+
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
@@ -33,11 +34,6 @@ public class OpCode_VALUES : OpCodeBase
         builder.Jump(VM.OpCode.JMPIF, initBegin);
         builder.Push(ItemCount / 2);
         builder.AddInstruction(VM.OpCode.PACKMAP);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(Opcode);
         return builder.ToArray();
     }

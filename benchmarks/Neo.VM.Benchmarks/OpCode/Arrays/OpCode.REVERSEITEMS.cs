@@ -16,7 +16,7 @@ public class OpCode_REVERSEITEMS : OpCodeBase
 
     protected override VM.OpCode Opcode => VM.OpCode.REVERSEITEMS;
 
-    protected override InstructionBuilder CreateBaseLineScript()
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
@@ -33,11 +33,6 @@ public class OpCode_REVERSEITEMS : OpCodeBase
         builder.AddInstruction(VM.OpCode.LDLOC0);
         builder.Jump(VM.OpCode.JMPIF, initBegin);
         builder.Push(ItemCount);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(Opcode);
         return builder.ToArray();
     }

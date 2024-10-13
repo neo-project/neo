@@ -13,19 +13,16 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_SWAP : OpCodeBase
 {
-    protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
+    protected override VM.OpCode Opcode => VM.OpCode.SWAP;
 
-    protected override InstructionBuilder CreateBaseLineScript()
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
-        builder.Push(ItemCount);
-        builder.Push(0);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.Push(ushort.MaxValue * 2);
+        builder.AddInstruction(VM.OpCode.NEWBUFFER);
+        builder.Push(ushort.MaxValue * 2);
+        builder.AddInstruction(VM.OpCode.NEWBUFFER);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 
@@ -34,3 +31,12 @@ public class OpCode_SWAP : OpCodeBase
         throw new NotImplementedException();
     }
 }
+
+
+// | Method          | ItemCount | Mean     | Error     | StdDev    | Median   |
+//     |---------------- |---------- |---------:|----------:|----------:|---------:|
+//     | Bench_OneOpCode | 2         | 2.094 us | 0.0524 us | 0.1417 us | 2.100 us |
+//     | Bench_OneOpCode | 32        | 2.897 us | 0.2905 us | 0.8565 us | 2.400 us |
+//     | Bench_OneOpCode | 128       | 2.085 us | 0.0453 us | 0.1178 us | 2.100 us |
+//     | Bench_OneOpCode | 1024      | 2.065 us | 0.0450 us | 0.1060 us | 2.000 us |
+//     | Bench_OneOpCode | 2040      | 2.096 us | 0.0457 us | 0.1195 us | 2.100 us |

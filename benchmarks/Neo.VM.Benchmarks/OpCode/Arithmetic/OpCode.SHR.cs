@@ -17,115 +17,56 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_SHR
 {
-    [ParamsSource(nameof(ScriptParams))]
-    public Script _script = new("0c04ffffff7f0c0100b8".HexToBytes());
+    [ParamsSource(nameof(ShiftParams))]
+    public int _shift;
+
+    [ParamsSource(nameof(IntegerParams))]
+    public BigInteger _initeger;
+
+
     private BenchmarkEngine _engine;
 
     private const VM.OpCode Opcode = VM.OpCode.SHR;
 
-    public static IEnumerable<Script> ScriptParams()
+    public static IEnumerable<int> ShiftParams()
     {
-        string[] scripts = [
-"Bf////////////////////////////////////////9/AFmp",
-            "Bf////////////////////////////////////////9/Ab4AqQ==",
-            "Bf////////////////////////////////////////9/AC6p",
-            "Bf////////////////////////////////////////9/AckAqQ==",
-            "Bf////////////////////////////////////////9/AZoAqQ==",
-            "Bf////////////////////////////////////////9/ADup",
-            "Bf////////////////////////////////////////9/AdYAqQ==",
-            "Bf////////////////////////////////////////9/AdoAqQ==",
-            "Bf////////////////////////////////////////9/AC+p",
-            "Bf////////////////////////////////////////9/AaYAqQ==",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAFWp",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAGmp",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAEqp",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAGOp",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAdkAqQ==",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAHWp",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAbIAqQ==",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAcoAqQ==",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAdIAqQ==",
-            "BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAGWp",
-            "EQBTqQ==",
-            "EQGsAKk=",
-            "EQAaqQ==",
-            "EQHjAKk=",
-            "EQBDqQ==",
-            "EQB8qQ==",
-            "EQAgqQ==",
-            "EQBuqQ==",
-            "EQAwqQ==",
-            "EQGJAKk=",
-            "EAGqAKk=",
-            "EAGyAKk=",
-            "EAHHAKk=",
-            "EAGzAKk=",
-            "EByp",
-            "EAH0AKk=",
-            "EABZqQ==",
-            "EAHNAKk=",
-            "EBip",
-            "EAA7qQ==",
-            "Av///38AMqk=",
-            "Av///38Abak=",
-            "Av///38AU6k=",
-            "Av///38AF6k=",
-            "Av///38BhwCp",
-            "Av///38B0wCp",
-            "Av///38ANqk=",
-            "Av///38eqQ==",
-            "Av///38B4QCp",
-            "Av///38AL6k=",
-            "AgAAAIAB6wCp",
-            "AgAAAIABmACp",
-            "AgAAAIAAIqk=",
-            "AgAAAIAAH6k=",
-            "AgAAAIAAIKk=",
-            "AgAAAIABvQCp",
-            "AgAAAIAAUak=",
-            "AgAAAIAB/QCp",
-            "AgAAAIABAAGp",
-            "AgAAAIAAHKk=",
-            "A/////////9/AcUAqQ==",
-            "A/////////9/AGKp",
-            "A/////////9/AegAqQ==",
-            "A/////////9/AcsAqQ==",
-            "A/////////9/AGGp",
-            "A/////////9/AaIAqQ==",
-            "A/////////9/AGGp",
-            "A/////////9/Fak=",
-            "A/////////9/AZcAqQ==",
-            "A/////////9/ABOp",
-            "AwAAAAAAAACAAFOp",
-            "AwAAAAAAAACAAa4AqQ==",
-            "AwAAAAAAAACAAa4AqQ==",
-            "AwAAAAAAAACAADqp",
-            "AwAAAAAAAACAAEyp",
-            "AwAAAAAAAACAAYQAqQ==",
-            "AwAAAAAAAACAABmp",
-            "AwAAAAAAAACAAZYAqQ==",
-            "AwAAAAAAAACAACqp",
-            "AwAAAAAAAACAAHap",
-            "BP///////////////////38B+gCp",
-            "BP///////////////////38BwwCp",
-            "BP///////////////////38Aaak=",
-            "BP///////////////////38B0wCp",
-            "BP///////////////////38BogCp",
-            "BP///////////////////38TqQ==",
-            "BP///////////////////38B9QCp",
-            "BP///////////////////38BrgCp",
-            "BP///////////////////38B2ACp",
-            "BP///////////////////38B0QCp",
+        return [
+            0,
+            2,
+            4,
+            32,
+            64,
+            128,
+            256
         ];
+    }
 
-        return scripts.Select(p => new Script(Convert.FromBase64String(p)));
+    public static IEnumerable<BigInteger> IntegerParams()
+    {
+        return
+        [
+            Benchmark_Opcode.MAX_INT,
+            Benchmark_Opcode.MIN_INT,
+            BigInteger.One,
+            BigInteger.Zero,
+            int.MaxValue,
+            int.MinValue,
+            long.MaxValue,
+            long.MinValue,
+            BigInteger.Parse("170141183460469231731687303715884105727") // Mersenne prime 2^127 - 1
+        ];
     }
 
     [IterationSetup]
     public void Setup()
     {
+        var builder = new InstructionBuilder();
+        builder.Push(_initeger);
+        builder.Push(_shift);
+        builder.AddInstruction(Opcode);
+
         _engine = new BenchmarkEngine();
-        _engine.LoadScript(_script);
+        _engine.LoadScript(builder.ToArray());
         _engine.ExecuteUntil(Opcode);
     }
 
@@ -136,134 +77,75 @@ public class OpCode_SHR
     }
 
     [Benchmark]
-    public void Bench() => _engine.ExecuteNext();
-
-    [GenerateTests]
-    public void CreateBenchScript()
+    public void Bench()
     {
-        var values = new[]
-        {
-            Benchmark_Opcode.MAX_INT,
-            Benchmark_Opcode.MIN_INT,
-            BigInteger.One,
-            BigInteger.Zero,
-            int.MaxValue,
-            int.MinValue,
-            long.MaxValue,
-            long.MinValue,
-            BigInteger.Parse("170141183460469231731687303715884105727"),  // Mersenne prime 2^127 - 1
-        };
+        _engine.ExecuteNext();
 
-        foreach (var t in values)
-        {
-            for (var j = 0; j < 10; j++)
-            {
-                var shift = Random.Shared.Next(0, 257);
-                CreateBenchScript(t, shift, Opcode);
-            }
-        }
-    }
-
-    void CreateBenchScript(BigInteger a, BigInteger b, VM.OpCode opcode)
-    {
-        var builder = new InstructionBuilder();
-        builder.Push(a);
-        builder.Push(b);
-        builder.AddInstruction(opcode);
-        Console.WriteLine($"\"{Convert.ToBase64String(builder.ToArray())}\",");
     }
 }
-
 //
-// | Method | _script       | Mean     | Error     | StdDev    | Median   |
-// |------- |-------------- |---------:|----------:|----------:|---------:|
-// | Bench  | Neo.VM.Script | 2.464 us | 0.0478 us | 0.0638 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.608 us | 0.0714 us | 0.1967 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 3.159 us | 0.2751 us | 0.8067 us | 2.800 us |
-// | Bench  | Neo.VM.Script | 2.912 us | 0.2281 us | 0.6435 us | 2.600 us |
-// | Bench  | Neo.VM.Script | 3.262 us | 0.2929 us | 0.8591 us | 2.900 us |
-// | Bench  | Neo.VM.Script | 3.004 us | 0.2262 us | 0.6380 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 3.252 us | 0.2857 us | 0.8242 us | 2.900 us |
-// | Bench  | Neo.VM.Script | 2.672 us | 0.0980 us | 0.2699 us | 2.600 us |
-// | Bench  | Neo.VM.Script | 2.911 us | 0.2144 us | 0.6046 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.442 us | 0.0810 us | 0.2190 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.567 us | 0.0678 us | 0.1809 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.981 us | 0.2118 us | 0.5940 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.494 us | 0.0446 us | 0.0870 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.667 us | 0.0695 us | 0.1950 us | 2.600 us |
-// | Bench  | Neo.VM.Script | 2.808 us | 0.1261 us | 0.3387 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.631 us | 0.0954 us | 0.2628 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.589 us | 0.0491 us | 0.0820 us | 2.600 us |
-// | Bench  | Neo.VM.Script | 2.968 us | 0.2116 us | 0.5933 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.548 us | 0.0549 us | 0.1272 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.877 us | 0.2061 us | 0.5606 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.492 us | 0.1423 us | 0.3943 us | 2.400 us |
-// | Bench  | Neo.VM.Script | 2.361 us | 0.0912 us | 0.2464 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.378 us | 0.0908 us | 0.2471 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.180 us | 0.0443 us | 0.0414 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.259 us | 0.0794 us | 0.2160 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.200 us | 0.0467 us | 0.0767 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.405 us | 0.1045 us | 0.2860 us | 2.350 us |
-// | Bench  | Neo.VM.Script | 2.338 us | 0.0926 us | 0.2488 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.328 us | 0.1132 us | 0.3061 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.249 us | 0.0804 us | 0.2227 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.287 us | 0.0534 us | 0.1461 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.237 us | 0.0489 us | 0.1304 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.336 us | 0.1069 us | 0.2925 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.362 us | 0.1027 us | 0.2862 us | 2.250 us |
-// | Bench  | Neo.VM.Script | 2.326 us | 0.1022 us | 0.2797 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.370 us | 0.1232 us | 0.3310 us | 2.250 us |
-// | Bench  | Neo.VM.Script | 2.366 us | 0.0777 us | 0.2190 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.377 us | 0.0864 us | 0.2350 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.227 us | 0.0446 us | 0.0921 us | 2.250 us |
-// | Bench  | Neo.VM.Script | 2.208 us | 0.0455 us | 0.1239 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.294 us | 0.0972 us | 0.2660 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.346 us | 0.1016 us | 0.2731 us | 2.250 us |
-// | Bench  | Neo.VM.Script | 3.270 us | 0.3244 us | 0.9566 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.257 us | 0.0717 us | 0.1976 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.163 us | 0.0472 us | 0.1284 us | 2.100 us |
-// | Bench  | Neo.VM.Script | 2.217 us | 0.0478 us | 0.0785 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 3.430 us | 0.3143 us | 0.9219 us | 3.200 us |
-// | Bench  | Neo.VM.Script | 2.426 us | 0.1066 us | 0.2828 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 3.037 us | 0.2926 us | 0.8582 us | 2.650 us |
-// | Bench  | Neo.VM.Script | 2.175 us | 0.0473 us | 0.1143 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.727 us | 0.1786 us | 0.5095 us | 2.550 us |
-// | Bench  | Neo.VM.Script | 2.771 us | 0.2337 us | 0.6705 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.364 us | 0.0803 us | 0.2170 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 3.391 us | 0.3043 us | 0.8877 us | 3.200 us |
-// | Bench  | Neo.VM.Script | 2.298 us | 0.0807 us | 0.2182 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.952 us | 0.2802 us | 0.8261 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.803 us | 0.1886 us | 0.5256 us | 2.600 us |
-// | Bench  | Neo.VM.Script | 3.065 us | 0.3063 us | 0.9030 us | 2.650 us |
-// | Bench  | Neo.VM.Script | 2.244 us | 0.0488 us | 0.0759 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.421 us | 0.0523 us | 0.0845 us | 2.400 us |
-// | Bench  | Neo.VM.Script | 2.384 us | 0.0927 us | 0.2538 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.372 us | 0.1038 us | 0.2806 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.562 us | 0.1632 us | 0.4521 us | 2.400 us |
-// | Bench  | Neo.VM.Script | 2.413 us | 0.0987 us | 0.2667 us | 2.400 us |
-// | Bench  | Neo.VM.Script | 2.857 us | 0.2743 us | 0.8045 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.348 us | 0.0811 us | 0.2220 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.303 us | 0.0404 us | 0.0912 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.728 us | 0.1659 us | 0.4597 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.471 us | 0.1379 us | 0.3775 us | 2.400 us |
-// | Bench  | Neo.VM.Script | 2.301 us | 0.1037 us | 0.2822 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.596 us | 0.1276 us | 0.3448 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.325 us | 0.1326 us | 0.3585 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.170 us | 0.0753 us | 0.1998 us | 2.100 us |
-// | Bench  | Neo.VM.Script | 2.208 us | 0.0901 us | 0.2451 us | 2.100 us |
-// | Bench  | Neo.VM.Script | 2.627 us | 0.1452 us | 0.3951 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.205 us | 0.0875 us | 0.2365 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 2.094 us | 0.0414 us | 0.0983 us | 2.100 us |
-// | Bench  | Neo.VM.Script | 2.659 us | 0.1378 us | 0.3771 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.227 us | 0.0937 us | 0.2644 us | 2.200 us |
-// | Bench  | Neo.VM.Script | 3.794 us | 0.3559 us | 1.0326 us | 3.900 us |
-// | Bench  | Neo.VM.Script | 2.850 us | 0.2905 us | 0.8380 us | 2.500 us |
-// | Bench  | Neo.VM.Script | 2.325 us | 0.1031 us | 0.2821 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 3.002 us | 0.2797 us | 0.8115 us | 2.800 us |
-// | Bench  | Neo.VM.Script | 3.166 us | 0.2537 us | 0.7278 us | 3.000 us |
-// | Bench  | Neo.VM.Script | 2.423 us | 0.1205 us | 0.3278 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 2.619 us | 0.2462 us | 0.6902 us | 2.400 us |
-// | Bench  | Neo.VM.Script | 2.928 us | 0.2063 us | 0.5717 us | 2.700 us |
-// | Bench  | Neo.VM.Script | 2.340 us | 0.0606 us | 0.1699 us | 2.300 us |
-// | Bench  | Neo.VM.Script | 3.099 us | 0.2616 us | 0.7589 us | 2.900 us |
-// | Bench  | Neo.VM.Script | 2.362 us | 0.1164 us | 0.3127 us | 2.300 us |
+// | Method | _shift | _initeger            | Mean       | Error     | StdDev    | Median     |
+// |------- |------- |--------------------- |-----------:|----------:|----------:|-----------:|
+// | Bench  | 0      | -5789(...)19968 [78] |   990.8 ns |  30.32 ns |  83.01 ns | 1,000.0 ns |
+// | Bench  | 0      | -9223372036854775808 | 1,016.1 ns |  35.18 ns |  96.30 ns | 1,000.0 ns |
+// | Bench  | 0      | -2147483648          | 1,051.7 ns |  39.34 ns | 107.68 ns | 1,000.0 ns |
+// | Bench  | 0      | 0                    | 1,002.2 ns |  36.03 ns | 101.61 ns | 1,000.0 ns |
+// | Bench  | 0      | 1                    | 1,057.3 ns |  43.49 ns | 120.50 ns | 1,000.0 ns |
+// | Bench  | 0      | 2147483647           | 1,367.7 ns | 135.67 ns | 397.91 ns | 1,200.0 ns |
+// | Bench  | 0      | 9223372036854775807  | 1,025.9 ns |  46.42 ns | 125.50 ns | 1,000.0 ns |
+// | Bench  | 0      | 17014(...)05727 [39] |   993.0 ns |  36.01 ns |  97.97 ns | 1,000.0 ns |
+// | Bench  | 0      | 57896(...)19967 [77] | 1,024.2 ns |  25.13 ns |  70.46 ns | 1,000.0 ns |
+// | Bench  | 2      | -5789(...)19968 [78] | 2,736.8 ns | 112.26 ns | 307.32 ns | 2,600.0 ns |
+// | Bench  | 2      | -9223372036854775808 | 2,629.3 ns |  65.31 ns | 173.20 ns | 2,600.0 ns |
+// | Bench  | 2      | -2147483648          | 2,877.1 ns | 219.52 ns | 633.37 ns | 2,600.0 ns |
+// | Bench  | 2      | 0                    | 2,307.0 ns |  86.39 ns | 235.04 ns | 2,200.0 ns |
+// | Bench  | 2      | 1                    | 2,445.3 ns | 107.67 ns | 292.92 ns | 2,400.0 ns |
+// | Bench  | 2      | 2147483647           | 3,019.2 ns | 262.97 ns | 771.25 ns | 2,800.0 ns |
+// | Bench  | 2      | 9223372036854775807  | 2,661.8 ns | 106.69 ns | 288.43 ns | 2,550.0 ns |
+// | Bench  | 2      | 17014(...)05727 [39] | 2,581.2 ns | 103.76 ns | 280.52 ns | 2,500.0 ns |
+// | Bench  | 2      | 57896(...)19967 [77] | 2,606.7 ns |  78.24 ns | 216.79 ns | 2,500.0 ns |
+// | Bench  | 4      | -5789(...)19968 [78] | 2,598.2 ns |  55.29 ns | 117.84 ns | 2,600.0 ns |
+// | Bench  | 4      | -9223372036854775808 | 3,180.0 ns | 297.27 ns | 876.52 ns | 2,700.0 ns |
+// | Bench  | 4      | -2147483648          | 2,675.0 ns |  86.38 ns | 237.93 ns | 2,600.0 ns |
+// | Bench  | 4      | 0                    | 2,220.0 ns |  71.99 ns | 200.67 ns | 2,200.0 ns |
+// | Bench  | 4      | 1                    | 2,197.7 ns |  66.51 ns | 183.19 ns | 2,100.0 ns |
+// | Bench  | 4      | 2147483647           | 2,241.2 ns |  54.53 ns | 147.43 ns | 2,200.0 ns |
+// | Bench  | 4      | 9223372036854775807  | 2,503.4 ns |  63.83 ns | 175.81 ns | 2,500.0 ns |
+// | Bench  | 4      | 17014(...)05727 [39] | 2,710.8 ns | 124.67 ns | 332.77 ns | 2,600.0 ns |
+// | Bench  | 4      | 57896(...)19967 [77] | 2,631.4 ns |  88.84 ns | 241.69 ns | 2,500.0 ns |
+// | Bench  | 32     | -5789(...)19968 [78] | 2,668.2 ns |  87.35 ns | 236.15 ns | 2,600.0 ns |
+// | Bench  | 32     | -9223372036854775808 | 2,647.6 ns |  85.09 ns | 225.65 ns | 2,600.0 ns |
+// | Bench  | 32     | -2147483648          | 2,350.0 ns |  78.16 ns | 217.88 ns | 2,300.0 ns |
+// | Bench  | 32     | 0                    | 2,219.3 ns |  61.02 ns | 168.06 ns | 2,200.0 ns |
+// | Bench  | 32     | 1                    | 2,303.7 ns |  81.13 ns | 215.13 ns | 2,300.0 ns |
+// | Bench  | 32     | 2147483647           | 2,377.6 ns |  85.30 ns | 230.62 ns | 2,300.0 ns |
+// | Bench  | 32     | 9223372036854775807  | 2,482.0 ns |  84.56 ns | 234.31 ns | 2,400.0 ns |
+// | Bench  | 32     | 17014(...)05727 [39] | 2,654.4 ns | 132.11 ns | 343.36 ns | 2,500.0 ns |
+// | Bench  | 32     | 57896(...)19967 [77] | 3,211.0 ns | 299.76 ns | 883.85 ns | 2,850.0 ns |
+// | Bench  | 64     | -5789(...)19968 [78] | 2,675.3 ns | 114.03 ns | 304.38 ns | 2,550.0 ns |
+// | Bench  | 64     | -9223372036854775808 | 2,354.8 ns |  80.67 ns | 216.71 ns | 2,250.0 ns |
+// | Bench  | 64     | -2147483648          | 2,241.7 ns |  48.25 ns |  80.62 ns | 2,300.0 ns |
+// | Bench  | 64     | 0                    | 2,187.5 ns |  71.52 ns | 197.00 ns | 2,100.0 ns |
+// | Bench  | 64     | 1                    | 2,191.9 ns |  64.09 ns | 174.37 ns | 2,100.0 ns |
+// | Bench  | 64     | 2147483647           | 2,753.6 ns | 244.19 ns | 708.44 ns | 2,400.0 ns |
+// | Bench  | 64     | 9223372036854775807  | 2,827.3 ns | 254.03 ns | 745.03 ns | 2,400.0 ns |
+// | Bench  | 64     | 17014(...)05727 [39] | 3,105.2 ns | 309.24 ns | 892.23 ns | 2,700.0 ns |
+// | Bench  | 64     | 57896(...)19967 [77] | 3,008.2 ns | 246.11 ns | 717.91 ns | 2,600.0 ns |
+// | Bench  | 128    | -5789(...)19968 [78] | 3,236.5 ns | 294.10 ns | 848.54 ns | 2,900.0 ns |
+// | Bench  | 128    | -9223372036854775808 | 2,778.8 ns | 232.34 ns | 681.43 ns | 2,500.0 ns |
+// | Bench  | 128    | -2147483648          | 2,276.2 ns |  75.92 ns | 203.95 ns | 2,200.0 ns |
+// | Bench  | 128    | 0                    | 2,591.1 ns | 180.50 ns | 503.17 ns | 2,400.0 ns |
+// | Bench  | 128    | 1                    | 2,359.6 ns | 111.99 ns | 310.32 ns | 2,200.0 ns |
+// | Bench  | 128    | 2147483647           | 2,829.9 ns | 255.97 ns | 742.63 ns | 2,500.0 ns |
+// | Bench  | 128    | 9223372036854775807  | 2,328.7 ns |  57.06 ns | 156.20 ns | 2,300.0 ns |
+// | Bench  | 128    | 17014(...)05727 [39] | 2,461.6 ns | 108.77 ns | 295.92 ns | 2,400.0 ns |
+// | Bench  | 128    | 57896(...)19967 [77] | 3,096.9 ns | 253.95 ns | 736.75 ns | 2,800.0 ns |
+// | Bench  | 256    | -5789(...)19968 [78] | 2,215.5 ns |  58.50 ns | 157.15 ns | 2,200.0 ns |
+// | Bench  | 256    | -9223372036854775808 | 3,094.0 ns | 289.10 ns | 852.43 ns | 2,750.0 ns |
+// | Bench  | 256    | -2147483648          | 2,357.6 ns | 103.11 ns | 278.76 ns | 2,300.0 ns |
+// | Bench  | 256    | 0                    | 2,446.9 ns |  98.45 ns | 259.37 ns | 2,400.0 ns |
+// | Bench  | 256    | 1                    | 2,829.0 ns | 242.53 ns | 688.03 ns | 2,600.0 ns |
+// | Bench  | 256    | 2147483647           | 2,256.2 ns |  66.40 ns | 183.99 ns | 2,200.0 ns |
+// | Bench  | 256    | 9223372036854775807  | 2,445.3 ns |  92.93 ns | 252.82 ns | 2,350.0 ns |
+// | Bench  | 256    | 17014(...)05727 [39] | 2,570.8 ns | 137.33 ns | 380.55 ns | 2,400.0 ns |
+// | Bench  | 256    | 57896(...)19967 [77] | 2,557.0 ns | 161.71 ns | 439.93 ns | 2,400.0 ns |

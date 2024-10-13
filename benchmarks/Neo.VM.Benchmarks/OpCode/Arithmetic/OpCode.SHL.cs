@@ -17,117 +17,56 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_SHL
 {
-    [ParamsSource(nameof(ScriptParams))]
-    public Script _script = new("0c04ffffff7f0c0100b8".HexToBytes());
+    [ParamsSource(nameof(ShiftParams))]
+    public int _shift;
+
+    [ParamsSource(nameof(IntegerParams))]
+    public BigInteger _initeger;
+
+
     private BenchmarkEngine _engine;
 
     private const VM.OpCode Opcode = VM.OpCode.SHL;
 
-    public static IEnumerable<Script> ScriptParams()
+    public static IEnumerable<int> ShiftParams()
     {
-        string[] scripts = [
-"05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f0078a8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f0059a8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f0070a8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f01db00a8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f006ea8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f01cb00a8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f01cd00a8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f01b800a8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f002ea8",
-            "05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f018200a8",
-            "0500000000000000000000000000000000000000000000000000000000000000801ea8",
-            "0500000000000000000000000000000000000000000000000000000000000000800018a8",
-            "05000000000000000000000000000000000000000000000000000000000000008001d100a8",
-            "05000000000000000000000000000000000000000000000000000000000000008001a700a8",
-            "050000000000000000000000000000000000000000000000000000000000000080004aa8",
-            "050000000000000000000000000000000000000000000000000000000000000080018300a8",
-            "050000000000000000000000000000000000000000000000000000000000000080004ba8",
-            "05000000000000000000000000000000000000000000000000000000000000008001ae00a8",
-            "050000000000000000000000000000000000000000000000000000000000000080019100a8",
-            "05000000000000000000000000000000000000000000000000000000000000008001d100a8",
-            "1101fb00a8",
-            "1101c000a8",
-            "110017a8",
-            "11018800a8",
-            "1117a8",
-            "11005da8",
-            "1101a600a8",
-            "11006aa8",
-            "110052a8",
-            "1101bf00a8",
-            "10019c00a8",
-            "1001d100a8",
-            "10018500a8",
-            "1001ae00a8",
-            "1001fa00a8",
-            "100078a8",
-            "10018700a8",
-            "100017a8",
-            "100016a8",
-            "100055a8",
-            "02ffffff7f1ea8",
-            "02ffffff7f0079a8",
-            "02ffffff7f0062a8",
-            "02ffffff7f01f900a8",
-            "02ffffff7f019000a8",
-            "02ffffff7f0011a8",
-            "02ffffff7f0029a8",
-            "02ffffff7f019100a8",
-            "02ffffff7f01b500a8",
-            "02ffffff7f0015a8",
-            "02000000800013a8",
-            "02000000800052a8",
-            "0200000080005da8",
-            "020000008001e400a8",
-            "0200000080018e00a8",
-            "02000000801ca8",
-            "020000008001fa00a8",
-            "02000000800028a8",
-            "020000008001b300a8",
-            "0200000080002da8",
-            "03ffffffffffffff7f01c900a8",
-            "03ffffffffffffff7f0048a8",
-            "03ffffffffffffff7f0071a8",
-            "03ffffffffffffff7f0033a8",
-            "03ffffffffffffff7f018500a8",
-            "03ffffffffffffff7f0033a8",
-            "03ffffffffffffff7f0069a8",
-            "03ffffffffffffff7f0028a8",
-            "03ffffffffffffff7f0037a8",
-            "03ffffffffffffff7f002ca8",
-            "030000000000000080018400a8",
-            "03000000000000008001a900a8",
-            "03000000000000008001c800a8",
-            "03000000000000008001c000a8",
-            "03000000000000008001be00a8",
-            "030000000000000080010001a8",
-            "03000000000000008001d600a8",
-            "0300000000000000800022a8",
-            "03000000000000008001a100a8",
-            "03000000000000008001d700a8",
-            "04ffffffffffffffffffffffffffffff7f019e00a8",
-            "04ffffffffffffffffffffffffffffff7f003ea8",
-            "04ffffffffffffffffffffffffffffff7f0014a8",
-            "04ffffffffffffffffffffffffffffff7f019b00a8",
-            "04ffffffffffffffffffffffffffffff7f007fa8",
-            "04ffffffffffffffffffffffffffffff7f01ca00a8",
-            "04ffffffffffffffffffffffffffffff7f01cb00a8",
-            "04ffffffffffffffffffffffffffffff7f005fa8",
-            "04ffffffffffffffffffffffffffffff7f019700a8",
-            "04ffffffffffffffffffffffffffffff7f018000a8",
+        return [
+            0,
+            2,
+            4,
+            32,
+            64,
+            128,
+            256
+          ];
+    }
 
-
+    public static IEnumerable<BigInteger> IntegerParams()
+    {
+        return
+        [
+            Benchmark_Opcode.MAX_INT,
+            Benchmark_Opcode.MIN_INT,
+            BigInteger.One,
+            BigInteger.Zero,
+            int.MaxValue,
+            int.MinValue,
+            long.MaxValue,
+            long.MinValue,
+            BigInteger.Parse("170141183460469231731687303715884105727") // Mersenne prime 2^127 - 1
         ];
-
-        return scripts.Select(p => new Script(p.HexToBytes()));
     }
 
     [IterationSetup]
     public void Setup()
     {
+        var builder = new InstructionBuilder();
+        builder.Push(_initeger);
+        builder.Push(_shift);
+        builder.AddInstruction(Opcode);
+
         _engine = new BenchmarkEngine();
-        _engine.LoadScript(_script);
+        _engine.LoadScript(builder.ToArray());
         _engine.ExecuteUntil(Opcode);
     }
 
@@ -143,133 +82,70 @@ public class OpCode_SHL
         _engine.ExecuteNext();
 
     }
-
-    [GenerateTests]
-    public void CreateBenchScript()
-    {
-        var values = new BigInteger[]
-        {
-            Benchmark_Opcode.MAX_INT,
-            Benchmark_Opcode.MIN_INT,
-            BigInteger.One,
-            BigInteger.Zero,
-            int.MaxValue,
-            int.MinValue,
-            long.MaxValue,
-            long.MinValue,
-            BigInteger.Parse("170141183460469231731687303715884105727"),  // Mersenne prime 2^127 - 1
-        };
-
-        foreach (var t in values)
-        {
-            for (var j = 0; j < 10; j++)
-            {
-                var shift = Random.Shared.Next(0, 257);
-                CreateBenchScript(t, shift, Opcode);
-            }
-        }
-    }
-
-    void CreateBenchScript(BigInteger a, BigInteger b, VM.OpCode opcode)
-    {
-        var builder = new InstructionBuilder();
-        builder.Push(a);
-        builder.Push(b);
-        builder.AddInstruction(opcode);
-        Console.WriteLine($"\"{builder.ToArray().ToHexString()}\",");
-    }
 }
 
-
-// | Method | _script       | Mean      | Error     | StdDev    | Median    |
-// |------- |-------------- |----------:|----------:|----------:|----------:|
-// | Bench  | Neo.VM.Script | 14.699 us | 0.5136 us | 1.3708 us | 14.300 us |
-// | Bench  | Neo.VM.Script | 16.433 us | 1.1801 us | 3.4610 us | 14.900 us |
-// | Bench  | Neo.VM.Script | 15.445 us | 0.8731 us | 2.4627 us | 14.400 us |
-// | Bench  | Neo.VM.Script | 17.297 us | 1.3914 us | 4.1026 us | 15.500 us |
-// | Bench  | Neo.VM.Script | 16.856 us | 1.3829 us | 4.0775 us | 14.950 us |
-// | Bench  | Neo.VM.Script | 15.129 us | 0.8729 us | 2.4620 us | 14.200 us |
-// | Bench  | Neo.VM.Script | 14.429 us | 0.4559 us | 1.2248 us | 14.200 us |
-// | Bench  | Neo.VM.Script | 16.249 us | 1.0937 us | 3.2077 us | 14.700 us |
-// | Bench  | Neo.VM.Script | 15.737 us | 0.7761 us | 2.1762 us | 14.900 us |
-// | Bench  | Neo.VM.Script |  2.472 us | 0.0524 us | 0.1161 us |  2.450 us |
-// | Bench  | Neo.VM.Script | 18.154 us | 1.5437 us | 4.5516 us | 15.900 us |
-// | Bench  | Neo.VM.Script | 18.571 us | 1.4612 us | 4.2856 us | 17.300 us |
-// | Bench  | Neo.VM.Script | 18.907 us | 1.3956 us | 4.0712 us | 18.100 us |
-// | Bench  | Neo.VM.Script | 14.653 us | 0.4779 us | 1.2591 us | 14.400 us |
-// | Bench  | Neo.VM.Script | 18.495 us | 1.3308 us | 3.8819 us | 17.150 us |
-// | Bench  | Neo.VM.Script | 14.418 us | 0.4578 us | 1.2300 us | 14.150 us |
-// | Bench  | Neo.VM.Script | 14.512 us | 0.5221 us | 1.4116 us | 14.000 us |
-// | Bench  | Neo.VM.Script | 18.420 us | 1.2555 us | 3.7017 us | 17.400 us |
-// | Bench  | Neo.VM.Script | 15.151 us | 0.7952 us | 2.1903 us | 14.250 us |
-// | Bench  | Neo.VM.Script | 14.542 us | 0.5094 us | 1.3771 us | 14.100 us |
-// | Bench  | Neo.VM.Script | 18.792 us | 1.2005 us | 3.5398 us | 19.900 us |
-// | Bench  | Neo.VM.Script |  2.386 us | 0.0494 us | 0.0783 us |  2.350 us |
-// | Bench  | Neo.VM.Script |  2.482 us | 0.0733 us | 0.1944 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.255 us | 0.0765 us | 0.2067 us |  2.200 us |
-// | Bench  | Neo.VM.Script |  2.502 us | 0.0968 us | 0.2567 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.517 us | 0.0935 us | 0.2512 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.540 us | 0.1102 us | 0.3071 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.553 us | 0.1093 us | 0.2973 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.490 us | 0.0816 us | 0.2122 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.223 us | 0.0457 us | 0.0859 us |  2.200 us |
-// | Bench  | Neo.VM.Script |  2.308 us | 0.1377 us | 0.3723 us |  2.200 us |
-// | Bench  | Neo.VM.Script |  2.233 us | 0.0665 us | 0.1830 us |  2.200 us |
-// | Bench  | Neo.VM.Script |  2.393 us | 0.1419 us | 0.3884 us |  2.250 us |
-// | Bench  | Neo.VM.Script |  2.284 us | 0.1026 us | 0.2790 us |  2.200 us |
-// | Bench  | Neo.VM.Script |  2.628 us | 0.2179 us | 0.6321 us |  2.300 us |
-// | Bench  | Neo.VM.Script |  2.212 us | 0.0631 us | 0.1718 us |  2.200 us |
-// | Bench  | Neo.VM.Script |  2.205 us | 0.0470 us | 0.0872 us |  2.200 us |
-// | Bench  | Neo.VM.Script |  2.142 us | 0.0422 us | 0.0578 us |  2.100 us |
-// | Bench  | Neo.VM.Script |  2.119 us | 0.0457 us | 0.0776 us |  2.100 us |
-// | Bench  | Neo.VM.Script |  2.489 us | 0.0951 us | 0.2603 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.326 us | 0.0497 us | 0.0817 us |  2.300 us |
-// | Bench  | Neo.VM.Script |  2.442 us | 0.0830 us | 0.2229 us |  2.400 us |
-// | Bench  | Neo.VM.Script | 14.402 us | 0.4666 us | 1.2773 us | 14.100 us |
-// | Bench  | Neo.VM.Script | 14.419 us | 0.3766 us | 1.0052 us | 14.200 us |
-// | Bench  | Neo.VM.Script |  2.317 us | 0.0499 us | 0.0747 us |  2.300 us |
-// | Bench  | Neo.VM.Script |  3.065 us | 0.2598 us | 0.7453 us |  2.800 us |
-// | Bench  | Neo.VM.Script |  2.467 us | 0.0525 us | 0.1012 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.327 us | 0.0487 us | 0.0667 us |  2.300 us |
-// | Bench  | Neo.VM.Script |  2.422 us | 0.0748 us | 0.2059 us |  2.300 us |
-// | Bench  | Neo.VM.Script |  2.448 us | 0.0743 us | 0.2034 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.548 us | 0.0890 us | 0.2392 us |  2.500 us |
-// | Bench  | Neo.VM.Script |  2.444 us | 0.0522 us | 0.1270 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.756 us | 0.2055 us | 0.5830 us |  2.500 us |
-// | Bench  | Neo.VM.Script | 17.585 us | 1.2607 us | 3.6973 us | 15.700 us |
-// | Bench  | Neo.VM.Script |  2.495 us | 0.0683 us | 0.1859 us |  2.400 us |
-// | Bench  | Neo.VM.Script | 16.858 us | 1.2710 us | 3.7475 us | 14.700 us |
-// | Bench  | Neo.VM.Script |  2.480 us | 0.0841 us | 0.2246 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.429 us | 0.0520 us | 0.0898 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.582 us | 0.0903 us | 0.2441 us |  2.500 us |
-// | Bench  | Neo.VM.Script |  2.770 us | 0.1672 us | 0.4633 us |  2.600 us |
-// | Bench  | Neo.VM.Script | 16.526 us | 1.1621 us | 3.3899 us | 15.050 us |
-// | Bench  | Neo.VM.Script |  2.906 us | 0.2254 us | 0.6575 us |  2.600 us |
-// | Bench  | Neo.VM.Script |  2.546 us | 0.1100 us | 0.2955 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.361 us | 0.0501 us | 0.0838 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  3.065 us | 0.2947 us | 0.8595 us |  2.650 us |
-// | Bench  | Neo.VM.Script |  2.581 us | 0.1012 us | 0.2736 us |  2.500 us |
-// | Bench  | Neo.VM.Script |  2.357 us | 0.0856 us | 0.2286 us |  2.300 us |
-// | Bench  | Neo.VM.Script |  2.640 us | 0.1280 us | 0.3525 us |  2.500 us |
-// | Bench  | Neo.VM.Script |  2.553 us | 0.0624 us | 0.1644 us |  2.500 us |
-// | Bench  | Neo.VM.Script |  2.385 us | 0.0517 us | 0.1287 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  3.384 us | 0.3190 us | 0.9406 us |  2.950 us |
-// | Bench  | Neo.VM.Script |  3.449 us | 0.3644 us | 1.0745 us |  2.900 us |
-// | Bench  | Neo.VM.Script |  2.471 us | 0.0532 us | 0.1438 us |  2.400 us |
-// | Bench  | Neo.VM.Script | 16.819 us | 1.2016 us | 3.5241 us | 15.350 us |
-// | Bench  | Neo.VM.Script |  3.322 us | 0.3141 us | 0.9162 us |  2.950 us |
-// | Bench  | Neo.VM.Script |  3.003 us | 0.2269 us | 0.6436 us |  2.700 us |
-// | Bench  | Neo.VM.Script | 19.699 us | 1.4966 us | 4.3657 us | 18.750 us |
-// | Bench  | Neo.VM.Script | 16.780 us | 1.1318 us | 3.2473 us | 15.600 us |
-// | Bench  | Neo.VM.Script |  3.269 us | 0.3387 us | 0.9718 us |  2.900 us |
-// | Bench  | Neo.VM.Script |  2.639 us | 0.1334 us | 0.3675 us |  2.500 us |
-// | Bench  | Neo.VM.Script | 19.294 us | 1.4098 us | 4.1346 us | 19.000 us |
-// | Bench  | Neo.VM.Script | 18.398 us | 1.2986 us | 3.8290 us | 17.500 us |
-// | Bench  | Neo.VM.Script |  2.873 us | 0.2337 us | 0.6513 us |  2.500 us |
-// | Bench  | Neo.VM.Script |  2.800 us | 0.1874 us | 0.5162 us |  2.600 us |
-// | Bench  | Neo.VM.Script | 14.185 us | 0.3480 us | 0.9469 us | 14.050 us |
-// | Bench  | Neo.VM.Script |  2.887 us | 0.2344 us | 0.6611 us |  2.550 us |
-// | Bench  | Neo.VM.Script | 17.584 us | 1.2138 us | 3.5599 us | 16.000 us |
-// | Bench  | Neo.VM.Script | 21.493 us | 2.2795 us | 6.6854 us | 20.700 us |
-// | Bench  | Neo.VM.Script |  2.464 us | 0.0668 us | 0.1795 us |  2.400 us |
-// | Bench  | Neo.VM.Script |  2.755 us | 0.1976 us | 0.5637 us |  2.500 us |
+// | Method | _shift | _initeger            | Mean      | Error     | StdDev    | Median    |
+// |------- |------- |--------------------- |----------:|----------:|----------:|----------:|
+// | Bench  | 0      | -5789(...)19968 [78] |  1.154 us | 0.0363 us | 0.0975 us |  1.100 us |
+// | Bench  | 0      | -9223372036854775808 |  1.094 us | 0.0683 us | 0.1870 us |  1.000 us |
+// | Bench  | 0      | -2147483648          |  1.271 us | 0.1318 us | 0.3845 us |  1.100 us |
+// | Bench  | 0      | 0                    |  1.199 us | 0.1172 us | 0.3436 us |  1.000 us |
+// | Bench  | 0      | 1                    |  1.086 us | 0.0641 us | 0.1723 us |  1.000 us |
+// | Bench  | 0      | 2147483647           |  1.445 us | 0.1461 us | 0.4307 us |  1.200 us |
+// | Bench  | 0      | 9223372036854775807  |  1.051 us | 0.0437 us | 0.1181 us |  1.000 us |
+// | Bench  | 0      | 17014(...)05727 [39] |  1.285 us | 0.1302 us | 0.3779 us |  1.100 us |
+// | Bench  | 0      | 57896(...)19967 [77] |  1.264 us | 0.1205 us | 0.3477 us |  1.150 us |
+// | Bench  | 2      | -5789(...)19968 [78] | 17.120 us | 1.1400 us | 3.3434 us | 15.500 us |
+// | Bench  | 2      | -9223372036854775808 |  3.311 us | 0.2759 us | 0.8135 us |  3.050 us |
+// | Bench  | 2      | -2147483648          |  3.323 us | 0.2637 us | 0.7733 us |  3.100 us |
+// | Bench  | 2      | 0                    |  2.741 us | 0.2486 us | 0.7251 us |  2.400 us |
+// | Bench  | 2      | 1                    |  2.465 us | 0.1354 us | 0.3660 us |  2.300 us |
+// | Bench  | 2      | 2147483647           |  2.827 us | 0.1276 us | 0.3362 us |  2.800 us |
+// | Bench  | 2      | 9223372036854775807  |  3.109 us | 0.2504 us | 0.7303 us |  2.800 us |
+// | Bench  | 2      | 17014(...)05727 [39] |  2.868 us | 0.2155 us | 0.6044 us |  2.600 us |
+// | Bench  | 2      | 57896(...)19967 [77] | 18.106 us | 1.1378 us | 3.3548 us | 17.050 us |
+// | Bench  | 4      | -5789(...)19968 [78] | 17.415 us | 1.1680 us | 3.4255 us | 16.000 us |
+// | Bench  | 4      | -9223372036854775808 |  3.378 us | 0.3433 us | 0.9849 us |  3.000 us |
+// | Bench  | 4      | -2147483648          |  3.116 us | 0.2739 us | 0.8076 us |  2.900 us |
+// | Bench  | 4      | 0                    |  2.116 us | 0.0437 us | 0.0754 us |  2.100 us |
+// | Bench  | 4      | 1                    |  2.335 us | 0.0982 us | 0.2672 us |  2.250 us |
+// | Bench  | 4      | 2147483647           |  2.460 us | 0.0745 us | 0.2013 us |  2.400 us |
+// | Bench  | 4      | 9223372036854775807  |  2.496 us | 0.0538 us | 0.1087 us |  2.500 us |
+// | Bench  | 4      | 17014(...)05727 [39] |  2.600 us | 0.1087 us | 0.2901 us |  2.500 us |
+// | Bench  | 4      | 57896(...)19967 [77] | 15.208 us | 0.5675 us | 1.5342 us | 14.800 us |
+// | Bench  | 32     | -5789(...)19968 [78] | 17.648 us | 1.1474 us | 3.3471 us | 16.050 us |
+// | Bench  | 32     | -9223372036854775808 |  2.647 us | 0.0860 us | 0.2384 us |  2.600 us |
+// | Bench  | 32     | -2147483648          |  2.655 us | 0.0905 us | 0.2447 us |  2.600 us |
+// | Bench  | 32     | 0                    |  2.381 us | 0.0600 us | 0.1622 us |  2.300 us |
+// | Bench  | 32     | 1                    |  2.525 us | 0.0914 us | 0.2533 us |  2.400 us |
+// | Bench  | 32     | 2147483647           |  2.703 us | 0.1631 us | 0.4491 us |  2.500 us |
+// | Bench  | 32     | 9223372036854775807  |  2.693 us | 0.1162 us | 0.3180 us |  2.600 us |
+// | Bench  | 32     | 17014(...)05727 [39] |  2.635 us | 0.0944 us | 0.2600 us |  2.600 us |
+// | Bench  | 32     | 57896(...)19967 [77] | 15.541 us | 0.7765 us | 2.2153 us | 14.600 us |
+// | Bench  | 64     | -5789(...)19968 [78] | 17.519 us | 1.2186 us | 3.5548 us | 16.000 us |
+// | Bench  | 64     | -9223372036854775808 |  2.508 us | 0.0636 us | 0.1720 us |  2.500 us |
+// | Bench  | 64     | -2147483648          |  2.722 us | 0.0882 us | 0.2428 us |  2.600 us |
+// | Bench  | 64     | 0                    |  2.381 us | 0.0980 us | 0.2699 us |  2.300 us |
+// | Bench  | 64     | 1                    |  2.542 us | 0.0928 us | 0.2588 us |  2.500 us |
+// | Bench  | 64     | 2147483647           |  2.690 us | 0.1310 us | 0.3607 us |  2.550 us |
+// | Bench  | 64     | 9223372036854775807  |  2.562 us | 0.0839 us | 0.2340 us |  2.500 us |
+// | Bench  | 64     | 17014(...)05727 [39] |  2.568 us | 0.0872 us | 0.2356 us |  2.500 us |
+// | Bench  | 64     | 57896(...)19967 [77] | 15.586 us | 0.7423 us | 2.0814 us | 14.800 us |
+// | Bench  | 128    | -5789(...)19968 [78] | 18.670 us | 1.2010 us | 3.5413 us | 18.400 us |
+// | Bench  | 128    | -9223372036854775808 |  2.434 us | 0.0527 us | 0.0909 us |  2.450 us |
+// | Bench  | 128    | -2147483648          |  2.622 us | 0.0969 us | 0.2702 us |  2.500 us |
+// | Bench  | 128    | 0                    |  2.402 us | 0.1390 us | 0.3852 us |  2.200 us |
+// | Bench  | 128    | 1                    |  2.520 us | 0.0757 us | 0.2046 us |  2.500 us |
+// | Bench  | 128    | 2147483647           |  2.947 us | 0.2281 us | 0.6582 us |  2.700 us |
+// | Bench  | 128    | 9223372036854775807  |  2.585 us | 0.0860 us | 0.2339 us |  2.500 us |
+// | Bench  | 128    | 17014(...)05727 [39] |  2.553 us | 0.1049 us | 0.2889 us |  2.500 us |
+// | Bench  | 128    | 57896(...)19967 [77] | 15.019 us | 0.6669 us | 1.7802 us | 14.400 us |
+// | Bench  | 256    | -5789(...)19968 [78] | 16.017 us | 0.9051 us | 2.5676 us | 15.100 us |
+// | Bench  | 256    | -9223372036854775808 | 15.927 us | 0.9452 us | 2.6967 us | 14.750 us |
+// | Bench  | 256    | -2147483648          | 15.445 us | 0.6759 us | 1.8503 us | 14.800 us |
+// | Bench  | 256    | 0                    |  2.274 us | 0.0714 us | 0.1956 us |  2.200 us |
+// | Bench  | 256    | 1                    | 15.079 us | 0.7463 us | 2.0805 us | 14.300 us |
+// | Bench  | 256    | 2147483647           | 18.140 us | 1.1967 us | 3.5285 us | 17.150 us |
+// | Bench  | 256    | 9223372036854775807  | 15.482 us | 0.6804 us | 1.8626 us | 14.900 us |
+// | Bench  | 256    | 17014(...)05727 [39] | 15.298 us | 0.6336 us | 1.7558 us | 14.700 us |
+// | Bench  | 256    | 57896(...)19967 [77] | 14.780 us | 0.5659 us | 1.5204 us | 14.300 us |

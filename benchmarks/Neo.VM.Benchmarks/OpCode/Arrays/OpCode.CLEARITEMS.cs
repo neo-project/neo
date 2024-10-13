@@ -13,9 +13,9 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_CLEARITEMS : OpCodeBase
 {
-
     protected override VM.OpCode Opcode => VM.OpCode.CLEARITEMS;
-    protected override InstructionBuilder CreateBaseLineScript()
+
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
@@ -34,11 +34,6 @@ public class OpCode_CLEARITEMS : OpCodeBase
         builder.Push(ItemCount);
         builder.AddInstruction(VM.OpCode.PACK);
         builder.AddInstruction(VM.OpCode.DUP);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(Opcode);
         return builder.ToArray();
     }

@@ -15,16 +15,10 @@ public class OpCode_NIP : OpCodeBase
 {
 
     protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
-    protected override InstructionBuilder CreateBaseLineScript()
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
-        builder.Push(ItemCount);
-        builder.Push(0);
-        return builder;
-    }
 
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(VM.OpCode.GE);
         return builder.ToArray();
     }

@@ -15,7 +15,7 @@ public class OpCode_REVERSEN : OpCodeBase
 {
     protected override VM.OpCode Opcode => VM.OpCode.REVERSEN;
 
-    protected override InstructionBuilder CreateBaseLineScript()
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
@@ -23,18 +23,14 @@ public class OpCode_REVERSEN : OpCodeBase
         builder.Push(ItemCount);
         builder.AddInstruction(VM.OpCode.STLOC0);
         initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
-        builder.Push(0);
+        builder.Push(ushort.MaxValue * 2);
+        builder.AddInstruction(VM.OpCode.NEWBUFFER);
         builder.AddInstruction(VM.OpCode.LDLOC0);
         builder.AddInstruction(VM.OpCode.DEC);
         builder.AddInstruction(VM.OpCode.STLOC0);
         builder.AddInstruction(VM.OpCode.LDLOC0);
         builder.Jump(VM.OpCode.JMPIF, initBegin);
         builder.Push(ItemCount);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(VM.OpCode.REVERSEN);
         return builder.ToArray();
     }
@@ -52,3 +48,12 @@ public class OpCode_REVERSEN : OpCodeBase
 //     | Bench_OneOpCode | 128       | 1.540 us | 0.0532 us | 0.1393 us | 1.500 us |
 //     | Bench_OneOpCode | 1024      | 3.968 us | 0.1582 us | 0.4614 us | 3.800 us |
 //     | Bench_OneOpCode | 2040      | 6.327 us | 0.1916 us | 0.5620 us | 6.200 us |
+
+
+// | Method          | ItemCount | Mean     | Error     | StdDev    |
+//     |---------------- |---------- |---------:|----------:|----------:|
+//     | Bench_OneOpCode | 2         | 1.285 us | 0.0383 us | 0.1061 us |
+//     | Bench_OneOpCode | 32        | 2.029 us | 0.1094 us | 0.3208 us |
+//     | Bench_OneOpCode | 128       | 2.709 us | 0.1647 us | 0.4779 us |
+//     | Bench_OneOpCode | 1024      | 4.553 us | 0.6520 us | 1.9121 us |
+//     | Bench_OneOpCode | 2040      | 6.112 us | 0.6347 us | 1.8715 us |

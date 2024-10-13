@@ -9,28 +9,48 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using BenchmarkDotNet.Attributes;
+
 namespace Neo.VM.Benchmark.OpCode;
 
-public class OpCode_PUSHDATA2 : OpCodeBase
+public class OpCode_PUSHDATA2
 {
+    protected VM.OpCode Opcode => VM.OpCode.PUSHDATA2;
 
-    protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
-    protected override InstructionBuilder CreateBaseLineScript()
+    private BenchmarkEngine _engine;
+
+    [ParamsSource(nameof(StrLen))]
+    public byte[] _value;
+
+    public static IEnumerable<byte[]> StrLen =>
+    [
+        new byte[byte.MaxValue + 1],
+        new byte[ushort.MaxValue - 1],
+    ];
+
+    [IterationSetup]
+    public void Setup()
     {
         var builder = new InstructionBuilder();
-        builder.Push(ItemCount);
-        builder.Push(0);
-        return builder;
+        builder.AddInstruction(VM.OpCode.NOP);
+        builder.Push(_value);
+
+        _engine = new BenchmarkEngine();
+        _engine.LoadScript(builder.ToArray());
+        _engine.ExecuteUntil(VM.OpCode.NOP);
     }
 
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
+    [IterationCleanup]
+    public void Cleanup()
     {
-        builder.AddInstruction(VM.OpCode.GE);
-        return builder.ToArray();
+        _engine.Dispose();
     }
 
-    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
-    {
-        throw new NotImplementedException();
-    }
+    [Benchmark]
+    public void Bench() => _engine.ExecuteNext();
 }
+
+// | Method | _value      | Mean     | Error     | StdDev    | Median   |
+//     |------- |------------ |---------:|----------:|----------:|---------:|
+//     | Bench  | Byte[256]   | 2.024 us | 0.1621 us | 0.4753 us | 1.800 us |
+//     | Bench  | Byte[65534] | 1.981 us | 0.1299 us | 0.3684 us | 1.800 us |

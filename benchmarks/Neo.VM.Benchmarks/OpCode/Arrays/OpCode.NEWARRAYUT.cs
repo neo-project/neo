@@ -15,18 +15,14 @@ public class OpCode_NEWARRAYUT : OpCodeBase
 {
 
     protected override VM.OpCode Opcode => VM.OpCode.NEWARRAY_T;
-    protected override InstructionBuilder CreateBaseLineScript()
+
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         // builder.Push(ushort.MaxValue*2);
         // builder.AddInstruction(VM.OpCode.NEWBUFFER);
         builder.Push(0);
         builder.Push(ItemCount);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(Opcode);
         return builder.ToArray();
     }

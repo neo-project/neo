@@ -15,7 +15,8 @@ public class OpCode_UNPACK : OpCodeBase
 {
 
     protected override VM.OpCode Opcode => VM.OpCode.UNPACK;
-    protected override InstructionBuilder CreateBaseLineScript()
+
+    protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
@@ -33,11 +34,6 @@ public class OpCode_UNPACK : OpCodeBase
         builder.Jump(VM.OpCode.JMPIF, initBegin);
         builder.Push(ItemCount);
         builder.AddInstruction(VM.OpCode.PACK);
-        return builder;
-    }
-
-    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
-    {
         builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
