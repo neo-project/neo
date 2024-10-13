@@ -72,6 +72,7 @@ namespace Neo.Wallets.NEP6
                 accounts = new Dictionary<UInt160, NEP6Account>();
                 extra = JToken.Null;
             }
+            Thread.MemoryBarrier();
         }
 
         /// <summary>
@@ -85,6 +86,7 @@ namespace Neo.Wallets.NEP6
         {
             this.password = password.ToSecureString();
             LoadFromJson(json, out Scrypt, out accounts, out extra);
+            Thread.MemoryBarrier();
         }
 
         private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken extra)
@@ -94,7 +96,6 @@ namespace Neo.Wallets.NEP6
             scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
             accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
-            Thread.MemoryBarrier();
             if (!VerifyPasswordInternal(password.GetClearText()))
                 throw new InvalidOperationException("Wrong password.");
         }
