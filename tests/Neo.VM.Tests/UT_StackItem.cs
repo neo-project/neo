@@ -31,8 +31,10 @@ namespace Neo.Test
 
             itemA = new VM.Types.Buffer(1);
             itemB = new VM.Types.Buffer(1);
+            itemC = new VM.Types.Buffer(2);
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
             itemA = true;
             itemB = true;
