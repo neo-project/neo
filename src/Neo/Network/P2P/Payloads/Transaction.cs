@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -458,7 +459,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             if (_signers == null || _signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
             return new Array(referenceCounter, new StackItem[]

@@ -46,7 +46,7 @@ namespace Neo.VM.Benchmark
             // L24: LDLOC 0
             // L25: JMPIF_L L19
             // L26: DROP
-            Run(nameof(NeoIssue2528), "VwEAwkpKAfsHdwARwG8AnXcAbwAl9////xHAzwJwlAAAdwAQzm8AnXcAbwAl9////0U=");
+            Run("VwEAwkpKAfsHdwARwG8AnXcAbwAl9////xHAzwJwlAAAdwAQzm8AnXcAbwAl9////0U=");
         }
 
         [Benchmark]
@@ -81,7 +81,7 @@ namespace Neo.VM.Benchmark
             // L25: DROP
             // L26: ROT
             // L27: DROP
-            Run(nameof(NeoVMIssue418), "whBNEcARTRHAVgEB/gGdYBFNEU0SwFMSwFhKJPNFUUU=");
+            Run("whBNEcARTRHAVgEB/gGdYBFNEU0SwFMSwFhKJPNFUUU=");
         }
 
         [Benchmark]
@@ -98,15 +98,299 @@ namespace Neo.VM.Benchmark
             // L08: DUP
             // L09: STSFLD 0
             // L10: JMPIF L03
-            Run(nameof(NeoIssue2723), "VgEC0PsBAGcAAgAAEACIRV8AnUpnACTz");
+            Run("VgEC0PsBAGcAAgAAEACIRV8AnUpnACTz");
         }
 
-        private static void Run(string name, string poc)
+        // Below are PoCs from issue https://github.com/neo-project/neo/issues/2723 by @dusmart
+        [Benchmark]
+        public void PoC_NewBuffer()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 23000000
+            // STLOC 00
+            // PUSHINT32 1048576
+            // NEWBUFFER
+            // DROP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f2ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAsDzXgF3AAIAABAAiEVvAJ13AG8AJfL///9JQA==");
+        }
+
+        [Benchmark]
+        public void PoC_Cat()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 1048575
+            // NEWBUFFER
+            // PUSH1
+            // NEWBUFFER
+            // PUSHINT32 133333337
+            // STLOC 00
+            // OVER
+            // OVER
+            // CAT
+            // DROP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f5ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAv//DwCIEYgCWYHyB3cAS0uLRW8AnXcAbwAl9f///0lA");
+        }
+
+        [Benchmark]
+        public void PoC_Left()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 1048576
+            // NEWBUFFER
+            // PUSHINT32 133333337
+            // STLOC 00
+            // DUP
+            // PUSHINT32 1048576
+            // LEFT
+            // DROP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f1ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAgAAEACIAlmB8gd3AEoCAAAQAI1FbwCddwBvACXx////SUA=");
+        }
+
+        [Benchmark]
+        public void PoC_Right()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 1048576
+            // NEWBUFFER
+            // PUSHINT32 133333337
+            // STLOC 00
+            // DUP
+            // PUSHINT32 1048576
+            // RIGHT
+            // DROP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f1ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAgAAEACIAlmB8gd3AEoCAAAQAI5FbwCddwBvACXx////SUA=");
+        }
+
+        [Benchmark]
+        public void PoC_ReverseN()
+        {
+            // INITSLOT 0100
+            // PUSHINT16 2040
+            // STLOC 00
+            // PUSHDATA1 aaabbbbbbbbbcccccccdddddddeeeeeeefffffff
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L cfffffff
+            // PUSHINT32 23000000
+            // STLOC 00
+            // PUSHINT16 2040
+            // REVERSEN
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f5ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAfgHdwAMKGFhYWJiYmJiYmJiYmNjY2NjY2NkZGRkZGRkZWVlZWVlZWZmZmZmZmZvAJ13AG8AJc////8CwPNeAXcAAfgHVW8AnXcAbwAl9f///0lA");
+        }
+
+        [Benchmark]
+        public void PoC_Substr()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 1048576
+            // NEWBUFFER
+            // PUSHINT32 133333337
+            // STLOC 00
+            // DUP
+            // PUSH0
+            // PUSHINT32 1048576
+            // SUBSTR
+            // DROP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f0ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAgAAEACIAlmB8gd3AEoQAgAAEACMRW8AnXcAbwAl8P///0lA");
+        }
+
+        [Benchmark]
+        public void PoC_NewArray()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 1333333337
+            // STLOC 00
+            // PUSHINT16 2040
+            // NEWARRAY
+            // DROP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f4ffffff
+            // RET
+            Run("VwEAAlkNeU93AAH4B8NFbwCddwBvACX0////QA==");
+        }
+
+        [Benchmark]
+        public void PoC_NewStruct()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 1333333337
+            // STLOC 00
+            // PUSHINT16 2040
+            // NEWSTRUCT
+            // DROP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f4ffffff
+            // RET
+            Run("VwEAAlkNeU93AAH4B8ZFbwCddwBvACX0////QA==");
+        }
+
+        [Benchmark]
+        public void PoC_Roll()
+        {
+            // INITSLOT 0100
+            // PUSHINT16 2040
+            // STLOC 00
+            // PUSHDATA1 aaabbbbbbbbbcccccccdddddddeeeeeeefffffff
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L cfffffff
+            // PUSHINT32 23000000
+            // STLOC 00
+            // PUSHINT16 2039
+            // ROLL
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f5ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAfgHdwAMKGFhYWJiYmJiYmJiYmNjY2NjY2NkZGRkZGRkZWVlZWVlZWZmZmZmZmZvAJ13AG8AJc////8CwPNeAXcAAfcHUm8AnXcAbwAl9f///0lA");
+        }
+
+        [Benchmark]
+        public void PoC_XDrop()
+        {
+            // INITSLOT 0100
+            // PUSHINT16 2040
+            // STLOC 00
+            // PUSHDATA1 aaabbbbbbbbbcccccccdddddddeeeeeeefffffff
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L cfffffff
+            // PUSHINT32 23000000
+            // STLOC 00
+            // PUSHINT16 2039
+            // XDROP
+            // DUP
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f4ffffff
+            // CLEAR
+            // RET
+            Run("VwEAAfgHdwAMKGFhYWJiYmJiYmJiYmNjY2NjY2NkZGRkZGRkZWVlZWVlZWZmZmZmZmZvAJ13AG8AJc////8CwPNeAXcAAfcHSEpvAJ13AG8AJfT///9JQA==");
+        }
+
+        [Benchmark]
+        public void PoC_MemCpy()
+        {
+            // INITSLOT 0100
+            // PUSHINT32 1048576
+            // NEWBUFFER
+            // PUSHINT32 1048576
+            // NEWBUFFER
+            // PUSHINT32 133333337
+            // STLOC 00
+            // OVER
+            // PUSH0
+            // PUSH2
+            // PICK
+            // PUSH0
+            // PUSHINT32 1048576
+            // MEMCPY
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L eeffffff
+            // CLEAR
+            // RET
+            Run("VwEAAgAAEACIAgAAEACIAlmB8gd3AEsQEk0QAgAAEACJbwCddwBvACXu////SUA=");
+        }
+
+        [Benchmark]
+        public void PoC_Unpack()
+        {
+            // INITSLOT 0200
+            // PUSHINT16 1010
+            // NEWARRAY
+            // STLOC 01
+            // PUSHINT32 1333333337
+            // STLOC 00
+            // LDLOC 01
+            // UNPACK
+            // CLEAR
+            // LDLOC 00
+            // DEC
+            // STLOC 00
+            // LDLOC 00
+            // JMPIF_L f5ffffff
+            // RET
+            Run("VwIAAfIDw3cBAlkNeU93AG8BwUlvAJ13AG8AJfX///9A");
+        }
+
+        [Benchmark]
+        public void PoC_GetScriptContainer()
+        {
+            // SYSCALL System.Runtime.GetScriptContainer
+            // DROP
+            // JMP fa
+            Run("QS1RCDBFIvo=");
+        }
+
+        private static void Run(string poc)
         {
             byte[] script = Convert.FromBase64String(poc);
             using ExecutionEngine engine = new();
             engine.LoadScript(script);
             engine.Execute();
+
             Debug.Assert(engine.State == VMState.HALT);
         }
     }
