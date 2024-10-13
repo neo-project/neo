@@ -53,7 +53,8 @@ public class BenchmarkEngine : TestEngine
             try
             {
                 var instruction = CurrentContext!.CurrentInstruction!.OpCode;
-                if (instruction == opCode) break;
+                if (instruction == opCode)
+                    break;
             }
             catch
             {
@@ -68,28 +69,19 @@ public class BenchmarkEngine : TestEngine
     {
         while (State != VMState.HALT && State != VMState.FAULT)
         {
-#if DEBUG
-            var stopwatch = Stopwatch.StartNew();
-#endif
             ExecuteNext();
-#if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(CurrentContext!.CurrentInstruction!.OpCode, stopwatch.Elapsed);
-#endif
         }
-#if DEBUG
-        PrintOpcodeStats();
-#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ExecuteOneGASBenchmark()
+    public void ExecuteOneGASBenchmark(double gas = 1)
     {
+        var maxGas = Benchmark_Opcode.OneGasDatoshi * gas;
         while (State != VMState.HALT && State != VMState.FAULT)
         {
             var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
             _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
-            if (_gasConsumed >= Benchmark_Opcode.OneGasDatoshi)
+            if (_gasConsumed >= maxGas)
             {
                 State = VMState.HALT;
             }
@@ -160,7 +152,9 @@ public class BenchmarkEngine : TestEngine
     protected override void OnFault(Exception ex)
     {
         base.OnFault(ex);
-        // throw ex;
+#if DEBUG
+        throw ex;
+#endif
     }
 
     private void UpdateOpcodeStats(VM.OpCode opcode, TimeSpan elapsed)

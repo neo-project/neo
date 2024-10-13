@@ -13,7 +13,9 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_REVERSEN : OpCodeBase
 {
-    protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
+    protected override VM.OpCode Opcode => VM.OpCode.REVERSEN;
+
+    protected override InstructionBuilder CreateBaseLineScript()
     {
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
@@ -27,21 +29,26 @@ public class OpCode_REVERSEN : OpCodeBase
         builder.AddInstruction(VM.OpCode.STLOC0);
         builder.AddInstruction(VM.OpCode.LDLOC0);
         builder.Jump(VM.OpCode.JMPIF, initBegin);
-        if (benchmarkMode == BenchmarkMode.BaseLine)
-        {
-            return builder.ToArray();
-        }
         builder.Push(ItemCount);
-        builder.AddInstruction(VM.OpCode.REVERSEN);
-        if (benchmarkMode == BenchmarkMode.OneGAS)
-        {
-            // just keep running until GAS is exhausted
-            var loopStart = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
-            builder.Push(ItemCount);
-            builder.AddInstruction(VM.OpCode.REVERSEN);
-            builder.Jump(VM.OpCode.JMP, loopStart);
-        }
+        return builder;
+    }
 
+    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
+    {
+        builder.AddInstruction(VM.OpCode.REVERSEN);
         return builder.ToArray();
     }
+
+    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
+    {
+        throw new NotImplementedException();
+    }
 }
+
+// | Method          | ItemCount | Mean     | Error     | StdDev    | Median   |
+//     |---------------- |---------- |---------:|----------:|----------:|---------:|
+//     | Bench_OneOpCode | 1         | 1.089 us | 0.0546 us | 0.1457 us | 1.100 us |
+//     | Bench_OneOpCode | 32        | 1.344 us | 0.0446 us | 0.1214 us | 1.300 us |
+//     | Bench_OneOpCode | 128       | 1.540 us | 0.0532 us | 0.1393 us | 1.500 us |
+//     | Bench_OneOpCode | 1024      | 3.968 us | 0.1582 us | 0.4614 us | 3.800 us |
+//     | Bench_OneOpCode | 2040      | 6.327 us | 0.1916 us | 0.5620 us | 6.200 us |

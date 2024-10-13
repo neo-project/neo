@@ -13,10 +13,30 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_NEWMAP : OpCodeBase
 {
-    protected override byte[] CreateScript(BenchmarkMode benchmarkMode)
+    protected override VM.OpCode Opcode => VM.OpCode.NEWMAP;
+    protected override InstructionBuilder CreateBaseLineScript()
     {
         var builder = new InstructionBuilder();
+        builder.Push(ItemCount);
+        return builder;
+    }
 
+    protected override byte[] CreateOneOpCodeScript(ref InstructionBuilder builder)
+    {
+        builder.AddInstruction(VM.OpCode.NEWMAP);
         return builder.ToArray();
     }
+
+    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
+    {
+        throw new NotImplementedException();
+    }
 }
+
+//     | Method          | ItemCount | Mean     | Error     | StdDev    | Median   |
+//     |---------------- |---------- |---------:|----------:|----------:|---------:|
+//     | Bench_OneOpCode | 1         | 2.436 us | 0.1130 us | 0.3036 us | 2.350 us |
+//     | Bench_OneOpCode | 32        | 2.382 us | 0.1007 us | 0.2756 us | 2.300 us |
+//     | Bench_OneOpCode | 128       | 2.280 us | 0.0493 us | 0.1255 us | 2.300 us |
+//     | Bench_OneOpCode | 1024      | 2.444 us | 0.1008 us | 0.2708 us | 2.400 us |
+//     | Bench_OneOpCode | 2040      | 2.359 us | 0.0643 us | 0.1694 us | 2.300 us |

@@ -9,11 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Numerics;
+
 namespace Neo.VM.Benchmark.OpCode;
 
 public class Benchmark_Opcode
 {
     internal static readonly long OneGasDatoshi = 1_0000_0000;
+
+    internal static readonly BigInteger MAX_INT = BigInteger.Parse("57896044618658097711785492504343953926634992332820282019728792003956564819967");
+    internal static readonly BigInteger MIN_INT = BigInteger.Parse("-57896044618658097711785492504343953926634992332820282019728792003956564819968");
 
     public static readonly IReadOnlyDictionary<VM.OpCode, long> OpCodePrices = new Dictionary<VM.OpCode, long>
     {
@@ -230,5 +235,20 @@ public class Benchmark_Opcode
         var engine = new BenchmarkEngine();
         engine.LoadScript(script);
         return engine;
+    }
+
+    internal static void FillStack(ref InstructionBuilder builder)
+    {
+        var initBegin = new JumpTarget();
+        builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+        builder.Push(2048);
+        builder.AddInstruction(VM.OpCode.STLOC0);
+        initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+        builder.Push(0);
+        builder.AddInstruction(VM.OpCode.LDLOC0);
+        builder.AddInstruction(VM.OpCode.DEC);
+        builder.AddInstruction(VM.OpCode.STLOC0);
+        builder.AddInstruction(VM.OpCode.LDLOC0);
+        builder.Jump(VM.OpCode.JMPIF, initBegin);
     }
 }
