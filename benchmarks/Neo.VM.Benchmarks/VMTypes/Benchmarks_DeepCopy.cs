@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Benchmarks.Types.cs file belongs to the neo project and is free
+// Benchmarks_DeepCopy.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,7 +14,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.VM.Benchmark;
 
-public class Benchmarks_Types
+public class Benchmarks_DeepCopy
 {
     public IEnumerable<(int Depth, int ElementsPerLevel)> ParamSource()
     {
@@ -70,7 +70,7 @@ public class Benchmarks_Types
         _ = root.DeepCopy();
     }
 
-    private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, ReferenceCounter? referenceCounter = null)
+    private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
     {
         if (depth < 0)
         {
@@ -95,7 +95,7 @@ public class Benchmarks_Types
         }
     }
 
-    private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, ReferenceCounter referenceCounter = null)
+    private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter referenceCounter = null)
     {
         if (depth < 0)
         {
