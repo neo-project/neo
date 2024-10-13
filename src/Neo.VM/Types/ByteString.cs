@@ -29,7 +29,7 @@ namespace Neo.VM.Types
         /// </summary>
         public static readonly ByteString Empty = ReadOnlyMemory<byte>.Empty;
 
-        private static readonly uint s_seed = unchecked((uint)new Random().Next());
+        private static readonly uint s_seed = unchecked((uint)new Random().Next(int.MinValue, int.MaxValue));
         private int _hashCode = 0;
 
         public override ReadOnlyMemory<byte> Memory { get; }

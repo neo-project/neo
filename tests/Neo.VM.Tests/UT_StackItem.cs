@@ -32,7 +32,7 @@ namespace Neo.Test
             itemA = new VM.Types.Buffer(1);
             itemB = new VM.Types.Buffer(1);
 
-            Assert.IsTrue(itemA.GetHashCode() != itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
 
             itemA = true;
             itemB = true;

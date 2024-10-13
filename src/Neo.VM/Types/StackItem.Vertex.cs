@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Cryptography;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -111,6 +113,10 @@ namespace Neo.VM.Types
         /// </summary>
         internal void Reset() => (DFN, LowLink, OnStack) = (-1, 0, false);
 
+
+        private static readonly uint s_seed = unchecked((uint)new Random().Next(int.MinValue, int.MaxValue));
+        private int _hashCode = 0;
+
         /// <summary>
         /// Generates a hash code based on the item's span.
         ///
@@ -120,7 +126,14 @@ namespace Neo.VM.Types
         /// Use this method when you need a hash code for a StackItem.
         /// </summary>
         /// <returns>The hash code for the StackItem.</returns>
-        public override int GetHashCode() =>
-            HashCode.Combine(GetSpan().ToArray());
+        public override int GetHashCode()
+        {
+            if (_hashCode == 0)
+            {
+                using Murmur32 murmur = new(s_seed);
+                _hashCode = BinaryPrimitives.ReadInt32LittleEndian(murmur.ComputeHash(GetSpan().ToArray()));
+            }
+            return _hashCode;
+        }
     }
 }
