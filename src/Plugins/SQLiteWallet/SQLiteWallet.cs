@@ -318,6 +318,7 @@ class SQLiteWallet : Wallet
             account.Contract = contract;
             account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, masterKey, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P));
         }
+        Thread.MemoryBarrier();
         return accounts;
     }
 

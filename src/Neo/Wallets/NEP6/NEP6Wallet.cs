@@ -20,6 +20,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Wallets.NEP6
@@ -93,6 +94,7 @@ namespace Neo.Wallets.NEP6
             scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
             accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
+            Thread.MemoryBarrier();
             if (!VerifyPasswordInternal(password.GetClearText()))
                 throw new InvalidOperationException("Wrong password.");
         }
