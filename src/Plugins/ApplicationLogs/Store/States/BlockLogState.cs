@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo;
+using Neo.Extensions;
 using Neo.IO;
 
 namespace Neo.Plugins.ApplicationLogs.Store.States

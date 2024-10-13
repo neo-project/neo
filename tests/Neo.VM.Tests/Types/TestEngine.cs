@@ -15,7 +15,7 @@ using System;
 
 namespace Neo.Test.Types
 {
-    class TestEngine : ExecutionEngine
+    public class TestEngine : ExecutionEngine
     {
         public Exception FaultException { get; private set; }
 
