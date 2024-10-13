@@ -12,7 +12,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Neo.Helper;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -47,7 +46,7 @@ namespace Neo.Cryptography.MPTTrie
                             start = node;
                             return ReadOnlySpan<byte>.Empty;
                         }
-                        return Concat(path[..1], Seek(ref node.Children[path[0]], path[1..], out start));
+                        return new([.. path[..1], .. Seek(ref node.Children[path[0]], path[1..], out start)]);
                     }
                 case NodeType.ExtensionNode:
                     {
@@ -58,7 +57,7 @@ namespace Neo.Cryptography.MPTTrie
                         }
                         if (path.StartsWith(node.Key.Span))
                         {
-                            return Concat(node.Key.Span, Seek(ref node.Next, path[node.Key.Length..], out start));
+                            return new([.. node.Key.Span, .. Seek(ref node.Next, path[node.Key.Length..], out start)]);
                         }
                         if (node.Key.Span.StartsWith(path))
                         {
@@ -135,10 +134,10 @@ namespace Neo.Cryptography.MPTTrie
                             for (int i = 0; i < Node.BranchChildCount - 1; i++)
                             {
                                 if (from[offset] < i)
-                                    foreach (var item in Travers(node.Children[i], Concat(path, new byte[] { (byte)i }), from, from.Length))
+                                    foreach (var item in Travers(node.Children[i], [.. path, .. new byte[] { (byte)i }], from, from.Length))
                                         yield return item;
                                 else if (i == from[offset])
-                                    foreach (var item in Travers(node.Children[i], Concat(path, new byte[] { (byte)i }), from, offset + 1))
+                                    foreach (var item in Travers(node.Children[i], [.. path, .. new byte[] { (byte)i }], from, offset + 1))
                                         yield return item;
                             }
                         }
@@ -148,7 +147,7 @@ namespace Neo.Cryptography.MPTTrie
                                 yield return item;
                             for (int i = 0; i < Node.BranchChildCount - 1; i++)
                             {
-                                foreach (var item in Travers(node.Children[i], Concat(path, new byte[] { (byte)i }), from, offset))
+                                foreach (var item in Travers(node.Children[i], [.. path, .. new byte[] { (byte)i }], from, offset))
                                     yield return item;
                             }
                         }
@@ -157,10 +156,10 @@ namespace Neo.Cryptography.MPTTrie
                 case NodeType.ExtensionNode:
                     {
                         if (offset < from.Length && from.AsSpan()[offset..].StartsWith(node.Key.Span))
-                            foreach (var item in Travers(node.Next, Concat(path, node.Key.Span), from, offset + node.Key.Length))
+                            foreach (var item in Travers(node.Next, [.. path, .. node.Key.Span], from, offset + node.Key.Length))
                                 yield return item;
                         else if (from.Length <= offset || 0 < node.Key.Span.CompareTo(from.AsSpan(offset)))
-                            foreach (var item in Travers(node.Next, Concat(path, node.Key.Span), from, from.Length))
+                            foreach (var item in Travers(node.Next, [.. path, .. node.Key.Span], from, from.Length))
                                 yield return item;
                         break;
                     }

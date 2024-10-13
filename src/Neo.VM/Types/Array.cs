@@ -35,6 +35,11 @@ namespace Neo.VM.Types
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
                 ReferenceCounter?.RemoveReference(_array[index], this);
                 _array[index] = value;
+                if (ReferenceCounter != null && value is CompoundType { ReferenceCounter: null })
+                {
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+                }
+
                 ReferenceCounter?.AddReference(value, this);
             }
         }
@@ -61,7 +66,7 @@ namespace Neo.VM.Types
         /// </summary>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> to be used by this array.</param>
         /// <param name="items">The items to be included in the array.</param>
-        public Array(ReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
+        public Array(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
             : base(referenceCounter)
         {
             _array = items switch
@@ -70,9 +75,18 @@ namespace Neo.VM.Types
                 List<StackItem> list => list,
                 _ => new List<StackItem>(items)
             };
-            if (referenceCounter != null)
-                foreach (StackItem item in _array)
-                    referenceCounter.AddReference(item, this);
+
+            if (referenceCounter == null) return;
+
+            foreach (var item in _array)
+            {
+                if (item is CompoundType { ReferenceCounter: null })
+                {
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+                }
+
+                referenceCounter.AddReference(item, this);
+            }
         }
 
         /// <summary>
@@ -83,7 +97,14 @@ namespace Neo.VM.Types
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             _array.Add(item);
-            ReferenceCounter?.AddReference(item, this);
+
+            if (ReferenceCounter == null) return;
+
+            if (item is CompoundType { ReferenceCounter: null })
+            {
+                throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+            }
+            ReferenceCounter.AddReference(item, this);
         }
 
         public override void Clear()

@@ -30,9 +30,7 @@ namespace Neo.IO.Storage.LevelDB
         {
         }
 
-        protected virtual void FreeUnManagedObjects()
-        {
-        }
+        protected abstract void FreeUnManagedObjects();
 
         bool _disposed = false;
         void Dispose(bool disposing)

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Neo.Plugins.DBFTPlugin
 {
-    public class Settings
+    public class Settings : PluginSettings
     {
         public string RecoveryLogs { get; }
         public bool IgnoreRecoveryLogs { get; }
@@ -22,7 +22,7 @@ namespace Neo.Plugins.DBFTPlugin
         public uint MaxBlockSize { get; }
         public long MaxBlockSystemFee { get; }
 
-        public Settings(IConfigurationSection section)
+        public Settings(IConfigurationSection section) : base(section)
         {
             RecoveryLogs = section.GetValue("RecoveryLogs", "ConsensusState");
             IgnoreRecoveryLogs = section.GetValue("IgnoreRecoveryLogs", false);

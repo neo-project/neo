@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -39,7 +40,7 @@ namespace Neo.Plugins.RpcServer
                 timer = new(OnTimer, null, settings.SessionExpirationTime, settings.SessionExpirationTime);
         }
 
-        private void Dispose_SmartContract()
+        internal void Dispose_SmartContract()
         {
             timer?.Dispose();
             Session[] toBeDestroyed;
@@ -52,7 +53,7 @@ namespace Neo.Plugins.RpcServer
                 session.Dispose();
         }
 
-        private void OnTimer(object state)
+        internal void OnTimer(object state)
         {
             List<(Guid Id, Session Session)> toBeDestroyed = new();
             lock (sessions)
@@ -189,7 +190,7 @@ namespace Neo.Plugins.RpcServer
 
             // Validate format
 
-            _ = IO.Helper.ToByteArray(ret).AsSerializableArray<Signer>();
+            _ = ret.ToByteArray().AsSerializableArray<Signer>();
 
             return ret;
         }

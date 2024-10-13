@@ -62,7 +62,7 @@ namespace Neo.IO.Storage.LevelDB
         /// <summary>
         /// Support for iterating over a batch.
         /// </summary>
-        public void Iterate(object state, Action<object, byte[], int, byte[], int> put, Action<object, byte[], int> deleted)
+        internal void Iterate(object state, Action<object, byte[], int, byte[], int> put, Action<object, byte[], int> deleted)
         {
             Native.leveldb_writebatch_iterate(Handle, state, put, deleted);
         }

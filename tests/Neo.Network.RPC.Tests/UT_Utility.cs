@@ -9,11 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.Numerics;
+using System.Security.Cryptography;
 
 namespace Neo.Network.RPC.Tests
 {
@@ -33,6 +38,16 @@ namespace Neo.Network.RPC.Tests
         }
 
         [TestMethod]
+        public void TestAsScriptHash()
+        {
+            var scriptHash1 = Utility.AsScriptHash(NativeContract.NEO.Id.ToString());
+            var scriptHash2 = Utility.AsScriptHash(NativeContract.NEO.Hash.ToString());
+            var scriptHash3 = Utility.AsScriptHash(NativeContract.NEO.Name);
+            scriptHash2.Should().Be(scriptHash1);
+            scriptHash3.Should().Be(scriptHash1);
+        }
+
+        [TestMethod]
         public void TestGetKeyPair()
         {
             string nul = null;
@@ -45,6 +60,13 @@ namespace Neo.Network.RPC.Tests
             string privateKey = keyPair.PrivateKey.ToHexString();
             result = Utility.GetKeyPair(privateKey);
             Assert.AreEqual(keyPair, result);
+
+            string hexWith0x = $"0x{result.PrivateKey.ToHexString()}";
+            result = Utility.GetKeyPair(hexWith0x);
+            Assert.AreEqual(keyPair, result);
+
+            var action = () => { Utility.GetKeyPair("00"); };
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]
@@ -64,6 +86,124 @@ namespace Neo.Network.RPC.Tests
             string publicKey = keyPair.PublicKey.ToString();
             result = Utility.GetScriptHash(publicKey, protocolSettings);
             Assert.AreEqual(scriptHash, result);
+
+            var action = () => { Utility.GetScriptHash("00", protocolSettings); };
+            action.Should().Throw<FormatException>();
+        }
+
+        [TestMethod]
+        public void TestTransactionAttribute()
+        {
+            var attribute = new Conflicts();
+            attribute.Hash = UInt256.Zero;
+            var json = attribute.ToJson();
+            var result = Utility.TransactionAttributeFromJson(json).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            var attribute2 = new OracleResponse();
+            attribute2.Id = 1234;
+            attribute2.Code = 0;
+            attribute2.Result = new ReadOnlyMemory<byte> { };
+            json = attribute2.ToJson();
+            result = Utility.TransactionAttributeFromJson(json).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            var attribute3 = new NotValidBefore();
+            attribute3.Height = 10000;
+            json = attribute3.ToJson();
+            result = Utility.TransactionAttributeFromJson(json).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            var attribute4 = new HighPriorityAttribute();
+            json = attribute4.ToJson();
+            result = Utility.TransactionAttributeFromJson(json).ToJson();
+            result.ToString().Should().Be(json.ToString());
+        }
+
+        [TestMethod]
+        public void TestWitnessRule()
+        {
+            var rule = new WitnessRule();
+            rule.Action = WitnessRuleAction.Allow;
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByEntryCondition();
+            var json = rule.ToJson();
+            var result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.OrCondition()
+            {
+                Expressions = new P2P.Payloads.Conditions.WitnessCondition[]
+                {
+                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    {
+                        Expression = true
+                    },
+                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    {
+                        Expression = false
+                    }
+                }
+            };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.AndCondition()
+            {
+                Expressions = new P2P.Payloads.Conditions.WitnessCondition[]
+                {
+                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    {
+                        Expression = true
+                    },
+                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    {
+                        Expression = false
+                    }
+                }
+            };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.BooleanCondition() { Expression = true };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.NotCondition()
+            {
+                Expression = new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                {
+                    Expression = true
+                }
+            };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            var kp = Utility.GetKeyPair("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p");
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.GroupCondition() { Group = kp.PublicKey };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByContractCondition() { Hash = UInt160.Zero };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.ScriptHashCondition() { Hash = UInt160.Zero };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+            result.ToString().Should().Be(json.ToString());
+
+            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByGroupCondition() { Group = kp.PublicKey };
+            json = rule.ToJson();
+            result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
+            result.ToString().Should().Be(json.ToString());
+            result.ToString().Should().Be(json.ToString());
         }
 
         [TestMethod]
