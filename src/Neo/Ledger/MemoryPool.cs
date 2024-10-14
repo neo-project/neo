@@ -445,12 +445,20 @@ namespace Neo.Ledger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool TryRemoveUnVerified(UInt256 hash, [MaybeNullWhen(false)] out PoolItem? item)
         {
-            if (!_unverifiedTransactions.TryGetValue(hash, out item))
-                return false;
+            _txRwLock.EnterWriteLock();
+            try
+            {
+                if (!_unverifiedTransactions.TryGetValue(hash, out item))
+                    return false;
 
-            _unverifiedTransactions.Remove(hash);
-            _unverifiedSortedTransactions.Remove(item);
-            return true;
+                _unverifiedTransactions.Remove(hash);
+                _unverifiedSortedTransactions.Remove(item);
+                return true;
+            }
+            finally
+            {
+                _txRwLock.ExitWriteLock();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

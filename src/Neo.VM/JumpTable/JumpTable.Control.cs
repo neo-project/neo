@@ -539,7 +539,11 @@ namespace Neo.VM
             if (context_pop.EvaluationStack != stack_eval)
             {
                 if (context_pop.RVCount >= 0 && context_pop.EvaluationStack.Count != context_pop.RVCount)
-                    throw new InvalidOperationException("RVCount doesn't match with EvaluationStack");
+                    // This exception indicates a mismatch between the expected and actual number of stack items.
+                    // It typically occurs due to compilation errors caused by potential issues in the compiler, resulting in either too many or too few
+                    // items left on the stack compared to what was anticipated by the return value count.
+                    // When you run into this problem, try to reach core-devs at https://github.com/neo-project/neo for help.
+                    throw new InvalidOperationException($"Return value count mismatch: expected {context_pop.RVCount}, but got {context_pop.EvaluationStack.Count} items on the evaluation stack");
                 context_pop.EvaluationStack.CopyTo(stack_eval);
             }
             if (engine.InvocationStack.Count == 0)
