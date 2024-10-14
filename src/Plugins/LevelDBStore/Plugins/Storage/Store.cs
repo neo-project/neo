@@ -58,10 +58,10 @@ namespace Neo.Plugins.Storage
 
         public byte[] TryGet(byte[] key) =>
             _db.Get(key, ReadOptions.Default);
-            
+
         public bool TryGet(byte[] key, out byte[] value)
         {
-            value = db.Get(key, ReadOptions.Default);
+            value = _db.Get(key, ReadOptions.Default);
             return value != null;
         }
 
