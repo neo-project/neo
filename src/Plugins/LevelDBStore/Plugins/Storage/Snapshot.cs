@@ -62,6 +62,12 @@ namespace Neo.Plugins.Storage
 
         public byte[] TryGet(byte[] key) =>
             _db.Get(key, _readOptions);
+            
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            value = db.Get(key, _readOptions);
+            return value != null;
+        }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
             direction == SeekDirection.Forward
