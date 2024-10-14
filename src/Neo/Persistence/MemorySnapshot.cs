@@ -69,6 +69,11 @@ namespace Neo.Persistence
             return value?[..];
         }
 
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            return immutableData.TryGetValue(key, out value);
+        }
+
         public bool Contains(byte[] key)
         {
             return immutableData.ContainsKey(key);
