@@ -97,6 +97,14 @@ public class UT_MemorySnapshot
         Assert.IsNull(_snapshot.TryGet(key1));
         CollectionAssert.AreEqual(value1, snapshot2.TryGet(key1));
 
+        Assert.IsFalse(_snapshot.TryGet(key1, out var value2));
+
+        Assert.IsTrue(snapshot2.TryGet(key1, out value2));
+        CollectionAssert.AreEqual(value1, value2);
+
+        Assert.IsTrue(_memoryStore.TryGet(key1, out value2));
+        CollectionAssert.AreEqual(value1, value2);
+
         _snapshot.Delete(key1);
 
         // Deleted value can not being found from the snapshot but can still get from the store and snapshot2
