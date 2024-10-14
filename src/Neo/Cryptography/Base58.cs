@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Neo.Cryptography
@@ -28,8 +29,8 @@ namespace Neo.Cryptography
         /// </summary>
         public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-        private static readonly char s_zeroChar = Alphabet[0];
-        private static readonly Lazy<IReadOnlyDictionary<char, int>> s_alphabetDic = new(() => Enumerable.Range(0, Alphabet.Length).ToDictionary(t => Alphabet[t], t => t));
+        private const char ZeroChar = '1';
+        private static readonly IReadOnlyDictionary<char, int> s_alphabetDic = Enumerable.Range(0, Alphabet.Length).ToDictionary(t => Alphabet[t], t => t);
 
         /// <summary>
         /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
@@ -78,7 +79,7 @@ namespace Neo.Cryptography
             var bi = BigInteger.Zero;
             for (int i = 0; i < input.Length; i++)
             {
-                if (!s_alphabetDic.Value.TryGetValue(input[i], out var digit))
+                if (!s_alphabetDic.TryGetValue(input[i], out var digit))
                     throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
                 bi = bi * Alphabet.Length + digit;
             }
@@ -91,14 +92,11 @@ namespace Neo.Cryptography
                 return new byte[leadingZeroCount];
             }
 
-            int decodedSize = bi.GetByteCount(true) + leadingZeroCount;
+            int decodedSize = leadingZeroCount + bi.GetByteCount(true);
+            byte[] result = new byte[decodedSize];
 
-            Span<byte> result = decodedSize <= 128
-                ? stackalloc byte[decodedSize]
-                : new byte[decodedSize];
-
-            _ = bi.TryWriteBytes(result[leadingZeroCount..], out _, true, true);
-            return result.ToArray();
+            _ = bi.TryWriteBytes(result.AsSpan(leadingZeroCount), out _, true, true);
+            return result;
         }
 
         /// <summary>
@@ -112,7 +110,7 @@ namespace Neo.Cryptography
             BigInteger value = new(input, isUnsigned: true, isBigEndian: true);
 
             // Encode BigInteger to Base58 string
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(input.Length * 138 / 100 + 5);
 
             while (value > 0)
             {
@@ -123,7 +121,7 @@ namespace Neo.Cryptography
             // Append `1` for each leading 0 byte
             for (int i = 0; i < input.Length && input[i] == 0; i++)
             {
-                sb.Insert(0, s_zeroChar);
+                sb.Insert(0, ZeroChar);
             }
             return sb.ToString();
         }
@@ -133,9 +131,46 @@ namespace Neo.Cryptography
         {
             var i = 0;
             var len = collection.Length;
-            for (; i < len && collection[i] == s_zeroChar; i++) { }
+            for (; i < len && collection[i] == ZeroChar; i++) { }
 
             return i;
         }
+    }
+}
+
+public static class Ext
+{
+    public static byte[] Sha256(this ReadOnlySpan<byte> value)
+    {
+        byte[] buffer = new byte[32];
+        using var sha256 = SHA256.Create();
+        sha256.TryComputeHash(value, buffer, out _);
+        return buffer;
+    }
+
+
+
+    /// <summary>
+    /// Computes the hash value for the specified byte array using the sha256 algorithm.
+    /// </summary>
+    /// <param name="value">The input to compute the hash code for.</param>
+    /// <returns>The computed hash code.</returns>
+    public static byte[] Sha256(this byte[] value)
+    {
+        using var sha256 = SHA256.Create();
+        return sha256.ComputeHash(value);
+    }
+
+    /// <summary>
+    /// Computes the hash value for the specified region of the specified byte array using the sha256 algorithm.
+    /// </summary>
+    /// <param name="value">The input to compute the hash code for.</param>
+    /// <param name="offset">The offset into the byte array from which to begin using data.</param>
+    /// <param name="count">The number of bytes in the array to use as data.</param>
+    /// <returns>The computed hash code.</returns>
+    public static byte[] Sha256(this byte[] value, int offset, int count)
+    {
+        using var sha256 = SHA256.Create();
+        return sha256.ComputeHash(value, offset, count);
     }
 }
