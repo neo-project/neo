@@ -67,6 +67,12 @@ namespace Neo.Persistence
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            return _innerData.TryGetValue(key, out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(byte[] key)
         {
             return _innerData.ContainsKey(key);
