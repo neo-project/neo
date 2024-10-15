@@ -36,6 +36,13 @@ namespace Neo.Test
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
             Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
+            itemA = new byte[] { 1, 2, 3 };
+            itemB = new byte[] { 1, 2, 3 };
+            itemC = new byte[] { 5, 6 };
+
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+
             itemA = true;
             itemB = true;
             itemC = false;
