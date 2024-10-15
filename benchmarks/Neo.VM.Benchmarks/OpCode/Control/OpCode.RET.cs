@@ -20,7 +20,7 @@ public class OpCode_RET : OpCodeBase
     protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 

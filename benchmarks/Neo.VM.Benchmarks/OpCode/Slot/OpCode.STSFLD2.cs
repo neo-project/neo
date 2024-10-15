@@ -20,7 +20,7 @@ public class OpCode_STSFLD2 : OpCodeBase
     protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 

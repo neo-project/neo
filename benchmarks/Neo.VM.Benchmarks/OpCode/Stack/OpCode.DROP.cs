@@ -19,7 +19,7 @@ public class OpCode_DROP : OpCodeBase
     {
         var builder = new InstructionBuilder();
 
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 

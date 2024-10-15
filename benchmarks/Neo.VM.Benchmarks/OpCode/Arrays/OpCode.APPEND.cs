@@ -16,7 +16,6 @@ public class OpCode_APPEND : OpCodeBase
 
     protected override VM.OpCode Opcode => VM.OpCode.APPEND;
 
-
     protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();

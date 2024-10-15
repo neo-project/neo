@@ -15,12 +15,10 @@ public class OpCode_NEWSTRUCT0 : OpCodeBase
 {
     protected override VM.OpCode Opcode => VM.OpCode.NEWSTRUCT0;
 
-
-
     protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 

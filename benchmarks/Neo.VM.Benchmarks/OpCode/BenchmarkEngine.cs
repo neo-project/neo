@@ -43,6 +43,7 @@ public class BenchmarkEngine : TestEngine
     /// Start or continue execution of the VM.
     /// </summary>
     /// <returns>Returns the state of the VM after the execution.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BenchmarkEngine ExecuteUntil(VM.OpCode opCode)
     {
         if (State == VMState.BREAK)
@@ -152,9 +153,9 @@ public class BenchmarkEngine : TestEngine
     protected override void OnFault(Exception ex)
     {
         base.OnFault(ex);
-#if DEBUG
+        // #if DEBUG
         throw ex;
-#endif
+        // #endif
     }
 
     private void UpdateOpcodeStats(VM.OpCode opcode, TimeSpan elapsed)

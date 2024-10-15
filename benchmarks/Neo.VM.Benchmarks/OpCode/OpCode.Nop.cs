@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// OpCode.PUSHNULL.cs file belongs to the neo project and is free
+// OpCode.Nop.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -13,9 +13,9 @@ using BenchmarkDotNet.Attributes;
 
 namespace Neo.VM.Benchmark.OpCode;
 
-public class OpCode_PUSHNULL
+public class OpCode_Nop
 {
-    protected VM.OpCode Opcode => VM.OpCode.PUSHNULL;
+    protected VM.OpCode Opcode => VM.OpCode.NOP;
 
     private BenchmarkEngine _engine;
 
@@ -23,7 +23,7 @@ public class OpCode_PUSHNULL
     public void Setup()
     {
         var builder = new InstructionBuilder();
-        builder.AddInstruction(Opcode);
+        builder.AddInstruction(VM.OpCode.NOP);
 
         _engine = new BenchmarkEngine();
         _engine.LoadScript(builder.ToArray());
@@ -40,6 +40,7 @@ public class OpCode_PUSHNULL
     public void Bench() => _engine.ExecuteNext();
 }
 
-//     | Method | Mean     | Error     | StdDev    |
-//     |------- |---------:|----------:|----------:|
-//     | Bench  | 1.729 us | 0.0516 us | 0.1396 us |
+
+//     | Method | Mean     | Error    | StdDev   | Median   |
+//     |------- |---------:|---------:|---------:|---------:|
+//     | Bench  | 951.6 ns | 57.35 ns | 160.8 ns | 900.0 ns |

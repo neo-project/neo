@@ -11,17 +11,15 @@
 
 // Flag to determine if running benchmark or running methods
 #define BENCHMARK
-// #define GENERATE_SCRIPT
 
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using Microsoft.Diagnostics.Tracing.Parsers.Clr;
 using Neo.VM.Benchmark;
 using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
 // Define the benchmark or execute class
-var benchmarkType = typeof(OpCode_XDROP);
+var benchmarkType = typeof(OpCode_Nop);
 
 /*
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -49,49 +47,36 @@ var benchmarkType = typeof(OpCode_XDROP);
 #if BENCHMARK
 BenchmarkRunner.Run(benchmarkType);
 #else
-    var instance = Activator.CreateInstance(benchmarkType);
+var instance = Activator.CreateInstance(benchmarkType);
 
-    var allMethods = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-    var setupMethod = allMethods
-        .FirstOrDefault(m => m.GetCustomAttribute<GlobalSetupAttribute>() != null);
-    if (setupMethod != null)
+var allMethods = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
+var setupMethod = allMethods
+    .FirstOrDefault(m => m.GetCustomAttribute<GlobalSetupAttribute>() != null);
+if (setupMethod != null)
+{
+    setupMethod.Invoke(instance, null);
+}
+
+var iterationSetup = allMethods
+    .FirstOrDefault(m => m.GetCustomAttribute<IterationSetupAttribute>() != null);
+if (iterationSetup != null)
+{
+    iterationSetup.Invoke(instance, null);
+}
+
+var methods = allMethods.Where(m => m.GetCustomAttribute<BenchmarkAttribute>() != null && !m.GetCustomAttributes<GlobalSetupAttribute>().Any());
+
+foreach (var method in methods.Where(p => p.GetCustomAttribute<GenerateTestsAttribute>() == null))
+{
+
+    try
     {
-        setupMethod.Invoke(instance, null);
+        method.Invoke(instance, null);
     }
-
-    var iterationSetup =allMethods
-        .FirstOrDefault(m => m.GetCustomAttribute<IterationSetupAttribute>() != null);
-    if (iterationSetup != null)
+    catch (Exception e)
     {
-        iterationSetup.Invoke(instance, null);
+        Console.WriteLine(e);
+        throw;
     }
-
-    var methods =allMethods.Where(m=>m.GetCustomAttribute<BenchmarkAttribute>() != null && !m.GetCustomAttributes<GlobalSetupAttribute>().Any());
-
-
-#if GENERATE_SCRIPT
-
-    var generateTest = allMethods.FirstOrDefault(m=>m.GetCustomAttribute<GenerateTestsAttribute>() != null);
-
-    if (generateTest != null)
-    {
-        generateTest.Invoke(instance, null);
-    }
-
-#else
-
-    foreach (var method in methods.Where(p => p.GetCustomAttribute<GenerateTestsAttribute>() == null))
-    {
-
-        try
-        {
-            method.Invoke(instance, null);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-                throw;
-        }
-    }
-#endif
+}
 #endif

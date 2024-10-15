@@ -19,7 +19,7 @@ public class OpCode_ISTYPE : OpCodeBase
         var builder = new InstructionBuilder();
         builder.Push(ItemCount);
         builder.Push(0);
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 

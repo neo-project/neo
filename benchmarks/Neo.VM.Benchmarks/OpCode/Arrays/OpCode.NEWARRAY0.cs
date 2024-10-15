@@ -14,13 +14,13 @@ namespace Neo.VM.Benchmark.OpCode;
 public class OpCode_NEWARRAY0 : OpCodeBase
 {
 
-    protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
+    protected override VM.OpCode Opcode => VM.OpCode.NEWARRAY0;
 
 
     protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 

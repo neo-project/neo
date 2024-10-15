@@ -14,13 +14,13 @@ namespace Neo.VM.Benchmark.OpCode;
 public class OpCode_NEWARRAY : OpCodeBase
 {
 
-    protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
-
+    protected override VM.OpCode Opcode => VM.OpCode.NEWARRAY;
 
     protected override byte[] CreateOneOpCodeScript()
     {
         var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.GE);
+        builder.Push(ItemCount);
+        builder.AddInstruction(Opcode);
         return builder.ToArray();
     }
 
@@ -29,3 +29,11 @@ public class OpCode_NEWARRAY : OpCodeBase
         throw new NotImplementedException();
     }
 }
+
+// | Method          | ItemCount | Mean      | Error     | StdDev    | Median    |
+//     |---------------- |---------- |----------:|----------:|----------:|----------:|
+//     | Bench_OneOpCode | 2         |  3.484 us | 0.0904 us | 0.2444 us |  3.400 us |
+//     | Bench_OneOpCode | 32        |  3.958 us | 0.0829 us | 0.1954 us |  3.900 us |
+//     | Bench_OneOpCode | 128       |  5.721 us | 0.1100 us | 0.0975 us |  5.750 us |
+//     | Bench_OneOpCode | 1024      | 26.086 us | 0.5238 us | 0.8751 us | 26.000 us |
+//     | Bench_OneOpCode | 2040      | 32.465 us | 0.6344 us | 1.2521 us | 32.100 us |

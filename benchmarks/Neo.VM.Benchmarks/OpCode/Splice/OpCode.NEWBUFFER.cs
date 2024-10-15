@@ -53,7 +53,7 @@ public class OpCode_NEWBUFFER
     public void Bench() => _engine.ExecuteNext();
 }
 
-// | Method | _value | Mean     | Error     | StdDev    | Median   |
+//     | Method | _value | Mean     | Error     | StdDev    | Median   |
 //     |------- |------- |---------:|----------:|----------:|---------:|
 //     | Bench  | 65535  | 4.116 us | 0.4132 us | 1.1987 us | 3.500 us |
 //     | Bench  | 131070 | 4.003 us | 0.0833 us | 0.1879 us | 4.000 us |

@@ -24,9 +24,9 @@ public class OpCode_UNPACK : OpCodeBase
         builder.Push(ItemCount);
         builder.AddInstruction(VM.OpCode.STLOC0);
         initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
-        // builder.Push(ushort.MaxValue * 2);
-        // builder.AddInstruction(VM.OpCode.NEWBUFFER);
-        builder.Push(0);
+        builder.Push(ushort.MaxValue * 2);
+        builder.AddInstruction(VM.OpCode.NEWBUFFER);
+        // builder.Push(0);
         builder.AddInstruction(VM.OpCode.LDLOC0);
         builder.AddInstruction(VM.OpCode.DEC);
         builder.AddInstruction(VM.OpCode.STLOC0);
