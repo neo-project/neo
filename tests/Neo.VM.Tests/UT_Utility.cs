@@ -45,7 +45,7 @@ namespace Neo.Test
         {
             var result = value.GetBitLength();
             Assert.AreEqual(expected, value.GetBitLength(), "Native method has not the expected result");
-            Assert.AreEqual(result, VM.Utility.GetBitLength(value), "Result doesn't match");
+            Assert.AreEqual(result, Utility.GetBitLength(value), "Result doesn't match");
         }
 
         [TestMethod]
@@ -81,12 +81,12 @@ namespace Neo.Test
             for (uint i = 0; i < 1000; i++)
             {
                 var bi = new BigInteger(GetRandomByteArray(random));
-                Assert.AreEqual(bi.GetBitLength(), VM.Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
+                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
 
             foreach (var bi in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new BigInteger(ulong.MaxValue), new BigInteger(long.MinValue) })
             {
-                Assert.AreEqual(bi.GetBitLength(), VM.Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
+                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
         }
 

@@ -14,8 +14,4 @@
     <InternalsVisibleTo Include="Neo.VM.Benchmarks" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
-  </ItemGroup>
-
 </Project>

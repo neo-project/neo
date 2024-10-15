@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -126,7 +125,7 @@ namespace Neo.VM.Types
 
             fixed (byte* k = bytes)
             {
-                return (int)UnsafeData.HashBytes(k, bytes.Length);
+                return (int)Unsafe.HashBytes(k, bytes.Length);
             }
         }
     }

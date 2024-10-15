@@ -38,5 +38,37 @@ namespace Neo.VM
             }
             return false;
         }
+
+        /// <summary>
+        /// Get 64-bit hash code for a byte array
+        /// </summary>
+        /// <param name="pbString"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe long HashBytes(byte* pbString, int len)
+        {
+            const long magicno = 40343;
+            var pwString = (char*)pbString;
+            var cbBuf = len / 2;
+            var hashState = (ulong)len;
+
+            for (var i = 0; i < cbBuf; i++, pwString++)
+                hashState = magicno * hashState + *pwString;
+
+            if ((len & 1) > 0)
+            {
+                var pC = (byte*)pwString;
+                hashState = magicno * hashState + *pC;
+            }
+
+            return (long)Rotr64(magicno * hashState, 4);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ulong Rotr64(ulong x, int n)
+        {
+            return (((x) >> n) | ((x) << (64 - n)));
+        }
     }
 }
