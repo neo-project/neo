@@ -85,6 +85,8 @@ namespace Neo.Plugins.Storage.Tests
             snapshot.Put(testKey, testValue);
             // Data saved to the leveldb snapshot shall not be visible to the store
             Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(snapshot.TryGet(testKey, out var got));
+            Assert.IsNull(got);
 
             // Value is in the write batch, not visible to the store and snapshot
             Assert.AreEqual(false, snapshot.Contains(testKey));
@@ -94,7 +96,13 @@ namespace Neo.Plugins.Storage.Tests
 
             // After commit, the data shall be visible to the store but not to the snapshot
             Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(snapshot.TryGet(testKey, out got));
+            Assert.IsNull(got);
+
             CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
+            Assert.IsTrue(store.TryGet(testKey, out got));
+            CollectionAssert.AreEqual(testValue, got);
+
             Assert.AreEqual(false, snapshot.Contains(testKey));
             Assert.AreEqual(true, store.Contains(testKey));
 
@@ -154,7 +162,12 @@ namespace Neo.Plugins.Storage.Tests
             snapshot.Put(testKey, testValue);
             // Data saved to the leveldb snapshot shall not be visible
             Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(snapshot.TryGet(testKey, out var got));
+            Assert.IsNull(got);
+
             Assert.IsNull(store.TryGet(testKey));
+            Assert.IsFalse(store.TryGet(testKey, out got));
+            Assert.IsNull(got);
 
             // Value is in the write batch, not visible to the store and snapshot
             Assert.AreEqual(false, snapshot.Contains(testKey));
@@ -164,7 +177,13 @@ namespace Neo.Plugins.Storage.Tests
 
             // After commit, the data shall be visible to the store but not to the snapshot
             Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(snapshot.TryGet(testKey, out got));
+            Assert.IsNull(got);
+
             CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
+            Assert.IsTrue(store.TryGet(testKey, out got));
+            CollectionAssert.AreEqual(testValue, got);
+
             Assert.AreEqual(false, snapshot.Contains(testKey));
             Assert.AreEqual(true, store.Contains(testKey));
 

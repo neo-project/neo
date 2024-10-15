@@ -96,5 +96,47 @@ namespace Neo.Plugins.RpcServer.Tests
             // Assert
             Assert.IsTrue(result);
         }
+
+        [TestMethod]
+        public void TestCheckAuth()
+        {
+            var memoryStoreProvider = new TestMemoryStoreProvider(new MemoryStore());
+            var neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, memoryStoreProvider);
+            var rpcServerSettings = RpcServerSettings.Default with
+            {
+                SessionEnabled = true,
+                SessionExpirationTime = TimeSpan.FromSeconds(0.3),
+                MaxGasInvoke = 1500_0000_0000,
+                Network = TestProtocolSettings.SoleNode.Network,
+                RpcUser = "testuser",
+                RpcPass = "testpass",
+            };
+            var rpcServer = new RpcServer(neoSystem, rpcServerSettings);
+
+            var context = new DefaultHttpContext();
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+            var result = rpcServer.CheckAuth(context);
+            Assert.IsTrue(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:wrongpass"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("wronguser:testpass"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(":testpass"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(""));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+        }
     }
 }

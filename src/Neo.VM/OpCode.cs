@@ -1330,7 +1330,7 @@ namespace Neo.VM
         ///
         /// <remarks>
         ///     Push: 1 item(s)
-        ///     Pop: 0 item(s)
+        ///     Pop: 1 item(s)
         /// </remarks>
         /// </summary>
         NEWBUFFER = 0x88,
