@@ -11,7 +11,7 @@
 
 using Neo.Cryptography.ECC;
 
-namespace Neo.UnitTests
+namespace Neo.Plugins.DBFTPlugin.Tests
 {
     public static class TestProtocolSettings
     {
@@ -19,8 +19,8 @@ namespace Neo.UnitTests
         {
             Network = 5195086u,
             AddressVersion = ProtocolSettings.Default.AddressVersion,
-            StandbyCommittee =
-            [
+            StandbyCommittee = new[]
+            {
                 //Validators
                 ECPoint.Parse("0327708fd7a39d384cd1cc48803a084a43d3b5013ada9de299a12e7b7afccfa013", ECCurve.Secp256r1),
                 ECPoint.Parse("02e691f222d1867098643aca188a3d290c2da98af9e1bcf94b35d67322c034988d", ECCurve.Secp256r1),
@@ -45,15 +45,17 @@ namespace Neo.UnitTests
                 ECPoint.Parse("0226933336f1b75baa42d42b71d9091508b638046d19abd67f4e119bf64a7cfb4d", ECCurve.Secp256r1),
                 ECPoint.Parse("03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc", ECCurve.Secp256r1),
                 ECPoint.Parse("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a", ECCurve.Secp256r1)
-            ],
+            },
             ValidatorsCount = 7,
             SeedList =
             [
-                "seed1.neo.org:10333",
-                "seed2.neo.org:10333",
-                "seed3.neo.org:10333",
-                "seed4.neo.org:10333",
-                "seed5.neo.org:10333"
+                "127.0.0.1:30333",
+                "127.0.0.1:30334",
+                "127.0.0.1:30335",
+                "127.0.0.1:30336",
+                "127.0.0.1:30337",
+                "127.0.0.1:30338",
+                "127.0.0.1:30339",
             ],
             MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
             MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
