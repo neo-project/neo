@@ -16,6 +16,8 @@ namespace Neo.VM
 {
     unsafe internal static class Unsafe
     {
+        const long HashMagicNumber = 40343;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(ReadOnlySpan<byte> x)
         {
@@ -42,33 +44,36 @@ namespace Neo.VM
         /// <summary>
         /// Get 64-bit hash code for a byte array
         /// </summary>
-        /// <param name="pbString"></param>
-        /// <param name="len"></param>
+        /// <param name="span">Span</param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe long HashBytes(byte* pbString, int len)
+        public static long HashBytes(ReadOnlySpan<byte> span)
         {
-            const long magicno = 40343;
-            var pwString = (char*)pbString;
-            var cbBuf = len / 2;
+            var len = span.Length;
             var hashState = (ulong)len;
 
-            for (var i = 0; i < cbBuf; i++, pwString++)
-                hashState = magicno * hashState + *pwString;
-
-            if ((len & 1) > 0)
+            fixed (byte* k = span.ToArray())
             {
-                var pC = (byte*)pwString;
-                hashState = magicno * hashState + *pC;
+                var pwString = (char*)k;
+                var cbBuf = len / 2;
+
+                for (var i = 0; i < cbBuf; i++, pwString++)
+                    hashState = HashMagicNumber * hashState + *pwString;
+
+                if ((len & 1) > 0)
+                {
+                    var pC = (byte*)pwString;
+                    hashState = HashMagicNumber * hashState + *pC;
+                }
             }
 
-            return (long)Rotr64(magicno * hashState, 4);
+            return (long)Rotr64(HashMagicNumber * hashState, 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static ulong Rotr64(ulong x, int n)
         {
-            return (((x) >> n) | ((x) << (64 - n)));
+            return ((x) >> n) | ((x) << (64 - n));
         }
     }
 }

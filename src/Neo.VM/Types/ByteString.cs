@@ -83,16 +83,6 @@ namespace Neo.VM.Types
             return Unsafe.NotZero(GetSpan());
         }
 
-        public unsafe override int GetHashCode()
-        {
-            var bytes = GetSpan().ToArray();
-
-            fixed (byte* k = bytes)
-            {
-                return (int)Unsafe.HashBytes(k, bytes.Length);
-            }
-        }
-
         public override BigInteger GetInteger()
         {
             if (Size > Integer.MaxSize) throw new InvalidCastException($"MaxSize exceed: {Size}");
