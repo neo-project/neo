@@ -23,6 +23,7 @@ namespace Neo.VM
     [DebuggerDisplay("Length={Length}")]
     public class Script
     {
+        private int _hashCode = 0;
         private readonly ReadOnlyMemory<byte> _value;
         private readonly bool strictMode;
         private readonly Dictionary<int, Instruction> _instructions = new();
@@ -160,7 +161,12 @@ namespace Neo.VM
 
         public override int GetHashCode()
         {
-            return (int)Unsafe.HashBytes(_value.Span);
+            if (_hashCode == 0)
+            {
+                return _hashCode = (int)Unsafe.HashBytes(_value.Span);
+            }
+
+            return _hashCode;
         }
     }
 }
