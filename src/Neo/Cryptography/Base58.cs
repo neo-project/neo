@@ -96,6 +96,7 @@ namespace Neo.Cryptography
 
             // Encode BigInteger to byte[]
             // Leading zero bytes get encoded as leading `1` characters
+
             int leadingZeroCount = LeadingBase58Zeros(input);
             if (bi.IsZero)
             {

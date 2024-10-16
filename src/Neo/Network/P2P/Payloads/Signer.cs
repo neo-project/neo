@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -190,7 +191,7 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        VM.Types.StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
             return new VM.Types.Array(referenceCounter,
             [

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -93,7 +94,7 @@ namespace Neo.Wallets
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length), index = -1;
+            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + UnsafeData.GetVarSize(hashes.Length), index = -1;
             uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
             foreach (UInt160 hash in hashes)
@@ -119,7 +120,8 @@ namespace Neo.Wallets
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null)
-                        throw new ArgumentException($"The smart contract or address {hash} is not found");
+                        throw new ArgumentException($"The smart contract or address {hash} ({hash.ToAddress(settings.AddressVersion)}) is not found. " +
+                            $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");
                     var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
                     if (md is null)
                         throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
@@ -133,7 +135,7 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings, gas: maxExecutionCost);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
@@ -151,7 +153,7 @@ namespace Neo.Wallets
                 else if (IsMultiSigContract(witnessScript, out int m, out int n))
                 {
                     int size_inv = 66 * m;
-                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
+                    size += UnsafeData.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
                     networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
                 // We can support more contract types in the future.

@@ -54,6 +54,10 @@ namespace Neo.VM.Types
                         ReferenceCounter.RemoveReference(old_value, this);
                     else
                         ReferenceCounter.AddReference(key, this);
+                    if (value is CompoundType { ReferenceCounter: null })
+                    {
+                        throw new InvalidOperationException("Can not set a Map without a ReferenceCounter.");
+                    }
                     ReferenceCounter.AddReference(value, this);
                 }
                 dictionary[key] = value;
@@ -82,7 +86,7 @@ namespace Neo.VM.Types
         /// Create a new map with the specified reference counter.
         /// </summary>
         /// <param name="referenceCounter">The reference counter to be used.</param>
-        public Map(ReferenceCounter? referenceCounter = null)
+        public Map(IReferenceCounter? referenceCounter = null)
             : base(referenceCounter)
         {
         }

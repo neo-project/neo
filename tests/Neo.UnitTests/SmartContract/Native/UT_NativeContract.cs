@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NativeContract
     {
-        private DataCache _snapshot;
+        private DataCache _snapshotCache;
         /// <summary>
         /// _nativeStates contains a mapping from native contract name to expected native contract state
         /// constructed with all hardforks enabled and marshalled in JSON.
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshot = TestBlockchain.GetTestSnapshot();
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
             _nativeStates = new Dictionary<string, string>
             {
                 {"ContractManagement", """{"id":-1,"updatecounter":0,"hash":"0xfffdc93764dbaddd97c48f252a53ea4643faa3fd","nef":{"magic":860243278,"compiler":"neo-core-v3.0","source":"","tokens":[],"script":"EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=","checksum":1094259016},"manifest":{"name":"ContractManagement","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"deploy","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"}],"returntype":"Array","offset":0,"safe":false},{"name":"deploy","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"},{"name":"data","type":"Any"}],"returntype":"Array","offset":7,"safe":false},{"name":"destroy","parameters":[],"returntype":"Void","offset":14,"safe":false},{"name":"getContract","parameters":[{"name":"hash","type":"Hash160"}],"returntype":"Array","offset":21,"safe":true},{"name":"getContractById","parameters":[{"name":"id","type":"Integer"}],"returntype":"Array","offset":28,"safe":true},{"name":"getContractHashes","parameters":[],"returntype":"InteropInterface","offset":35,"safe":true},{"name":"getMinimumDeploymentFee","parameters":[],"returntype":"Integer","offset":42,"safe":true},{"name":"hasMethod","parameters":[{"name":"hash","type":"Hash160"},{"name":"method","type":"String"},{"name":"pcount","type":"Integer"}],"returntype":"Boolean","offset":49,"safe":true},{"name":"setMinimumDeploymentFee","parameters":[{"name":"value","type":"Integer"}],"returntype":"Void","offset":56,"safe":false},{"name":"update","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"}],"returntype":"Void","offset":63,"safe":false},{"name":"update","parameters":[{"name":"nefFile","type":"ByteArray"},{"name":"manifest","type":"ByteArray"},{"name":"data","type":"Any"}],"returntype":"Void","offset":70,"safe":false}],"events":[{"name":"Deploy","parameters":[{"name":"Hash","type":"Hash160"}]},{"name":"Update","parameters":[{"name":"Hash","type":"Hash160"}]},{"name":"Destroy","parameters":[{"name":"Hash","type":"Hash160"}]}]},"permissions":[{"contract":"*","methods":"*"}],"trusts":[],"extra":null}}""" },
@@ -58,6 +58,28 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.ResetStore();
         }
 
+        class active : IHardforkActivable
+        {
+            public Hardfork? ActiveIn { get; init; }
+            public Hardfork? DeprecatedIn { get; init; }
+        }
+
+        [TestMethod]
+        public void TestActiveDeprecatedIn()
+        {
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            File.Delete(file);
+
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 1));
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 20));
+
+            Assert.IsTrue(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 1));
+            Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = null, DeprecatedIn = Hardfork.HF_Cockatrice }, settings.IsHardforkEnabled, 20));
+        }
+
         [TestMethod]
         public void TestGetContract()
         {
@@ -67,7 +89,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestIsInitializeBlock()
         {
-            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Cockatrice\": 20");
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
@@ -101,7 +123,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = []
             };
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Ensure that native NEP17 contracts contain proper supported standards and events declared
             // in the manifest constructed for all hardforks enabled. Ref. https://github.com/neo-project/neo/pull/3195.
@@ -128,7 +150,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = []
             };
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
 
             // Ensure that all native contracts have proper state generated with an assumption that
             // all hardforks enabled.

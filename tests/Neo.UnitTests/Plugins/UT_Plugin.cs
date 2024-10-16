@@ -15,14 +15,13 @@ using Neo.Ledger;
 using Neo.Plugins;
 using System;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Plugins
 {
     [TestClass]
     public class UT_Plugin
     {
-        private static readonly object locker = new();
+        private static readonly object s_locker = new();
 
         [TestInitialize]
         public void TestInitialize()
@@ -94,7 +93,7 @@ namespace Neo.UnitTests.Plugins
         [TestMethod]
         public void TestSendMessage()
         {
-            lock (locker)
+            lock (s_locker)
             {
                 Plugin.Plugins.Clear();
                 Plugin.SendMessage("hey1").Should().BeFalse();
@@ -112,14 +111,14 @@ namespace Neo.UnitTests.Plugins
         }
 
         [TestMethod]
-        public async Task TestOnException()
+        public void TestOnException()
         {
             _ = new TestPlugin();
             // Ensure no exception is thrown
             try
             {
-                await Blockchain.InvokeCommittingAsync(null, null, null, null);
-                await Blockchain.InvokeCommittedAsync(null, null);
+                Blockchain.InvokeCommitting(null, null, null, null);
+                Blockchain.InvokeCommitted(null, null);
             }
             catch (Exception ex)
             {
@@ -130,27 +129,27 @@ namespace Neo.UnitTests.Plugins
             _ = new TestNonPlugin();
 
             // Ensure exception is thrown
-            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
-            {
-                await Blockchain.InvokeCommittingAsync(null, null, null, null);
-            });
+            Assert.ThrowsException<NotImplementedException>(() =>
+           {
+               Blockchain.InvokeCommitting(null, null, null, null);
+           });
 
-            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
-            {
-                await Blockchain.InvokeCommittedAsync(null, null);
-            });
+            Assert.ThrowsException<NotImplementedException>(() =>
+           {
+               Blockchain.InvokeCommitted(null, null);
+           });
         }
 
         [TestMethod]
-        public async Task TestOnPluginStopped()
+        public void TestOnPluginStopped()
         {
             var pp = new TestPlugin();
             Assert.AreEqual(false, pp.IsStopped);
             // Ensure no exception is thrown
             try
             {
-                await Blockchain.InvokeCommittingAsync(null, null, null, null);
-                await Blockchain.InvokeCommittedAsync(null, null);
+                Blockchain.InvokeCommitting(null, null, null, null);
+                Blockchain.InvokeCommitted(null, null);
             }
             catch (Exception ex)
             {
@@ -161,7 +160,7 @@ namespace Neo.UnitTests.Plugins
         }
 
         [TestMethod]
-        public async Task TestOnPluginStopOnException()
+        public void TestOnPluginStopOnException()
         {
             // pp will stop on exception.
             var pp = new TestPlugin();
@@ -169,8 +168,8 @@ namespace Neo.UnitTests.Plugins
             // Ensure no exception is thrown
             try
             {
-                await Blockchain.InvokeCommittingAsync(null, null, null, null);
-                await Blockchain.InvokeCommittedAsync(null, null);
+                Blockchain.InvokeCommitting(null, null, null, null);
+                Blockchain.InvokeCommitted(null, null);
             }
             catch (Exception ex)
             {
@@ -185,8 +184,8 @@ namespace Neo.UnitTests.Plugins
             // Ensure no exception is thrown
             try
             {
-                await Blockchain.InvokeCommittingAsync(null, null, null, null);
-                await Blockchain.InvokeCommittedAsync(null, null);
+                Blockchain.InvokeCommitting(null, null, null, null);
+                Blockchain.InvokeCommitted(null, null);
             }
             catch (Exception ex)
             {
@@ -197,19 +196,19 @@ namespace Neo.UnitTests.Plugins
         }
 
         [TestMethod]
-        public async Task TestOnNodeStopOnPluginException()
+        public void TestOnNodeStopOnPluginException()
         {
             // node will stop on pp exception.
             var pp = new TestPlugin(UnhandledExceptionPolicy.StopNode);
             Assert.AreEqual(false, pp.IsStopped);
-            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
+            Assert.ThrowsException<NotImplementedException>(() =>
             {
-                await Blockchain.InvokeCommittingAsync(null, null, null, null);
+                Blockchain.InvokeCommitting(null, null, null, null);
             });
 
-            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () =>
+            Assert.ThrowsException<NotImplementedException>(() =>
             {
-                await Blockchain.InvokeCommittedAsync(null, null);
+                Blockchain.InvokeCommitted(null, null);
             });
 
             Assert.AreEqual(false, pp.IsStopped);

@@ -1,0 +1,86 @@
+#!/usr/bin/expect -d -f
+#
+# This script uses expect to test neo-cli
+#
+set timeout 10
+exp_internal true
+
+# Start neo-cli
+spawn dotnet ./bin/Neo.CLI/net8.0/neo-cli.dll
+
+# Expect the main input prompt
+expect {
+    "neo> " { }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+#
+# Test 'create wallet'
+#
+send "create wallet ./bin/Neo.CLI/test-wallet1.json\n"
+
+expect {
+    "password:" { send "asd\n" }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+expect {
+    "password:" { send "asd\n" }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+expect {
+    "   Address:" { }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+
+#
+# Test 'create wallet'
+#
+send "create wallet ./bin/Neo.CLI/test-wallet2.json L2ArHTuiDL4FHu4nfyhamrG8XVYB4QyRbmhj7vD6hFMB5iAMSTf6\n"
+
+expect {
+    "password:" { send "abcd\n" }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+expect {
+    "password:" { send "abcd\n" }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+expect {
+    "NUj249PQg9EMJfAuxKizdJwMG7GSBzYX2Y" { }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+#
+# Test 'list address'
+#
+send "list address\n"
+
+expect {
+    "neo> " { }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+
+#
+# Test 'create address'
+#
+send "create address\n"
+
+expect {
+    "neo> " { }
+    "error" { exit 2 }
+    timeout { exit 1 }
+}
+exit 0
