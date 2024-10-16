@@ -16,6 +16,8 @@ namespace Neo.VM
 {
     unsafe internal static class Unsafe
     {
+        const long HashMagicNumber = 40343;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(ReadOnlySpan<byte> x)
         {
@@ -37,6 +39,41 @@ namespace Neo.VM
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Get 64-bit hash code for a byte array
+        /// </summary>
+        /// <param name="span">Span</param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long HashBytes(ReadOnlySpan<byte> span)
+        {
+            var len = span.Length;
+            var hashState = (ulong)len;
+
+            fixed (byte* k = span)
+            {
+                var pwString = (char*)k;
+                var cbBuf = len / 2;
+
+                for (var i = 0; i < cbBuf; i++, pwString++)
+                    hashState = HashMagicNumber * hashState + *pwString;
+
+                if ((len & 1) > 0)
+                {
+                    var pC = (byte*)pwString;
+                    hashState = HashMagicNumber * hashState + *pC;
+                }
+            }
+
+            return (long)Rotr64(HashMagicNumber * hashState, 4);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ulong Rotr64(ulong x, int n)
+        {
+            return ((x) >> n) | ((x) << (64 - n));
         }
     }
 }
