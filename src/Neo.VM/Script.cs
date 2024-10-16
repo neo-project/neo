@@ -157,5 +157,10 @@ namespace Neo.VM
         public static implicit operator ReadOnlyMemory<byte>(Script script) => script._value;
         public static implicit operator Script(ReadOnlyMemory<byte> script) => new(script);
         public static implicit operator Script(byte[] script) => new(script);
+
+        public override int GetHashCode()
+        {
+            return (int)Unsafe.HashBytes(_value.Span);
+        }
     }
 }
