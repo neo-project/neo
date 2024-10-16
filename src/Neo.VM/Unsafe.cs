@@ -52,7 +52,7 @@ namespace Neo.VM
             var len = span.Length;
             var hashState = (ulong)len;
 
-            fixed (byte* k = span.ToArray())
+            fixed (byte* k = span)
             {
                 var pwString = (char*)k;
                 var cbBuf = len / 2;
