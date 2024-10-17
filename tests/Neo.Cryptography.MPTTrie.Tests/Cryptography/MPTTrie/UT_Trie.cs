@@ -52,6 +52,11 @@ namespace Neo.Cryptography.MPTTrie.Tests
             return null;
         }
 
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            return store.TryGetValue(StoreKey(key), out value);
+        }
+
         public void Dispose() { throw new System.NotImplementedException(); }
 
         public int Size => store.Count;

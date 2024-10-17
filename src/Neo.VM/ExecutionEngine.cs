@@ -83,17 +83,18 @@ namespace Neo.VM
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
+        /// <param name="jumpTable">The jump table to be used.</param>
         public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class with the specified <see cref="VM.ReferenceCounter"/> and <see cref="ExecutionEngineLimits"/>.
+        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class with the specified <see cref="VM.IReferenceCounter"/> and <see cref="ExecutionEngineLimits"/>.
         /// </summary>
         /// <param name="jumpTable">The jump table to be used.</param>
         /// <param name="referenceCounter">The reference counter to be used.</param>
         /// <param name="limits">Restrictions on the VM.</param>
-        protected ExecutionEngine(JumpTable? jumpTable, ReferenceCounter referenceCounter, ExecutionEngineLimits limits)
+        protected ExecutionEngine(JumpTable? jumpTable, IReferenceCounter referenceCounter, ExecutionEngineLimits limits)
         {
             JumpTable = jumpTable ?? JumpTable.Default;
             Limits = limits;
