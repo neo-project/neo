@@ -15,11 +15,12 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Neo.VM.Benchmark;
+using Neo.VM.Benchmark.NativeContract.CryptoLib;
 using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
 // Define the benchmark or execute class
-var benchmarkType = typeof(OpCode_Nop);
+var benchmarkType = typeof(CryptoLib_RIPEMD160);
 
 /*
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
