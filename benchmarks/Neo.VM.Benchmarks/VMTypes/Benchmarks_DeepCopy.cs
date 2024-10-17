@@ -120,3 +120,31 @@ public class Benchmarks_DeepCopy
         }
     }
 }
+
+
+// | Method                                           | Params | Mean         | Error       | StdDev      |
+// |------------------------------------------------- |------- |-------------:|------------:|------------:|
+// | BenchNestedArrayDeepCopy                         | (2, 2) |           NA |          NA |          NA |
+// | BenchNestedArrayDeepCopyWithReferenceCounter     | (2, 2) |   1,149.8 ns |    21.83 ns |    24.26 ns |
+// | BenchNestedTestArrayDeepCopy                     | (2, 2) |     632.0 ns |    11.56 ns |    12.37 ns |
+// | BenchNestedTestArrayDeepCopyWithReferenceCounter | (2, 2) |   1,142.2 ns |    14.77 ns |    13.09 ns |
+// | BenchNestedArrayDeepCopy                         | (2, 4) |           NA |          NA |          NA |
+// | BenchNestedArrayDeepCopyWithReferenceCounter     | (2, 4) |   3,668.6 ns |    45.15 ns |    42.23 ns |
+// | BenchNestedTestArrayDeepCopy                     | (2, 4) |   1,596.6 ns |    23.94 ns |    22.39 ns |
+// | BenchNestedTestArrayDeepCopyWithReferenceCounter | (2, 4) |   3,681.1 ns |    60.30 ns |    53.46 ns |
+// | BenchNestedArrayDeepCopy                         | (2, 6) |           NA |          NA |          NA |
+// | BenchNestedArrayDeepCopyWithReferenceCounter     | (2, 6) |   7,373.6 ns |    85.36 ns |    79.85 ns |
+// | BenchNestedTestArrayDeepCopy                     | (2, 6) |   3,144.5 ns |    36.97 ns |    34.58 ns |
+// | BenchNestedTestArrayDeepCopyWithReferenceCounter | (2, 6) |   7,369.9 ns |   129.31 ns |   120.95 ns |
+// | BenchNestedArrayDeepCopy                         | (4, 2) |           NA |          NA |          NA |
+// | BenchNestedArrayDeepCopyWithReferenceCounter     | (4, 2) |   5,411.1 ns |    51.05 ns |    47.75 ns |
+// | BenchNestedTestArrayDeepCopy                     | (4, 2) |   1,979.6 ns |    27.34 ns |    25.57 ns |
+// | BenchNestedTestArrayDeepCopyWithReferenceCounter | (4, 2) |   5,247.7 ns |    47.92 ns |    42.48 ns |
+// | BenchNestedArrayDeepCopy                         | (4, 4) |           NA |          NA |          NA |
+// | BenchNestedArrayDeepCopyWithReferenceCounter     | (4, 4) |  58,111.1 ns | 1,105.46 ns | 1,085.71 ns |
+// | BenchNestedTestArrayDeepCopy                     | (4, 4) |  18,572.0 ns |   205.89 ns |   192.59 ns |
+// | BenchNestedTestArrayDeepCopyWithReferenceCounter | (4, 4) |  58,180.0 ns |   329.65 ns |   275.28 ns |
+// | BenchNestedArrayDeepCopy                         | (4, 6) |           NA |          NA |          NA |
+// | BenchNestedArrayDeepCopyWithReferenceCounter     | (4, 6) | 304,681.5 ns | 3,336.16 ns | 2,957.42 ns |
+// | BenchNestedTestArrayDeepCopy                     | (4, 6) |  95,279.8 ns |   888.40 ns |   831.01 ns |
+// | BenchNestedTestArrayDeepCopyWithReferenceCounter | (4, 6) | 310,658.1 ns | 6,192.65 ns | 5,792.61 ns |

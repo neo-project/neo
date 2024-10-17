@@ -669,6 +669,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="slot">The slot to load the value from.</param>
         /// <param name="index">The index within the slot.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ExecuteLoadFromSlot(ExecutionEngine engine, Slot? slot, int index)
         {
             if (slot is null)
