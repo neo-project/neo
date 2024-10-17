@@ -13,7 +13,7 @@ using System;
 
 namespace Neo.VM;
 
-public class VMUncatchableException:Exception
+public class VMUncatchableException : Exception
 {
     public VMUncatchableException(string message) : base(message)
     {
