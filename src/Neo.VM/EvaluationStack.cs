@@ -69,7 +69,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Insert(int index, StackItem item)
         {
-            if (index > innerList.Count) throw new InvalidOperationException($"Insert out of bounds: {index}/{innerList.Count}");
+            if (index > innerList.Count) throw new VMUncatchableException($"Insert out of bounds: {index}/{innerList.Count}");
             innerList.Insert(innerList.Count - index, item);
             referenceCounter.AddStackReference(item);
         }
@@ -92,11 +92,11 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public StackItem Peek(int index = 0)
         {
-            if (index >= innerList.Count) throw new InvalidOperationException($"Peek out of bounds: {index}/{innerList.Count}");
+            if (index >= innerList.Count) throw new VMUncatchableException($"Peek out of bounds: {index}/{innerList.Count}");
             if (index < 0)
             {
                 index += innerList.Count;
-                if (index < 0) throw new InvalidOperationException($"Peek out of bounds: {index}/{innerList.Count}");
+                if (index < 0) throw new VMUncatchableException($"Peek out of bounds: {index}/{innerList.Count}");
             }
             return innerList[innerList.Count - index - 1];
         }
@@ -118,7 +118,7 @@ namespace Neo.VM
         internal void Reverse(int n)
         {
             if (n < 0 || n > innerList.Count)
-                throw new ArgumentOutOfRangeException(nameof(n));
+                throw new VMUncatchableException($"Reverse operation out of bounds: {n}/{innerList.Count}");
             if (n <= 1) return;
             innerList.Reverse(innerList.Count - n, n);
         }
@@ -147,16 +147,16 @@ namespace Neo.VM
         internal T Remove<T>(int index) where T : StackItem
         {
             if (index >= innerList.Count)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                throw new VMUncatchableException($"Remove out of bounds: {index}/{innerList.Count}");
             if (index < 0)
             {
                 index += innerList.Count;
                 if (index < 0)
-                    throw new ArgumentOutOfRangeException(nameof(index));
+                    throw new VMUncatchableException($"Remove out of bounds: {index}/{innerList.Count}");
             }
             index = innerList.Count - index - 1;
             if (innerList[index] is not T item)
-                throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
+                throw new VMUncatchableException($"The item of type {innerList[index].Type} can't be casted to type {typeof(T)}");
             innerList.RemoveAt(index);
             referenceCounter.RemoveStackReference(item);
             return item;

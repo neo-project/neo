@@ -263,7 +263,7 @@ namespace Neo.SmartContract
             FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
 #pragma warning restore CS0618 // Type or member is obsolete
             if (FeeConsumed > _feeAmount)
-                throw new InvalidOperationException("Insufficient GAS.");
+                throw new VMUncatchableException("Insufficient GAS.");
         }
 
         protected override void OnFault(Exception ex)
@@ -281,16 +281,16 @@ namespace Neo.SmartContract
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
             ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            if (contract is null) throw new VMUncatchableException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Length);
-            if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
+            if (md is null) throw new VMUncatchableException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
             return CallContractInternal(contract, md, flags, hasReturnValue, args);
         }
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
             if (NativeContract.Policy.IsBlocked(SnapshotCache, contract.Hash))
-                throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
+                throw new VMUncatchableException($"The contract {contract.Hash} has been blocked.");
 
             ExecutionContext currentContext = CurrentContext;
             ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
@@ -304,7 +304,7 @@ namespace Neo.SmartContract
                 ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
                 : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
                 if (executingContract?.CanCall(contract, method.Name) == false)
-                    throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
+                    throw new VMUncatchableException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
@@ -356,7 +356,7 @@ namespace Neo.SmartContract
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
-                if (UncaughtException is null)
+                if (UncaughtVMCatchableException is null)
                 {
                     state.SnapshotCache?.Commit();
                     if (CurrentContext != null)
@@ -368,7 +368,7 @@ namespace Neo.SmartContract
                             if (context.EvaluationStack.Count == 0)
                                 Push(StackItem.Null);
                             else if (context.EvaluationStack.Count > 1)
-                                throw new NotSupportedException("Multiple return values are not allowed in cross-contract calls.");
+                                throw new VMUncatchableException("Multiple return values are not allowed in cross-contract calls.");
                         }
                     }
                 }
@@ -381,8 +381,8 @@ namespace Neo.SmartContract
             Diagnostic?.ContextUnloaded(context);
             if (contractTasks.Remove(context, out var awaiter))
             {
-                if (UncaughtException is not null)
-                    throw new VMUnhandledException(UncaughtException);
+                if (UncaughtVMCatchableException is not null)
+                    throw new VMUnhandledException(UncaughtVMCatchableException);
                 awaiter.SetResult(this);
             }
         }
@@ -568,7 +568,7 @@ namespace Neo.SmartContract
         {
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))
-                throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
+                throw new VMUncatchableException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
 
         /// <summary>

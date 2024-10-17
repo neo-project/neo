@@ -13,10 +13,12 @@ using System;
 
 namespace Neo.VM
 {
-    public class CatchableException : Exception
+    public class VMCatchableException : Exception
     {
-        public CatchableException(string message) : base(message)
+        public VMCatchableException(string message) : base(message)
         {
+            if (string.IsNullOrEmpty(message))
+                throw new ArgumentException("Message cannot be null or empty.", nameof(message));
         }
     }
 }
