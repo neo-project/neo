@@ -714,7 +714,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
             engine.SnapshotCache.DeleteContract(state.Hash);
             engine.SnapshotCache.AddContract(state.Hash, state);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, args));
+            Assert.ThrowsException<VMUncatchableException>(() => engine.CallContract(state.Hash, method, CallFlags.All, args));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
             engine.SnapshotCache.DeleteContract(state.Hash);
@@ -723,7 +723,7 @@ namespace Neo.UnitTests.SmartContract
 
             engine.SnapshotCache.DeleteContract(state.Hash);
             engine.SnapshotCache.AddContract(state.Hash, state);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
+            Assert.ThrowsException<VMUncatchableException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
         }
 
         [TestMethod]
