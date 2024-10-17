@@ -86,7 +86,7 @@ namespace Neo.VM.Types
         /// Create a new map with the specified reference counter.
         /// </summary>
         /// <param name="referenceCounter">The reference counter to be used.</param>
-        public Map(ReferenceCounter? referenceCounter = null)
+        public Map(IReferenceCounter? referenceCounter = null)
             : base(referenceCounter)
         {
         }

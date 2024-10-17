@@ -14,6 +14,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.VM
@@ -152,8 +153,9 @@ namespace Neo.VM
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
                 throw new InvalidOperationException($"MaxStackSize exceed: {n}");
-
-            engine.Push(new VMArray(engine.ReferenceCounter, Enumerable.Repeat(StackItem.Null, n)));
+            var nullArray = new StackItem[n];
+            Array.Fill(nullArray, StackItem.Null);
+            engine.Push(new VMArray(engine.ReferenceCounter, nullArray));
         }
 
         /// <summary>
@@ -181,8 +183,9 @@ namespace Neo.VM
                 (byte)StackItemType.ByteString => ByteString.Empty,
                 _ => StackItem.Null
             };
-
-            engine.Push(new VMArray(engine.ReferenceCounter, Enumerable.Repeat(item, n)));
+            var itemArray = new StackItem[n];
+            Array.Fill(itemArray, item);
+            engine.Push(new VMArray(engine.ReferenceCounter, itemArray));
         }
 
         /// <summary>
@@ -211,10 +214,10 @@ namespace Neo.VM
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
                 throw new InvalidOperationException($"MaxStackSize exceed: {n}");
-            Struct result = new(engine.ReferenceCounter);
-            for (var i = 0; i < n; i++)
-                result.Add(StackItem.Null);
-            engine.Push(result);
+
+            var nullArray = new StackItem[n];
+            Array.Fill(nullArray, StackItem.Null);
+            engine.Push(new Struct(engine.ReferenceCounter, nullArray));
         }
 
         /// <summary>

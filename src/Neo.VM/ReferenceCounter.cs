@@ -20,7 +20,7 @@ namespace Neo.VM
     /// <summary>
     /// Used for reference counting of objects in the VM.
     /// </summary>
-    public sealed class ReferenceCounter
+    public sealed class ReferenceCounter : IReferenceCounter
     {
         // If set to true, all items will be tracked regardless of their type.
         private const bool TrackAllItems = false;
@@ -38,9 +38,7 @@ namespace Neo.VM
         // Keeps the total count of references.
         private int _referencesCount = 0;
 
-        /// <summary>
-        /// Gets the count of references.
-        /// </summary>
+        /// <inheritdoc/>
         public int Count => _referencesCount;
 
         /// <summary>
@@ -61,17 +59,8 @@ namespace Neo.VM
             return false;
         }
 
-        /// <summary>
-        /// Adds a reference to a specified item with a parent compound type.
-        ///
-        /// This method is used when an item gains a new reference through a parent compound type.
-        /// It increments the reference count and updates the tracking structures if necessary.
-        ///
-        /// Use this method when you need to add a reference from a compound type to a stack item.
-        /// </summary>
-        /// <param name="item">The item to add a reference to.</param>
-        /// <param name="parent">The parent compound type.</param>
-        internal void AddReference(StackItem item, CompoundType parent)
+        /// <inheritdoc/>
+        public void AddReference(StackItem item, CompoundType parent)
         {
             // Increment the reference count.
             _referencesCount++;
@@ -98,17 +87,8 @@ namespace Neo.VM
             pEntry.References++;
         }
 
-        /// <summary>
-        /// Adds a stack reference to a specified item with a count.
-        ///
-        /// This method is used when an item gains a new stack reference, usually due to being pushed onto the evaluation stack.
-        /// It increments the reference count and updates the tracking structures if necessary.
-        ///
-        /// Use this method when you need to add one or more stack references to a stack item.
-        /// </summary>
-        /// <param name="item">The item to add a stack reference to.</param>
-        /// <param name="count">The number of references to add.</param>
-        internal void AddStackReference(StackItem item, int count = 1)
+        /// <inheritdoc/>
+        public void AddStackReference(StackItem item, int count = 1)
         {
             // Increment the reference count by the specified count.
             _referencesCount += count;
@@ -127,16 +107,8 @@ namespace Neo.VM
             _zeroReferred.Remove(item);
         }
 
-        /// <summary>
-        /// Adds an item to the zero-referred list.
-        ///
-        /// This method is used when an item has no remaining references.
-        /// It adds the item to the zero-referred list to be checked for cleanup later.
-        ///
-        /// Use this method when you detect that an item has zero references and may need to be cleaned up.
-        /// </summary>
-        /// <param name="item">The item to add.</param>
-        internal void AddZeroReferred(StackItem item)
+        /// <inheritdoc/>
+        public void AddZeroReferred(StackItem item)
         {
             // Add the item to the _zeroReferred set.
             _zeroReferred.Add(item);
@@ -158,7 +130,7 @@ namespace Neo.VM
         /// Use this method periodically to clean up items with zero references and free up memory.
         /// </summary>
         /// <returns>The current reference count.</returns>
-        internal int CheckZeroReferred()
+        public int CheckZeroReferred()
         {
             // If there are items with zero references, process them.
             if (_zeroReferred.Count > 0)
@@ -241,18 +213,8 @@ namespace Neo.VM
             return _referencesCount;
         }
 
-
-        /// <summary>
-        /// Removes a reference from a specified item with a parent compound type.
-        ///
-        /// This method is used when an item loses a reference from a parent compound type.
-        /// It decrements the reference count and updates the tracking structures if necessary.
-        ///
-        /// Use this method when you need to remove a reference from a compound type to a stack item.
-        /// </summary>
-        /// <param name="item">The item to remove a reference from.</param>
-        /// <param name="parent">The parent compound type.</param>
-        internal void RemoveReference(StackItem item, CompoundType parent)
+        /// <inheritdoc/>
+        public void RemoveReference(StackItem item, CompoundType parent)
         {
             // Decrement the reference count.
             _referencesCount--;
@@ -271,16 +233,8 @@ namespace Neo.VM
                 _zeroReferred.Add(item);
         }
 
-        /// <summary>
-        /// Removes a stack reference from a specified item.
-        ///
-        /// This method is used when an item loses a stack reference, usually due to being popped off the evaluation stack.
-        /// It decrements the reference count and updates the tracking structures if necessary.
-        ///
-        /// Use this method when you need to remove one or more stack references from a stack item.
-        /// </summary>
-        /// <param name="item">The item to remove a stack reference from.</param>
-        internal void RemoveStackReference(StackItem item)
+        /// <inheritdoc/>
+        public void RemoveStackReference(StackItem item)
         {
             // Decrement the reference count.
             _referencesCount--;
