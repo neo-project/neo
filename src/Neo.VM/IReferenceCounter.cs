@@ -87,5 +87,6 @@ namespace Neo.VM
         /// </summary>
         /// <returns>The current reference count.</returns>
         int CheckZeroReferred();
+        bool TryCleanTrackedItem(CompoundType compound);
     }
 }

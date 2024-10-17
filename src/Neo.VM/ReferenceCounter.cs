@@ -247,7 +247,7 @@ namespace Neo.VM
                 _zeroReferred.Add(item);
         }
 
-        internal bool TryCleanTrackedItem(StackItem item)
+        public bool TryCleanTrackedItem(CompoundType item)
         {
             if (item.StackReferences > 0 || item.ObjectReferences?.Values.Any(p => p.References > 0 && p.Item.OnStack) == true)
                 // Still referred by stack or some compound item
