@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 // Flag to determine if running benchmark or running methods
-#define BENCHMARK
+// #define BENCHMARK
 
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;

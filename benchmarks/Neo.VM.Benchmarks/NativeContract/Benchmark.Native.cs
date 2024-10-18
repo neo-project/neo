@@ -17,52 +17,5 @@ namespace Neo.VM.Benchmark.NativeContract;
 
 public abstract class Benchmark_Native
 {
-    private BenchmarkEngine _engine;
 
-    protected abstract SmartContract.Native.NativeContract Native { get; }
-    protected abstract string Method { get; }
-
-    [ParamsSource(nameof(Params))]
-    private readonly object[] _args;
-    protected abstract object[][] Params { get; }
-
-    [IterationSetup]
-    public void Setup()
-    {
-
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(AppCall());
-        _engine.ExecuteUntil(VM.OpCode.SYSCALL);
-    }
-
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
-
-    [Benchmark]
-    public void Bench()
-    {
-        _engine.ExecuteNext();
-    }
-
-    protected byte[] AppCall()
-    {
-        var builder = new ScriptBuilder();
-
-        foreach (var o in _args)
-        {
-            builder.EmitPush(o);
-        }
-
-        builder.EmitPush(_args.Length);
-        builder.Emit(VM.OpCode.PACK);
-
-        builder.EmitPush((byte)CallFlags.None);
-        builder.EmitPush(Method);
-        builder.EmitPush(Native.Hash);
-        builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
-        return builder.ToArray();
-    }
 }
