@@ -20,6 +20,7 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -101,8 +102,6 @@ namespace Neo.Ledger
             public IReadOnlyList<IInventory> Inventories { get; init; }
         }
 
-        private UInt160 _currentConsensus = null;
-
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when an <see cref="IInventory"/> is relayed.
         /// </summary>
@@ -165,18 +164,23 @@ namespace Neo.Ledger
 
                 if (verify)
                 {
-                    var nextConsensus = block.NextConsensus;
-                    if (block.Index == 0)
+                    const int CheckpointInterval = 1_000_000;
+                    var maxCheckpoint = system.Settings.CheckPoint.Count * CheckpointInterval;
+                    if (block.Index % CheckpointInterval == 0 && block.Index >= CheckpointInterval && block.Index <= maxCheckpoint)
                     {
-                        _currentConsensus = nextConsensus;
+                        var checkpointIndex = (int)(block.Index / CheckpointInterval - 1);
+                        if (system.Settings.CheckPoint[checkpointIndex] != block.Hash.ToString())
+                        {
+                            throw new InvalidOperationException("Invalid block hash for checkpoint.");
+                        }
                     }
-                    else if (nextConsensus != _currentConsensus)
+
+                    if (!block.Verify(system.Settings, system.StoreView))
                     {
-                        if (!block.Verify(system.Settings, system.StoreView))
-                            throw new InvalidOperationException();
-                        _currentConsensus = nextConsensus;
+                        throw new InvalidOperationException("Block verification failed.");
                     }
                 }
+
                 Persist(block);
                 ++currentHeight;
             }

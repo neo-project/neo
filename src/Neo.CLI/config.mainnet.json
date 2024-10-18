@@ -71,6 +71,14 @@
       "seed3.neo.org:10333",
       "seed4.neo.org:10333",
       "seed5.neo.org:10333"
+    ],
+    "CheckPoint": [
+      "0x7339b8a32e6ff7e8affbbb7a7be62d95f09c7a9426f2bea582d910f2228fded0",
+      "0xbcb5d0b779c80b0339266cceaf33aebe9d6eb20e8d0cfcc8c8a5d3718d1247ea",
+      "0x153bc34532f29cd729a9015cf5b69950f9577787789f5f1bc26c4647273426fc",
+      "0xcad42b6bcbcbff165f862df442280c07f73ad263bd28b6fd60722a8ae7a9318b",
+      "0xa56a4bf59a7cec3df965c77d943a2c74a94b8117598fea6b35004f394c918e32",
+      "0x0e23f98c7e9eb2bac066f759009d06daf61c82ede43ae8d9d80e49bd7bdf9b57"
     ]
   }
 }
