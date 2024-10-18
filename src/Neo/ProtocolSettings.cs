@@ -103,6 +103,8 @@ namespace Neo
         /// </summary>
         public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
 
+        public List<string> CheckPoint { get; private init; }
+
         /// <summary>
         /// The default protocol settings for NEO MainNet.
         /// </summary>
@@ -118,7 +120,8 @@ namespace Neo
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
-            Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
+            Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary(),
+            CheckPoint = []
         };
 
         public static ProtocolSettings Custom { get; set; }
@@ -163,7 +166,8 @@ namespace Neo
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
-                    : Default.Hardforks
+                    : Default.Hardforks,
+                CheckPoint = section.GetSection("CheckPoint").GetChildren().Select(p => p.Value).ToList()
             };
             return Custom;
         }
