@@ -29,6 +29,7 @@ namespace Neo.Cryptography
         private const char ZeroChar = '1';
         private static readonly BigInteger s_alphabetLength = Alphabet.Length;
 
+        #pragma warning disable format
         private static readonly sbyte[] s_decodeMap =
         [
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -39,6 +40,7 @@ namespace Neo.Cryptography
             -1, -1, -1, -1, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, -1, 44, 45,
             46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, -1, -1, -1, -1, -1,
         ];
+        #pragma warning restore format
 
         /// <summary>
         /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
