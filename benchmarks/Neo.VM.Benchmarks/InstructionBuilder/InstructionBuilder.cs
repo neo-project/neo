@@ -14,7 +14,7 @@ using System.Numerics;
 
 namespace Neo.VM.Benchmark;
 
-internal class InstructionBuilder
+public class InstructionBuilder
 {
     internal readonly List<Instruction> _instructions = new();
 
