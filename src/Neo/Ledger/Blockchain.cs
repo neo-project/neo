@@ -101,6 +101,8 @@ namespace Neo.Ledger
             public IReadOnlyList<IInventory> Inventories { get; init; }
         }
 
+        private UInt160 _currentConsensus = null;
+
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when an <see cref="IInventory"/> is relayed.
         /// </summary>
@@ -160,8 +162,21 @@ namespace Neo.Ledger
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
                     throw new InvalidOperationException();
-                if (verify && !block.Verify(system.Settings, system.StoreView))
-                    throw new InvalidOperationException();
+
+                if (verify)
+                {
+                    var nextConsensus = block.NextConsensus;
+                    if (block.Index == 0)
+                    {
+                        _currentConsensus = nextConsensus;
+                    }
+                    else if (nextConsensus != _currentConsensus)
+                    {
+                        if (!block.Verify(system.Settings, system.StoreView))
+                            throw new InvalidOperationException();
+                        _currentConsensus = nextConsensus;
+                    }
+                }
                 Persist(block);
                 ++currentHeight;
             }
@@ -475,6 +490,7 @@ namespace Neo.Ledger
             }
             InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
+
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
