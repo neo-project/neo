@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Neo.CLI.Hosting;
 using Neo.CLI.Hosting.Services;
+using Neo.CLI.Pipes;
 
 namespace Neo.CLI.Extensions
 {
@@ -62,6 +63,17 @@ namespace Neo.CLI.Extensions
                 services.ConfigureOptions<NeoOptionsSetup>();
                 services.TryAddSingleton<NeoSystemHostedService>();
                 //services.AddHostedService(provider => provider.GetRequiredService<NeoSystemHostedService>());
+            });
+            return hostBuilder;
+        }
+
+        public static IHostBuilder UseNamedPipe(this IHostBuilder hostBuilder)
+        {
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                services.TryAddSingleton(new NamedPipeEndPoint(NeoDefaults.PipeName));
+                services.TryAddSingleton<NamedPipeService>();
+                services.AddHostedService(provider => provider.GetRequiredService<NamedPipeService>());
             });
             return hostBuilder;
         }
