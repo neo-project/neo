@@ -20,7 +20,7 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        public string GetEngineErrorInfo()
+        public string? GetEngineErrorInfo()
         {
             if (State != VMState.FAULT || FaultException == null)
                 return null;
