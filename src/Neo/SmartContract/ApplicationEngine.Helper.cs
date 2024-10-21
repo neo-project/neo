@@ -25,22 +25,10 @@ namespace Neo.SmartContract
             if (State != VMState.FAULT || FaultException == null)
                 return null;
             StringBuilder traceback = new();
-            try
-            {
-                if (CallingScriptHash != null)
-                    traceback.AppendLine($"CallingScriptHash={CallingScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CallingScriptHash)?.Manifest.Name}]");
-            }
-            catch { }
-            try
-            {
-                traceback.AppendLine($"CurrentScriptHash={CurrentScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash)?.Manifest.Name}]");
-            }
-            catch { }
-            try
-            {
-                traceback.AppendLine($"EntryScriptHash={EntryScriptHash}");
-            }
-            catch { }
+            if (CallingScriptHash != null)
+                traceback.AppendLine($"CallingScriptHash={CallingScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CallingScriptHash)?.Manifest.Name}]");
+            traceback.AppendLine($"CurrentScriptHash={CurrentScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash)?.Manifest.Name}]");
+            traceback.AppendLine($"EntryScriptHash={EntryScriptHash}");
 
             foreach (ExecutionContext context in InvocationStack.Reverse())
             {
