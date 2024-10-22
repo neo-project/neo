@@ -19,10 +19,10 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        public string? GetEngineStackInfoOnFault(bool exceptionStackTrace = true, bool exceptionMessage = true)
+        public string GetEngineStackInfoOnFault(bool exceptionStackTrace = true, bool exceptionMessage = true)
         {
             if (State != VMState.FAULT || FaultException == null)
-                return null;
+                return "";
             StringBuilder traceback = new();
             if (CallingScriptHash != null)
                 traceback.AppendLine($"CallingScriptHash={CallingScriptHash}[{NativeContract.ContractManagement.GetContract(SnapshotCache, CallingScriptHash)?.Manifest.Name}]");
@@ -40,10 +40,10 @@ namespace Neo.SmartContract
             return traceback.ToString();
         }
 
-        public string? GetEngineExceptionInfo(bool exceptionStackTrace = true, bool exceptionMessage = true)
+        public string GetEngineExceptionInfo(bool exceptionStackTrace = true, bool exceptionMessage = true)
         {
             if (State != VMState.FAULT || FaultException == null)
-                return null;
+                return "";
             StringBuilder traceback = new();
             Exception baseException = FaultException.GetBaseException();
             if (exceptionStackTrace)
