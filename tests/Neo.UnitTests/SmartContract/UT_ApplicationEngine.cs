@@ -167,10 +167,10 @@ namespace Neo.UnitTests.SmartContract
                 };
                 var currentScriptHash = engine.EntryScriptHash;
 
-                Assert.IsNull(engine.GetEngineErrorInfo());
+                Assert.IsNull(engine.GetEngineStackInfoOnFault());
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
                 Assert.IsTrue(engine.FaultException.ToString().Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}"));
-                string traceback = engine.GetEngineErrorInfo();
+                string traceback = engine.GetEngineStackInfoOnFault();
                 Assert.IsTrue(traceback.Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}"));
                 Assert.IsTrue(traceback.Contains("CurrentScriptHash"));
                 Assert.IsTrue(traceback.Contains("EntryScriptHash"));

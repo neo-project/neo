@@ -12,7 +12,6 @@
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -20,7 +19,7 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        public string? GetEngineErrorInfo()
+        public string? GetEngineStackInfoOnFault(bool exceptionStackTrace = true, bool exceptionMessage = true)
         {
             if (State != VMState.FAULT || FaultException == null)
                 return null;
@@ -36,10 +35,21 @@ namespace Neo.SmartContract
                 string contextContractName = NativeContract.ContractManagement.GetContract(SnapshotCache, contextScriptHash)?.Manifest.Name;
                 traceback.AppendLine($"\tInstructionPointer={context.InstructionPointer}, OpCode {context.CurrentInstruction?.OpCode}, Script Length={context.Script.Length} {contextScriptHash}[{contextContractName}]");
             }
-            Exception baseException = FaultException.GetBaseException();
-            traceback.AppendLine(baseException.StackTrace);
-            traceback.AppendLine(baseException.Message);
+            traceback.Append(GetEngineExceptionInfo(exceptionStackTrace: exceptionStackTrace, exceptionMessage: exceptionMessage));
 
+            return traceback.ToString();
+        }
+
+        public string? GetEngineExceptionInfo(bool exceptionStackTrace = true, bool exceptionMessage = true)
+        {
+            if (State != VMState.FAULT || FaultException == null)
+                return null;
+            StringBuilder traceback = new();
+            Exception baseException = FaultException.GetBaseException();
+            if (exceptionStackTrace)
+                traceback.AppendLine(baseException.StackTrace);
+            if (exceptionMessage)
+                traceback.AppendLine(baseException.Message);
             return traceback.ToString();
         }
     }
