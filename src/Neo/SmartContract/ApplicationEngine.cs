@@ -643,12 +643,12 @@ namespace Neo.SmartContract
         /// <summary>
         /// Get Interop Descriptor
         /// </summary>
-        /// <param name="hash">Hash</param>
+        /// <param name="methodHash">Method Hash</param>
         /// <returns>InteropDescriptor</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static InteropDescriptor GetInteropDescriptor(uint hash)
+        public static InteropDescriptor GetInteropDescriptor(uint methodHash)
         {
-            return services[hash];
+            return services[methodHash];
         }
 
         /// <summary>
