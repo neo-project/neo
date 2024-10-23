@@ -399,7 +399,6 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             notifications ??= new List<NotifyEventArgs>();
             // Restrict the number of notifications for Application executions. Do not check
             // persisting triggers to avoid native persist failure. Do not check verification
@@ -408,6 +407,7 @@ namespace Neo.SmartContract
             {
                 throw new InvalidOperationException($"Maximum number of notifications `{MaxNotificationCount}` is reached.");
             }
+            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
             CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
