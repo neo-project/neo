@@ -103,7 +103,7 @@ namespace Neo.UnitTests.Ledger
         public void GetHashCode_Get()
         {
             StorageKey uut = new() { Id = 0x42000000, Key = TestUtils.GetByteArray(10, 0x42) };
-            uut.GetHashCode().Should().Be(1374529787);
+            uut.GetHashCode().Should().Be(-729135550);
         }
 
         [TestMethod]

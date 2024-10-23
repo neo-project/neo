@@ -67,7 +67,7 @@ namespace Neo.SmartContract
 
         public override int GetHashCode()
         {
-            return Id + (int)Key.Span.Murmur32(0);
+            return Id + (int)Key.Span.XxHash3_32();
         }
 
         public byte[] ToArray()
