@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -235,9 +236,7 @@ namespace Neo.SmartContract
         {
             if (engine is ApplicationEngine app)
             {
-                uint method = instruction.TokenU32;
-
-                app.OnSysCall(services[method]);
+                app.OnSysCall(GetInteropDescriptor(instruction.TokenU32));
             }
             else
             {
@@ -633,6 +632,17 @@ namespace Neo.SmartContract
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
+        }
+
+        /// <summary>
+        /// Get Interop Descriptor
+        /// </summary>
+        /// <param name="hash">Hash</param>
+        /// <returns>InteropDescriptor</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static InteropDescriptor GetInteropDescriptor(uint hash)
+        {
+            return services[hash];
         }
 
         /// <summary>
