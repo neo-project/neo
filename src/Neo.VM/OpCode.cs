@@ -725,6 +725,8 @@ namespace Neo.VM
         /// <summary>
         /// The item n back in the stack is copied to the top.
         ///
+        /// <example> a b c d 2 -> a b c d b </example>
+        ///  index => 3[2]1 0
         /// <remarks>
         ///     Push: 1 item(s)
         ///     Pop: 0 item(s)
@@ -735,6 +737,8 @@ namespace Neo.VM
         /// <summary>
         /// The item at the top of the stack is copied and inserted before the second-to-top item.
         ///
+        /// <example> a b c -> a c b c </example>
+        /// 
         /// <remarks>
         ///     Push: 1 item(s)
         ///     Pop: 0 item(s)
@@ -769,6 +773,8 @@ namespace Neo.VM
         /// <summary>
         /// The item n back in the stack is moved to the top.
         ///
+        /// <example>a b c d 2 -> a c d b</example>
+        /// index => 3[2]1 0
         /// <remarks>
         ///     Push: 0 item(s)
         ///     Pop: 1 item(s)
@@ -793,7 +799,6 @@ namespace Neo.VM
         ///
         /// <example> a b c d -> d c b a</example>
         ///
-        ///
         /// <remarks>
         ///     Push: 0 item(s)
         ///     Pop: 0 item(s)
@@ -804,7 +809,8 @@ namespace Neo.VM
         /// <summary>
         /// Pop the number N on the stack, and reverse the order of the top N items on the stack.
         ///
-        ///
+        /// <example> a b c d 3 -> a d c b </example>
+        /// 
         /// <remarks>
         ///     Push: 0 item(s)
         ///     Pop: 1 item(s)
