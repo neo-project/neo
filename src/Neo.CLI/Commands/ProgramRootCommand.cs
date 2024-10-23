@@ -31,8 +31,9 @@ namespace Neo.CLI.Commands
 
         }
 
-        public new sealed class Handler
-            (NeoSystemHostedService neoSystemService) : ICommandHandler
+        public new sealed class Handler(
+            NeoSystemHostedService neoSystemService,
+            NamedPipeService namedPipeService) : ICommandHandler
         {
             public int Invoke(InvocationContext context)
             {
@@ -45,6 +46,7 @@ namespace Neo.CLI.Commands
                 var host = context.GetHost();
 
                 await neoSystemService.StartAsync(stoppingToken);
+                await namedPipeService.StartAsync(stoppingToken);
 
                 return await RunConsolePrompt(context, stoppingToken);
             }
@@ -74,7 +76,7 @@ namespace Neo.CLI.Commands
                 {
                     PrintPrompt(context.Console);
 
-                    var line = context.Console.ReadLine()?.Trim() ?? default;
+                    var line = context.Console.ReadLine()?.Trim();
 
                     if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
                         continue;

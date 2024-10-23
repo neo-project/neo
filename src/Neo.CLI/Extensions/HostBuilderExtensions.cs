@@ -67,13 +67,18 @@ namespace Neo.CLI.Extensions
             return hostBuilder;
         }
 
+        /// <summary>
+        /// Injects the <see cref="IHostedService"/> named pipe server for the application.
+        /// </summary>
+        /// <param name="hostBuilder"></param>
+        /// <returns></returns>
         public static IHostBuilder UseNamedPipe(this IHostBuilder hostBuilder)
         {
             hostBuilder.ConfigureServices((context, services) =>
             {
                 services.TryAddSingleton(new NamedPipeEndPoint(NeoDefaults.PipeName));
                 services.TryAddSingleton<NamedPipeService>();
-                services.AddHostedService(provider => provider.GetRequiredService<NamedPipeService>());
+                //services.AddHostedService(provider => provider.GetRequiredService<NamedPipeService>());
             });
             return hostBuilder;
         }

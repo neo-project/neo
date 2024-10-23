@@ -32,6 +32,18 @@ namespace Neo.CLI.Pipes
             return new(applicationToTransport, transportToApplication);
         }
 
+        public static DuplexPipePair CreateConnectionPair()
+        {
+            var input = new Pipe();
+            var output = new Pipe();
+
+            // Use Transport for Input and Output for Application
+            var transportToApplication = new DuplexPipe(output.Reader, input.Writer);
+            var applicationToTransport = new DuplexPipe(input.Reader, output.Writer);
+
+            return new(applicationToTransport, transportToApplication);
+        }
+
         public readonly struct DuplexPipePair(
             IDuplexPipe transport,
             IDuplexPipe application)
