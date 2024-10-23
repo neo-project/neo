@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System;
+using System.IO.Hashing;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM
@@ -47,33 +48,9 @@ namespace Neo.VM
         /// <param name="span">Span</param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long HashBytes(ReadOnlySpan<byte> span)
+        public static ulong HashBytes(ReadOnlySpan<byte> span)
         {
-            var len = span.Length;
-            var hashState = (ulong)len;
-
-            fixed (byte* k = span)
-            {
-                var pwString = (char*)k;
-                var cbBuf = len / 2;
-
-                for (var i = 0; i < cbBuf; i++, pwString++)
-                    hashState = HashMagicNumber * hashState + *pwString;
-
-                if ((len & 1) > 0)
-                {
-                    var pC = (byte*)pwString;
-                    hashState = HashMagicNumber * hashState + *pC;
-                }
-            }
-
-            return (long)Rotr64(HashMagicNumber * hashState, 4);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ulong Rotr64(ulong x, int n)
-        {
-            return ((x) >> n) | ((x) << (64 - n));
+            return XxHash3.HashToUInt64(span, HashMagicNumber);
         }
     }
 }
