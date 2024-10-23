@@ -61,7 +61,7 @@ namespace Neo.VM
                 throw new InvalidOperationException($"The value {count} is out of range.");
             // TODO: check if we can optimize the memcpy by using peek instead of  dup then pop
             src.Slice(si, count).CopyTo(dst.InnerBuffer.Span[di..]);
-            dst.Invalidate();
+            dst.InvalidateHashCode();
         }
 
         /// <summary>
