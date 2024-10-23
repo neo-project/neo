@@ -404,7 +404,7 @@ namespace Neo.SmartContract
             // Restrict the number of notifications for Application executions. Do not check
             // persisting triggers to avoid native persist failure. Do not check verification
             // trigger since verification context is loaded with ReadOnly flag.
-            if (IsHardforkEnabled(Hardfork.HF_Echidna) && Trigger == TriggerType.Application && notifications.Count == MaxNotificationCount)
+            if (IsHardforkEnabled(Hardfork.HF_Echidna) && Trigger == TriggerType.Application && notifications.Count >= MaxNotificationCount)
             {
                 throw new InvalidOperationException($"Maximum number of notifications `{MaxNotificationCount}` is reached.");
             }
