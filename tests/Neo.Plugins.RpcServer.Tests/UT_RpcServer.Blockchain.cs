@@ -11,17 +11,22 @@
 
 using Akka.Actor;
 using Akka.Util.Internal;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.RpcServer.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
 using System;
 using System.Linq;
+using System.Security.Policy;
+using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -40,7 +45,7 @@ namespace Neo.Plugins.RpcServer.Tests
             b.Index = 100;
             snapshot.Commit();
 
-            var result = _rpcServer.GetBestBlockHash([]);
+            var result = _rpcServer.GetBestBlockHash();
             // Assert
             Assert.AreEqual(expectedHash.ToString(), result.AsString());
         }
@@ -53,14 +58,18 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
 
-            var parameters = new JArray(block.Hash.ToString(), false);
-            var result = _rpcServer.GetBlock(parameters);
+            var result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Hash), false);
             var blockArr = Convert.FromBase64String(result.AsString());
             var block2 = blockArr.AsSerializable<Block>();
             block2.Transactions.ForEach(tx =>
             {
                 Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
             });
+
+            result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Hash), true);
+            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
+            result.ToString().Should().Be(block3.ToString());
         }
 
         [TestMethod]
@@ -71,21 +80,25 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
 
-            var parameters = new JArray(block.Index, false);
-            var result = _rpcServer.GetBlock(parameters);
+            var result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), false);
             var blockArr = Convert.FromBase64String(result.AsString());
             var block2 = blockArr.AsSerializable<Block>();
             block2.Transactions.ForEach(tx =>
             {
                 Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
             });
+
+            result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), true);
+            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
+            result.ToString().Should().Be(block3.ToString());
         }
 
         [TestMethod]
         public void TestGetBlockCount()
         {
             var expectedCount = 1;
-            var result = _rpcServer.GetBlockCount(new JArray());
+            var result = _rpcServer.GetBlockCount();
             Assert.AreEqual(expectedCount, result.AsNumber());
         }
 
@@ -93,7 +106,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetBlockHeaderCount()
         {
             var expectedCount = 1;
-            var result = _rpcServer.GetBlockHeaderCount(new JArray());
+            var result = _rpcServer.GetBlockHeaderCount();
             Assert.AreEqual(expectedCount, result.AsNumber());
         }
 
@@ -106,7 +119,7 @@ namespace Neo.Plugins.RpcServer.Tests
             // snapshot.Commit();
             var reason = _neoSystem.Blockchain.Ask<Blockchain.RelayResult>(block).Result;
             var expectedHash = block.Hash.ToString();
-            var result = _rpcServer.GetBlockHash(new JArray(block.Index));
+            var result = _rpcServer.GetBlockHash(block.Index);
             Assert.AreEqual(expectedHash, result.AsString());
         }
 
@@ -117,11 +130,15 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
-            var parameters = new JArray(block.Hash.ToString(), true);
-            var result = _rpcServer.GetBlockHeader(parameters);
+            var result = _rpcServer.GetBlockHeader(new BlockHashOrIndex(block.Hash), true);
             var header = block.Header.ToJson(_neoSystem.Settings);
             header["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
             Assert.AreEqual(header.ToString(), result.ToString());
+
+            result = _rpcServer.GetBlockHeader(new BlockHashOrIndex(block.Hash), false);
+            var headerArr = Convert.FromBase64String(result.AsString());
+            var header2 = headerArr.AsSerializable<Header>();
+            header2.ToJson(_neoSystem.Settings).ToString().Should().Be(block.Header.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
@@ -131,9 +148,23 @@ namespace Neo.Plugins.RpcServer.Tests
             var contractState = TestUtils.GetContract();
             snapshot.AddContract(contractState.Hash, contractState);
             snapshot.Commit();
-            var result = _rpcServer.GetContractState(new JArray(contractState.Hash.ToString()));
 
+            var result = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
             Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
+
+            result = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id));
+            Assert.AreEqual(contractState.ToJson().ToString(), result.ToString());
+
+            var byId = _rpcServer.GetContractState(new ContractNameOrHashOrId(-1));
+            var byName = _rpcServer.GetContractState(new ContractNameOrHashOrId("ContractManagement"));
+            byId.ToString().Should().Be(byName.ToString());
+
+            snapshot.DeleteContract(contractState.Hash);
+            snapshot.Commit();
+            Action act = () => _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
+            act.Should().Throw<RpcException>().WithMessage(RpcError.UnknownContract.Message);
+            act = () => _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id));
+            act.Should().Throw<RpcException>().WithMessage(RpcError.UnknownContract.Message);
         }
 
         [TestMethod]
@@ -144,9 +175,11 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
             _neoSystem.MemPool.TryAdd(tx, snapshot);
 
-            var result = _rpcServer.GetRawMemPool(new JArray());
-
+            var result = _rpcServer.GetRawMemPool();
             Assert.IsTrue(((JArray)result).Any(p => p.AsString() == tx.Hash.ToString()));
+
+            result = _rpcServer.GetRawMemPool(true);
+            Assert.IsTrue(((JArray)result["verified"]).Any(p => p.AsString() == tx.Hash.ToString()));
         }
 
         [TestMethod]
@@ -155,12 +188,15 @@ namespace Neo.Plugins.RpcServer.Tests
             var snapshot = _neoSystem.GetSnapshotCache();
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             _neoSystem.MemPool.TryAdd(tx, snapshot);
-            var parameters = new JArray(tx.Hash.ToString(), true);
             snapshot.Commit();
-            var result = _rpcServer.GetRawTransaction(parameters);
 
+            var result = _rpcServer.GetRawTransaction(tx.Hash, true);
             var json = Utility.TransactionToJson(tx, _neoSystem.Settings);
             Assert.AreEqual(json.ToString(), result.ToString());
+
+            result = _rpcServer.GetRawTransaction(tx.Hash, false);
+            var tx2 = Convert.FromBase64String(result.AsString()).AsSerializable<Transaction>();
+            tx2.ToJson(_neoSystem.Settings).ToString().Should().Be(tx.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
@@ -174,7 +210,7 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
             snapshot.Commit();
 
-            var result = _rpcServer.GetStorage(new JArray(contractState.Hash.ToString(), Convert.ToBase64String(key)));
+            var result = _rpcServer.GetStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
             Assert.AreEqual(Convert.ToBase64String(value), result.AsString());
         }
 
@@ -188,7 +224,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var value = new byte[] { 0x02 };
             TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
             snapshot.Commit();
-            var result = _rpcServer.FindStorage(new JArray(contractState.Hash.ToString(), Convert.ToBase64String(key), 0));
+            var result = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key), 0);
 
             var json = new JObject();
             var jarr = new JArray();
@@ -200,6 +236,15 @@ namespace Neo.Plugins.RpcServer.Tests
             json["next"] = 1;
             json["results"] = jarr;
             Assert.AreEqual(json.ToString(), result.ToString());
+
+            var result2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
+            result2.ToString().Should().Be(result.ToString());
+
+            Enumerable.Range(0, 51).ToList().ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, new byte[] { 0x01, (byte)i }, new byte[] { 0x02 }));
+            snapshot.Commit();
+            var result4 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(new byte[] { 0x01 }), 0);
+            result4["next"].Should().Be(RpcServerSettings.Default.FindStoragePageSize);
+            (result4["truncated"]).AsBoolean().Should().Be(true);
         }
 
         [TestMethod]
@@ -210,7 +255,7 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
             var tx = block.Transactions[0];
-            var result = _rpcServer.GetTransactionHeight(new JArray(tx.Hash.ToString()));
+            var result = _rpcServer.GetTransactionHeight(tx.Hash);
             Assert.AreEqual(block.Index, result.AsNumber());
         }
 
@@ -218,7 +263,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetNextBlockValidators()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
-            var result = _rpcServer.GetNextBlockValidators(new JArray());
+            var result = _rpcServer.GetNextBlockValidators();
 
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
             var expected = validators.Select(p =>
@@ -235,12 +280,16 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetCandidates()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
-            var result = _rpcServer.GetCandidates(new JArray());
+
+            var result = _rpcServer.GetCandidates();
             var json = new JArray();
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, _neoSystem.Settings.ValidatorsCount);
+
+            var key = new KeyBuilder(NativeContract.NEO.Id, 33).Add(ECPoint.Parse("02237309a0633ff930d51856db01d17c829a5b2e5cc2638e9c03b4cfa8e9c9f971", ECCurve.Secp256r1));
+            snapshot.Add(key, new StorageItem(new CandidateState() { Registered = true, Votes = 10000 }));
             snapshot.Commit();
             var candidates = NativeContract.NEO.GetCandidates(_neoSystem.GetSnapshotCache());
-
+            result = _rpcServer.GetCandidates();
             foreach (var candidate in candidates)
             {
                 var item = new JObject();
@@ -256,7 +305,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetCommittee()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
-            var result = _rpcServer.GetCommittee(new JArray());
+            var result = _rpcServer.GetCommittee();
             var committee = NativeContract.NEO.GetCommittee(snapshot);
             var expected = new JArray(committee.Select(p => (JToken)p.ToString()));
             Assert.AreEqual(expected.ToString(), result.ToString());
@@ -265,7 +314,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestGetNativeContracts()
         {
-            var result = _rpcServer.GetNativeContracts(new JArray());
+            var result = _rpcServer.GetNativeContracts();
             var contracts = new JArray(NativeContract.Contracts.Select(p => NativeContract.ContractManagement.GetContract(_neoSystem.GetSnapshotCache(), p.Hash).ToJson()));
             Assert.AreEqual(contracts.ToString(), result.ToString());
         }
@@ -278,10 +327,9 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
 
-            var parameters = new JArray(int.MaxValue, false);
             try
             {
-                _rpcServer.GetBlock(parameters);
+                _rpcServer.GetBlock(new BlockHashOrIndex(int.MaxValue), false);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -298,10 +346,9 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
 
-            var parameters = new JArray(TestUtils.RandomUInt256().ToString(), false);
             try
             {
-                _rpcServer.GetBlock(parameters);
+                _rpcServer.GetBlock(new BlockHashOrIndex(TestUtils.RandomUInt256()), false);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -318,10 +365,9 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
 
-            var parameters = new JArray(int.MaxValue, false);
             try
             {
-                _rpcServer.GetBlock(parameters);
+                _rpcServer.GetBlock(new BlockHashOrIndex(int.MaxValue), false);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -338,10 +384,9 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
 
-            var parameters = new JArray(TestUtils.RandomUInt256().ToString(), false);
             try
             {
-                _rpcServer.GetBlock(parameters);
+                _rpcServer.GetBlock(new BlockHashOrIndex(TestUtils.RandomUInt256()), false);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -357,7 +402,8 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
-            Assert.ThrowsException<RpcException>(() => _rpcServer.GetBlockHash(new JArray(block.Index + 1)));
+            Action act = () => _rpcServer.GetBlockHash(block.Index + 1);
+            act.Should().Throw<RpcException>();
         }
 
         [TestMethod]
@@ -367,7 +413,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var randomHash = TestUtils.RandomUInt160();
             try
             {
-                _rpcServer.GetContractState(new JArray(randomHash.ToString()));
+                _rpcServer.GetContractState(new ContractNameOrHashOrId(randomHash));
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -384,7 +430,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var key = new byte[] { 0x01 };
             try
             {
-                _rpcServer.GetStorage(new JArray(randomHash.ToString(), Convert.ToBase64String(key)));
+                _rpcServer.GetStorage(new ContractNameOrHashOrId(randomHash), Convert.ToBase64String(key));
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -404,7 +450,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var key = new byte[] { 0x01 };
             try
             {
-                _rpcServer.GetStorage(new JArray(contractState.Hash.ToString(), Convert.ToBase64String(key)));
+                _rpcServer.GetStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -419,7 +465,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var randomHash = TestUtils.RandomUInt256();
             try
             {
-                _rpcServer.GetTransactionHeight(new JArray(randomHash.ToString()));
+                _rpcServer.GetTransactionHeight(randomHash);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -434,7 +480,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var randomHash = TestUtils.RandomUInt256();
             try
             {
-                _rpcServer.GetRawTransaction(new JArray(randomHash.ToString(), true));
+                _rpcServer.GetRawTransaction(randomHash, true);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -444,159 +490,12 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
-        public void TestGetBlockInvalidParams()
-        {
-            try
-            {
-                _rpcServer.GetBlock(new JArray("invalid_hash", false));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-            catch (FormatException)
-            {
-            }
-            catch
-            {
-                Assert.Fail("Unexpected exception");
-            }
-        }
-
-        [TestMethod]
-        public void TestGetBlockHashInvalidParams()
-        {
-            try
-            {
-                _rpcServer.GetBlockHash(new JArray("invalid_index"));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-        }
-
-        [TestMethod]
-        public void TestGetBlockHeaderInvalidParams()
-        {
-            try
-            {
-                _rpcServer.GetBlockHeader(new JArray("invalid_hash", true));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-            catch (FormatException)
-            {
-            }
-            catch
-            {
-                Assert.Fail("Unexpected exception");
-            }
-        }
-
-        [TestMethod]
-        public void TestGetContractStateInvalidParams()
-        {
-            try
-            {
-                _rpcServer.GetContractState(new JArray("invalid_hash"));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-            catch (FormatException)
-            {
-            }
-            catch
-            {
-                Assert.Fail("Unexpected exception");
-            }
-        }
-
-        [TestMethod]
-        public void TestGetStorageInvalidParams()
-        {
-            try
-            {
-                _rpcServer.GetStorage(new JArray("invalid_hash", "invalid_key"));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-            catch (FormatException)
-            {
-            }
-            catch
-            {
-                Assert.Fail("Unexpected exception");
-            }
-        }
-
-        [TestMethod]
-        public void TestFindStorageInvalidParams()
-        {
-            try
-            {
-                _rpcServer.FindStorage(new JArray("invalid_hash", "invalid_prefix", "invalid_start"));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-            catch (FormatException)
-            {
-            }
-            catch
-            {
-                Assert.Fail("Unexpected exception");
-            }
-        }
-
-        [TestMethod]
-        public void TestGetTransactionHeightInvalidParams()
-        {
-            try
-            {
-                _rpcServer.GetTransactionHeight(new JArray("invalid_hash"));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-        }
-
-        [TestMethod]
-        public void TestGetRawTransactionInvalidParams()
-        {
-            try
-            {
-                _rpcServer.GetRawTransaction(new JArray("invalid_hash", true));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            }
-        }
-
-        [TestMethod]
         public void TestInternalServerError()
         {
             _memoryStore.Reset();
             try
             {
-                _rpcServer.GetCandidates(new JArray());
+                _rpcServer.GetCandidates();
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
@@ -610,7 +509,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             try
             {
-                _rpcServer.GetBlockHash(new JArray(int.MaxValue));
+                _rpcServer.GetBlockHash(int.MaxValue);
                 Assert.Fail("Expected RpcException was not thrown.");
             }
             catch (RpcException ex)
