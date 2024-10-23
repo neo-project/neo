@@ -725,8 +725,10 @@ namespace Neo.VM
         /// <summary>
         /// The item n back in the stack is copied to the top.
         ///
-        /// <example> a b c d 2 -> a b c d b </example>
+        /// <example> a b c d 2 -> a b c d b
         ///  index => 3[2]1 0
+        /// </example>
+        /// 
         /// <remarks>
         ///     Push: 1 item(s)
         ///     Pop: 0 item(s)
@@ -773,8 +775,10 @@ namespace Neo.VM
         /// <summary>
         /// The item n back in the stack is moved to the top.
         ///
-        /// <example>a b c d 2 -> a c d b</example>
+        /// <example>a b c d 2 -> a c d b
         /// index => 3[2]1 0
+        /// </example>
+        /// 
         /// <remarks>
         ///     Push: 0 item(s)
         ///     Pop: 1 item(s)
