@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native
             list.AddRange(nodes);
             list.Sort();
             engine.SnapshotCache.Add(key, new StorageItem(list));
-            
+
             if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
             {
                 var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.Snapshot, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
