@@ -10,10 +10,10 @@
 // modifications are permitted.
 
 using Neo.CLI.Pipes.Buffers;
-using Neo.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Hashing;
 using System.Reflection;
 
 namespace Neo.CLI.Pipes.Protocols
@@ -25,7 +25,7 @@ namespace Neo.CLI.Pipes.Protocols
 
         public NamedPipeCommand Command { get; set; }
         public INamedPipeMessage? Payload { get; set; }
-        public int PayloadSize => _payloadSize;
+        public int PayloadSize => Payload?.Size ?? 0;
 
         private static readonly Dictionary<NamedPipeCommand, Type> s_commandTypes = new();
 
@@ -78,7 +78,7 @@ namespace Neo.CLI.Pipes.Protocols
             if (payloadBytes.Length != _payloadSize)
                 throw new InvalidDataException("Invalid payload size");
 
-            if (_checksum != Crc32.Compute(payloadBytes))
+            if (_checksum != Crc32.HashToUInt32(payloadBytes))
                 throw new InvalidDataException("Invalid checksum");
 
             Payload = payload;
@@ -91,7 +91,7 @@ namespace Neo.CLI.Pipes.Protocols
             var bytes = Payload?.ToByteArray();
 
             if (bytes is not null)
-                _checksum = Crc32.Compute(bytes);
+                _checksum = Crc32.HashToUInt32(bytes);
 
             writer.Write(Magic);
             writer.Write(Version);

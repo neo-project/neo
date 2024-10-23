@@ -90,6 +90,7 @@ jobs:
         dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
         dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
         dotnet test ./tests/Neo.Plugins.ApplicationLogs.Tests --output ./bin/tests/Neo.Plugins.ApplicationLogs.Tests
+        dotnet test ./tests/Neo.CLI.Tests --output ./bin/tests/Neo.CLI.Tests
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
@@ -109,6 +110,7 @@ jobs:
           ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Plugins.ApplicationLogs.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Extensions.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.CLI.Tests/TestResults/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')

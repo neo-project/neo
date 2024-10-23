@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyTitle).Tests"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="neo.ico" />
   </ItemGroup>
 
@@ -43,6 +47,7 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
     <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0.0" />
   </ItemGroup>
 
 </Project>
