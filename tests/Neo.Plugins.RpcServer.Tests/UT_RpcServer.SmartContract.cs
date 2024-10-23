@@ -9,11 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -22,11 +18,8 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
-using Neo.UnitTests.Extensions;
 using Neo.Wallets;
 using System;
-using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -64,7 +57,7 @@ public partial class UT_RpcServer
     {
         _rpcServer.wallet = _wallet;
 
-        JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "totalSupply", new JArray([]), validatorSigner, true));
+        var resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokefunction", new JArray(NeoToken.NEO.Hash.ToString(), "totalSupply", new JArray([]), validatorSigner, true)).GetAwaiter().GetResult();
         Assert.AreEqual(resp.Count, 8);
         Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
@@ -78,7 +71,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["stack"][0]["value"], "100000000");
         Assert.IsTrue(resp.ContainsProperty("tx"));
 
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "symbol"));
+        resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokefunction", new JArray(NeoToken.NEO.Hash.ToString(), "symbol")).GetAwaiter().GetResult();
         Assert.AreEqual(resp.Count, 6);
         Assert.IsTrue(resp.ContainsProperty("script"));
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
@@ -89,12 +82,12 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["stack"][0]["value"], Convert.ToBase64String(Encoding.UTF8.GetBytes("NEO")));
 
         // This call triggers not only NEO but also unclaimed GAS
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "transfer", new JArray([
+        resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokefunction", new JArray(NeoToken.NEO.Hash.ToString(), "transfer", new JArray([
             new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = MultisigScriptHash.ToString() },
             new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = ValidatorScriptHash.ToString() },
             new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "1" },
             new JObject() { ["type"] = nameof(ContractParameterType.Any) },
-        ]), multisigSigner, true));
+        ]), multisigSigner, true)).GetAwaiter().GetResult();
         Assert.AreEqual(resp.Count, 7);
         Assert.AreEqual(resp["script"], NeoTransferScript);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
@@ -104,7 +97,7 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash} ({MultisigAddress}) is not found. " +
                             $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");
-        JArray notifications = (JArray)resp["notifications"];
+        var notifications = (JArray)resp["notifications"];
         Assert.AreEqual(notifications.Count, 2);
         Assert.AreEqual(notifications[0]["eventname"].AsString(), "Transfer");
         Assert.AreEqual(notifications[0]["contract"].AsString(), NeoToken.NEO.Hash.ToString());
@@ -119,7 +112,7 @@ public partial class UT_RpcServer
     [TestMethod]
     public void TestInvokeScript()
     {
-        JObject resp = (JObject)_rpcServer.InvokeScript(new JArray(NeoTotalSupplyScript, validatorSigner, true));
+        var resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokescript", new JArray(NeoTotalSupplyScript, validatorSigner, true)).GetAwaiter().GetResult();
         Assert.AreEqual(resp.Count, 7);
         Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
         Assert.IsTrue(resp.ContainsProperty("diagnostics"));
@@ -130,31 +123,31 @@ public partial class UT_RpcServer
         Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Integer));
         Assert.AreEqual(resp["stack"][0]["value"], "100000000");
 
-        resp = (JObject)_rpcServer.InvokeScript(new JArray(NeoTransferScript));
-        Assert.AreEqual(resp.Count, 6);
+        resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokescript", new JArray(NeoTransferScript, validatorSigner, true)).GetAwaiter().GetResult();
+        Assert.AreEqual(resp.Count, 7);
         Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Boolean));
         Assert.AreEqual(resp["stack"][0]["value"], false);
     }
 
     [TestMethod]
-    public void TestTraverseIterator()
+    public async void TestTraverseIterator()
     {
         // GetAllCandidates that should return 0 candidates
-        JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
-        string sessionId = resp["session"].AsString();
-        string iteratorId = resp["stack"][0]["id"].AsString();
-        JArray respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        var resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokefunction", new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true)).GetAwaiter().GetResult();
+        var sessionId = resp["session"].AsString();
+        var iteratorId = resp["stack"][0]["id"].AsString();
+        var respArray = (JArray)(JToken)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseiterator", new JArray([sessionId, iteratorId, 100])).GetAwaiter().GetResult();
         Assert.AreEqual(respArray.Count, 0);
-        _rpcServer.TerminateSession([sessionId]);
-        Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
+        _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "terminatesession", new JArray([sessionId])).GetAwaiter().GetResult();
+        Assert.ThrowsException<RpcException>(() => _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseiterator", new JArray([sessionId, iteratorId, 100])).GetAwaiter().GetResult(), "Unknown session");
 
         // register candidate in snapshot
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "registerCandidate",
+        resp = (JObject)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokefunction", new JArray(NeoToken.NEO.Hash.ToString(), "registerCandidate",
             new JArray([new JObject()
             {
                 ["type"] = nameof(ContractParameterType.PublicKey),
                 ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
-            }]), validatorSigner, true));
+            }]), validatorSigner, true)).GetAwaiter().GetResult();
         Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
         SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
         Transaction? tx = new Transaction
@@ -170,10 +163,11 @@ public partial class UT_RpcServer
         engine.SnapshotCache.Commit();
 
         // GetAllCandidates that should return 1 candidate
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokeFunction", new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true)).GetAwaiter().GetResult();
         sessionId = resp["session"].AsString();
         iteratorId = resp["stack"][0]["id"].AsString();
-        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        respArray = (JArray)(JToken)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([sessionId, iteratorId, 100])).GetAwaiter().GetResult();
+
         Assert.AreEqual(respArray.Count, 1);
         Assert.AreEqual(respArray[0]["type"], nameof(Neo.VM.Types.Struct));
         JArray value = (JArray)respArray[0]["value"];
@@ -184,50 +178,50 @@ public partial class UT_RpcServer
         Assert.AreEqual(value[1]["value"], "0");
 
         // No result when traversed again
-        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
+        respArray = (JArray)(JToken)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([sessionId, iteratorId, 100])).GetAwaiter().GetResult();
         Assert.AreEqual(respArray.Count, 0);
 
         // GetAllCandidates again
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokeFunction", new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true)).GetAwaiter().GetResult();
         sessionId = resp["session"].AsString();
         iteratorId = resp["stack"][0]["id"].AsString();
 
         // Insufficient result count limit
-        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 0]);
+        respArray = (JArray)(JToken)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([sessionId, iteratorId, 0])).GetAwaiter().GetResult();
         Assert.AreEqual(respArray.Count, 0);
-        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 1]);
+        respArray = (JArray)(JToken)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([sessionId, iteratorId, 1])).GetAwaiter().GetResult();
         Assert.AreEqual(respArray.Count, 1);
-        respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 1]);
+        respArray = (JArray)(JToken)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([sessionId, iteratorId, 1])).GetAwaiter().GetResult();
         Assert.AreEqual(respArray.Count, 0);
 
         // Mocking session timeout
         Thread.Sleep((int)_rpcServerSettings.SessionExpirationTime.TotalMilliseconds + 1);
         // build another session that did not expire
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "InvokeFunction", new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true)).GetAwaiter().GetResult();
         string notExpiredSessionId = resp["session"].AsString();
         string notExpiredIteratorId = resp["stack"][0]["id"].AsString();
         _rpcServer.OnTimer(new object());
-        Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
+        Assert.ThrowsException<RpcException>(() => _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([sessionId, iteratorId, 100])).GetAwaiter().GetResult(), "Unknown session");
         // If you want to run the following line without exception,
         // DO NOT BREAK IN THE DEBUGGER, because the session expires quickly
-        respArray = (JArray)_rpcServer.TraverseIterator([notExpiredSessionId, notExpiredIteratorId, 1]);
+        respArray = (JArray)(JToken)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([notExpiredSessionId, notExpiredIteratorId, 1])).GetAwaiter().GetResult();
         Assert.AreEqual(respArray.Count, 1);
 
         // Mocking disposal
-        resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+        resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "invokeFunction", new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true)).GetAwaiter().GetResult();
         sessionId = resp["session"].AsString();
         iteratorId = resp["stack"][0]["id"].AsString();
         _rpcServer.Dispose_SmartContract();
-        Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
+        Assert.ThrowsException<RpcException>(() => _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "traverseIterator", new JArray([sessionId, iteratorId, 100])).GetAwaiter().GetResult(), "Unknown session");
     }
 
     [TestMethod]
     public void TestGetUnclaimedGas()
     {
-        JObject resp = (JObject)_rpcServer.GetUnclaimedGas([MultisigAddress]);
+        var resp = _rpcServer.ProcessRequestMock(_mockHttpContext.Object, "getunclaimedgas", new JArray([MultisigAddress])).GetAwaiter().GetResult();
         Assert.AreEqual(resp["unclaimed"], "50000000");
         Assert.AreEqual(resp["address"], MultisigAddress);
-        resp = (JObject)_rpcServer.GetUnclaimedGas([ValidatorAddress]);
+        resp = (JObject)_rpcServer.ProcessRequestMock(_mockHttpContext.Object, "getunclaimedgas", new JArray([ValidatorAddress])).GetAwaiter().GetResult();
         Assert.AreEqual(resp["unclaimed"], "0");
         Assert.AreEqual(resp["address"], ValidatorAddress);
     }
