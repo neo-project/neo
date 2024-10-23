@@ -10,12 +10,15 @@
 // modifications are permitted.
 
 using System;
+using System.IO.Hashing;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
     unsafe internal static class Unsafe
     {
+        const long HashMagicNumber = 40343;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool NotZero(ReadOnlySpan<byte> x)
         {
@@ -37,6 +40,17 @@ namespace Neo.VM
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Get 64-bit hash code for a byte array
+        /// </summary>
+        /// <param name="span">Span</param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong HashBytes(ReadOnlySpan<byte> span)
+        {
+            return XxHash3.HashToUInt64(span, HashMagicNumber);
         }
     }
 }

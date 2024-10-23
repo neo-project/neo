@@ -464,6 +464,7 @@ namespace Neo.VM
                         if (b < sbyte.MinValue || b > byte.MaxValue)
                             throw new InvalidOperationException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
                         buffer.InnerBuffer.Span[index] = (byte)b;
+                        buffer.InvalidateHashCode();
                         break;
                     }
                 default:
@@ -489,6 +490,7 @@ namespace Neo.VM
                     break;
                 case Types.Buffer buffer:
                     buffer.InnerBuffer.Span.Reverse();
+                    buffer.InvalidateHashCode();
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
