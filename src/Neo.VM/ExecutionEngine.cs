@@ -59,7 +59,7 @@ namespace Neo.VM
         /// <summary>
         /// The VM object representing the uncaught exception.
         /// </summary>
-        public StackItem? UncaughtException { get; internal set; }
+        public StackItem? UncaughtVMCatchableException { get; internal set; }
 
         /// <summary>
         /// The current state of the VM.
@@ -148,7 +148,7 @@ namespace Neo.VM
                     {
                         JumpTable[instruction.OpCode](this, instruction);
                     }
-                    catch (CatchableException ex) when (Limits.CatchEngineExceptions)
+                    catch (VMCatchableException ex) when (Limits.CatchEngineExceptions)
                     {
                         JumpTable.ExecuteThrow(this, ex.Message);
                     }
