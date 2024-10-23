@@ -85,7 +85,7 @@ namespace Neo.VM
 
         /// <summary>
         /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
-        /// <see cref="OpCode.CAT"/>
+        /// <see cref="OpCode.SUBSTR"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
