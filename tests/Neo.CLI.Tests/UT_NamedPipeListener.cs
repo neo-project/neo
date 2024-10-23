@@ -26,24 +26,21 @@ namespace Neo.CLI.Tests
         private static readonly NamedPipeEndPoint _endPoint = new(Path.GetRandomFileName());
 
         [TestMethod]
-        public async Task NamedPipeListener_ReadAndWrite_Async()
+        public async Task ServerEcho_Message()
         {
-            var listener = new NamedPipeListener(_endPoint);
-            var client = new NamedPipeClientStream(_endPoint.ServerName, _endPoint.PipeName, PipeDirection.InOut, PipeOptions.CurrentUserOnly | PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+            await using var listener = new NamedPipeListener(_endPoint);
+            await using var client = new NamedPipeClientStream(_endPoint.ServerName, _endPoint.PipeName, PipeDirection.InOut, PipeOptions.CurrentUserOnly | PipeOptions.Asynchronous | PipeOptions.WriteThrough);
 
             listener.Start();
             await client.ConnectAsync().WaitAsync(TimeSpan.FromSeconds(1));
 
-            var conn = await listener.AcceptAsync();
-            var threadItem = new NamedPipeMessageProtocol(conn!);
+            await using var conn = await listener.AcceptAsync();
+            await using var threadItem = new NamedPipeMessageProtocol(conn!);
             ThreadPool.UnsafeQueueUserWorkItem(threadItem, preferLocal: false);
 
             var echoMessage = new EchoPayload { Message = "Hello World!" };
             var expectedMessage = new NamedPipeMessage { Command = NamedPipeCommand.Echo, Payload = echoMessage };
 
-            //await client.WriteAsync(new byte[] { 1 });
-            //await client.WriteAsync(new byte[] { 2 });
-            //await client.WriteAsync(new byte[] { 3 });
             await client.WriteAsync(expectedMessage.ToByteArray()).AsTask().WaitAsync(TimeSpan.FromSeconds(1));
 
             var buffer = new byte[expectedMessage.Size];
