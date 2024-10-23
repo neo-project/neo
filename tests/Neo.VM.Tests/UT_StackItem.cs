@@ -53,17 +53,26 @@ namespace Neo.Test
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
 
-            itemA = new VM.Types.Array();
+            itemA = new Array { true, false, 0 };
+            itemB = new Array { true, false, 0 };
+            itemC = new Array { true, false, 1 };
 
-            Assert.ThrowsException<System.NotSupportedException>(() => itemA.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
-            itemA = new Struct();
+            itemA = new Struct { true, false, 0 };
+            itemB = new Struct { true, false, 0 };
+            itemC = new Struct { true, false, 1 };
 
-            Assert.ThrowsException<System.NotSupportedException>(() => itemA.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
-            itemA = new Map();
+            itemA = new Map { [true] = false, [0] = 1 };
+            itemB = new Map { [true] = false, [0] = 1 };
+            itemC = new Map { [true] = false, [0] = 2 };
 
-            Assert.ThrowsException<System.NotSupportedException>(() => itemA.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
             itemA = new InteropInterface(123);
             itemB = new InteropInterface(123);

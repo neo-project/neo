@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Hashing;
 
 namespace Neo.VM.Types
 {
@@ -65,7 +66,12 @@ namespace Neo.VM.Types
         /// <exception cref="NotSupportedException">This method always throws the exception.</exception>
         public override int GetHashCode()
         {
-            throw new NotSupportedException();
+            var h = new HashCode();
+            h.Add(Count);
+            h.Add(Type);
+            foreach (var item in SubItems)
+                h.Add(XxHash3.HashToUInt64(item.GetSpan()));
+            return h.ToHashCode();
         }
 
         public override string ToString()
