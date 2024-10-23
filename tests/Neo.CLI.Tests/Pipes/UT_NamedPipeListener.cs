@@ -9,16 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
+using Neo.CLI;
 using Neo.CLI.Pipes;
 using Neo.CLI.Pipes.Protocols;
 using Neo.CLI.Pipes.Protocols.Payloads;
+using Neo.CLI.Tests;
+using Neo.CLI.Tests.Pipes;
 using System;
 using System.IO;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.CLI.Tests
+namespace Neo.CLI.Tests.Pipes
 {
     [TestClass]
     public class UT_NamedPipeListener
