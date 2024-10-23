@@ -118,7 +118,7 @@ namespace Neo.VM.Types
         /// Invalidate HashCode
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void InvalidateHashCode()
+        internal void InvalidateHashCode()
         {
             _hashCode = 0;
         }
