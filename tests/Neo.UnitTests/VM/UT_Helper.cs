@@ -107,6 +107,30 @@ namespace Neo.UnitTests.VMT
         }
 
         [TestMethod]
+        public void TestEmitStruct()
+        {
+            var expected = new BigInteger[] { 1, 2, 3 };
+            var sb = new ScriptBuilder();
+            sb.CreateStruct(expected);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<VM.Types.Struct>().Select(u => u.GetInteger()).ToArray());
+
+            expected = new BigInteger[] { };
+            sb = new ScriptBuilder();
+            sb.CreateStruct(expected);
+
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine2.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine2.Execute());
+
+            Assert.AreEqual(0, engine2.ResultStack.Pop<VM.Types.Struct>().Count);
+        }
+
+        [TestMethod]
         public void TestEmitMap()
         {
             var expected = new Dictionary<BigInteger, BigInteger>() { { 1, 2 }, { 3, 4 } };
