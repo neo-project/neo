@@ -57,6 +57,9 @@ namespace Neo.CLI.Pipes.Buffers
         public void WriteArray<T>(T[] array)
             where T : unmanaged
         {
+            if (typeof(T) == typeof(char))
+                throw new InvalidOperationException("Data type 'char' is not supported.");
+
             Write(array.Length);
             foreach (var item in array)
                 Write(item);
@@ -88,6 +91,9 @@ namespace Neo.CLI.Pipes.Buffers
         public T[] ReadArray<T>()
             where T : unmanaged
         {
+            if (typeof(T) == typeof(char))
+                throw new InvalidOperationException("Data type 'char' is not supported.");
+
             var length = Read<int>();
             var array = new T[length];
             for (var i = 0; i < length; i++)
