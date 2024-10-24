@@ -74,7 +74,7 @@ namespace Neo.CLI.Pipes
             {
                 _receivingTask = DoReceiveAsync();
                 _sendingTask = DoSendAsync();
-                _processMessagesTask = DoProcessProtocol();
+                _processMessagesTask = DoReceiveProcessAsync();
             }
             catch (Exception)
             {
@@ -103,18 +103,15 @@ namespace Neo.CLI.Pipes
             {
                 while (cancellationToken.IsCancellationRequested == false)
                 {
-                    if (_requests.TryGetValue(message.RequestId, out var response))
-                    {
-                        _ = _requests.TryRemove(response.RequestId, out _);
+                    if (_requests.TryRemove(message.RequestId, out var response))
                         return response;
-                    }
                 }
 
                 throw new OperationCanceledException();
             }
         }
 
-        private async Task DoProcessProtocol()
+        private async Task DoReceiveProcessAsync()
         {
             try
             {
