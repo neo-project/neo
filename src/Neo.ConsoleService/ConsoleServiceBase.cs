@@ -531,7 +531,7 @@ namespace Neo.ConsoleService
                 if (ShowPrompt)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write($"{Prompt}> ");
+                    Console.Write($"{Prompt}$ ");
                 }
 
                 Console.ForegroundColor = ConsoleColor.Yellow;

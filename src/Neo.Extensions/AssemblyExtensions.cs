@@ -19,5 +19,23 @@ namespace Neo.Extensions
         {
             return assembly.GetName().Version!.ToString(3);
         }
+
+        public static int GetVersionNumber(this Assembly assembly)
+        {
+            var version = assembly.GetName().Version!;
+
+            var versionNumber = 0;
+
+            if (version.Major >= -1)
+                versionNumber += version.Major * 1000;
+            if (version.Minor >= -1)
+                versionNumber += version.Minor * 100;
+            if (version.Build >= -1)
+                versionNumber += version.Build * 10;
+            if (version.Revision >= -1)
+                versionNumber += version.Revision;
+
+            return versionNumber;
+        }
     }
 }
