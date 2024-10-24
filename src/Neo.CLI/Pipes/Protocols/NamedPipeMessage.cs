@@ -103,7 +103,7 @@ namespace Neo.CLI.Pipes.Protocols
             writer.Write(RequestId);
             writer.Write(Command);
             writer.Write(bytes.Length);
-            writer.Write(bytes);
+            writer.WriteRaw(bytes);
 
             return writer.ToArray();
         }

@@ -9,15 +9,22 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
+using Neo.CLI;
 using Neo.CLI.Pipes.Protocols;
 using Neo.CLI.Pipes.Protocols.Payloads;
+using Neo.CLI.Tests;
+using Neo.CLI.Tests.Pipes;
+using Neo.CLI.Tests.Pipes.Protocols;
+using Neo.CLI.Tests.Pipes.Protocols;
+using Neo.CLI.Tests.Pipes.Protocols.Payload;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Neo.CLI.Tests.Pipes.Protocols.Payload
+namespace Neo.CLI.Tests.Pipes.Protocols
 {
     [TestClass]
     public class UT_NamedPipeMessage
