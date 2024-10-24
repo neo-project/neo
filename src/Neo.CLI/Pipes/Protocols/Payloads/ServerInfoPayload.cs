@@ -20,12 +20,12 @@ namespace Neo.CLI.Pipes.Protocols.Payloads
         internal class RemoteConnectedClient : INamedPipeMessage
         {
             public IPAddress Address { get; set; } = IPAddress.Any;
-            public uint Port { get; set; }
+            public ushort Port { get; set; }
             public uint LastBlockIndex { get; set; }
 
             public int Size =>
                 MemoryBuffer.GetStringSize($"{Address}") + // Address
-                sizeof(uint) +                             // Port
+                sizeof(ushort) +                           // Port
                 sizeof(uint);                              // LastBlockIndex
 
             public void FromBytes(byte[] buffer)
@@ -36,7 +36,7 @@ namespace Neo.CLI.Pipes.Protocols.Payloads
             public void FromMemoryBuffer(MemoryBuffer reader)
             {
                 Address = IPAddress.Parse(reader.ReadString());
-                Port = reader.Read<uint>();
+                Port = reader.Read<ushort>();
                 LastBlockIndex = reader.Read<uint>();
             }
             public byte[] ToByteArray()
@@ -52,7 +52,7 @@ namespace Neo.CLI.Pipes.Protocols.Payloads
         public uint Nonce { get; set; }
         public uint Version { get; set; }
         public IPAddress Address { get; set; } = IPAddress.Loopback;
-        public uint Port { get; set; }
+        public ushort Port { get; set; }
         public uint BlockHeight { get; set; }
         public uint HeaderHeight { get; set; }
 
@@ -62,7 +62,7 @@ namespace Neo.CLI.Pipes.Protocols.Payloads
             sizeof(uint) +                               // Nonce
             sizeof(uint) +                               // Version
             MemoryBuffer.GetStringSize($"{Address}") +   // Address
-            sizeof(uint) +                               // Port
+            sizeof(ushort) +                             // Port
             sizeof(uint) +                               // BlockHeight
             sizeof(uint) +                               // HeaderHeight
             sizeof(uint) +                               // RemoteNodes.Length
@@ -79,7 +79,7 @@ namespace Neo.CLI.Pipes.Protocols.Payloads
             Nonce = reader.Read<uint>();
             Version = reader.Read<uint>();
             Address = IPAddress.Parse(reader.ReadString());
-            Port = reader.Read<uint>();
+            Port = reader.Read<ushort>();
             BlockHeight = reader.Read<uint>();
             HeaderHeight = reader.Read<uint>();
 

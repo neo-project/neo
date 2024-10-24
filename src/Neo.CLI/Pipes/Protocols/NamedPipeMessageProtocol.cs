@@ -9,9 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.CLI.Hosting.Services;
+using Neo.CLI.Pipes.Protocols.Payloads;
+using Neo.Extensions;
+using Neo.SmartContract.Native;
 using System;
 using System.Buffers;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -85,13 +92,48 @@ namespace Neo.CLI.Pipes.Protocols
 
         private async Task OnMessageReceivedAsync(NamedPipeMessage message)
         {
-            var responseMessage = message.Command switch
+            try
             {
-                NamedPipeCommand.Echo => message,
-                _ => throw new InvalidOperationException(),
+                var responseMessage = message.Command switch
+                {
+                    NamedPipeCommand.Echo => message,
+                    NamedPipeCommand.ServerInfo => OnServerInfo(message),
+                    _ => throw new InvalidOperationException(),
+                };
+
+                await SendMessage(responseMessage);
+            }
+            catch
+            {
+                // Send Error Message to Client
+            }
+        }
+
+        private NamedPipeMessage OnServerInfo(NamedPipeMessage message)
+        {
+            var neoSystem = NeoSystemHostedService.NeoSystem ?? throw new InvalidOperationException("NeoSystem is not set");
+            var options = NeoSystemHostedService.Options ?? throw new InvalidOperationException("Options is not set");
+            var localNode = NeoSystemHostedService.LocalNode ?? throw new InvalidOperationException("LocalNode is not set");
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var responsePayload = new ServerInfoPayload
+            {
+                Nonce = (uint)Random.Shared.Next(),
+                Version = (uint)Assembly.GetExecutingAssembly().GetVersionNumber(),
+                Address = IPAddress.Parse(options.P2P.Listen),
+                Port = options.P2P.Port,
+                BlockHeight = height,
+                HeaderHeight = neoSystem.HeaderCache.Last?.Index ?? height,
+
+                RemoteNodes = [.. localNode.GetRemoteNodes().Select(s =>
+                    new ServerInfoPayload.RemoteConnectedClient
+                    {
+                        Address = s.Remote.Address,
+                        Port = (ushort)s.Remote.Port,
+                        LastBlockIndex = s.LastBlockIndex,
+                    })],
             };
 
-            await SendMessage(responseMessage);
+            return new NamedPipeMessage() { RequestId = message.RequestId, Command = NamedPipeCommand.ServerInfo, Payload = responsePayload, };
         }
 
         public static NamedPipeMessage? GetMessage(byte[] buffer)

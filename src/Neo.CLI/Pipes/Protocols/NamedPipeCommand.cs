@@ -15,5 +15,8 @@ namespace Neo.CLI.Pipes.Protocols
     {
         [NamedPipeCommand(typeof(Payloads.EchoPayload))]
         Echo = 0x00,
+
+        [NamedPipeCommand(typeof(Payloads.ServerInfoPayload))]
+        ServerInfo = 0x01,
     }
 }

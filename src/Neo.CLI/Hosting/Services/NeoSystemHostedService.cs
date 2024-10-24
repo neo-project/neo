@@ -24,6 +24,10 @@ namespace Neo.CLI.Hosting.Services
 {
     internal partial class NeoSystemHostedService : IHostedService, IAsyncDisposable
     {
+        public static NeoSystem? NeoSystem { get; private set; }
+        public static NeoOptions? Options { get; private set; }
+        public static LocalNode? LocalNode { get; set; }
+
         private readonly NeoOptions _neoOptions;
 
         private readonly ProtocolSettings _protocolSettings;
@@ -45,6 +49,7 @@ namespace Neo.CLI.Hosting.Services
             IConsole console)
         {
             _neoOptions = neoOptions.Value;
+            Options = _neoOptions;
             _console = console;
             _protocolSettings = ProtocolSettings.Load("config.json");
         }
@@ -87,7 +92,9 @@ namespace Neo.CLI.Hosting.Services
                 _hasStarted = true;
 
                 _neoSystem = new(_protocolSettings, _neoOptions.Storage.Engine, string.Format(_neoOptions.Storage.Path, _protocolSettings.Network.ToString("X8")));
+                NeoSystem = _neoSystem;
                 _localNode = await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken);
+                LocalNode = _localNode;
                 _neoSystem.StartNode(new()
                 {
                     Tcp = new(IPAddress.Parse(_neoOptions.P2P.Listen), _neoOptions.P2P.Port),
