@@ -9,9 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.CLI.Pipes.Protocols;
 using System;
+using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.IO.Pipes;
+using System.Threading;
 using System.Threading.Tasks;
 using PipeOptions = System.IO.Pipes.PipeOptions;
 
@@ -24,12 +28,14 @@ namespace Neo.CLI.Pipes
 
         public NamedPipeEndPoint EndPoint => _endPoint;
 
+        private readonly ConcurrentDictionary<int, NamedPipeMessage> _requests = new();
+
         private readonly NamedPipeEndPoint _endPoint;
         private readonly NamedPipeClientStream _client;
 
         private Task _receivingTask = Task.CompletedTask;
         private Task _sendingTask = Task.CompletedTask;
-        private Task _protocolTask = Task.CompletedTask;
+        private Task _processMessagesTask = Task.CompletedTask;
 
         public NamedPipeClient(
             NamedPipeEndPoint endPoint)
@@ -51,6 +57,7 @@ namespace Neo.CLI.Pipes
             {
                 await _receivingTask;
                 await _sendingTask;
+                await _processMessagesTask;
             }
             catch (Exception)
             {
@@ -67,7 +74,7 @@ namespace Neo.CLI.Pipes
             {
                 _receivingTask = DoReceiveAsync();
                 _sendingTask = DoSendAsync();
-                _protocolTask = DoProtocolAsync();
+                _processMessagesTask = DoProcessProtocol();
             }
             catch (Exception)
             {
@@ -78,6 +85,78 @@ namespace Neo.CLI.Pipes
         public void Close()
         {
             _client.Close();
+        }
+
+        public async ValueTask<NamedPipeMessage> SendMessageAsync(NamedPipeMessage message, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(message);
+
+            var buffer = message.ToByteArray();
+            var writer = Transport.Output;
+            var result = await writer.WriteAsync(buffer);
+
+            if (result.IsCanceled)
+                throw new OperationCanceledException();
+            else if (result.IsCompleted)
+                throw new InvalidOperationException("The transport pipe is closed.");
+            else
+            {
+                while (cancellationToken.IsCancellationRequested == false)
+                {
+                    if (_requests.TryGetValue(message.RequestId, out var response))
+                    {
+                        _ = _requests.TryRemove(response.RequestId, out _);
+                        return response;
+                    }
+                }
+
+                throw new OperationCanceledException();
+            }
+        }
+
+        private async Task DoProcessProtocol()
+        {
+            try
+            {
+                var tempts = 0;
+
+                while (true)
+                {
+                    if (tempts + 1 >= 3)
+                        break;
+
+                    var reader = Transport.Input;
+                    var result = await reader.ReadAsync();
+
+                    if (result.IsCanceled)
+                        break;
+
+                    var buffer = result.Buffer;
+                    var message = NamedPipeMessageProtocol.GetMessage(buffer.ToArray());
+
+                    if (message is null)
+                    {
+                        reader.AdvanceTo(buffer.Start, buffer.End);
+                        tempts++;
+                    }
+                    else
+                    {
+                        var messageSequence = buffer.Slice(0, message.Size);
+                        reader.AdvanceTo(messageSequence.End);
+
+                        _requests[message.RequestId] = message;
+
+                        tempts = 0;
+                    }
+
+                    if (result.IsCompleted)
+                        break;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         private async Task DoReceiveAsync()
@@ -157,22 +236,6 @@ namespace Neo.CLI.Pipes
 
                 Application.Input.Complete(unexpectedError);
                 Application.Output.CancelPendingFlush();
-            }
-        }
-
-        private async Task DoProtocolAsync()
-        {
-            try
-            {
-
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                await DisposeAsync();
             }
         }
     }

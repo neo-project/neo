@@ -94,7 +94,7 @@ namespace Neo.CLI.Pipes.Protocols
             await SendMessage(responseMessage);
         }
 
-        private NamedPipeMessage? GetMessage(byte[] buffer)
+        public static NamedPipeMessage? GetMessage(byte[] buffer)
         {
             try
             {

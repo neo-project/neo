@@ -30,7 +30,7 @@ namespace Neo.CLI.Tests.Pipes
         private static readonly NamedPipeEndPoint _endPoint = new(Path.GetRandomFileName());
 
         [TestMethod]
-        public async Task ServerEcho_Message()
+        public async Task Server_Echo_Message()
         {
             await using var listener = new NamedPipeListener(_endPoint);
             await using var client = new NamedPipeClientStream(_endPoint.ServerName, _endPoint.PipeName, PipeDirection.InOut, PipeOptions.CurrentUserOnly | PipeOptions.Asynchronous | PipeOptions.WriteThrough);

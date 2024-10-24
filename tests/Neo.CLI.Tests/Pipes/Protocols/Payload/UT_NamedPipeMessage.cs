@@ -23,14 +23,15 @@ namespace Neo.CLI.Tests.Pipes.Protocols.Payload
     public class UT_NamedPipeMessage
     {
         [TestMethod]
-        public void NamedPipeMessage_ToByteArray_FromBytes()
+        public void ToByteArray_FromBytes()
         {
-            var expectedMessage = new NamedPipeMessage() { Command = NamedPipeCommand.Echo, Payload = new EchoPayload() };
+            var expectedMessage = new NamedPipeMessage() { RequestId = 666, Command = NamedPipeCommand.Echo, Payload = new EchoPayload() };
             var expectedBytes = expectedMessage.ToByteArray();
 
             var actualMessage = NamedPipeMessage.Deserialize(expectedBytes);
 
             Assert.AreEqual(expectedMessage.Command, actualMessage.Command);
+            Assert.AreEqual(expectedMessage.RequestId, actualMessage.RequestId);
             Assert.AreEqual(expectedMessage.Size, actualMessage.Size);
             Assert.AreEqual(expectedMessage.PayloadSize, actualMessage.PayloadSize);
             Assert.AreEqual(expectedMessage.Payload?.Size, actualMessage.Payload?.Size);
