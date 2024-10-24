@@ -117,12 +117,16 @@ namespace Neo.CLI.Pipes.Buffers
         {
             if (typeof(T) == typeof(char))
                 throw new InvalidOperationException("Data type 'char' is not supported.");
+
             return Unsafe.SizeOf<T>();
         }
 
         public static int GetArraySize<T>(T[] array)
             where T : unmanaged
         {
+            if (typeof(T) == typeof(char))
+                throw new InvalidOperationException("Data type 'char' is not supported.");
+
             return GetSize<int>() + (array.Length * GetSize<T>());
         }
 
