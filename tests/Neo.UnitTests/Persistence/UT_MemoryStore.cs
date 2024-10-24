@@ -51,6 +51,9 @@ namespace Neo.UnitTests.Persistence
 
             store.Delete([1]);
             Assert.AreEqual(null, store.TryGet([1]));
+            Assert.IsFalse(store.TryGet([1], out var got));
+            Assert.AreEqual(null, got);
+
             store.Put([1], [1, 2, 3]);
             CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, store.TryGet([1]));
 
@@ -79,13 +82,18 @@ namespace Neo.UnitTests.Persistence
             var store = _neoSystem.StoreView;
             var key = new StorageKey(Encoding.UTF8.GetBytes("testKey"));
             var value = new StorageItem(Encoding.UTF8.GetBytes("testValue"));
+
             store.Add(key, value);
             store.Commit();
+
             var result = store.TryGet(key);
             // The StoreView is a readonly view of the store, here it will have value in the cache
             Assert.AreEqual("testValue", Encoding.UTF8.GetString(result.Value.ToArray()));
-            // But the value will  not be written to the underlying store even its committed.
+
+            // But the value will not be written to the underlying store even its committed.
             Assert.IsNull(_memoryStore.TryGet(key.ToArray()));
+            Assert.IsFalse(_memoryStore.TryGet(key.ToArray(), out var got));
+            Assert.AreEqual(null, got);
         }
 
         [TestMethod]

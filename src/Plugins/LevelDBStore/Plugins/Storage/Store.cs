@@ -69,5 +69,11 @@ namespace Neo.Plugins.Storage
 
         IEnumerator IEnumerable.GetEnumerator() =>
             GetEnumerator();
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            value = db.Get(ReadOptions.Default, key);
+            return value != null;
+        }
     }
 }
