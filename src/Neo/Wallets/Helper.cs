@@ -194,7 +194,7 @@ namespace Neo.Wallets
                     else if (IsMultiSigContract(witnessScript, out int m, out int n))
                     {
                         int size_inv = 66 * m;
-                        size += IO.Helper.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
+                        size += UnsafeData.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
                         networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                     }
                 }
