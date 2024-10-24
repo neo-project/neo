@@ -28,13 +28,16 @@ namespace Neo.CLI.Pipes.Protocols.Payloads
 
         public void FromMemoryBuffer(MemoryBuffer reader)
         {
-            Message = reader.ReadString();
+            var str = reader.ReadString();
+            if (string.IsNullOrEmpty(str) == false)
+                Message = str;
         }
 
         public byte[] ToByteArray()
         {
             using var writer = new MemoryBuffer();
-            writer.WriteString(Message ?? string.Empty);
+            if (string.IsNullOrEmpty(Message) == false)
+                writer.WriteString(Message);
             return writer.ToArray();
         }
     }

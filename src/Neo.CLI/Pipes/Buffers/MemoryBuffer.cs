@@ -123,7 +123,7 @@ namespace Neo.CLI.Pipes.Buffers
         public static int GetStringSize(string? value)
         {
             if (string.IsNullOrEmpty(value))
-                return GetSize<int>();
+                return 0;
 
             var strByteCount = s_utf8NoBom.GetByteCount(value);
             return GetSize<int>() + strByteCount;

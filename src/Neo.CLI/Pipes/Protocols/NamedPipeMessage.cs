@@ -86,25 +86,20 @@ namespace Neo.CLI.Pipes.Protocols
 
         public byte[] ToByteArray()
         {
+            if (Payload is null)
+                throw new InvalidDataException("Payload is not set");
+
             using var writer = new MemoryBuffer();
+            var bytes = Payload.ToByteArray();
 
-            var bytes = Payload?.ToByteArray();
-
-            if (bytes is not null)
-                _checksum = Crc32.HashToUInt32(bytes);
+            _checksum = Crc32.HashToUInt32(bytes);
 
             writer.Write(Magic);
             writer.Write(Version);
             writer.Write(_checksum);
             writer.Write(Command);
-
-            if (bytes is null)
-                writer.Write(0);
-            else
-            {
-                writer.Write(bytes.Length);
-                writer.Write(bytes);
-            }
+            writer.Write(bytes.Length);
+            writer.Write(bytes);
 
             return writer.ToArray();
         }

@@ -14,6 +14,6 @@ namespace Neo.CLI.Pipes.Protocols
     internal enum NamedPipeCommand : byte
     {
         [NamedPipeCommand(typeof(Payloads.EchoPayload))]
-        Echo = 0x01,
+        Echo = 0x00,
     }
 }
