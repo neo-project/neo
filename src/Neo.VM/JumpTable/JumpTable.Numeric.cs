@@ -321,8 +321,13 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Nz(ExecutionEngine engine, Instruction instruction)
         {
-            var x = engine.Pop().GetInteger();
-            engine.Push(!x.IsZero);
+            //var x = engine.Pop().GetInteger();
+            //engine.Push(!x.IsZero);
+            var x = engine.Pop();
+            if (x is Neo.VM.Types.Null)
+                engine.Push(true);
+            else
+                engine.Push(!x.GetInteger().IsZero);
         }
 
         /// <summary>
