@@ -33,7 +33,7 @@ namespace Neo.Cryptography.MPTTrie
         {
             var path = ToNibbles(key);
             var val = value;
-            if (path.Length == 0 || path.Length > Node.MaxKeyLength)
+            if (path.Length is 0 or > Node.MaxKeyLength)
                 throw new ArgumentException("invalid", nameof(key));
             if (val.Length > Node.MaxValueLength)
                 throw new ArgumentException("exceed limit", nameof(value));
@@ -41,50 +41,50 @@ namespace Neo.Cryptography.MPTTrie
             Put(ref root, path, n);
         }
 
-        private void Put(ref Node node, ReadOnlySpan<byte> path, Node val)
+        private void Put(ref Node root, ReadOnlySpan<byte> path, Node val)
         {
-            switch (node.Type)
+            switch (root.Type)
             {
                 case NodeType.LeafNode:
                     {
                         if (path.IsEmpty)
                         {
-                            if (!full) cache.DeleteNode(node.Hash);
-                            node = val;
-                            cache.PutNode(node);
+                            if (!full) cache.DeleteNode(root.Hash);
+                            root = val;
+                            cache.PutNode(root);
                             return;
                         }
                         var branch = Node.NewBranch();
-                        branch.Children[Node.BranchChildCount - 1] = node;
+                        branch.Children[Node.BranchChildCount - 1] = root;
                         Put(ref branch.Children[path[0]], path[1..], val);
                         cache.PutNode(branch);
-                        node = branch;
+                        root = branch;
                         break;
                     }
                 case NodeType.ExtensionNode:
                     {
-                        if (path.StartsWith(node.Key.Span))
+                        if (path.StartsWith(root.Key.Span))
                         {
-                            var oldHash = node.Hash;
-                            Put(ref node.Next, path[node.Key.Length..], val);
+                            var oldHash = root.Hash;
+                            Put(ref root.Next, path[root.Key.Length..], val);
                             if (!full) cache.DeleteNode(oldHash);
-                            node.SetDirty();
-                            cache.PutNode(node);
+                            root.SetDirty();
+                            cache.PutNode(root);
                             return;
                         }
-                        if (!full) cache.DeleteNode(node.Hash);
-                        var prefix = CommonPrefix(node.Key.Span, path);
+                        if (!full) cache.DeleteNode(root.Hash);
+                        var prefix = CommonPrefix(root.Key.Span, path);
                         var pathRemain = path[prefix.Length..];
-                        var keyRemain = node.Key.Span[prefix.Length..];
+                        var keyRemain = root.Key.Span[prefix.Length..];
                         var child = Node.NewBranch();
                         Node grandChild = new Node();
                         if (keyRemain.Length == 1)
                         {
-                            child.Children[keyRemain[0]] = node.Next;
+                            child.Children[keyRemain[0]] = root.Next;
                         }
                         else
                         {
-                            var exNode = Node.NewExtension(keyRemain[1..].ToArray(), node.Next);
+                            var exNode = Node.NewExtension(keyRemain[1..].ToArray(), root.Next);
                             cache.PutNode(exNode);
                             child.Children[keyRemain[0]] = exNode;
                         }
@@ -103,28 +103,28 @@ namespace Neo.Cryptography.MPTTrie
                         {
                             var exNode = Node.NewExtension(prefix.ToArray(), child);
                             cache.PutNode(exNode);
-                            node = exNode;
+                            root = exNode;
                         }
                         else
                         {
-                            node = child;
+                            root = child;
                         }
                         break;
                     }
                 case NodeType.BranchNode:
                     {
-                        var oldHash = node.Hash;
+                        var oldHash = root.Hash;
                         if (path.IsEmpty)
                         {
-                            Put(ref node.Children[Node.BranchChildCount - 1], path, val);
+                            Put(ref root.Children[Node.BranchChildCount - 1], path, val);
                         }
                         else
                         {
-                            Put(ref node.Children[path[0]], path[1..], val);
+                            Put(ref root.Children[path[0]], path[1..], val);
                         }
                         if (!full) cache.DeleteNode(oldHash);
-                        node.SetDirty();
-                        cache.PutNode(node);
+                        root.SetDirty();
+                        cache.PutNode(root);
                         break;
                     }
                 case NodeType.Empty:
@@ -139,16 +139,16 @@ namespace Neo.Cryptography.MPTTrie
                             newNode = Node.NewExtension(path.ToArray(), val);
                             cache.PutNode(newNode);
                         }
-                        node = newNode;
+                        root = newNode;
                         if (val.Type == NodeType.LeafNode) cache.PutNode(val);
                         break;
                     }
                 case NodeType.HashNode:
                     {
-                        Node newNode = cache.Resolve(node.Hash);
+                        Node newNode = cache.Resolve(root.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt put");
-                        node = newNode;
-                        Put(ref node, path, val);
+                        root = newNode;
+                        Put(ref root, path, val);
                         break;
                     }
                 default:

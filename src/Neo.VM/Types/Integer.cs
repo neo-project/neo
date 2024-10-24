@@ -50,7 +50,7 @@ namespace Neo.VM.Types
             else
             {
                 Size = value.GetByteCount();
-                if (Size > MaxSize) throw new ArgumentException($"MaxSize exceed: {Size}");
+                if (Size > MaxSize) throw new VMUncatchableException($"The Integer value exceeds the maximum size: {Size}/{MaxSize}");
             }
             this.value = value;
         }

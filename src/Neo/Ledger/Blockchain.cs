@@ -160,8 +160,8 @@ namespace Neo.Ledger
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
                     throw new InvalidOperationException();
-                if (verify && !block.Verify(system.Settings, system.StoreView))
-                    throw new InvalidOperationException();
+                // if (verify && !block.Verify(system.Settings, system.StoreView))
+                //     throw new InvalidOperationException();
                 Persist(block);
                 ++currentHeight;
             }

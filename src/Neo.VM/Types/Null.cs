@@ -26,7 +26,7 @@ namespace Neo.VM.Types
         public override StackItem ConvertTo(StackItemType type)
         {
             if (type == StackItemType.Any || !Enum.IsDefined(typeof(StackItemType), type))
-                throw new InvalidCastException($"Type can't be converted to StackItemType: {type}");
+                throw new VMUncatchableException($"Type can't be converted to StackItemType: {type}");
             return this;
         }
 

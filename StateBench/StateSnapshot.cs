@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+﻿// Copyright (C) 2015-2024 The Neo Project.
 //
 // StateSnapshot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,15 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo;
 using Neo.Cryptography.MPTTrie;
 using Neo.IO;
 using Neo.Persistence;
-using Neo.Plugins.StateService.Network;
-using System;
 
-namespace Neo.Plugins.StateService.Storage
-{
-    class StateSnapshot : IDisposable
+namespace StateBench;
+
+  class StateSnapshot : IDisposable
     {
         private readonly ISnapshot _snapshot;
         public readonly Trie Trie;
@@ -25,7 +24,7 @@ namespace Neo.Plugins.StateService.Storage
         public StateSnapshot(IStore store)
         {
             _snapshot = store.GetSnapshot();
-            Trie = new Trie(_snapshot, CurrentLocalRootHash(), Settings.Default.FullState);
+            Trie = new Trie(_snapshot, CurrentLocalRootHash(), true);
         }
 
         public StateRoot GetStateRoot(uint index)
@@ -89,4 +88,3 @@ namespace Neo.Plugins.StateService.Storage
             _snapshot.Dispose();
         }
     }
-}

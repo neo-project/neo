@@ -16,12 +16,13 @@ namespace Neo.VM
     /// <summary>
     /// Represents the exception thrown when the bad script is parsed.
     /// </summary>
-    public class BadScriptException : Exception
+    public class BadScriptException : VMUncatchableException
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BadScriptException"/> class.
         /// </summary>
-        public BadScriptException() { }
+        public BadScriptException() : base("The script is of invalid format.")
+        { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BadScriptException"/> class with a specified error message.

@@ -15,9 +15,12 @@ namespace Neo.VM;
 
 public class VMUncatchableException : Exception
 {
+    /// <summary>
+    /// Represents an exception that will be thrown during the execution of the VM,
+    /// is not catchable by the VM, and will directly cause the VM execution to fault.
+    /// </summary>
+    /// <param name="message">The error message that explains the reason for the exception.</param>
     public VMUncatchableException(string message) : base(message)
     {
-        if (string.IsNullOrEmpty(message))
-            throw new ArgumentException("Message cannot be null or empty.", nameof(message));
     }
 }

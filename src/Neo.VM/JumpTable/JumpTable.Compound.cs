@@ -36,7 +36,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size * 2 > engine.CurrentContext!.EvaluationStack.Count)
-                throw new InvalidOperationException($"The value {size} is out of range.");
+                throw new VMUncatchableException($"The value {size} is out of range.");
             Map map = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -59,7 +59,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
-                throw new InvalidOperationException($"The value {size} is out of range.");
+                throw new VMUncatchableException($"The value {size} is out of range.");
             Struct @struct = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -81,7 +81,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
-                throw new InvalidOperationException($"The value {size} is out of range.");
+                throw new VMUncatchableException($"The value {size} is out of range.");
             VMArray array = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -118,7 +118,7 @@ namespace Neo.VM
                     }
                     break;
                 default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {compound.Type}");
+                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {compound.Type}");
             }
             engine.Push(compound.Count);
         }
@@ -151,7 +151,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new InvalidOperationException($"MaxStackSize exceed: {n}");
+                throw new VMUncatchableException($"MaxStackSize exceed: {n}");
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
             engine.Push(new VMArray(engine.ReferenceCounter, nullArray));
@@ -169,11 +169,11 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new InvalidOperationException($"MaxStackSize exceed: {n}");
+                throw new VMUncatchableException($"MaxStackSize exceed: {n}");
 
             var type = (StackItemType)instruction.TokenU8;
             if (!Enum.IsDefined(typeof(StackItemType), type))
-                throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {instruction.TokenU8}");
+                throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {instruction.TokenU8}");
 
             var item = instruction.TokenU8 switch
             {
@@ -212,7 +212,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new InvalidOperationException($"MaxStackSize exceed: {n}");
+                throw new VMUncatchableException($"MaxStackSize exceed: {n}");
 
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
@@ -256,7 +256,7 @@ namespace Neo.VM
                     engine.Push(buffer.Size);
                     break;
                 default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -281,7 +281,7 @@ namespace Neo.VM
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new VMUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < array.Count);
                         break;
                     }
@@ -297,7 +297,7 @@ namespace Neo.VM
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new VMUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < buffer.Size);
                         break;
                     }
@@ -307,12 +307,12 @@ namespace Neo.VM
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new VMUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < array.Size);
                         break;
                     }
                 default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 

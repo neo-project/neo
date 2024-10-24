@@ -43,13 +43,13 @@ namespace Neo.Plugins.StateService.Verification
         private void SendVote(VerificationContext context)
         {
             if (context.VoteMessage is null) return;
-            Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay vote, height={context.RootIndex}, retry={context.Retries}");
+            Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay vote, height={context.RootIndex}, retry={context._retries}");
             StatePlugin._system.Blockchain.Tell(context.VoteMessage);
         }
 
         private void OnStateRootVote(Vote vote)
         {
-            if (contexts.TryGetValue(vote.RootIndex, out VerificationContext context) && context.AddSignature(vote.ValidatorIndex, vote.Signature.ToArray()))
+            if (contexts.TryGetValue(vote.RootIndex, out var context) && context.AddSignature(vote.ValidatorIndex, vote.Signature.ToArray()))
             {
                 CheckVotes(context);
             }
@@ -73,14 +73,14 @@ namespace Neo.Plugins.StateService.Verification
                 {
                     if (contexts.TryRemove(p, out var value))
                     {
-                        value.Timer.CancelIfNotNull();
+                        value._timer.CancelIfNotNull();
                     }
                 });
             }
             var p = new VerificationContext(wallet, index);
             if (p.IsValidator && contexts.TryAdd(index, p))
             {
-                p.Timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMilliseconds(DelayMilliseconds), Self, new Timer
+                p._timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMilliseconds(DelayMilliseconds), Self, new Timer
                 {
                     Index = index,
                 }, ActorRefs.NoSender);
@@ -95,7 +95,7 @@ namespace Neo.Plugins.StateService.Verification
             {
                 if (contexts.TryRemove(i.Key, out var value))
                 {
-                    value.Timer.CancelIfNotNull();
+                    value._timer.CancelIfNotNull();
                 }
             }
         }
@@ -106,12 +106,12 @@ namespace Neo.Plugins.StateService.Verification
             {
                 SendVote(context);
                 CheckVotes(context);
-                context.Timer.CancelIfNotNull();
-                context.Timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMilliseconds(TimeoutMilliseconds << context.Retries), Self, new Timer
+                context._timer.CancelIfNotNull();
+                context._timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMilliseconds(TimeoutMilliseconds << context._retries), Self, new Timer
                 {
                     Index = index,
                 }, ActorRefs.NoSender);
-                context.Retries++;
+                context._retries++;
             }
         }
 

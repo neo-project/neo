@@ -30,7 +30,7 @@ namespace Neo.VM.Types
         /// <param name="value">The wrapped <see cref="object"/>.</param>
         public InteropInterface(object value)
         {
-            _object = value ?? throw new ArgumentNullException(nameof(value));
+            _object = value ?? throw new VMUncatchableException($"InteropInterface {nameof(value)} can not be null.");
         }
 
         public override bool Equals(StackItem? other)
@@ -53,7 +53,7 @@ namespace Neo.VM.Types
         public override T GetInterface<T>()
         {
             if (_object is T t) return t;
-            throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
+            throw new VMUncatchableException($"The interopInterface item can't be casted to type {typeof(T)}");
         }
 
         internal object GetInterface()

@@ -136,11 +136,11 @@ namespace Neo.Plugins.StateService
         {
             if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
             using var snapshot = StateStore.Singleton.GetSnapshot();
-            StateRoot state_root = snapshot.GetStateRoot(index);
-            if (state_root is null)
+            var stateRoot = snapshot.GetStateRoot(index);
+            if (stateRoot is null)
                 ConsoleHelper.Warning("Unknown state root");
             else
-                ConsoleHelper.Info(state_root.ToJson().ToString());
+                ConsoleHelper.Info(stateRoot.ToJson().ToString());
         }
 
         [ConsoleCommand("state height", Category = "StateService", Description = "Get current state root index")]
@@ -154,12 +154,12 @@ namespace Neo.Plugins.StateService
         }
 
         [ConsoleCommand("get proof", Category = "StateService", Description = "Get proof of key and contract hash")]
-        private void OnGetProof(UInt256 root_hash, UInt160 script_hash, string key)
+        private void OnGetProof(UInt256 rootHash, UInt160 scriptHash, string key)
         {
             if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
             try
             {
-                ConsoleHelper.Info("Proof: ", GetProof(root_hash, script_hash, Convert.FromBase64String(key)));
+                ConsoleHelper.Info("Proof: ", GetProof(rootHash, scriptHash, Convert.FromBase64String(key)));
             }
             catch (RpcException e)
             {
@@ -168,12 +168,12 @@ namespace Neo.Plugins.StateService
         }
 
         [ConsoleCommand("verify proof", Category = "StateService", Description = "Verify proof, return value if successed")]
-        private void OnVerifyProof(UInt256 root_hash, string proof)
+        private void OnVerifyProof(UInt256 rootHash, string proof)
         {
             try
             {
                 ConsoleHelper.Info("Verify Result: ",
-                    VerifyProof(root_hash, Convert.FromBase64String(proof)));
+                    VerifyProof(rootHash, Convert.FromBase64String(proof)));
             }
             catch (RpcException e)
             {
@@ -184,17 +184,17 @@ namespace Neo.Plugins.StateService
         [RpcMethod]
         public JToken GetStateRoot(JArray _params)
         {
-            uint index = Result.Ok_Or(() => uint.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid state root index: {_params[0]}"));
+            var index = Result.Ok_Or(() => uint.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid state root index: {_params[0]}"));
             using var snapshot = StateStore.Singleton.GetSnapshot();
-            StateRoot state_root = snapshot.GetStateRoot(index).NotNull_Or(RpcError.UnknownStateRoot);
-            return state_root.ToJson();
+            var stateRoot = snapshot.GetStateRoot(index).NotNull_Or(RpcError.UnknownStateRoot);
+            return stateRoot.ToJson();
         }
 
-        private string GetProof(Trie trie, int contract_id, byte[] key)
+        private string GetProof(Trie trie, int contractId, byte[] key)
         {
             StorageKey skey = new()
             {
-                Id = contract_id,
+                Id = contractId,
                 Key = key,
             };
             return GetProof(trie, skey);
@@ -217,25 +217,25 @@ namespace Neo.Plugins.StateService
             return Convert.ToBase64String(ms.ToArray());
         }
 
-        private string GetProof(UInt256 root_hash, UInt160 script_hash, byte[] key)
+        private string GetProof(UInt256 rootHash, UInt160 scriptHash, byte[] key)
         {
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
+            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
             using var store = StateStore.Singleton.GetStoreSnapshot();
-            var trie = new Trie(store, root_hash);
-            var contract = GetHistoricalContractState(trie, script_hash).NotNull_Or(RpcError.UnknownContract);
+            var trie = new Trie(store, rootHash);
+            var contract = GetHistoricalContractState(trie, scriptHash).NotNull_Or(RpcError.UnknownContract);
             return GetProof(trie, contract.Id, key);
         }
 
         [RpcMethod]
         public JToken GetProof(JArray _params)
         {
-            UInt256 root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
-            byte[] key = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[2]}"));
-            return GetProof(root_hash, script_hash, key);
+            var rootHash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
+            var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
+            var key = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[2]}"));
+            return GetProof(rootHash, scriptHash, key);
         }
 
-        private string VerifyProof(UInt256 root_hash, byte[] proof)
+        private string VerifyProof(UInt256 rootHash, byte[] proof)
         {
             var proofs = new HashSet<byte[]>();
 
@@ -249,16 +249,16 @@ namespace Neo.Plugins.StateService
                 proofs.Add(reader.ReadVarBytes());
             }
 
-            var value = Trie.VerifyProof(root_hash, key, proofs).NotNull_Or(RpcError.InvalidProof);
+            var value = Trie.VerifyProof(rootHash, key, proofs).NotNull_Or(RpcError.InvalidProof);
             return Convert.ToBase64String(value);
         }
 
         [RpcMethod]
         public JToken VerifyProof(JArray _params)
         {
-            UInt256 root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            byte[] proof_bytes = Result.Ok_Or(() => Convert.FromBase64String(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid proof: {_params[1]}"));
-            return VerifyProof(root_hash, proof_bytes);
+            var rootHash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
+            var proofBytes = Result.Ok_Or(() => Convert.FromBase64String(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid proof: {_params[1]}"));
+            return VerifyProof(rootHash, proofBytes);
         }
 
         [RpcMethod]
@@ -270,10 +270,10 @@ namespace Neo.Plugins.StateService
             return json;
         }
 
-        private ContractState GetHistoricalContractState(Trie trie, UInt160 script_hash)
+        private ContractState GetHistoricalContractState(Trie trie, UInt160 scriptHash)
         {
-            const byte prefix = 8;
-            StorageKey skey = new KeyBuilder(NativeContract.ContractManagement.Id, prefix).Add(script_hash);
+            const byte Prefix = 8;
+            StorageKey skey = new KeyBuilder(NativeContract.ContractManagement.Id, Prefix).Add(scriptHash);
             return trie.TryGetValue(skey.ToArray(), out var value) ? value.AsSerializable<StorageItem>().GetInteroperable<ContractState>() : null;
         }
 
@@ -289,11 +289,11 @@ namespace Neo.Plugins.StateService
         [RpcMethod]
         public JToken FindStates(JArray _params)
         {
-            var root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
-            var script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
+            var rootHash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
+            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
+            var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
             var prefix = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid prefix: {_params[2]}"));
-            byte[] key = Array.Empty<byte>();
+            var key = Array.Empty<byte>();
             if (3 < _params.Count)
                 key = Result.Ok_Or(() => Convert.FromBase64String(_params[3].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[3]}"));
             int count = Settings.Default.MaxFindResultItems;
@@ -302,8 +302,8 @@ namespace Neo.Plugins.StateService
             if (Settings.Default.MaxFindResultItems < count)
                 count = Settings.Default.MaxFindResultItems;
             using var store = StateStore.Singleton.GetStoreSnapshot();
-            var trie = new Trie(store, root_hash);
-            var contract = GetHistoricalContractState(trie, script_hash).NotNull_Or(RpcError.UnknownContract);
+            var trie = new Trie(store, rootHash);
+            var contract = GetHistoricalContractState(trie, scriptHash).NotNull_Or(RpcError.UnknownContract);
             StorageKey pkey = new()
             {
                 Id = contract.Id,
@@ -345,14 +345,14 @@ namespace Neo.Plugins.StateService
         [RpcMethod]
         public JToken GetState(JArray _params)
         {
-            var root_hash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
-            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != root_hash).False_Or(RpcError.UnsupportedState);
-            var script_hash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
+            var rootHash = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid root hash: {_params[0]}"));
+            (!Settings.Default.FullState && StateStore.Singleton.CurrentLocalRootHash != rootHash).False_Or(RpcError.UnsupportedState);
+            var scriptHash = Result.Ok_Or(() => UInt160.Parse(_params[1].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[1]}"));
             var key = Result.Ok_Or(() => Convert.FromBase64String(_params[2].AsString()), RpcError.InvalidParams.WithData($"Invalid key: {_params[2]}"));
             using var store = StateStore.Singleton.GetStoreSnapshot();
-            var trie = new Trie(store, root_hash);
+            var trie = new Trie(store, rootHash);
 
-            var contract = GetHistoricalContractState(trie, script_hash).NotNull_Or(RpcError.UnknownContract);
+            var contract = GetHistoricalContractState(trie, scriptHash).NotNull_Or(RpcError.UnknownContract);
             StorageKey skey = new()
             {
                 Id = contract.Id,

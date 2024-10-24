@@ -76,7 +76,7 @@ namespace Neo.VM
             internal set
             {
                 if (value < 0 || value > Script.Length)
-                    throw new ArgumentOutOfRangeException(nameof(value));
+                    throw new VMUncatchableException($"InstructionPointer {nameof(value)} out of range: {value}/{Script.Length}");
                 instructionPointer = value;
             }
         }
@@ -115,7 +115,7 @@ namespace Neo.VM
         private ExecutionContext(SharedStates shared_states, int rvcount, int initialPosition)
         {
             if (rvcount < -1 || rvcount > ushort.MaxValue)
-                throw new ArgumentOutOfRangeException(nameof(rvcount));
+                throw new VMUncatchableException($"Return value count {nameof(rvcount)} out of range: {rvcount}/{ushort.MaxValue}");
             this.shared_states = shared_states;
             RVCount = rvcount;
             InstructionPointer = initialPosition;

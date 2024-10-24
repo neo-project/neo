@@ -9,6 +9,7 @@
 |Index|uint|index|true|
 #### Result
 StateRoot Object
+
 |Name|Type|Summary|
 |-|-|-|
 |version|number|version|

@@ -59,7 +59,7 @@ namespace Neo.VM.Types
                 foreach (StackItem item in b)
                 {
                     count--;
-                    if (count < 0) throw new InvalidOperationException("Beyond clone limits!");
+                    if (count < 0) throw new VMUncatchableException($"Struct clone limits exceed! {count}/{limits.MaxStackSize}");
                     if (item is Struct sb)
                     {
                         Struct sa = new(ReferenceCounter);
@@ -100,7 +100,7 @@ namespace Neo.VM.Types
             while (stack1.Count > 0)
             {
                 if (count-- == 0)
-                    throw new InvalidOperationException("Too many struct items to compare.");
+                    throw new VMUncatchableException($"Too many struct items to compare. {count}/{limits.MaxStackSize}");
                 StackItem a = stack1.Pop();
                 StackItem b = stack2.Pop();
                 if (a is ByteString byteString)
@@ -110,7 +110,7 @@ namespace Neo.VM.Types
                 else
                 {
                     if (maxComparableSize == 0)
-                        throw new InvalidOperationException("The operand exceeds the maximum comparable size.");
+                        throw new VMUncatchableException($"The operand exceeds the maximum comparable size. 0/{limits.MaxComparableSize}");
                     maxComparableSize -= 1;
                     if (a is Struct sa)
                     {

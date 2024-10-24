@@ -40,14 +40,14 @@ namespace Neo.VM.Types
             get
             {
                 if (key.Size > MaxKeySize)
-                    throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
+                    throw new VMUncatchableException($"The key exceeds the maximum size: {key.Size}/{MaxKeySize}");
                 return dictionary[key];
             }
             set
             {
                 if (key.Size > MaxKeySize)
-                    throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
-                if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+                    throw new VMUncatchableException($"The key exceeds the maximum size: {key.Size}/{MaxKeySize}");
+                if (IsReadOnly) throw new VMUncatchableException("The Map object is readonly, can not set item.");
                 if (ReferenceCounter != null)
                 {
                     if (dictionary.TryGetValue(key, out StackItem? old_value))
@@ -56,7 +56,7 @@ namespace Neo.VM.Types
                         ReferenceCounter.AddReference(key, this);
                     if (value is CompoundType { ReferenceCounter: null })
                     {
-                        throw new InvalidOperationException("Can not set a Map without a ReferenceCounter.");
+                        throw new VMUncatchableException("Can not set a Map without a ReferenceCounter.");
                     }
                     ReferenceCounter.AddReference(value, this);
                 }
@@ -93,7 +93,7 @@ namespace Neo.VM.Types
 
         public override void Clear()
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new VMUncatchableException("The Map object is readonly, can not clear.");
             if (ReferenceCounter != null)
                 foreach (var pair in dictionary)
                 {
@@ -114,7 +114,7 @@ namespace Neo.VM.Types
         public bool ContainsKey(PrimitiveType key)
         {
             if (key.Size > MaxKeySize)
-                throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
+                throw new VMUncatchableException($"The key exceeds the maximum size: {key.Size}/{MaxKeySize}");
             return dictionary.ContainsKey(key);
         }
 
@@ -151,8 +151,8 @@ namespace Neo.VM.Types
         public bool Remove(PrimitiveType key)
         {
             if (key.Size > MaxKeySize)
-                throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+                throw new VMUncatchableException($"The key exceeds the maximum size: {key.Size}/{MaxKeySize}");
+            if (IsReadOnly) throw new VMUncatchableException("The Map object is readonly, can not remove item.");
             if (!dictionary.Remove(key, out StackItem? old_value))
                 return false;
             ReferenceCounter?.RemoveReference(key, this);
@@ -178,7 +178,7 @@ namespace Neo.VM.Types
 #pragma warning restore CS8767
         {
             if (key.Size > MaxKeySize)
-                throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
+                throw new VMUncatchableException($"The key exceeds the maximum size: {key.Size}/{MaxKeySize}");
             return dictionary.TryGetValue(key, out value);
         }
     }
