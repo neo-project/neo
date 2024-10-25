@@ -76,8 +76,10 @@ namespace Neo.Test
 
             itemA = new InteropInterface(123);
             itemB = new InteropInterface(123);
+            itemC = new InteropInterface(124);
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
             var script = new Script(System.Array.Empty<byte>());
             itemA = new Pointer(script, 123);

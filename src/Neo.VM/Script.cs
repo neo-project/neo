@@ -163,7 +163,7 @@ namespace Neo.VM
         {
             if (_hashCode == 0)
             {
-                return _hashCode = (int)Unsafe.HashBytes(_value.Span);
+                return _hashCode = HashCode.Combine(Unsafe.HashBytes(_value.Span));
             }
 
             return _hashCode;
