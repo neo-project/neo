@@ -9,7 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.CLI.Pipes.Protocols;
+using Neo.IO.Pipes;
+using Neo.IO.Pipes.Protocols;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -23,6 +24,8 @@ namespace Neo.CLI.Pipes
 {
     internal class NamedPipeClient : IAsyncDisposable
     {
+        public const int MinAllocBufferSize = 4096;
+
         internal IDuplexPipe Application { get; private set; }
         public IDuplexPipe Transport { get; private set; }
 
@@ -129,7 +132,8 @@ namespace Neo.CLI.Pipes
                         break;
 
                     var buffer = result.Buffer;
-                    var message = NamedPipeMessageProtocol.GetMessage(buffer.ToArray());
+                    var message = new NamedPipeMessage();
+                    message.FromBytes(buffer.ToArray());
 
                     if (message is null)
                     {
@@ -166,7 +170,7 @@ namespace Neo.CLI.Pipes
 
                 while (true)
                 {
-                    var buffer = input.GetMemory(NamedPipeConnection.MinAllocBufferSize);
+                    var buffer = input.GetMemory(MinAllocBufferSize);
                     var bytesReceived = await _client.ReadAsync(buffer);
 
                     if (bytesReceived == 0)

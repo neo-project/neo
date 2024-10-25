@@ -10,14 +10,14 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Hosting;
-using Neo.CLI.Commands;
-using Neo.CLI.Extensions;
+using Neo.Service.CommandLine;
+using Neo.Service.Extensions;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.Threading.Tasks;
 
-namespace Neo.CLI
+namespace Neo.Service
 {
     static class Program
     {
@@ -29,7 +29,6 @@ namespace Neo.CLI
                 {
                     builder.UseNeoAppConfiguration();
                     builder.UseNeoHostConfiguration();
-                    builder.UseNeoSystem();
 
                     // Command handlers below <Here>
                     builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();

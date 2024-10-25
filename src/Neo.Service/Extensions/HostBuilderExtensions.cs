@@ -9,13 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Neo.CLI.Hosting;
-using Neo.CLI.Hosting.Services;
 
-namespace Neo.CLI.Extensions
+namespace Neo.Service.Extensions
 {
     internal static class HostBuilderExtensions
     {
@@ -47,22 +43,6 @@ namespace Neo.CLI.Extensions
                 config.AddNeoDefaultFiles();
             });
 
-            return hostBuilder;
-        }
-
-        /// <summary>
-        /// Injects the NeoSystem into the application.
-        /// </summary>
-        /// <param name="hostBuilder"></param>
-        /// <returns></returns>
-        public static IHostBuilder UseNeoSystem(this IHostBuilder hostBuilder)
-        {
-            hostBuilder.ConfigureServices((context, services) =>
-            {
-                services.ConfigureOptions<NeoOptionsSetup>();
-                services.TryAddSingleton<NeoSystemHostedService>();
-                //services.AddHostedService(provider => provider.GetRequiredService<NeoSystemHostedService>());
-            });
             return hostBuilder;
         }
     }

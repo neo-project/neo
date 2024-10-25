@@ -14,10 +14,18 @@
     <InternalsVisibleTo Include="Neo.UnitTests" />
     <InternalsVisibleTo Include="Neo.Extensions" />
     <InternalsVisibleTo Include="Neo.Extensions.Tests" />
+    <InternalsVisibleTo Include="Neo.IO.Tests" />
+    <InternalsVisibleTo Include="neo-cli" />
+    <InternalsVisibleTo Include="neo-srv" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0.0" />
+    <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
   </ItemGroup>
 
 </Project>
