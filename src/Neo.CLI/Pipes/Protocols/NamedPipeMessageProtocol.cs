@@ -157,7 +157,7 @@ namespace Neo.CLI.Pipes.Protocols
                 throw new IOException("Failed to send message");
         }
 
-        private NamedPipeMessage CreateErrorResponse(int requestId, Exception exception)
+        private static NamedPipeMessage CreateErrorResponse(int requestId, Exception exception)
         {
             var error = ExceptionPayload.FromException(exception);
             return new NamedPipeMessage() { RequestId = requestId, Command = NamedPipeCommand.Exception, Payload = error, };
