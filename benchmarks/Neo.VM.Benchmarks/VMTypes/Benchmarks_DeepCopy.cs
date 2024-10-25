@@ -12,111 +12,112 @@
 using BenchmarkDotNet.Attributes;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.VM.Benchmark;
-
-public class Benchmarks_DeepCopy
+namespace Neo.VM.Benchmark
 {
-    public IEnumerable<(int Depth, int ElementsPerLevel)> ParamSource()
+    public class Benchmarks_DeepCopy
     {
-        int[] depths = [2, 4];
-        int[] elementsPerLevel = [2, 4, 6];
-
-        foreach (var depth in depths)
+        public IEnumerable<(int Depth, int ElementsPerLevel)> ParamSource()
         {
-            foreach (var elements in elementsPerLevel)
+            int[] depths = [2, 4];
+            int[] elementsPerLevel = [2, 4, 6];
+
+            foreach (var depth in depths)
             {
-                if (depth <= 8 || elements <= 2)
+                foreach (var elements in elementsPerLevel)
                 {
-                    yield return (depth, elements);
+                    if (depth <= 8 || elements <= 2)
+                    {
+                        yield return (depth, elements);
+                    }
                 }
             }
         }
-    }
 
-    [ParamsSource(nameof(ParamSource))]
-    public (int Depth, int ElementsPerLevel) Params;
+        [ParamsSource(nameof(ParamSource))]
+        public (int Depth, int ElementsPerLevel) Params;
 
-    [Benchmark]
-    public void BenchNestedArrayDeepCopy()
-    {
-        var root = new Array(new ReferenceCounter());
-        CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel);
-        _ = root.DeepCopy();
-    }
-
-    [Benchmark]
-    public void BenchNestedArrayDeepCopyWithReferenceCounter()
-    {
-        var referenceCounter = new ReferenceCounter();
-        var root = new Array(referenceCounter);
-        CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
-        _ = root.DeepCopy();
-    }
-
-    [Benchmark]
-    public void BenchNestedTestArrayDeepCopy()
-    {
-        var root = new TestArray(new ReferenceCounter());
-        CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel);
-        _ = root.DeepCopy();
-    }
-
-    [Benchmark]
-    public void BenchNestedTestArrayDeepCopyWithReferenceCounter()
-    {
-        var referenceCounter = new ReferenceCounter();
-        var root = new TestArray(referenceCounter);
-        CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
-        _ = root.DeepCopy();
-    }
-
-    private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
-    {
-        if (depth < 0)
+        [Benchmark]
+        public void BenchNestedArrayDeepCopy()
         {
-            throw new ArgumentException("Depth must be non-negative", nameof(depth));
+            var root = new Array(new ReferenceCounter());
+            CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel);
+            _ = root.DeepCopy();
         }
 
-        if (rootArray == null)
+        [Benchmark]
+        public void BenchNestedArrayDeepCopyWithReferenceCounter()
         {
-            throw new ArgumentNullException(nameof(rootArray));
+            var referenceCounter = new ReferenceCounter();
+            var root = new Array(referenceCounter);
+            CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
+            _ = root.DeepCopy();
         }
 
-        if (depth == 0)
+        [Benchmark]
+        public void BenchNestedTestArrayDeepCopy()
         {
-            return;
+            var root = new TestArray(new ReferenceCounter());
+            CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel);
+            _ = root.DeepCopy();
         }
 
-        for (var i = 0; i < elementsPerLevel; i++)
+        [Benchmark]
+        public void BenchNestedTestArrayDeepCopyWithReferenceCounter()
         {
-            var childArray = new Array(referenceCounter);
-            rootArray.Add(childArray);
-            CreateNestedArray(childArray, depth - 1, elementsPerLevel, referenceCounter);
-        }
-    }
-
-    private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter referenceCounter = null)
-    {
-        if (depth < 0)
-        {
-            throw new ArgumentException("Depth must be non-negative", nameof(depth));
+            var referenceCounter = new ReferenceCounter();
+            var root = new TestArray(referenceCounter);
+            CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
+            _ = root.DeepCopy();
         }
 
-        if (rootArray == null)
+        private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
         {
-            throw new ArgumentNullException(nameof(rootArray));
+            if (depth < 0)
+            {
+                throw new ArgumentException("Depth must be non-negative", nameof(depth));
+            }
+
+            if (rootArray == null)
+            {
+                throw new ArgumentNullException(nameof(rootArray));
+            }
+
+            if (depth == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < elementsPerLevel; i++)
+            {
+                var childArray = new Array(referenceCounter);
+                rootArray.Add(childArray);
+                CreateNestedArray(childArray, depth - 1, elementsPerLevel, referenceCounter);
+            }
         }
 
-        if (depth == 0)
+        private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter referenceCounter = null)
         {
-            return;
-        }
+            if (depth < 0)
+            {
+                throw new ArgumentException("Depth must be non-negative", nameof(depth));
+            }
 
-        for (var i = 0; i < elementsPerLevel; i++)
-        {
-            var childArray = new TestArray(referenceCounter);
-            rootArray.Add(childArray);
-            CreateNestedTestArray(childArray, depth - 1, elementsPerLevel, referenceCounter);
+            if (rootArray == null)
+            {
+                throw new ArgumentNullException(nameof(rootArray));
+            }
+
+            if (depth == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < elementsPerLevel; i++)
+            {
+                var childArray = new TestArray(referenceCounter);
+                rootArray.Add(childArray);
+                CreateNestedTestArray(childArray, depth - 1, elementsPerLevel, referenceCounter);
+            }
         }
     }
 }
