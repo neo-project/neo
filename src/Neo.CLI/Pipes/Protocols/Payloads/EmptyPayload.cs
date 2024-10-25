@@ -13,7 +13,7 @@ using Neo.CLI.Pipes.Buffers;
 
 namespace Neo.CLI.Pipes.Protocols.Payloads
 {
-    internal class EmptyRequestPayload : INamedPipeMessage
+    internal class EmptyPayload : INamedPipeMessage
     {
         public int Size => 0;
 

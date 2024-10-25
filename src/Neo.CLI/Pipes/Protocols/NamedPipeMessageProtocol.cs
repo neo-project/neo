@@ -98,14 +98,14 @@ namespace Neo.CLI.Pipes.Protocols
                 {
                     NamedPipeCommand.Echo => message,
                     NamedPipeCommand.ServerInfo => OnServerInfo(message),
-                    _ => throw new InvalidOperationException(),
+                    _ => CreateErrorResponse(message.RequestId, new InvalidOperationException()),
                 };
 
                 await SendMessage(responseMessage);
             }
-            catch
+            catch (Exception ex)
             {
-                // Send Error Message to Client
+                CreateErrorResponse(message.RequestId, ex);
             }
         }
 
@@ -155,6 +155,12 @@ namespace Neo.CLI.Pipes.Protocols
 
             if (result.IsCompleted == false)
                 throw new IOException("Failed to send message");
+        }
+
+        private NamedPipeMessage CreateErrorResponse(int requestId, Exception exception)
+        {
+            var error = ExceptionPayload.FromException(exception);
+            return new NamedPipeMessage() { RequestId = requestId, Command = NamedPipeCommand.Exception, Payload = error, };
         }
     }
 }

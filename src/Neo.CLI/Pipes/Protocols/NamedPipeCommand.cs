@@ -18,5 +18,8 @@ namespace Neo.CLI.Pipes.Protocols
 
         [NamedPipeCommand(typeof(Payloads.ServerInfoPayload))]
         ServerInfo = 0x01,
+
+        [NamedPipeCommand(typeof(Payloads.ExceptionPayload))]
+        Exception = 0xe0,
     }
 }
