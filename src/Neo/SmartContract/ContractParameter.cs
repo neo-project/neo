@@ -168,6 +168,7 @@ namespace Neo.SmartContract
                             throw new InvalidOperationException();
                         context.Add(parameter);
                         json["value"] = new JArray(((IList<ContractParameter>)parameter.Value).Select(p => ToJson(p, context)));
+                        context.Remove(parameter);
                         break;
                     case ContractParameterType.Map:
                         if (context is null)
@@ -182,6 +183,7 @@ namespace Neo.SmartContract
                             item["value"] = ToJson(p.Value, context);
                             return item;
                         }));
+                        context.Remove(parameter);
                         break;
                 }
             return json;
