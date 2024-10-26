@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -283,7 +284,7 @@ namespace Neo.Plugins.Trackers.NEP_11
 
             using ScriptBuilder sb = new();
             sb.EmitDynamicCall(nep11Hash, "properties", CallFlags.ReadOnly, tokenId);
-            using var snapshot = _neoSystem.GetSnapshot();
+            using var snapshot = _neoSystem.GetSnapshotCache();
 
             using var engine = ApplicationEngine.Run(sb.ToArray(), snapshot, settings: _neoSystem.Settings);
             JObject json = new();

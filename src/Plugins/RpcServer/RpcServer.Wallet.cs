@@ -48,22 +48,36 @@ namespace Neo.Plugins.RpcServer
             public override void Save() { }
         }
 
-        protected Wallet wallet;
+        protected internal Wallet wallet;
 
+        /// <summary>
+        /// Checks if a wallet is open and throws an error if not.
+        /// </summary>
         private void CheckWallet()
         {
             wallet.NotNull_Or(RpcError.NoOpenedWallet);
         }
 
+        /// <summary>
+        /// Closes the currently opened wallet.
+        /// </summary>
+        /// <param name="_params">An empty array.</param>
+        /// <returns>Returns true if the wallet was successfully closed.</returns>
         [RpcMethod]
-        protected virtual JToken CloseWallet(JArray _params)
+        protected internal virtual JToken CloseWallet(JArray _params)
         {
             wallet = null;
             return true;
         }
 
+        /// <summary>
+        /// Exports the private key of a specified address.
+        /// </summary>
+        /// <param name="_params">An array containing the address as a string.</param>
+        /// <returns>The exported private key as a string.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open or the address is invalid.</exception>
         [RpcMethod]
-        protected virtual JToken DumpPrivKey(JArray _params)
+        protected internal virtual JToken DumpPrivKey(JArray _params)
         {
             CheckWallet();
             UInt160 scriptHash = AddressToScriptHash(_params[0].AsString(), system.Settings.AddressVersion);
@@ -71,8 +85,14 @@ namespace Neo.Plugins.RpcServer
             return account.GetKey().Export();
         }
 
+        /// <summary>
+        /// Creates a new address in the wallet.
+        /// </summary>
+        /// <param name="_params">An empty array.</param>
+        /// <returns>The newly created address as a string.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open.</exception>
         [RpcMethod]
-        protected virtual JToken GetNewAddress(JArray _params)
+        protected internal virtual JToken GetNewAddress(JArray _params)
         {
             CheckWallet();
             WalletAccount account = wallet.CreateAccount();
@@ -81,8 +101,14 @@ namespace Neo.Plugins.RpcServer
             return account.Address;
         }
 
+        /// <summary>
+        /// Gets the balance of a specified asset in the wallet.
+        /// </summary>
+        /// <param name="_params">An array containing the asset ID as a string.</param>
+        /// <returns>A JSON object containing the balance of the specified asset.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open or the asset ID is invalid.</exception>
         [RpcMethod]
-        protected virtual JToken GetWalletBalance(JArray _params)
+        protected internal virtual JToken GetWalletBalance(JArray _params)
         {
             CheckWallet();
             UInt160 asset_id = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
@@ -91,13 +117,19 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Gets the amount of unclaimed GAS in the wallet.
+        /// </summary>
+        /// <param name="_params">An empty array.</param>
+        /// <returns>The amount of unclaimed GAS as a string.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open.</exception>
         [RpcMethod]
-        protected virtual JToken GetWalletUnclaimedGas(JArray _params)
+        protected internal virtual JToken GetWalletUnclaimedGas(JArray _params)
         {
             CheckWallet();
             // Datoshi is the smallest unit of GAS, 1 GAS = 10^8 Datoshi
             BigInteger datoshi = BigInteger.Zero;
-            using (var snapshot = system.GetSnapshot())
+            using (var snapshot = system.GetSnapshotCache())
             {
                 uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
                 foreach (UInt160 account in wallet.GetAccounts().Select(p => p.ScriptHash))
@@ -106,8 +138,14 @@ namespace Neo.Plugins.RpcServer
             return datoshi.ToString();
         }
 
+        /// <summary>
+        /// Imports a private key into the wallet.
+        /// </summary>
+        /// <param name="_params">An array containing the private key as a string.</param>
+        /// <returns>A JSON object containing information about the imported account.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open or the private key is invalid.</exception>
         [RpcMethod]
-        protected virtual JToken ImportPrivKey(JArray _params)
+        protected internal virtual JToken ImportPrivKey(JArray _params)
         {
             CheckWallet();
             string privkey = _params[0].AsString();
@@ -123,10 +161,20 @@ namespace Neo.Plugins.RpcServer
             };
         }
 
+        /// <summary>
+        /// Calculates the network fee for a given transaction.
+        /// </summary>
+        /// <param name="_params">An array containing the Base64-encoded serialized transaction.</param>
+        /// <returns>A JSON object containing the calculated network fee.</returns>
+        /// <exception cref="RpcException">Thrown when the input parameters are invalid or the transaction is malformed.</exception>
         [RpcMethod]
-        protected virtual JToken CalculateNetworkFee(JArray _params)
+        protected internal virtual JToken CalculateNetworkFee(JArray _params)
         {
-            var tx = Convert.FromBase64String(_params[0].AsString());
+            if (_params.Count == 0)
+            {
+                throw new RpcException(RpcError.InvalidParams.WithData("Params array is empty, need a raw transaction."));
+            }
+            var tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid tx: {_params[0]}")); ;
 
             JObject account = new();
             var networkfee = Wallets.Helper.CalculateNetworkFee(
@@ -136,8 +184,14 @@ namespace Neo.Plugins.RpcServer
             return account;
         }
 
+        /// <summary>
+        /// Lists all addresses in the wallet.
+        /// </summary>
+        /// <param name="_params">An empty array.</param>
+        /// <returns>An array of JSON objects, each containing information about an address in the wallet.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open.</exception>
         [RpcMethod]
-        protected virtual JToken ListAddress(JArray _params)
+        protected internal virtual JToken ListAddress(JArray _params)
         {
             CheckWallet();
             return wallet.GetAccounts().Select(p =>
@@ -151,16 +205,39 @@ namespace Neo.Plugins.RpcServer
             }).ToArray();
         }
 
+        /// <summary>
+        /// Opens a wallet file.
+        /// </summary>
+        /// <param name="_params">An array containing the wallet path and password.</param>
+        /// <returns>Returns true if the wallet was successfully opened.</returns>
+        /// <exception cref="RpcException">Thrown when the wallet file is not found, the wallet is not supported, or the password is invalid.</exception>
         [RpcMethod]
-        protected virtual JToken OpenWallet(JArray _params)
+        protected internal virtual JToken OpenWallet(JArray _params)
         {
             string path = _params[0].AsString();
             string password = _params[1].AsString();
             File.Exists(path).True_Or(RpcError.WalletNotFound);
-            wallet = Wallet.Open(path, password, system.Settings).NotNull_Or(RpcError.WalletNotSupported);
+            try
+            {
+                wallet = Wallet.Open(path, password, system.Settings).NotNull_Or(RpcError.WalletNotSupported);
+            }
+            catch (NullReferenceException)
+            {
+                throw new RpcException(RpcError.WalletNotSupported);
+            }
+            catch (InvalidOperationException)
+            {
+                throw new RpcException(RpcError.WalletNotSupported.WithData("Invalid password."));
+            }
+
             return true;
         }
 
+        /// <summary>
+        /// Processes the result of an invocation with wallet for signing.
+        /// </summary>
+        /// <param name="result">The result object to process.</param>
+        /// <param name="signers">Optional signers for the transaction.</param>
         private void ProcessInvokeWithWallet(JObject result, Signer[] signers = null)
         {
             if (wallet == null || signers == null || signers.Length == 0) return;
@@ -189,20 +266,26 @@ namespace Neo.Plugins.RpcServer
             }
         }
 
+        /// <summary>
+        /// Transfers an asset from a specific address to another address.
+        /// </summary>
+        /// <param name="_params">An array containing asset ID, from address, to address, amount, and optional signers.</param>
+        /// <returns>The transaction details if successful, or the contract parameters if signatures are incomplete.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open, parameters are invalid, or there are insufficient funds.</exception>
         [RpcMethod]
-        protected virtual JToken SendFrom(JArray _params)
+        protected internal virtual JToken SendFrom(JArray _params)
         {
             CheckWallet();
             UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset id: {_params[0]}"));
             UInt160 from = AddressToScriptHash(_params[1].AsString(), system.Settings.AddressVersion);
             UInt160 to = AddressToScriptHash(_params[2].AsString(), system.Settings.AddressVersion);
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
             BigDecimal amount = new(BigInteger.Parse(_params[3].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Amount can't be negative."));
             Signer[] signers = _params.Count >= 5 ? ((JArray)_params[4]).Select(p => new Signer() { Account = AddressToScriptHash(p.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray() : null;
 
-            Transaction tx = wallet.MakeTransaction(snapshot, new[]
+            Transaction tx = Result.Ok_Or(() => wallet.MakeTransaction(snapshot, new[]
             {
                 new TransferOutput
                 {
@@ -210,7 +293,7 @@ namespace Neo.Plugins.RpcServer
                     Value = amount,
                     ScriptHash = to
                 }
-            }, from, signers).NotNull_Or(RpcError.InsufficientFunds);
+            }, from, signers), RpcError.InvalidRequest.WithData("Can not process this request.")).NotNull_Or(RpcError.InsufficientFunds);
 
             ContractParametersContext transContext = new(snapshot, tx, settings.Network);
             wallet.Sign(transContext);
@@ -227,8 +310,37 @@ namespace Neo.Plugins.RpcServer
             return SignAndRelay(snapshot, tx);
         }
 
+        /// <summary>
+        /// Transfers assets to multiple addresses.
+        /// </summary>
+        /// <param name="_params">
+        /// An array containing the following elements:
+        /// [0] (optional): The address to send from as a string. If omitted, the assets will be sent from any address in the wallet.
+        /// [1]: An array of transfer objects, each containing:
+        ///     - "asset": The asset ID (UInt160) as a string.
+        ///     - "value": The amount to transfer as a string.
+        ///     - "address": The recipient address as a string.
+        /// [2] (optional): An array of signers, each containing:
+        ///     - The address of the signer as a string.
+        /// </param>
+        /// <returns>
+        /// If the transaction is successfully created and all signatures are present:
+        ///     Returns a JSON object representing the transaction.
+        /// If not all signatures are present:
+        ///     Returns a JSON object representing the contract parameters that need to be signed.
+        /// </returns>
+        /// <exception cref="RpcException">
+        /// Thrown when:
+        /// - No wallet is open.
+        /// - The 'to' parameter is invalid or empty.
+        /// - Any of the asset IDs are invalid.
+        /// - Any of the amounts are negative or invalid.
+        /// - Any of the addresses are invalid.
+        /// - There are insufficient funds for the transfer.
+        /// - The network fee exceeds the maximum allowed fee.
+        /// </exception>
         [RpcMethod]
-        protected virtual JToken SendMany(JArray _params)
+        protected internal virtual JToken SendMany(JArray _params)
         {
             CheckWallet();
             int to_start = 0;
@@ -243,7 +355,7 @@ namespace Neo.Plugins.RpcServer
             Signer[] signers = _params.Count >= to_start + 2 ? ((JArray)_params[to_start + 1]).Select(p => new Signer() { Account = AddressToScriptHash(p.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray() : null;
 
             TransferOutput[] outputs = new TransferOutput[to.Count];
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             for (int i = 0; i < to.Count; i++)
             {
                 UInt160 asset_id = UInt160.Parse(to[i]["asset"].AsString());
@@ -273,13 +385,19 @@ namespace Neo.Plugins.RpcServer
             return SignAndRelay(snapshot, tx);
         }
 
+        /// <summary>
+        /// Transfers an asset to a specific address.
+        /// </summary>
+        /// <param name="_params">An array containing asset ID, to address, and amount.</param>
+        /// <returns>The transaction details if successful, or the contract parameters if signatures are incomplete.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open, parameters are invalid, or there are insufficient funds.</exception>
         [RpcMethod]
-        protected virtual JToken SendToAddress(JArray _params)
+        protected internal virtual JToken SendToAddress(JArray _params)
         {
             CheckWallet();
             UInt160 assetId = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid asset hash: {_params[0]}"));
             UInt160 to = AddressToScriptHash(_params[1].AsString(), system.Settings.AddressVersion);
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
             BigDecimal amount = new(BigInteger.Parse(_params[2].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcError.InvalidParams);
@@ -308,8 +426,14 @@ namespace Neo.Plugins.RpcServer
             return SignAndRelay(snapshot, tx);
         }
 
+        /// <summary>
+        /// Cancels an unconfirmed transaction.
+        /// </summary>
+        /// <param name="_params">An array containing the transaction ID to cancel, signers, and optional extra fee.</param>
+        /// <returns>The details of the cancellation transaction.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open, the transaction is already confirmed, or there are insufficient funds for the cancellation fee.</exception>
         [RpcMethod]
-        protected virtual JToken CancelTransaction(JArray _params)
+        protected internal virtual JToken CancelTransaction(JArray _params)
         {
             CheckWallet();
             var txid = Result.Ok_Or(() => UInt256.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid txid: {_params[0]}"));
@@ -342,8 +466,14 @@ namespace Neo.Plugins.RpcServer
             return SignAndRelay(system.StoreView, tx);
         }
 
+        /// <summary>
+        /// Invokes the verify method of a contract.
+        /// </summary>
+        /// <param name="_params">An array containing the script hash, optional arguments, and optional signers and witnesses.</param>
+        /// <returns>A JSON object containing the result of the verification.</returns>
+        /// <exception cref="RpcException">Thrown when the script hash is invalid, the contract is not found, or the verification fails.</exception>
         [RpcMethod]
-        protected virtual JToken InvokeContractVerify(JArray _params)
+        protected internal virtual JToken InvokeContractVerify(JArray _params)
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash: {_params[0]}"));
             ContractParameter[] args = _params.Count >= 2 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : Array.Empty<ContractParameter>();
@@ -352,11 +482,19 @@ namespace Neo.Plugins.RpcServer
             return GetVerificationResult(script_hash, args, signers, witnesses);
         }
 
+        /// <summary>
+        /// Gets the result of the contract verification.
+        /// </summary>
+        /// <param name="scriptHash">The script hash of the contract.</param>
+        /// <param name="args">The contract parameters.</param>
+        /// <param name="signers">Optional signers for the verification.</param>
+        /// <param name="witnesses">Optional witnesses for the verification.</param>
+        /// <returns>A JSON object containing the verification result.</returns>
         private JObject GetVerificationResult(UInt160 scriptHash, ContractParameter[] args, Signer[] signers = null, Witness[] witnesses = null)
         {
-            using var snapshot = system.GetSnapshot();
+            using var snapshot = system.GetSnapshotCache();
             var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash).NotNull_Or(RpcError.UnknownContract);
-            var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount).NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash));
+            var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, args.Count()).NotNull_Or(RpcErrorFactory.InvalidContractVerification(contract.Hash, args.Count()));
             (md.ReturnType == ContractParameterType.Boolean).True_Or(RpcErrorFactory.InvalidContractVerification("The verify method doesn't return boolean value."));
             Transaction tx = new()
             {
@@ -365,7 +503,7 @@ namespace Neo.Plugins.RpcServer
                 Witnesses = witnesses,
                 Script = new[] { (byte)OpCode.RET }
             };
-            using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: system.Settings);
+            using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: system.Settings);
             engine.LoadContract(contract, md, CallFlags.ReadOnly);
 
             var invocationScript = Array.Empty<byte>();
@@ -396,6 +534,12 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
+        /// <summary>
+        /// Signs and relays a transaction.
+        /// </summary>
+        /// <param name="snapshot">The data snapshot.</param>
+        /// <param name="tx">The transaction to sign and relay.</param>
+        /// <returns>A JSON object containing the transaction details.</returns>
         private JObject SignAndRelay(DataCache snapshot, Transaction tx)
         {
             ContractParametersContext context = new(snapshot, tx, settings.Network);
@@ -412,6 +556,12 @@ namespace Neo.Plugins.RpcServer
             }
         }
 
+        /// <summary>
+        /// Converts an address to a script hash.
+        /// </summary>
+        /// <param name="address">The address to convert.</param>
+        /// <param name="version">The address version.</param>
+        /// <returns>The script hash corresponding to the address.</returns>
         internal static UInt160 AddressToScriptHash(string address, byte version)
         {
             if (UInt160.TryParse(address, out var scriptHash))

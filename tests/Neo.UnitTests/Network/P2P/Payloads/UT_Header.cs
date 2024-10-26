@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
@@ -34,7 +35,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
             // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
             uut.Size.Should().Be(113); // 105 + nonce
@@ -44,7 +45,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void GetHashCodeTest()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
             uut.GetHashCode().Should().Be(uut.Hash.GetHashCode());
         }
 
@@ -52,11 +53,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TrimTest()
         {
             UInt256 val256 = UInt256.Zero;
-            var snapshot = TestBlockchain.GetTestSnapshot().CreateSnapshot();
-            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache().CreateSnapshot();
+            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
 
-            TestUtils.BlocksAdd(snapshot, uut.Hash, new TrimmedBlock()
+            TestUtils.BlocksAdd(snapshotCache, uut.Hash, new TrimmedBlock()
             {
                 Header = new Header
                 {
@@ -69,7 +70,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Hashes = Array.Empty<UInt256>()
             });
 
-            var trim = NativeContract.Ledger.GetTrimmedBlock(snapshot, uut.Hash);
+            var trim = NativeContract.Ledger.GetTrimmedBlock(snapshotCache, uut.Hash);
             var header = trim.Header;
 
             header.Version.Should().Be(uut.Version);
@@ -87,11 +88,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Deserialize()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(null, new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal);
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111";
 
             MemoryReader reader = new(hex.HexToBytes());
             uut.Deserialize(ref reader);
@@ -130,8 +131,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             Header newHeader = new();
             UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
-            TestUtils.SetupHeaderWithValues(newHeader, prevHash, out _, out _, out _, out _, out _, out _);
-            TestUtils.SetupHeaderWithValues(uut, prevHash, out _, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(null, newHeader, prevHash, out _, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _);
 
             uut.Equals(newHeader).Should().BeTrue();
         }
@@ -146,9 +147,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Serialize()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111";
             uut.ToArray().ToHexString().Should().Be(hex);
         }
     }

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -275,8 +276,20 @@ namespace Neo
         /// <summary>
         /// Gets a snapshot of the blockchain storage.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
+        [Obsolete("This method is obsolete, use GetSnapshotCache instead.")]
         public SnapshotCache GetSnapshot()
+        {
+            return new SnapshotCache(store.GetSnapshot());
+        }
+
+        /// <summary>
+        /// Gets a snapshot of the blockchain storage with an execution cache.
+        /// With the snapshot, we have the latest state of the blockchain, with the cache,
+        /// we can run transactions in a sandboxed environment.
+        /// </summary>
+        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
+        public SnapshotCache GetSnapshotCache()
         {
             return new SnapshotCache(store.GetSnapshot());
         }

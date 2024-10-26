@@ -11,6 +11,8 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -18,6 +20,9 @@ using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Linq;
+using System.Net;
+using System.Numerics;
 using System.Text;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -26,23 +31,33 @@ namespace Neo.Plugins.RpcServer.Tests
     public partial class UT_RpcServer
     {
         private NeoSystem _neoSystem;
+        private RpcServerSettings _rpcServerSettings;
         private RpcServer _rpcServer;
         private TestMemoryStoreProvider _memoryStoreProvider;
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
         private WalletAccount _walletAccount;
 
+        const byte NativePrefixAccount = 20;
+        const byte NativePrefixTotalSupply = 11;
+
         [TestInitialize]
         public void TestSetup()
         {
             _memoryStore = new MemoryStore();
             _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
-            var protocolSettings = TestProtocolSettings.Default;
-            _neoSystem = new NeoSystem(protocolSettings, _memoryStoreProvider);
-            _rpcServer = new RpcServer(_neoSystem, RpcServerSettings.Default);
-            _walletAccount = _wallet.CreateAccount();
+            _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, _memoryStoreProvider);
+            _rpcServerSettings = RpcServerSettings.Default with
+            {
+                SessionEnabled = true,
+                SessionExpirationTime = TimeSpan.FromSeconds(0.3),
+                MaxGasInvoke = 1500_0000_0000,
+                Network = TestProtocolSettings.SoleNode.Network,
+            };
+            _rpcServer = new RpcServer(_neoSystem, _rpcServerSettings);
+            _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
-            var snapshot = _neoSystem.GetSnapshot();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
             snapshot.Commit();
@@ -51,8 +66,10 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestCleanup]
         public void TestCleanup()
         {
+            // Please build and test in debug mode
+            _neoSystem.MemPool.Clear();
             _memoryStore.Reset();
-            var snapshot = _neoSystem.GetSnapshot();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
@@ -69,6 +86,48 @@ namespace Neo.Plugins.RpcServer.Tests
             var result = _rpcServer.CheckAuth(context);
             // Assert
             Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TestCheckAuth()
+        {
+            var memoryStoreProvider = new TestMemoryStoreProvider(new MemoryStore());
+            var neoSystem = new NeoSystem(TestProtocolSettings.SoleNode, memoryStoreProvider);
+            var rpcServerSettings = RpcServerSettings.Default with
+            {
+                SessionEnabled = true,
+                SessionExpirationTime = TimeSpan.FromSeconds(0.3),
+                MaxGasInvoke = 1500_0000_0000,
+                Network = TestProtocolSettings.SoleNode.Network,
+                RpcUser = "testuser",
+                RpcPass = "testpass",
+            };
+            var rpcServer = new RpcServer(neoSystem, rpcServerSettings);
+
+            var context = new DefaultHttpContext();
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+            var result = rpcServer.CheckAuth(context);
+            Assert.IsTrue(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:wrongpass"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("wronguser:testpass"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(":testpass"));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
+
+            context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(""));
+            result = rpcServer.CheckAuth(context);
+            Assert.IsFalse(result);
         }
     }
 }

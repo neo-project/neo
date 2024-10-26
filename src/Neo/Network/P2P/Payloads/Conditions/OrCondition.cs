@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
@@ -66,7 +67,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));

@@ -27,13 +27,13 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_GasToken
     {
-        private DataCache _snapshot;
+        private DataCache _snapshotCache;
         private Block _persistingBlock;
 
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshot = TestBlockchain.GetTestSnapshot();
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
             _persistingBlock = new Block { Header = new Header() };
         }
 
@@ -41,15 +41,15 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Name() => NativeContract.GAS.Name.Should().Be(nameof(GasToken));
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("GAS");
+        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshotCache).Should().Be("GAS");
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
+        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshotCache).Should().Be(8);
 
         [TestMethod]
         public async Task Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
@@ -119,20 +119,20 @@ namespace Neo.UnitTests.SmartContract.Native
 
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
-            NativeContract.GAS.BalanceOf(engine.Snapshot, to).Should().Be(5200049999999999);
+            NativeContract.GAS.BalanceOf(engine.SnapshotCache, to).Should().Be(5200049999999999);
 
-            engine.Snapshot.GetChangeSet().Count().Should().Be(2);
+            engine.SnapshotCache.GetChangeSet().Count().Should().Be(2);
 
             // Burn all
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(5200049999999999));
 
-            (keyCount - 2).Should().Be(engine.Snapshot.GetChangeSet().Count());
+            (keyCount - 2).Should().Be(engine.SnapshotCache.GetChangeSet().Count());
 
             // Bad inputs
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(engine.SnapshotCache, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.SnapshotCache, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.SnapshotCache, from, new byte[19], BigInteger.One, false, persistingBlock));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

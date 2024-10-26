@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;

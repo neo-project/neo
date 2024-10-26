@@ -10,13 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Neo.Helper;
 
 namespace Neo.Cryptography.MPTTrie.Tests
 {
@@ -26,7 +26,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         private byte[] StoreKey(byte[] key)
         {
-            return Concat(key);
+            return [.. key];
         }
 
         public void Put(byte[] key, byte[] value)
@@ -52,6 +52,11 @@ namespace Neo.Cryptography.MPTTrie.Tests
             return null;
         }
 
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            return store.TryGetValue(StoreKey(key), out value);
+        }
+
         public void Dispose() { throw new System.NotImplementedException(); }
 
         public int Size => store.Count;
@@ -65,7 +70,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         private void PutToStore(IStore store, Node node)
         {
-            store.Put(Concat(new byte[] { 0xf0 }, node.Hash.ToArray()), node.ToArray());
+            store.Put([.. new byte[] { 0xf0 }, .. node.Hash.ToArray()], node.ToArray());
         }
 
         [TestInitialize]
