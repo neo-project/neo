@@ -83,6 +83,7 @@ jobs:
         dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
         dotnet test ./tests/Neo.Extensions.Tests --output ./bin/tests/Neo.Extensions.Tests
         dotnet test ./tests/Neo.IO.Tests --output ./bin/tests/Neo.IO.Tests
+        dotnet test ./tests/Neo.Service.Tests --output ./bin/tests/Neo.Service.Tests
 
         # Plugins
         dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
@@ -111,6 +112,7 @@ jobs:
           ${{ github.workspace }}/tests/Neo.Plugins.ApplicationLogs.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Extensions.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.IO.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Service.Tests/TestResults/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
