@@ -34,10 +34,10 @@ namespace Neo.Service.Pipes.Messaging
         {
             _logger.LogInformation("Connection has started.");
 
-            _ = ProcessRequests();
+            _ = ProcessReceive();
         }
 
-        private async Task ProcessRequests()
+        private async Task ProcessReceive()
         {
             try
             {
