@@ -12,6 +12,7 @@
 using Neo.IO.Buffers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Hashing;
 using System.Reflection;
@@ -105,11 +106,20 @@ namespace Neo.IO.Pipes.Protocols
             return ms.ToArray();
         }
 
-        public static NamedPipeMessage Deserialize(Stream stream)
+        public static bool TryDeserialize(Stream stream, [NotNullWhen(true)] out NamedPipeMessage? message)
         {
-            var m = new NamedPipeMessage();
-            m.FromStream(stream);
-            return m;
+            message = null;
+            try
+            {
+                var m = new NamedPipeMessage();
+                m.FromStream(stream);
+                message = m;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static INamedPipeMessage? CreateEmptyPayload(NamedPipeCommand command) =>
