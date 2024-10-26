@@ -32,13 +32,12 @@ namespace Neo.IO.Tests.Pipes.Protocols
         [TestMethod]
         public void TestToByteArrayFromBytes()
         {
-            var expectedMessage = new NamedPipeMessage() { RequestId = 666, Command = NamedPipeCommand.Echo, Payload = new EchoPayload() };
+            var expectedMessage = new NamedPipeMessage() { Command = NamedPipeCommand.Echo, Payload = new EchoPayload() };
             var expectedBytes = expectedMessage.ToByteArray();
 
             var actualMessage = NamedPipeMessage.Deserialize(expectedBytes);
 
             Assert.AreEqual(expectedMessage.Command, actualMessage.Command);
-            Assert.AreEqual(expectedMessage.RequestId, actualMessage.RequestId);
             Assert.AreEqual(expectedMessage.Size, actualMessage.Size);
             Assert.AreEqual(expectedMessage.PayloadSize, actualMessage.PayloadSize);
             Assert.AreEqual(expectedMessage.Payload?.Size, actualMessage.Payload?.Size);

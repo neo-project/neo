@@ -26,7 +26,6 @@ namespace Neo.IO.Pipes.Protocols
         public NamedPipeCommand Command { get; set; }
         public INamedPipeMessage? Payload { get; set; }
         public int PayloadSize => Payload?.Size ?? 0;
-        public int RequestId { get; set; }
 
         private static readonly Dictionary<NamedPipeCommand, Type> s_commandTypes = new();
 
@@ -37,7 +36,6 @@ namespace Neo.IO.Pipes.Protocols
             sizeof(ulong) +             // Magic
             sizeof(byte) +              // Version
             sizeof(uint) +              // CRC32
-            sizeof(int) +               // RequestId
             sizeof(NamedPipeCommand) +  // Command
             sizeof(int) +               // Payload size
             (Payload?.Size ?? 0);       // Payload
@@ -70,7 +68,6 @@ namespace Neo.IO.Pipes.Protocols
                 throw new InvalidDataException("Invalid version number");
 
             _checksum = reader.Read<uint>();
-            RequestId = reader.Read<int>();
             Command = reader.Read<NamedPipeCommand>();
             _payloadSize = reader.Read<int>();
 
@@ -100,7 +97,6 @@ namespace Neo.IO.Pipes.Protocols
             writer.Write(Magic);
             writer.Write(Version);
             writer.Write(_checksum);
-            writer.Write(RequestId);
             writer.Write(Command);
             writer.Write(bytes.Length);
             writer.WriteRaw(bytes);

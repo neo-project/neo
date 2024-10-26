@@ -160,7 +160,7 @@ namespace Neo.Service.Pipes
                             throw new InvalidOperationException("Accept queue writer was unexpectedly closed.");
                     }
                 }
-                catch (IOException) when (_listeningToken.IsCancellationRequested)
+                catch (IOException) when (_listeningToken.IsCancellationRequested == false)
                 {
                     nextStream.Dispose();
                     nextStream = _namedPipeServerStreamPool.Get();
