@@ -9,9 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Hosting.Systemd;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using Neo.Service.Extensions;
+using Neo.Service.Pipes;
+using Neo.Service.Pipes.Messaging;
+using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Service.CommandLine
@@ -20,25 +27,68 @@ namespace Neo.Service.CommandLine
     {
         public ProgramRootCommand() : base("Neo N3 Command-Line Tool")
         {
+            var serviceOption = new Option<bool>(["--run-as-service", "-rS"])
+            {
+                IsHidden = true,
+            };
 
+            AddOption(serviceOption);
         }
 
         public new class Handler(
-            ILogger<Handler> logger) : ICommandHandler
+            NamedPipeListener listener,
+            NeoSystem neoSystem,
+            ILogger<SimpleMessageProtocol> logger) : ICommandHandler
         {
-            private readonly ILogger _logger = logger;
+            public bool AsService { get; set; }
 
             public int Invoke(InvocationContext context)
             {
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
 
-            public Task<int> InvokeAsync(InvocationContext context)
+            public async Task<int> InvokeAsync(InvocationContext context)
             {
-                context.Console.WriteLine("Hello World!");
-                _logger.LogInformation("Hello World!");
+                var stoppingToken = context.GetCancellationToken();
 
-                return Task.FromResult(0);
+                if (SystemdHelpers.IsSystemdService() ||
+                    WindowsServiceHelpers.IsWindowsService() ||
+                    AsService)
+                {
+                    // This wait for NamedPipe connections
+                    return await WaitForConnections(context.Console, stoppingToken);
+                }
+
+                // TODO: add client
+
+                return 0;
+            }
+
+            private async Task<int> WaitForConnections(IConsole console, CancellationToken cancellationToken)
+            {
+                listener.Start();
+                logger.LogInformation("Started.");
+
+                while (cancellationToken.IsCancellationRequested == false)
+                {
+                    try
+                    {
+                        var conn = await listener.AcceptAsync(cancellationToken);
+
+                        if (conn is null)
+                            break;
+
+                        var protocolThread = new SimpleMessageProtocol(conn, neoSystem, logger);
+                        ThreadPool.UnsafeQueueUserWorkItem(protocolThread, preferLocal: false);
+                    }
+                    catch (Exception ex)
+                    {
+                        console.ErrorMessage(ex.Message);
+                        return ex.HResult;
+                    }
+                }
+
+                return 0;
             }
         }
     }

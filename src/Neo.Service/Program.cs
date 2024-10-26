@@ -32,6 +32,8 @@ namespace Neo.Service
                     builder.UseNeoHostConfiguration();
                     builder.UseNeoConfigFile();
                     builder.AddDefaultServices();
+                    builder.UseNeoSystem();
+                    builder.UseNamedPipes();
 
                     // Command handlers below <Here>
                     builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();

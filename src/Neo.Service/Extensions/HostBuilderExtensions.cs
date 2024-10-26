@@ -9,16 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Hosting.Systemd;
-using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Logging.Debug;
+using Neo.IO.Pipes;
 using Neo.Service.Configuration;
 using Neo.Service.Hosting;
+using Neo.Service.Pipes;
 using System;
+using System.CommandLine.Hosting;
+using System.IO;
 
 namespace Neo.Service.Extensions
 {
@@ -69,10 +73,55 @@ namespace Neo.Service.Extensions
             return hostBuilder;
         }
 
+        public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder)
+        {
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                var endPoint = new NamedPipeEndPoint(@"LOCAL\neo-cli");
+
+                services.TryAddSingleton(endPoint);
+                services.TryAddSingleton<NamedPipeListener>();
+
+
+            });
+            return hostBuilder;
+        }
+
+        public static IHostBuilder UseNeoSystem(this IHostBuilder hostBuilder)
+        {
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
+                var protocolSettings = ProtocolSettings.Load(protocolSettingsSection);
+
+                services.TryAddSingleton(protocolSettings);
+
+                var applicationSection = context.Configuration
+                    .GetRequiredSection("ApplicationConfiguration")
+                    .GetRequiredSection("Storage");
+                var storageOptions = applicationSection.Get<StorageOptions>();
+
+                string? storagePath = null;
+                if (string.IsNullOrEmpty(storageOptions?.Path) == false)
+                {
+                    storagePath = string.Format(storageOptions.Path, protocolSettings.Network);
+                    if (Directory.Exists(storagePath) == false)
+                    {
+                        if (Path.IsPathFullyQualified(storagePath) == false)
+                            storagePath = Path.Combine(AppContext.BaseDirectory, storagePath);
+                    }
+                }
+
+                services.TryAddSingleton(new NeoSystem(protocolSettings, storageOptions?.Engine ?? NeoDefaults.StoreProviderName, storagePath));
+            });
+            return hostBuilder;
+        }
+
         public static IHostBuilder AddDefaultServices(this IHostBuilder hostBuilder)
         {
             hostBuilder.ConfigureServices((context, services) =>
             {
+                services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
                 services.AddLogging(logging =>
                 {
                     logging.AddConfiguration(context.Configuration.GetSection("Logging"));
@@ -82,17 +131,13 @@ namespace Neo.Service.Extensions
                     logging.AddDebug();
 #endif
                     logging.AddEventSourceLogger();
-
-                    if (SystemdHelpers.IsSystemdService() ||
-                        WindowsServiceHelpers.IsWindowsService() ||
-                        Environment.UserInteractive == false)
-                        logging.AddSimpleConsole(config =>
-                        {
-                            config.ColorBehavior = LoggerColorBehavior.Enabled;
-                            config.SingleLine = true;
-                            config.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ";
-                            config.UseUtcTimestamp = false;
-                        });
+                    logging.AddSimpleConsole(config =>
+                    {
+                        config.ColorBehavior = LoggerColorBehavior.Enabled;
+                        config.SingleLine = true;
+                        config.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ";
+                        config.UseUtcTimestamp = false;
+                    });
 
                     if (OperatingSystem.IsWindows())
                         logging.AddEventLog();

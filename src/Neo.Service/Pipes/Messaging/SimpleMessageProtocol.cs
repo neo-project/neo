@@ -20,13 +20,16 @@ namespace Neo.Service.Pipes.Messaging
 {
     internal class SimpleMessageProtocol(
         NamedPipeConnection connection,
+        NeoSystem neoSystem,
         ILogger<SimpleMessageProtocol> logger) : IThreadPoolWorkItem, IAsyncDisposable
     {
         private readonly NamedPipeConnection _connection = connection;
+        private readonly NeoSystem _neoSystem = neoSystem;
         private readonly ILogger<SimpleMessageProtocol> _logger = logger;
 
         public ValueTask DisposeAsync()
         {
+            _logger.LogInformation("Connection shutting down.");
             return _connection.DisposeAsync();
         }
 
@@ -56,10 +59,10 @@ namespace Neo.Service.Pipes.Messaging
                     {
                         case NamedPipeCommand.Echo:
                             await output.WriteAsync(message.ToByteArray());
+                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.Echo)}");
                             break;
                         case NamedPipeCommand.ServerInfo:
-                            break;
-                        case NamedPipeCommand.Exception:
+                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.ServerInfo)}");
                             break;
                         default:
                             break;

@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Neo.IO.Pipes;
 using System;
@@ -32,6 +33,7 @@ namespace Neo.Service.Pipes
         private readonly NamedPipeStreamPoolPolicy _namedPipeStreamPoolPolicy;
         private readonly ObjectPool<NamedPipeServerStream> _namedPipeServerStreamPool;
         private readonly NamedPipeTransportOptions _namedPipeTransportOptions;
+        private readonly ILogger<NamedPipeListener> _logger;
 
         private readonly MemoryPool<byte> _memoryPool;
         private readonly PipeOptions _inputOptions;
@@ -46,6 +48,7 @@ namespace Neo.Service.Pipes
 
         public NamedPipeListener(
             NamedPipeEndPoint endPoint,
+            ILogger<NamedPipeListener> logger,
             NamedPipeTransportOptions? options = null)
         {
             var pipeName = endPoint.PipeName;
@@ -62,6 +65,7 @@ namespace Neo.Service.Pipes
                 throw new ApplicationException($"Named pipe '{endPoint.PipeName}' is already in use.");
             }
 
+            _logger = logger;
             _namedPipeTransportOptions = options ?? new();
             _namedPipeStreamPoolPolicy = new(endPoint, _namedPipeTransportOptions);
             _listeningToken = _listeningTokenSource.Token;
@@ -121,6 +125,7 @@ namespace Neo.Service.Pipes
                 catch (Exception ex)
                 {
                     _connections.Writer.TryComplete(ex);
+                    _logger.LogError(ex, ex.Message);
                 }
             });
         }
@@ -168,6 +173,10 @@ namespace Neo.Service.Pipes
                 catch (OperationCanceledException) when (_listeningToken.IsCancellationRequested)
                 {
                     break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
                 }
             }
         }
