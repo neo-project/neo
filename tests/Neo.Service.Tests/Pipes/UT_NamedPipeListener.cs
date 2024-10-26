@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Neo;
 using Neo.IO.Pipes;
 using Neo.Service;
@@ -27,15 +28,14 @@ namespace Neo.Service.Tests.Pipes
         public async Task TestWriteFromClientAndReadFromServer()
         {
             var endPoint = new NamedPipeEndPoint(Path.GetRandomFileName());
-            await using var listener = new NamedPipeListener(endPoint);
+            await using var listener = new NamedPipeListener(endPoint, NullLogger<NamedPipeListener>.Instance);
             await using var client = new NamedPipeClientStream(endPoint.ServerName, endPoint.PipeName);
 
             listener.Start();
-            var taskAccept = listener.AcceptAsync();
             await client.ConnectAsync();
 
             // Accept client and get connection
-            await using var conn = await taskAccept;
+            await using var conn = await listener.AcceptAsync();
 
             // Write data to the server from the client
             byte[] expectedBytes = [0x01, 0x02, 0x03, 0x04, 0x05];

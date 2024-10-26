@@ -9,8 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Microsoft.Extensions.Logging;
 using Neo.IO.Pipes.Protocols;
+using Neo.Network.P2P;
+using Neo.Service.Configuration;
 using System;
 using System.IO;
 using System.Threading;
@@ -18,13 +21,17 @@ using System.Threading.Tasks;
 
 namespace Neo.Service.Pipes.Messaging
 {
-    internal class SimpleMessageProtocol(
+    internal partial class SimpleMessageProtocol(
         NamedPipeConnection connection,
         NeoSystem neoSystem,
+        NeoOptions options,
         ILogger<SimpleMessageProtocol> logger) : IThreadPoolWorkItem, IAsyncDisposable
     {
         private readonly NamedPipeConnection _connection = connection;
         private readonly NeoSystem _neoSystem = neoSystem;
+        private readonly NeoOptions _options = options;
+        private readonly LocalNode _localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
+
         private readonly ILogger<SimpleMessageProtocol> _logger = logger;
 
         public ValueTask DisposeAsync()
@@ -62,6 +69,8 @@ namespace Neo.Service.Pipes.Messaging
                             _logger.LogInformation($"Received: {nameof(NamedPipeCommand.Echo)}");
                             break;
                         case NamedPipeCommand.ServerInfo:
+                            var response = NamedPipeMessage.Create(NamedPipeCommand.ServerInfo, GetServerInfo());
+                            await output.WriteAsync(response.ToByteArray());
                             _logger.LogInformation($"Received: {nameof(NamedPipeCommand.ServerInfo)}");
                             break;
                         default:

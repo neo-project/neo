@@ -12,6 +12,7 @@
 using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using Neo.Service.Configuration;
 using Neo.Service.Extensions;
 using Neo.Service.Pipes;
 using Neo.Service.Pipes.Messaging;
@@ -38,6 +39,7 @@ namespace Neo.Service.CommandLine
         public new class Handler(
             NamedPipeListener listener,
             NeoSystem neoSystem,
+            NeoOptions options,
             ILogger<SimpleMessageProtocol> logger) : ICommandHandler
         {
             public bool AsService { get; set; }
@@ -78,7 +80,7 @@ namespace Neo.Service.CommandLine
                         if (conn is null)
                             break;
 
-                        var protocolThread = new SimpleMessageProtocol(conn, neoSystem, logger);
+                        var protocolThread = new SimpleMessageProtocol(conn, neoSystem, options, logger);
                         ThreadPool.UnsafeQueueUserWorkItem(protocolThread, preferLocal: false);
                     }
                     catch (Exception ex)

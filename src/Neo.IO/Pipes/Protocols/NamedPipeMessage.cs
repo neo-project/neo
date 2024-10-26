@@ -71,17 +71,20 @@ namespace Neo.IO.Pipes.Protocols
             Command = reader.Read<NamedPipeCommand>();
             _payloadSize = reader.Read<int>();
 
-            var payload = CreateEmptyPayload(Command) ?? throw new InvalidDataException($"Unknown command: {Command}");
-            payload.FromMemoryBuffer(reader);
+            if (_payloadSize > 0)
+            {
+                var payload = CreateEmptyPayload(Command) ?? throw new InvalidDataException($"Unknown command: {Command}");
+                payload.FromMemoryBuffer(reader);
 
-            var payloadBytes = payload.ToByteArray();
-            if (payloadBytes.Length != _payloadSize)
-                throw new InvalidDataException("Invalid payload size");
+                var payloadBytes = payload.ToByteArray();
+                if (payloadBytes.Length != _payloadSize)
+                    throw new InvalidDataException("Invalid payload size");
 
-            if (_checksum != Crc32.HashToUInt32(payloadBytes))
-                throw new InvalidDataException("Invalid checksum");
+                if (_checksum != Crc32.HashToUInt32(payloadBytes))
+                    throw new InvalidDataException("Invalid checksum");
 
-            Payload = payload;
+                Payload = payload;
+            }
         }
 
         public byte[] ToByteArray()
@@ -120,6 +123,13 @@ namespace Neo.IO.Pipes.Protocols
                 return false;
             }
         }
+
+        public static NamedPipeMessage Create(NamedPipeCommand command, INamedPipeMessage payload) =>
+            new()
+            {
+                Command = command,
+                Payload = payload,
+            };
 
         private static INamedPipeMessage? CreateEmptyPayload(NamedPipeCommand command) =>
             s_commandTypes.TryGetValue(command, out var t)
