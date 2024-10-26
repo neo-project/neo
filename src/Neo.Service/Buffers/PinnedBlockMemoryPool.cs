@@ -13,7 +13,7 @@ using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 
-namespace Neo.CLI.Pipes.Buffers
+namespace Neo.Service.Buffers
 {
     internal class PinnedBlockMemoryPool : MemoryPool<byte>
     {

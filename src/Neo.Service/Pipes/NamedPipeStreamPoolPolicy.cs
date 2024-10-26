@@ -14,7 +14,7 @@ using Neo.IO.Pipes;
 using System.IO.Pipes;
 using NamedPipeOptions = System.IO.Pipes.PipeOptions;
 
-namespace Neo.CLI.Pipes
+namespace Neo.Service.Pipes
 {
     internal class NamedPipeStreamPoolPolicy(
         NamedPipeEndPoint namedPipeEndPoint,

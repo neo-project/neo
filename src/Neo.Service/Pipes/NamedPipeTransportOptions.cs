@@ -9,11 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.CLI.Pipes.Buffers;
+using Neo.Service.Buffers;
 using System;
 using System.Buffers;
 
-namespace Neo.CLI.Pipes
+namespace Neo.Service.Pipes
 {
     internal class NamedPipeTransportOptions
     {

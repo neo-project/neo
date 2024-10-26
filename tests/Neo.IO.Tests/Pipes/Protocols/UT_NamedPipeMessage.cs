@@ -30,7 +30,7 @@ namespace Neo.IO.Tests.Pipes.Protocols
     public class UT_NamedPipeMessage
     {
         [TestMethod]
-        public void ToByteArray_FromBytes()
+        public void TestToByteArrayFromBytes()
         {
             var expectedMessage = new NamedPipeMessage() { RequestId = 666, Command = NamedPipeCommand.Echo, Payload = new EchoPayload() };
             var expectedBytes = expectedMessage.ToByteArray();

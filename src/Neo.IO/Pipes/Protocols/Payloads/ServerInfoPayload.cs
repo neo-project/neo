@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Pipes.Buffers;
+using Neo.IO.Buffers;
 using System.Linq;
 using System.Net;
 
@@ -39,6 +39,7 @@ namespace Neo.IO.Pipes.Protocols.Payloads
                 Port = reader.Read<ushort>();
                 LastBlockIndex = reader.Read<uint>();
             }
+
             public byte[] ToByteArray()
             {
                 using var writer = new MemoryBuffer();

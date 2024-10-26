@@ -22,7 +22,7 @@ namespace Neo.IO.Tests.Pipes.Protocols.Payload
     public class UT_ServerInfoPayload
     {
         [TestMethod]
-        public void ToByteArray_FromBytes()
+        public void TestToByteArrayFromBytes()
         {
             var expectedPayload = new ServerInfoPayload()
             {

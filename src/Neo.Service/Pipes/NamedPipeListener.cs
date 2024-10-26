@@ -22,7 +22,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using PipeOptions = System.IO.Pipelines.PipeOptions;
 
-namespace Neo.CLI.Pipes
+namespace Neo.Service.Pipes
 {
     internal class NamedPipeListener : IAsyncDisposable
     {

@@ -14,7 +14,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Neo.IO.Pipes.Buffers
+namespace Neo.IO.Buffers
 {
     internal class MemoryBuffer : IDisposable
     {

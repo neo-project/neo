@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Pipes.Buffers;
+using Neo.IO.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +23,7 @@ namespace Neo.IO.Tests.Pipes.Buffers
     public class UT_MemoryBuffer
     {
         [TestMethod]
-        public void ReadWrite_Integers()
+        public void TestReadWriteIntegers()
         {
             using var mb = new MemoryBuffer();
             mb.Write<byte>(1);
@@ -62,7 +62,7 @@ namespace Neo.IO.Tests.Pipes.Buffers
         }
 
         [TestMethod]
-        public void ReadWrite_String()
+        public void TestReadWriteString()
         {
             using var mb = new MemoryBuffer();
             mb.WriteString("Hello, World!");
@@ -81,7 +81,7 @@ namespace Neo.IO.Tests.Pipes.Buffers
         }
 
         [TestMethod]
-        public void ReadWrite_Array()
+        public void TestReadWriteArray()
         {
             using var mb = new MemoryBuffer();
             mb.WriteArray(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 });

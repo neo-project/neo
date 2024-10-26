@@ -13,7 +13,7 @@ using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
 
-namespace Neo.CLI.Pipes.Buffers
+namespace Neo.Service.Buffers
 {
     internal class MemoryPoolBlock : IMemoryOwner<byte>
     {
@@ -37,11 +37,6 @@ namespace Neo.CLI.Pipes.Buffers
         void IDisposable.Dispose()
         {
             Pool.Return(this);
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
         }
 
         #endregion
