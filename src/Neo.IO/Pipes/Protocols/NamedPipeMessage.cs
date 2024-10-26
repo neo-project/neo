@@ -26,7 +26,6 @@ namespace Neo.IO.Pipes.Protocols
 
         public NamedPipeCommand Command { get; set; }
         public INamedPipeMessage? Payload { get; set; }
-        public int PayloadSize => Payload?.Size ?? 0;
 
         private static readonly Dictionary<NamedPipeCommand, Type> s_commandTypes = new();
 

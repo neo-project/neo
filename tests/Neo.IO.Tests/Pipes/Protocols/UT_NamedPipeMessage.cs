@@ -42,7 +42,6 @@ namespace Neo.IO.Tests.Pipes.Protocols
             Assert.IsTrue(actualResult);
             Assert.AreEqual(expectedMessage.Command, actualMessage.Command);
             Assert.AreEqual(expectedMessage.Size, actualMessage.Size);
-            Assert.AreEqual(expectedMessage.PayloadSize, actualMessage.PayloadSize);
             Assert.AreEqual(expectedMessage.Payload?.Size, actualMessage.Payload?.Size);
             Assert.AreEqual(((EchoPayload)expectedMessage.Payload)?.Message, ((EchoPayload)actualMessage.Payload)?.Message);
         }
