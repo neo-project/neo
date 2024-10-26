@@ -24,7 +24,7 @@ namespace Neo.Service.Tests.Pipes
     public class UT_NamedPipeListener
     {
         [TestMethod]
-        public async Task TestReadWriteToServer()
+        public async Task TestWriteFromClientAndReadFromServer()
         {
             var endPoint = new NamedPipeEndPoint(Path.GetRandomFileName());
             await using var listener = new NamedPipeListener(endPoint);
