@@ -37,8 +37,9 @@ namespace Neo.IO.Tests.Pipes.Protocols
             var expectedBytes = expectedMessage.ToByteArray();
 
             using var actualStream = new MemoryStream(expectedBytes);
-            var actualMessage = NamedPipeMessage.Deserialize(actualStream);
+            var actualResult = NamedPipeMessage.TryDeserialize(actualStream, out var actualMessage);
 
+            Assert.IsTrue(actualResult);
             Assert.AreEqual(expectedMessage.Command, actualMessage.Command);
             Assert.AreEqual(expectedMessage.Size, actualMessage.Size);
             Assert.AreEqual(expectedMessage.PayloadSize, actualMessage.PayloadSize);
