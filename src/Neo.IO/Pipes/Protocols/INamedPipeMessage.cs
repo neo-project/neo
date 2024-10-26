@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO.Buffers;
+using System.IO;
 
 namespace Neo.IO.Pipes.Protocols
 {
@@ -17,7 +18,7 @@ namespace Neo.IO.Pipes.Protocols
     {
         public int Size { get; }
 
-        public void FromBytes(byte[] buffer);
+        public void FromStream(Stream stream);
         public void FromMemoryBuffer(MemoryBuffer reader);
         public byte[] ToByteArray();
     }

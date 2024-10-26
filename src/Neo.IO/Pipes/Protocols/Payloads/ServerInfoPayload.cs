@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO.Buffers;
+using System.IO;
 using System.Linq;
 using System.Net;
 
@@ -28,11 +29,12 @@ namespace Neo.IO.Pipes.Protocols.Payloads
                 sizeof(ushort) +                           // Port
                 sizeof(uint);                              // LastBlockIndex
 
-            public void FromBytes(byte[] buffer)
+            public void FromStream(Stream stream)
             {
-                using var reader = new MemoryBuffer(buffer);
+                using var reader = new MemoryBuffer(stream);
                 FromMemoryBuffer(reader);
             }
+
             public void FromMemoryBuffer(MemoryBuffer reader)
             {
                 Address = IPAddress.Parse(reader.ReadString());
@@ -42,11 +44,12 @@ namespace Neo.IO.Pipes.Protocols.Payloads
 
             public byte[] ToByteArray()
             {
-                using var writer = new MemoryBuffer();
+                using var ms = new MemoryStream();
+                using var writer = new MemoryBuffer(ms);
                 writer.WriteString($"{Address}");
                 writer.Write(Port);
                 writer.Write(LastBlockIndex);
-                return writer.ToArray();
+                return ms.ToArray();
             }
         }
 
@@ -69,9 +72,9 @@ namespace Neo.IO.Pipes.Protocols.Payloads
             sizeof(uint) +                               // RemoteNodes.Length
             RemoteNodes.Sum(s => sizeof(int) + s.Size);  // RemoteNodes
 
-        public void FromBytes(byte[] buffer)
+        public void FromStream(Stream stream)
         {
-            using var reader = new MemoryBuffer(buffer);
+            using var reader = new MemoryBuffer(stream);
             FromMemoryBuffer(reader);
         }
 
@@ -89,14 +92,17 @@ namespace Neo.IO.Pipes.Protocols.Payloads
             for (var i = 0; i < RemoteNodes.Length; i++)
             {
                 var bytes = reader.ReadArray<byte>();
+                using var ms = new MemoryStream(bytes);
+                using var mb = new MemoryBuffer(ms);
                 RemoteNodes[i] = new RemoteConnectedClient();
-                RemoteNodes[i].FromBytes(bytes);
+                RemoteNodes[i].FromMemoryBuffer(mb);
             }
         }
 
         public byte[] ToByteArray()
         {
-            using var writer = new MemoryBuffer();
+            using var ms = new MemoryStream();
+            using var writer = new MemoryBuffer(ms);
             writer.Write(Nonce);
             writer.Write(Version);
             writer.WriteString($"{Address}");
@@ -106,7 +112,7 @@ namespace Neo.IO.Pipes.Protocols.Payloads
             writer.Write(RemoteNodes.Length);
             foreach (var node in RemoteNodes)
                 writer.WriteArray(node.ToByteArray());
-            return writer.ToArray();
+            return ms.ToArray();
         }
     }
 }

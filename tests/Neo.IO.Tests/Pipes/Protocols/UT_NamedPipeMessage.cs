@@ -20,6 +20,7 @@ using Neo.IO.Tests.Pipes.Protocols;
 using Neo.IO.Tests.Pipes.Protocols.Payload;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,12 +31,13 @@ namespace Neo.IO.Tests.Pipes.Protocols
     public class UT_NamedPipeMessage
     {
         [TestMethod]
-        public void TestToByteArrayFromBytes()
+        public void TestToByteArrayFromStream()
         {
-            var expectedMessage = new NamedPipeMessage() { Command = NamedPipeCommand.Echo, Payload = new EchoPayload() };
+            var expectedMessage = new NamedPipeMessage() { Command = NamedPipeCommand.Echo, Payload = new EchoPayload() { Message = "Hello World" } };
             var expectedBytes = expectedMessage.ToByteArray();
 
-            var actualMessage = NamedPipeMessage.Deserialize(expectedBytes);
+            using var actualStream = new MemoryStream(expectedBytes);
+            var actualMessage = NamedPipeMessage.Deserialize(actualStream);
 
             Assert.AreEqual(expectedMessage.Command, actualMessage.Command);
             Assert.AreEqual(expectedMessage.Size, actualMessage.Size);

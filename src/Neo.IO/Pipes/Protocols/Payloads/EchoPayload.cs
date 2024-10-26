@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO.Buffers;
+using System.IO;
 
 namespace Neo.IO.Pipes.Protocols.Payloads
 {
@@ -20,9 +21,9 @@ namespace Neo.IO.Pipes.Protocols.Payloads
         public int Size =>
             MemoryBuffer.GetStringSize(Message);
 
-        public void FromBytes(byte[] buffer)
+        public void FromStream(Stream stream)
         {
-            using var reader = new MemoryBuffer(buffer);
+            using var reader = new MemoryBuffer(stream);
             FromMemoryBuffer(reader);
         }
 
@@ -35,10 +36,11 @@ namespace Neo.IO.Pipes.Protocols.Payloads
 
         public byte[] ToByteArray()
         {
-            using var writer = new MemoryBuffer();
+            using var ms = new MemoryStream();
+            using var writer = new MemoryBuffer(ms);
             if (string.IsNullOrEmpty(Message) == false)
                 writer.WriteString(Message);
-            return writer.ToArray();
+            return ms.ToArray();
         }
     }
 }

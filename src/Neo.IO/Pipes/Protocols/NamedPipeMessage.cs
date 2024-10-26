@@ -51,9 +51,9 @@ namespace Neo.IO.Pipes.Protocols
             }
         }
 
-        public void FromBytes(byte[] buffer)
+        public void FromStream(Stream stream)
         {
-            using var reader = new MemoryBuffer(buffer);
+            using var reader = new MemoryBuffer(stream);
             FromMemoryBuffer(reader);
         }
 
@@ -89,7 +89,8 @@ namespace Neo.IO.Pipes.Protocols
             if (Payload is null)
                 throw new InvalidDataException("Payload is not set");
 
-            using var writer = new MemoryBuffer();
+            using var ms = new MemoryStream();
+            using var writer = new MemoryBuffer(ms);
             var bytes = Payload.ToByteArray();
 
             _checksum = Crc32.HashToUInt32(bytes);
@@ -101,14 +102,14 @@ namespace Neo.IO.Pipes.Protocols
             writer.Write(bytes.Length);
             writer.WriteRaw(bytes);
 
-            return writer.ToArray();
+            return ms.ToArray();
         }
 
-        public static NamedPipeMessage Deserialize(byte[] buffer)
+        public static NamedPipeMessage Deserialize(Stream stream)
         {
-            var message = new NamedPipeMessage();
-            message.FromBytes(buffer);
-            return message;
+            var m = new NamedPipeMessage();
+            m.FromStream(stream);
+            return m;
         }
 
         private static INamedPipeMessage? CreateEmptyPayload(NamedPipeCommand command) =>

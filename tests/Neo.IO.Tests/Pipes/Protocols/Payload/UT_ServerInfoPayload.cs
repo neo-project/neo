@@ -12,6 +12,7 @@
 using Neo.IO.Pipes.Protocols.Payloads;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace Neo.IO.Tests.Pipes.Protocols.Payload
     public class UT_ServerInfoPayload
     {
         [TestMethod]
-        public void TestToByteArrayFromBytes()
+        public void TestToByteArrayFromStream()
         {
             var expectedPayload = new ServerInfoPayload()
             {
@@ -42,7 +43,8 @@ namespace Neo.IO.Tests.Pipes.Protocols.Payload
             };
             var expectedBytes = expectedPayload.ToByteArray();
             var actualPayload = new ServerInfoPayload();
-            actualPayload.FromBytes(expectedBytes);
+            using var actualStream = new MemoryStream(expectedBytes);
+            actualPayload.FromStream(actualStream);
 
             Assert.AreEqual(expectedPayload.Size, actualPayload.Size);
             Assert.AreEqual(expectedPayload.Nonce, actualPayload.Nonce);

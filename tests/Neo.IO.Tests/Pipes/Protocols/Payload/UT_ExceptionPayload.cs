@@ -9,9 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.IO.Buffers;
 using Neo.IO.Pipes.Protocols.Payloads;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +24,7 @@ namespace Neo.IO.Tests.Pipes.Protocols.Payload
     public class UT_ExceptionPayload
     {
         [TestMethod]
-        public void TestToByteArrayFromBytes()
+        public void TestToByteArrayFromStream()
         {
             var expected = new ExceptionPayload()
             {
@@ -33,7 +35,8 @@ namespace Neo.IO.Tests.Pipes.Protocols.Payload
             };
             var expectedBytes = expected.ToByteArray();
             var actual = new ExceptionPayload();
-            actual.FromBytes(expectedBytes);
+            using var actualStream = new MemoryStream(expectedBytes);
+            actual.FromStream(actualStream);
 
             Assert.AreEqual(expected.Size, actual.Size);
             Assert.AreEqual(expected.HResult, actual.HResult);

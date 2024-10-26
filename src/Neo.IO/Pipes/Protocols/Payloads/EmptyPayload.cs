@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO.Buffers;
+using System.IO;
 
 namespace Neo.IO.Pipes.Protocols.Payloads
 {
@@ -17,7 +18,7 @@ namespace Neo.IO.Pipes.Protocols.Payloads
     {
         public int Size => 0;
 
-        public void FromBytes(byte[] buffer)
+        public void FromStream(Stream stream)
         {
 
         }

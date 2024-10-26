@@ -20,28 +20,23 @@ namespace Neo.IO.Buffers
     {
         private static readonly UTF8Encoding s_utf8NoBom = new(false, true);
 
-        private readonly MemoryStream _ms;
+        private readonly Stream _stream;
 
         public void Dispose()
         {
-            _ms.Dispose();
+            _stream.Dispose();
         }
 
-        public MemoryBuffer()
+        public MemoryBuffer(Stream stream)
         {
-            _ms = new();
-        }
-
-        public MemoryBuffer(byte[] buffer)
-        {
-            _ms = new(buffer);
+            _stream = stream;
         }
 
         public void WriteRaw(byte[] buffer) =>
-            _ms.Write(buffer, 0, buffer.Length);
+            _stream.Write(buffer, 0, buffer.Length);
 
         public void ReadRaw(byte[] buffer) =>
-            _ms.Read(buffer, 0, buffer.Length);
+            _stream.Read(buffer, 0, buffer.Length);
 
         public void Write<T>(T value)
             where T : unmanaged
@@ -54,7 +49,7 @@ namespace Neo.IO.Buffers
 
             Unsafe.As<byte, T>(ref buffer[0]) = value;
 
-            _ms.Write(buffer, 0, size);
+            _stream.Write(buffer, 0, size);
         }
 
         public void WriteArray<T>(T[] array)
@@ -74,7 +69,7 @@ namespace Neo.IO.Buffers
             Write(strByteCount);
 
             var buffer = s_utf8NoBom.GetBytes(value);
-            _ms.Write(buffer, 0, buffer.Length);
+            _stream.Write(buffer, 0, buffer.Length);
         }
 
         public T Read<T>()
@@ -86,7 +81,7 @@ namespace Neo.IO.Buffers
             var size = Unsafe.SizeOf<T>();
             var buffer = new byte[size];
 
-            _ms.Read(buffer, 0, size);
+            _stream.Read(buffer, 0, size);
 
             return Unsafe.As<byte, T>(ref buffer[0]);
         }
@@ -108,12 +103,9 @@ namespace Neo.IO.Buffers
         {
             var strByteCount = Read<int>();
             var buffer = new byte[strByteCount];
-            _ms.Read(buffer, 0, strByteCount);
+            _stream.Read(buffer, 0, strByteCount);
             return s_utf8NoBom.GetString(buffer);
         }
-
-        public byte[] ToArray() =>
-            _ms.ToArray();
 
         public static int GetSize<T>()
             where T : unmanaged

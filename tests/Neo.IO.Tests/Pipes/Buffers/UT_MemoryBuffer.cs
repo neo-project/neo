@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Buffers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,7 +26,8 @@ namespace Neo.IO.Tests.Pipes.Buffers
         [TestMethod]
         public void TestReadWriteIntegers()
         {
-            using var mb = new MemoryBuffer();
+            using var ms = new MemoryStream();
+            using var mb = new MemoryBuffer(ms);
             mb.Write<byte>(1);
             mb.Write<sbyte>(2);
             mb.Write<short>(3);
@@ -47,8 +49,9 @@ namespace Neo.IO.Tests.Pipes.Buffers
                 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             };
 
-            var actualBytes = mb.ToArray();
-            using var actualBuffer = new MemoryBuffer(actualBytes);
+            var actualBytes = ms.ToArray();
+            using var actualStream = new MemoryStream(actualBytes);
+            using var actualBuffer = new MemoryBuffer(actualStream);
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(1, actualBuffer.Read<byte>());
@@ -64,7 +67,8 @@ namespace Neo.IO.Tests.Pipes.Buffers
         [TestMethod]
         public void TestReadWriteString()
         {
-            using var mb = new MemoryBuffer();
+            using var ms = new MemoryStream();
+            using var mb = new MemoryBuffer(ms);
             mb.WriteString("Hello, World!");
 
             var expectedString = "Hello, World!";
@@ -73,8 +77,9 @@ namespace Neo.IO.Tests.Pipes.Buffers
                 .. BitConverter.GetBytes(Encoding.UTF8.GetByteCount(expectedString)),
                 .. Encoding.UTF8.GetBytes(expectedString)
             ];
-            var actualBytes = mb.ToArray();
-            using var actualBuffer = new MemoryBuffer(actualBytes);
+            var actualBytes = ms.ToArray();
+            using var actualStream = new MemoryStream();
+            using var actualBuffer = new MemoryBuffer(actualStream);
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
             Assert.AreEqual(expectedString, actualBuffer.ReadString());
@@ -83,7 +88,8 @@ namespace Neo.IO.Tests.Pipes.Buffers
         [TestMethod]
         public void TestReadWriteArray()
         {
-            using var mb = new MemoryBuffer();
+            using var ms = new MemoryStream();
+            using var mb = new MemoryBuffer(ms);
             mb.WriteArray(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 });
 
             var expectedArray = new byte[]
@@ -95,8 +101,9 @@ namespace Neo.IO.Tests.Pipes.Buffers
                 0x04,
                 0x05
             };
-            var actualArray = mb.ToArray();
-            using var actualBuffer = new MemoryBuffer(actualArray);
+            var actualArray = ms.ToArray();
+            using var actualStream = new MemoryStream();
+            using var actualBuffer = new MemoryBuffer(actualStream);
 
             CollectionAssert.AreEqual(expectedArray, actualArray);
             CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 }, actualBuffer.ReadArray<byte>());

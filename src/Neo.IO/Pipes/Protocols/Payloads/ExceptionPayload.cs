@@ -11,6 +11,7 @@
 
 using Neo.IO.Buffers;
 using System;
+using System.IO;
 
 namespace Neo.IO.Pipes.Protocols.Payloads
 {
@@ -36,9 +37,9 @@ namespace Neo.IO.Pipes.Protocols.Payloads
                 StackTrace = ex.StackTrace ?? string.Empty
             };
 
-        public void FromBytes(byte[] buffer)
+        public void FromStream(Stream stream)
         {
-            using var reader = new MemoryBuffer(buffer);
+            using var reader = new MemoryBuffer(stream);
             FromMemoryBuffer(reader);
         }
 
@@ -61,7 +62,8 @@ namespace Neo.IO.Pipes.Protocols.Payloads
 
         public byte[] ToByteArray()
         {
-            using var writer = new MemoryBuffer();
+            using var ms = new MemoryStream();
+            using var writer = new MemoryBuffer(ms);
             writer.Write(HResult);
 
             if (string.IsNullOrEmpty(ExceptionName) == false)
@@ -73,7 +75,7 @@ namespace Neo.IO.Pipes.Protocols.Payloads
             if (string.IsNullOrEmpty(StackTrace) == false)
                 writer.WriteString(StackTrace);
 
-            return writer.ToArray();
+            return ms.ToArray();
         }
     }
 }
