@@ -27,8 +27,11 @@ namespace Neo.Service
             var parser = new CommandLineBuilder(rootCommand)
                 .UseHost(builder =>
                 {
+                    // WARNING: DO NOT CHANGE ORDER
                     builder.UseNeoAppConfiguration();
                     builder.UseNeoHostConfiguration();
+                    builder.UseNeoConfigFile();
+                    builder.AddDefaultServices();
 
                     // Command handlers below <Here>
                     builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();

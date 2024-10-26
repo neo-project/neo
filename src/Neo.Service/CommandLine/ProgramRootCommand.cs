@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Threading.Tasks;
@@ -17,16 +18,15 @@ namespace Neo.Service.CommandLine
 {
     internal class ProgramRootCommand : RootCommand
     {
-        public ProgramRootCommand() : base("Neo Windows / Systemd Service")
+        public ProgramRootCommand() : base("Neo N3 Command-Line Tool")
         {
 
         }
 
-        public new class Handler : ICommandHandler
+        public new class Handler(
+            ILogger<Handler> logger) : ICommandHandler
         {
-            public Handler()
-            {
-            }
+            private readonly ILogger _logger = logger;
 
             public int Invoke(InvocationContext context)
             {
@@ -36,6 +36,7 @@ namespace Neo.Service.CommandLine
             public Task<int> InvokeAsync(InvocationContext context)
             {
                 context.Console.WriteLine("Hello World!");
+                _logger.LogInformation("Hello World!");
 
                 return Task.FromResult(0);
             }
