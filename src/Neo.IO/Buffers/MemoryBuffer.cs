@@ -21,15 +21,18 @@ namespace Neo.IO.Buffers
         private static readonly UTF8Encoding s_utf8NoBom = new(false, true);
 
         private readonly Stream _stream;
+        private readonly bool _leaveOpen;
 
         public void Dispose()
         {
-            _stream.Dispose();
+            if (_leaveOpen == false)
+                _stream.Dispose();
         }
 
-        public MemoryBuffer(Stream stream)
+        public MemoryBuffer(Stream stream, bool leaveOpen = true)
         {
             _stream = stream;
+            _leaveOpen = leaveOpen;
         }
 
         public void WriteRaw(byte[] buffer) =>
@@ -63,8 +66,11 @@ namespace Neo.IO.Buffers
                 Write(item);
         }
 
-        public void WriteString(string value)
+        public void WriteString(string? value)
         {
+            if (string.IsNullOrEmpty(value))
+                value = string.Empty;
+
             var strByteCount = s_utf8NoBom.GetByteCount(value);
             Write(strByteCount);
 

@@ -11,9 +11,12 @@
 
 using Akka.Actor;
 using Microsoft.Extensions.Logging;
-using Neo.IO.Pipes.Protocols;
+using Neo.IO.Buffers;
 using Neo.Network.P2P;
+using Neo.Service.CommandLine;
 using System;
+using System.CommandLine.Builder;
+using System.CommandLine.Parsing;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,8 +33,6 @@ namespace Neo.Service.Pipes.Messaging
         private readonly LocalNode _localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
 
         private readonly ILogger _logger = logger;
-        private readonly Stream _input = connection.Transport.Input.AsStream();
-        private readonly Stream _output = connection.Transport.Output.AsStream();
 
         public ValueTask DisposeAsync()
         {
@@ -44,37 +45,31 @@ namespace Neo.Service.Pipes.Messaging
         {
             _logger.LogInformation("Connection has started.");
 
-            try
-            {
-                if (_input.CanRead == false)
-                    throw new IOException("Input stream of connection can't be read.");
-
-                if (_output.CanWrite == false)
-                    throw new IOException("Output stream of connection can't be written to.");
-
-                _ = ProcessReceive();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
-            }
+            _ = ProcessReceive();
         }
 
         private async Task ProcessReceive()
         {
             try
             {
-                if (NamedPipeMessage.TryDeserialize(_input, out var message))
-                {
-                    switch (message.Command)
-                    {
-                        case NamedPipeCommand.Exception:
-                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.Exception)}");
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                var input = _connection.Transport.Input.AsStream();
+                var output = _connection.Transport.Output.AsStream();
+
+                if (input.CanRead == false)
+                    throw new IOException("Input stream of connection can't be read.");
+
+                if (output.CanWrite == false)
+                    throw new IOException("Output stream of connection can't be written to.");
+
+                using var reader = new MemoryBuffer(input);
+                var commands = reader.ReadString();
+
+                var rootCommand = new ProgramRootCommand();
+                var parser = new CommandLineBuilder(rootCommand)
+                    .UseDefaults()
+                    .Build();
+
+                await parser.InvokeAsync(commands, new NamedPipeConsole(output));
             }
             catch (Exception ex)
             {

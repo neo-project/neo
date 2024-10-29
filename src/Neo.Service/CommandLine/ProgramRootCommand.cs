@@ -31,7 +31,7 @@ namespace Neo.Service.CommandLine
 
             public async Task<int> InvokeAsync(InvocationContext context)
             {
-                await Task.Delay(10000);
+                context.Console.WriteLine("Hello World!");
 
                 return 0;
             }
