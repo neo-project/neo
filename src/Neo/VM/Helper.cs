@@ -364,7 +364,7 @@ namespace Neo.VM
             {
                 case Array array:
                     {
-                        context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
+                        context ??= new(ReferenceEqualityComparer.Instance);
                         if (!context.Add(array)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
                         JArray a = new();
@@ -398,7 +398,7 @@ namespace Neo.VM
                     }
                 case Map map:
                     {
-                        context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
+                        context ??= new(ReferenceEqualityComparer.Instance);
                         if (!context.Add(map)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (map.Count - 1))/*,*/;
                         JArray a = new();
