@@ -164,14 +164,12 @@ namespace Neo.SmartContract
                     case ContractParameterType.Array:
                         context ??= [];
                         if (!context.Add(parameter)) throw new InvalidOperationException("Circular reference.");
-                        context.Add(parameter);
                         json["value"] = new JArray(((IList<ContractParameter>)parameter.Value).Select(p => ToJson(p, context)));
                         if (!context.Remove(parameter)) throw new InvalidOperationException("Circular reference.");
                         break;
                     case ContractParameterType.Map:
                         context ??= [];
                         if (!context.Add(parameter)) throw new InvalidOperationException("Circular reference.");
-                        context.Add(parameter);
                         json["value"] = new JArray(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Select(p =>
                         {
                             JObject item = new();
