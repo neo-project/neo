@@ -9,23 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Pipes.Protocols;
-using Neo.IO.Pipes.Protocols.Payloads;
-
 namespace Neo.Service.Pipes.Messaging
 {
     internal partial class ConsoleMessageProtocol
     {
-        public void Write(string? value)
-        {
-            var response = NamedPipeMessage.Create(NamedPipeCommand.Write, new StringPayload() { Value = value });
-            _output.Write(response.ToByteArray());
-        }
-
-        public void WriteLine(string? value)
-        {
-            var response = NamedPipeMessage.Create(NamedPipeCommand.WriteLine, new StringPayload() { Value = value });
-            _output.Write(response.ToByteArray());
-        }
     }
 }

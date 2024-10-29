@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Neo.Service.Hosting;
 using System;
 using System.IO;
 
@@ -45,7 +46,7 @@ namespace Neo.Service.Extensions
                 // Set location: %ApplicationPath%
                 builder.SetBasePath(AppContext.BaseDirectory);
                 // "config.json" settings **FILE MUST EXIST**
-                builder.AddJsonFile("config.json", optional: false);
+                builder.AddJsonFile(NeoDefaults.ConfigurationFileName, optional: false);
             }
             catch (FileNotFoundException)
             {

@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging.Debug;
 using Neo.IO.Pipes;
 using Neo.Service.Configuration;
 using Neo.Service.Hosting;
+using Neo.Service.Hosting.Services;
 using Neo.Service.Pipes;
 using System;
 using System.CommandLine.Hosting;
@@ -81,8 +82,7 @@ namespace Neo.Service.Extensions
 
                 services.TryAddSingleton(endPoint);
                 services.TryAddSingleton<NamedPipeListener>();
-
-
+                services.AddHostedService<NamedPipeService>();
             });
             return hostBuilder;
         }
@@ -97,7 +97,7 @@ namespace Neo.Service.Extensions
                 services.TryAddSingleton(protocolSettings);
 
                 var applicationSection = context.Configuration
-                    .GetRequiredSection("ApplicationConfiguration")
+                    .GetRequiredSection(NeoConfigurationSectionNames.ApplicationConfiguration)
                     .GetRequiredSection("Storage");
                 var storageOptions = applicationSection.Get<StorageOptions>();
 
@@ -117,7 +117,7 @@ namespace Neo.Service.Extensions
             return hostBuilder;
         }
 
-        public static IHostBuilder AddDefaultServices(this IHostBuilder hostBuilder)
+        public static IHostBuilder UseDefaultServices(this IHostBuilder hostBuilder)
         {
             hostBuilder.ConfigureServices((context, services) =>
             {

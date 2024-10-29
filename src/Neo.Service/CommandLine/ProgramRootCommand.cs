@@ -9,15 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Service.Extensions;
-using Neo.Service.Hosting;
 using System;
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Service.CommandLine
@@ -37,49 +31,9 @@ namespace Neo.Service.CommandLine
 
             public async Task<int> InvokeAsync(InvocationContext context)
             {
-                var stoppingToken = context.GetCancellationToken();
-                var host = context.GetHost();
+                await Task.Delay(10000);
 
-                return await RunConsolePrompt(context, stoppingToken);
-            }
-
-            private static void PrintPrompt(IConsole console)
-            {
-                console.SetTerminalForegroundColor(ConsoleColor.Green);
-                console.Write($"{NeoDefaults.ConsolePromptName} ");
-                console.SetTerminalForegroundColor(ConsoleColor.White);
-                console.ResetColor();
-            }
-
-            private async Task<int> RunConsolePrompt(
-                InvocationContext context,
-                CancellationToken cancellationToken)
-            {
-                context.Console.Clear();
-
-                var rootCommand = new RootCommand();
-                var parser = new CommandLineBuilder(rootCommand)
-                    .UseParseErrorReporting()
-                    .Build();
-
-                var exitCode = 0;
-
-                while (cancellationToken.IsCancellationRequested == false)
-                {
-                    PrintPrompt(context.Console);
-
-                    var line = context.Console.ReadLine()?.Trim();
-
-                    if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    exitCode = await parser.InvokeAsync(line, context.Console);
-
-                    if (exitCode < 0)
-                        break;
-                }
-
-                return exitCode;
+                return 0;
             }
         }
     }

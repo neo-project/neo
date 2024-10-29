@@ -9,10 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Microsoft.Extensions.Logging;
 using Neo.IO.Pipes.Protocols;
+using Neo.Network.P2P;
 using System;
-using System.CommandLine.IO;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,14 +22,14 @@ namespace Neo.Service.Pipes.Messaging
 {
     internal partial class ConsoleMessageProtocol(
         NamedPipeConnection connection,
-        ILogger<ConsoleMessageProtocol> logger) : IThreadPoolWorkItem, IAsyncDisposable, IStandardStreamWriter
+        NeoSystem neoSystem,
+        ILogger logger) : IThreadPoolWorkItem, IAsyncDisposable
     {
         private readonly NamedPipeConnection _connection = connection;
-        //private readonly NeoSystem _neoSystem = neoSystem;
-        //private readonly NeoOptions _options = options;
-        //private readonly LocalNode _localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
+        private readonly NeoSystem _neoSystem = neoSystem;
+        private readonly LocalNode _localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
 
-        private readonly ILogger<ConsoleMessageProtocol> _logger = logger;
+        private readonly ILogger _logger = logger;
         private readonly Stream _input = connection.Transport.Input.AsStream();
         private readonly Stream _output = connection.Transport.Output.AsStream();
 
@@ -43,13 +44,20 @@ namespace Neo.Service.Pipes.Messaging
         {
             _logger.LogInformation("Connection has started.");
 
-            if (_input.CanRead == false)
-                throw new IOException("Input stream of connection can't be read.");
+            try
+            {
+                if (_input.CanRead == false)
+                    throw new IOException("Input stream of connection can't be read.");
 
-            if (_output.CanWrite == false)
-                throw new IOException("Output stream of connection can't be written to.");
+                if (_output.CanWrite == false)
+                    throw new IOException("Output stream of connection can't be written to.");
 
-            _ = ProcessReceive();
+                _ = ProcessReceive();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+            }
         }
 
         private async Task ProcessReceive()
@@ -60,8 +68,8 @@ namespace Neo.Service.Pipes.Messaging
                 {
                     switch (message.Command)
                     {
-                        case NamedPipeCommand.Test:
-                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.Test)}");
+                        case NamedPipeCommand.Exception:
+                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.Exception)}");
                             break;
                         default:
                             break;

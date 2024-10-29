@@ -31,7 +31,7 @@ namespace Neo.Service
                     builder.UseNeoAppConfiguration();
                     builder.UseNeoHostConfiguration();
                     builder.UseNeoConfigFile();
-                    builder.AddDefaultServices();
+                    builder.UseDefaultServices();
                     builder.UseNeoSystem();
                     builder.UseNamedPipes();
 
