@@ -371,6 +371,7 @@ namespace Neo.VM
                         foreach (StackItem stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
+                        context.Remove(array);
                         break;
                     }
                 case Boolean boolean:
@@ -412,6 +413,7 @@ namespace Neo.VM
                             a.Add(i);
                         }
                         value = a;
+                        context.Remove(map);
                         break;
                     }
                 case Pointer pointer:
