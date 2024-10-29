@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// SimpleMessageProtocol.Methods.cs file belongs to the neo project and is free
+// QuitCommand.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,19 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Pipes.Protocols.Payloads;
+using System.CommandLine;
 
-namespace Neo.Service.Pipes.Messaging
+namespace Neo.Service.Commands.Prompt
 {
-    internal partial class SimpleMessageProtocol
+    internal sealed class QuitCommand : Command
     {
-        public StringPayload GetTestData()
+        public QuitCommand() : base("quit", $"Exit application.")
         {
-            var payload = new StringPayload()
-            {
-                Value = "Hello World!",
-            };
-            return payload;
+            AddAlias("exit");
+            this.SetHandler(context => context.ExitCode = -1);
         }
     }
 }

@@ -57,5 +57,8 @@ namespace Neo.IO.Pipes.Protocols
 
         [NamedPipeCommand(typeof(Payloads.PromptPayload))]
         Prompt = 0xf3,
+
+        [NamedPipeCommand(typeof(Payloads.StringPayload))]
+        Invoke = 0xf4,
     }
 }

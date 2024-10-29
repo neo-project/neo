@@ -9,16 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Hosting.Systemd;
-using Microsoft.Extensions.Hosting.WindowsServices;
-using Microsoft.Extensions.Logging;
-using Neo.Service.Configuration;
 using Neo.Service.Extensions;
-using Neo.Service.Pipes;
-using Neo.Service.Pipes.Messaging;
+using Neo.Service.Hosting;
 using System;
 using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,22 +26,10 @@ namespace Neo.Service.CommandLine
     {
         public ProgramRootCommand() : base("Neo N3 Command-Line Tool")
         {
-            var serviceOption = new Option<bool>(["--run-as-service", "-rS"])
-            {
-                IsHidden = true,
-            };
-
-            AddOption(serviceOption);
         }
 
-        public new class Handler(
-            NamedPipeListener listener,
-            NeoSystem neoSystem,
-            NeoOptions options,
-            ILogger<SimpleMessageProtocol> logger) : ICommandHandler
+        public new sealed class Handler : ICommandHandler
         {
-            public bool AsService { get; set; }
-
             public int Invoke(InvocationContext context)
             {
                 throw new NotImplementedException();
@@ -52,45 +38,48 @@ namespace Neo.Service.CommandLine
             public async Task<int> InvokeAsync(InvocationContext context)
             {
                 var stoppingToken = context.GetCancellationToken();
+                var host = context.GetHost();
 
-                if (SystemdHelpers.IsSystemdService() ||
-                    WindowsServiceHelpers.IsWindowsService() ||
-                    AsService)
-                {
-                    // This wait for NamedPipe connections
-                    return await WaitForConnections(context.Console, stoppingToken);
-                }
-
-                // TODO: add client
-
-                return 0;
+                return await RunConsolePrompt(context, stoppingToken);
             }
 
-            private async Task<int> WaitForConnections(IConsole console, CancellationToken cancellationToken)
+            private static void PrintPrompt(IConsole console)
             {
-                listener.Start();
-                logger.LogInformation("Started.");
+                console.SetTerminalForegroundColor(ConsoleColor.Green);
+                console.Write($"{NeoDefaults.ConsolePromptName} ");
+                console.SetTerminalForegroundColor(ConsoleColor.White);
+                console.ResetColor();
+            }
+
+            private async Task<int> RunConsolePrompt(
+                InvocationContext context,
+                CancellationToken cancellationToken)
+            {
+                context.Console.Clear();
+
+                var rootCommand = new RootCommand();
+                var parser = new CommandLineBuilder(rootCommand)
+                    .UseParseErrorReporting()
+                    .Build();
+
+                var exitCode = 0;
 
                 while (cancellationToken.IsCancellationRequested == false)
                 {
-                    try
-                    {
-                        var conn = await listener.AcceptAsync(cancellationToken);
+                    PrintPrompt(context.Console);
 
-                        if (conn is null)
-                            break;
+                    var line = context.Console.ReadLine()?.Trim();
 
-                        var protocolThread = new SimpleMessageProtocol(conn, neoSystem, options, logger);
-                        ThreadPool.UnsafeQueueUserWorkItem(protocolThread, preferLocal: false);
-                    }
-                    catch (Exception ex)
-                    {
-                        console.ErrorMessage(ex.Message);
-                        return ex.HResult;
-                    }
+                    if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    exitCode = await parser.InvokeAsync(line, context.Console);
+
+                    if (exitCode < 0)
+                        break;
                 }
 
-                return 0;
+                return exitCode;
             }
         }
     }
