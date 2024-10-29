@@ -371,7 +371,7 @@ namespace Neo.VM
                         foreach (StackItem stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
-                        context.Remove(array);
+                        if (!context.Remove(array)) throw new InvalidOperationException("Circular reference.");
                         break;
                     }
                 case Boolean boolean:
@@ -413,7 +413,7 @@ namespace Neo.VM
                             a.Add(i);
                         }
                         value = a;
-                        context.Remove(map);
+                        if (!context.Remove(map)) throw new InvalidOperationException("Circular reference.");
                         break;
                     }
                 case Pointer pointer:
