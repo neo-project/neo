@@ -27,6 +27,9 @@ namespace Neo.Service
             var parser = new CommandLineBuilder(rootCommand)
                 .UseHost(builder =>
                 {
+                    var context = builder.GetInvocationContext();
+                    context.Console = new NamedPipeConsole();
+
                     // WARNING: DO NOT CHANGE ORDER
                     builder.UseNeoAppConfiguration();
                     builder.UseNeoHostConfiguration();
@@ -42,7 +45,6 @@ namespace Neo.Service
                     builder.UseWindowsService();
                 })
                 .UseDefaults()
-                .CancelOnProcessTermination()
                 .Build();
 
             return await parser.InvokeAsync(args);

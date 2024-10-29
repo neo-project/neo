@@ -33,7 +33,7 @@ namespace Neo.IO.Tests.Pipes.Protocols
         [TestMethod]
         public void TestToByteArrayFromStream()
         {
-            var expectedMessage = new NamedPipeMessage() { Command = NamedPipeCommand.Echo, Payload = new EchoPayload() { Message = "Hello World" } };
+            var expectedMessage = new NamedPipeMessage() { Command = NamedPipeCommand.Write, Payload = new StringPayload() { Value = "Hello World" } };
             var expectedBytes = expectedMessage.ToByteArray();
 
             using var actualStream = new MemoryStream(expectedBytes);
@@ -43,7 +43,7 @@ namespace Neo.IO.Tests.Pipes.Protocols
             Assert.AreEqual(expectedMessage.Command, actualMessage.Command);
             Assert.AreEqual(expectedMessage.Size, actualMessage.Size);
             Assert.AreEqual(expectedMessage.Payload?.Size, actualMessage.Payload?.Size);
-            Assert.AreEqual(((EchoPayload)expectedMessage.Payload)?.Message, ((EchoPayload)actualMessage.Payload)?.Message);
+            Assert.AreEqual(((StringPayload)expectedMessage.Payload)?.Value, ((StringPayload)actualMessage.Payload)?.Value);
         }
     }
 }

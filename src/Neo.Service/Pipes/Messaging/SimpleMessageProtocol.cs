@@ -64,14 +64,10 @@ namespace Neo.Service.Pipes.Messaging
                 {
                     switch (message.Command)
                     {
-                        case NamedPipeCommand.Echo:
-                            await output.WriteAsync(message.ToByteArray());
-                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.Echo)}");
-                            break;
-                        case NamedPipeCommand.ServerInfo:
-                            var response = NamedPipeMessage.Create(NamedPipeCommand.ServerInfo, GetServerInfo());
+                        case NamedPipeCommand.Test:
+                            var response = NamedPipeMessage.Create(NamedPipeCommand.Test, GetTestData());
                             await output.WriteAsync(response.ToByteArray());
-                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.ServerInfo)}");
+                            _logger.LogInformation($"Received: {nameof(NamedPipeCommand.Test)}");
                             break;
                         default:
                             break;

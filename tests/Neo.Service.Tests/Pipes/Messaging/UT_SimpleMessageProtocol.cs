@@ -32,7 +32,7 @@ namespace Neo.Service.Tests.Pipes.Messaging
     public class UT_SimpleMessageProtocol
     {
         [TestMethod]
-        public async Task TestEchoMessage()
+        public async Task TestProtocolMessage()
         {
             using var neoSystem = new NeoSystem(TestProtocolSettings.Default, nameof(MemoryStore));
             var endPoint = new NamedPipeEndPoint(Path.GetRandomFileName());
@@ -47,52 +47,18 @@ namespace Neo.Service.Tests.Pipes.Messaging
             await using var protocol = new SimpleMessageProtocol(conn, neoSystem, new(), NullLogger<SimpleMessageProtocol>.Instance);
             ThreadPool.UnsafeQueueUserWorkItem(protocol, preferLocal: false);
 
-            var expectedMessage = new NamedPipeMessage()
+            var testMessage = new NamedPipeMessage()
             {
-                Command = NamedPipeCommand.Echo,
-                Payload = new EchoPayload()
-                {
-                    Message = "Hello World!",
-                },
-            };
-
-            client.Write(expectedMessage.ToByteArray());
-
-            var actualResult = NamedPipeMessage.TryDeserialize(client, out var actualMessage);
-
-            Assert.IsTrue(actualResult);
-            Assert.AreEqual(((EchoPayload)expectedMessage.Payload).Message, ((EchoPayload)actualMessage.Payload).Message);
-        }
-
-        [TestMethod]
-        public async Task TestServerInfoMessage()
-        {
-            using var neoSystem = new NeoSystem(TestProtocolSettings.Default, nameof(MemoryStore));
-            var endPoint = new NamedPipeEndPoint(Path.GetRandomFileName());
-            await using var listener = new NamedPipeListener(endPoint, NullLogger<NamedPipeListener>.Instance);
-            await using var client = new NamedPipeClientStream(endPoint.ServerName, endPoint.PipeName);
-
-            listener.Start();
-            await client.ConnectAsync();
-
-            // Accept client and get connection
-            await using var conn = await listener.AcceptAsync();
-            await using var protocol = new SimpleMessageProtocol(conn, neoSystem, new(), NullLogger<SimpleMessageProtocol>.Instance);
-            ThreadPool.UnsafeQueueUserWorkItem(protocol, preferLocal: false);
-
-            var expectedMessage = new NamedPipeMessage()
-            {
-                Command = NamedPipeCommand.ServerInfo,
+                Command = NamedPipeCommand.Test,
                 Payload = new EmptyPayload(),
             };
 
-            client.Write(expectedMessage.ToByteArray());
+            client.Write(testMessage.ToByteArray());
 
             var actualResult = NamedPipeMessage.TryDeserialize(client, out var actualMessage);
 
             Assert.IsTrue(actualResult);
-            Assert.AreEqual(IPAddress.Any, ((ServerInfoPayload)actualMessage.Payload).Address);
-            Assert.AreEqual(10333, ((ServerInfoPayload)actualMessage.Payload).Port);
+            Assert.AreEqual("Hello World!", ((StringPayload)actualMessage.Payload).Value);
         }
     }
 }

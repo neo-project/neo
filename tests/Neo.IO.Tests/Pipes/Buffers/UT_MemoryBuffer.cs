@@ -78,7 +78,7 @@ namespace Neo.IO.Tests.Pipes.Buffers
                 .. Encoding.UTF8.GetBytes(expectedString)
             ];
             var actualBytes = ms.ToArray();
-            using var actualStream = new MemoryStream();
+            using var actualStream = new MemoryStream(actualBytes);
             using var actualBuffer = new MemoryBuffer(actualStream);
 
             CollectionAssert.AreEqual(expectedBytes, actualBytes);
@@ -102,7 +102,7 @@ namespace Neo.IO.Tests.Pipes.Buffers
                 0x05
             };
             var actualArray = ms.ToArray();
-            using var actualStream = new MemoryStream();
+            using var actualStream = new MemoryStream(actualArray);
             using var actualBuffer = new MemoryBuffer(actualStream);
 
             CollectionAssert.AreEqual(expectedArray, actualArray);

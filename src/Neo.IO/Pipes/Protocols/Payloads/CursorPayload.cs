@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// EchoPayload.cs file belongs to the neo project and is free
+// CursorPayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,12 +14,20 @@ using System.IO;
 
 namespace Neo.IO.Pipes.Protocols.Payloads
 {
-    internal class EchoPayload : INamedPipeMessage
+    internal class CursorPayload : INamedPipeMessage
     {
-        public string? Message { get; set; }
+        public int Left { get; set; }
+        public int Right { get; set; }
 
         public int Size =>
-            MemoryBuffer.GetStringSize(Message);
+            sizeof(int) +
+            sizeof(int);
+
+        public void FromMemoryBuffer(MemoryBuffer reader)
+        {
+            Left = reader.Read<int>();
+            Right = reader.Read<int>();
+        }
 
         public void FromStream(Stream stream)
         {
@@ -27,19 +35,14 @@ namespace Neo.IO.Pipes.Protocols.Payloads
             FromMemoryBuffer(reader);
         }
 
-        public void FromMemoryBuffer(MemoryBuffer reader)
-        {
-            var str = reader.ReadString();
-            if (string.IsNullOrEmpty(str) == false)
-                Message = str;
-        }
-
         public byte[] ToByteArray()
         {
             using var ms = new MemoryStream();
             using var writer = new MemoryBuffer(ms);
-            if (string.IsNullOrEmpty(Message) == false)
-                writer.WriteString(Message);
+
+            writer.Write(Left);
+            writer.Write(Right);
+
             return ms.ToArray();
         }
     }
