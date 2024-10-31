@@ -14,5 +14,6 @@ namespace Neo.Service.Hosting
     internal static class NeoConfigurationSectionNames
     {
         public static readonly string ApplicationConfiguration = "ApplicationConfiguration";
+        public static readonly string ProtocolConfiguration = "ProtocolConfiguration";
     }
 }

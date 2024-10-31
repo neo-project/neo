@@ -9,11 +9,14 @@
       "Archive": {
         "Path": "Backups",
         "FileName": "chain.{0}.acc",
-        "CompressFile":  false
+        "CompressFile": false
       },
       "Engine": "LevelDBStore",
       "Path": "Data_LevelDB_{0}",
       "Verify": true
+    },
+    "Service": {
+      "PipeName": "LOCAL\neo-cli"
     },
     "P2P": {
       "Listen": "0.0.0.0",

@@ -31,7 +31,7 @@ namespace Neo.Service.Configuration
     {
         public class ArchiveSettings
         {
-            public string Path { get; set; } = AppContext.BaseDirectory;
+            public string Path { get; set; } = NeoDefaults.ArchivePath;
             public string FileName { get; set; } = NeoDefaults.ArchiveFileNameFormat;
             public bool CompressFile { get; set; } = false;
         }

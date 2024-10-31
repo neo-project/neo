@@ -78,7 +78,11 @@ namespace Neo.Service.Extensions
         {
             hostBuilder.ConfigureServices((context, services) =>
             {
-                var endPoint = new NamedPipeEndPoint(@"LOCAL\neo-cli");
+                var pipeName = context.Configuration
+                    .GetSection(NeoConfigurationSectionNames.ApplicationConfiguration)
+                    .GetSection("Service")
+                    .GetValue<string>("PipeName");
+                var endPoint = new NamedPipeEndPoint(pipeName ?? NeoDefaults.PipeName);
 
                 services.TryAddSingleton(endPoint);
                 services.TryAddSingleton<NamedPipeListener>();
@@ -91,7 +95,8 @@ namespace Neo.Service.Extensions
         {
             hostBuilder.ConfigureServices((context, services) =>
             {
-                var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
+                var protocolSettingsSection = context.Configuration
+                    .GetRequiredSection(NeoConfigurationSectionNames.ProtocolConfiguration);
                 var protocolSettings = ProtocolSettings.Load(protocolSettingsSection);
 
                 services.TryAddSingleton(protocolSettings);
