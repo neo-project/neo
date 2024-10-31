@@ -29,7 +29,6 @@ namespace Neo.CLI
                 {
                     builder.UseNeoAppConfiguration();
                     builder.UseNeoHostConfiguration();
-                    builder.UseNeoSystem();
 
                     // Command handlers below <Here>
                     builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();

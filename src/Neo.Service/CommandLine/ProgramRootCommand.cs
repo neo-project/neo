@@ -31,8 +31,10 @@ namespace Neo.Service.CommandLine
 
             public async Task<int> InvokeAsync(InvocationContext context)
             {
-                context.Console.WriteLine("Hello World!");
-
+                while (context.GetCancellationToken().IsCancellationRequested == false)
+                {
+                    await Task.Delay(1000);
+                }
                 return 0;
             }
         }

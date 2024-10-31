@@ -10,7 +10,11 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo;
+using Neo.IO;
 using Neo.IO.Buffers;
+using Neo.IO.Tests;
+using Neo.IO.Tests.Buffers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,7 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Neo.IO.Tests.Pipes.Buffers
+namespace Neo.IO.Tests.Buffers
 {
     [TestClass]
     public class UT_MemoryBuffer

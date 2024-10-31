@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Buffers;
 using System.CommandLine;
 using System.CommandLine.IO;
 using System.IO;
@@ -28,8 +27,11 @@ namespace Neo.Service.CommandLine
 
         public void Write(string? value)
         {
-            using var writer = new MemoryBuffer(stream);
-            writer.WriteString(value);
+            var sw = new StreamWriter(stream)
+            {
+                AutoFlush = true,
+            };
+            sw.Write(value);
         }
     }
 }

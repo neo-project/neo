@@ -9,16 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.CLI.Commands.Prompt;
 using Neo.CLI.Extensions;
 using Neo.CLI.Hosting;
-using Neo.CLI.Hosting.Services;
+using Neo.IO.Pipes;
 using System;
 using System.CommandLine;
-using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
+using System.IO;
+using System.IO.Pipelines;
+using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,9 +31,28 @@ namespace Neo.CLI.Commands
 
         }
 
-        public new sealed class Handler(
-            NeoSystemHostedService neoSystemService) : ICommandHandler
+        public new sealed class Handler : ICommandHandler
         {
+            private const int MinAllocBufferSize = 4096;
+
+            private readonly NamedPipeClientStream _namedPipeClientStream;
+
+            private readonly IDuplexPipe _applicationPipe;
+            private readonly IDuplexPipe _transportPipe;
+
+            private Task _receivingTask = Task.CompletedTask;
+            private Task _sendingTask = Task.CompletedTask;
+
+            public Handler()
+            {
+                _namedPipeClientStream = new NamedPipeClientStream(".", @"neo-cli", PipeDirection.InOut, System.IO.Pipes.PipeOptions.Asynchronous | System.IO.Pipes.PipeOptions.CurrentUserOnly | System.IO.Pipes.PipeOptions.WriteThrough);
+
+                var pair = DuplexPipe.CreateConnectionPair();
+
+                _transportPipe = pair.Transport;
+                _applicationPipe = pair.Application;
+            }
+
             public int Invoke(InvocationContext context)
             {
                 throw new NotImplementedException();
@@ -44,8 +63,6 @@ namespace Neo.CLI.Commands
                 var stoppingToken = context.GetCancellationToken();
                 var host = context.GetHost();
 
-                await neoSystemService.StartAsync(stoppingToken);
-
                 return await RunConsolePrompt(context, stoppingToken);
             }
 
@@ -54,7 +71,6 @@ namespace Neo.CLI.Commands
                 console.SetTerminalForegroundColor(ConsoleColor.Green);
                 console.Write($"{NeoDefaults.ConsolePromptName} ");
                 console.SetTerminalForegroundColor(ConsoleColor.White);
-                console.ResetColor();
             }
 
             private async Task<int> RunConsolePrompt(
@@ -63,15 +79,27 @@ namespace Neo.CLI.Commands
             {
                 context.Console.Clear();
 
-                var rootCommand = new ReplRootCommand(neoSystemService, cancellationToken, context.Console);
-                var parser = new CommandLineBuilder(rootCommand)
-                    .UseParseErrorReporting()
-                    .Build();
+                await _namedPipeClientStream.ConnectAsync(cancellationToken);
 
-                var exitCode = 0;
+                _receivingTask = DoReceiveAsync();
+                _sendingTask = DoSendAsync();
+
+                _ = Task.Run(() =>
+                {
+                    var input = _transportPipe.Input.AsStream(true);
+                    var sr = new StreamReader(input);
+
+                    while (cancellationToken.IsCancellationRequested == false)
+                    {
+                        var line = sr.ReadLine() ?? string.Empty;
+                        lock (context.Console)
+                            context.Console.WriteLine(line);
+                    }
+                });
 
                 while (cancellationToken.IsCancellationRequested == false)
                 {
+
                     PrintPrompt(context.Console);
 
                     var line = context.Console.ReadLine()?.Trim();
@@ -79,13 +107,91 @@ namespace Neo.CLI.Commands
                     if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
                         continue;
 
-                    exitCode = await parser.InvokeAsync(line, context.Console);
-
-                    if (exitCode < 0)
-                        break;
+                    var output = _transportPipe.Output.AsStream();
+                    var sw = new StreamWriter(output) { AutoFlush = true, };
+                    sw.WriteLine(line);
                 }
 
-                return exitCode;
+                return 0;
+            }
+
+            private async Task DoReceiveAsync()
+            {
+                Exception? error = null;
+
+                try
+                {
+                    var input = _applicationPipe.Output;
+
+                    while (true)
+                    {
+                        var buffer = input.GetMemory();
+                        var bytesReceived = await _namedPipeClientStream.ReadAsync(buffer);
+
+                        if (bytesReceived == 0)
+                            break;
+
+                        input.Advance(bytesReceived);
+
+                        var result = await input.FlushAsync();
+
+                        if (result.IsCompleted || result.IsCanceled)
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                finally
+                {
+                    _applicationPipe.Output.Complete(error);
+                }
+            }
+
+            private async Task DoSendAsync()
+            {
+                Exception? unexpectedError = null;
+
+                try
+                {
+                    while (true)
+                    {
+                        var output = _applicationPipe.Input;
+                        var result = await output.ReadAsync();
+
+                        if (result.IsCanceled)
+                            break;
+
+                        var buffer = result.Buffer;
+                        if (buffer.IsSingleSegment)
+                            await _namedPipeClientStream.WriteAsync(buffer.First);
+                        else
+                        {
+                            foreach (var segment in buffer)
+                                await _namedPipeClientStream.WriteAsync(segment);
+                        }
+
+                        output.AdvanceTo(buffer.End);
+
+                        if (result.IsCompleted)
+                            break;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    unexpectedError = ex;
+                }
+                finally
+                {
+                    _namedPipeClientStream.Close();
+
+                    _applicationPipe.Input.Complete(unexpectedError);
+                    _applicationPipe.Output.CancelPendingFlush();
+                }
             }
         }
     }

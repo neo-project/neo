@@ -24,6 +24,7 @@ namespace Neo.Service.Pipes
 
         internal IDuplexPipe Application { get; private set; }
         public IDuplexPipe Transport { get; private set; }
+        public bool IsConnected => _namedPipeStream.IsConnected;
 
         private readonly NamedPipeListener _namedPipeListener;
         private readonly NamedPipeServerStream _namedPipeStream;

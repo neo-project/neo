@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Microsoft.Extensions.Logging;
-using Neo.IO.Buffers;
 using Neo.Network.P2P;
 using Neo.Service.CommandLine;
 using System;
@@ -52,24 +51,28 @@ namespace Neo.Service.Pipes.Messaging
         {
             try
             {
-                var input = _connection.Transport.Input.AsStream();
-                var output = _connection.Transport.Output.AsStream();
+                while (_connection.IsConnected)
+                {
+                    var inputStream = _connection.Transport.Input.AsStream();
+                    var outputStream = _connection.Transport.Output.AsStream();
 
-                if (input.CanRead == false)
-                    throw new IOException("Input stream of connection can't be read.");
+                    if (inputStream.CanRead == false)
+                        throw new IOException("Input stream of connection can't be read.");
 
-                if (output.CanWrite == false)
-                    throw new IOException("Output stream of connection can't be written to.");
+                    if (outputStream.CanWrite == false)
+                        throw new IOException("Output stream of connection can't be written to.");
 
-                using var reader = new MemoryBuffer(input);
-                var commands = reader.ReadString();
+                    var sr = new StreamReader(inputStream);
+                    var commands = sr.ReadLine() ?? string.Empty;
 
-                var rootCommand = new ProgramRootCommand();
-                var parser = new CommandLineBuilder(rootCommand)
-                    .UseDefaults()
-                    .Build();
+                    var rootCommand = new ProgramRootCommand();
+                    var parser = new CommandLineBuilder(rootCommand)
+                        .UseDefaults()
+                        .Build();
 
-                await parser.InvokeAsync(commands, new NamedPipeConsole(output));
+                    _logger.LogInformation("Received Command: {Command}", commands);
+                    await parser.InvokeAsync(commands, new NamedPipeConsole(outputStream));
+                }
             }
             catch (Exception ex)
             {

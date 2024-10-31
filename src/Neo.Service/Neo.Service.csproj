@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Neo.IO.Tests" />
     <InternalsVisibleTo Include="$(AssemblyTitle).Tests" />
   </ItemGroup>
 

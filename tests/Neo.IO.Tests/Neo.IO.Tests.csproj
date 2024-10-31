@@ -12,10 +12,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.IO\Neo.IO.csproj" />
+    <ProjectReference Include="..\..\src\Neo.Service\Neo.Service.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Pipes\" />
   </ItemGroup>
 
 </Project>

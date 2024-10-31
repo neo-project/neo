@@ -65,27 +65,21 @@ namespace Neo.Service.Tests.Pipes
             listener.Start();
             await client.ConnectAsync();
 
+            var sw = new StreamWriter(client) { AutoFlush = true, };
+            var sr = new StreamReader(client);
+
             // Accept client and get connection
             await using var conn = await listener.AcceptAsync();
             await using var thread = new ConsoleMessageProtocol(conn, neoSystem, NullLogger.Instance);
             ThreadPool.UnsafeQueueUserWorkItem(thread, false);
 
-            // Write data to the server from the client
-            using var writer = new MemoryBuffer(client);
-            writer.WriteString("--version");
+            // Write data to the server
+            sw.WriteLine("--version");
 
-            // Read the sent data to client
-            using var reader = new MemoryBuffer(client);
-            var actualString = reader.ReadString();
-            var sb = new StringBuilder();
-            sb.Append(actualString);
-            while (string.IsNullOrEmpty(actualString) == false)
-            {
-                actualString = reader.ReadString();
-                sb.Append(actualString);
-            }
+            // Read response from the server
+            var line = sr.ReadLine();
 
-            Assert.IsFalse(string.IsNullOrEmpty(sb.ToString()));
+            Assert.IsNotNull(line);
         }
     }
 }

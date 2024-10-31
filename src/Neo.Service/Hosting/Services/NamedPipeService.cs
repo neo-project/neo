@@ -41,10 +41,10 @@ namespace Neo.Service.Hosting.Services
 
         public async ValueTask DisposeAsync()
         {
-            _stopCts.Cancel();
-
             try
             {
+                _stopCts.Cancel();
+
                 await _connTask;
             }
             catch (Exception ex)
@@ -60,6 +60,7 @@ namespace Neo.Service.Hosting.Services
             _hasStarted = true;
 
             _logger.LogInformation("{ClassName} has started.", nameof(NamedPipeService));
+            _listener.Start();
             _connTask = ProcessConnectionsAsync();
 
             return Task.CompletedTask;
@@ -67,6 +68,7 @@ namespace Neo.Service.Hosting.Services
 
         public async Task StopAsync(CancellationToken cancellationToken = default)
         {
+            _logger.LogInformation("{ClassName} has stopped.", nameof(NamedPipeService));
             await DisposeAsync();
         }
 
@@ -86,6 +88,10 @@ namespace Neo.Service.Hosting.Services
                     var protocolThread = new ConsoleMessageProtocol(conn, _neoSystem, _loggerFactory.CreateLogger(nameof(ConsoleMessageProtocol)));
                     ThreadPool.UnsafeQueueUserWorkItem(protocolThread, preferLocal: false);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+
             }
             catch (Exception ex)
             {
