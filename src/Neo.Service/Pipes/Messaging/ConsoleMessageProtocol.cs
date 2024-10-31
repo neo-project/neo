@@ -72,6 +72,9 @@ namespace Neo.Service.Pipes.Messaging
 
                     _logger.LogInformation("Received Command: {Command}", commands);
                     await parser.InvokeAsync(commands, new NamedPipeConsole(outputStream));
+
+                    var sw = new StreamWriter(outputStream) { AutoFlush = true, };
+                    sw.WriteLine("<END/>");
                 }
             }
             catch (Exception ex)

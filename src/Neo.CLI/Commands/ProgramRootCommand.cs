@@ -84,19 +84,6 @@ namespace Neo.CLI.Commands
                 _receivingTask = DoReceiveAsync();
                 _sendingTask = DoSendAsync();
 
-                _ = Task.Run(() =>
-                {
-                    var input = _transportPipe.Input.AsStream(true);
-                    var sr = new StreamReader(input);
-
-                    while (cancellationToken.IsCancellationRequested == false)
-                    {
-                        var line = sr.ReadLine() ?? string.Empty;
-                        lock (context.Console)
-                            context.Console.WriteLine(line);
-                    }
-                });
-
                 while (cancellationToken.IsCancellationRequested == false)
                 {
 
@@ -110,6 +97,16 @@ namespace Neo.CLI.Commands
                     var output = _transportPipe.Output.AsStream();
                     var sw = new StreamWriter(output) { AutoFlush = true, };
                     sw.WriteLine(line);
+
+                    var input = _transportPipe.Input.AsStream();
+                    var sr = new StreamReader(input);
+
+                    string? reline;
+                    while ((reline = sr.ReadLine()) != null)
+                    {
+                        if (reline == "<END/>") break;
+                        context.Console.WriteLine(reline);
+                    }
                 }
 
                 return 0;
