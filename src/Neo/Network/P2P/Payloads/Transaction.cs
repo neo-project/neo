@@ -254,7 +254,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as Transaction);
+            return obj is Transaction other && Equals(other);
         }
 
         void IInteroperable.FromStackItem(StackItem stackItem)

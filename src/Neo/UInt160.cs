@@ -84,7 +84,7 @@ namespace Neo
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(obj, this)) return true;
-            return Equals(obj as UInt160);
+            return obj is UInt160 other && Equals(other);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

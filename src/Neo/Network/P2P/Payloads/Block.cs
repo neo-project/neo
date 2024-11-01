@@ -108,7 +108,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as Block);
+            return obj is Block other && Equals(other);
         }
 
         public override int GetHashCode()

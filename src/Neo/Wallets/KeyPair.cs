@@ -68,7 +68,7 @@ namespace Neo.Wallets
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as KeyPair);
+            return obj is KeyPair other && Equals(other);
         }
 
         /// <summary>

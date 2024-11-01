@@ -180,7 +180,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as Header);
+            return obj is Header other && Equals(other);
         }
 
         public override int GetHashCode()

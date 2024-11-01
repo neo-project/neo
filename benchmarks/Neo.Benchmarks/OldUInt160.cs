@@ -78,7 +78,7 @@ namespace Neo
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(obj, this)) return true;
-            return Equals(obj as OldUInt160);
+            return obj is OldUInt160 other && Equals(other);
         }
 
         public bool Equals(OldUInt160 other)

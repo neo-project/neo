@@ -41,7 +41,7 @@ class VerificationContract : SmartContract.Contract, IEquatable<VerificationCont
 
     public override bool Equals(object obj)
     {
-        return Equals(obj as VerificationContract);
+        return obj is VerificationContract other && Equals(other);
     }
 
     public override int GetHashCode()

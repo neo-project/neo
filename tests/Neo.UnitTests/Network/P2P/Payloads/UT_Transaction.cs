@@ -1289,5 +1289,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var result = tx.VerifyStateIndependent(settings);
             Assert.AreEqual(VerifyResult.Succeed, result);
         }
+
+        [TestMethod]
+        public void TestTransaction_Equals()
+        {
+            uut.Equals(null).Should().BeFalse();
+            uut.Equals("0").Should().BeFalse();
+            uut.Equals(uut).Should().BeTrue();
+        }
     }
 }

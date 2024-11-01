@@ -70,6 +70,8 @@ namespace Neo.UnitTests.Wallets
             KeyPair keyPair4 = new KeyPair(privateKey1);
             KeyPair keyPair5 = new KeyPair(privateKey2);
             keyPair4.Equals(keyPair5).Should().BeFalse();
+
+            keyPair4.Equals("0").Should().BeFalse();
         }
 
         [TestMethod]

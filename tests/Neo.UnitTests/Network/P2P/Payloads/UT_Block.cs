@@ -170,6 +170,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupBlockWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _, out _, 0);
 
             uut.Equals(newBlock).Should().BeFalse();
+
+            uut.Equals("0").Should().BeFalse();
         }
 
         [TestMethod]

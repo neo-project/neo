@@ -114,9 +114,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Equals_Null()
+        public void Equals_Other()
         {
             uut.Equals(null).Should().BeFalse();
+            uut.Equals("0").Should().BeFalse();
         }
 
 

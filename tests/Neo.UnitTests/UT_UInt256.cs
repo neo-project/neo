@@ -98,6 +98,8 @@ namespace Neo.UnitTests.IO
             object temp3 = new();
             Assert.AreEqual(false, temp1.Equals(temp2));
             Assert.AreEqual(false, temp1.Equals(temp3));
+
+            Assert.IsFalse(temp1.Equals((object)"0"));
         }
 
         [TestMethod]

@@ -126,5 +126,12 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(true, UInt160.Zero <= UInt160.Zero);
             Assert.IsTrue(UInt160.Zero >= "0x0000000000000000000000000000000000000000");
         }
+
+        [TestMethod]
+        public void TestUInt160_Equals()
+        {
+            var a = new UInt160();
+            Assert.IsFalse(a.Equals((object)"0"));
+        }
     }
 }

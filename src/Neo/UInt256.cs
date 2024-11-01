@@ -84,7 +84,7 @@ namespace Neo
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(obj, this)) return true;
-            return Equals(obj as UInt256);
+            return obj is UInt256 other && Equals(other);
         }
 
         public bool Equals(UInt256 other)
