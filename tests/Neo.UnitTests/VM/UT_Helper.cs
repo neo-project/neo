@@ -689,5 +689,29 @@ namespace Neo.UnitTests.VMT
                 CollectionAssert.AreEqual(sbUInt16.ToArray(), sbChar.ToArray());
             }
         }
+
+        [TestMethod]
+        public void TestCyclicReference()
+        {
+            var map = new VM.Types.Map
+            {
+                [1] = 2,
+            };
+
+            var item = new VM.Types.Array
+            {
+                   map,
+                   map
+            };
+
+            // just check there is no exception
+            var json = item.ToJson();
+            Assert.AreEqual(json.ToString(), @"{""type"":""Array"",""value"":[{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]},{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]}]}");
+
+            // check cyclic reference
+            map[2] = item;
+            var action = () => item.ToJson();
+            action.Should().Throw<System.InvalidOperationException>();
+        }
     }
 }
