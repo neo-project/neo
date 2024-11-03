@@ -74,6 +74,15 @@ namespace Neo.Test
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
             Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
+            // Test CompoundType GetHashCode for subitems
+            var junk = new Array { true, false, 0 };
+            itemA = new Map { [true] = junk, [0] = 1 };
+            itemB = new Map { [true] = junk, [0] = 1 };
+            itemC = new Map { [true] = junk, [0] = 2 };
+
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+
             itemA = new InteropInterface(123);
             itemB = new InteropInterface(123);
 
