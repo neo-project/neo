@@ -89,23 +89,26 @@ namespace Neo.CLI.Commands
 
                     PrintPrompt(context.Console);
 
-                    var line = context.Console.ReadLine()?.Trim();
+                    var inputLine = context.Console.ReadLine()?.Trim();
 
-                    if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
+                    if (string.IsNullOrEmpty(inputLine) || string.IsNullOrWhiteSpace(inputLine))
                         continue;
+
+                    if (inputLine.Equals("exit", StringComparison.InvariantCultureIgnoreCase) || inputLine.Equals("quit", StringComparison.InvariantCultureIgnoreCase))
+                        return 0;
 
                     var output = _transportPipe.Output.AsStream();
                     var sw = new StreamWriter(output) { AutoFlush = true, };
-                    sw.WriteLine(line);
+                    sw.WriteLine(inputLine);
 
                     var input = _transportPipe.Input.AsStream();
                     var sr = new StreamReader(input);
 
-                    string? reline;
-                    while ((reline = sr.ReadLine()) != null)
+                    string? receivedLine;
+                    while ((receivedLine = sr.ReadLine()) != null)
                     {
-                        if (reline == "<END/>") break;
-                        context.Console.WriteLine(reline);
+                        if (receivedLine == "<END/>") break;
+                        context.Console.WriteLine(receivedLine);
                     }
                 }
 

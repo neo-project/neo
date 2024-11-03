@@ -13,6 +13,7 @@ using Akka.Actor;
 using Microsoft.Extensions.Logging;
 using Neo.Network.P2P;
 using Neo.Service.CommandLine;
+using Neo.Service.Commands.Prompt;
 using System;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
@@ -65,9 +66,9 @@ namespace Neo.Service.Pipes.Messaging
                     var sr = new StreamReader(inputStream);
                     var commands = sr.ReadLine() ?? string.Empty;
 
-                    var rootCommand = new ProgramRootCommand();
+                    var rootCommand = new PromptRootCommand();
                     var parser = new CommandLineBuilder(rootCommand)
-                        .UseDefaults()
+                        .UseParseErrorReporting()
                         .Build();
 
                     _logger.LogInformation("Received Command: {Command}", commands);

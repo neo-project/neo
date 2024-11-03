@@ -74,7 +74,7 @@ namespace Neo.Service.Tests.Pipes
             ThreadPool.UnsafeQueueUserWorkItem(thread, false);
 
             // Write data to the server
-            sw.WriteLine("--version");
+            sw.WriteLine("help");
 
             // Read response from the server
             var line = sr.ReadLine();

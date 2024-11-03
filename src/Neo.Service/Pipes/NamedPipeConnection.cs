@@ -11,6 +11,7 @@
 
 using Neo.IO.Pipes;
 using System;
+using System.IO;
 using System.IO.Pipelines;
 using System.IO.Pipes;
 using System.Threading.Tasks;
@@ -145,6 +146,10 @@ namespace Neo.Service.Pipes
                     if (result.IsCompleted)
                         break;
                 }
+            }
+            catch (IOException)
+            {
+                // Connection closed in middle of sending data.
             }
             catch (ObjectDisposedException)
             {
