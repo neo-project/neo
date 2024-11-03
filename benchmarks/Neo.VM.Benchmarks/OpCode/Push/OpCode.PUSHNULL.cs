@@ -24,10 +24,12 @@ public class OpCode_PUSHNULL
     {
         var builder = new InstructionBuilder();
         builder.AddInstruction(Opcode);
+        builder.AddInstruction(Opcode);
 
         _engine = new BenchmarkEngine();
         _engine.LoadScript(builder.ToArray());
         _engine.ExecuteUntil(Opcode);
+        _engine.ExecuteNext();
     }
 
     [IterationCleanup]

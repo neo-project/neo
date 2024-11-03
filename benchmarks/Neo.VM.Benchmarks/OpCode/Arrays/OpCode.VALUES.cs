@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Types;
+
 namespace Neo.VM.Benchmark.OpCode;
 
 public class OpCode_VALUES : OpCodeBase
@@ -21,11 +23,18 @@ public class OpCode_VALUES : OpCodeBase
         var builder = new InstructionBuilder();
         var initBegin = new JumpTarget();
         builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
-        builder.Push(ItemCount);
+        builder.Push(ItemCount/2);
         builder.AddInstruction(VM.OpCode.STLOC0);
         initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+
         builder.Push(ushort.MaxValue * 2);
         builder.AddInstruction(VM.OpCode.NEWBUFFER);
+        builder.Push(sbyte.MaxValue);
+        builder.AddInstruction(VM.OpCode.NEWBUFFER);
+        builder.AddInstruction(new Instruction
+        {
+            _opCode = VM.OpCode.CONVERT, _operand = [(byte)StackItemType.ByteString]
+        });
         // builder.Push(0);
         builder.AddInstruction(VM.OpCode.LDLOC0);
         builder.AddInstruction(VM.OpCode.DEC);

@@ -19,7 +19,7 @@ public class OpCode_POW
 {
     private BenchmarkEngine _engine;
 
-    private const VM.OpCode Opcode = VM.OpCode.SHR;
+    private const VM.OpCode Opcode = VM.OpCode.POW;
 
     [ParamsSource(nameof(Values))]
     public BigInteger _value;

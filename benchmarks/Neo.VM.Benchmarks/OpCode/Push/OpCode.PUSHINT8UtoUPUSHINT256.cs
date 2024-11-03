@@ -20,7 +20,7 @@ public class OpCode_PUSHINT8UtoUPUSHINT256
     private BenchmarkEngine _engine;
 
     [ParamsSource(nameof(PushValues))]
-    public BigInteger _value;
+    public BigInteger _value = 1;
 
     public static IEnumerable<BigInteger> PushValues()
     {
@@ -39,7 +39,7 @@ public class OpCode_PUSHINT8UtoUPUSHINT256
             ulong.MaxValue,
             ulong.MinValue,
             long.MaxValue,
-            long.MinValue
+            long.MinValue,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,-1
         ];
     }
 
@@ -52,6 +52,7 @@ public class OpCode_PUSHINT8UtoUPUSHINT256
         _engine = new BenchmarkEngine();
         _engine.LoadScript(builder.ToArray());
         _engine.ExecuteUntil(VM.OpCode.NOP);
+        _engine.ExecuteNext();
     }
 
     [IterationCleanup]
@@ -65,19 +66,37 @@ public class OpCode_PUSHINT8UtoUPUSHINT256
 }
 
 
-// | Method | _value               | Mean     | Error     | StdDev    | Median   |
-//     |------- |--------------------- |---------:|----------:|----------:|---------:|
-//     | Bench  | -5789(...)19968 [78] | 2.147 us | 0.2107 us | 0.6212 us | 1.800 us |
-//     | Bench  | -9223372036854775808 | 1.605 us | 0.0549 us | 0.1456 us | 1.600 us |
-//     | Bench  | -2147483648          | 1.967 us | 0.1781 us | 0.5251 us | 1.800 us |
-//     | Bench  | -32768               | 1.600 us | 0.0487 us | 0.1375 us | 1.600 us |
-//     | Bench  | 0                    | 1.665 us | 0.0819 us | 0.2213 us | 1.600 us |
-//     | Bench  | 0                    | 1.679 us | 0.0535 us | 0.1456 us | 1.650 us |
-//     | Bench  | 32767                | 1.580 us | 0.0688 us | 0.1813 us | 1.500 us |
-//     | Bench  | 65535                | 1.597 us | 0.0506 us | 0.1376 us | 1.600 us |
-//     | Bench  | 2147483647           | 1.609 us | 0.0476 us | 0.1288 us | 1.600 us |
-//     | Bench  | 4294967295           | 1.605 us | 0.0459 us | 0.1296 us | 1.600 us |
-//     | Bench  | 4294967295           | 1.613 us | 0.0469 us | 0.1299 us | 1.600 us |
-//     | Bench  | 9223372036854775807  | 1.619 us | 0.0564 us | 0.1571 us | 1.600 us |
-//     | Bench  | 18446744073709551615 | 1.650 us | 0.0537 us | 0.1478 us | 1.600 us |
-//     | Bench  | 57896(...)19967 [77] | 1.613 us | 0.0562 us | 0.1539 us | 1.600 us |
+// | Method | _value               | Mean     | Error    | StdDev   | Median   |
+// |------- |--------------------- |---------:|---------:|---------:|---------:|
+// | Bench  | -5789(...)19968 [78] | 12.36 us | 0.234 us | 0.473 us | 12.30 us |
+// | Bench  | -9223372036854775808 | 11.94 us | 0.240 us | 0.257 us | 11.90 us |
+// | Bench  | -2147483648          | 11.84 us | 0.240 us | 0.267 us | 11.80 us |
+// | Bench  | -32768               | 11.90 us | 0.241 us | 0.287 us | 11.90 us |
+// | Bench  | -1                   | 12.60 us | 0.255 us | 0.662 us | 12.60 us |
+// | Bench  | 0                    | 11.90 us | 0.242 us | 0.347 us | 11.85 us |
+// | Bench  | 0                    | 11.77 us | 0.234 us | 0.219 us | 11.70 us |
+// | Bench  | 1                    | 10.77 us | 0.210 us | 0.175 us | 10.80 us |
+// | Bench  | 2                    | 11.77 us | 0.232 us | 0.205 us | 11.80 us |
+// | Bench  | 3                    | 12.13 us | 0.218 us | 0.340 us | 12.10 us |
+// | Bench  | 4                    | 11.91 us | 0.232 us | 0.228 us | 11.95 us |
+// | Bench  | 5                    | 11.98 us | 0.231 us | 0.204 us | 12.00 us |
+// | Bench  | 6                    | 11.99 us | 0.236 us | 0.307 us | 11.95 us |
+// | Bench  | 7                    | 12.01 us | 0.241 us | 0.225 us | 12.00 us |
+// | Bench  | 8                    | 11.84 us | 0.213 us | 0.236 us | 11.90 us |
+// | Bench  | 9                    | 12.90 us | 0.485 us | 1.321 us | 12.40 us |
+// | Bench  | 10                   | 12.16 us | 0.245 us | 0.410 us | 12.15 us |
+// | Bench  | 11                   | 11.77 us | 0.228 us | 0.224 us | 11.70 us |
+// | Bench  | 12                   | 12.17 us | 0.245 us | 0.466 us | 12.20 us |
+// | Bench  | 13                   | 11.86 us | 0.254 us | 0.701 us | 12.00 us |
+// | Bench  | 14                   | 12.22 us | 0.246 us | 0.485 us | 12.10 us |
+// | Bench  | 15                   | 12.06 us | 0.245 us | 0.429 us | 12.00 us |
+// | Bench  | 16                   | 11.77 us | 0.236 us | 0.209 us | 11.80 us |
+// | Bench  | 32767                | 11.68 us | 0.231 us | 0.257 us | 11.60 us |
+// | Bench  | 65535                | 11.73 us | 0.238 us | 0.356 us | 11.70 us |
+// | Bench  | 2147483647           | 11.67 us | 0.229 us | 0.273 us | 11.70 us |
+// | Bench  | 4294967295           | 11.76 us | 0.297 us | 0.838 us | 11.90 us |
+// | Bench  | 4294967295           | 12.07 us | 0.240 us | 0.235 us | 12.05 us |
+// | Bench  | 9223372036854775807  | 11.73 us | 0.265 us | 0.756 us | 11.90 us |
+// | Bench  | 18446744073709551615 | 12.11 us | 0.243 us | 0.357 us | 12.00 us |
+// | Bench  | 57896(...)19967 [77] | 12.17 us | 0.246 us | 0.411 us | 12.05 us |
+

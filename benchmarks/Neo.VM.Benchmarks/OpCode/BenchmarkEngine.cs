@@ -50,12 +50,12 @@ public class BenchmarkEngine : TestEngine
             State = VMState.NONE;
         while (State == VMState.NONE)
         {
-            ExecuteNext();
             try
             {
+                ExecuteNext();
                 var instruction = CurrentContext!.CurrentInstruction!.OpCode;
                 if (instruction == opCode)
-                    break;
+                    State = VMState.BREAK;
             }
             catch
             {

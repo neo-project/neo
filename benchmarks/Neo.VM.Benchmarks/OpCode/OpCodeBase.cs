@@ -15,8 +15,8 @@ namespace Neo.VM.Benchmark.OpCode;
 
 public abstract class OpCodeBase
 {
-    [Params(2, 32, 128, 1024, 2040)]
-    public int ItemCount { get; set; } = 2040;
+    [Params(1,2, 32, 128, 1024, 2040)]
+    public int ItemCount { get; set; } = 2;
     protected byte[] baseLineScript;
     protected byte[] script;
     protected byte[] multiScript;
@@ -49,5 +49,3 @@ public abstract class OpCodeBase
 
     protected abstract byte[] CreateOneGASScript(InstructionBuilder builder);
 }
-
-

@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 // Flag to determine if running benchmark or running methods
-// #define BENCHMARK
+#define BENCHMARK
 
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
@@ -20,7 +20,7 @@ using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
 // Define the benchmark or execute class
-var benchmarkType = typeof(CryptoLib_RIPEMD160);
+var benchmarkType = typeof(OpCode_VALUES);
 
 /*
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
