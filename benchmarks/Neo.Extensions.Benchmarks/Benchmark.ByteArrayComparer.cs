@@ -26,207 +26,139 @@ namespace Neo.Extensions
             _oldComparer = OldByteArrayComparer.Default;
         }
 
-        [Benchmark]
-        public void NewCompare_NullArrays()
+        [GlobalSetup(Target = nameof(NewCompare_50Bytes))]
+        public void SetupNew50Bytes()
         {
-            x = null;
-            y = null;
-            comparer.Compare(x, y);
+            comparer = NewByteArrayCompare.Default;
+
+            x = new byte[50]; // 50 bytes
+            y = new byte[50]; // 50 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
         }
 
         [Benchmark]
-        public void OldCompare_NullArrays()
+        public void NewCompare_50Bytes()
         {
-            x = null;
-            y = null;
+            comparer.Compare(x, y);
+        }
+
+        [GlobalSetup(Target = nameof(OldCompare_50Bytes))]
+        public void SetupOld50Bytes()
+        {
+            _oldComparer = OldByteArrayComparer.Default;
+
+            x = new byte[50]; // 50 bytes
+            y = new byte[50]; // 50 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
+        }
+
+        [Benchmark]
+        public void OldCompare_50Bytes()
+        {
             _oldComparer.Compare(x, y);
         }
 
-        [Benchmark]
-        public void NewCompare_SameArray()
+        [GlobalSetup(Target = nameof(NewCompare_500Bytes))]
+        public void SetupNew500Bytes()
         {
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = x;
-            comparer.Compare(x, y);
-            comparer.Compare(x, x);
+            comparer = NewByteArrayCompare.Default;
+
+            x = new byte[500]; // 500 bytes
+            y = new byte[500]; // 500 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
         }
 
         [Benchmark]
-        public void OldCompare_SameArray()
+        public void NewCompare_500Bytes()
         {
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = x;
-            _oldComparer.Compare(x, y);
-            _oldComparer.Compare(x, x);
-        }
-
-        [Benchmark]
-        public void NewCompare_NonNullAndNull()
-        {
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = null;
             comparer.Compare(x, y);
         }
 
-        [Benchmark]
-        public void OldCompare_NonNullAndNull()
+        [GlobalSetup(Target = nameof(OldCompare_500Bytes))]
+        public void SetupOld500Bytes()
         {
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = null;
-            _oldComparer.Compare(x, y);
+            _oldComparer = OldByteArrayComparer.Default;
+
+            x = new byte[500]; // 500 bytes
+            y = new byte[500]; // 500 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
         }
 
         [Benchmark]
-        public void NewCompare_NullAndNonNull()
+        public void OldCompare_500Bytes()
         {
-            y = new byte[] { 1, 2, 3, 4, 5 };
-            x = null;
-            comparer.Compare(x, y);
-        }
-
-        [Benchmark]
-        public void OldCompare_NullAndNonNull()
-        {
-            y = new byte[] { 1, 2, 3, 4, 5 };
-            x = null;
             _oldComparer.Compare(x, y);
         }
 
-        [Benchmark]
-        public void NewCompare_EmptyArray()
+        [GlobalSetup(Target = nameof(NewCompare_5000Bytes))]
+        public void SetupNew5000Bytes()
         {
-            x = new byte[] { 1 };
-            y = Array.Empty<byte>();
-            comparer.Compare(x, y);
-            y = x;
-            comparer.Compare(x, y);
+            comparer = NewByteArrayCompare.Default;
+
+            x = new byte[5000]; // 5000 bytes
+            y = new byte[5000]; // 5000 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
         }
 
         [Benchmark]
-        public void OldCompare_EmptyArray()
+        public void NewCompare_5000Bytes()
         {
-            x = new byte[] { 1 };
-            y = Array.Empty<byte>();
-            _oldComparer.Compare(x, y);
-            y = x;
-            _oldComparer.Compare(x, y);
-        }
-
-        [Benchmark]
-        public void NewCompare_SingleElementArrays()
-        {
-            x = new byte[] { 1 };
-            y = new byte[] { 2 };
             comparer.Compare(x, y);
         }
 
-        [Benchmark]
-        public void OldCompare_SingleElementArrays()
+        [GlobalSetup(Target = nameof(OldCompare_5000Bytes))]
+        public void SetupOld5000Bytes()
         {
-            x = new byte[] { 1 };
-            y = new byte[] { 2 };
+            _oldComparer = OldByteArrayComparer.Default;
+
+            x = new byte[5000]; // 5000 bytes
+            y = new byte[5000]; // 5000 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
+        }
+
+        [Benchmark]
+        public void OldCompare_5000Bytes()
+        {
             _oldComparer.Compare(x, y);
         }
 
-        [Benchmark]
-        public void NewCompare_NullAndEmptyArray()
+        [GlobalSetup(Target = nameof(NewCompare_50000Bytes))]
+        public void SetupNew50000Bytes()
         {
-            comparer.Compare(null, Array.Empty<byte>());
-            comparer.Compare(Array.Empty<byte>(), null);
+            comparer = NewByteArrayCompare.Default;
+
+            x = new byte[50000]; // 50000 bytes
+            y = new byte[50000]; // 50000 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
         }
 
         [Benchmark]
-        public void OldCompare_NullAndEmptyArray()
+        public void NewCompare_50000Bytes()
         {
-            _oldComparer.Compare(null, Array.Empty<byte>());
-            _oldComparer.Compare(Array.Empty<byte>(), null);
+            comparer.Compare(x, y);
+        }
+
+        [GlobalSetup(Target = nameof(OldCompare_50000Bytes))]
+        public void SetupOld50000Bytes()
+        {
+            _oldComparer = OldByteArrayComparer.Default;
+
+            x = new byte[50000]; // 50000 bytes
+            y = new byte[50000]; // 50000 bytes
+            Array.Fill(x, (byte)0xCC);
+            Array.Copy(x, y, x.Length);
         }
 
         [Benchmark]
-        public void NewCompare_DifferentLengthArrays()
+        public void OldCompare_50000Bytes()
         {
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3 };
-            comparer.Compare(x, y);
-
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3, 4, 5, 6 };
-            comparer.Compare(x, y);
-        }
-
-        [Benchmark]
-        public void OldCompare_DifferentLengthArrays()
-        {
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3 };
-            _oldComparer.Compare(x, y);
-
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3, 4, 5, 6 };
-            _oldComparer.Compare(x, y);
-        }
-
-        [GlobalSetup(Target = nameof(NewCompare_ReverseComparer))]
-        public void SetupReverseComparer()
-        {
-            comparer = NewByteArrayCompare.Reverse;
-        }
-
-        [GlobalSetup(Target = nameof(OldCompare_ReverseComparer))]
-        public void SetupTestReverseComparer()
-        {
-            _oldComparer = OldByteArrayComparer.Reverse;
-        }
-
-        [Benchmark]
-        public void NewCompare_ReverseComparer()
-        {
-            x = new byte[] { 3 };
-            y = new byte[] { 1, 2, 3, 4, 5, 6 };
-            comparer.Compare(x, y);
-
-            y = x;
-            comparer.Compare(x, y);
-
-            x = new byte[] { 1 };
-            y = new byte[] { 2 };
-            comparer.Compare(x, y);
-
-            comparer.Compare(null, Array.Empty<byte>());
-            comparer.Compare(Array.Empty<byte>(), null);
-
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3 };
-            comparer.Compare(x, y);
-
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3, 4, 5, 6 };
-            comparer.Compare(x, y);
-        }
-
-        [Benchmark]
-        public void OldCompare_ReverseComparer()
-        {
-            x = new byte[] { 3 };
-            y = new byte[] { 1, 2, 3, 4, 5, 6 };
-            _oldComparer.Compare(x, y);
-
-            y = x;
-            _oldComparer.Compare(x, y);
-
-            x = new byte[] { 1 };
-            y = new byte[] { 2 };
-            _oldComparer.Compare(x, y);
-
-            _oldComparer.Compare(null, Array.Empty<byte>());
-            _oldComparer.Compare(Array.Empty<byte>(), null);
-
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3 };
-            _oldComparer.Compare(x, y);
-
-            x = new byte[] { 1, 2, 3, 4, 5 };
-            y = new byte[] { 1, 2, 3, 4, 5, 6 };
             _oldComparer.Compare(x, y);
         }
     }
