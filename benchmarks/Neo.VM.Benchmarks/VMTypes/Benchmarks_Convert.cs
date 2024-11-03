@@ -18,7 +18,7 @@ namespace Neo.VM.Benchmark;
 
 public class Benchmarks_Convert
 {
-    private Dictionary<StackItemType, List<StackItem>> testItemsByType;
+    private Dictionary<StackItemType, List<StackItem>>? testItemsByType;
 
     [GlobalSetup]
     public void Setup()
@@ -30,6 +30,9 @@ public class Benchmarks_Convert
     [ArgumentsSource(nameof(GetTypeConversionPairs))]
     public void BenchConvertTo(StackItemType fromType, StackItemType toType)
     {
+        if (testItemsByType is null)
+            throw new InvalidOperationException($"{nameof(testItemsByType)} not initialized");
+
         foreach (var item in testItemsByType[fromType])
         {
             try
