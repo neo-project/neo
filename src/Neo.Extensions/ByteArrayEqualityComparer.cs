@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Collections.Generic;
 using System.IO.Hashing;
 using System.Linq;
@@ -29,7 +30,7 @@ namespace Neo.Extensions
 
         public int GetHashCode(byte[] obj)
         {
-            return (int)XxHash3.HashToUInt64(obj);
+            return HashCode.Combine(XxHash3.HashToUInt64(obj));
         }
     }
 }
