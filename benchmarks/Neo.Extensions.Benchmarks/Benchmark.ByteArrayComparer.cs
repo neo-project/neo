@@ -15,16 +15,9 @@ namespace Neo.Extensions
 {
     public class Benchmark_ByteArrayComparer
     {
-        private NewByteArrayCompare comparer;
-        private OldByteArrayComparer _oldComparer;
-        private byte[] x, y;
-
-        [GlobalSetup]
-        public void Setup()
-        {
-            comparer = NewByteArrayCompare.Default;
-            _oldComparer = OldByteArrayComparer.Default;
-        }
+        private ByteArrayComparer comparer = ByteArrayComparer.Default;
+        private OldByteArrayComparer _oldComparer = OldByteArrayComparer.Default;
+        private byte[]? x, y;
 
         [Benchmark]
         public void NewCompare_NullArrays()
@@ -169,7 +162,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(NewCompare_ReverseComparer))]
         public void SetupReverseComparer()
         {
-            comparer = NewByteArrayCompare.Reverse;
+            comparer = ByteArrayComparer.Reverse;
         }
 
         [GlobalSetup(Target = nameof(OldCompare_ReverseComparer))]
