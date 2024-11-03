@@ -17,9 +17,9 @@ public abstract class OpCodeBase
 {
     [Params(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2040)]
     public int ItemCount { get; set; } = 10;
-    protected byte[] baseLineScript;
-    protected byte[] script;
-    protected byte[] multiScript;
+    protected byte[] baseLineScript = Array.Empty<byte>();
+    protected byte[] script = Array.Empty<byte>();
+    protected byte[] multiScript = Array.Empty<byte>();
 
     [GlobalSetup]
     public void Setup()
