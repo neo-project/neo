@@ -12,7 +12,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO.Hashing;
 
 namespace Neo.VM.Types
 {
@@ -77,7 +76,7 @@ namespace Neo.VM.Types
             {
                 try
                 {
-                    h.Add(XxHash3.HashToUInt64(item.GetSpan()));
+                    h.Add(Unsafe.HashBytes(item.GetSpan()));
                 }
                 catch
                 {
