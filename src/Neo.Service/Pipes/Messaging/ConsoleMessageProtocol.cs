@@ -15,8 +15,10 @@ using Neo.Network.P2P;
 using Neo.Service.CommandLine;
 using Neo.Service.Commands.Prompt;
 using System;
+using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using System.CommandLine.Rendering;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +33,9 @@ namespace Neo.Service.Pipes.Messaging
         private readonly NamedPipeConnection _connection = connection;
         private readonly NeoSystem _neoSystem = neoSystem;
         private readonly LocalNode _localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
+
+        private readonly StreamWriter _output = new StreamWriter(connection.Transport.Output.AsStream()) { AutoFlush = true };
+        private readonly StreamReader _input = new StreamReader(connection.Transport.Input.AsStream());
 
         private readonly ILogger _logger = logger;
 
@@ -54,17 +59,11 @@ namespace Neo.Service.Pipes.Messaging
             {
                 while (_connection.IsConnected)
                 {
-                    var inputStream = _connection.Transport.Input.AsStream();
-                    var outputStream = _connection.Transport.Output.AsStream();
+                    _output.Write($"{Ansi.Color.Foreground.Green}");
+                    _output.Write("neo> ");
+                    _output.Write($"{Ansi.Color.Foreground.White}");
 
-                    if (inputStream.CanRead == false)
-                        throw new IOException("Input stream of connection can't be read.");
-
-                    if (outputStream.CanWrite == false)
-                        throw new IOException("Output stream of connection can't be written to.");
-
-                    var sr = new StreamReader(inputStream);
-                    var commands = sr.ReadLine() ?? string.Empty;
+                    var commands = _input.ReadLine() ?? string.Empty;
 
                     var rootCommand = new PromptRootCommand();
                     var parser = new CommandLineBuilder(rootCommand)
@@ -72,10 +71,7 @@ namespace Neo.Service.Pipes.Messaging
                         .Build();
 
                     _logger.LogInformation("Received Command: {Command}", commands);
-                    await parser.InvokeAsync(commands, new NamedPipeConsole(outputStream));
-
-                    var sw = new StreamWriter(outputStream) { AutoFlush = true, };
-                    sw.WriteLine("<END/>");
+                    await parser.InvokeAsync(commands, new NamedPipeConsole(_input, _output));
                 }
             }
             catch (Exception ex)

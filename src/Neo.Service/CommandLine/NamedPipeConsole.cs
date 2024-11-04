@@ -16,22 +16,24 @@ using System.IO;
 namespace Neo.Service.CommandLine
 {
     internal class NamedPipeConsole(
-        Stream stream) : IConsole, IStandardStreamWriter
+        StreamReader input,
+        StreamWriter output) : IConsole, IStandardStreamWriter
     {
         public IStandardStreamWriter Out => this;
         public IStandardStreamWriter Error => this;
 
-        public bool IsOutputRedirected => true;
-        public bool IsErrorRedirected => true;
+        public bool IsOutputRedirected => false;
+        public bool IsErrorRedirected => false;
         public bool IsInputRedirected => false;
 
         public void Write(string? value)
         {
-            var sw = new StreamWriter(stream)
-            {
-                AutoFlush = true,
-            };
-            sw.Write(value);
+            output.Write(value);
+        }
+
+        public string? ReadLine()
+        {
+            return input.ReadLine();
         }
     }
 }

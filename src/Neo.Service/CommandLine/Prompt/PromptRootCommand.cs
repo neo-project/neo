@@ -21,10 +21,8 @@ namespace Neo.Service.Commands.Prompt
         public PromptRootCommand() : base(ExecutableName, $"Neo N3 Command-Line Tool")
         {
             var helpCommand = new HelpCommand();
-            var quitCommand = new QuitCommand();
 
             AddCommand(helpCommand);
-            AddCommand(quitCommand);
         }
 
         public static string ExecutableName => NeoDefaults.ConsolePromptName;

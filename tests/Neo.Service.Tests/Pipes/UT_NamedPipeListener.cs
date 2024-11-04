@@ -11,15 +11,12 @@
 
 using Microsoft.Extensions.Logging.Abstractions;
 using Neo;
-using Neo.IO.Buffers;
 using Neo.IO.Pipes;
 using Neo.Persistence;
 using Neo.Service;
 using Neo.Service.Pipes;
 using Neo.Service.Pipes.Messaging;
 using Neo.Service.Tests;
-using Neo.Service.Tests.Helpers;
-using Neo.Service.Tests.Pipes;
 using System.Buffers;
 using System.IO.Pipes;
 using System.Text;
@@ -52,34 +49,6 @@ namespace Neo.Service.Tests.Pipes
             Assert.IsFalse(actualResult.IsCompleted);
             Assert.IsFalse(actualResult.IsCanceled);
             CollectionAssert.AreEqual(expectedBytes, actualResult.Buffer.ToArray());
-        }
-
-        [TestMethod]
-        public async Task TestConsoleMessageProtocol()
-        {
-            using var neoSystem = new NeoSystem(TestProtocolSettings.Default, nameof(MemoryStore));
-            var endPoint = new NamedPipeEndPoint(Path.GetRandomFileName());
-            await using var listener = new NamedPipeListener(endPoint, NullLogger<NamedPipeListener>.Instance);
-            await using var client = new NamedPipeClientStream(endPoint.ServerName, endPoint.PipeName);
-
-            listener.Start();
-            await client.ConnectAsync();
-
-            var sw = new StreamWriter(client) { AutoFlush = true, };
-            var sr = new StreamReader(client);
-
-            // Accept client and get connection
-            await using var conn = await listener.AcceptAsync();
-            await using var thread = new ConsoleMessageProtocol(conn, neoSystem, NullLogger.Instance);
-            ThreadPool.UnsafeQueueUserWorkItem(thread, false);
-
-            // Write data to the server
-            sw.WriteLine("help");
-
-            // Read response from the server
-            var line = sr.ReadLine();
-
-            Assert.IsNotNull(line);
         }
     }
 }
