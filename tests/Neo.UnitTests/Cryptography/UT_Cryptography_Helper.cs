@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Cryptography
         public void TestXxHash3()
         {
             byte[] data = Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("Hello, World!^_^", 16 * 1024)));
-            data.XxHash3_32().Should().Be(1389469485u);
+            data.XxHash3_32().Should().Be(HashCode.Combine(XxHash3.HashToUInt64(data)));
             XxHash32.HashToUInt32(data).Should().Be(682967318u);
             data.Murmur32(0).Should().Be(3731881930u);
         }

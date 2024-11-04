@@ -125,9 +125,9 @@ namespace Neo.Cryptography
         /// <param name="seed">The seed used by the xxhash3 algorithm.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint XxHash3_32(this ReadOnlySpan<byte> value, uint seed = 0)
+        public static int XxHash3_32(this ReadOnlySpan<byte> value, uint seed = 0)
         {
-            return (uint)XxHash3.HashToUInt64(value, seed);
+            return HashCode.Combine(XxHash3.HashToUInt64(value, seed));
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace Neo.Cryptography
         /// <param name="seed">The seed used by the xxhash3 algorithm.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint XxHash3_32(this byte[] value, uint seed = 0)
+        public static int XxHash3_32(this byte[] value, uint seed = 0)
         {
             return XxHash3_32(value.AsSpan(), seed);
         }

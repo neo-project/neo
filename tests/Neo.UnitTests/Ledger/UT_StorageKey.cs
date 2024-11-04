@@ -11,7 +11,9 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.SmartContract;
+using System;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -102,8 +104,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void GetHashCode_Get()
         {
-            StorageKey uut = new() { Id = 0x42000000, Key = TestUtils.GetByteArray(10, 0x42) };
-            uut.GetHashCode().Should().Be(-729135550);
+            var data = TestUtils.GetByteArray(10, 0x42);
+            StorageKey uut = new() { Id = 0x42000000, Key = data };
+            uut.GetHashCode().Should().Be(HashCode.Combine(0x42000000, data.XxHash3_32()));
         }
 
         [TestMethod]

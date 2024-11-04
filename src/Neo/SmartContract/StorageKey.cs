@@ -75,7 +75,7 @@ namespace Neo.SmartContract
         public override int GetHashCode()
         {
             if (_hashCode == 0)
-                _hashCode = Id + (int)Key.Span.XxHash3_32();
+                _hashCode = HashCode.Combine(Id, Key.Span.XxHash3_32());
             return _hashCode;
         }
 
