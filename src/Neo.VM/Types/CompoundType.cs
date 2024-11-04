@@ -74,7 +74,7 @@ namespace Neo.VM.Types
             h.Add(Type);
             foreach (var item in SubItems)
             {
-                if (ReferenceEquals(this, item)) continue;
+                if (item.GetType().IsSubclassOf(typeof(CompoundType))) continue;
                 h.Add(item.GetHashCode());
             }
             return h.ToHashCode();
