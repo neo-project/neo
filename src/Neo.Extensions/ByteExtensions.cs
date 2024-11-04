@@ -10,23 +10,36 @@
 // modifications are permitted.
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.Extensions
 {
     public static class ByteExtensions
     {
+        private const string HexChars = "0123456789abcdef";
+
         /// <summary>
         /// Converts a byte array to hex <see cref="string"/>.
         /// </summary>
         /// <param name="value">The byte array to convert.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[] value)
         {
-            StringBuilder sb = new();
-            foreach (var b in value)
-                sb.AppendFormat("{0:x2}", b);
-            return sb.ToString();
+#if NET9_0_OR_GREATER
+            return Convert.ToHexStringLower(value);
+#else
+            return string.Create(value.Length * 2, value, (span, bytes) =>
+            {
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    byte b = bytes[i];
+                    span[i * 2] = HexChars[b >> 4];
+                    span[i * 2 + 1] = HexChars[b & 0xF];
+                }
+            });
+#endif
         }
 
         /// <summary>
@@ -35,12 +48,21 @@ namespace Neo.Extensions
         /// <param name="value">The byte array to convert.</param>
         /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[] value, bool reverse = false)
         {
-            StringBuilder sb = new();
-            for (var i = 0; i < value.Length; i++)
-                sb.AppendFormat("{0:x2}", value[reverse ? value.Length - i - 1 : i]);
-            return sb.ToString();
+            if (!reverse)
+                return ToHexString(value);
+
+            return string.Create(value.Length * 2, value, (span, bytes) =>
+            {
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    byte b = bytes[bytes.Length - i - 1];
+                    span[i * 2] = HexChars[b >> 4];
+                    span[i * 2 + 1] = HexChars[b & 0xF];
+                }
+            });
         }
 
         /// <summary>
@@ -48,12 +70,22 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="value">The byte array to convert.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this ReadOnlySpan<byte> value)
         {
-            StringBuilder sb = new();
-            foreach (var b in value)
-                sb.AppendFormat("{0:x2}", b);
+#if NET9_0_OR_GREATER
+            return Convert.ToHexStringLower(value);
+#else
+            // string.Create with ReadOnlySpan<char> not supported in NET5 or lower
+            var sb = new StringBuilder(value.Length * 2);
+            for (int i = 0; i < value.Length; i++)
+            {
+                byte b = value[i];
+                sb.Append(HexChars[b >> 4]);
+                sb.Append(HexChars[b & 0xF]);
+            }
             return sb.ToString();
+#endif
         }
     }
 }
