@@ -15,21 +15,21 @@ namespace Neo.Extensions
 {
     public class Benchmark_ByteArrayComparer
     {
-        private NewByteArrayCompare comparer;
-        private OldByteArrayComparer _oldComparer;
-        private byte[] x, y;
+        private ByteArrayComparer comparer = ByteArrayComparer.Default;
+        private ByteArrayComparerV0 _oldComparer = ByteArrayComparerV0.Default;
+        private byte[]? x, y;
 
         [GlobalSetup]
         public void Setup()
         {
-            comparer = NewByteArrayCompare.Default;
-            _oldComparer = OldByteArrayComparer.Default;
+            comparer = ByteArrayComparer.Default;
+            _oldComparer = ByteArrayComparerV0.Default;
         }
 
         [GlobalSetup(Target = nameof(NewCompare_50Bytes))]
         public void SetupNew50Bytes()
         {
-            comparer = NewByteArrayCompare.Default;
+            comparer = ByteArrayComparer.Default;
 
             x = new byte[50]; // 50 bytes
             y = new byte[50]; // 50 bytes
@@ -46,7 +46,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(OldCompare_50Bytes))]
         public void SetupOld50Bytes()
         {
-            _oldComparer = OldByteArrayComparer.Default;
+            _oldComparer = ByteArrayComparerV0.Default;
 
             x = new byte[50]; // 50 bytes
             y = new byte[50]; // 50 bytes
@@ -63,7 +63,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(NewCompare_500Bytes))]
         public void SetupNew500Bytes()
         {
-            comparer = NewByteArrayCompare.Default;
+            comparer = ByteArrayComparer.Default;
 
             x = new byte[500]; // 500 bytes
             y = new byte[500]; // 500 bytes
@@ -80,7 +80,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(OldCompare_500Bytes))]
         public void SetupOld500Bytes()
         {
-            _oldComparer = OldByteArrayComparer.Default;
+            _oldComparer = ByteArrayComparerV0.Default;
 
             x = new byte[500]; // 500 bytes
             y = new byte[500]; // 500 bytes
@@ -97,7 +97,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(NewCompare_5000Bytes))]
         public void SetupNew5000Bytes()
         {
-            comparer = NewByteArrayCompare.Default;
+            comparer = ByteArrayComparer.Default;
 
             x = new byte[5000]; // 5000 bytes
             y = new byte[5000]; // 5000 bytes
@@ -114,7 +114,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(OldCompare_5000Bytes))]
         public void SetupOld5000Bytes()
         {
-            _oldComparer = OldByteArrayComparer.Default;
+            _oldComparer = ByteArrayComparerV0.Default;
 
             x = new byte[5000]; // 5000 bytes
             y = new byte[5000]; // 5000 bytes
@@ -131,7 +131,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(NewCompare_50000Bytes))]
         public void SetupNew50000Bytes()
         {
-            comparer = NewByteArrayCompare.Default;
+            comparer = ByteArrayComparer.Default;
 
             x = new byte[50000]; // 50000 bytes
             y = new byte[50000]; // 50000 bytes
@@ -148,7 +148,7 @@ namespace Neo.Extensions
         [GlobalSetup(Target = nameof(OldCompare_50000Bytes))]
         public void SetupOld50000Bytes()
         {
-            _oldComparer = OldByteArrayComparer.Default;
+            _oldComparer = ByteArrayComparerV0.Default;
 
             x = new byte[50000]; // 50000 bytes
             y = new byte[50000]; // 50000 bytes

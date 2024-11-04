@@ -13,14 +13,14 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {
-    public class OldByteArrayComparer : IComparer<byte[]>
+    public class ByteArrayComparerV0 : IComparer<byte[]>
     {
-        public static readonly OldByteArrayComparer Default = new(1);
-        public static readonly OldByteArrayComparer Reverse = new(-1);
+        public static readonly ByteArrayComparerV0 Default = new(1);
+        public static readonly ByteArrayComparerV0 Reverse = new(-1);
 
         private readonly int _direction;
 
-        internal OldByteArrayComparer(int direction)
+        internal ByteArrayComparerV0(int direction)
         {
             _direction = direction;
         }
