@@ -17,7 +17,7 @@ namespace Neo.Extensions
 {
     public static class ByteExtensions
     {
-        private const string HexChars = "0123456789abcdef";
+        private static readonly char[] s_hexChars = "0123456789abcdef".ToCharArray();
 
         /// <summary>
         /// Converts a byte array to hex <see cref="string"/>.
@@ -32,11 +32,11 @@ namespace Neo.Extensions
 #else
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {
-                for (int i = 0; i < bytes.Length; i++)
+                for (var i = 0; i < bytes.Length; i++)
                 {
-                    byte b = bytes[i];
-                    span[i * 2] = HexChars[b >> 4];
-                    span[i * 2 + 1] = HexChars[b & 0xF];
+                    var b = bytes[i];
+                    span[i * 2] = s_hexChars[b >> 4];
+                    span[i * 2 + 1] = s_hexChars[b & 0xF];
                 }
             });
 #endif
@@ -56,11 +56,11 @@ namespace Neo.Extensions
 
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {
-                for (int i = 0; i < bytes.Length; i++)
+                for (var i = 0; i < bytes.Length; i++)
                 {
-                    byte b = bytes[bytes.Length - i - 1];
-                    span[i * 2] = HexChars[b >> 4];
-                    span[i * 2 + 1] = HexChars[b & 0xF];
+                    var b = bytes[bytes.Length - i - 1];
+                    span[i * 2] = s_hexChars[b >> 4];
+                    span[i * 2 + 1] = s_hexChars[b & 0xF];
                 }
             });
         }
@@ -78,11 +78,11 @@ namespace Neo.Extensions
 #else
             // string.Create with ReadOnlySpan<char> not supported in NET5 or lower
             var sb = new StringBuilder(value.Length * 2);
-            for (int i = 0; i < value.Length; i++)
+            for (var i = 0; i < value.Length; i++)
             {
-                byte b = value[i];
-                sb.Append(HexChars[b >> 4]);
-                sb.Append(HexChars[b & 0xF]);
+                var b = value[i];
+                sb.Append(s_hexChars[b >> 4]);
+                sb.Append(s_hexChars[b & 0xF]);
             }
             return sb.ToString();
 #endif
