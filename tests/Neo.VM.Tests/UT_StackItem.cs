@@ -24,10 +24,11 @@ namespace Neo.Test
         {
             var itemA = new Struct { true, false };
             var itemB = new Struct { true, false };
-            var itemC = new Struct { true, true };
+            var itemC = new Struct { false, false };
 
             itemA[1] = itemA;
             itemB[1] = itemB;
+            itemC[1] = itemC;
 
             Assert.AreEqual(itemA.GetHashCode(), itemB.GetHashCode());
             Assert.AreNotEqual(itemA.GetHashCode(), itemC.GetHashCode());
