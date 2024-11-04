@@ -73,16 +73,7 @@ namespace Neo.VM.Types
             h.Add(Count);
             h.Add(Type);
             foreach (var item in SubItems)
-            {
-                try
-                {
-                    h.Add(Unsafe.HashBytes(item.GetSpan()));
-                }
-                catch
-                {
-                    h.Add(item.GetHashCode());
-                }
-            }
+                h.Add(item.GetHashCode());
             return h.ToHashCode();
         }
 
