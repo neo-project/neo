@@ -28,7 +28,7 @@ namespace Neo.Test
             itemA[1] = itemA;
             itemB[1] = itemB;
 
-            Assert.AreNotEqual(itemA.GetHashCode(), itemB.GetHashCode());
+            Assert.AreEqual(itemA.GetHashCode(), itemB.GetHashCode());
         }
 
         [TestMethod]
