@@ -20,6 +20,18 @@ namespace Neo.Test
     public class UT_StackItem
     {
         [TestMethod]
+        public void TestCircularReference()
+        {
+            var itemA = new Struct { true, false };
+            var itemB = new Struct { true, false };
+
+            itemA[1] = itemA;
+            itemB[1] = itemB;
+
+            Assert.AreNotEqual(itemA.GetHashCode(), itemB.GetHashCode());
+        }
+
+        [TestMethod]
         public void TestHashCode()
         {
             StackItem itemA = "NEO";

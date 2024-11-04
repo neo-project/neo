@@ -72,8 +72,8 @@ namespace Neo.VM.Types
             var h = new HashCode();
             h.Add(Count);
             h.Add(Type);
-            foreach (var item in SubItems)
-                h.Add(item.GetHashCode());
+            //foreach (var item in SubItems)
+            //    h.Add(item.GetHashCode());
             return h.ToHashCode();
         }
 
