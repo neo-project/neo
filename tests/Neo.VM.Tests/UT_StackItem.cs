@@ -85,8 +85,8 @@ namespace Neo.Test
 
             // Test CompoundType GetHashCode for subitems
             var junk = new Array { true, false, 0 };
-            itemA = new Map { [true] = junk, [0] = 1 };
-            itemB = new Map { [true] = junk, [0] = 1 };
+            itemA = new Map { [true] = junk, [0] = junk };
+            itemB = new Map { [true] = junk, [0] = junk };
             itemC = new Map { [true] = junk, [0] = 2 };
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
