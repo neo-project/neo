@@ -11,6 +11,7 @@
 
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.VM
 {
@@ -46,6 +47,45 @@ namespace Neo.VM
             }
 
             Count--;
+
+            if (item is CompoundType compoundType)
+            {
+                // Remove all the childrens
+
+                var hashSet = new HashSet<StackItem> { item };
+
+                foreach (var subItem in compoundType.SubItems)
+                {
+                    RemoveStackReference(subItem, hashSet);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes item from Reference Counter
+        /// </summary>
+        /// <param name="item">The item to remove.</param>
+        /// <param name="context">HashSet</param>
+        private void RemoveStackReference(StackItem item, HashSet<StackItem> context)
+        {
+            if (Count == 0)
+            {
+                throw new InvalidOperationException("Reference was not added before");
+            }
+
+            Count--;
+
+            if (item is CompoundType compoundType)
+            {
+                if (!context.Add(compoundType)) return;
+
+                foreach (var subItem in compoundType.SubItems)
+                {
+                    RemoveStackReference(subItem, context);
+                }
+
+                if (!context.Remove(item)) throw new InvalidOperationException("Circular reference.");
+            }
         }
 
         public void AddReference(StackItem item, CompoundType parent) => AddStackReference(item);
