@@ -74,6 +74,7 @@ namespace Neo.VM.Types
             h.Add(Type);
             foreach (var item in SubItems)
             {
+                // This isn't prefect and leaves somethings unsolved.
                 if (item.GetType().IsSubclassOf(typeof(CompoundType))) continue;
                 h.Add(item.GetHashCode());
             }
