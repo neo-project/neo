@@ -120,9 +120,11 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
 
     public override string ToString()
     {
-        StringBuilder sb = new();
+        var data = ToArray();
+
+        StringBuilder sb = new(2 + (data.Length * 2));
         sb.Append("0x");
-        sb.Append(ToArray().ToHexString(true));
+        sb.Append(data.ToHexString(true));
         return sb.ToString();
     }
 
