@@ -11,6 +11,7 @@
 
 using System.CommandLine;
 using System.CommandLine.Help;
+using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 
 namespace Neo.Service.Commands.Prompt
@@ -19,11 +20,13 @@ namespace Neo.Service.Commands.Prompt
     {
         public HelpCommand() : base("help", "Show help and usage information.")
         {
-            this.SetHandler(context =>
-            {
-                context.HelpBuilder.Write(context.Parser.Configuration.RootCommand, context.Console.Out.CreateTextWriter());
-                context.ExitCode = 0;
-            });
+            this.SetHandler(Invoke);
+        }
+
+        private void Invoke(InvocationContext context)
+        {
+            context.HelpBuilder.Write(context.Parser.Configuration.RootCommand, context.Console.Out.CreateTextWriter());
+            context.ExitCode = 0;
         }
     }
 }
