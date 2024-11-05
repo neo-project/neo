@@ -32,7 +32,9 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Helper
     {
+        private const int DefaultXxHash3Seed = 40343;
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
@@ -125,7 +127,7 @@ namespace Neo.Cryptography
         /// <param name="seed">The seed used by the xxhash3 algorithm.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int XxHash3_32(this ReadOnlySpan<byte> value, uint seed = 0)
+        public static int XxHash3_32(this ReadOnlySpan<byte> value, long seed = DefaultXxHash3Seed)
         {
             return HashCode.Combine(XxHash3.HashToUInt64(value, seed));
         }
@@ -137,7 +139,7 @@ namespace Neo.Cryptography
         /// <param name="seed">The seed used by the xxhash3 algorithm.</param>
         /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int XxHash3_32(this byte[] value, uint seed = 0)
+        public static int XxHash3_32(this byte[] value, long seed = DefaultXxHash3Seed)
         {
             return XxHash3_32(value.AsSpan(), seed);
         }
