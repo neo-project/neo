@@ -17,7 +17,7 @@ namespace Neo.Extensions
 {
     public static class ByteExtensions
     {
-        private static readonly char[] s_hexChars = "0123456789abcdef".ToCharArray();
+        private const string s_hexChars = "0123456789abcdef";
 
         /// <summary>
         /// Converts a byte array to hex <see cref="string"/>.

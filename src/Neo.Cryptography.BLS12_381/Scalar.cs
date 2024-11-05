@@ -9,11 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text;
 using static Neo.Cryptography.BLS12_381.ConstantTimeUtility;
 using static Neo.Cryptography.BLS12_381.MathUtility;
 using static Neo.Cryptography.BLS12_381.ScalarConstants;
@@ -119,12 +119,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
 
     public override string ToString()
     {
-        byte[] bytes = ToArray();
-        StringBuilder sb = new();
-        sb.Append("0x");
-        for (int i = bytes.Length - 1; i >= 0; i--)
-            sb.AppendFormat("{0:x2}", bytes[i]);
-        return sb.ToString();
+        return "0x" + ToArray().ToHexString(true);
     }
 
     public static bool operator ==(in Scalar a, in Scalar b)
