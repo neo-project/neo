@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Neo.Network.P2P;
 using Neo.Service.CommandLine;
 using Neo.Service.Commands.Prompt;
+using Neo.Service.Hosting;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
@@ -60,7 +61,7 @@ namespace Neo.Service.Pipes.Messaging
                 while (_connection.IsConnected)
                 {
                     _output.Write($"{Ansi.Color.Foreground.Green}");
-                    _output.Write("neo> ");
+                    _output.Write($"{NeoDefaults.ConsolePromptName} ");
                     _output.Write($"{Ansi.Color.Foreground.White}");
 
                     var commands = _input.ReadLine() ?? string.Empty;

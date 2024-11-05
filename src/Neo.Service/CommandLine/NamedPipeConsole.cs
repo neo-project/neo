@@ -35,5 +35,10 @@ namespace Neo.Service.CommandLine
         {
             return input.ReadLine();
         }
+
+        public int Read()
+        {
+            return input.Read();
+        }
     }
 }

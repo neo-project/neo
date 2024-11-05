@@ -19,8 +19,6 @@ namespace Neo.Service.Commands.Prompt
     {
         public HelpCommand() : base("help", "Show help and usage information.")
         {
-            AddAlias("?");
-
             this.SetHandler(context =>
             {
                 context.HelpBuilder.Write(context.Parser.Configuration.RootCommand, context.Console.Out.CreateTextWriter());
