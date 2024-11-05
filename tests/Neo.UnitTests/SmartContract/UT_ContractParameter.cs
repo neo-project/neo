@@ -132,6 +132,34 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestContractParameterCyclicReference()
+        {
+            var map = new ContractParameter
+            {
+                Type = ContractParameterType.Map,
+                Value = new List<KeyValuePair<ContractParameter, ContractParameter>>
+                {
+                    new(
+                        new ContractParameter { Type = ContractParameterType.Integer, Value = 1 },
+                        new ContractParameter { Type = ContractParameterType.Integer, Value = 2 }
+                    )
+                }
+            };
+
+            var value = new List<ContractParameter> { map, map };
+            var item = new ContractParameter { Type = ContractParameterType.Array, Value = value };
+
+            // just check there is no exception
+            var json = item.ToJson();
+            Assert.AreEqual(json.ToString(), ContractParameter.FromJson(json).ToJson().ToString());
+
+            // check cyclic reference
+            value.Add(item);
+            Action action = () => item.ToJson();
+            action.Should().Throw<InvalidOperationException>();
+        }
+
+        [TestMethod]
         public void TestSetValue()
         {
             ContractParameter contractParameter1 = new(ContractParameterType.Signature);
