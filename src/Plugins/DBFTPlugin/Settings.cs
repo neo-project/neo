@@ -15,21 +15,35 @@ namespace Neo.Plugins.DBFTPlugin
 {
     public class Settings : PluginSettings
     {
-        public string RecoveryLogs { get; }
-        public bool IgnoreRecoveryLogs { get; }
-        public bool AutoStart { get; }
-        public uint Network { get; }
-        public uint MaxBlockSize { get; }
-        public long MaxBlockSystemFee { get; }
+        public string RecoveryLogs { get; private set; }
+        public bool IgnoreRecoveryLogs { get; private set; }
+        public bool AutoStart { get; private set; }
+        public uint Network { get; private set; }
+        public uint MaxBlockSize { get; private set; }
+        public long MaxBlockSystemFee { get; private set; }
 
-        public Settings(IConfigurationSection section) : base(section)
+        // Modified constructor with default values
+        public Settings(IConfigurationSection section = null)
+            : base(section)
         {
-            RecoveryLogs = section.GetValue("RecoveryLogs", "ConsensusState");
-            IgnoreRecoveryLogs = section.GetValue("IgnoreRecoveryLogs", false);
-            AutoStart = section.GetValue("AutoStart", false);
-            Network = section.GetValue("Network", 5195086u);
-            MaxBlockSize = section.GetValue("MaxBlockSize", 262144u);
-            MaxBlockSystemFee = section.GetValue("MaxBlockSystemFee", 150000000000L);
+            // Set default values
+            RecoveryLogs = "ConsensusState";
+            IgnoreRecoveryLogs = false;
+            AutoStart = false;
+            Network = 5195086u;
+            MaxBlockSize = 262144u;
+            MaxBlockSystemFee = 150000000000L;
+
+            // Override defaults if section is provided
+            if (section != null)
+            {
+                RecoveryLogs = section.GetValue("RecoveryLogs", RecoveryLogs);
+                IgnoreRecoveryLogs = section.GetValue("IgnoreRecoveryLogs", IgnoreRecoveryLogs);
+                AutoStart = section.GetValue("AutoStart", AutoStart);
+                Network = section.GetValue("Network", Network);
+                MaxBlockSize = section.GetValue("MaxBlockSize", MaxBlockSize);
+                MaxBlockSystemFee = section.GetValue("MaxBlockSystemFee", MaxBlockSystemFee);
+            }
         }
     }
 }
