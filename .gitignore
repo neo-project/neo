@@ -259,3 +259,6 @@ PublishProfiles
 launchSettings.json
 /coverages
 **/.DS_Store
+
+# Benchmarks
+**/BenchmarkDotNet.Artifacts/
