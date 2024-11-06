@@ -87,23 +87,27 @@ namespace Neo.Cryptography
         {
             // Decode Base58 string to BigInteger
             var bi = BigInteger.Zero;
-            for (int i = 0; i < input.Length; i++)
+            sbyte value;
+            for (var i = 0; i < input.Length; i++)
             {
-                if (input[i] >= 123 || s_decodeMap[input[i]] == -1)
+                if (input[i] >= 123)
                     throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
-                bi = bi * s_alphabetLength + s_decodeMap[input[i]];
+                value = s_decodeMap[input[i]];
+                if (value == -1)
+                    throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
+                bi = bi * s_alphabetLength + value;
             }
 
             // Encode BigInteger to byte[]
             // Leading zero bytes get encoded as leading `1` characters
 
-            int leadingZeroCount = LeadingBase58Zeros(input);
+            var leadingZeroCount = LeadingBase58Zeros(input);
             if (bi.IsZero)
             {
                 return new byte[leadingZeroCount];
             }
 
-            byte[] result = new byte[leadingZeroCount + bi.GetByteCount(true)];
+            var result = new byte[leadingZeroCount + bi.GetByteCount(true)];
 
             _ = bi.TryWriteBytes(result.AsSpan(leadingZeroCount), out _, true, true);
             return result;
