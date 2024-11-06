@@ -57,7 +57,7 @@ namespace Neo.VM.Types
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Script, Position);
+            return HashCode.Combine(Script.GetHashCode(), Position);
         }
 
         public override string ToString()
