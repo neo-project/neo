@@ -63,15 +63,27 @@ namespace Neo.Plugins.Storage
         public byte[] TryGet(byte[] key) =>
             _db.Get(key, _readOptions);
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
-            direction == SeekDirection.Forward
-                ? _db.Seek(prefix, _readOptions)
-                : _db.SeekPrev(prefix, _readOptions);
-
         public bool TryGet(byte[] key, out byte[] value)
         {
             value = _db.Get(key, _readOptions);
             return value != null;
         }
+
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
+            direction == SeekDirection.Forward
+                ? _db.Seek(prefix, _readOptions)
+                : _db.SeekPrev(prefix, _readOptions);
+=========
+        public byte[] TryGet(byte[] key)
+        {
+            return db.Get(options, key);
+        }
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            value = db.Get(options, key);
+            return value != null;
+        }
+>>>>>>>>> Temporary merge branch 2
     }
 }
