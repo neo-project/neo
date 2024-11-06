@@ -60,12 +60,32 @@ namespace Neo.VM.Types
         }
 
         /// <summary>
-        /// The operation is not supported. Always throw <see cref="NotSupportedException"/>.
+        ///
+        /// This method provides a hash code for the <see cref="CompoundType"/> based on its item's span.
+        /// It is used for efficient storage and retrieval in hash-based collections.
+        ///
+        /// Use this method when you need a hash code for a <see cref="CompoundType"/>.
         /// </summary>
-        /// <exception cref="NotSupportedException">This method always throws the exception.</exception>
+        /// <returns>The hash code for the <see cref="CompoundType"/>.</returns>
         public override int GetHashCode()
         {
-            throw new NotSupportedException();
+            var h = new HashCode();
+            h.Add(Count);
+            h.Add(Type);
+            foreach (var item in SubItems)
+            {
+                // This isn't prefect and leaves somethings unsolved.
+                if (item is CompoundType cItem)
+                {
+                    h.Add(cItem.Count);
+                    h.Add(cItem.Type);
+                }
+                else
+                {
+                    h.Add(item.GetHashCode());
+                }
+            }
+            return h.ToHashCode();
         }
 
         public override string ToString()
