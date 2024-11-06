@@ -64,17 +64,18 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Test (windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
-        dotnet build
-        dotnet test --blame-hang --blame-crash --no-build
-
     - name: Test (MacOS)
       if: matrix.os == 'windows-latest'
       run: |
         brew install leveldb
+        export PATH="your-dir:$PATH"
+        dotnet build
+        dotnet test --blame-hang --blame-crash --no-build
+
+    - name: Test (windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet build
         dotnet test --blame-hang --blame-crash --no-build
 
