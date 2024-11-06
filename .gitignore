@@ -257,3 +257,6 @@ paket-files/
 PublishProfiles
 /.vscode
 launchSettings.json
+
+# Benchmarks
+**/BenchmarkDotNet.Artifacts/
