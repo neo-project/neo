@@ -20,6 +20,21 @@ namespace Neo.Test
     public class UT_StackItem
     {
         [TestMethod]
+        public void TestCircularReference()
+        {
+            var itemA = new Struct { true, false };
+            var itemB = new Struct { true, false };
+            var itemC = new Struct { false, false };
+
+            itemA[1] = itemA;
+            itemB[1] = itemB;
+            itemC[1] = itemC;
+
+            Assert.AreEqual(itemA.GetHashCode(), itemB.GetHashCode());
+            Assert.AreNotEqual(itemA.GetHashCode(), itemC.GetHashCode());
+        }
+
+        [TestMethod]
         public void TestHashCode()
         {
             StackItem itemA = "NEO";
@@ -62,17 +77,35 @@ namespace Neo.Test
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
 
-            itemA = new VM.Types.Array();
+            itemA = new Array { true, false, 0 };
+            itemB = new Array { true, false, 0 };
+            itemC = new Array { true, false, 1 };
 
-            Assert.ThrowsException<System.NotSupportedException>(() => itemA.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
-            itemA = new Struct();
+            itemA = new Struct { true, false, 0 };
+            itemB = new Struct { true, false, 0 };
+            itemC = new Struct { true, false, 1 };
 
-            Assert.ThrowsException<System.NotSupportedException>(() => itemA.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
-            itemA = new Map();
+            itemA = new Map { [true] = false, [0] = 1 };
+            itemB = new Map { [true] = false, [0] = 1 };
+            itemC = new Map { [true] = false, [0] = 2 };
 
-            Assert.ThrowsException<System.NotSupportedException>(() => itemA.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+
+            // Test CompoundType GetHashCode for subitems
+            var junk = new Array { true, false, 0 };
+            itemA = new Map { [true] = junk, [0] = junk };
+            itemB = new Map { [true] = junk, [0] = junk };
+            itemC = new Map { [true] = junk, [0] = 2 };
+
+            Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
+            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
             itemA = new InteropInterface(123);
             itemB = new InteropInterface(123);
