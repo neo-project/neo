@@ -62,7 +62,7 @@ namespace Neo.IO.Storage.LevelDB
         /// </summary>
         public void Put(byte[] key, byte[] value)
         {
-            Put(key, value, new WriteOptions());
+            Put(key, value, WriteOptions.Default);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Neo.IO.Storage.LevelDB
         /// </summary>
         public void Delete(byte[] key)
         {
-            Delete(key, new WriteOptions());
+            Delete(key, WriteOptions.Default);
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace Neo.IO.Storage.LevelDB
 
         public void Write(WriteBatch batch)
         {
-            Write(batch, new WriteOptions());
+            Write(batch, WriteOptions.Default);
         }
 
         public void Write(WriteBatch batch, WriteOptions options)
