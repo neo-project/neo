@@ -87,15 +87,15 @@ namespace Neo.Cryptography
         {
             // Decode Base58 string to BigInteger
             var bi = BigInteger.Zero;
-            sbyte value;
+            sbyte digit;
             for (var i = 0; i < input.Length; i++)
             {
                 if (input[i] >= 123)
                     throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
-                value = s_decodeMap[input[i]];
-                if (value == -1)
+                digit = s_decodeMap[input[i]];
+                if (digit == -1)
                     throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
-                bi = bi * s_alphabetLength + value;
+                bi = bi * s_alphabetLength + digit;
             }
 
             // Encode BigInteger to byte[]
