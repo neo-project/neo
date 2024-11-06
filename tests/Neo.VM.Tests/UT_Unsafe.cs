@@ -15,6 +15,7 @@ using System;
 
 namespace Neo.Test
 {
+    [TestClass]
     public class UT_Unsafe
     {
         [TestMethod]
