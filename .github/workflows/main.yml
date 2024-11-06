@@ -63,11 +63,18 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: Test
-      if: matrix.os != 'ubuntu-latest'
+
+    - name: Test (windows)
+      if: matrix.os == 'windows-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
+        dotnet build
+        dotnet test --blame-hang --blame-crash --no-build
+
+    - name: Test (MacOS)
+      if: matrix.os == 'windows-latest'
+      run: |
+        brew install leveldb
         dotnet build
         dotnet test --blame-hang --blame-crash --no-build
 
