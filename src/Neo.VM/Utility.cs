@@ -27,17 +27,6 @@ namespace Neo.VM
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
-        /// <summary>
-        /// All bytes are zero or not in a byte array
-        /// </summary>
-        /// <param name="x">The byte array</param>
-        /// <returns>false if all bytes are zero, true otherwise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool NotZero(this ReadOnlySpan<byte> x)
-        {
-            return x.IndexOfAnyExcept((byte)0) >= 0;
-        }
-
         public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
         {
             try
