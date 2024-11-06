@@ -69,16 +69,16 @@ namespace Neo.VM.Benchmark.OpCode
             while (State != VMState.HALT && State != VMState.FAULT)
             {
 #if DEBUG
-            var stopwatch = Stopwatch.StartNew();
+                var stopwatch = Stopwatch.StartNew();
 #endif
                 ExecuteNext();
 #if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(CurrentContext!.CurrentInstruction!.OpCode, stopwatch.Elapsed);
+                stopwatch.Stop();
+                UpdateOpcodeStats(CurrentContext!.CurrentInstruction!.OpCode, stopwatch.Elapsed);
 #endif
             }
 #if DEBUG
-        PrintOpcodeStats();
+            PrintOpcodeStats();
 #endif
         }
 
@@ -94,16 +94,16 @@ namespace Neo.VM.Benchmark.OpCode
                     State = VMState.HALT;
                 }
 #if DEBUG
-            var stopwatch = Stopwatch.StartNew();
+                var stopwatch = Stopwatch.StartNew();
 #endif
                 ExecuteNext();
 #if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+                stopwatch.Stop();
+                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
 #endif
             }
 #if DEBUG
-        PrintOpcodeStats();
+            PrintOpcodeStats();
 #endif
         }
 
@@ -119,16 +119,16 @@ namespace Neo.VM.Benchmark.OpCode
                     State = VMState.HALT;
                 }
 #if DEBUG
-            var stopwatch = Stopwatch.StartNew();
+                var stopwatch = Stopwatch.StartNew();
 #endif
                 ExecuteNext();
 #if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+                stopwatch.Stop();
+                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
 #endif
             }
 #if DEBUG
-        PrintOpcodeStats();
+            PrintOpcodeStats();
 #endif
         }
 
@@ -144,16 +144,16 @@ namespace Neo.VM.Benchmark.OpCode
                     State = VMState.HALT;
                 }
 #if DEBUG
-            var stopwatch = Stopwatch.StartNew();
+                var stopwatch = Stopwatch.StartNew();
 #endif
                 ExecuteNext();
 #if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+                stopwatch.Stop();
+                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
 #endif
             }
 #if DEBUG
-        PrintOpcodeStats();
+            PrintOpcodeStats();
 #endif
         }
 
