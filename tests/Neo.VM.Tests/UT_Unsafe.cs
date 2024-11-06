@@ -13,37 +13,38 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using System;
 
-namespace Neo.Test;
-
-public class UT_Unsafe
+namespace Neo.Test
 {
-    [TestMethod]
-    public void TestNotZero()
+    public class UT_Unsafe
     {
-        Assert.IsFalse(new ReadOnlySpan<byte>(System.Array.Empty<byte>()).NotZero());
-        Assert.IsFalse(new ReadOnlySpan<byte>(new byte[4]).NotZero());
-        Assert.IsFalse(new ReadOnlySpan<byte>(new byte[7]).NotZero());
-        Assert.IsFalse(new ReadOnlySpan<byte>(new byte[8]).NotZero());
-        Assert.IsFalse(new ReadOnlySpan<byte>(new byte[9]).NotZero());
-        Assert.IsFalse(new ReadOnlySpan<byte>(new byte[11]).NotZero());
-
-        Assert.IsTrue(new ReadOnlySpan<byte>(new byte[4] { 0x00, 0x00, 0x00, 0x01 }).NotZero());
-        Assert.IsTrue(new ReadOnlySpan<byte>(new byte[7] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
-        Assert.IsTrue(new ReadOnlySpan<byte>(new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
-        Assert.IsTrue(new ReadOnlySpan<byte>(new byte[9] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00 }).NotZero());
-        Assert.IsTrue(new ReadOnlySpan<byte>(new byte[11] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
-
-        var bytes = new byte[64];
-        for (int i = 0; i < bytes.Length; i++)
+        [TestMethod]
+        public void TestNotZero()
         {
-            ReadOnlySpan<byte> span = bytes.AsSpan();
-            Assert.IsFalse(span[i..].NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(System.Array.Empty<byte>()).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[4]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[7]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[8]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[9]).NotZero());
+            Assert.IsFalse(new ReadOnlySpan<byte>(new byte[11]).NotZero());
 
-            for (int j = i; j < bytes.Length; j++)
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[4] { 0x00, 0x00, 0x00, 0x01 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[7] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[9] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00 }).NotZero());
+            Assert.IsTrue(new ReadOnlySpan<byte>(new byte[11] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).NotZero());
+
+            var bytes = new byte[64];
+            for (int i = 0; i < bytes.Length; i++)
             {
-                bytes[j] = 0x01;
-                Assert.IsTrue(span[i..].NotZero());
-                bytes[j] = 0x00;
+                ReadOnlySpan<byte> span = bytes.AsSpan();
+                Assert.IsFalse(span[i..].NotZero());
+
+                for (int j = i; j < bytes.Length; j++)
+                {
+                    bytes[j] = 0x01;
+                    Assert.IsTrue(span[i..].NotZero());
+                    bytes[j] = 0x00;
+                }
             }
         }
     }
