@@ -73,17 +73,5 @@ namespace Neo.Plugins.Storage
             direction == SeekDirection.Forward
                 ? _db.Seek(prefix, _readOptions)
                 : _db.SeekPrev(prefix, _readOptions);
-=========
-        public byte[] TryGet(byte[] key)
-        {
-            return db.Get(options, key);
-        }
-
-        public bool TryGet(byte[] key, out byte[] value)
-        {
-            value = db.Get(options, key);
-            return value != null;
-        }
->>>>>>>>> Temporary merge branch 2
     }
 }
