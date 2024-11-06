@@ -30,7 +30,7 @@ namespace Neo.CLI.Commands
 
             public Handler()
             {
-                _namedPipeClientStream = new NamedPipeClientStream(".", @"neo-cli", PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly | PipeOptions.WriteThrough);
+                _namedPipeClientStream = new NamedPipeClientStream(".", "LOCAL\\neo-cli", PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly | PipeOptions.WriteThrough);
             }
 
             public int Invoke(InvocationContext context)

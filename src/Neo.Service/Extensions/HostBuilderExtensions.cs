@@ -22,7 +22,6 @@ using Neo.Service.Hosting;
 using Neo.Service.Hosting.Services;
 using Neo.Service.Pipes;
 using System;
-using System.CommandLine.Hosting;
 using System.IO;
 
 namespace Neo.Service.Extensions
@@ -116,7 +115,6 @@ namespace Neo.Service.Extensions
                             storagePath = Path.Combine(AppContext.BaseDirectory, storagePath);
                     }
                 }
-
                 services.TryAddSingleton(new NeoSystem(protocolSettings, storageOptions?.Engine ?? NeoDefaults.StoreProviderName, storagePath));
             });
             return hostBuilder;
@@ -126,7 +124,7 @@ namespace Neo.Service.Extensions
         {
             hostBuilder.ConfigureServices((context, services) =>
             {
-                services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
+                //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
                 services.AddLogging(logging =>
                 {
                     logging.AddConfiguration(context.Configuration.GetSection("Logging"));

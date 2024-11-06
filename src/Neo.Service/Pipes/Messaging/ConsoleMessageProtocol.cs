@@ -66,7 +66,7 @@ namespace Neo.Service.Pipes.Messaging
 
                     var commands = _input.ReadLine() ?? string.Empty;
 
-                    var rootCommand = new PromptRootCommand();
+                    var rootCommand = new PromptRootCommand(neoSystem);
                     var parser = new CommandLineBuilder(rootCommand)
                         .UseParseErrorReporting()
                         .Build();

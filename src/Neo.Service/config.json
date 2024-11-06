@@ -16,7 +16,7 @@
       "Verify": true
     },
     "Service": {
-      "PipeName": "neo-cli"
+      "PipeName": "LOCAL\\neo-cli"
     },
     "P2P": {
       "Listen": "0.0.0.0",

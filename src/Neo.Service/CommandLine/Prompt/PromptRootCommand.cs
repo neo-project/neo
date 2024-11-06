@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Service.CommandLine.Prompt;
 using Neo.Service.Hosting;
 using System.CommandLine;
 
@@ -18,10 +19,13 @@ namespace Neo.Service.Commands.Prompt
     {
         private static string? s_executablePath;
 
-        public PromptRootCommand() : base(ExecutableName, $"Neo N3 Command-Line Tool")
+        public PromptRootCommand(
+            NeoSystem neoSystem) : base(ExecutableName, $"Neo N3 Command-Line Tool")
         {
             var helpCommand = new HelpCommand();
+            var showCommand = new ShowCommand(neoSystem);
 
+            AddCommand(showCommand);
             AddCommand(helpCommand);
         }
 

@@ -19,7 +19,7 @@ namespace Neo.Service.Hosting
 
         public static readonly string ConsolePromptName = "neo>";
 
-        public static readonly string PipeName = @"LOCAL\neo-cli";
+        public static readonly string PipeName = "LOCAL\\neo-cli";
 
         public static readonly string NeoNameService = "0x50ac1c37690cc2cfc594472833cf57505d5f46de";
         public static readonly string GitHubReleasesAPI = "https://api.github.com/repos/neo-project/neo/releases";
