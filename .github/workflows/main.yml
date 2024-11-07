@@ -68,8 +68,8 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew install leveldb
-        cp -vp /opt/homebrew/Cellar/leveldb/1.23_1/libleveldb.dylib ./bin/tests/Neo.Plugins.Storage.Tests/bin/Debug/net8.0/
         dotnet build
+        cp -vp /opt/homebrew/Cellar/leveldb/1.23_1/libleveldb.dylib ./bin/tests/Neo.Plugins.Storage.Tests/bin/Debug/net8.0/
         dotnet test --blame-hang --blame-crash --no-build
 
     - name: Test (windows)
