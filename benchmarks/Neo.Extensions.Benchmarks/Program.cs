@@ -10,8 +10,6 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Running;
-using Neo.Benchmark;
+using Neo.Extensions;
 
-// BenchmarkRunner.Run<Benchmarks_PoCs>();
-BenchmarkRunner.Run<Benchmarks_UInt160>();
-BenchmarkRunner.Run<Benchmarks_Hash>();
+BenchmarkRunner.Run(typeof(Benchmark_ByteArrayComparer));

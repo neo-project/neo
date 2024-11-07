@@ -17,11 +17,19 @@ namespace Neo.VM
 {
     unsafe internal static class Unsafe
     {
-        const long HashMagicNumber = 40343;
+        private const long DefaultXxHash3Seed = 40343;
 
+        /// <summary>
+        /// All bytes are zero or not in a byte array
+        /// </summary>
+        /// <param name="x">The byte array</param>
+        /// <returns>false if all bytes are zero, true otherwise</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool NotZero(ReadOnlySpan<byte> x)
+        public static bool NotZero(this ReadOnlySpan<byte> x)
         {
+#if NET7_0_OR_GREATER
+            return x.IndexOfAnyExcept((byte)0) >= 0;
+#else
             int len = x.Length;
             if (len == 0) return false;
             fixed (byte* xp = x)
@@ -40,17 +48,19 @@ namespace Neo.VM
                 }
             }
             return false;
+#endif
         }
 
         /// <summary>
         /// Get 64-bit hash code for a byte array
         /// </summary>
         /// <param name="span">Span</param>
-        /// <returns></returns>
+        /// <param name="seed">The seed used by the xxhash3 algorithm.</param>
+        /// <returns>The computed hash code.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong HashBytes(ReadOnlySpan<byte> span)
+        public static ulong HashBytes(ReadOnlySpan<byte> span, long seed = DefaultXxHash3Seed)
         {
-            return XxHash3.HashToUInt64(span, HashMagicNumber);
+            return XxHash3.HashToUInt64(span, seed);
         }
     }
 }
