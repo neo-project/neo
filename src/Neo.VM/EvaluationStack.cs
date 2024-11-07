@@ -11,7 +11,6 @@
 
 using Neo.VM.Exceptions;
 using Neo.VM.Types;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,7 +48,7 @@ namespace Neo.VM
         internal void CopyTo(EvaluationStack stack, int count = -1)
         {
             if (count < -1 || count > innerList.Count)
-                throw new ArgumentOutOfRangeException(nameof(count));
+                throw new VMUncatchableException($"Insert out of range: {count}/{innerList.Count}");
             if (count == 0) return;
             if (count == -1 || count == innerList.Count)
                 stack.innerList.AddRange(innerList);

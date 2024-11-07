@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -76,7 +77,7 @@ namespace Neo.VM
             internal set
             {
                 if (value < 0 || value > Script.Length)
-                    throw new ArgumentOutOfRangeException(nameof(value));
+                    throw new VMUncatchableException($"Insert out of range: {value}");
                 instructionPointer = value;
             }
         }
@@ -115,7 +116,7 @@ namespace Neo.VM
         private ExecutionContext(SharedStates shared_states, int rvcount, int initialPosition)
         {
             if (rvcount < -1 || rvcount > ushort.MaxValue)
-                throw new ArgumentOutOfRangeException(nameof(rvcount));
+                throw new VMUncatchableException($"Insert out of range: {rvcount}");
             this.shared_states = shared_states;
             RVCount = rvcount;
             InstructionPointer = initialPosition;

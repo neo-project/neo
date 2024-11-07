@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+using Neo.VM.Exceptions;
 using System.Runtime.CompilerServices;
 
 namespace Neo.VM
@@ -68,7 +68,7 @@ namespace Neo.VM
         {
             if (size < 0 || size > MaxItemSize)
             {
-                throw new InvalidOperationException($"MaxItemSize exceed: {size}");
+                throw new VMUncatchableException($"MaxItemSize exceed: {size}");
             }
         }
 
@@ -81,7 +81,7 @@ namespace Neo.VM
         {
             if (shift > MaxShift || shift < 0)
             {
-                throw new InvalidOperationException($"Invalid shift value: {shift}");
+                throw new VMUncatchableException($"Invalid shift value: {shift}");
             }
         }
     }
