@@ -517,10 +517,10 @@ namespace Neo.VM
             if (!engine.CurrentContext.TryStack.TryPop(out var currentTry))
                 throw new InvalidOperationException($"The corresponding TRY block cannot be found.");
 
-            if (engine.UncaughtVMCatchableException is null)
+            if (engine.UncaughtException is null)
                 engine.CurrentContext.InstructionPointer = currentTry.EndPointer;
             else
-                ExecuteThrow(engine, engine.UncaughtVMCatchableException);
+                ExecuteThrow(engine, engine.UncaughtException);
 
             engine.isJumping = true;
         }
@@ -659,7 +659,7 @@ namespace Neo.VM
         /// <param name="ex">The exception to throw.</param>
         public virtual void ExecuteThrow(ExecutionEngine engine, StackItem? ex)
         {
-            engine.UncaughtVMCatchableException = ex;
+            engine.UncaughtException = ex;
 
             var pop = 0;
             foreach (var executionContext in engine.InvocationStack)
@@ -680,9 +680,9 @@ namespace Neo.VM
                         if (tryContext.State == ExceptionHandlingState.Try && tryContext.HasCatch)
                         {
                             tryContext.State = ExceptionHandlingState.Catch;
-                            engine.Push(engine.UncaughtVMCatchableException!);
+                            engine.Push(engine.UncaughtException!);
                             executionContext.InstructionPointer = tryContext.CatchPointer;
-                            engine.UncaughtVMCatchableException = null;
+                            engine.UncaughtException = null;
                         }
                         else
                         {
@@ -696,7 +696,7 @@ namespace Neo.VM
                 ++pop;
             }
 
-            throw new VMUnhandledException(engine.UncaughtVMCatchableException!);
+            throw new VMUnhandledException(engine.UncaughtException!);
         }
 
         #endregion

@@ -355,7 +355,7 @@ namespace Neo.SmartContract
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
-                if (UncaughtVMCatchableException is null)
+                if (UncaughtException is null)
                 {
                     state.SnapshotCache?.Commit();
                     if (CurrentContext != null)
@@ -380,8 +380,8 @@ namespace Neo.SmartContract
             Diagnostic?.ContextUnloaded(context);
             if (contractTasks.Remove(context, out var awaiter))
             {
-                if (UncaughtVMCatchableException is not null)
-                    throw new VMUnhandledException(UncaughtVMCatchableException);
+                if (UncaughtException is not null)
+                    throw new VMUnhandledException(UncaughtException);
                 awaiter.SetResult(this);
             }
         }

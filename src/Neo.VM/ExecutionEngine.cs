@@ -59,7 +59,7 @@ namespace Neo.VM
         /// <summary>
         /// The VM object representing the uncaught exception.
         /// </summary>
-        public StackItem? UncaughtVMCatchableException { get; internal set; }
+        public StackItem? UncaughtException { get; internal set; }
 
         /// <summary>
         /// The current state of the VM.
