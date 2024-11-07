@@ -13,6 +13,7 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Exceptions;
 using System;
 using Array = Neo.VM.Types.Array;
 

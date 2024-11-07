@@ -24,6 +24,7 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using Neo.VM.Exceptions;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;

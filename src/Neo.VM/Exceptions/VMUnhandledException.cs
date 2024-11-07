@@ -14,13 +14,13 @@ using System;
 using System.Text;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.VM
+namespace Neo.VM.Exceptions
 {
     /// <summary>
     /// Represents an unhandled exception in the VM.
     /// Thrown when there is an exception in the VM that is not caught by any script.
     /// </summary>
-    public class VMUnhandledException : Exception
+    public class VMUnhandledException : Exception, IVMException
     {
         /// <summary>
         /// The unhandled exception in the VM.
@@ -39,7 +39,7 @@ namespace Neo.VM
         private static string GetExceptionMessage(StackItem e)
         {
             StringBuilder sb = new("An unhandled exception was thrown.");
-            ByteString? s = e as ByteString;
+            var s = e as ByteString;
             if (s is null && e is Array array && array.Count > 0)
                 s = array[0] as ByteString;
             if (s != null)
