@@ -18,7 +18,7 @@ namespace Neo.VM.Exceptions
         public VMCatchableException(string message) : base(message)
         {
             if (string.IsNullOrEmpty(message))
-                throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+                throw new VMUncatchableException("Message cannot be null or empty.");
         }
     }
 }

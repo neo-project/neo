@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Diagnostics;
 using System.Numerics;
@@ -50,7 +51,7 @@ namespace Neo.VM.Types
             else
             {
                 Size = value.GetByteCount();
-                if (Size > MaxSize) throw new ArgumentException($"MaxSize exceed: {Size}");
+                if (Size > MaxSize) throw new VMUncatchableException($"MaxSize exceed: {Size}");
             }
             this.value = value;
         }
