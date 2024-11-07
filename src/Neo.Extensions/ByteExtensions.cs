@@ -10,12 +10,40 @@
 // modifications are permitted.
 
 using System;
+using System.IO.Hashing;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.Extensions
 {
     public static class ByteExtensions
     {
+        private const int DefaultXxHash3Seed = 40343;
+
+        /// <summary>
+        /// Computes the 32-bit hash value for the specified byte array using the xxhash3 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed used by the xxhash3 algorithm.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int XxHash3_32(this ReadOnlySpan<byte> value, long seed = DefaultXxHash3Seed)
+        {
+            return HashCode.Combine(XxHash3.HashToUInt64(value, seed));
+        }
+
+        /// <summary>
+        /// Computes the 32-bit hash value for the specified byte array using the xxhash3 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed used by the xxhash3 algorithm.</param>
+        /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int XxHash3_32(this byte[] value, long seed = DefaultXxHash3Seed)
+        {
+            return XxHash3_32(value.AsSpan(), seed);
+        }
+
         /// <summary>
         /// Converts a byte array to hex <see cref="string"/>.
         /// </summary>

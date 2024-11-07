@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO.Hashing;
 using System.Linq;
 
 namespace Neo.Extensions
@@ -30,7 +29,7 @@ namespace Neo.Extensions
 
         public int GetHashCode(byte[] obj)
         {
-            return HashCode.Combine(XxHash3.HashToUInt64(obj));
+            return obj.XxHash3_32();
         }
     }
 }
