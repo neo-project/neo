@@ -2,7 +2,7 @@ name: .NET Core Test and Publish
 
 on:
   push:
-    #branches: [master]
+    branches: [master]
   pull_request:
 
 env:
@@ -10,51 +10,50 @@ env:
 
 jobs:
 
-  # Format:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
+  Format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-  #   - name: Setup .NET
-  #     uses: actions/setup-dotnet@v4
-  #     with:
-  #       dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
-  #   - name: Check Format (*.cs)
-  #     run: dotnet format --verify-no-changes --verbosity diagnostic
+    - name: Check Format (*.cs)
+      run: dotnet format --verify-no-changes --verbosity diagnostic
 
-  # Test-Everything:
-  #   needs: [Format]
-  #   timeout-minutes: 15
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
+  Test-Everything:
+    needs: [Format]
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-  #   - name: Setup .NET
-  #     uses: actions/setup-dotnet@v4
-  #     with:
-  #       dotnet-version: ${{ env.DOTNET_VERSION }} 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }} 
 
-  #   - name: Build (Everything)
-  #     run: dotnet build
+    - name: Build (Everything)
+      run: dotnet build
 
-  #   - name: Install dependencies
-  #     run: |
-  #       sudo apt-get install libleveldb-dev expect
-  #       find ./bin -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
+    - name: Install dependencies
+      run: |
+        sudo apt-get install libleveldb-dev expect
+        find ./bin -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
 
-  #   - name: Run tests with expect
-  #     run: expect ./scripts/Neo.CLI/test-neo-cli.exp
+    - name: Run tests with expect
+      run: expect ./scripts/Neo.CLI/test-neo-cli.exp
       
   Test:
-    #needs: [Format]
+    needs: [Format]
     timeout-minutes: 15
     strategy:
       matrix:
-        #os: [ubuntu-latest, windows-latest, macos-latest]
-        os: [macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
