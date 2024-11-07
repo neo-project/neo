@@ -30,6 +30,9 @@ namespace Neo.VM.Benchmark
         [ArgumentsSource(nameof(GetTypeConversionPairs))]
         public void BenchConvertTo(StackItemType fromType, StackItemType toType)
         {
+            if (testItemsByType is null)
+                throw new InvalidOperationException($"{nameof(testItemsByType)} not initialized");
+
             foreach (var item in testItemsByType[fromType])
             {
                 try
