@@ -61,6 +61,7 @@ namespace Neo.VM
                 throw new InvalidOperationException($"The value {count} is out of range.");
             // TODO: check if we can optimize the memcpy by using peek instead of  dup then pop
             src.Slice(si, count).CopyTo(dst.InnerBuffer.Span[di..]);
+            dst.InvalidateHashCode();
         }
 
         /// <summary>
@@ -85,7 +86,7 @@ namespace Neo.VM
 
         /// <summary>
         /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
-        /// <see cref="OpCode.CAT"/>
+        /// <see cref="OpCode.SUBSTR"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>

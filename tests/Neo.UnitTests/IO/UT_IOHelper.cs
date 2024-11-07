@@ -110,23 +110,9 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializable()
         {
-            for (int i = 0; i < 2; i++)
-            {
-                if (i == 0)
-                {
-                    byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00,
-                                                    0x00,0x00,0x00,0x00,0x00 };
-                    ISerializable result = Neo.IO.Helper.AsSerializable(caseArray, typeof(UInt160));
-                    Assert.AreEqual(UInt160.Zero, result);
-                }
-                else
-                {
-                    Action action = () => Neo.IO.Helper.AsSerializable(Array.Empty<byte>(), typeof(double));
-                    action.Should().Throw<InvalidCastException>();
-                }
-            }
+            byte[] caseArray = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+            ISerializable result = caseArray.AsSerializable<UInt160>();
+            Assert.AreEqual(UInt160.Zero, result);
         }
 
         [TestMethod]
@@ -164,167 +150,10 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializableArray()
         {
-            byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
+            byte[] byteArray = new UInt160[] { UInt160.Zero }.ToByteArray();
             UInt160[] result = Neo.IO.Helper.AsSerializableArray<UInt160>(byteArray);
             Assert.AreEqual(1, result.Length);
             Assert.AreEqual(UInt160.Zero, result[0]);
-        }
-
-        [TestMethod]
-        public void TestGetVarSizeInt()
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                if (i == 0)
-                {
-                    int result = Neo.IO.Helper.GetVarSize(1);
-                    Assert.AreEqual(1, result);
-                }
-                else if (i == 1)
-                {
-                    int result = Neo.IO.Helper.GetVarSize(0xFFFF);
-                    Assert.AreEqual(3, result);
-                }
-                else
-                {
-                    int result = Neo.IO.Helper.GetVarSize(0xFFFFFF);
-                    Assert.AreEqual(5, result);
-                }
-            }
-        }
-        enum TestEnum0 : sbyte
-        {
-            case1 = 1, case2 = 2
-        }
-
-        enum TestEnum1 : byte
-        {
-            case1 = 1, case2 = 2
-        }
-
-        enum TestEnum2 : short
-        {
-            case1 = 1, case2 = 2
-        }
-
-        enum TestEnum3 : ushort
-        {
-            case1 = 1, case2 = 2
-        }
-
-        enum TestEnum4 : int
-        {
-            case1 = 1, case2 = 2
-        }
-
-        enum TestEnum5 : uint
-        {
-            case1 = 1, case2 = 2
-        }
-
-        enum TestEnum6 : long
-        {
-            case1 = 1, case2 = 2
-        }
-
-        [TestMethod]
-        public void TestGetVarSizeGeneric()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                if (i == 0)
-                {
-                    int result = Neo.IO.Helper.GetVarSize(new UInt160[] { UInt160.Zero });
-                    Assert.AreEqual(21, result);
-                }
-                else if (i == 1)//sbyte
-                {
-                    List<TestEnum0> initList = new()
-                    {
-                        TestEnum0.case1
-                    };
-                    IReadOnlyCollection<TestEnum0> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
-                    Assert.AreEqual(2, result);
-                }
-                else if (i == 2)//byte
-                {
-                    List<TestEnum1> initList = new()
-                    {
-                        TestEnum1.case1
-                    };
-                    IReadOnlyCollection<TestEnum1> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
-                    Assert.AreEqual(2, result);
-                }
-                else if (i == 3)//short
-                {
-                    List<TestEnum2> initList = new()
-                    {
-                        TestEnum2.case1
-                    };
-                    IReadOnlyCollection<TestEnum2> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
-                    Assert.AreEqual(3, result);
-                }
-                else if (i == 4)//ushort
-                {
-                    List<TestEnum3> initList = new()
-                    {
-                        TestEnum3.case1
-                    };
-                    IReadOnlyCollection<TestEnum3> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
-                    Assert.AreEqual(3, result);
-                }
-                else if (i == 5)//int
-                {
-                    List<TestEnum4> initList = new()
-                    {
-                        TestEnum4.case1
-                    };
-                    IReadOnlyCollection<TestEnum4> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
-                    Assert.AreEqual(5, result);
-                }
-                else if (i == 6)//uint
-                {
-                    List<TestEnum5> initList = new()
-                    {
-                        TestEnum5.case1
-                    };
-                    IReadOnlyCollection<TestEnum5> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
-                    Assert.AreEqual(5, result);
-                }
-                else if (i == 7)//long
-                {
-                    List<TestEnum6> initList = new()
-                    {
-                        TestEnum6.case1
-                    };
-                    IReadOnlyCollection<TestEnum6> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
-                    Assert.AreEqual(9, result);
-                }
-                else if (i == 8)
-                {
-                    List<int> initList = new()
-                    {
-                        1
-                    };
-                    IReadOnlyCollection<int> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize<int>(testList);
-                    Assert.AreEqual(5, result);
-                }
-            }
-        }
-
-        [TestMethod]
-        public void TestGetVarSizeString()
-        {
-            int result = Neo.IO.Helper.GetVarSize("AA");
-            Assert.AreEqual(3, result);
         }
 
         [TestMethod]
@@ -413,7 +242,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestToByteArrayGeneric()
         {
-            byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
+            byte[] byteArray = new UInt160[] { UInt160.Zero }.ToByteArray();
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01,0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,

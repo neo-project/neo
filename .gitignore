@@ -261,3 +261,7 @@ launchSettings.json
 # UT coverage report
 /coverages
 **/.DS_Store
+
+# Benchmarks
+**/BenchmarkDotNet.Artifacts/
+

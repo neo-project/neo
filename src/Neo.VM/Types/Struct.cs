@@ -31,11 +31,11 @@ namespace Neo.VM.Types
         }
 
         /// <summary>
-        /// Create a structure with the specified fields. And make the structure use the specified <see cref="ReferenceCounter"/>.
+        /// Create a structure with the specified fields. And make the structure use the specified <see cref="IReferenceCounter"/>.
         /// </summary>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> to be used by this structure.</param>
+        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> to be used by this structure.</param>
         /// <param name="fields">The fields to be included in the structure.</param>
-        public Struct(ReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
+        public Struct(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
             : base(referenceCounter, fields)
         {
         }
