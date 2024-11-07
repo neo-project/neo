@@ -20,10 +20,12 @@ namespace Neo.VM
     /// </summary>
     public sealed class ReferenceCounterV2 : IReferenceCounter
     {
+        private readonly List<StackItem> _stack = [];
+
         /// <summary>
         /// Gets the count of references.
         /// </summary>
-        public int Count { get; private set; }
+        public int Count => _stack.Count;
 
         /// <summary>
         /// Adds item to Reference Counter
@@ -32,7 +34,10 @@ namespace Neo.VM
         /// <param name="count">Number of similar entries</param>
         public void AddStackReference(StackItem item, int count = 1)
         {
-            Count += count;
+            for (var x = 0; x < count; x++)
+            {
+                _stack.Add(item);
+            }
         }
 
         /// <summary>
@@ -41,50 +46,19 @@ namespace Neo.VM
         /// <param name="item">The item to remove.</param>
         public void RemoveStackReference(StackItem item)
         {
-            if (Count == 0)
+            if (!_stack.Remove(item))
             {
                 throw new InvalidOperationException("Reference was not added before");
             }
-
-            Count--;
 
             if (item is CompoundType compoundType)
             {
                 // Remove all the childrens
 
-                var hashSet = new HashSet<StackItem> { item };
-
                 foreach (var subItem in compoundType.SubItems)
                 {
-                    RemoveStackReference(subItem, hashSet);
+                    RemoveStackReference(subItem);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Removes item from Reference Counter
-        /// </summary>
-        /// <param name="item">The item to remove.</param>
-        /// <param name="context">HashSet</param>
-        private void RemoveStackReference(StackItem item, HashSet<StackItem> context)
-        {
-            if (Count == 0)
-            {
-                throw new InvalidOperationException("Reference was not added before");
-            }
-
-            Count--;
-
-            if (item is CompoundType compoundType)
-            {
-                if (!context.Add(compoundType)) return;
-
-                foreach (var subItem in compoundType.SubItems)
-                {
-                    RemoveStackReference(subItem, context);
-                }
-
-                if (!context.Remove(item)) throw new InvalidOperationException("Circular reference.");
             }
         }
 

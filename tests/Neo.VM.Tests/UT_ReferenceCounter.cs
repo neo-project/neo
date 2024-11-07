@@ -159,7 +159,7 @@ namespace Neo.Test
             Assert.AreEqual(3, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(2, engine.ReferenceCounter.Count);
-            Assert.AreEqual(VMState.HALT, debugger.Execute());
+            Assert.AreEqual(VMState.HALT, debugger.StepInto());
             Assert.AreEqual(1, engine.ReferenceCounter.Count);
         }
 
