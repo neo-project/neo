@@ -65,7 +65,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Test (MacOS)
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'macos-latest'
       run: |
         brew install leveldb
         export PATH="your-dir:$PATH"
