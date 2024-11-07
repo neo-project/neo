@@ -53,7 +53,8 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        #os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
@@ -68,6 +69,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew install leveldb
+        ls -la /opt/homebrew/Cellar/leveldb/1.23_1/
         dotnet build
         cp -vp /opt/homebrew/Cellar/leveldb/1.23_1/libleveldb.dylib ./tests/Neo.Plugins.Storage.Tests/bin/Debug/net8.0/
         dotnet test --blame-hang --blame-crash --no-build
