@@ -18,7 +18,7 @@ namespace Neo.VM.Benchmark
 {
     public class Benchmarks_Convert
     {
-        private Dictionary<StackItemType, List<StackItem>> testItemsByType;
+        private Dictionary<StackItemType, List<StackItem>>? testItemsByType;
 
         [GlobalSetup]
         public void Setup()
