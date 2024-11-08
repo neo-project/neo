@@ -19,7 +19,7 @@ using System.Reflection;
 var runBenchmark = true;
 
 // Define the benchmark or execute class
-var benchmarkType = typeof(Benchmarks_PoCs);
+var benchmarkType = typeof(Benchmarks_ReferenceCounter);
 
 /*
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

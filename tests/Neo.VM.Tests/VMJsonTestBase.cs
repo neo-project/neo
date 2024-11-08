@@ -28,13 +28,14 @@ namespace Neo.Test
         /// Execute this test
         /// </summary>
         /// <param name="ut">Test</param>
-        public void ExecuteTest(VMUT ut)
+        /// <typeparam name="T">Reference Counter</typeparam>
+        public void ExecuteTest<T>(VMUT ut) where T : IReferenceCounter, new()
         {
             foreach (var test in ut.Tests)
             {
                 Assert.IsFalse(string.IsNullOrEmpty(test.Name), "Name is required");
 
-                using TestEngine engine = new();
+                using TestEngine engine = new(new T());
                 Debugger debugger = new(engine);
 
                 if (test.Script.Length > 0)

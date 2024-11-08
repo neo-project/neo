@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Test.Extensions;
 using Neo.Test.Types;
+using Neo.VM;
 using System;
 using System.IO;
 using System.Text;
@@ -73,7 +74,7 @@ namespace Neo.Test
 
                 try
                 {
-                    ExecuteTest(ut);
+                    ExecuteTest<ReferenceCounter>(ut);
                 }
                 catch (Exception ex)
                 {

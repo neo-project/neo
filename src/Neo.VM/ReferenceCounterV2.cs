@@ -46,20 +46,39 @@ namespace Neo.VM
         /// <param name="item">The item to remove.</param>
         public void RemoveStackReference(StackItem item)
         {
-            if (!_stack.Remove(item))
+            var indexOf = ReferenceEqualsIndexOf(_stack, item);
+
+            if (indexOf == -1)
             {
                 throw new InvalidOperationException("Reference was not added before");
             }
 
-            if (item is CompoundType compoundType)
+            _stack.RemoveAt(indexOf);
+
+            if (item is CompoundType compoundType && ReferenceEqualsIndexOf(_stack, item, indexOf) == -1)
             {
-                // Remove all the childrens
+                // Remove all the childrens only if the compound is not present
 
                 foreach (var subItem in compoundType.SubItems)
                 {
                     RemoveStackReference(subItem);
                 }
             }
+        }
+
+        private static int ReferenceEqualsIndexOf(List<StackItem> stack, StackItem item, int index = 0)
+        {
+            // Note: List use Equals, and Struct don't allow to use it, so we iterate over the list
+
+            for (; index < stack.Count; index++)
+            {
+                if (ReferenceEquals(stack[index], item))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         public void AddReference(StackItem item, CompoundType parent) => AddStackReference(item);

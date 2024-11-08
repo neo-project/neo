@@ -21,6 +21,10 @@ namespace Neo.Test.Types
 
         public TestEngine() : base(ComposeJumpTable()) { }
 
+        public TestEngine(IReferenceCounter referenceCounter) : base(ComposeJumpTable(), referenceCounter, ExecutionEngineLimits.Default)
+        {
+        }
+
         private static JumpTable ComposeJumpTable()
         {
             JumpTable jumpTable = new JumpTable();
