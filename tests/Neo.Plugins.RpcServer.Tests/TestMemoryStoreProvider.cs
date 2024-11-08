@@ -11,11 +11,12 @@
 
 using Neo.Persistence;
 
-namespace Neo.Plugins.RpcServer.Tests;
-
-public class TestMemoryStoreProvider(MemoryStore memoryStore) : IStoreProvider
+namespace Neo.Plugins.RpcServer.Tests
 {
-    public MemoryStore MemoryStore { get; init; } = memoryStore;
-    public string Name => nameof(MemoryStore);
-    public IStore GetStore(string path) => MemoryStore;
+    public class TestMemoryStoreProvider(MemoryStore memoryStore) : IStoreProvider
+    {
+        public MemoryStore MemoryStore { get; init; } = memoryStore;
+        public string Name => nameof(MemoryStore);
+        public IStore GetStore(string path) => MemoryStore;
+    }
 }
