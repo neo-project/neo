@@ -36,6 +36,16 @@ namespace Neo.VM
         {
             for (var x = 0; x < count; x++)
             {
+                if (item is CompoundType compound && ReferenceEqualsIndexOf(item) == -1)
+                {
+                    // Add sub items only if it was not present
+
+                    foreach (var subItem in compound.SubItems)
+                    {
+                        AddStackReference(subItem);
+                    }
+                }
+
                 _stack.Add(item);
             }
         }
@@ -46,7 +56,7 @@ namespace Neo.VM
         /// <param name="item">The item to remove.</param>
         public void RemoveStackReference(StackItem item)
         {
-            var indexOf = ReferenceEqualsIndexOf(_stack, item);
+            var indexOf = ReferenceEqualsIndexOf(item);
 
             if (indexOf == -1)
             {
@@ -55,24 +65,24 @@ namespace Neo.VM
 
             _stack.RemoveAt(indexOf);
 
-            if (item is CompoundType compoundType && ReferenceEqualsIndexOf(_stack, item, indexOf) == -1)
+            if (item is CompoundType compound && ReferenceEqualsIndexOf(item, indexOf) == -1)
             {
                 // Remove all the childrens only if the compound is not present
 
-                foreach (var subItem in compoundType.SubItems)
+                foreach (var subItem in compound.SubItems)
                 {
                     RemoveStackReference(subItem);
                 }
             }
         }
 
-        private static int ReferenceEqualsIndexOf(List<StackItem> stack, StackItem item, int index = 0)
+        private int ReferenceEqualsIndexOf(StackItem item, int index = 0)
         {
             // Note: List use Equals, and Struct don't allow to use it, so we iterate over the list
 
-            for (; index < stack.Count; index++)
+            for (; index < _stack.Count; index++)
             {
-                if (ReferenceEquals(stack[index], item))
+                if (ReferenceEquals(_stack[index], item))
                 {
                     return index;
                 }
@@ -81,8 +91,26 @@ namespace Neo.VM
             return -1;
         }
 
-        public void AddReference(StackItem item, CompoundType parent) => AddStackReference(item);
-        public void RemoveReference(StackItem item, CompoundType parent) => RemoveStackReference(item);
+        public void AddReference(StackItem item, CompoundType parent)
+        {
+            if (ReferenceEqualsIndexOf(parent) != -1)
+            {
+                // Add only if the parent is present
+
+                AddStackReference(item);
+            }
+        }
+
+        public void RemoveReference(StackItem item, CompoundType parent)
+        {
+            if (ReferenceEqualsIndexOf(parent) != -1)
+            {
+                // Remove only if the parent is present
+
+                RemoveStackReference(item);
+            }
+        }
+
         public void AddZeroReferred(StackItem item)
         {
             // This version don't use this method

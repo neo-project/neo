@@ -37,14 +37,6 @@ namespace Neo.VM.Benchmark
 
             foreach (var file in Directory.GetFiles(path, "*.json", SearchOption.AllDirectories))
             {
-                // Avoid differences
-                if (file.EndsWith("StackLimits.json")) continue;
-                // TODO: We should check this fault
-                if (file.EndsWith("PICKITEM.json")) continue;
-                if (file.EndsWith("REMOVE.json")) continue;
-                if (file.EndsWith("SETITEM.json")) continue;
-                if (file.EndsWith("VALUES.json")) continue;
-
                 var realFile = Path.GetFullPath(file);
                 var json = File.ReadAllText(realFile, Encoding.UTF8);
                 var ut = json.DeserializeJson<VMUT>();
