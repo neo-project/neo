@@ -35,7 +35,7 @@ namespace Neo.Plugins.RestServer.Helpers
         public static ApplicationEngine InvokeMethod(ProtocolSettings protocolSettings, DataCache snapshot, UInt160 scriptHash, string method, ContractParameter[] args, Signer[]? signers, out byte[] script)
         {
             using var scriptBuilder = new ScriptBuilder();
-            scriptBuilder.EmitDynamicCall(scriptHash, method, CallFlags.ReadOnly, args);
+            scriptBuilder.EmitDynamicCall(scriptHash, method, CallFlags.All, args);
             script = scriptBuilder.ToArray();
             var tx = signers == null ? null : new Transaction
             {
