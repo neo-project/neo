@@ -80,7 +80,7 @@ namespace Neo.VM.Types
         public override bool GetBoolean()
         {
             if (Size > Integer.MaxSize) throw new InvalidCastException();
-            return Unsafe.NotZero(GetSpan());
+            return GetSpan().NotZero();
         }
 
         public override BigInteger GetInteger()
