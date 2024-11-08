@@ -12,15 +12,16 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 
-namespace Neo.IEventHandlers;
-
-public interface ITransactionAddedHandler
+namespace Neo.IEventHandlers
 {
-    /// <summary>
-    /// The handler of TransactionAdded event from the <see cref="MemoryPool"/>.
-    /// Triggered when a transaction is added to the <see cref="MemoryPool"/>.
-    /// </summary>
-    /// <param name="sender">The source of the event</param>
-    /// <param name="tx">The transaction added to the memory pool <see cref="MemoryPool"/>.</param>
-    void MemoryPool_TransactionAdded_Handler(object sender, Transaction tx);
+    public interface ITransactionAddedHandler
+    {
+        /// <summary>
+        /// The handler of TransactionAdded event from the <see cref="MemoryPool"/>.
+        /// Triggered when a transaction is added to the <see cref="MemoryPool"/>.
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="tx">The transaction added to the memory pool <see cref="MemoryPool"/>.</param>
+        void MemoryPool_TransactionAdded_Handler(object sender, Transaction tx);
+    }
 }
