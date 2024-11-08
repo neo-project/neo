@@ -237,7 +237,6 @@ namespace Neo.Test
             using ExecutionEngine engine = new();
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(0, engine.ReferenceCounter.Count);
-
             Array array = new(engine.ReferenceCounter, new StackItem[] { 1, 2, 3, 4 });
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
