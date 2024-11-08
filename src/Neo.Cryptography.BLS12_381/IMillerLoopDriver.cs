@@ -9,13 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Cryptography.BLS12_381;
-
-interface IMillerLoopDriver<T>
+namespace Neo.Cryptography.BLS12_381
 {
-    public T DoublingStep(in T f);
-    public T AdditionStep(in T f);
-    public T Square(in T f);
-    public T Conjugate(in T f);
-    public T One { get; }
+    interface IMillerLoopDriver<T>
+    {
+        public T DoublingStep(in T f);
+        public T AdditionStep(in T f);
+        public T Square(in T f);
+        public T Conjugate(in T f);
+        public T One { get; }
+    }
 }

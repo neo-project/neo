@@ -9,18 +9,19 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Json;
-
-enum JPathTokenType : byte
+namespace Neo.Json
 {
-    Root,
-    Dot,
-    LeftBracket,
-    RightBracket,
-    Asterisk,
-    Comma,
-    Colon,
-    Identifier,
-    String,
-    Number
+    enum JPathTokenType : byte
+    {
+        Root,
+        Dot,
+        LeftBracket,
+        RightBracket,
+        Asterisk,
+        Comma,
+        Colon,
+        Identifier,
+        String,
+        Number
+    }
 }
