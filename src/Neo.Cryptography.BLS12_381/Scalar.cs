@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -119,11 +120,11 @@ namespace Neo.Cryptography.BLS12_381
 
         public override string ToString()
         {
-            byte[] bytes = ToArray();
-            StringBuilder sb = new();
+            var bytes = ToArray();
+
+            StringBuilder sb = new(2 + (bytes.Length * 2));
             sb.Append("0x");
-            for (int i = bytes.Length - 1; i >= 0; i--)
-                sb.AppendFormat("{0:x2}", bytes[i]);
+            sb.Append(bytes.ToHexString(true));
             return sb.ToString();
         }
 
