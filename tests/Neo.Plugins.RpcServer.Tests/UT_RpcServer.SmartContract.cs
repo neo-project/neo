@@ -233,5 +233,4 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(resp["address"], ValidatorAddress);
         }
     }
-
 }

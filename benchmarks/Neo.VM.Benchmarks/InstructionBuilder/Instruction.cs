@@ -13,46 +13,47 @@ using Microsoft.CodeAnalysis;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Neo.VM.Benchmark;
-
-[DebuggerDisplay("{_opCode}")]
-public class Instruction
+namespace Neo.VM.Benchmark
 {
-    private static readonly int[] s_operandSizePrefixTable = new int[256];
-    private static readonly int[] s_operandSizeTable = new int[256];
-
-    public VM.OpCode _opCode;
-    public byte[]? _operand;
-    public JumpTarget? _target;
-    public JumpTarget? _target2;
-    public int _offset;
-
-    public int Size
+    [DebuggerDisplay("{_opCode}")]
+    public class Instruction
     {
-        get
+        private static readonly int[] s_operandSizePrefixTable = new int[256];
+        private static readonly int[] s_operandSizeTable = new int[256];
+
+        public VM.OpCode _opCode;
+        public byte[]? _operand;
+        public JumpTarget? _target;
+        public JumpTarget? _target2;
+        public int _offset;
+
+        public int Size
         {
-            int prefixSize = s_operandSizePrefixTable[(int)_opCode];
-            return prefixSize > 0
-                ? sizeof(VM.OpCode) + _operand!.Length
-                : sizeof(VM.OpCode) + s_operandSizeTable[(int)_opCode];
+            get
+            {
+                int prefixSize = s_operandSizePrefixTable[(int)_opCode];
+                return prefixSize > 0
+                    ? sizeof(VM.OpCode) + _operand!.Length
+                    : sizeof(VM.OpCode) + s_operandSizeTable[(int)_opCode];
+            }
         }
-    }
 
-    static Instruction()
-    {
-        foreach (var field in typeof(VM.OpCode).GetFields(BindingFlags.Public | BindingFlags.Static))
+        static Instruction()
         {
-            var attribute = field.GetCustomAttribute<OperandSizeAttribute>();
-            if (attribute is null) continue;
-            var index = (int)(VM.OpCode)field.GetValue(null)!;
-            s_operandSizePrefixTable[index] = attribute.SizePrefix;
-            s_operandSizeTable[index] = attribute.Size;
+            foreach (var field in typeof(VM.OpCode).GetFields(BindingFlags.Public | BindingFlags.Static))
+            {
+                var attribute = field.GetCustomAttribute<OperandSizeAttribute>();
+                if (attribute is null) continue;
+                var index = (int)(VM.OpCode)field.GetValue(null)!;
+                s_operandSizePrefixTable[index] = attribute.SizePrefix;
+                s_operandSizeTable[index] = attribute.Size;
+            }
         }
-    }
 
-    public byte[] ToArray()
-    {
-        if (_operand is null) return [(byte)_opCode];
-        return _operand.Prepend((byte)_opCode).ToArray();
+        public byte[] ToArray()
+        {
+            if (_operand is null) return [(byte)_opCode];
+            return _operand.Prepend((byte)_opCode).ToArray();
+        }
     }
 }
