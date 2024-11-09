@@ -280,5 +280,59 @@ namespace Neo.Test
             Assert.AreEqual(2, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
         }
+
+        [TestMethod]
+        public void TestNewArrayThenDrop()
+        {
+            using ScriptBuilder sb = new();
+            sb.EmitPush(2000);
+            sb.Emit(OpCode.NEWARRAY);
+            sb.Emit(OpCode.DROP);
+            using ExecutionEngine engine = new();
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            var res = engine.Execute();
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(VMState.HALT, res);
+        }
+
+        [TestMethod]
+        public void TestTwoNewArrayThenDrop()
+        {
+            using ScriptBuilder sb = new();
+            sb.EmitPush(2000);
+            sb.Emit(OpCode.NEWARRAY);
+            sb.Emit(OpCode.DROP);
+            sb.EmitPush(2000);
+            sb.Emit(OpCode.NEWARRAY);
+            sb.Emit(OpCode.DROP);
+            using ExecutionEngine engine = new();
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            var res = engine.Execute();
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(VMState.HALT, res);
+        }
+
+        [TestMethod]
+        public void TestMultiNewArrayThenDrop()
+        {
+            using ScriptBuilder sb = new();
+            sb.EmitPush(1000);
+            sb.Emit(OpCode.NEWARRAY);
+            sb.Emit(OpCode.DROP);
+            sb.EmitPush(1000);
+            sb.Emit(OpCode.NEWARRAY);
+            sb.Emit(OpCode.DROP);
+            sb.EmitPush(1000);
+            sb.Emit(OpCode.NEWARRAY);
+            sb.Emit(OpCode.DROP);
+            using ExecutionEngine engine = new();
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            var res = engine.Execute();
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(VMState.HALT, res);
+        }
     }
 }
