@@ -9,10 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Wallets.SQLite;
-
-class Key
+namespace Neo.Wallets.SQLite
 {
-    public string Name { get; set; }
-    public byte[] Value { get; set; }
+    class Key
+    {
+        public string Name { get; set; }
+        public byte[] Value { get; set; }
+    }
 }

@@ -11,10 +11,11 @@
 
 using System;
 
-namespace Neo.Plugins.RpcServer;
-
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-public class RpcMethodWithParamsAttribute : Attribute
+namespace Neo.Plugins.RpcServer
 {
-    public string Name { get; set; }
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    public class RpcMethodWithParamsAttribute : Attribute
+    {
+        public string Name { get; set; }
+    }
 }
