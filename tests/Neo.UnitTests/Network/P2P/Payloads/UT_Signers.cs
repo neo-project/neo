@@ -24,6 +24,48 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     public class UT_Signers
     {
         [TestMethod]
+        public void Test_IEquatable()
+        {
+            var expected = new Signer()
+            {
+                Account = UInt160.Zero,
+                Scopes = WitnessScope.Global,
+                AllowedContracts = [],
+                AllowedGroups = [],
+                Rules = []
+            };
+
+            var actual = new Signer()
+            {
+                Account = UInt160.Zero,
+                Scopes = WitnessScope.Global,
+                AllowedContracts = [],
+                AllowedGroups = [],
+                Rules = []
+            };
+
+            var notEqual = new Signer()
+            {
+                Account = UInt160.Zero,
+                Scopes = WitnessScope.WitnessRules,
+                AllowedContracts = [],
+                AllowedGroups = [],
+                Rules = []
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+        }
+
+
+        [TestMethod]
         public void Serialize_Deserialize_Global()
         {
             var attr = new Signer()
