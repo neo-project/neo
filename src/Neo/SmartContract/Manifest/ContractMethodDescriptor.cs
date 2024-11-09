@@ -91,7 +91,7 @@ namespace Neo.SmartContract.Manifest
             return json;
         }
 
-        public bool Equals(ContractMethodDescriptor? other)
+        public bool Equals(ContractMethodDescriptor other)
         {
             if (other == null) return false;
             if (ReferenceEquals(this, other)) return true;
