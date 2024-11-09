@@ -18,6 +18,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
+using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -72,6 +73,16 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 }
             };
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+        }
+
+        [TestMethod]
+        public void EqualTests()
+        {
+            var json = @"{""name"":""testManifest"",""groups"":[],""features"":{},""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""0x0000000000000000000000000000000000000000"",""methods"":[""method1"",""method2""]}],""trusts"":[],""extra"":null}";
+            var manifestA = ContractManifest.Parse(json);
+            var manifestB = ContractManifest.Parse(json);
+
+            Assert.IsTrue(manifestA.Abi.Methods.SequenceEqual(manifestB.Abi.Methods));
         }
 
         [TestMethod]
