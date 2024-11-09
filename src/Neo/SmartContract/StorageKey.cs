@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography;
+using Neo.Extensions;
 using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;

@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Akka" Version="1.5.26" />
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
