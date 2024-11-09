@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Manifest
     /// <summary>
     /// Represents an event in a smart contract ABI.
     /// </summary>
-    public class ContractEventDescriptor : IInteroperable
+    public class ContractEventDescriptor : IInteroperable, IEquatable<ContractEventDescriptor>
     {
         /// <summary>
         /// The name of the event or method.
@@ -76,6 +76,14 @@ namespace Neo.SmartContract.Manifest
             json["name"] = Name;
             json["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray());
             return json;
+        }
+
+        public bool Equals(ContractEventDescriptor? other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return Name == other.Name && Parameters.SequenceEqual(other.Parameters);
         }
     }
 }

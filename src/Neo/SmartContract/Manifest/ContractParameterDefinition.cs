@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Manifest
     /// <summary>
     /// Represents a parameter of an event or method in ABI.
     /// </summary>
-    public class ContractParameterDefinition : IInteroperable
+    public class ContractParameterDefinition : IInteroperable, IEquatable<ContractParameterDefinition>
     {
         /// <summary>
         /// The name of the parameter.
@@ -72,6 +72,14 @@ namespace Neo.SmartContract.Manifest
             json["name"] = Name;
             json["type"] = Type.ToString();
             return json;
+        }
+
+        public bool Equals(ContractParameterDefinition other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return Name == other.Name && Type == other.Type;
         }
     }
 }

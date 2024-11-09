@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Manifest
     /// <summary>
     /// Represents a method in a smart contract ABI.
     /// </summary>
-    public class ContractMethodDescriptor : ContractEventDescriptor
+    public class ContractMethodDescriptor : ContractEventDescriptor, IEquatable<ContractMethodDescriptor>
     {
         /// <summary>
         /// Indicates the return type of the method. It can be any value of <see cref="ContractParameterType"/>.
@@ -89,6 +89,18 @@ namespace Neo.SmartContract.Manifest
             json["offset"] = Offset;
             json["safe"] = Safe;
             return json;
+        }
+
+        public bool Equals(ContractMethodDescriptor? other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return
+                ReturnType == other.ReturnType
+                && Offset == other.Offset
+                && Safe == other.Safe
+                && base.Equals(other);
         }
     }
 }
