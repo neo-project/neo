@@ -13,43 +13,44 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Neo.IO.Caching;
-
-internal abstract class KeyedCollectionSlim<TKey, TItem>
-    where TKey : notnull
-    where TItem : class, IStructuralEquatable, IStructuralComparable, IComparable
+namespace Neo.IO.Caching
 {
-    private readonly LinkedList<TItem> _items = new();
-    private readonly Dictionary<TKey, LinkedListNode<TItem>> _dict = [];
-
-    public int Count => _dict.Count;
-    public TItem? First => _items.First?.Value;
-
-    protected abstract TKey GetKeyForItem(TItem? item);
-
-    public void Add(TItem item)
+    internal abstract class KeyedCollectionSlim<TKey, TItem>
+        where TKey : notnull
+        where TItem : class, IStructuralEquatable, IStructuralComparable, IComparable
     {
-        var key = GetKeyForItem(item);
-        var node = _items.AddLast(item);
-        if (!_dict.TryAdd(key, node))
+        private readonly LinkedList<TItem> _items = new();
+        private readonly Dictionary<TKey, LinkedListNode<TItem>> _dict = [];
+
+        public int Count => _dict.Count;
+        public TItem? First => _items.First?.Value;
+
+        protected abstract TKey GetKeyForItem(TItem? item);
+
+        public void Add(TItem item)
         {
-            _items.RemoveLast();
-            throw new ArgumentException("An element with the same key already exists in the collection.");
+            var key = GetKeyForItem(item);
+            var node = _items.AddLast(item);
+            if (!_dict.TryAdd(key, node))
+            {
+                _items.RemoveLast();
+                throw new ArgumentException("An element with the same key already exists in the collection.");
+            }
         }
-    }
 
-    public bool Contains(TKey key) => _dict.ContainsKey(key);
+        public bool Contains(TKey key) => _dict.ContainsKey(key);
 
-    public void Remove(TKey key)
-    {
-        if (_dict.Remove(key, out var node))
-            _items.Remove(node);
-    }
+        public void Remove(TKey key)
+        {
+            if (_dict.Remove(key, out var node))
+                _items.Remove(node);
+        }
 
-    public void RemoveFirst()
-    {
-        var key = GetKeyForItem(_items.First?.Value);
-        _dict.Remove(key);
-        _items.RemoveFirst();
+        public void RemoveFirst()
+        {
+            var key = GetKeyForItem(_items.First?.Value);
+            _dict.Remove(key);
+            _items.RemoveFirst();
+        }
     }
 }
