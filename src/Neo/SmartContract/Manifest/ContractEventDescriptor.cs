@@ -80,7 +80,6 @@ namespace Neo.SmartContract.Manifest
 
         public bool Equals(ContractEventDescriptor other)
         {
-            if (other == null) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return Name == other.Name && Parameters.SequenceEqual(other.Parameters);

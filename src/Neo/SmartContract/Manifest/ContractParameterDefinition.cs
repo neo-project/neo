@@ -76,7 +76,6 @@ namespace Neo.SmartContract.Manifest
 
         public bool Equals(ContractParameterDefinition other)
         {
-            if (other == null) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return Name == other.Name && Type == other.Type;

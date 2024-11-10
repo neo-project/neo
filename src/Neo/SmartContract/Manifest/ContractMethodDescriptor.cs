@@ -93,7 +93,6 @@ namespace Neo.SmartContract.Manifest
 
         public bool Equals(ContractMethodDescriptor other)
         {
-            if (other == null) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return
