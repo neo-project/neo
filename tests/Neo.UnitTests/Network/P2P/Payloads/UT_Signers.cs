@@ -33,7 +33,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Scopes = WitnessScope.Global,
                 AllowedContracts = [UInt160.Zero],
                 AllowedGroups = [ecPoint],
-                Rules = []
+                Rules = [
+                    new WitnessRule
+                    {
+                        Condition = new BooleanCondition
+                        {
+                            Expression = true,
+                        },
+                        Action = WitnessRuleAction.Allow,
+                    },
+                ]
             };
 
             var actual = new Signer()
@@ -42,7 +51,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Scopes = WitnessScope.Global,
                 AllowedContracts = [UInt160.Zero],
                 AllowedGroups = [ecPoint],
-                Rules = []
+                Rules = [
+                    new WitnessRule
+                    {
+                        Condition = new BooleanCondition
+                        {
+                            Expression = true,
+                        },
+                        Action = WitnessRuleAction.Allow,
+                    },
+                ]
             };
 
             var notEqual = new Signer()
