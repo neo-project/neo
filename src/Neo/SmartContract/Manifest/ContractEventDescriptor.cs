@@ -80,9 +80,23 @@ namespace Neo.SmartContract.Manifest
 
         public bool Equals(ContractEventDescriptor other)
         {
+            if (other == null) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return Name == other.Name && Parameters.SequenceEqual(other.Parameters);
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other is not ContractEventDescriptor ev)
+                return false;
+
+            return Equals(ev);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Parameters);
         }
     }
 }

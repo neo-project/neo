@@ -76,9 +76,23 @@ namespace Neo.SmartContract.Manifest
 
         public bool Equals(ContractParameterDefinition other)
         {
+            if (other == null) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return Name == other.Name && Type == other.Type;
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other is not ContractParameterDefinition parm)
+                return false;
+
+            return Equals(parm);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Type);
         }
     }
 }

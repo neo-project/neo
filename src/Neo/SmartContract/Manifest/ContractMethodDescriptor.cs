@@ -96,10 +96,23 @@ namespace Neo.SmartContract.Manifest
             if (ReferenceEquals(this, other)) return true;
 
             return
+                base.Equals(other) && // Already check null
                 ReturnType == other.ReturnType
                 && Offset == other.Offset
-                && Safe == other.Safe
-                && base.Equals(other);
+                && Safe == other.Safe;
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other is not ContractMethodDescriptor ev)
+                return false;
+
+            return Equals(ev);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ReturnType, Offset, Safe, base.GetHashCode());
         }
     }
 }
