@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
     /// <summary>
     /// The rule used to describe the scope of the witness.
     /// </summary>
-    public class WitnessRule : IInteroperable, ISerializable
+    public class WitnessRule : IInteroperable, ISerializable, IEquatable<WitnessRule>
     {
         /// <summary>
         /// Indicates the action to be taken if the current context meets with the rule.
@@ -36,6 +36,27 @@ namespace Neo.Network.P2P.Payloads
         public WitnessCondition Condition;
 
         int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
+
+        public bool Equals(WitnessRule other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            return Action == other.Action &&
+                Condition == other.Condition;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            if (obj is not WitnessRule wr)
+                return false;
+            else
+                return Equals(wr);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Action, Condition.GetHashCode());
+        }
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
@@ -95,6 +116,22 @@ namespace Neo.Network.P2P.Payloads
                 (byte)Action,
                 Condition.ToStackItem(referenceCounter)
             });
+        }
+
+        public static bool operator ==(WitnessRule left, WitnessRule right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(WitnessRule left, WitnessRule right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return !Equals(left, right);
+
+            return !(left.Equals(right));
         }
     }
 }
