@@ -13,12 +13,291 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
+using System.Security.Policy;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
     [TestClass]
     public class UT_WitnessCondition
     {
+        [TestMethod]
+        public void Test_IEquatable_ScriptHashCondition()
+        {
+            var expected = new ScriptHashCondition
+            {
+                Hash = UInt160.Zero,
+            };
+
+            var actual = new ScriptHashCondition
+            {
+                Hash = UInt160.Zero,
+            };
+
+            var notEqual = new ScriptHashCondition
+            {
+                Hash = UInt160.Parse("0xfff4f52ca43d6bf4fec8647a60415b183303d961"),
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
+        [TestMethod]
+        public void Test_IEquatable_GroupCondition()
+        {
+            var point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+            var expected = new GroupCondition
+            {
+                Group = point,
+            };
+
+            var actual = new GroupCondition
+            {
+                Group = point,
+            };
+
+            var notEqual = new GroupCondition
+            {
+                Group = ECPoint.Parse("03b209fd4f53a7170ea4444e0ca0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1),
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
+        [TestMethod]
+        public void Test_IEquatable_CalledByGroupCondition()
+        {
+            var point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+            var expected = new CalledByGroupCondition
+            {
+                Group = point,
+            };
+
+            var actual = new CalledByGroupCondition
+            {
+                Group = point,
+            };
+
+            var notEqual = new CalledByGroupCondition
+            {
+                Group = ECPoint.Parse("03b209fd4f53a7170ea4444e0ca0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1),
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
+        [TestMethod]
+        public void Test_IEquatable_CalledByEntryCondition()
+        {
+            var expected = new CalledByEntryCondition();
+
+            var actual = new CalledByEntryCondition();
+
+            var notEqual = new CalledByContractCondition
+            {
+                Hash = UInt160.Parse("0xfff4f52ca43d6bf4fec8647a60415b183303d961"),
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual<WitnessCondition>(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
+        [TestMethod]
+        public void Test_IEquatable_CalledByContractCondition()
+        {
+            var expected = new CalledByContractCondition
+            {
+                Hash = UInt160.Zero,
+            };
+
+            var actual = new CalledByContractCondition
+            {
+                Hash = UInt160.Zero,
+            };
+
+            var notEqual = new CalledByContractCondition
+            {
+                Hash = UInt160.Parse("0xfff4f52ca43d6bf4fec8647a60415b183303d961"),
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
+        [TestMethod]
+        public void Test_IEquatable_BooleanCondition()
+        {
+            var expected = new BooleanCondition
+            {
+                Expression = true,
+            };
+
+            var actual = new BooleanCondition
+            {
+                Expression = true,
+            };
+
+            var notEqual = new BooleanCondition
+            {
+                Expression = false,
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
+        [TestMethod]
+        public void Test_IEquatable_AndCondition()
+        {
+            var point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+            var hash = UInt160.Zero;
+            var expected = new AndCondition
+            {
+                Expressions = new WitnessCondition[]
+                {
+                    new CalledByContractCondition { Hash = hash },
+                    new CalledByGroupCondition { Group = point }
+                }
+            };
+
+            var actual = new AndCondition
+            {
+                Expressions = new WitnessCondition[]
+                {
+                    new CalledByContractCondition { Hash = hash },
+                    new CalledByGroupCondition { Group = point }
+                }
+            };
+
+            var notEqual = new AndCondition
+            {
+                Expressions = new WitnessCondition[]
+                {
+                    new CalledByContractCondition { Hash = hash },
+                }
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
+        [TestMethod]
+        public void Test_IEquatable_OrCondition()
+        {
+            var point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+            var hash = UInt160.Zero;
+            var expected = new OrCondition
+            {
+                Expressions = new WitnessCondition[]
+                {
+                    new CalledByContractCondition { Hash = hash },
+                    new CalledByGroupCondition { Group = point }
+                }
+            };
+
+            var actual = new OrCondition
+            {
+                Expressions = new WitnessCondition[]
+                {
+                    new CalledByContractCondition { Hash = hash },
+                    new CalledByGroupCondition { Group = point }
+                }
+            };
+
+            var notEqual = new OrCondition
+            {
+                Expressions = new WitnessCondition[]
+                {
+                    new CalledByContractCondition { Hash = hash },
+                }
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+        }
+
         [TestMethod]
         public void TestFromJson1()
         {

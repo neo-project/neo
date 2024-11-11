@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
     /// <summary>
     /// Represents the condition that any of the conditions meets.
     /// </summary>
-    public class OrCondition : WitnessCondition
+    public class OrCondition : WitnessCondition, IEquatable<OrCondition>
     {
         /// <summary>
         /// The expressions of the condition.
@@ -33,6 +33,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.Or;
+
+        public bool Equals(OrCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            return Type == other.Type &&
+                Size == other.Size &&
+                Expressions.SequenceEqual(other.Expressions);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            if (obj is not OrCondition oc)
+                return false;
+            else
+                return Equals(oc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Size);
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -72,6 +95,22 @@ namespace Neo.Network.P2P.Payloads.Conditions
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
             return result;
+        }
+
+        public static bool operator ==(OrCondition left, OrCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(OrCondition left, OrCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return !Equals(left, right);
+
+            return !(left.Equals(right));
         }
     }
 }

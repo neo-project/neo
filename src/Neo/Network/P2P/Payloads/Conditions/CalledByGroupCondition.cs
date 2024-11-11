@@ -16,12 +16,13 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.IO;
 using System.Linq;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class CalledByGroupCondition : WitnessCondition
+    public class CalledByGroupCondition : WitnessCondition, IEquatable<CalledByGroupCondition>
     {
         /// <summary>
         /// The group to be checked.
@@ -30,6 +31,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + Group.Size;
         public override WitnessConditionType Type => WitnessConditionType.CalledByGroup;
+
+        public bool Equals(CalledByGroupCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            return Type == other.Type &&
+                Size == other.Size &&
+                Group == other.Group;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            if (obj is not CalledByGroupCondition cc)
+                return false;
+            else
+                return Equals(cc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Group);
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -65,6 +89,22 @@ namespace Neo.Network.P2P.Payloads.Conditions
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Group.ToArray());
             return result;
+        }
+
+        public static bool operator ==(CalledByGroupCondition left, CalledByGroupCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(CalledByGroupCondition left, CalledByGroupCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return !Equals(left, right);
+
+            return !(left.Equals(right));
         }
     }
 }

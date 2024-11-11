@@ -14,11 +14,12 @@ using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class ScriptHashCondition : WitnessCondition
+    public class ScriptHashCondition : WitnessCondition, IEquatable<ScriptHashCondition>
     {
         /// <summary>
         /// The script hash to be checked.
@@ -27,6 +28,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + UInt160.Length;
         public override WitnessConditionType Type => WitnessConditionType.ScriptHash;
+
+        public bool Equals(ScriptHashCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            return Type == other.Type &&
+                Size == other.Size &&
+                Hash == other.Hash;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            if (obj is not ScriptHashCondition sc)
+                return false;
+            else
+                return Equals(sc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Hash);
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -60,6 +84,22 @@ namespace Neo.Network.P2P.Payloads.Conditions
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Hash.ToArray());
             return result;
+        }
+
+        public static bool operator ==(ScriptHashCondition left, ScriptHashCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ScriptHashCondition left, ScriptHashCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return !Equals(left, right);
+
+            return !(left.Equals(right));
         }
     }
 }

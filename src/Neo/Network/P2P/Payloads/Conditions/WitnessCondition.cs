@@ -32,6 +32,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public virtual int Size => sizeof(WitnessConditionType);
 
+        public abstract override bool Equals(object obj);
+
+        public abstract override int GetHashCode();
+
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             if (reader.ReadByte() != (byte)Type) throw new FormatException();
@@ -130,6 +134,22 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
+        }
+
+        public static bool operator ==(WitnessCondition left, WitnessCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(WitnessCondition left, WitnessCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return !Equals(left, right);
+
+            return !(left.Equals(right));
         }
     }
 }

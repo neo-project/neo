@@ -22,7 +22,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
     /// <summary>
     /// Reverse another condition.
     /// </summary>
-    public class NotCondition : WitnessCondition
+    public class NotCondition : WitnessCondition, IEquatable<NotCondition>
     {
         /// <summary>
         /// The expression of the condition to be reversed.
@@ -31,6 +31,28 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + Expression.Size;
         public override WitnessConditionType Type => WitnessConditionType.Not;
+
+        public bool Equals(NotCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            return Type == other.Type &&
+                Size == other.Size;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            if (obj is not NotCondition nc)
+                return false;
+            else
+                return Equals(nc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Expression.GetHashCode());
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -66,6 +88,22 @@ namespace Neo.Network.P2P.Payloads.Conditions
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Expression.ToStackItem(referenceCounter));
             return result;
+        }
+
+        public static bool operator ==(NotCondition left, NotCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(NotCondition left, NotCondition right)
+        {
+            if (((object)left) == null || ((object)right) == null)
+                return !Equals(left, right);
+
+            return !(left.Equals(right));
         }
     }
 }
