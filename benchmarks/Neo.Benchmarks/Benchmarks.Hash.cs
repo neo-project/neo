@@ -16,41 +16,42 @@ using System.Diagnostics;
 using System.IO.Hashing;
 using System.Text;
 
-namespace Neo.Benchmark;
-
-public class Benchmarks_Hash
+namespace Neo.Benchmark
 {
-    // 256 KiB
-    static readonly byte[] data = Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("Hello, World!^_^", 16 * 1024)));
-
-    static readonly byte[] hash = "9182abedfbb9b18d81a05d8bcb45489e7daa2858".HexToBytes();
-
-    [Benchmark]
-    public void RIPEMD160_ComputeHash()
+    public class Benchmarks_Hash
     {
-        using var ripemd160 = new RIPEMD160Managed();
-        var result = ripemd160.ComputeHash(data);
-        Debug.Assert(result.SequenceEqual(hash));
-    }
+        // 256 KiB
+        static readonly byte[] data = Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("Hello, World!^_^", 16 * 1024)));
 
-    [Benchmark]
-    public void XxHash32_HashToUInt32()
-    {
-        var result = XxHash32.HashToUInt32(data);
-        Debug.Assert(result == 682967318u);
-    }
+        static readonly byte[] hash = "9182abedfbb9b18d81a05d8bcb45489e7daa2858".HexToBytes();
 
-    [Benchmark]
-    public void XxHash3_HashToUInt64()
-    {
-        var result = (uint)XxHash3.HashToUInt64(data);
-        Debug.Assert(result == 1389469485u);
-    }
+        [Benchmark]
+        public void RIPEMD160_ComputeHash()
+        {
+            using var ripemd160 = new RIPEMD160Managed();
+            var result = ripemd160.ComputeHash(data);
+            Debug.Assert(result.SequenceEqual(hash));
+        }
 
-    [Benchmark]
-    public void Murmur32_HashToUInt32()
-    {
-        var result = data.Murmur32(0);
-        Debug.Assert(result == 3731881930u);
+        [Benchmark]
+        public void XxHash32_HashToUInt32()
+        {
+            var result = XxHash32.HashToUInt32(data);
+            Debug.Assert(result == 682967318u);
+        }
+
+        [Benchmark]
+        public void XxHash3_HashToUInt64()
+        {
+            var result = (uint)XxHash3.HashToUInt64(data);
+            Debug.Assert(result == 1389469485u);
+        }
+
+        [Benchmark]
+        public void Murmur32_HashToUInt32()
+        {
+            var result = data.Murmur32(0);
+            Debug.Assert(result == 3731881930u);
+        }
     }
 }
