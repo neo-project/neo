@@ -83,6 +83,12 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var manifestB = ContractManifest.Parse(json);
 
             Assert.IsTrue(manifestA.Abi.Methods.SequenceEqual(manifestB.Abi.Methods));
+
+            for (int x = 0; x < manifestA.Abi.Methods.Length; x++)
+            {
+                Assert.IsTrue(manifestA.Abi.Methods[x] == manifestB.Abi.Methods[x]);
+                Assert.IsFalse(manifestA.Abi.Methods[x] != manifestB.Abi.Methods[x]);
+            }
         }
 
         [TestMethod]

@@ -14,6 +14,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -113,6 +114,24 @@ namespace Neo.SmartContract.Manifest
         public override int GetHashCode()
         {
             return HashCode.Combine(ReturnType, Offset, Safe, base.GetHashCode());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(ContractMethodDescriptor left, ContractMethodDescriptor right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(ContractMethodDescriptor left, ContractMethodDescriptor right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

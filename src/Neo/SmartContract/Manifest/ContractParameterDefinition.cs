@@ -13,6 +13,7 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -93,6 +94,24 @@ namespace Neo.SmartContract.Manifest
         public override int GetHashCode()
         {
             return HashCode.Combine(Name, Type);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(ContractParameterDefinition left, ContractParameterDefinition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(ContractParameterDefinition left, ContractParameterDefinition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }
