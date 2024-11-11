@@ -36,6 +36,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         {
             if (ReferenceEquals(this, other))
                 return true;
+            if (other is null) return false;
             return Type == other.Type &&
                 Size == other.Size &&
                 Group == other.Group;
