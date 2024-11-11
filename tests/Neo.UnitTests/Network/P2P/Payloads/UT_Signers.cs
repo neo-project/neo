@@ -26,12 +26,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Test_IEquatable()
         {
+            var ecPoint = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
             var expected = new Signer()
             {
                 Account = UInt160.Zero,
                 Scopes = WitnessScope.Global,
-                AllowedContracts = [],
-                AllowedGroups = [],
+                AllowedContracts = [UInt160.Zero],
+                AllowedGroups = [ecPoint],
                 Rules = []
             };
 
@@ -39,8 +40,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Account = UInt160.Zero,
                 Scopes = WitnessScope.Global,
-                AllowedContracts = [],
-                AllowedGroups = [],
+                AllowedContracts = [UInt160.Zero],
+                AllowedGroups = [ecPoint],
                 Rules = []
             };
 
