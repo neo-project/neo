@@ -70,6 +70,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ReferenceEquals(this, other))
                 return true;
+            if (other is null) return false;
             return Account == other.Account &&
                 Scopes == other.Scopes &&
                 AllowedContracts.SequenceEqual(other.AllowedContracts) &&
