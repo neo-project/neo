@@ -13,13 +13,14 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// Represents a parameter of an event or method in ABI.
     /// </summary>
-    public class ContractParameterDefinition : IInteroperable
+    public class ContractParameterDefinition : IInteroperable, IEquatable<ContractParameterDefinition>
     {
         /// <summary>
         /// The name of the parameter.
@@ -72,6 +73,45 @@ namespace Neo.SmartContract.Manifest
             json["name"] = Name;
             json["type"] = Type.ToString();
             return json;
+        }
+
+        public bool Equals(ContractParameterDefinition other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return Name == other.Name && Type == other.Type;
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other is not ContractParameterDefinition parm)
+                return false;
+
+            return Equals(parm);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Type);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(ContractParameterDefinition left, ContractParameterDefinition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(ContractParameterDefinition left, ContractParameterDefinition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

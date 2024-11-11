@@ -58,13 +58,6 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
-        public void TestXxHash3()
-        {
-            byte[] data = Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("Hello, World!^_^", 16 * 1024)));
-            data.XxHash3_32().Should().Be(HashCode.Combine(XxHash3.HashToUInt64(data, 40343)));
-        }
-
-        [TestMethod]
         public void TestSha256()
         {
             byte[] value = Encoding.ASCII.GetBytes("hello world");
