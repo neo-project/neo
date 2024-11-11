@@ -65,6 +65,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsFalse(expected == null);
             Assert.IsFalse(null == expected);
+            Assert.AreNotEqual(expected, null);
+            Assert.IsFalse(expected.Equals(null));
         }
     }
 }

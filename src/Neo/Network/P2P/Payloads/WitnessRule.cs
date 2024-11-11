@@ -40,6 +40,7 @@ namespace Neo.Network.P2P.Payloads
         public bool Equals(WitnessRule other)
         {
             if (ReferenceEquals(this, other)) return true;
+            if (other is null) return false;
             return Action == other.Action &&
                 Condition == other.Condition;
         }
