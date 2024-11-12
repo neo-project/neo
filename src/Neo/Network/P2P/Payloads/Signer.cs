@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -66,6 +67,7 @@ namespace Neo.Network.P2P.Payloads
             /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0) +
             /*Rules*/               (Scopes.HasFlag(WitnessScope.WitnessRules) ? Rules.GetVarSize() : 0);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Signer other)
         {
             if (ReferenceEquals(this, other))
@@ -78,15 +80,11 @@ namespace Neo.Network.P2P.Payloads
                 Rules.SequenceEqual(other.Rules);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
-            if (obj == null)
-                return false;
-
-            if (obj is not Signer signerObj)
-                return false;
-            else
-                return Equals(signerObj);
+            if (obj == null) return false;
+            return obj is Signer signerObj && Equals(signerObj);
         }
 
         public override int GetHashCode()
@@ -231,6 +229,7 @@ namespace Neo.Network.P2P.Payloads
             ]);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Signer left, Signer right)
         {
             if (left is null || right is null)
@@ -239,6 +238,7 @@ namespace Neo.Network.P2P.Payloads
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Signer left, Signer right)
         {
             if (left is null || right is null)
