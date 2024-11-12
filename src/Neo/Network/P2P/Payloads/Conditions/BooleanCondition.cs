@@ -14,11 +14,13 @@ using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class BooleanCondition : WitnessCondition
+    public class BooleanCondition : WitnessCondition, IEquatable<BooleanCondition>
     {
         /// <summary>
         /// The expression of the <see cref="BooleanCondition"/>.
@@ -27,6 +29,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + sizeof(bool);
         public override WitnessConditionType Type => WitnessConditionType.Boolean;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(BooleanCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null) return false;
+            return
+                Type == other.Type &&
+                Expression == other.Expression;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is BooleanCondition bc && Equals(bc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Expression);
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -60,6 +85,24 @@ namespace Neo.Network.P2P.Payloads.Conditions
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Expression);
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(BooleanCondition left, BooleanCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(BooleanCondition left, BooleanCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

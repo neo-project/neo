@@ -9,9 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark;
-
-public class JumpTarget
+namespace Neo.VM.Benchmark
 {
-    public Instruction? _instruction;
+    public class JumpTarget
+    {
+        public Instruction? _instruction;
+    }
 }
