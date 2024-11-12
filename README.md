@@ -86,6 +86,9 @@
   <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
   </a>
+  <a href="https://gurubase.io/g/neo-blockchain">
+    <img src="https://img.shields.io/badge/Gurubase-Ask%20Neo%20Blockchain%20Guru-006BFF" alt="Gurubase">
+  </a>
 </p>
 
 <p align="center">
