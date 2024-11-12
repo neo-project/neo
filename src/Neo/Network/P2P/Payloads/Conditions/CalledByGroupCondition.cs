@@ -39,8 +39,8 @@ namespace Neo.Network.P2P.Payloads.Conditions
             if (ReferenceEquals(this, other))
                 return true;
             if (other is null) return false;
-            return Type == other.Type &&
-                Size == other.Size &&
+            return
+                Type == other.Type &&
                 Group == other.Group;
         }
 
@@ -107,7 +107,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             if (left is null || right is null)
                 return !Equals(left, right);
 
-            return !(left.Equals(right));
+            return !left.Equals(right);
         }
     }
 }
