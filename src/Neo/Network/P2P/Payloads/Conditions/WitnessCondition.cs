@@ -140,7 +140,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(WitnessCondition left, WitnessCondition right)
         {
-            if (((object)left) == null || ((object)right) == null)
+            if (left is null || right is null)
                 return Equals(left, right);
 
             return left.Equals(right);
@@ -149,7 +149,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(WitnessCondition left, WitnessCondition right)
         {
-            if (((object)left) == null || ((object)right) == null)
+            if (left is null || right is null)
                 return !Equals(left, right);
 
             return !(left.Equals(right));
