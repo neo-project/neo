@@ -19,6 +19,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -32,6 +33,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + Group.Size;
         public override WitnessConditionType Type => WitnessConditionType.Group;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(GroupCondition other)
         {
             if (ReferenceEquals(this, other))
@@ -42,6 +44,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
                 Group == other.Group;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
@@ -89,6 +92,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(GroupCondition left, GroupCondition right)
         {
             if (((object)left) == null || ((object)right) == null)
@@ -97,6 +101,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(GroupCondition left, GroupCondition right)
         {
             if (((object)left) == null || ((object)right) == null)

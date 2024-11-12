@@ -16,6 +16,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -29,6 +30,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + sizeof(bool);
         public override WitnessConditionType Type => WitnessConditionType.Boolean;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(BooleanCondition other)
         {
             if (ReferenceEquals(this, other))
@@ -39,6 +41,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
                 Expression == other.Expression;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
@@ -84,6 +87,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(BooleanCondition left, BooleanCondition right)
         {
             if (((object)left) == null || ((object)right) == null)
@@ -92,6 +96,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(BooleanCondition left, BooleanCondition right)
         {
             if (((object)left) == null || ((object)right) == null)

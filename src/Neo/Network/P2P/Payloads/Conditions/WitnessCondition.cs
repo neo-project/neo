@@ -17,6 +17,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -136,6 +137,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(WitnessCondition left, WitnessCondition right)
         {
             if (((object)left) == null || ((object)right) == null)
@@ -144,6 +146,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(WitnessCondition left, WitnessCondition right)
         {
             if (((object)left) == null || ((object)right) == null)

@@ -18,6 +18,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -34,6 +35,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.And;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(AndCondition other)
         {
             if (ReferenceEquals(this, other))
@@ -44,6 +46,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
                 Expressions.SequenceEqual(other.Expressions);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
@@ -52,7 +55,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int GetHashCode()
         {
-            return (byte)Type;
+            return HashCode.Combine(Type, Size);
         }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
@@ -95,6 +98,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(AndCondition left, AndCondition right)
         {
             if (((object)left) == null || ((object)right) == null)
@@ -103,6 +107,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(AndCondition left, AndCondition right)
         {
             if (((object)left) == null || ((object)right) == null)

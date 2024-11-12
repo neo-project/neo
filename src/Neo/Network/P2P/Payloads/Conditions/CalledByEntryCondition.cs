@@ -14,6 +14,7 @@ using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -21,6 +22,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
     {
         public override WitnessConditionType Type => WitnessConditionType.CalledByEntry;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(CalledByEntryCondition other)
         {
             if (ReferenceEquals(this, other))
@@ -30,6 +32,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
                 Size == other.Size;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
@@ -55,6 +58,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth) { }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(CalledByEntryCondition left, CalledByEntryCondition right)
         {
             if (((object)left) == null || ((object)right) == null)
@@ -63,6 +67,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(CalledByEntryCondition left, CalledByEntryCondition right)
         {
             if (((object)left) == null || ((object)right) == null)
