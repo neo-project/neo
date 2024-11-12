@@ -17,6 +17,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -37,6 +38,7 @@ namespace Neo.Network.P2P.Payloads
 
         int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(WitnessRule other)
         {
             if (ReferenceEquals(this, other)) return true;
@@ -45,13 +47,11 @@ namespace Neo.Network.P2P.Payloads
                 Condition == other.Condition;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
-            if (obj is not WitnessRule wr)
-                return false;
-            else
-                return Equals(wr);
+            return obj is WitnessRule wr && Equals(wr);
         }
 
         public override int GetHashCode()
@@ -119,6 +119,7 @@ namespace Neo.Network.P2P.Payloads
             });
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(WitnessRule left, WitnessRule right)
         {
             if (((object)left) == null || ((object)right) == null)
@@ -127,6 +128,7 @@ namespace Neo.Network.P2P.Payloads
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(WitnessRule left, WitnessRule right)
         {
             if (((object)left) == null || ((object)right) == null)
