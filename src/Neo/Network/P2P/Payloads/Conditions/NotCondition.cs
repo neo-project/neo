@@ -44,10 +44,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
-            if (obj is not NotCondition nc)
-                return false;
-            else
-                return Equals(nc);
+            return obj is NotCondition nc && Equals(nc);
         }
 
         public override int GetHashCode()

@@ -42,10 +42,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
-            if (obj is not ScriptHashCondition sc)
-                return false;
-            else
-                return Equals(sc);
+            return obj is ScriptHashCondition sc && Equals(sc);
         }
 
         public override int GetHashCode()
