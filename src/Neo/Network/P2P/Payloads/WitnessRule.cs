@@ -134,7 +134,7 @@ namespace Neo.Network.P2P.Payloads
             if (left is null || right is null)
                 return !Equals(left, right);
 
-            return !(left.Equals(right));
+            return !left.Equals(right);
         }
     }
 }
