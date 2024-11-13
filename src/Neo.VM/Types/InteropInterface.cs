@@ -53,7 +53,7 @@ namespace Neo.VM.Types
         public override T GetInterface<T>()
         {
             if (_object is T t) return t;
-            throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
+            throw new InvalidCastException($"The item {_object} can't be casted to type {typeof(T)}.");
         }
 
         internal object GetInterface()

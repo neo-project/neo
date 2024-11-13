@@ -69,7 +69,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Insert(int index, StackItem item)
         {
-            if (index > innerList.Count) throw new InvalidOperationException($"Insert out of bounds: {index}/{innerList.Count}");
+            if (index > innerList.Count) throw new InvalidOperationException($"Insert index {index} is out of stack bounds: {index}/{innerList.Count}");
             innerList.Insert(innerList.Count - index, item);
             referenceCounter.AddStackReference(item);
         }
@@ -92,11 +92,11 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public StackItem Peek(int index = 0)
         {
-            if (index >= innerList.Count) throw new InvalidOperationException($"Peek out of bounds: {index}/{innerList.Count}");
+            if (index >= innerList.Count) throw new InvalidOperationException($"Peek index {index} is out of stack bounds: {index}/{innerList.Count}");
             if (index < 0)
             {
                 index += innerList.Count;
-                if (index < 0) throw new InvalidOperationException($"Peek out of bounds: {index}/{innerList.Count}");
+                if (index < 0) throw new InvalidOperationException($"Peek index {index} is out of stack bounds: {index}/{innerList.Count}");
             }
             return innerList[innerList.Count - index - 1];
         }

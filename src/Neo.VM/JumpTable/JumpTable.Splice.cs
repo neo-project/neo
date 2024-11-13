@@ -46,19 +46,19 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The count {count} can not be negative for {nameof(OpCode.MEMCPY)}.");
             int si = (int)engine.Pop().GetInteger();
             if (si < 0)
-                throw new InvalidOperationException($"The value {si} is out of range.");
+                throw new InvalidOperationException($"The source index {si} can not be negative for {nameof(OpCode.MEMCPY)}.");
             ReadOnlySpan<byte> src = engine.Pop().GetSpan();
             if (checked(si + count) > src.Length)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The source index {si} + count {count} is out of range for {nameof(OpCode.MEMCPY)}, {si}/[0, {src.Length}).");
             int di = (int)engine.Pop().GetInteger();
             if (di < 0)
-                throw new InvalidOperationException($"The value {di} is out of range.");
+                throw new InvalidOperationException($"The destination index {di} can not be negative for {nameof(OpCode.MEMCPY)}.");
             Types.Buffer dst = engine.Pop<Types.Buffer>();
             if (checked(di + count) > dst.Size)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The destination index {di} + count {count} is out of range for {nameof(OpCode.MEMCPY)}, {di}/[0, {dst.Size}).");
             // TODO: check if we can optimize the memcpy by using peek instead of  dup then pop
             src.Slice(si, count).CopyTo(dst.InnerBuffer.Span[di..]);
             dst.InvalidateHashCode();
@@ -96,13 +96,13 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The count {count} can not be negative for {nameof(OpCode.SUBSTR)}.");
             int index = (int)engine.Pop().GetInteger();
             if (index < 0)
-                throw new InvalidOperationException($"The value {index} is out of range.");
+                throw new InvalidOperationException($"The index {index} can not be negative for {nameof(OpCode.SUBSTR)}.");
             var x = engine.Pop().GetSpan();
             if (index + count > x.Length)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The index {index} + count {count} is out of range for {nameof(OpCode.SUBSTR)}, {index}/[0, {x.Length}).");
             Types.Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
@@ -120,10 +120,10 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The count {count} can not be negative for {nameof(OpCode.LEFT)}.");
             var x = engine.Pop().GetSpan();
             if (count > x.Length)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The count {count} is out of range for {nameof(OpCode.LEFT)}, {count}/[0, {x.Length}).");
             Types.Buffer result = new(count, false);
             x[..count].CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
@@ -141,10 +141,10 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The count {count} can not be negative for {nameof(OpCode.RIGHT)}.");
             var x = engine.Pop().GetSpan();
             if (count > x.Length)
-                throw new InvalidOperationException($"The value {count} is out of range.");
+                throw new InvalidOperationException($"The count {count} is out of range for {nameof(OpCode.RIGHT)}, {count}/[0, {x.Length}).");
             Types.Buffer result = new(count, false);
             x[^count..^0].CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
