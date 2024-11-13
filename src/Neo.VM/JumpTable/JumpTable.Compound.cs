@@ -375,7 +375,7 @@ namespace Neo.VM
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
-                            throw new InvalidOperationException($"The index {index} is out of range, {index}/[0, {array.Count}).");
+                            throw new CatchableException($"The index {index} is out of range, {index}/[0, {array.Count}).");
                         engine.Push(array[index]);
                         break;
                     }
