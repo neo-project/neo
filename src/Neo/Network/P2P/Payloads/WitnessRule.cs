@@ -17,13 +17,14 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
     /// The rule used to describe the scope of the witness.
     /// </summary>
-    public class WitnessRule : IInteroperable, ISerializable
+    public class WitnessRule : IInteroperable, ISerializable, IEquatable<WitnessRule>
     {
         /// <summary>
         /// Indicates the action to be taken if the current context meets with the rule.
@@ -36,6 +37,27 @@ namespace Neo.Network.P2P.Payloads
         public WitnessCondition Condition;
 
         int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(WitnessRule other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (other is null) return false;
+            return Action == other.Action &&
+                Condition == other.Condition;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is WitnessRule wr && Equals(wr);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Action, Condition.GetHashCode());
+        }
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
@@ -95,6 +117,24 @@ namespace Neo.Network.P2P.Payloads
                 (byte)Action,
                 Condition.ToStackItem(referenceCounter)
             });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(WitnessRule left, WitnessRule right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(WitnessRule left, WitnessRule right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }
