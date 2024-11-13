@@ -41,7 +41,7 @@ namespace Neo.IO.Data.LevelDB
         }
 
         /// <summary>
-        /// If "snapshot" is provides, read as of the supplied snapshot
+        /// If "snapshot" is provided, read as of the supplied snapshot
         /// (which must belong to the DB that is being read and which must
         /// not have been released).
         /// If "snapshot" is not set, use an implicit
