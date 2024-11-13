@@ -11,11 +11,13 @@
 
 using System;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace Neo.GUI
 {
     internal partial class ChangePasswordDialog : Form
     {
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string OldPassword
         {
             get
@@ -28,6 +30,7 @@ namespace Neo.GUI
             }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string NewPassword
         {
             get

@@ -11,6 +11,7 @@
 
 using System;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace Neo.GUI
 {
@@ -21,6 +22,7 @@ namespace Neo.GUI
             InitializeComponent();
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Password
         {
             get
@@ -33,6 +35,7 @@ namespace Neo.GUI
             }
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string WalletPath
         {
             get
