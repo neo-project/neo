@@ -36,7 +36,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size * 2 > engine.CurrentContext!.EvaluationStack.Count)
-                throw new InvalidOperationException($"The map size {size} is out of valid range, {size * 2}/[0, {engine.CurrentContext!.EvaluationStack.Count}].");
+                throw new InvalidOperationException($"The map size is out of valid range, 2*{size}/[0, {engine.CurrentContext!.EvaluationStack.Count}].");
             Map map = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -59,7 +59,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
-                throw new InvalidOperationException($"The struct size {size} is out of valid range, {size}/[0, {engine.CurrentContext!.EvaluationStack.Count}].");
+                throw new InvalidOperationException($"The struct size is out of valid range, {size}/[0, {engine.CurrentContext!.EvaluationStack.Count}].");
             Struct @struct = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -81,7 +81,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
-                throw new InvalidOperationException($"The array size {size} is out of valid range, {size}/[0, {engine.CurrentContext!.EvaluationStack.Count}].");
+                throw new InvalidOperationException($"The array size is out of valid range, {size}/[0, {engine.CurrentContext!.EvaluationStack.Count}].");
             VMArray array = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -151,7 +151,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new InvalidOperationException($"The array size {n} is out of valid range, {n}/[0, {engine.Limits.MaxStackSize}].");
+                throw new InvalidOperationException($"The array size is out of valid range, {n}/[0, {engine.Limits.MaxStackSize}].");
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
             engine.Push(new VMArray(engine.ReferenceCounter, nullArray));
@@ -169,7 +169,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new InvalidOperationException($"The array size {n} is out of valid range, {n}/[0, {engine.Limits.MaxStackSize}].");
+                throw new InvalidOperationException($"The array size is out of valid range, {n}/[0, {engine.Limits.MaxStackSize}].");
 
             var type = (StackItemType)instruction.TokenU8;
             if (!Enum.IsDefined(typeof(StackItemType), type))
@@ -212,7 +212,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new InvalidOperationException($"The struct size {n} is out of valid range, {n}/[0, {engine.Limits.MaxStackSize}].");
+                throw new InvalidOperationException($"The struct size is out of valid range, {n}/[0, {engine.Limits.MaxStackSize}].");
 
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
@@ -375,7 +375,7 @@ namespace Neo.VM
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
-                            throw new CatchableException($"The index {index} is out of range, {index}/[0, {array.Count}).");
+                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
                         engine.Push(array[index]);
                         break;
                     }
@@ -391,7 +391,7 @@ namespace Neo.VM
                         var byteArray = primitive.GetSpan();
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= byteArray.Length)
-                            throw new CatchableException($"The index {index} of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).");
+                            throw new CatchableException($"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).");
                         engine.Push((BigInteger)byteArray[index]);
                         break;
                     }
@@ -399,7 +399,7 @@ namespace Neo.VM
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index {index} of {nameof(Types.Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                            throw new CatchableException($"The index of {nameof(Types.Buffer)} is out of range, {index}/[0, {buffer.Size}).");
                         engine.Push((BigInteger)buffer.InnerBuffer.Span[index]);
                         break;
                     }
@@ -444,7 +444,7 @@ namespace Neo.VM
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
-                            throw new CatchableException($"The index {index} of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                            throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
                         array[index] = value;
                         break;
                     }
@@ -457,7 +457,7 @@ namespace Neo.VM
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index {index} of {nameof(Types.Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                            throw new CatchableException($"The index of {nameof(Types.Buffer)} is out of range, {index}/[0, {buffer.Size}).");
                         if (value is not PrimitiveType p)
                             throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Types.Buffer)} in {instruction.OpCode}.");
                         var b = (int)p.GetInteger();
@@ -514,7 +514,7 @@ namespace Neo.VM
                 case VMArray array:
                     var index = (int)key.GetInteger();
                     if (index < 0 || index >= array.Count)
-                        throw new InvalidOperationException($"The index {index} of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        throw new InvalidOperationException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
                     array.RemoveAt(index);
                     break;
                 case Map map:
