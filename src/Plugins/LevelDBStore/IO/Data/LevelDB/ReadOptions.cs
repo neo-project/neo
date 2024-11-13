@@ -13,33 +13,43 @@ using System;
 
 namespace Neo.IO.Data.LevelDB
 {
+    /// <summary>
+    /// Options that control read operations.
+    /// </summary>
     public class ReadOptions
     {
         public static readonly ReadOptions Default = new ReadOptions();
         internal readonly IntPtr handle = Native.leveldb_readoptions_create();
 
+        /// <summary>
+        /// If true, all data read from underlying storage will be
+        /// verified against corresponding checksums.
+        /// </summary>
         public bool VerifyChecksums
         {
-            set
-            {
-                Native.leveldb_readoptions_set_verify_checksums(handle, value);
-            }
+            set { Native.leveldb_readoptions_set_verify_checksums(handle, value); }
         }
 
+        /// <summary>
+        /// Should the data read for this iteration be cached in memory?
+        /// Callers may wish to set this field to false for bulk scans.
+        /// Default: true
+        /// </summary>
         public bool FillCache
         {
-            set
-            {
-                Native.leveldb_readoptions_set_fill_cache(handle, value);
-            }
+            set { Native.leveldb_readoptions_set_fill_cache(handle, value); }
         }
 
+        /// <summary>
+        /// If "snapshot" is provides, read as of the supplied snapshot
+        /// (which must belong to the DB that is being read and which must
+        /// not have been released).
+        /// If "snapshot" is not set, use an implicit
+        /// snapshot of the state at the beginning of this read operation.
+        /// </summary>
         public Snapshot Snapshot
         {
-            set
-            {
-                Native.leveldb_readoptions_set_snapshot(handle, value.handle);
-            }
+            set { Native.leveldb_readoptions_set_snapshot(handle, value.handle); }
         }
 
         ~ReadOptions()

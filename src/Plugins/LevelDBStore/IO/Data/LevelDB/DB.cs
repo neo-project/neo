@@ -14,6 +14,10 @@ using System.IO;
 
 namespace Neo.IO.Data.LevelDB
 {
+    /// <summary>
+    /// A DB is a persistent ordered map from keys to values.
+    /// A DB is safe for concurrent access from multiple threads without any external synchronization.
+    /// </summary>
     public class DB : IDisposable
     {
         private IntPtr handle;
@@ -37,12 +41,39 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
+        /// <summary>
+        /// Remove the database entry (if any) for "key".
+        /// It is not an error if "key" did not exist in the database.
+        /// </summary>
+        public void Delete(byte[] key)
+        {
+            Delete(WriteOptions.Default, key);
+        }
+
+        /// <summary>
+        /// Remove the database entry (if any) for "key".
+        /// It is not an error if "key" did not exist in the database.
+        /// Note: consider setting new WriteOptions{ Sync = true }.
+        /// </summary>
         public void Delete(WriteOptions options, byte[] key)
         {
             Native.leveldb_delete(handle, options.handle, key, (UIntPtr)key.Length, out IntPtr error);
             NativeHelper.CheckError(error);
         }
 
+        /// <summary>
+        /// If the database contains an entry for "key" return the value,
+        /// otherwise return null.
+        /// </summary>
+        public byte[] Get(byte[] key)
+        {
+            return Get(ReadOptions.Default, key);
+        }
+
+        /// <summary>
+        /// If the database contains an entry for "key" return the value,
+        /// otherwise return null.
+        /// </summary>
         public byte[] Get(ReadOptions options, byte[] key)
         {
             IntPtr value = Native.leveldb_get(handle, options.handle, key, (UIntPtr)key.Length, out UIntPtr length, out IntPtr error);
@@ -93,12 +124,30 @@ namespace Neo.IO.Data.LevelDB
             return new DB(handle);
         }
 
+        /// <summary>
+        /// Set the database entry for "key" to "value".
+        /// </summary>
+        public void Put(byte[] key, byte[] value)
+        {
+            Put(WriteOptions.Default, key, value);
+        }
+
+        /// <summary>
+        /// Set the database entry for "key" to "value".
+        /// Note: consider setting new WriteOptions{ Sync = true }.
+        /// </summary>
         public void Put(WriteOptions options, byte[] key, byte[] value)
         {
             Native.leveldb_put(handle, options.handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length, out IntPtr error);
             NativeHelper.CheckError(error);
         }
 
+        /// <summary>
+        /// If a DB cannot be opened, you may attempt to call this method to
+        /// resurrect as much of the contents of the database as possible.
+        /// Some data may be lost, so be careful when calling this function
+        /// on a database that contains important information.
+        /// </summary>
         public static void Repair(string name, Options options)
         {
             Native.leveldb_repair_db(options.handle, Path.GetFullPath(name), out IntPtr error);
