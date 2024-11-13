@@ -92,11 +92,11 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public StackItem Peek(int index = 0)
         {
-            if (index >= innerList.Count) throw new InvalidOperationException($"Peek index {index} is out of stack bounds: {index}/{innerList.Count}");
+            if (index >= innerList.Count) throw new InvalidOperationException($"Peek index is out of stack bounds: {index}/{innerList.Count}");
             if (index < 0)
             {
                 index += innerList.Count;
-                if (index < 0) throw new InvalidOperationException($"Peek index {index} is out of stack bounds: {index}/{innerList.Count}");
+                if (index < 0) throw new InvalidOperationException($"Peek index is out of stack bounds: {index}/{innerList.Count}");
             }
             return innerList[innerList.Count - index - 1];
         }
