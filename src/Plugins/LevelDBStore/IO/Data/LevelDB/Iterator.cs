@@ -61,12 +61,7 @@ namespace Neo.IO.Data.LevelDB
             Native.leveldb_iter_next(handle);
             CheckError();
         }
-
-        /// <summary>
-        /// Moves to the previous entry in the source.
-        /// After this call, Valid() is true if the iterator was not positioned at the first entry in source.
-        /// REQUIRES: Valid()
-        /// </summary>
+        
         public void Prev()
         {
             Native.leveldb_iter_prev(handle);
