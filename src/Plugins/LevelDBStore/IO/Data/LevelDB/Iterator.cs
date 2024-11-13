@@ -61,7 +61,7 @@ namespace Neo.IO.Data.LevelDB
             Native.leveldb_iter_next(handle);
             CheckError();
         }
-        
+
         public void Prev()
         {
             Native.leveldb_iter_prev(handle);
