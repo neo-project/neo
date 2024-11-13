@@ -126,7 +126,7 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(ReadOnlySpan<byte> data)
         {
-            if (data.IsEmpty)
+            if (data == null)
                 throw new ArgumentNullException(nameof(data));
             if (data.Length < 0x100)
             {
