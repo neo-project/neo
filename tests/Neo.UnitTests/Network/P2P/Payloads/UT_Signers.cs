@@ -72,6 +72,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Rules = []
             };
 
+            var cnull = new Signer
+            {
+                Account = null,
+                Scopes = WitnessScope.Global,
+                AllowedContracts = null,
+                AllowedGroups = null,
+                Rules = null,
+            };
+
             Assert.IsTrue(expected.Equals(expected));
 
             Assert.AreEqual(expected, actual);
@@ -86,6 +95,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsFalse(null == expected);
             Assert.AreNotEqual(expected, null);
             Assert.IsFalse(expected.Equals(null));
+
+            //Check null
+            Assert.AreNotEqual(cnull, notEqual);
+            Assert.IsFalse(cnull.Equals(notEqual));
         }
 
 

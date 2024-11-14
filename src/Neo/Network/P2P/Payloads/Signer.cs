@@ -75,9 +75,9 @@ namespace Neo.Network.P2P.Payloads
             if (other is null) return false;
             return Account == other.Account &&
                 Scopes == other.Scopes &&
-                AllowedContracts.SequenceEqual(other.AllowedContracts) &&
-                AllowedGroups.SequenceEqual(other.AllowedGroups) &&
-                Rules.SequenceEqual(other.Rules);
+                AllowedContracts.AsSpan().SequenceEqual(other.AllowedContracts.AsSpan()) &&
+                AllowedGroups.AsSpan().SequenceEqual(other.AllowedGroups.AsSpan()) &&
+                Rules.AsEnumerable().SequenceEqual(other.Rules.AsEnumerable());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
