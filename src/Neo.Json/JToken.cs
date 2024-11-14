@@ -171,7 +171,7 @@ namespace Neo.Json
                 JsonTokenType.StartObject => ReadObject(ref reader),
                 JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
-                _ => throw new FormatException(),
+                _ => throw new FormatException($"Unexpected token {reader.TokenType}"),
             };
         }
 
@@ -189,7 +189,7 @@ namespace Neo.Json
                         break;
                 }
             }
-            throw new FormatException();
+            throw new FormatException("Unterminated array");
         }
 
         private static JObject ReadObject(ref Utf8JsonReader reader)
@@ -203,15 +203,17 @@ namespace Neo.Json
                         return obj;
                     case JsonTokenType.PropertyName:
                         string name = ReadString(ref reader);
-                        if (obj.Properties.ContainsKey(name)) throw new FormatException();
+                        if (obj.Properties.ContainsKey(name))
+                            throw new FormatException($"Duplicate property name: {name}");
+
                         JToken? value = Read(ref reader);
                         obj.Properties.Add(name, value);
                         break;
                     default:
-                        throw new FormatException();
+                        throw new FormatException($"Unexpected token {reader.TokenType}");
                 }
             }
-            throw new FormatException();
+            throw new FormatException("Unterminated object");
         }
 
         private static string ReadString(ref Utf8JsonReader reader)
@@ -271,9 +273,12 @@ namespace Neo.Json
         {
             JToken?[] objects = { this };
             if (expr.Length == 0) return objects;
+
             Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
             JPathToken first = tokens.Dequeue();
-            if (first.Type != JPathTokenType.Root) throw new FormatException();
+            if (first.Type != JPathTokenType.Root)
+                throw new FormatException($"Unexpected token {first.Type}");
+
             JPathToken.ProcessJsonPath(ref objects, tokens);
             return objects;
         }
