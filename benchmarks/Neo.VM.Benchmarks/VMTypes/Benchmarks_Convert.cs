@@ -60,7 +60,7 @@ namespace Neo.VM.Benchmark
 
         private Dictionary<StackItemType, List<StackItem>> CreateTestItemsByType()
         {
-            var referenceCounter = new ReferenceCounter();
+            var referenceCounter = new ReferenceCounterV2();
             var result = new Dictionary<StackItemType, List<StackItem>>();
 
             foreach (StackItemType type in Enum.GetValues(typeof(StackItemType)))
@@ -84,22 +84,22 @@ namespace Neo.VM.Benchmark
             result[StackItemType.Buffer].Add(new Buffer(new byte[128])); // Another 128-byte buffer, all zeros
 
             // Create an array with 10 items
-            var longArray = new Array(referenceCounter);
+            var longArray = new Array();
             for (int i = 0; i < 10; i++) longArray.Add(new Integer(i));
             result[StackItemType.Array].Add(longArray);
-            result[StackItemType.Array].Add(new Array(referenceCounter) { StackItem.True, new ByteString(new byte[] { 3, 4, 5 }) });
+            result[StackItemType.Array].Add(new Array() { StackItem.True, new ByteString(new byte[] { 3, 4, 5 }) });
 
             // Create a struct with 10 items
-            var longStruct = new Struct(referenceCounter);
+            var longStruct = new Struct();
             for (int i = 0; i < 10; i++) longStruct.Add(new Integer(i * 10));
             result[StackItemType.Struct].Add(longStruct);
-            result[StackItemType.Struct].Add(new Struct(referenceCounter) { StackItem.False, new Buffer(new byte[] { 6, 7, 8 }) });
+            result[StackItemType.Struct].Add(new Struct() { StackItem.False, new Buffer(new byte[] { 6, 7, 8 }) });
 
             // Create a map with 10 items
-            var longMap = new Map(referenceCounter);
+            var longMap = new Map();
             for (int i = 0; i < 10; i++) longMap[new Integer(i)] = new ByteString(new byte[] { (byte)(i * 20) });
             result[StackItemType.Map].Add(longMap);
-            result[StackItemType.Map].Add(new Map(referenceCounter) { [new ByteString(new byte[] { 9 })] = StackItem.True });
+            result[StackItemType.Map].Add(new Map() { [new ByteString(new byte[] { 9 })] = StackItem.True });
 
             result[StackItemType.InteropInterface].Add(new InteropInterface(new object()));
             result[StackItemType.InteropInterface].Add(new InteropInterface("test string"));

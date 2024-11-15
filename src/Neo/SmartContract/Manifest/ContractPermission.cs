@@ -70,10 +70,10 @@ namespace Neo.SmartContract.Manifest
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter)
+            return new Struct()
             {
                 Contract.IsWildcard ? StackItem.Null : Contract.IsHash ? Contract.Hash.ToArray() : Contract.Group.ToArray(),
-                Methods.IsWildcard ? StackItem.Null : new Array(referenceCounter, Methods.Select(p => (StackItem)p)),
+                Methods.IsWildcard ? StackItem.Null : new Array(Methods.Select(p => (StackItem)p)),
             };
         }
 

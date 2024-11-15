@@ -134,19 +134,19 @@ namespace Neo.SmartContract
                     switch (placeholder.Type)
                     {
                         case StackItemType.Array:
-                            Array array = new(referenceCounter);
+                            Array array = new();
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 array.Add(stack_temp.Pop());
                             item = array;
                             break;
                         case StackItemType.Struct:
-                            Struct @struct = new(referenceCounter);
+                            Struct @struct = new();
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 @struct.Add(stack_temp.Pop());
                             item = @struct;
                             break;
                         case StackItemType.Map:
-                            Map map = new(referenceCounter);
+                            Map map = new();
                             for (int i = 0; i < placeholder.ElementCount; i++)
                             {
                                 StackItem key = stack_temp.Pop();

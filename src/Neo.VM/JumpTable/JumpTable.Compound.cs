@@ -37,7 +37,7 @@ namespace Neo.VM
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size * 2 > engine.CurrentContext!.EvaluationStack.Count)
                 throw new InvalidOperationException($"The value {size} is out of range.");
-            Map map = new(engine.ReferenceCounter);
+            Map map = new();
             for (var i = 0; i < size; i++)
             {
                 var key = engine.Pop<PrimitiveType>();
@@ -60,7 +60,7 @@ namespace Neo.VM
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
                 throw new InvalidOperationException($"The value {size} is out of range.");
-            Struct @struct = new(engine.ReferenceCounter);
+            Struct @struct = new();
             for (var i = 0; i < size; i++)
             {
                 var item = engine.Pop();
@@ -82,7 +82,7 @@ namespace Neo.VM
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
                 throw new InvalidOperationException($"The value {size} is out of range.");
-            VMArray array = new(engine.ReferenceCounter);
+            VMArray array = new();
             for (var i = 0; i < size; i++)
             {
                 var item = engine.Pop();
@@ -136,7 +136,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewArray0(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new VMArray(engine.ReferenceCounter));
+            engine.Push(new VMArray());
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace Neo.VM
                 throw new InvalidOperationException($"MaxStackSize exceed: {n}");
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
-            engine.Push(new VMArray(engine.ReferenceCounter, nullArray));
+            engine.Push(new VMArray(nullArray));
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace Neo.VM
             };
             var itemArray = new StackItem[n];
             Array.Fill(itemArray, item);
-            engine.Push(new VMArray(engine.ReferenceCounter, itemArray));
+            engine.Push(new VMArray(itemArray));
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewStruct0(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new Struct(engine.ReferenceCounter));
+            engine.Push(new Struct());
         }
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace Neo.VM
 
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
-            engine.Push(new Struct(engine.ReferenceCounter, nullArray));
+            engine.Push(new Struct(nullArray));
         }
 
         /// <summary>
@@ -229,7 +229,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewMap(ExecutionEngine engine, Instruction instruction)
         {
-            engine.Push(new Map(engine.ReferenceCounter));
+            engine.Push(new Map());
         }
 
         /// <summary>
@@ -327,7 +327,7 @@ namespace Neo.VM
         public virtual void Keys(ExecutionEngine engine, Instruction instruction)
         {
             var map = engine.Pop<Map>();
-            engine.Push(new VMArray(engine.ReferenceCounter, map.Keys));
+            engine.Push(new VMArray(map.Keys));
         }
 
         /// <summary>
@@ -347,7 +347,7 @@ namespace Neo.VM
                 Map map => map.Values,
                 _ => throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}"),
             };
-            VMArray newArray = new(engine.ReferenceCounter);
+            VMArray newArray = new();
             foreach (var item in values)
                 if (item is Struct s)
                     newArray.Add(s.Clone(engine.Limits));
@@ -422,6 +422,7 @@ namespace Neo.VM
             var array = engine.Pop<VMArray>();
             if (newItem is Struct s) newItem = s.Clone(engine.Limits);
             array.Add(newItem);
+            engine.ReferenceCounter.AddStackReference(newItem);
         }
 
         /// <summary>
@@ -445,12 +446,23 @@ namespace Neo.VM
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
                             throw new CatchableException($"The value {index} is out of range.");
+                        engine.ReferenceCounter.RemoveStackReference(array[index]);
                         array[index] = value;
+                        engine.ReferenceCounter.AddStackReference(array[index]);
                         break;
                     }
                 case Map map:
                     {
+                        if (!map.TryGetValue(key, out var value1))
+                        {
+                            engine.ReferenceCounter.AddStackReference(key);
+                        }
+                        else
+                        {
+                            engine.ReferenceCounter.RemoveStackReference(value1);
+                        }
                         map[key] = value;
+                        engine.ReferenceCounter.AddStackReference(value);
                         break;
                     }
                 case Types.Buffer buffer:
@@ -515,9 +527,13 @@ namespace Neo.VM
                     var index = (int)key.GetInteger();
                     if (index < 0 || index >= array.Count)
                         throw new InvalidOperationException($"The value {index} is out of range.");
+                    var item = array[index];
                     array.RemoveAt(index);
+                    engine.ReferenceCounter.RemoveStackReference(item);
                     break;
                 case Map map:
+                    engine.ReferenceCounter.RemoveStackReference(key);
+                    engine.ReferenceCounter.RemoveStackReference(map[key]);
                     map.Remove(key);
                     break;
                 default:
@@ -536,6 +552,10 @@ namespace Neo.VM
         public virtual void ClearItems(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop<CompoundType>();
+            foreach (var xSubItem in x.SubItems)
+            {
+                engine.ReferenceCounter.RemoveStackReference(xSubItem);
+            }
             x.Clear();
         }
 
@@ -551,7 +571,9 @@ namespace Neo.VM
         {
             var x = engine.Pop<VMArray>();
             var index = x.Count - 1;
-            engine.Push(x[index]);
+            var item = x[index];
+            engine.Push(item);
+            engine.ReferenceCounter.RemoveStackReference(item);
             x.RemoveAt(index);
         }
     }

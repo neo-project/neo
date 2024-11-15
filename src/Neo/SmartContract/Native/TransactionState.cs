@@ -79,10 +79,10 @@ namespace Neo.SmartContract.Native
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
             if (Transaction is null)
-                return new Struct(referenceCounter) { BlockIndex };
+                return new Struct() { BlockIndex };
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = Transaction.ToArray();
-            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
+            return new Struct() { BlockIndex, _rawTransaction, (byte)State };
         }
     }
 }

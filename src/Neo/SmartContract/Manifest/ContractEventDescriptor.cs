@@ -43,10 +43,10 @@ namespace Neo.SmartContract.Manifest
 
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter)
+            return new Struct()
             {
                 Name,
-                new Array(referenceCounter, Parameters.Select(p => p.ToStackItem(referenceCounter)))
+                new Array(Parameters.Select(p => p.ToStackItem(referenceCounter)))
             };
         }
 

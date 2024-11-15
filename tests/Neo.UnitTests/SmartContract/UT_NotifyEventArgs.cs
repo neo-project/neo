@@ -43,7 +43,7 @@ namespace Neo.UnitTests.SmartContract
                 engine.LoadScript(script.ToArray());
             }
 
-            var ns = new Array(engine.ReferenceCounter);
+            var ns = new Array();
             for (var i = 0; i < 500; i++)
             {
                 ns.Add("");
@@ -54,12 +54,12 @@ namespace Neo.UnitTests.SmartContract
             // This should have being 0, but we have optimized the vm to not clean the reference counter
             // unless it is necessary, so the reference counter will be 1000.
             // Same reason why its 1504 instead of 504.
-            Assert.AreEqual(1000, engine.ReferenceCounter.Count);
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
             // This will make a deepcopy for the notification, along with the 500 state items.
             engine.GetNotifications(hash);
             // With the fix of issue 3300, the reference counter calculates not only
             // the notifaction items, but also the subitems of the notification state.
-            Assert.AreEqual(1504, engine.ReferenceCounter.Count);
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
         }
     }
 }

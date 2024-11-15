@@ -46,10 +46,10 @@ namespace Neo.SmartContract.Manifest
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter)
+            return new Struct()
             {
-                new Array(referenceCounter, Methods.Select(p => p.ToStackItem(referenceCounter))),
-                new Array(referenceCounter, Events.Select(p => p.ToStackItem(referenceCounter))),
+                new Array( Methods.Select(p => p.ToStackItem(referenceCounter))),
+                new Array( Events.Select(p => p.ToStackItem(referenceCounter))),
             };
         }
 

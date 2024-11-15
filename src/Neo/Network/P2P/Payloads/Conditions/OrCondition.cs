@@ -94,7 +94,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
-            result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
+            result.Add(new VM.Types.Array(Expressions.Select(p => p.ToStackItem(referenceCounter))));
             return result;
         }
 

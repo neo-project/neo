@@ -158,9 +158,9 @@ namespace Neo.Test
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(3, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
-            Assert.AreEqual(2, engine.ReferenceCounter.Count);
-            Assert.AreEqual(VMState.HALT, debugger.Execute());
             Assert.AreEqual(1, engine.ReferenceCounter.Count);
+            Assert.AreEqual(VMState.HALT, debugger.Execute());
+            Assert.AreEqual(0, engine.ReferenceCounter.Count);
         }
 
         [TestMethod]
@@ -237,18 +237,18 @@ namespace Neo.Test
             using ExecutionEngine engine = new();
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(0, engine.ReferenceCounter.Count);
-            Array array = new(engine.ReferenceCounter, new StackItem[] { 1, 2, 3, 4 });
-            Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
+            Array array = new(new StackItem[] { 1, 2, 3, 4 });
+            engine.CurrentContext.EvaluationStack.Push(array);
+            Assert.AreEqual(array.Count + 1, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
+            Assert.AreEqual(array.Count + 1, engine.ReferenceCounter.Count);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
         public void TestInvalidReferenceStackItem()
         {
-            var reference = new ReferenceCounter();
-            var arr = new Array(reference);
+
+            var arr = new Array();
             var arr2 = new Array();
 
             for (var i = 0; i < 10; i++)
@@ -257,7 +257,12 @@ namespace Neo.Test
             }
 
             arr.Add(arr2);
-            Assert.AreEqual(11, reference.Count);
+
+            var engine = new ExecutionEngine();
+            engine.LoadScript(new Script((byte[])[(byte)OpCode.NOP]));
+
+            engine.CurrentContext.EvaluationStack.Push(arr);
+            Assert.AreEqual(12, engine.ReferenceCounter.Count);
         }
     }
 }

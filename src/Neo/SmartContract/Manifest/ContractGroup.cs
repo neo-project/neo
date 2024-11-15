@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Manifest
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter) { PubKey.ToArray(), Signature };
+            return new Struct() { PubKey.ToArray(), Signature };
         }
 
         /// <summary>

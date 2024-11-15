@@ -90,15 +90,15 @@ namespace Neo.SmartContract.Manifest
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter)
+            return new Struct()
             {
                 Name,
-                new Array(referenceCounter, Groups.Select(p => p.ToStackItem(referenceCounter))),
-                new Map(referenceCounter),
-                new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
+                new Array(Groups.Select(p => p.ToStackItem(referenceCounter))),
+                new Map(),
+                new Array(SupportedStandards.Select(p => (StackItem)p)),
                 Abi.ToStackItem(referenceCounter),
-                new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
-                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => p.ToArray()?? StackItem.Null)),
+                new Array(Permissions.Select(p => p.ToStackItem(referenceCounter))),
+                Trusts.IsWildcard ? StackItem.Null : new Array(Trusts.Select(p => p.ToArray()?? StackItem.Null)),
                 Extra is null ? "null" : Extra.ToByteArray(false)
             };
         }

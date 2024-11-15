@@ -29,9 +29,7 @@ namespace Neo.VM.Benchmark
             set
             {
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
-                ReferenceCounter?.RemoveReference(_array[index], this);
                 _array[index] = value;
-                ReferenceCounter?.AddReference(value, this);
             }
         }
 
@@ -43,22 +41,14 @@ namespace Neo.VM.Benchmark
         public override int SubItemsCount => _array.Count;
         public override StackItemType Type => StackItemType.Array;
 
-        /// <summary>
-        /// Create an array containing the specified items.
-        /// </summary>
-        /// <param name="items">The items to be included in the array.</param>
-        public TestArray(IEnumerable<StackItem>? items = null)
-            : this(null, items)
-        {
-        }
 
         /// <summary>
         /// Create an array containing the specified items. And make the array use the specified <see cref="IReferenceCounter"/>.
         /// </summary>
         /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> to be used by this array.</param>
         /// <param name="items">The items to be included in the array.</param>
-        public TestArray(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
-            : base(referenceCounter)
+        public TestArray(IEnumerable<StackItem>? items = null)
+            : base()
         {
             _array = items switch
             {
@@ -66,9 +56,6 @@ namespace Neo.VM.Benchmark
                 List<StackItem> list => list,
                 _ => new List<StackItem>(items)
             };
-            if (referenceCounter != null)
-                foreach (StackItem item in _array)
-                    referenceCounter.AddReference(item, this);
         }
 
         /// <summary>
@@ -79,29 +66,25 @@ namespace Neo.VM.Benchmark
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             _array.Add(item);
-            ReferenceCounter?.AddReference(item, this);
         }
 
         public override void Clear()
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
-            if (ReferenceCounter != null)
-                foreach (StackItem item in _array)
-                    ReferenceCounter.RemoveReference(item, this);
             _array.Clear();
         }
 
         public override StackItem ConvertTo(StackItemType type)
         {
             if (Type == StackItemType.Array && type == StackItemType.Struct)
-                return new Struct(ReferenceCounter, new List<StackItem>(_array));
+                return new Struct(new List<StackItem>(_array));
             return base.ConvertTo(type);
         }
 
         internal sealed override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
             if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
-            var result = this is TestStruct ? new TestStruct(ReferenceCounter) : new TestArray(ReferenceCounter);
+            var result = this is TestStruct ? new TestStruct() : new TestArray();
             refMap.Add(this, result);
             foreach (StackItem item in _array)
                 result.Add(item.DeepCopy(refMap, asImmutable));
@@ -126,7 +109,6 @@ namespace Neo.VM.Benchmark
         public void RemoveAt(int index)
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
-            ReferenceCounter?.RemoveReference(_array[index], this);
             _array.RemoveAt(index);
         }
 

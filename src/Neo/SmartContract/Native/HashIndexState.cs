@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter) { Hash.ToArray(), Index };
+            return new Struct() { Hash.ToArray(), Index };
         }
     }
 }

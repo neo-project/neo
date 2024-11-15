@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[]
+            return new VM.Types.Array(new StackItem[]
             {
                 // Computed properties
                 Header.Hash.ToArray(),

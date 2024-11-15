@@ -48,7 +48,7 @@ namespace Neo.VM.Types
         public Struct Clone(ExecutionEngineLimits limits)
         {
             int count = (int)(limits.MaxStackSize - 1);
-            Struct result = new(ReferenceCounter);
+            Struct result = new();
             Queue<Struct> queue = new();
             queue.Enqueue(result);
             queue.Enqueue(this);
@@ -62,7 +62,7 @@ namespace Neo.VM.Types
                     if (count < 0) throw new InvalidOperationException("Beyond clone limits!");
                     if (item is Struct sb)
                     {
-                        Struct sa = new(ReferenceCounter);
+                        Struct sa = new();
                         a.Add(sa);
                         queue.Enqueue(sa);
                         queue.Enqueue(sb);
@@ -79,7 +79,7 @@ namespace Neo.VM.Types
         public override StackItem ConvertTo(StackItemType type)
         {
             if (type == StackItemType.Array)
-                return new Array(ReferenceCounter, new List<StackItem>(_array));
+                return new Array(new List<StackItem>(_array));
             return base.ConvertTo(type);
         }
 

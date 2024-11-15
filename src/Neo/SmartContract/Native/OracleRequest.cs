@@ -70,7 +70,7 @@ namespace Neo.SmartContract.Native
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter)
+            return new Array()
             {
                 OriginalTxid.ToArray(),
                 GasForResponse,

@@ -65,7 +65,7 @@ namespace Neo.SmartContract
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter)
+            return new Array()
                 {
                     ScriptHash.ToArray(),
                     EventName,
@@ -77,7 +77,7 @@ namespace Neo.SmartContract
         {
             if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {
-                return new Array(referenceCounter)
+                return new Array()
                 {
                     ScriptHash.ToArray(),
                     EventName,
@@ -85,7 +85,7 @@ namespace Neo.SmartContract
                 };
             }
 
-            return new Array(referenceCounter)
+            return new Array()
                 {
                     ScriptHash.ToArray(),
                     EventName,

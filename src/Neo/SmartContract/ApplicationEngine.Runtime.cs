@@ -414,7 +414,7 @@ namespace Neo.SmartContract
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             var array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
-            Array notifyArray = new(ReferenceCounter);
+            Array notifyArray = new();
             foreach (var notify in array)
             {
                 notifyArray.Add(notify.ToStackItem(ReferenceCounter, this));

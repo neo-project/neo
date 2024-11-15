@@ -134,7 +134,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
+            return new VM.Types.Array(new StackItem[] { (byte)Type });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
