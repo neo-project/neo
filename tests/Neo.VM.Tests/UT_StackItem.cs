@@ -96,7 +96,9 @@ namespace Neo.Test
             itemC = new Map { [true] = false, [0] = 2 };
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+
+            // It is OK for different maps to have the same hashcode.
+            // Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
             // Test CompoundType GetHashCode for subitems
             var junk = new Array { true, false, 0 };
@@ -105,7 +107,7 @@ namespace Neo.Test
             itemC = new Map { [true] = junk, [0] = 2 };
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
-            Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+            // Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
             itemA = new InteropInterface(123);
             itemB = new InteropInterface(123);
@@ -121,6 +123,17 @@ namespace Neo.Test
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
             Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
+
+            var map1 = new Map();
+            map1[1] = 2;
+            map1[3] = 4;
+
+            var map2 = new Map();
+            map2[3] = 4;
+            map2[1] = 2;
+
+            // Same maps should have the same hashcode.
+            Assert.AreEqual(map1.GetHashCode(), map2.GetHashCode());
         }
 
         [TestMethod]

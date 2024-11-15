@@ -181,5 +181,18 @@ namespace Neo.VM.Types
                 throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
             return dictionary.TryGetValue(key, out value);
         }
+
+        /// <summary>
+        /// Gets the hash code of the map.
+        /// </summary>
+        /// <returns>The hash code of the map.</returns>
+        public override int GetHashCode()
+        {
+            var keysHashCode = 0;
+            // only keys are used.
+            foreach (var item in Keys)
+                keysHashCode ^= item.GetHashCode();
+            return HashCode.Combine(Count, (int)Type, keysHashCode);
+        }
     }
 }
