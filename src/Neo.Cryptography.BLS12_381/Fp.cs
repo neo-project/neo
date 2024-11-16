@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -152,11 +153,7 @@ namespace Neo.Cryptography.BLS12_381
 
         public override string ToString()
         {
-            var output = string.Empty;
-            foreach (var b in ToArray())
-                output += b.ToString("x2");
-
-            return "0x" + output;
+            return "0x" + ToArray().ToHexString();
         }
 
         public bool LexicographicallyLargest()

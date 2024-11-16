@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.Extensions
 {
@@ -24,7 +23,7 @@ namespace Neo.Extensions
             if (ReferenceEquals(x, y)) return true;
             if (x is null || y is null || x.Length != y.Length) return false;
 
-            return x.SequenceEqual(y);
+            return x.AsSpan().SequenceEqual(y.AsSpan());
         }
 
         public int GetHashCode(byte[] obj)
