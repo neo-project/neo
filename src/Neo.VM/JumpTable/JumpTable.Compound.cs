@@ -573,7 +573,6 @@ namespace Neo.VM
             var index = x.Count - 1;
             var item = x[index];
             engine.Push(item);
-            engine.ReferenceCounter.RemoveStackReference(item);
             x.RemoveAt(index);
         }
     }
