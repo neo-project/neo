@@ -32,7 +32,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <summary>
         /// Initializes a new instance of the <see cref="ServerCapability"/> class.
         /// </summary>
-        /// <param name="type">The type of the <see cref="ServerCapability"/>. It must be <see cref="NodeCapabilityType.TcpServer"/> or <see cref="NodeCapabilityType.WsServer"/></param>
+        /// <param name="type">The type of the <see cref="ServerCapability"/>. It must be <see cref="NodeCapabilityType.TcpServer"/></param>
         /// <param name="port">The port that the node is listening on.</param>
         public ServerCapability(NodeCapabilityType type, ushort port = 0) : base(type)
         {
