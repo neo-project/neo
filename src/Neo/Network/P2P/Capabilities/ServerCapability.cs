@@ -36,9 +36,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <param name="port">The port that the node is listening on.</param>
         public ServerCapability(NodeCapabilityType type, ushort port = 0) : base(type)
         {
-#pragma warning disable CS0612 // Type or member is obsolete
-            if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.WsServer)
-#pragma warning restore CS0612 // Type or member is obsolete
+            if (type != NodeCapabilityType.TcpServer)
             {
                 throw new ArgumentException(nameof(type));
             }
