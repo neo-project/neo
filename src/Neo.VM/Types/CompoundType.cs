@@ -30,7 +30,7 @@ namespace Neo.VM.Types
         /// Create a new <see cref="CompoundType"/> with the specified reference counter.
         /// </summary>
         /// <param name="referenceCounter">The reference counter to be used.</param>
-        protected CompoundType(IReferenceCounter? referenceCounter)
+        protected CompoundType(IReferenceCounter? referenceCounter = null)
         {
         }
 
