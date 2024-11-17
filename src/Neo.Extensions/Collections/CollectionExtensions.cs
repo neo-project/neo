@@ -12,7 +12,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 
 namespace Neo.Extensions
@@ -32,7 +31,13 @@ namespace Neo.Extensions
             Func<KeyValuePair<TKey, TValue>, bool> predicate,
             Action<KeyValuePair<TKey, TValue>>? afterRemoved = null)
         {
-            var items = dict.Where(predicate).ToList();
+            var items = new List<KeyValuePair<TKey, TValue>>();
+            foreach (var item in dict) // avoid linq
+            {
+                if (predicate(item))
+                    items.Add(item);
+            }
+
             foreach (var item in items)
             {
                 if (dict.Remove(item.Key))
@@ -68,6 +73,7 @@ namespace Neo.Extensions
                         throw new InvalidOperationException("unexpected end of sequence");
                     chunk[i] = enumerator.Current;
                 }
+
                 remain -= chunk.Length;
                 yield return chunk;
             }
