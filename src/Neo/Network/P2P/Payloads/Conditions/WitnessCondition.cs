@@ -17,6 +17,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -31,6 +32,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public abstract WitnessConditionType Type { get; }
 
         public virtual int Size => sizeof(WitnessConditionType);
+
+        public abstract override bool Equals(object obj);
+
+        public abstract override int GetHashCode();
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
@@ -130,6 +135,24 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(WitnessCondition left, WitnessCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(WitnessCondition left, WitnessCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }
