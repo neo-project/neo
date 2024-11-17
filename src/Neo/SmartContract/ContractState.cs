@@ -119,7 +119,7 @@ namespace Neo.SmartContract
             };
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter) });
         }

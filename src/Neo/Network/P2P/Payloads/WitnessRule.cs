@@ -110,7 +110,7 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {

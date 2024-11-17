@@ -603,7 +603,7 @@ namespace Neo.SmartContract.Native
                 Votes = @struct[1].GetInteger();
             }
 
-            public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
+            public StackItem ToStackItem(IReferenceCounter referenceCounter)
             {
                 return new Struct(referenceCounter) { Registered, Votes };
             }

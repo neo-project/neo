@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native
             UserData = array[6].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
             {

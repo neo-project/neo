@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Manifest
             Signature = @struct[1].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { PubKey.ToArray(), Signature };
         }
