@@ -83,7 +83,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestActiveDeprecatedInRoleManagement()
         {
-            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Echidna\": 20");
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 20");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
             ProtocolSettings settings = ProtocolSettings.Load(file, false);
