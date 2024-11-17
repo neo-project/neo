@@ -25,6 +25,8 @@ namespace Neo.VM
     /// </summary>
     public sealed class ReferenceCounterV2 : IReferenceCounter
     {
+        public RCVersion Version { get; init; } = RCVersion.V2;
+
         // Keeps the total count of references.
         private int _referencesCount = 0;
 

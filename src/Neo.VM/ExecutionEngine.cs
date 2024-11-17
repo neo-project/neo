@@ -34,7 +34,10 @@ namespace Neo.VM
         /// <summary>
         /// Used for reference counting of objects in the VM.
         /// </summary>
-        public IReferenceCounter ReferenceCounter { get; }
+        [Obsolete("ReferenceCounter will not be visible in a future release.")]
+        public IReferenceCounter ReferenceCounter => _referenceCounter;
+
+        private readonly IReferenceCounter _referenceCounter;
 
         /// <summary>
         /// The invocation stack of the VM.
@@ -83,9 +86,24 @@ namespace Neo.VM
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
+        /// <param name="referenceCounter">The reference counter to be used. 
+        /// referenceCounter is shared cross ExecutionContexts.</param>
         /// <param name="jumpTable">The jump table to be used.</param>
-        public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
+        public ExecutionEngine(IReferenceCounter referenceCounter, JumpTable? jumpTable = null)
+            : this(jumpTable, referenceCounter, ExecutionEngineLimits.Default)
         {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
+        /// </summary>
+        /// <param name="jumpTable">The jump table to be used.</param>
+        [Obsolete("Use ExecutionEngine(IReferenceCounter) to specify the reference counter.")]
+        public ExecutionEngine(JumpTable? jumpTable = null)
+            : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
+        {
+
         }
 
         /// <summary>
@@ -98,7 +116,7 @@ namespace Neo.VM
         {
             JumpTable = jumpTable ?? JumpTable.Default;
             Limits = limits;
-            ReferenceCounter = referenceCounter;
+            _referenceCounter = referenceCounter;
             ResultStack = new EvaluationStack(referenceCounter);
         }
 
@@ -209,7 +227,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected ExecutionContext CreateContext(Script script, int rvcount, int initialPosition)
         {
-            return new ExecutionContext(script, rvcount, ReferenceCounter)
+            return new ExecutionContext(script, rvcount, _referenceCounter)
             {
                 InstructionPointer = initialPosition
             };
@@ -289,9 +307,17 @@ namespace Neo.VM
         /// </summary>
         protected virtual void PostExecuteInstruction(Instruction instruction)
         {
-            if (ReferenceCounter.Count < Limits.MaxStackSize) return;
-            if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
+            if (_referenceCounter.Version == RCVersion.V1)
+            {
+                if (_referenceCounter.Count < Limits.MaxStackSize) return;
+                if (_referenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
+                    throw new InvalidOperationException($"MaxStackSize exceed: {_referenceCounter.Count}");
+            }
+            else
+            {
+                if (_referenceCounter.Count <= Limits.MaxStackSize) return;
+                throw new InvalidOperationException($"MaxStackSize exceed: {_referenceCounter.Count}");
+            }
         }
 
         /// <summary>
