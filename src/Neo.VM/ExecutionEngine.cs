@@ -34,10 +34,7 @@ namespace Neo.VM
         /// <summary>
         /// Used for reference counting of objects in the VM.
         /// </summary>
-        [Obsolete("ReferenceCounter will not be visible in a future release.")]
-        public IReferenceCounter ReferenceCounter => _referenceCounter;
-
-        private readonly IReferenceCounter _referenceCounter;
+        public IReferenceCounter ReferenceCounter { get; set; }
 
         /// <summary>
         /// The invocation stack of the VM.
@@ -86,7 +83,7 @@ namespace Neo.VM
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
-        /// <param name="referenceCounter">The reference counter to be used. 
+        /// <param name="referenceCounter">The reference counter to be used.
         /// referenceCounter is shared cross ExecutionContexts.</param>
         /// <param name="jumpTable">The jump table to be used.</param>
         public ExecutionEngine(IReferenceCounter referenceCounter, JumpTable? jumpTable = null)
@@ -116,7 +113,7 @@ namespace Neo.VM
         {
             JumpTable = jumpTable ?? JumpTable.Default;
             Limits = limits;
-            _referenceCounter = referenceCounter;
+            ReferenceCounter = referenceCounter;
             ResultStack = new EvaluationStack(referenceCounter);
         }
 
@@ -227,7 +224,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected ExecutionContext CreateContext(Script script, int rvcount, int initialPosition)
         {
-            return new ExecutionContext(script, rvcount, _referenceCounter)
+            return new ExecutionContext(script, rvcount, ReferenceCounter)
             {
                 InstructionPointer = initialPosition
             };
@@ -307,16 +304,16 @@ namespace Neo.VM
         /// </summary>
         protected virtual void PostExecuteInstruction(Instruction instruction)
         {
-            if (_referenceCounter.Version == RCVersion.V1)
+            if (ReferenceCounter.Version == RCVersion.V1)
             {
-                if (_referenceCounter.Count < Limits.MaxStackSize) return;
-                if (_referenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                    throw new InvalidOperationException($"MaxStackSize exceed: {_referenceCounter.Count}");
+                if (ReferenceCounter.Count < Limits.MaxStackSize) return;
+                if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
+                    throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
             }
             else
             {
-                if (_referenceCounter.Count <= Limits.MaxStackSize) return;
-                throw new InvalidOperationException($"MaxStackSize exceed: {_referenceCounter.Count}");
+                if (ReferenceCounter.Count <= Limits.MaxStackSize) return;
+                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
             }
         }
 

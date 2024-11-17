@@ -182,6 +182,7 @@ namespace Neo.SmartContract
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
+            ReferenceCounter = IsHardforkEnabled(Hardfork.HF_Echidna) ? new ReferenceCounterV2() : new ReferenceCounter();
             Trigger = trigger;
             ScriptContainer = container;
             originalSnapshotCache = snapshotCache;
