@@ -13,7 +13,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -29,12 +28,7 @@ namespace Neo.VM
 
         internal IReferenceCounter ReferenceCounter => referenceCounter;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EvaluationStack"/> class.
-        /// </summary>
-        /// <param name="referenceCounter">The reference counter. Cannot be null.</param>
-        /// Keep the NotNull attribute to explicitly announce that the reference counter cannot be null.
-        internal EvaluationStack([NotNull] IReferenceCounter referenceCounter)
+        internal EvaluationStack(IReferenceCounter referenceCounter)
         {
             this.referenceCounter = referenceCounter;
         }
