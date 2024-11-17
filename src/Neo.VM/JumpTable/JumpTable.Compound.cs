@@ -571,8 +571,7 @@ namespace Neo.VM
         {
             var x = engine.Pop<VMArray>();
             var index = x.Count - 1;
-            var item = x[index];
-            engine.Push(item);
+            engine.Push(x[index]);
             x.RemoveAt(index);
         }
     }
