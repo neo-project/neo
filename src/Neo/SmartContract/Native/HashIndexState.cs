@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
             Index = (uint)@struct[1].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter = null)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { Hash.ToArray(), Index };
         }

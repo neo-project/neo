@@ -76,7 +76,7 @@ namespace Neo.SmartContract.Native
             State = (VMState)(byte)@struct[2].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter = null)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
             if (Transaction is null)
                 return new Struct(referenceCounter) { BlockIndex };
