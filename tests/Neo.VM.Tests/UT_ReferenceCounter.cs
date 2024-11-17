@@ -247,7 +247,7 @@ namespace Neo.Test
         [ExpectedException(typeof(InvalidOperationException))]
         public void TestInvalidReferenceStackItem()
         {
-            var reference = new ReferenceCounter();
+            var reference = new ReferenceCounterV2();
             var arr = new Array(reference);
             var arr2 = new Array();
 
