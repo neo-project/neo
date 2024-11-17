@@ -16,12 +16,14 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class GroupCondition : WitnessCondition
+    public class GroupCondition : WitnessCondition, IEquatable<GroupCondition>
     {
         /// <summary>
         /// The group to be checked.
@@ -30,6 +32,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + Group.Size;
         public override WitnessConditionType Type => WitnessConditionType.Group;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(GroupCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null) return false;
+            return
+                Type == other.Type &&
+                Group == other.Group;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is GroupCondition gc && Equals(gc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Group);
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -60,11 +85,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Group.ToArray());
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(GroupCondition left, GroupCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(GroupCondition left, GroupCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

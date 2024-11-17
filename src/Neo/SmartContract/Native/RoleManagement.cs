@@ -26,16 +26,7 @@ namespace Neo.SmartContract.Native
     {
         [ContractEvent(0, name: "Designation",
             "Role", ContractParameterType.Integer,
-            "BlockIndex", ContractParameterType.Integer,
-            Hardfork.HF_Echidna)]
-
-        [ContractEvent(Hardfork.HF_Echidna, 0, name: "Designation",
-            "Role", ContractParameterType.Integer,
-            "BlockIndex", ContractParameterType.Integer,
-            "Old", ContractParameterType.Array,
-            "New", ContractParameterType.Array
-            )]
-
+            "BlockIndex", ContractParameterType.Integer)]
         internal RoleManagement() : base() { }
 
         /// <summary>
@@ -99,7 +90,7 @@ namespace Neo.SmartContract.Native
                 return ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1);
             }
 
-            protected override StackItem ElementToStackItem(ECPoint element, ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ECPoint element, IReferenceCounter referenceCounter)
             {
                 return element.ToArray();
             }

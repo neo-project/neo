@@ -54,18 +54,64 @@ namespace Neo.VM
         /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
         /// <param name="map">The key/value pairs of the map.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IEnumerable<KeyValuePair<TKey, TValue>> map)
+            where TKey : notnull
+            where TValue : notnull
         {
-            builder.Emit(OpCode.NEWMAP);
-            if (map != null)
-                foreach (var p in map)
-                {
-                    builder.Emit(OpCode.DUP);
-                    builder.EmitPush(p.Key);
-                    builder.EmitPush(p.Value);
-                    builder.Emit(OpCode.SETITEM);
-                }
-            return builder;
+            var count = map.Count();
+
+            if (count == 0)
+                return builder.Emit(OpCode.NEWMAP);
+
+            foreach (var (key, value) in map.Reverse())
+            {
+                builder.EmitPush(value);
+                builder.EmitPush(key);
+            }
+            builder.EmitPush(count);
+            return builder.Emit(OpCode.PACKMAP);
+        }
+
+        /// <summary>
+        /// Emits the opcodes for creating a map.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key of the map.</typeparam>
+        /// <typeparam name="TValue">The type of the value of the map.</typeparam>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="map">The key/value pairs of the map.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IReadOnlyDictionary<TKey, TValue> map)
+            where TKey : notnull
+            where TValue : notnull
+        {
+            if (map.Count == 0)
+                return builder.Emit(OpCode.NEWMAP);
+
+            foreach (var (key, value) in map.Reverse())
+            {
+                builder.EmitPush(value);
+                builder.EmitPush(key);
+            }
+            builder.EmitPush(map.Count);
+            return builder.Emit(OpCode.PACKMAP);
+        }
+
+        /// <summary>
+        /// Emits the opcodes for creating a struct.
+        /// </summary>
+        /// <typeparam name="T">The type of the property.</typeparam>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="array">The list of properties.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder CreateStruct<T>(this ScriptBuilder builder, IReadOnlyList<T> array)
+            where T : notnull
+        {
+            if (array.Count == 0)
+                return builder.Emit(OpCode.NEWSTRUCT0);
+            for (var i = array.Count - 1; i >= 0; i--)
+                builder.EmitPush(array[i]);
+            builder.EmitPush(array.Count);
+            return builder.Emit(OpCode.PACKSTRUCT);
         }
 
         /// <summary>
@@ -218,7 +264,7 @@ namespace Neo.VM
                     builder.EmitPush(data);
                     break;
                 case char data:
-                    builder.EmitPush((ushort)data);
+                    builder.EmitPush(data);
                     break;
                 case ushort data:
                     builder.EmitPush(data);
@@ -318,13 +364,14 @@ namespace Neo.VM
             {
                 case Array array:
                     {
-                        context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
-                        if (!context.Add(array)) throw new InvalidOperationException();
+                        context ??= new(ReferenceEqualityComparer.Instance);
+                        if (!context.Add(array)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
                         JArray a = new();
                         foreach (StackItem stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
+                        if (!context.Remove(array)) throw new InvalidOperationException("Circular reference.");
                         break;
                     }
                 case Boolean boolean:
@@ -351,8 +398,8 @@ namespace Neo.VM
                     }
                 case Map map:
                     {
-                        context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
-                        if (!context.Add(map)) throw new InvalidOperationException();
+                        context ??= new(ReferenceEqualityComparer.Instance);
+                        if (!context.Add(map)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (map.Count - 1))/*,*/;
                         JArray a = new();
                         foreach (var (k, v) in map)
@@ -366,6 +413,7 @@ namespace Neo.VM
                             a.Add(i);
                         }
                         value = a;
+                        if (!context.Remove(map)) throw new InvalidOperationException("Circular reference.");
                         break;
                     }
                 case Pointer pointer:
