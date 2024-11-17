@@ -63,9 +63,9 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
         {
-            return new Array()
+            return new Array(referenceCounter)
                 {
                     ScriptHash.ToArray(),
                     EventName,
@@ -77,7 +77,7 @@ namespace Neo.SmartContract
         {
             if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {
-                return new Array()
+                return new Array(referenceCounter)
                 {
                     ScriptHash.ToArray(),
                     EventName,
@@ -85,7 +85,7 @@ namespace Neo.SmartContract
                 };
             }
 
-            return new Array()
+            return new Array(referenceCounter)
                 {
                     ScriptHash.ToArray(),
                     EventName,

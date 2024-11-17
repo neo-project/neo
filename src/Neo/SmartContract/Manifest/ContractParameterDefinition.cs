@@ -39,9 +39,9 @@ namespace Neo.SmartContract.Manifest
             Type = (ContractParameterType)(byte)@struct[1].GetInteger();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
         {
-            return new Struct() { Name, (byte)Type };
+            return new Struct(referenceCounter) { Name, (byte)Type };
         }
 
         /// <summary>

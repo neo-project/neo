@@ -88,17 +88,17 @@ namespace Neo.SmartContract.Manifest
             Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
         {
-            return new Struct()
+            return new Struct(referenceCounter)
             {
                 Name,
-                new Array(Groups.Select(p => p.ToStackItem(referenceCounter))),
-                new Map(),
-                new Array(SupportedStandards.Select(p => (StackItem)p)),
+                new Array(referenceCounter, Groups.Select(p => p.ToStackItem(referenceCounter))),
+                new Map(referenceCounter),
+                new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
                 Abi.ToStackItem(referenceCounter),
-                new Array(Permissions.Select(p => p.ToStackItem(referenceCounter))),
-                Trusts.IsWildcard ? StackItem.Null : new Array(Trusts.Select(p => p.ToArray()?? StackItem.Null)),
+                new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
+                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => p.ToArray()?? StackItem.Null)),
                 Extra is null ? "null" : Extra.ToByteArray(false)
             };
         }

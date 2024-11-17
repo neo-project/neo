@@ -17,14 +17,22 @@ namespace Neo.VM.Benchmark
     {
         public override StackItemType Type => StackItemType.Struct;
 
+        /// <summary>
+        /// Create a structure with the specified fields.
+        /// </summary>
+        /// <param name="fields">The fields to be included in the structure.</param>
+        public TestStruct(IEnumerable<StackItem>? fields = null)
+            : this(null, fields)
+        {
+        }
 
         /// <summary>
         /// Create a structure with the specified fields. And make the structure use the specified <see cref="IReferenceCounter"/>.
         /// </summary>
         /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> to be used by this structure.</param>
         /// <param name="fields">The fields to be included in the structure.</param>
-        public TestStruct(IEnumerable<StackItem>? fields = null)
-            : base(fields)
+        public TestStruct(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? fields = null)
+            : base(referenceCounter, fields)
         {
         }
 
@@ -36,7 +44,7 @@ namespace Neo.VM.Benchmark
         public TestStruct Clone(ExecutionEngineLimits limits)
         {
             int count = (int)(limits.MaxStackSize - 1);
-            TestStruct result = new();
+            TestStruct result = new(ReferenceCounter);
             Queue<TestStruct> queue = new();
             queue.Enqueue(result);
             queue.Enqueue(this);
@@ -50,7 +58,7 @@ namespace Neo.VM.Benchmark
                     if (count < 0) throw new InvalidOperationException("Beyond clone limits!");
                     if (item is TestStruct sb)
                     {
-                        TestStruct sa = new();
+                        TestStruct sa = new(ReferenceCounter);
                         a.Add(sa);
                         queue.Enqueue(sa);
                         queue.Enqueue(sb);
@@ -67,7 +75,7 @@ namespace Neo.VM.Benchmark
         public override StackItem ConvertTo(StackItemType type)
         {
             if (type == StackItemType.Array)
-                return new TestArray(new List<StackItem>(_array));
+                return new TestArray(ReferenceCounter, new List<StackItem>(_array));
             return base.ConvertTo(type);
         }
 

@@ -33,7 +33,14 @@ namespace Neo.VM.Types
             set
             {
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+                ReferenceCounter?.RemoveReference(_array[index], this);
                 _array[index] = value;
+                if (ReferenceCounter != null && value is CompoundType { ReferenceCounter: null })
+                {
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+                }
+
+                ReferenceCounter?.AddReference(value, this);
             }
         }
 
@@ -68,6 +75,18 @@ namespace Neo.VM.Types
                 List<StackItem> list => list,
                 _ => new List<StackItem>(items)
             };
+
+            if (referenceCounter == null) return;
+
+            foreach (var item in _array)
+            {
+                if (item is CompoundType { ReferenceCounter: null })
+                {
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+                }
+
+                referenceCounter.AddReference(item, this);
+            }
         }
 
         /// <summary>
@@ -78,25 +97,36 @@ namespace Neo.VM.Types
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             _array.Add(item);
+
+            if (ReferenceCounter == null) return;
+
+            if (item is CompoundType { ReferenceCounter: null })
+            {
+                throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+            }
+            ReferenceCounter.AddReference(item, this);
         }
 
         public override void Clear()
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (ReferenceCounter != null)
+                foreach (StackItem item in _array)
+                    ReferenceCounter.RemoveReference(item, this);
             _array.Clear();
         }
 
         public override StackItem ConvertTo(StackItemType type)
         {
             if (Type == StackItemType.Array && type == StackItemType.Struct)
-                return new Struct(new List<StackItem>(_array));
+                return new Struct(ReferenceCounter, new List<StackItem>(_array));
             return base.ConvertTo(type);
         }
 
         internal sealed override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
             if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
-            Array result = this is Struct ? new Struct() : new Array();
+            Array result = this is Struct ? new Struct(ReferenceCounter) : new Array(ReferenceCounter);
             refMap.Add(this, result);
             foreach (StackItem item in _array)
                 result.Add(item.DeepCopy(refMap, asImmutable));
@@ -121,6 +151,7 @@ namespace Neo.VM.Types
         public void RemoveAt(int index)
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            ReferenceCounter?.RemoveReference(_array[index], this);
             _array.RemoveAt(index);
         }
 

@@ -60,7 +60,7 @@ namespace Neo.SmartContract.Iterators
                 return key;
             if (options.HasFlag(FindOptions.ValuesOnly))
                 return item;
-            return new Struct() { key, item };
+            return new Struct(referenceCounter) { key, item };
         }
     }
 }

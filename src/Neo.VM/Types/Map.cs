@@ -48,6 +48,18 @@ namespace Neo.VM.Types
                 if (key.Size > MaxKeySize)
                     throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+                if (ReferenceCounter != null)
+                {
+                    if (dictionary.TryGetValue(key, out StackItem? old_value))
+                        ReferenceCounter.RemoveReference(old_value, this);
+                    else
+                        ReferenceCounter.AddReference(key, this);
+                    if (value is CompoundType { ReferenceCounter: null })
+                    {
+                        throw new InvalidOperationException("Can not set a Map without a ReferenceCounter.");
+                    }
+                    ReferenceCounter.AddReference(value, this);
+                }
                 dictionary[key] = value;
             }
         }
@@ -82,6 +94,12 @@ namespace Neo.VM.Types
         public override void Clear()
         {
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (ReferenceCounter != null)
+                foreach (var pair in dictionary)
+                {
+                    ReferenceCounter.RemoveReference(pair.Key, this);
+                    ReferenceCounter.RemoveReference(pair.Value, this);
+                }
             dictionary.Clear();
         }
 
@@ -103,7 +121,7 @@ namespace Neo.VM.Types
         internal override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
             if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
-            Map result = new();
+            Map result = new(ReferenceCounter);
             refMap.Add(this, result);
             foreach (var (k, v) in dictionary)
                 result[k] = v.DeepCopy(refMap, asImmutable);
@@ -137,6 +155,8 @@ namespace Neo.VM.Types
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
             if (!dictionary.Remove(key, out StackItem? old_value))
                 return false;
+            ReferenceCounter?.RemoveReference(key, this);
+            ReferenceCounter?.RemoveReference(old_value, this);
             return true;
         }
 

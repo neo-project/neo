@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Manifest
             Safe = @struct[4].GetBoolean();
         }
 
-        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter referenceCounter = null)
         {
             Struct @struct = (Struct)base.ToStackItem(referenceCounter);
             @struct.Add((byte)ReturnType);

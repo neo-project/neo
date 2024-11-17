@@ -459,10 +459,10 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
         {
             if (_signers == null || _signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
-            return new Array(new StackItem[]
+            return new Array(referenceCounter, new StackItem[]
             {
                 // Computed properties
                 Hash.ToArray(),

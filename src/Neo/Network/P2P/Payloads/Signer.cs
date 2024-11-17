@@ -191,15 +191,15 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        VM.Types.StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
+        VM.Types.StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter = null)
         {
-            return new VM.Types.Array(
+            return new VM.Types.Array(referenceCounter,
             [
                 Account.ToArray(),
                 (byte)Scopes,
-                Scopes.HasFlag(WitnessScope.CustomContracts) ? new VM.Types.Array(AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))) : new VM.Types.Array(),
-                Scopes.HasFlag(WitnessScope.CustomGroups) ? new VM.Types.Array(AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))) : new VM.Types.Array(),
-                Scopes.HasFlag(WitnessScope.WitnessRules) ? new VM.Types.Array(Rules.Select(u => u.ToStackItem(referenceCounter))) : new VM.Types.Array()
+                Scopes.HasFlag(WitnessScope.CustomContracts) ? new VM.Types.Array(referenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))) : new VM.Types.Array(referenceCounter),
+                Scopes.HasFlag(WitnessScope.CustomGroups) ? new VM.Types.Array(referenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))) : new VM.Types.Array(referenceCounter),
+                Scopes.HasFlag(WitnessScope.WitnessRules) ? new VM.Types.Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter))) : new VM.Types.Array(referenceCounter)
             ]);
         }
     }

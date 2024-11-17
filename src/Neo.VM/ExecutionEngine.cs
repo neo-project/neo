@@ -84,7 +84,7 @@ namespace Neo.VM
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
         /// <param name="jumpTable">The jump table to be used.</param>
-        public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounterV2(), ExecutionEngineLimits.Default)
+        public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
         {
         }
 
@@ -289,7 +289,8 @@ namespace Neo.VM
         /// </summary>
         protected virtual void PostExecuteInstruction(Instruction instruction)
         {
-            if (ReferenceCounter.Count > Limits.MaxStackSize)
+            if (ReferenceCounter.Count < Limits.MaxStackSize) return;
+            if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
                 throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
         }
 

@@ -39,7 +39,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedArrayDeepCopy()
         {
-            var root = new Array();
+            var root = new Array(new ReferenceCounter());
             CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel);
             _ = root.DeepCopy();
         }
@@ -47,16 +47,16 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedArrayDeepCopyWithReferenceCounter()
         {
-            var referenceCounter = new ReferenceCounterV2();
-            var root = new Array();
-            CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel);
+            var referenceCounter = new ReferenceCounter();
+            var root = new Array(referenceCounter);
+            CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
             _ = root.DeepCopy();
         }
 
         [Benchmark]
         public void BenchNestedTestArrayDeepCopy()
         {
-            var root = new TestArray();
+            var root = new TestArray(new ReferenceCounter());
             CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel);
             _ = root.DeepCopy();
         }
@@ -64,13 +64,13 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedTestArrayDeepCopyWithReferenceCounter()
         {
-            var referenceCounter = new ReferenceCounterV2();
-            var root = new TestArray();
-            CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel);
+            var referenceCounter = new ReferenceCounter();
+            var root = new TestArray(referenceCounter);
+            CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
             _ = root.DeepCopy();
         }
 
-        private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1)
+        private static void CreateNestedArray(Array? rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
         {
             if (depth < 0)
             {
@@ -89,13 +89,13 @@ namespace Neo.VM.Benchmark
 
             for (var i = 0; i < elementsPerLevel; i++)
             {
-                var childArray = new Array();
+                var childArray = new Array(referenceCounter);
                 rootArray.Add(childArray);
-                CreateNestedArray(childArray, depth - 1, elementsPerLevel);
+                CreateNestedArray(childArray, depth - 1, elementsPerLevel, referenceCounter);
             }
         }
 
-        private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1)
+        private static void CreateNestedTestArray(TestArray rootArray, int depth, int elementsPerLevel = 1, IReferenceCounter? referenceCounter = null)
         {
             if (depth < 0)
             {
@@ -114,9 +114,9 @@ namespace Neo.VM.Benchmark
 
             for (var i = 0; i < elementsPerLevel; i++)
             {
-                var childArray = new TestArray();
+                var childArray = new TestArray(referenceCounter);
                 rootArray.Add(childArray);
-                CreateNestedTestArray(childArray, depth - 1, elementsPerLevel);
+                CreateNestedTestArray(childArray, depth - 1, elementsPerLevel, referenceCounter);
             }
         }
     }

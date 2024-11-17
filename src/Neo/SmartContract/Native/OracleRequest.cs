@@ -68,9 +68,9 @@ namespace Neo.SmartContract.Native
             UserData = array[6].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(IReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter = null)
         {
-            return new Array()
+            return new Array(referenceCounter)
             {
                 OriginalTxid.ToArray(),
                 GasForResponse,
