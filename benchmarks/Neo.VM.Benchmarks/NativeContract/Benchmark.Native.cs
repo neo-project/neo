@@ -13,9 +13,10 @@ using BenchmarkDotNet.Attributes;
 using Neo.SmartContract;
 using Neo.VM.Benchmark.OpCode;
 
-namespace Neo.VM.Benchmark.NativeContract;
-
-public abstract class Benchmark_Native
+namespace Neo.VM.Benchmark.NativeContract
 {
+    public abstract class Benchmark_Native
+    {
 
+    }
 }

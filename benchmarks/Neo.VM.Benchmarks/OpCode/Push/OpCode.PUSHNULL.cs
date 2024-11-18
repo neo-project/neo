@@ -11,35 +11,36 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_PUSHNULL
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected VM.OpCode Opcode => VM.OpCode.PUSHNULL;
-
-    private BenchmarkEngine _engine;
-
-    [IterationSetup]
-    public void Setup()
+    public class OpCode_PUSHNULL
     {
-        var builder = new InstructionBuilder();
-        builder.AddInstruction(Opcode);
-        builder.AddInstruction(Opcode);
+        protected VM.OpCode Opcode => VM.OpCode.PUSHNULL;
 
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(builder.ToArray());
-        _engine.ExecuteUntil(Opcode);
-        _engine.ExecuteNext();
+        private BenchmarkEngine _engine;
+
+        [IterationSetup]
+        public void Setup()
+        {
+            var builder = new InstructionBuilder();
+            builder.AddInstruction(Opcode);
+            builder.AddInstruction(Opcode);
+
+            _engine = new BenchmarkEngine();
+            _engine.LoadScript(builder.ToArray());
+            _engine.ExecuteUntil(Opcode);
+            _engine.ExecuteNext();
+        }
+
+        [IterationCleanup]
+        public void Cleanup()
+        {
+            _engine.Dispose();
+        }
+
+        [Benchmark]
+        public void Bench() => _engine.ExecuteNext();
     }
-
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
-
-    [Benchmark]
-    public void Bench() => _engine.ExecuteNext();
 }
 
 //     | Method | Mean     | Error     | StdDev    |

@@ -12,58 +12,59 @@
 using BenchmarkDotNet.Attributes;
 using System.Numerics;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_INITSLOT
+namespace Neo.VM.Benchmark.OpCode
 {
-    [Params(1, 4, 16, 64, 128, 255)]
-    public byte _arguments = byte.MaxValue;
-
-    [Params(1, 4, 16, 64, 128, 255)]
-    public byte _localVariables = byte.MaxValue;
-
-    [Params(0, ushort.MaxValue, ushort.MaxValue * 2)]
-    public BigInteger _itemSize = ushort.MaxValue * 2;
-
-    private BenchmarkEngine _engine;
-
-    private const VM.OpCode Opcode = VM.OpCode.INITSLOT;
-
-    [IterationSetup]
-    public void Setup()
+    public class OpCode_INITSLOT
     {
-        var builder = new InstructionBuilder();
-        var initBegin = new JumpTarget();
-        builder.Push(_arguments); // a
-        initBegin._instruction = builder.Push(_itemSize);
-        builder.AddInstruction(VM.OpCode.NEWBUFFER); // a buffer // buffer a-1 buffer
-        builder.AddInstruction(VM.OpCode.SWAP); // buffer a // buffer buffer a-1
-        builder.AddInstruction(VM.OpCode.DEC); // buffer a-1 // x xx a-2
-        builder.AddInstruction(VM.OpCode.DUP);
-        builder.Jump(VM.OpCode.JMPIF, initBegin);
-        builder.AddInstruction(VM.OpCode.DROP);
+        [Params(1, 4, 16, 64, 128, 255)]
+        public byte _arguments = byte.MaxValue;
 
-        builder.AddInstruction(new Instruction
+        [Params(1, 4, 16, 64, 128, 255)]
+        public byte _localVariables = byte.MaxValue;
+
+        [Params(0, ushort.MaxValue, ushort.MaxValue * 2)]
+        public BigInteger _itemSize = ushort.MaxValue * 2;
+
+        private BenchmarkEngine _engine;
+
+        private const VM.OpCode Opcode = VM.OpCode.INITSLOT;
+
+        [IterationSetup]
+        public void Setup()
         {
-            _opCode = Opcode,
-            _operand = [_localVariables, _arguments]
-        });
+            var builder = new InstructionBuilder();
+            var initBegin = new JumpTarget();
+            builder.Push(_arguments); // a
+            initBegin._instruction = builder.Push(_itemSize);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER); // a buffer // buffer a-1 buffer
+            builder.AddInstruction(VM.OpCode.SWAP); // buffer a // buffer buffer a-1
+            builder.AddInstruction(VM.OpCode.DEC); // buffer a-1 // x xx a-2
+            builder.AddInstruction(VM.OpCode.DUP);
+            builder.Jump(VM.OpCode.JMPIF, initBegin);
+            builder.AddInstruction(VM.OpCode.DROP);
 
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(builder.ToArray());
-        _engine.ExecuteUntil(Opcode);
-    }
+            builder.AddInstruction(new Instruction
+            {
+                _opCode = Opcode,
+                _operand = [_localVariables, _arguments]
+            });
 
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
+            _engine = new BenchmarkEngine();
+            _engine.LoadScript(builder.ToArray());
+            _engine.ExecuteUntil(Opcode);
+        }
 
-    [Benchmark]
-    public void Bench()
-    {
-        _engine.ExecuteNext();
+        [IterationCleanup]
+        public void Cleanup()
+        {
+            _engine.Dispose();
+        }
+
+        [Benchmark]
+        public void Bench()
+        {
+            _engine.ExecuteNext();
+        }
     }
 }
 

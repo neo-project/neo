@@ -95,7 +95,7 @@ namespace Neo.VM.Types
         /// <param name="item">The item to be added.</param>
         public void Add(StackItem item)
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not add item.");
             _array.Add(item);
 
             if (ReferenceCounter == null) return;
@@ -109,7 +109,7 @@ namespace Neo.VM.Types
 
         public override void Clear()
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not clear.");
             if (ReferenceCounter != null)
                 foreach (StackItem item in _array)
                     ReferenceCounter.RemoveReference(item, this);
@@ -150,7 +150,7 @@ namespace Neo.VM.Types
         /// <param name="index">The index of the item to be removed.</param>
         public void RemoveAt(int index)
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not remove item.");
             ReferenceCounter?.RemoveReference(_array[index], this);
             _array.RemoveAt(index);
         }
@@ -160,7 +160,7 @@ namespace Neo.VM.Types
         /// </summary>
         public void Reverse()
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not reverse.");
             _array.Reverse();
         }
     }

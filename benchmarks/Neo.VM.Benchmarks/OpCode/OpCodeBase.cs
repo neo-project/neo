@@ -11,41 +11,42 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public abstract class OpCodeBase
+namespace Neo.VM.Benchmark.OpCode
 {
-    [Params(1,2, 32, 128, 1024, 2040)]
-    public int ItemCount { get; set; } = 2;
-    protected byte[] baseLineScript;
-    protected byte[] script;
-    protected byte[] multiScript;
-
-    private readonly byte[] nopScript;
-
-    private BenchmarkEngine engine;
-
-    protected abstract VM.OpCode Opcode { get; }
-
-    [IterationSetup]
-    public void IterationSetup()
+    public abstract class OpCodeBase
     {
-        engine = new BenchmarkEngine();
-        engine.LoadScript(CreateOneOpCodeScript());
-        engine.ExecuteUntil(Opcode);
+        [Params(1, 2, 32, 128, 1024, 2040)]
+        public int ItemCount { get; set; } = 2;
+        protected byte[] baseLineScript;
+        protected byte[] script;
+        protected byte[] multiScript;
+
+        private readonly byte[] nopScript;
+
+        private BenchmarkEngine engine;
+
+        protected abstract VM.OpCode Opcode { get; }
+
+        [IterationSetup]
+        public void IterationSetup()
+        {
+            engine = new BenchmarkEngine();
+            engine.LoadScript(CreateOneOpCodeScript());
+            engine.ExecuteUntil(Opcode);
+        }
+
+        [GlobalCleanup]
+        public void Cleanup()
+        {
+            engine.Dispose();
+        }
+
+        [Benchmark]
+        public void Bench_OneOpCode() =>
+            engine.ExecuteNext();
+
+        protected abstract byte[] CreateOneOpCodeScript();
+
+        protected abstract byte[] CreateOneGASScript(InstructionBuilder builder);
     }
-
-    [GlobalCleanup]
-    public void Cleanup()
-    {
-        engine.Dispose();
-    }
-
-    [Benchmark]
-    public void Bench_OneOpCode() =>
-        engine.ExecuteNext();
-
-    protected abstract byte[] CreateOneOpCodeScript();
-
-    protected abstract byte[] CreateOneGASScript(InstructionBuilder builder);
 }

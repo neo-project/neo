@@ -11,43 +11,44 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_PUSHDATA2
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected VM.OpCode Opcode => VM.OpCode.PUSHDATA2;
-
-    private BenchmarkEngine _engine;
-
-    [ParamsSource(nameof(StrLen))]
-    public byte[] _value;
-
-    public static IEnumerable<byte[]> StrLen =>
-    [
-        new byte[byte.MaxValue + 1],
-        new byte[ushort.MaxValue - 1],
-    ];
-
-    [IterationSetup]
-    public void Setup()
+    public class OpCode_PUSHDATA2
     {
-        var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.NOP);
-        builder.Push(_value);
+        protected VM.OpCode Opcode => VM.OpCode.PUSHDATA2;
 
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(builder.ToArray());
-        _engine.ExecuteUntil(VM.OpCode.NOP);
+        private BenchmarkEngine _engine;
+
+        [ParamsSource(nameof(StrLen))]
+        public byte[] _value;
+
+        public static IEnumerable<byte[]> StrLen =>
+        [
+            new byte[byte.MaxValue + 1],
+            new byte[ushort.MaxValue - 1],
+        ];
+
+        [IterationSetup]
+        public void Setup()
+        {
+            var builder = new InstructionBuilder();
+            builder.AddInstruction(VM.OpCode.NOP);
+            builder.Push(_value);
+
+            _engine = new BenchmarkEngine();
+            _engine.LoadScript(builder.ToArray());
+            _engine.ExecuteUntil(VM.OpCode.NOP);
+        }
+
+        [IterationCleanup]
+        public void Cleanup()
+        {
+            _engine.Dispose();
+        }
+
+        [Benchmark]
+        public void Bench() => _engine.ExecuteNext();
     }
-
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
-
-    [Benchmark]
-    public void Bench() => _engine.ExecuteNext();
 }
 
 // | Method | _value      | Mean     | Error     | StdDev    | Median   |

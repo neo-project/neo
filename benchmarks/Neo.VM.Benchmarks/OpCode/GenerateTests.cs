@@ -9,9 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class GenerateTestsAttribute : Attribute
+namespace Neo.VM.Benchmark.OpCode
 {
+    public class GenerateTestsAttribute : Attribute
+    {
 
+    }
 }

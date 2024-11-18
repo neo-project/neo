@@ -12,57 +12,75 @@
 using BenchmarkDotNet.Attributes;
 using System.Numerics;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_PUSHINT8UtoUPUSHINT256
+namespace Neo.VM.Benchmark.OpCode
 {
-
-    private BenchmarkEngine _engine;
-
-    [ParamsSource(nameof(PushValues))]
-    public BigInteger _value = 1;
-
-    public static IEnumerable<BigInteger> PushValues()
+    public class OpCode_PUSHINT8UtoUPUSHINT256
     {
-        return
-        [
-            Benchmark_Opcode.MAX_INT,
-            Benchmark_Opcode.MIN_INT,
-            short.MaxValue,
-            short.MinValue,
-            ushort.MaxValue,
-            ushort.MinValue,
-            int.MaxValue,
-            int.MinValue,
-            uint.MaxValue,
-            uint.MaxValue,
-            ulong.MaxValue,
-            ulong.MinValue,
-            long.MaxValue,
-            long.MinValue,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,-1
-        ];
-    }
 
-    [IterationSetup]
-    public void Setup()
-    {
-        var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.NOP);
-        builder.Push(_value);
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(builder.ToArray());
-        _engine.ExecuteUntil(VM.OpCode.NOP);
-        _engine.ExecuteNext();
-    }
+        private BenchmarkEngine _engine;
 
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
+        [ParamsSource(nameof(PushValues))]
+        public BigInteger _value = 1;
 
-    [Benchmark]
-    public void Bench() => _engine.ExecuteNext();
+        public static IEnumerable<BigInteger> PushValues()
+        {
+            return
+            [
+                Benchmark_Opcode.MAX_INT,
+                Benchmark_Opcode.MIN_INT,
+                short.MaxValue,
+                short.MinValue,
+                ushort.MaxValue,
+                ushort.MinValue,
+                int.MaxValue,
+                int.MinValue,
+                uint.MaxValue,
+                uint.MaxValue,
+                ulong.MaxValue,
+                ulong.MinValue,
+                long.MaxValue,
+                long.MinValue,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                -1
+            ];
+        }
+
+        [IterationSetup]
+        public void Setup()
+        {
+            var builder = new InstructionBuilder();
+            builder.AddInstruction(VM.OpCode.NOP);
+            builder.Push(_value);
+            _engine = new BenchmarkEngine();
+            _engine.LoadScript(builder.ToArray());
+            _engine.ExecuteUntil(VM.OpCode.NOP);
+            _engine.ExecuteNext();
+        }
+
+        [IterationCleanup]
+        public void Cleanup()
+        {
+            _engine.Dispose();
+        }
+
+        [Benchmark]
+        public void Bench() => _engine.ExecuteNext();
+    }
 }
 
 

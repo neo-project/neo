@@ -9,26 +9,27 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_CAT : OpCodeBase
+namespace Neo.VM.Benchmark.OpCode
 {
-    // hide the bench param ItemCount
-    public int ItemCount { get; set; } = 2040;
-
-    protected override VM.OpCode Opcode => VM.OpCode.CAT;
-
-    protected override byte[] CreateOneOpCodeScript()
+    public class OpCode_CAT : OpCodeBase
     {
-        var builder = new InstructionBuilder();
-        builder.Push(ItemCount);
-        builder.Push(0);
-        builder.AddInstruction(Opcode);
-        return builder.ToArray();
-    }
+        // hide the bench param ItemCount
+        public int ItemCount { get; set; } = 2040;
 
-    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
-    {
-        throw new NotImplementedException();
+        protected override VM.OpCode Opcode => VM.OpCode.CAT;
+
+        protected override byte[] CreateOneOpCodeScript()
+        {
+            var builder = new InstructionBuilder();
+            builder.Push(ItemCount);
+            builder.Push(0);
+            builder.AddInstruction(Opcode);
+            return builder.ToArray();
+        }
+
+        protected override byte[] CreateOneGASScript(InstructionBuilder builder)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

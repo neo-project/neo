@@ -9,37 +9,38 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_XDROP : OpCodeBase
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected override VM.OpCode Opcode => VM.OpCode.XDROP;
-
-
-    protected override byte[] CreateOneOpCodeScript()
+    public class OpCode_XDROP : OpCodeBase
     {
-        var builder = new InstructionBuilder();
-        var initBegin = new JumpTarget();
-        builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
-        builder.Push(ItemCount);
-        builder.AddInstruction(VM.OpCode.STLOC0);
-        initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
-        // builder.Push(ushort.MaxValue * 2);
-        // builder.AddInstruction(VM.OpCode.NEWBUFFER);
-        builder.Push(0);
-        builder.AddInstruction(VM.OpCode.LDLOC0);
-        builder.AddInstruction(VM.OpCode.DEC);
-        builder.AddInstruction(VM.OpCode.STLOC0);
-        builder.AddInstruction(VM.OpCode.LDLOC0);
-        builder.Jump(VM.OpCode.JMPIF, initBegin);
-        builder.Push(ItemCount);
-        builder.AddInstruction(VM.OpCode.XDROP);
-        return builder.ToArray();
-    }
+        protected override VM.OpCode Opcode => VM.OpCode.XDROP;
 
-    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
-    {
-        throw new NotImplementedException();
+
+        protected override byte[] CreateOneOpCodeScript()
+        {
+            var builder = new InstructionBuilder();
+            var initBegin = new JumpTarget();
+            builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+            // builder.Push(ushort.MaxValue * 2);
+            // builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            builder.Push(0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.AddInstruction(VM.OpCode.DEC);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.Jump(VM.OpCode.JMPIF, initBegin);
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.XDROP);
+            return builder.ToArray();
+        }
+
+        protected override byte[] CreateOneGASScript(InstructionBuilder builder)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

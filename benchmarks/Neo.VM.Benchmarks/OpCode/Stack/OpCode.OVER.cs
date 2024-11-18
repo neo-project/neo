@@ -9,22 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_OVER : OpCodeBase
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected override VM.OpCode Opcode => VM.OpCode.OVER;
-
-    protected override byte[] CreateOneOpCodeScript()
+    public class OpCode_OVER : OpCodeBase
     {
-        var builder = new InstructionBuilder();
+        protected override VM.OpCode Opcode => VM.OpCode.OVER;
 
-        builder.AddInstruction(Opcode);
-        return builder.ToArray();
-    }
+        protected override byte[] CreateOneOpCodeScript()
+        {
+            var builder = new InstructionBuilder();
 
-    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
-    {
-        throw new NotImplementedException();
+            builder.AddInstruction(Opcode);
+            return builder.ToArray();
+        }
+
+        protected override byte[] CreateOneGASScript(InstructionBuilder builder)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

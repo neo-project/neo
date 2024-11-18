@@ -13,62 +13,63 @@ using BenchmarkDotNet.Attributes;
 using Neo.VM.Types;
 using System.Numerics;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_PUSHM1UtoUPUSH16
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected VM.OpCode Opcode => VM.OpCode.PUSHM1;
-
-    private BenchmarkEngine _engine;
-
-    [ParamsSource(nameof(StrLen))]
-    public BigInteger _value;
-
-    public const int MAX_LEN = ushort.MaxValue;
-
-
-    public static IEnumerable<BigInteger> StrLen =>
-    [
-        0,
-        1,
-        MAX_LEN / 2,
-        MAX_LEN / 4
-    ];
-
-    [IterationSetup]
-    public void Setup()
+    public class OpCode_PUSHM1UtoUPUSH16
     {
-        var builder = new InstructionBuilder();
-        builder.Push(MAX_LEN);
-        builder.AddInstruction(VM.OpCode.NEWBUFFER);
-        builder.AddInstruction(new Instruction
+        protected VM.OpCode Opcode => VM.OpCode.PUSHM1;
+
+        private BenchmarkEngine _engine;
+
+        [ParamsSource(nameof(StrLen))]
+        public BigInteger _value;
+
+        public const int MAX_LEN = ushort.MaxValue;
+
+
+        public static IEnumerable<BigInteger> StrLen =>
+        [
+            0,
+            1,
+            MAX_LEN / 2,
+            MAX_LEN / 4
+        ];
+
+        [IterationSetup]
+        public void Setup()
         {
-            _opCode = VM.OpCode.CONVERT,
-            _operand = [(byte)StackItemType.ByteString]
-        });
-        builder.Push(0);
-        builder.Push(_value);
-        builder.AddInstruction(VM.OpCode.SUBSTR);
+            var builder = new InstructionBuilder();
+            builder.Push(MAX_LEN);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            builder.AddInstruction(new Instruction
+            {
+                _opCode = VM.OpCode.CONVERT,
+                _operand = [(byte)StackItemType.ByteString]
+            });
+            builder.Push(0);
+            builder.Push(_value);
+            builder.AddInstruction(VM.OpCode.SUBSTR);
 
-        builder.Push(_value);
+            builder.Push(_value);
 
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(builder.ToArray());
-        _engine.ExecuteUntil(VM.OpCode.SUBSTR);
-        _engine.ExecuteNext();
+            _engine = new BenchmarkEngine();
+            _engine.LoadScript(builder.ToArray());
+            _engine.ExecuteUntil(VM.OpCode.SUBSTR);
+            _engine.ExecuteNext();
 
-    }
+        }
 
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
+        [IterationCleanup]
+        public void Cleanup()
+        {
+            _engine.Dispose();
+        }
 
-    [Benchmark]
-    public void Bench()
-    {
-        _engine.ExecuteNext();
+        [Benchmark]
+        public void Bench()
+        {
+            _engine.ExecuteNext();
+        }
     }
 }
 

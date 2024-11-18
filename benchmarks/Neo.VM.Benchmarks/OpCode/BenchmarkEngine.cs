@@ -13,173 +13,174 @@ using Neo.Test.Types;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-/// <summary>
-/// A simple benchmark engine for <see cref="ExecutionEngine"/>.
-/// </summary>
-public class BenchmarkEngine : TestEngine
+namespace Neo.VM.Benchmark.OpCode
 {
-    private readonly Dictionary<VM.OpCode, (int Count, TimeSpan TotalTime)> _opcodeStats = new();
-    private readonly Dictionary<Script, HashSet<uint>> _breakPoints = new();
-    private long _gasConsumed = 0;
-
     /// <summary>
-    /// Add a breakpoint at the specified position of the specified script. The VM will break the execution when it reaches the breakpoint.
+    /// A simple benchmark engine for <see cref="ExecutionEngine"/>.
     /// </summary>
-    /// <param name="script">The script to add the breakpoint.</param>
-    /// <param name="position">The position of the breakpoint in the script.</param>
-    public void AddBreakPoint(Script script, uint position)
+    public class BenchmarkEngine : TestEngine
     {
-        if (!_breakPoints.TryGetValue(script, out var hashset))
+        private readonly Dictionary<VM.OpCode, (int Count, TimeSpan TotalTime)> _opcodeStats = new();
+        private readonly Dictionary<Script, HashSet<uint>> _breakPoints = new();
+        private long _gasConsumed = 0;
+
+        /// <summary>
+        /// Add a breakpoint at the specified position of the specified script. The VM will break the execution when it reaches the breakpoint.
+        /// </summary>
+        /// <param name="script">The script to add the breakpoint.</param>
+        /// <param name="position">The position of the breakpoint in the script.</param>
+        public void AddBreakPoint(Script script, uint position)
         {
-            hashset = [];
-            _breakPoints.Add(script, hashset);
+            if (!_breakPoints.TryGetValue(script, out var hashset))
+            {
+                hashset = [];
+                _breakPoints.Add(script, hashset);
+            }
+            hashset.Add(position);
         }
-        hashset.Add(position);
-    }
 
-    /// <summary>
-    /// Start or continue execution of the VM.
-    /// </summary>
-    /// <returns>Returns the state of the VM after the execution.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BenchmarkEngine ExecuteUntil(VM.OpCode opCode)
-    {
-        if (State == VMState.BREAK)
-            State = VMState.NONE;
-        while (State == VMState.NONE)
+        /// <summary>
+        /// Start or continue execution of the VM.
+        /// </summary>
+        /// <returns>Returns the state of the VM after the execution.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BenchmarkEngine ExecuteUntil(VM.OpCode opCode)
         {
-            try
+            if (State == VMState.BREAK)
+                State = VMState.NONE;
+            while (State == VMState.NONE)
+            {
+                try
+                {
+                    ExecuteNext();
+                    var instruction = CurrentContext!.CurrentInstruction!.OpCode;
+                    if (instruction == opCode)
+                        State = VMState.BREAK;
+                }
+                catch
+                {
+                    break;
+                }
+            }
+            return this;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ExecuteBenchmark()
+        {
+            while (State != VMState.HALT && State != VMState.FAULT)
             {
                 ExecuteNext();
-                var instruction = CurrentContext!.CurrentInstruction!.OpCode;
-                if (instruction == opCode)
-                    State = VMState.BREAK;
             }
-            catch
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ExecuteOneGASBenchmark(double gas = 1)
+        {
+            var maxGas = Benchmark_Opcode.OneGasDatoshi * gas;
+            while (State != VMState.HALT && State != VMState.FAULT)
             {
-                break;
+                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
+                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
+                if (_gasConsumed >= maxGas)
+                {
+                    State = VMState.HALT;
+                }
+#if DEBUG
+                var stopwatch = Stopwatch.StartNew();
+#endif
+                ExecuteNext();
+#if DEBUG
+                stopwatch.Stop();
+                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+#endif
             }
+#if DEBUG
+            PrintOpcodeStats();
+#endif
         }
-        return this;
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ExecuteBenchmark()
-    {
-        while (State != VMState.HALT && State != VMState.FAULT)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ExecuteTwentyGASBenchmark()
         {
-            ExecuteNext();
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ExecuteOneGASBenchmark(double gas = 1)
-    {
-        var maxGas = Benchmark_Opcode.OneGasDatoshi * gas;
-        while (State != VMState.HALT && State != VMState.FAULT)
-        {
-            var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-            _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
-            if (_gasConsumed >= maxGas)
+            while (State != VMState.HALT && State != VMState.FAULT)
             {
-                State = VMState.HALT;
+                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
+                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
+                if (_gasConsumed >= 20 * Benchmark_Opcode.OneGasDatoshi)
+                {
+                    State = VMState.HALT;
+                }
+#if DEBUG
+                var stopwatch = Stopwatch.StartNew();
+#endif
+                ExecuteNext();
+#if DEBUG
+                stopwatch.Stop();
+                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+#endif
             }
 #if DEBUG
-            var stopwatch = Stopwatch.StartNew();
-#endif
-            ExecuteNext();
-#if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+            PrintOpcodeStats();
 #endif
         }
-#if DEBUG
-        PrintOpcodeStats();
-#endif
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ExecuteTwentyGASBenchmark()
-    {
-        while (State != VMState.HALT && State != VMState.FAULT)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ExecuteOpCodesBenchmark()
         {
-            var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-            _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
-            if (_gasConsumed >= 20 * Benchmark_Opcode.OneGasDatoshi)
+            while (State != VMState.HALT && State != VMState.FAULT)
             {
-                State = VMState.HALT;
+                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
+                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
+                if (_gasConsumed >= Benchmark_Opcode.OneGasDatoshi)
+                {
+                    State = VMState.HALT;
+                }
+#if DEBUG
+                var stopwatch = Stopwatch.StartNew();
+#endif
+                ExecuteNext();
+#if DEBUG
+                stopwatch.Stop();
+                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+#endif
             }
 #if DEBUG
-            var stopwatch = Stopwatch.StartNew();
-#endif
-            ExecuteNext();
-#if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
+            PrintOpcodeStats();
 #endif
         }
-#if DEBUG
-        PrintOpcodeStats();
-#endif
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ExecuteOpCodesBenchmark()
-    {
-        while (State != VMState.HALT && State != VMState.FAULT)
+        protected override void OnFault(Exception ex)
         {
-            var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-            _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
-            if (_gasConsumed >= Benchmark_Opcode.OneGasDatoshi)
+            base.OnFault(ex);
+            // #if DEBUG
+            throw ex;
+            // #endif
+        }
+
+        private void UpdateOpcodeStats(VM.OpCode opcode, TimeSpan elapsed)
+        {
+            if (!_opcodeStats.TryGetValue(opcode, out var value))
             {
-                State = VMState.HALT;
+                _opcodeStats[opcode] = (1, elapsed);
             }
-#if DEBUG
-            var stopwatch = Stopwatch.StartNew();
-#endif
-            ExecuteNext();
-#if DEBUG
-            stopwatch.Stop();
-            UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
-#endif
+            else
+            {
+                var (count, totalTime) = value;
+                _opcodeStats[opcode] = (count + 1, totalTime + elapsed);
+            }
         }
-#if DEBUG
-        PrintOpcodeStats();
-#endif
-    }
 
-    protected override void OnFault(Exception ex)
-    {
-        base.OnFault(ex);
-        // #if DEBUG
-        throw ex;
-        // #endif
-    }
-
-    private void UpdateOpcodeStats(VM.OpCode opcode, TimeSpan elapsed)
-    {
-        if (!_opcodeStats.TryGetValue(opcode, out var value))
+        private void PrintOpcodeStats()
         {
-            _opcodeStats[opcode] = (1, elapsed);
-        }
-        else
-        {
-            var (count, totalTime) = value;
-            _opcodeStats[opcode] = (count + 1, totalTime + elapsed);
-        }
-    }
-
-    private void PrintOpcodeStats()
-    {
-        Console.WriteLine("Opcode Statistics:");
-        foreach (var kvp in _opcodeStats)
-        {
-            Console.WriteLine($"{kvp.Key,-15} " +
-                              $"Count: {kvp.Value.Count,8} " +
-                              $"Total Time: {kvp.Value.TotalTime.TotalMilliseconds * 1000,10:F2} μs " +
-                              $"Avg Time: {kvp.Value.TotalTime.TotalMilliseconds * 1000 / kvp.Value.Count,10:F2} μs");
+            Console.WriteLine("Opcode Statistics:");
+            foreach (var kvp in _opcodeStats)
+            {
+                Console.WriteLine($"{kvp.Key,-15} " +
+                                  $"Count: {kvp.Value.Count,8} " +
+                                  $"Total Time: {kvp.Value.TotalTime.TotalMilliseconds * 1000,10:F2} μs " +
+                                  $"Avg Time: {kvp.Value.TotalTime.TotalMilliseconds * 1000 / kvp.Value.Count,10:F2} μs");
+            }
         }
     }
 }

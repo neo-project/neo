@@ -13,75 +13,76 @@ using BenchmarkDotNet.Attributes;
 using Neo.SmartContract;
 using Neo.VM.Benchmark.OpCode;
 
-namespace Neo.VM.Benchmark.NativeContract.CryptoLib;
-
-public class CryptoLib_RIPEMD160
+namespace Neo.VM.Benchmark.NativeContract.CryptoLib
 {
-    private BenchmarkEngine _engine;
-    private readonly SmartContract.Native.NativeContract _nativeContract = SmartContract.Native.CryptoLib.CryptoLib;
-
-    private const string Method = "ripemd160";
-
-    [ParamsSource(nameof(Params))]
-    public object[] _args = Params().First();
-
-    public static IEnumerable<object[]> Params()
+    public class CryptoLib_RIPEMD160
     {
-        var random = new Random(42); // Use a fixed seed for reproducibility
-        return
-        [
-            [RandomBytes(1, random)],
-            [RandomBytes(10, random)],
-            [RandomBytes(100, random)],
-            [RandomBytes(1000, random)],
-            [RandomBytes(10000, random)],
-            [RandomBytes(65535, random)],
-            [RandomBytes(100000, random)],
-            [RandomBytes(ushort.MaxValue * 2, random)]
-        ];
-    }
+        private BenchmarkEngine _engine;
+        private readonly SmartContract.Native.NativeContract _nativeContract = SmartContract.Native.CryptoLib.CryptoLib;
 
-    private static byte[] RandomBytes(int length, Random random)
-    {
-        var buffer = new byte[length];
-        random.NextBytes(buffer);
-        return buffer;
-    }
+        private const string Method = "ripemd160";
 
+        [ParamsSource(nameof(Params))]
+        public object[] _args = Params().First();
 
-    [IterationSetup]
-    public void Setup()
-    {
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(AppCall());
-        _engine.ExecuteUntil(VM.OpCode.SYSCALL);
-    }
-
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
-
-    [Benchmark]
-    public void Bench()
-    {
-        _engine.ExecuteNext();
-    }
-
-    private byte[] AppCall()
-    {
-        var builder = new ScriptBuilder();
-        foreach (var o in _args)
+        public static IEnumerable<object[]> Params()
         {
-            builder.EmitPush(o);
+            var random = new Random(42); // Use a fixed seed for reproducibility
+            return
+            [
+                [RandomBytes(1, random)],
+                [RandomBytes(10, random)],
+                [RandomBytes(100, random)],
+                [RandomBytes(1000, random)],
+                [RandomBytes(10000, random)],
+                [RandomBytes(65535, random)],
+                [RandomBytes(100000, random)],
+                [RandomBytes(ushort.MaxValue * 2, random)]
+            ];
         }
-        builder.EmitPush(_args.Length);
-        builder.Emit(VM.OpCode.PACK);
-        builder.EmitPush((byte)CallFlags.None);
-        builder.EmitPush(Method);
-        builder.EmitPush(_nativeContract.Hash);
-        builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
-        return builder.ToArray();
+
+        private static byte[] RandomBytes(int length, Random random)
+        {
+            var buffer = new byte[length];
+            random.NextBytes(buffer);
+            return buffer;
+        }
+
+
+        [IterationSetup]
+        public void Setup()
+        {
+            _engine = new BenchmarkEngine();
+            _engine.LoadScript(AppCall());
+            _engine.ExecuteUntil(VM.OpCode.SYSCALL);
+        }
+
+        [IterationCleanup]
+        public void Cleanup()
+        {
+            _engine.Dispose();
+        }
+
+        [Benchmark]
+        public void Bench()
+        {
+            _engine.ExecuteNext();
+        }
+
+        private byte[] AppCall()
+        {
+            var builder = new ScriptBuilder();
+            foreach (var o in _args)
+            {
+                builder.EmitPush(o);
+            }
+            builder.EmitPush(_args.Length);
+            builder.Emit(VM.OpCode.PACK);
+            builder.EmitPush((byte)CallFlags.None);
+            builder.EmitPush(Method);
+            builder.EmitPush(_nativeContract.Hash);
+            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            return builder.ToArray();
+        }
     }
 }

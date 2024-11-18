@@ -11,33 +11,34 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_Nop
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected VM.OpCode Opcode => VM.OpCode.NOP;
-
-    private BenchmarkEngine _engine;
-
-    [IterationSetup]
-    public void Setup()
+    public class OpCode_Nop
     {
-        var builder = new InstructionBuilder();
-        builder.AddInstruction(VM.OpCode.NOP);
+        protected VM.OpCode Opcode => VM.OpCode.NOP;
 
-        _engine = new BenchmarkEngine();
-        _engine.LoadScript(builder.ToArray());
-        _engine.ExecuteUntil(Opcode);
+        private BenchmarkEngine _engine;
+
+        [IterationSetup]
+        public void Setup()
+        {
+            var builder = new InstructionBuilder();
+            builder.AddInstruction(VM.OpCode.NOP);
+
+            _engine = new BenchmarkEngine();
+            _engine.LoadScript(builder.ToArray());
+            _engine.ExecuteUntil(Opcode);
+        }
+
+        [IterationCleanup]
+        public void Cleanup()
+        {
+            _engine.Dispose();
+        }
+
+        [Benchmark]
+        public void Bench() => _engine.ExecuteNext();
     }
-
-    [IterationCleanup]
-    public void Cleanup()
-    {
-        _engine.Dispose();
-    }
-
-    [Benchmark]
-    public void Bench() => _engine.ExecuteNext();
 }
 
 

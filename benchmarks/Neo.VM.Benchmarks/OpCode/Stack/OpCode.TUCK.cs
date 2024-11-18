@@ -9,21 +9,22 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_TUCK : OpCodeBase
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
-
-    protected override byte[] CreateOneOpCodeScript()
+    public class OpCode_TUCK : OpCodeBase
     {
-        var builder = new InstructionBuilder();
-        builder.AddInstruction(Opcode);
-        return builder.ToArray();
-    }
+        protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
 
-    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
-    {
-        throw new NotImplementedException();
+        protected override byte[] CreateOneOpCodeScript()
+        {
+            var builder = new InstructionBuilder();
+            builder.AddInstruction(Opcode);
+            return builder.ToArray();
+        }
+
+        protected override byte[] CreateOneGASScript(InstructionBuilder builder)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

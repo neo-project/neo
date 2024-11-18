@@ -9,26 +9,27 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.VM.Benchmark.OpCode;
-
-public class OpCode_SWAP : OpCodeBase
+namespace Neo.VM.Benchmark.OpCode
 {
-    protected override VM.OpCode Opcode => VM.OpCode.SWAP;
-
-    protected override byte[] CreateOneOpCodeScript()
+    public class OpCode_SWAP : OpCodeBase
     {
-        var builder = new InstructionBuilder();
-        builder.Push(ushort.MaxValue * 2);
-        builder.AddInstruction(VM.OpCode.NEWBUFFER);
-        builder.Push(ushort.MaxValue * 2);
-        builder.AddInstruction(VM.OpCode.NEWBUFFER);
-        builder.AddInstruction(Opcode);
-        return builder.ToArray();
-    }
+        protected override VM.OpCode Opcode => VM.OpCode.SWAP;
 
-    protected override byte[] CreateOneGASScript(InstructionBuilder builder)
-    {
-        throw new NotImplementedException();
+        protected override byte[] CreateOneOpCodeScript()
+        {
+            var builder = new InstructionBuilder();
+            builder.Push(ushort.MaxValue * 2);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            builder.Push(ushort.MaxValue * 2);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            builder.AddInstruction(Opcode);
+            return builder.ToArray();
+        }
+
+        protected override byte[] CreateOneGASScript(InstructionBuilder builder)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 
