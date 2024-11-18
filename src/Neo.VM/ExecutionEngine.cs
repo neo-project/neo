@@ -308,12 +308,12 @@ namespace Neo.VM
             {
                 if (ReferenceCounter.Count < Limits.MaxStackSize) return;
                 if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                    throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
+                    throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
             }
             else
             {
                 if (ReferenceCounter.Count <= Limits.MaxStackSize) return;
-                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
+                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
             }
         }
 
