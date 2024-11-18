@@ -26,7 +26,6 @@ indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
-dotnet_diagnostic.CA2265.severity = none
 
 # XML project files
 [*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
@@ -58,6 +57,7 @@ indent_size = 2
 [*.{cs,vb}]
 # Use block-scoped namespace
 csharp_style_namespace_declarations = block_scoped:error
+dotnet_diagnostic.CA2265.severity = none
 dotnet_diagnostic.IDE0160.severity = error
 dotnet_diagnostic.IDE0161.severity = error
 
