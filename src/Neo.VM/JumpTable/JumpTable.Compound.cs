@@ -422,6 +422,8 @@ namespace Neo.VM
             var array = engine.Pop<VMArray>();
             if (newItem is Struct s) newItem = s.Clone(engine.Limits);
             array.Add(newItem);
+            if (engine.ReferenceCounter.Version == RCVersion.V2)
+                engine.ReferenceCounter.AddStackReference(newItem);
         }
 
         /// <summary>
@@ -445,12 +447,30 @@ namespace Neo.VM
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
                             throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                            engine.ReferenceCounter.RemoveStackReference(array[index]);
                         array[index] = value;
+                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                            engine.ReferenceCounter.AddStackReference(array[index]);
                         break;
                     }
                 case Map map:
                     {
+                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                        {
+                            if (!map.TryGetValue(key, out var value1))
+                            {
+                                engine.ReferenceCounter.AddStackReference(key);
+                            }
+                            else
+                            {
+                                engine.ReferenceCounter.RemoveStackReference(value1);
+                            }
+                        }
+
                         map[key] = value;
+                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                            engine.ReferenceCounter.AddStackReference(value);
                         break;
                     }
                 case Types.Buffer buffer:
@@ -515,9 +535,18 @@ namespace Neo.VM
                     var index = (int)key.GetInteger();
                     if (index < 0 || index >= array.Count)
                         throw new InvalidOperationException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
+                    var item = array[index];
                     array.RemoveAt(index);
+                    if (engine.ReferenceCounter.Version == RCVersion.V2)
+                        engine.ReferenceCounter.RemoveStackReference(item);
                     break;
                 case Map map:
+                    if (engine.ReferenceCounter.Version == RCVersion.V2)
+                    {
+                        engine.ReferenceCounter.RemoveStackReference(key);
+                        engine.ReferenceCounter.RemoveStackReference(map[key]);
+                    }
+
                     map.Remove(key);
                     break;
                 default:
@@ -536,6 +565,14 @@ namespace Neo.VM
         public virtual void ClearItems(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop<CompoundType>();
+            if (engine.ReferenceCounter.Version == RCVersion.V2)
+            {
+                foreach (var xSubItem in x.SubItems)
+                {
+                    engine.ReferenceCounter.RemoveStackReference(xSubItem);
+                }
+            }
+
             x.Clear();
         }
 

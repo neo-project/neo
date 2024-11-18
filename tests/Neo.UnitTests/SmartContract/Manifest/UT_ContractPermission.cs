@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         {
             // null
             ContractPermission contractPermission = ContractPermission.DefaultPermission;
-            Struct s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounter());
+            Struct s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounterV2());
 
             contractPermission = s.ToInteroperable<ContractPermission>();
             Assert.IsTrue(contractPermission.Contract.IsWildcard);
@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Contract = ContractPermissionDescriptor.Create(UInt160.Zero),
                 Methods = WildcardContainer<string>.Create("test")
             };
-            s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounter());
+            s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounterV2());
 
             contractPermission = s.ToInteroperable<ContractPermission>();
             Assert.IsFalse(contractPermission.Contract.IsWildcard);

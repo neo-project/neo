@@ -39,7 +39,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedArrayDeepCopy()
         {
-            var root = new Array(new ReferenceCounter());
+            var root = new Array(new ReferenceCounterV2());
             CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel);
             _ = root.DeepCopy();
         }
@@ -47,7 +47,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedArrayDeepCopyWithReferenceCounter()
         {
-            var referenceCounter = new ReferenceCounter();
+            var referenceCounter = new ReferenceCounterV2();
             var root = new Array(referenceCounter);
             CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
             _ = root.DeepCopy();
@@ -56,7 +56,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedTestArrayDeepCopy()
         {
-            var root = new TestArray(new ReferenceCounter());
+            var root = new TestArray(new ReferenceCounterV2());
             CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel);
             _ = root.DeepCopy();
         }
@@ -64,7 +64,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedTestArrayDeepCopyWithReferenceCounter()
         {
-            var referenceCounter = new ReferenceCounter();
+            var referenceCounter = new ReferenceCounterV2();
             var root = new TestArray(referenceCounter);
             CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
             _ = root.DeepCopy();

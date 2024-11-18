@@ -58,7 +58,7 @@ namespace Neo.VM.Benchmark
 
         private Dictionary<StackItemType, List<StackItem>> CreateTestItemsByType()
         {
-            var referenceCounter = new ReferenceCounter();
+            var referenceCounter = new ReferenceCounterV2();
             var result = new Dictionary<StackItemType, List<StackItem>>();
 
             foreach (StackItemType type in Enum.GetValues(typeof(StackItemType)))

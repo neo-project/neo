@@ -180,7 +180,16 @@ namespace Neo.SmartContract
         protected unsafe ApplicationEngine(
             TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock,
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
-            : base(jumpTable ?? DefaultJumpTable)
+            : base(
+               // this is IsHardforkEnabled
+               settings is not null
+                   ? (persistingBlock is null
+                       ? settings.Hardforks.ContainsKey(Hardfork.HF_Echidna)
+                       : settings.IsHardforkEnabled(Hardfork.HF_Echidna, persistingBlock.Index))
+                            ? new ReferenceCounterV2()
+                            : new ReferenceCounter()
+                   : new ReferenceCounterV2(),
+                jumpTable ?? DefaultJumpTable)
         {
             Trigger = trigger;
             ScriptContainer = container;
@@ -707,10 +716,7 @@ namespace Neo.SmartContract
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
             // Return true if PersistingBlock is null and Hardfork is enabled
-            if (PersistingBlock is null)
-                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
-
-            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+            return PersistingBlock is null ? ProtocolSettings.Hardforks.ContainsKey(hardfork) : ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
         }
     }
 }
