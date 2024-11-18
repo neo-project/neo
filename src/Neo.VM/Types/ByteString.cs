@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Diagnostics;
 using System.Numerics;
@@ -60,7 +61,7 @@ namespace Neo.VM.Types
         internal bool Equals(StackItem? other, ref uint limits)
         {
             if (Size > limits || limits == 0)
-                throw new InvalidOperationException("The operand exceeds the maximum comparable size.");
+                throw new VMUncatchableException("The operand exceeds the maximum comparable size.");
             uint comparedSize = 1;
             try
             {
@@ -68,7 +69,7 @@ namespace Neo.VM.Types
                 comparedSize = Math.Max((uint)Math.Max(Size, b.Size), comparedSize);
                 if (ReferenceEquals(this, b)) return true;
                 if (b.Size > limits)
-                    throw new InvalidOperationException("The operand exceeds the maximum comparable size.");
+                    throw new VMUncatchableException("The operand exceeds the maximum comparable size.");
                 return Equals(b);
             }
             finally

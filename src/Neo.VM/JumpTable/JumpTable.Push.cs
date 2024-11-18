@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using Neo.VM.Types;
 using System;
 using System.Numerics;
@@ -129,7 +130,7 @@ namespace Neo.VM
         {
             var position = checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI32);
             if (position < 0 || position > engine.CurrentContext.Script.Length)
-                throw new InvalidOperationException($"Bad pointer address(Instruction instruction) {position}");
+                throw new VMUncatchableException($"Bad pointer address(Instruction instruction) {position}");
             engine.Push(new Pointer(engine.CurrentContext.Script, position));
         }
 

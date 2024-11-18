@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -148,7 +149,7 @@ namespace Neo.VM
                     {
                         JumpTable[instruction.OpCode](this, instruction);
                     }
-                    catch (CatchableException ex) when (Limits.CatchEngineExceptions)
+                    catch (VMCatchableException ex) when (Limits.CatchEngineExceptions)
                     {
                         JumpTable.ExecuteThrow(this, ex.Message);
                     }
@@ -170,7 +171,7 @@ namespace Neo.VM
         public virtual void LoadContext(ExecutionContext context)
         {
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
-                throw new InvalidOperationException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
+                throw new VMUncatchableException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
             InvocationStack.Push(context);
             if (EntryContext is null) EntryContext = context;
             CurrentContext = context;
@@ -291,7 +292,7 @@ namespace Neo.VM
         {
             if (ReferenceCounter.Count < Limits.MaxStackSize) return;
             if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
+                throw new VMUncatchableException($"MaxStackSize exceed: {ReferenceCounter.Count}");
         }
 
         /// <summary>

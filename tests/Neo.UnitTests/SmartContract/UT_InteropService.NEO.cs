@@ -20,6 +20,7 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using Neo.VM.Exceptions;
 using Neo.Wallets;
 using System;
 using System.Linq;
@@ -127,7 +128,7 @@ namespace Neo.UnitTests.SmartContract
             var manifest = TestUtils.CreateDefaultManifest();
             Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(null, nefFile, manifest.ToJson().ToByteArray(false)));
             Assert.ThrowsException<ArgumentException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, new byte[ContractManifest.MaxLength + 1]));
-            Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), 10000000));
+            Assert.ThrowsException<VMUncatchableException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), 10000000));
 
             var script_exceedMaxLength = new NefFile()
             {

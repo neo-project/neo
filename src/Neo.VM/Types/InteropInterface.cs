@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Diagnostics;
 
@@ -30,7 +31,7 @@ namespace Neo.VM.Types
         /// <param name="value">The wrapped <see cref="object"/>.</param>
         public InteropInterface(object value)
         {
-            _object = value ?? throw new ArgumentNullException(nameof(value));
+            _object = value ?? throw new VMUncatchableException("Interop value can't be null");
         }
 
         public override bool Equals(StackItem? other)
