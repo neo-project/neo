@@ -27,7 +27,6 @@ namespace Neo.VM
         private readonly ReadOnlyMemory<byte> _value;
         private readonly bool strictMode;
         private readonly Dictionary<int, Instruction> _instructions = new();
-        private readonly int scriptLen = -1;
 
         /// <summary>
         /// The length of the script.
@@ -37,7 +36,7 @@ namespace Neo.VM
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                return scriptLen == -1 ? _value.Length : scriptLen;
+                return _value.Length;
             }
         }
 
@@ -144,13 +143,12 @@ namespace Neo.VM
         /// <param name="ip">The position to get the <see cref="Instruction"/>.</param>
         /// <returns>The <see cref="Instruction"/> at the specified position.</returns>
         /// <exception cref="ArgumentException">In strict mode, the <see cref="Instruction"/> was not found at the specified position.</exception>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Instruction GetInstruction(int ip)
         {
             if (ip >= Length) throw new ArgumentOutOfRangeException(nameof(ip));
-            if (!_instructions.TryGetValue(ip, out var instruction))
+            if (!_instructions.TryGetValue(ip, out Instruction? instruction))
             {
-                if (strictMode) throw new ArgumentException("ip not found with strict mode", nameof(ip));
+                if (strictMode) throw new ArgumentException($"ip not found with strict mode", nameof(ip));
                 instruction = new Instruction(_value, ip);
                 _instructions.Add(ip, instruction);
             }

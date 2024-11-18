@@ -12,7 +12,6 @@
 using Neo.VM.Types;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
@@ -23,9 +22,6 @@ namespace Neo.VM
     {
         private readonly IReferenceCounter referenceCounter;
         private readonly StackItem[] items;
-        private int itemCount = -1;
-        private IEnumerator enumerator;
-
 
         /// <summary>
         /// Gets the item at the specified index in the slot.
@@ -50,15 +46,7 @@ namespace Neo.VM
         /// <summary>
         /// Gets the number of items in the slot.
         /// </summary>
-        public int Count
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (itemCount == -1) itemCount = items.Length;
-                return itemCount;
-            }
-        }
+        public int Count => items.Length;
 
         /// <summary>
         /// Creates a slot containing the specified items.
@@ -69,7 +57,7 @@ namespace Neo.VM
         {
             this.referenceCounter = referenceCounter;
             this.items = items;
-            foreach (var item in items)
+            foreach (StackItem item in items)
                 referenceCounter.AddStackReference(item);
         }
 
@@ -88,26 +76,18 @@ namespace Neo.VM
 
         internal void ClearReferences()
         {
-            foreach (var item in items)
+            foreach (StackItem item in items)
                 referenceCounter.RemoveStackReference(item);
         }
 
         IEnumerator<StackItem> IEnumerable<StackItem>.GetEnumerator()
         {
-            foreach (var item in items) yield return item;
+            foreach (StackItem item in items) yield return item;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            if (enumerator == null)
-            {
-                enumerator = items.GetEnumerator();
-            }
-            else
-            {
-                enumerator.Reset();
-            }
-            return enumerator;
+            return items.GetEnumerator();
         }
     }
 }

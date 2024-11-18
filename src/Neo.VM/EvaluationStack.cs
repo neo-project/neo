@@ -144,7 +144,6 @@ namespace Neo.VM
             return Remove<T>(0);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal T Remove<T>(int index) where T : StackItem
         {
             if (index >= innerList.Count)

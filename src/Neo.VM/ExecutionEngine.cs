@@ -66,12 +66,10 @@ namespace Neo.VM
         /// </summary>
         public VMState State
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return state;
             }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             protected internal set
             {
                 if (state != value)
@@ -125,7 +123,6 @@ namespace Neo.VM
         /// <summary>
         /// Execute the next instruction.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected internal void ExecuteNext()
         {
             if (InvocationStack.Count == 0)
@@ -136,8 +133,8 @@ namespace Neo.VM
             {
                 try
                 {
-                    var context = CurrentContext!;
-                    var instruction = context.CurrentInstruction ?? Instruction.RET;
+                    ExecutionContext context = CurrentContext!;
+                    Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
                     PreExecuteInstruction(instruction);
 #if VMPERF
                     Console.WriteLine("op:["
@@ -290,7 +287,6 @@ namespace Neo.VM
         /// <summary>
         /// Called after an instruction is executed.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void PostExecuteInstruction(Instruction instruction)
         {
             if (ReferenceCounter.Count < Limits.MaxStackSize) return;
@@ -301,7 +297,6 @@ namespace Neo.VM
         /// <summary>
         /// Called before an instruction is executed.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void PreExecuteInstruction(Instruction instruction) { }
 
         /// <summary>

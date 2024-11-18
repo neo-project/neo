@@ -69,12 +69,10 @@ namespace Neo.VM
         /// </summary>
         public int InstructionPointer
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return instructionPointer;
             }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal set
             {
                 if (value < 0 || value > Script.Length)
@@ -161,10 +159,9 @@ namespace Neo.VM
             return (T)value;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool MoveNext()
         {
-            var current = CurrentInstruction;
+            Instruction? current = CurrentInstruction;
             if (current is null) return false;
             InstructionPointer += current.Size;
             return InstructionPointer < Script.Length;
