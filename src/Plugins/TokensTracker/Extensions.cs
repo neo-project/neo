@@ -16,7 +16,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Neo.Plugins
 {
@@ -29,8 +28,7 @@ namespace Neo.Plugins
 
         public static string ToBase64(this ReadOnlySpan<byte> item)
         {
-            ReadOnlySpan<byte> nullData = null;
-            return item == nullData ? System.String.Empty : Convert.ToBase64String(item);
+            return item == null ? String.Empty : Convert.ToBase64String(item);
         }
 
         public static int GetVarSize(this ByteString item)
