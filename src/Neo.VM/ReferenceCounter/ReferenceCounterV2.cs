@@ -27,11 +27,18 @@ namespace Neo.VM
     {
         public RCVersion Version { get; init; } = RCVersion.V2;
 
+        private readonly ExecutionEngineLimits _limits = ExecutionEngineLimits.Default;
+
         // Keeps the total count of references.
         private int _referencesCount = 0;
 
         /// <inheritdoc/>
         public int Count => _referencesCount;
+
+        public ReferenceCounterV2(ExecutionEngineLimits limits = null)
+        {
+            _limits = limits ?? ExecutionEngineLimits.Default;
+        }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -52,10 +59,13 @@ namespace Neo.VM
             // Increment the reference count by the specified count.
             _referencesCount += count;
 
+            if (_referencesCount > _limits.MaxStackSize)
+                throw new IndexOutOfRangeException("Circular reference detected, execution stopped.");
             if (item is CompoundType compoundType)
             {
                 // Increment the item's stack references by the specified count.
                 compoundType.StackReferences += count;
+
                 if (compoundType.StackReferences == count)
                 {
                     foreach (var subItem in compoundType.SubItems)
@@ -89,11 +99,16 @@ namespace Neo.VM
         {
             // Increment the reference count by the specified count.
             _referencesCount--;
+            if (_referencesCount < 0)
+                throw new IndexOutOfRangeException("Circular reference detected, execution stopped.");
 
             if (item is CompoundType compoundType)
             {
                 // Increment the item's stack references by the specified count.
                 compoundType.StackReferences--;
+
+                if (compoundType.StackReferences < 0)
+                    throw new IndexOutOfRangeException("Circular reference detected, execution stopped.");
                 if (compoundType.StackReferences == 0)
                 {
                     foreach (var subItem in compoundType.SubItems)
