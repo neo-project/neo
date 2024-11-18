@@ -13,6 +13,9 @@ using System;
 
 namespace Neo.IO.Data.LevelDB
 {
+    /// <summary>
+    /// An iterator yields a sequence of key/value pairs from a database.
+    /// </summary>
     public class Iterator : IDisposable
     {
         private IntPtr handle;
@@ -37,6 +40,10 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
+        /// <summary>
+        /// Return the key for the current entry.
+        /// REQUIRES: Valid()
+        /// </summary>
         public byte[] Key()
         {
             IntPtr key = Native.leveldb_iter_key(handle, out UIntPtr length);
@@ -44,6 +51,11 @@ namespace Neo.IO.Data.LevelDB
             return key.ToByteArray(length);
         }
 
+        /// <summary>
+        /// Moves to the next entry in the source.
+        /// After this call, Valid() is true if the iterator was not positioned at the last entry in the source.
+        /// REQUIRES: Valid()
+        /// </summary>
         public void Next()
         {
             Native.leveldb_iter_next(handle);
@@ -56,6 +68,11 @@ namespace Neo.IO.Data.LevelDB
             CheckError();
         }
 
+        /// <summary>
+        /// Position at the first key in the source that at or past target
+        /// The iterator is Valid() after this call if the source contains
+        /// an entry that comes at or past target.
+        /// </summary>
         public void Seek(byte[] target)
         {
             Native.leveldb_iter_seek(handle, target, (UIntPtr)target.Length);
@@ -66,6 +83,10 @@ namespace Neo.IO.Data.LevelDB
             Native.leveldb_iter_seek_to_first(handle);
         }
 
+        /// <summary>
+        /// Position at the last key in the source.
+        /// The iterator is Valid() after this call if the source is not empty.
+        /// </summary>
         public void SeekToLast()
         {
             Native.leveldb_iter_seek_to_last(handle);
