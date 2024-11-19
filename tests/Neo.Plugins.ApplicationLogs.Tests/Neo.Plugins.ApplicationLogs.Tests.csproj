@@ -20,8 +20,4 @@
     <ProjectReference Include="..\Neo.UnitTests\Neo.UnitTests.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="FluentAssertions" Version="6.12.2" />
-  </ItemGroup>
-
 </Project>

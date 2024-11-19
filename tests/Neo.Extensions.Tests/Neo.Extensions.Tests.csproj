@@ -19,8 +19,4 @@
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="FluentAssertions" Version="6.12.2" />
-  </ItemGroup>
-
 </Project>

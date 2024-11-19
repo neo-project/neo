@@ -15,8 +15,4 @@
     <ProjectReference Include="..\..\src\Plugins\MPTTrie\MPTTrie.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="FluentAssertions" Version="6.12.2" />
-  </ItemGroup>
-
 </Project>

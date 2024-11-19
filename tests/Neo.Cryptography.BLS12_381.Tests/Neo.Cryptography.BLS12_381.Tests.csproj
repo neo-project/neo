@@ -16,8 +16,4 @@
     <PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="FluentAssertions" Version="6.12.2" />
-  </ItemGroup>
-
 </Project>
