@@ -19,25 +19,27 @@ namespace Neo.VM.Benchmark.OpCode
 
         private BenchmarkEngine _engine;
 
-        [ParamsSource(nameof(StrLen))]
-        public byte[] _value;
-
-        public static IEnumerable<byte[]> StrLen =>
-        [
-            new byte[ushort.MaxValue + 1],
-            new byte[ushort.MaxValue * 2],
-        ];
+        // [ParamsSource(nameof(StrLen))]
+        // public byte[] _value;
+        //
+        // public static IEnumerable<byte[]> StrLen =>
+        // [
+        //     new byte[ushort.MaxValue/2],
+        //     // new byte[ushort.MaxValue * 2-sizeof(uint)],
+        // ];
 
         [IterationSetup]
         public void Setup()
         {
             var builder = new InstructionBuilder();
-            builder.AddInstruction(VM.OpCode.NOP);
-            builder.Push(_value);
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
+            builder.Push(new byte[ushort.MaxValue - 1]);
+            builder.AddInstruction(VM.OpCode.DROP);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
 
             _engine = new BenchmarkEngine();
             _engine.LoadScript(builder.ToArray());
-            _engine.ExecuteUntil(VM.OpCode.NOP);
+            _engine.ExecuteUntil(Opcode);
         }
 
         [IterationCleanup]
@@ -47,7 +49,7 @@ namespace Neo.VM.Benchmark.OpCode
         }
 
         [Benchmark]
-        public void Bench() => _engine.ExecuteNext();
+        public void Bench() => _engine.ExecuteOneGASBenchmark();
     }
 }
 

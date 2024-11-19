@@ -20,6 +20,8 @@ namespace Neo.VM.Benchmark.OpCode
             var builder = new InstructionBuilder();
             var initBegin = new JumpTarget();
             builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
             builder.Push(ItemCount);
             builder.AddInstruction(VM.OpCode.STLOC0);
             initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
@@ -31,8 +33,8 @@ namespace Neo.VM.Benchmark.OpCode
             builder.AddInstruction(VM.OpCode.STLOC0);
             builder.AddInstruction(VM.OpCode.LDLOC0);
             builder.Jump(VM.OpCode.JMPIF, initBegin);
-
             builder.AddInstruction(VM.OpCode.CLEAR);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
             return builder.ToArray();
         }
 

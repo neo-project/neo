@@ -13,12 +13,26 @@ namespace Neo.VM.Benchmark.OpCode
 {
     public class OpCode_DROP : OpCodeBase
     {
-        protected override VM.OpCode Opcode => VM.OpCode.PICKITEM;
+        protected override VM.OpCode Opcode => VM.OpCode.DROP;
 
         protected override byte[] CreateOneOpCodeScript()
         {
             var builder = new InstructionBuilder();
-
+            var initBegin = new JumpTarget();
+            builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+            builder.Push(ushort.MaxValue * 2);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            // builder.Push(0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.AddInstruction(VM.OpCode.DEC);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.Jump(VM.OpCode.JMPIF, initBegin);
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.PACK);
             builder.AddInstruction(Opcode);
             return builder.ToArray();
         }

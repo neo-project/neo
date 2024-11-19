@@ -33,7 +33,11 @@ namespace Neo.VM.Benchmark.OpCode
             builder.AddInstruction(VM.OpCode.LDLOC0);
             builder.Jump(VM.OpCode.JMPIF, initBegin);
             builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.PACK);
+            // var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
+            builder.AddInstruction(VM.OpCode.DUP);
             builder.AddInstruction(Opcode);
+            // builder.Jump(VM.OpCode.JMP, loopBegin);
             return builder.ToArray();
         }
 

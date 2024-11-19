@@ -30,8 +30,10 @@ namespace Neo.VM.Benchmark.OpCode
             builder.AddInstruction(VM.OpCode.STLOC0);
             builder.AddInstruction(VM.OpCode.LDLOC0);
             builder.Jump(VM.OpCode.JMPIF, initBegin);
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
             builder.Push(ItemCount);
             builder.AddInstruction(VM.OpCode.REVERSEN);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
             return builder.ToArray();
         }
 
@@ -58,3 +60,14 @@ namespace Neo.VM.Benchmark.OpCode
 //     | Bench_OneOpCode | 128       | 2.709 us | 0.1647 us | 0.4779 us |
 //     | Bench_OneOpCode | 1024      | 4.553 us | 0.6520 us | 1.9121 us |
 //     | Bench_OneOpCode | 2040      | 6.112 us | 0.6347 us | 1.8715 us |
+
+
+// one gas << 4
+// | Method          | ItemCount | Mean      | Error    | StdDev   |
+//     |---------------- |---------- |----------:|---------:|---------:|
+//     | Bench_OneOpCode | 1         |  16.88 ms | 0.311 ms | 0.529 ms |
+//     | Bench_OneOpCode | 2         |  17.81 ms | 0.311 ms | 0.276 ms |
+//     | Bench_OneOpCode | 32        |  25.20 ms | 0.414 ms | 0.387 ms |
+//     | Bench_OneOpCode | 128       |  43.27 ms | 0.650 ms | 0.608 ms |
+//     | Bench_OneOpCode | 1024      | 206.34 ms | 2.858 ms | 2.673 ms |
+//     | Bench_OneOpCode | 2040      | 390.97 ms | 5.918 ms | 5.536 ms |
