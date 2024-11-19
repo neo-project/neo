@@ -17,22 +17,22 @@ namespace Neo.IO.Data.LevelDB
     /// A Snapshot is an immutable object and can therefore be safely
     /// accessed from multiple threads without any external synchronization.
     /// </summary>
-    public class Snapshot : IDisposable
+    public class Snapshot : LevelDBHandle
     {
-        internal IntPtr db, handle;
+        internal IntPtr db;
 
         internal Snapshot(IntPtr db)
         {
             this.db = db;
-            handle = Native.leveldb_create_snapshot(db);
+            Handle = Native.leveldb_create_snapshot(db);
         }
 
-        public void Dispose()
+        protected override void FreeUnManagedObjects()
         {
-            if (handle != IntPtr.Zero)
+            if (Handle != IntPtr.Zero)
             {
-                Native.leveldb_release_snapshot(db, handle);
-                handle = IntPtr.Zero;
+                Native.leveldb_release_snapshot(db, Handle);
+                Handle = IntPtr.Zero;
             }
         }
     }
