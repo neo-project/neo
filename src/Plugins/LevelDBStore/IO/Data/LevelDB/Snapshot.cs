@@ -19,20 +19,18 @@ namespace Neo.IO.Data.LevelDB
     /// </summary>
     public class Snapshot : LevelDBHandle
     {
-        internal IntPtr db;
+        internal IntPtr _db;
 
-        internal Snapshot(IntPtr db)
+        internal Snapshot(IntPtr db) : base(Native.leveldb_create_snapshot(db))
         {
-            this.db = db;
-            Handle = Native.leveldb_create_snapshot(db);
+            _db = db;
         }
 
         protected override void FreeUnManagedObjects()
         {
             if (Handle != IntPtr.Zero)
             {
-                Native.leveldb_release_snapshot(db, Handle);
-                Handle = IntPtr.Zero;
+                Native.leveldb_release_snapshot(_db, Handle);
             }
         }
     }

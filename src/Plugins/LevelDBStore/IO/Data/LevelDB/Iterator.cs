@@ -18,14 +18,11 @@ namespace Neo.IO.Data.LevelDB
     /// </summary>
     public class Iterator : LevelDBHandle
     {
-        internal Iterator(IntPtr handle)
-        {
-            Handle = handle;
-        }
+        internal Iterator(IntPtr handle) : base(handle) { }
 
         private void CheckError()
         {
-            Native.leveldb_iter_get_error(Handle, out IntPtr error);
+            Native.leveldb_iter_get_error(Handle, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -34,7 +31,6 @@ namespace Neo.IO.Data.LevelDB
             if (Handle != IntPtr.Zero)
             {
                 Native.leveldb_iter_destroy(Handle);
-                Handle = IntPtr.Zero;
             }
         }
 
@@ -44,7 +40,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public byte[] Key()
         {
-            IntPtr key = Native.leveldb_iter_key(Handle, out UIntPtr length);
+            var key = Native.leveldb_iter_key(Handle, out var length);
             CheckError();
             return key.ToByteArray(length);
         }
@@ -97,7 +93,7 @@ namespace Neo.IO.Data.LevelDB
 
         public byte[] Value()
         {
-            IntPtr value = Native.leveldb_iter_value(Handle, out UIntPtr length);
+            var value = Native.leveldb_iter_value(Handle, out var length);
             CheckError();
             return value.ToByteArray(length);
         }

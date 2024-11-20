@@ -21,12 +21,9 @@ namespace Neo.IO.Data.LevelDB
     /// </summary>
     public class Options : LevelDBHandle
     {
-        public static readonly Options Default = new Options();
+        public static readonly Options Default = new();
 
-        public Options()
-        {
-            Handle = Native.leveldb_options_create();
-        }
+        public Options() : base(Native.leveldb_options_create()) { }
 
         /// <summary>
         /// If true, the database will be created if it is missing.

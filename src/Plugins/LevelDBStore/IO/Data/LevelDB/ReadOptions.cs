@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.IO.Data.LevelDB
 {
     /// <summary>
@@ -18,12 +16,9 @@ namespace Neo.IO.Data.LevelDB
     /// </summary>
     public class ReadOptions : LevelDBHandle
     {
-        public static readonly ReadOptions Default = new ReadOptions();
+        public static readonly ReadOptions Default = new();
 
-        public ReadOptions()
-        {
-            Handle = Native.leveldb_readoptions_create();
-        }
+        public ReadOptions() : base(Native.leveldb_readoptions_create()) { }
 
         /// <summary>
         /// If true, all data read from underlying storage will be

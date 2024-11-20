@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.IO.Data.LevelDB
 {
     /// <summary>
@@ -21,10 +19,7 @@ namespace Neo.IO.Data.LevelDB
         public static readonly WriteOptions Default = new();
         public static readonly WriteOptions SyncWrite = new() { Sync = true };
 
-        public WriteOptions()
-        {
-            Handle = Native.leveldb_writeoptions_create();
-        }
+        public WriteOptions() : base(Native.leveldb_writeoptions_create()) { }
 
         /// <summary>
         /// If true, the write will be flushed from the operating system

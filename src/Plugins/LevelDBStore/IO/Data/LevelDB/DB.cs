@@ -20,17 +20,13 @@ namespace Neo.IO.Data.LevelDB
     /// </summary>
     public class DB : LevelDBHandle
     {
-        private DB(IntPtr handle)
-        {
-            Handle = handle;
-        }
+        private DB(IntPtr handle) : base(handle) { }
 
         protected override void FreeUnManagedObjects()
         {
             if (Handle != IntPtr.Zero)
             {
                 Native.leveldb_close(Handle);
-                Handle = IntPtr.Zero;
             }
         }
 
@@ -41,7 +37,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Delete(WriteOptions options, byte[] key)
         {
-            Native.leveldb_delete(Handle, options.Handle, key, (UIntPtr)key.Length, out IntPtr error);
+            Native.leveldb_delete(Handle, options.Handle, key, (UIntPtr)key.Length, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -51,7 +47,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public byte[] Get(ReadOptions options, byte[] key)
         {
-            IntPtr value = Native.leveldb_get(Handle, options.Handle, key, (UIntPtr)key.Length, out UIntPtr length, out IntPtr error);
+            var value = Native.leveldb_get(Handle, options.Handle, key, (UIntPtr)key.Length, out var length, out var error);
             try
             {
                 NativeHelper.CheckError(error);
@@ -65,7 +61,7 @@ namespace Neo.IO.Data.LevelDB
 
         public bool Contains(ReadOptions options, byte[] key)
         {
-            IntPtr value = Native.leveldb_get(Handle, options.Handle, key, (UIntPtr)key.Length, out _, out IntPtr error);
+            var value = Native.leveldb_get(Handle, options.Handle, key, (UIntPtr)key.Length, out _, out var error);
             NativeHelper.CheckError(error);
 
             if (value != IntPtr.Zero)
@@ -94,7 +90,7 @@ namespace Neo.IO.Data.LevelDB
 
         public static DB Open(string name, Options options)
         {
-            IntPtr Handle = Native.leveldb_open(options.Handle, Path.GetFullPath(name), out IntPtr error);
+            var Handle = Native.leveldb_open(options.Handle, Path.GetFullPath(name), out var error);
             NativeHelper.CheckError(error);
             return new DB(Handle);
         }
@@ -105,7 +101,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Put(WriteOptions options, byte[] key, byte[] value)
         {
-            Native.leveldb_put(Handle, options.Handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length, out IntPtr error);
+            Native.leveldb_put(Handle, options.Handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -117,13 +113,13 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public static void Repair(string name, Options options)
         {
-            Native.leveldb_repair_db(options.Handle, Path.GetFullPath(name), out IntPtr error);
+            Native.leveldb_repair_db(options.Handle, Path.GetFullPath(name), out var error);
             NativeHelper.CheckError(error);
         }
 
         public void Write(WriteOptions options, WriteBatch write_batch)
         {
-            Native.leveldb_write(Handle, options.Handle, write_batch.Handle, out IntPtr error);
+            Native.leveldb_write(Handle, options.Handle, write_batch.Handle, out var error);
             NativeHelper.CheckError(error);
         }
     }

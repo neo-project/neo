@@ -27,11 +27,7 @@ namespace Neo.IO.Data.LevelDB
     /// </summary>
     public class WriteBatch : LevelDBHandle
     {
-
-        public WriteBatch()
-        {
-            Handle = Native.leveldb_writebatch_create();
-        }
+        public WriteBatch() : base(Native.leveldb_writebatch_create()) { }
 
         /// <summary>
         /// Clear all updates buffered in this batch.

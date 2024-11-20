@@ -16,9 +16,11 @@ namespace Neo.IO.Data.LevelDB
     /// <summary>
     /// Base class for all LevelDB objects
     /// </summary>
-    public abstract class LevelDBHandle : IDisposable
+    public abstract class LevelDBHandle(nint handle) : IDisposable
     {
-        public nint Handle { protected set; get; }
+        private bool _disposed = false;
+
+        public nint Handle { get; private set; } = handle;
 
         /// <summary>
         /// Return true if haven't got valid handle
@@ -31,27 +33,18 @@ namespace Neo.IO.Data.LevelDB
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void FreeManagedObjects()
-        {
-        }
-
         protected abstract void FreeUnManagedObjects();
 
-        bool _disposed = false;
         void Dispose(bool disposing)
         {
             if (!_disposed)
             {
-                if (disposing)
-                {
-                    FreeManagedObjects();
-                }
+                _disposed = true;
                 if (Handle != nint.Zero)
                 {
                     FreeUnManagedObjects();
                     Handle = nint.Zero;
                 }
-                _disposed = true;
             }
         }
 
