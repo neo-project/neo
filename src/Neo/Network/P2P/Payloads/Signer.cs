@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using K4os.Compression.LZ4.Encoders;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
