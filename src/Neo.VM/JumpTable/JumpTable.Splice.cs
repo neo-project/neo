@@ -101,7 +101,7 @@ namespace Neo.VM
             if (index < 0)
                 throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
             var x = engine.Pop().GetSpan();
-             if (checked(index + count) > x.Length)
+            if (checked(index + count) > x.Length)
                 throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
             Types.Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
