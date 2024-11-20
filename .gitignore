@@ -257,6 +257,8 @@ paket-files/
 PublishProfiles
 /.vscode
 launchSettings.json
+/coverages
+**/.DS_Store
 
 # UT coverage report
 /coverages
@@ -264,4 +266,3 @@ launchSettings.json
 
 # Benchmarks
 **/BenchmarkDotNet.Artifacts/
-
