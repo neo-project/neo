@@ -72,18 +72,26 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ReferenceEquals(this, other))
                 return true;
+
             if (other is null) return false;
-            return Account == other.Account &&
-                Scopes == other.Scopes &&
-                AllowedContracts.AsSpan().SequenceEqual(other.AllowedContracts.AsSpan()) &&
-                AllowedGroups.AsSpan().SequenceEqual(other.AllowedGroups.AsSpan()) &&
-                Rules.AsEnumerable().SequenceEqual(other.Rules.AsEnumerable());
+            if (Account != other.Account || Scopes != other.Scopes)
+                return false;
+
+            if (Scopes.HasFlag(WitnessScope.CustomContracts) && !AllowedContracts.SequenceEqual(other.AllowedContracts))
+                return false;
+
+            if (Scopes.HasFlag(WitnessScope.CustomGroups) && !AllowedGroups.SequenceEqual(other.AllowedGroups))
+                return false;
+
+            if (Scopes.HasFlag(WitnessScope.WitnessRules) && !Rules.SequenceEqual(other.Rules))
+                return false;
+
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
-            if (obj == null) return false;
             return obj is Signer signerObj && Equals(signerObj);
         }
 
@@ -137,7 +145,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.CustomContracts))
                 {
-                    foreach (UInt160 hash in AllowedContracts)
+                    foreach (var hash in AllowedContracts)
                         yield return new WitnessRule
                         {
                             Action = WitnessRuleAction.Allow,
@@ -146,7 +154,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
-                    foreach (ECPoint group in AllowedGroups)
+                    foreach (var group in AllowedGroups)
                         yield return new WitnessRule
                         {
                             Action = WitnessRuleAction.Allow,
@@ -155,7 +163,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 {
-                    foreach (WitnessRule rule in Rules)
+                    foreach (var rule in Rules)
                         yield return rule;
                 }
             }
