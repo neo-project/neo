@@ -221,7 +221,7 @@ namespace Neo
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
-            inbox.Receive(TimeSpan.FromSeconds(15));
+            inbox.Receive(TimeSpan.FromSeconds(30));
         }
 
         /// <summary>
