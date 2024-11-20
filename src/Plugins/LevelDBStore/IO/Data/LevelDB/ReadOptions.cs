@@ -20,7 +20,6 @@ namespace Neo.IO.Data.LevelDB
     {
         public static readonly ReadOptions Default = new ReadOptions();
 
-
         public ReadOptions()
         {
             Handle = Native.leveldb_readoptions_create();
