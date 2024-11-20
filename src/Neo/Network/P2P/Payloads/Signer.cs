@@ -20,13 +20,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
     /// Represents a signer of a <see cref="Transaction"/>.
     /// </summary>
-    public class Signer : IInteroperable, ISerializable
+    public class Signer : IInteroperable, ISerializable, IEquatable<Signer>
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -65,6 +66,31 @@ namespace Neo.Network.P2P.Payloads
             /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
             /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0) +
             /*Rules*/               (Scopes.HasFlag(WitnessScope.WitnessRules) ? Rules.GetVarSize() : 0);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(Signer other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null) return false;
+            return Account == other.Account &&
+                Scopes == other.Scopes &&
+                AllowedContracts.AsSpan().SequenceEqual(other.AllowedContracts.AsSpan()) &&
+                AllowedGroups.AsSpan().SequenceEqual(other.AllowedGroups.AsSpan()) &&
+                Rules.AsEnumerable().SequenceEqual(other.Rules.AsEnumerable());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is Signer signerObj && Equals(signerObj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Account.GetHashCode(), Scopes);
+        }
 
         public void Deserialize(ref MemoryReader reader)
         {
@@ -201,6 +227,24 @@ namespace Neo.Network.P2P.Payloads
                 Scopes.HasFlag(WitnessScope.CustomGroups) ? new VM.Types.Array(referenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))) : new VM.Types.Array(referenceCounter),
                 Scopes.HasFlag(WitnessScope.WitnessRules) ? new VM.Types.Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter))) : new VM.Types.Array(referenceCounter)
             ]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(Signer left, Signer right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(Signer left, Signer right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }
