@@ -20,6 +20,11 @@ namespace Neo.IO.Data.LevelDB
     {
         public nint Handle { protected set; get; }
 
+        /// <summary>
+        /// Return true if haven't got valid handle
+        /// </summary>
+        public bool IsDisposed => _disposed || Handle == IntPtr.Zero;
+
         public void Dispose()
         {
             Dispose(true);
