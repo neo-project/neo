@@ -23,8 +23,11 @@ namespace Neo.VM.Benchmark.OpCode
         public void Setup()
         {
             var builder = new InstructionBuilder();
+
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
             builder.AddInstruction(Opcode);
-            builder.AddInstruction(Opcode);
+            builder.AddInstruction(VM.OpCode.DROP);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
 
             _engine = new BenchmarkEngine();
             _engine.LoadScript(builder.ToArray());
@@ -39,7 +42,7 @@ namespace Neo.VM.Benchmark.OpCode
         }
 
         [Benchmark]
-        public void Bench() => _engine.ExecuteNext();
+        public void Bench() => _engine.ExecuteOneGASBenchmark();
     }
 }
 

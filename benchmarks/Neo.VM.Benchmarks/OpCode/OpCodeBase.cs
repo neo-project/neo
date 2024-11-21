@@ -17,13 +17,11 @@ namespace Neo.VM.Benchmark.OpCode
     {
         [Params(2, 32, 128, 1024, 2040)]
         public int ItemCount { get; set; } = 2;
-        protected byte[] baseLineScript;
-        protected byte[] script;
-        protected byte[] multiScript;
 
         private readonly byte[] nopScript;
 
         private BenchmarkEngine engine;
+        private BenchmarkEngine oneGasEngine;
 
         protected abstract VM.OpCode Opcode { get; }
 
@@ -33,20 +31,29 @@ namespace Neo.VM.Benchmark.OpCode
             engine = new BenchmarkEngine();
             engine.LoadScript(CreateOneOpCodeScript());
             engine.ExecuteUntil(Opcode);
+
+            oneGasEngine = new BenchmarkEngine();
+            oneGasEngine.LoadScript(CreateOneGASScript());
+            oneGasEngine.ExecuteUntil(Opcode);
         }
 
         [GlobalCleanup]
         public void Cleanup()
         {
             engine.Dispose();
+            oneGasEngine.Dispose();
         }
 
         [Benchmark]
         public void Bench_OneOpCode() =>
-            engine.ExecuteOneGASBenchmark();
+            engine.ExecuteNext();
+
+        [Benchmark]
+        public void Bench_OneGAS() =>
+            oneGasEngine.ExecuteOneGASBenchmark();
 
         protected abstract byte[] CreateOneOpCodeScript();
 
-        protected abstract byte[] CreateOneGASScript(InstructionBuilder builder);
+        protected abstract byte[] CreateOneGASScript();
     }
 }

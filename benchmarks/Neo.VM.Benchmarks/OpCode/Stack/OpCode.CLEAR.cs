@@ -21,6 +21,27 @@ namespace Neo.VM.Benchmark.OpCode
             var initBegin = new JumpTarget();
             builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
 
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+            builder.Push(ushort.MaxValue * 2);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            // builder.Push(0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.AddInstruction(VM.OpCode.DEC);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.Jump(VM.OpCode.JMPIF, initBegin);
+            builder.AddInstruction(Opcode);
+            return builder.ToArray();
+        }
+
+        protected override byte[] CreateOneGASScript( )
+        {
+            var builder = new InstructionBuilder();
+            var initBegin = new JumpTarget();
+            builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+
             var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
             builder.Push(ItemCount);
             builder.AddInstruction(VM.OpCode.STLOC0);
@@ -33,33 +54,22 @@ namespace Neo.VM.Benchmark.OpCode
             builder.AddInstruction(VM.OpCode.STLOC0);
             builder.AddInstruction(VM.OpCode.LDLOC0);
             builder.Jump(VM.OpCode.JMPIF, initBegin);
-            builder.AddInstruction(VM.OpCode.CLEAR);
+            builder.AddInstruction(Opcode);
             builder.Jump(VM.OpCode.JMP, loopBegin);
             return builder.ToArray();
-        }
-
-        protected override byte[] CreateOneGASScript(InstructionBuilder builder)
-        {
-            throw new NotImplementedException();
         }
     }
 }
 
-
-// max buffer
-//     | Method          | ItemCount | Mean      | Error      | StdDev     | Median    |
-//     |---------------- |---------- |----------:|-----------:|-----------:|----------:|
-//     | Bench_OneOpCode | 2         |  2.011 us |  0.0697 us |  0.1884 us |  2.000 us |
-//     | Bench_OneOpCode | 32        |  4.488 us |  0.1793 us |  0.5231 us |  4.400 us |
-//     | Bench_OneOpCode | 128       |  9.763 us |  0.6970 us |  2.0551 us |  9.000 us |
-//     | Bench_OneOpCode | 1024      | 34.498 us |  3.7138 us | 10.2289 us | 38.500 us |
-//     | Bench_OneOpCode | 2040      | 79.396 us | 10.8171 us | 31.7247 us | 69.900 us |
-
-// 0
-// | Method          | ItemCount | Mean      | Error     | StdDev    | Median    |
-//     |---------------- |---------- |----------:|----------:|----------:|----------:|
-//     | Bench_OneOpCode | 2         |  1.319 us | 0.1278 us | 0.3727 us |  1.200 us |
-//     | Bench_OneOpCode | 32        |  1.527 us | 0.0290 us | 0.0672 us |  1.500 us |
-//     | Bench_OneOpCode | 128       |  3.282 us | 0.1186 us | 0.3365 us |  3.300 us |
-//     | Bench_OneOpCode | 1024      | 18.108 us | 0.4129 us | 1.1980 us | 18.000 us |
-//     | Bench_OneOpCode | 2040      | 21.722 us | 0.4409 us | 1.2930 us | 21.800 us |
+// | Method          | ItemCount | Mean             | Error           | StdDev          | Median           |
+//     |---------------- |---------- |-----------------:|----------------:|----------------:|-----------------:|
+//     | Bench_OneOpCode | 2         |         1.377 us |       0.0615 us |       0.1653 us |         1.300 us |
+//     | Bench_OneGAS    | 2         | 4,231,554.676 us |  83,909.7077 us | 184,183.8425 us | 4,303,600.900 us |
+//     | Bench_OneOpCode | 32        |         2.401 us |       0.1199 us |       0.3515 us |         2.400 us |
+//     | Bench_OneGAS    | 32        | 2,547,750.008 us |  49,819.7387 us |  83,237.5915 us | 2,543,539.850 us |
+//     | Bench_OneOpCode | 128       |         5.956 us |       0.3384 us |       0.9601 us |         5.900 us |
+//     | Bench_OneGAS    | 128       | 2,639,446.005 us | 179,671.1278 us | 529,764.3742 us | 2,624,183.250 us |
+//     | Bench_OneOpCode | 1024      |        14.652 us |       2.9867 us |       8.7123 us |        18.950 us |
+//     | Bench_OneGAS    | 1024      | 1,805,836.310 us | 113,124.7967 us | 329,990.3417 us | 1,806,568.700 us |
+//     | Bench_OneOpCode | 2040      |        18.231 us |       3.2867 us |       9.6393 us |        22.300 us |
+//     | Bench_OneGAS    | 2040      | 1,855,640.206 us | 108,324.1031 us | 319,396.0621 us | 1,871,437.150 us |

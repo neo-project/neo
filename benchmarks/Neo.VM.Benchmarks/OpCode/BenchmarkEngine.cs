@@ -81,7 +81,7 @@ namespace Neo.VM.Benchmark.OpCode
             while (State != VMState.HALT && State != VMState.FAULT)
             {
                 var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 30;
+                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3;
                 if (_gasConsumed >= maxGas)
                 {
                     State = VMState.HALT;
@@ -106,7 +106,7 @@ namespace Neo.VM.Benchmark.OpCode
             while (State != VMState.HALT && State != VMState.FAULT)
             {
                 var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode];
+                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3;
                 if (_gasConsumed >= 20 * Benchmark_Opcode.OneGasDatoshi)
                 {
                     State = VMState.HALT;
