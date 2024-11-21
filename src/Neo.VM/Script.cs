@@ -71,7 +71,7 @@ namespace Neo.VM
         public Script(ReadOnlyMemory<byte> script, bool strictMode)
         {
             _value = script;
-            Length =_value.Length;
+            Length = _value.Length;
             if (strictMode)
             {
                 for (int ip = 0; ip < script.Length; ip += GetInstruction(ip).Size) { }
