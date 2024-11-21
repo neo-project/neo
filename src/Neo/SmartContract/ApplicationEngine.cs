@@ -34,6 +34,7 @@ namespace Neo.SmartContract
     public partial class ApplicationEngine : ExecutionEngine
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+        protected static readonly JumpTable NotEchidnaJumpTable = ComposeEchidnaJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -212,6 +213,13 @@ namespace Neo.SmartContract
             table[OpCode.CALLT] = OnCallT;
 
             return table;
+        }
+
+        public static JumpTable ComposeEchidnaJumpTable()
+        {
+            var jumpTable = ComposeDefaultJumpTable();
+            jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
+            return jumpTable;
         }
 
         protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
@@ -399,30 +407,15 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            var jumpTable = GetJumpTable(settings, persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot));
+            var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+
+            // Adjust jump table according persistingBlock
+
+            var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
 
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
-
-        /// <summary>
-        /// Adjust jump table according persistingBlock
-        /// </summary>
-        /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="index">Block index</param>
-        /// <returns></returns>
-        public static JumpTable GetJumpTable(ProtocolSettings settings, uint index)
-        {
-            if (settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
-            {
-                var jumpTable = ComposeDefaultJumpTable();
-                jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
-                return jumpTable;
-            }
-
-            return ApplicationEngine.DefaultJumpTable;
-        }
-
         /// <summary>
         /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
         /// <see cref="OpCode.SUBSTR"/>
