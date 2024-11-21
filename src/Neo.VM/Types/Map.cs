@@ -161,6 +161,27 @@ namespace Neo.VM.Types
         }
 
         /// <summary>
+        /// Removes the element with the specified key from the map.
+        /// </summary>
+        /// <param name="key">The key of the element to remove.</param>
+        /// <returns>
+        /// <see langword="true" /> if the element is successfully removed;
+        /// otherwise, <see langword="false"/>.
+        /// This method also returns <see langword="false"/> if <paramref name="key"/> was not found in the original map.
+        /// </returns>
+        public StackItem? RemoveKey(PrimitiveType key)
+        {
+            if (key.Size > MaxKeySize)
+                throw new ArgumentException($"Can not remove key from map, MaxKeySize of {nameof(Types.Map)} is exceeded: {key.Size}/{MaxKeySize}.");
+            if (IsReadOnly) throw new InvalidOperationException("The map is readonly, can not remove key.");
+            if (!dictionary.Remove(key, out StackItem? old_value))
+                return null;
+            ReferenceCounter?.RemoveReference(key, this);
+            ReferenceCounter?.RemoveReference(old_value, this);
+            return old_value;
+        }
+
+        /// <summary>
         /// Gets the value that is associated with the specified key.
         /// </summary>
         /// <param name="key">The key to locate.</param>

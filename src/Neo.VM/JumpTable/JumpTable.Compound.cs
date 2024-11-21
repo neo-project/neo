@@ -542,13 +542,12 @@ namespace Neo.VM
                         engine.ReferenceCounter.RemoveStackReference(item);
                     break;
                 case Map map:
-                    if (engine.ReferenceCounter.Version == RCVersion.V2)
+                    var old = map.RemoveKey(key);
+                    if (old != null && engine.ReferenceCounter.Version == RCVersion.V2)
                     {
                         engine.ReferenceCounter.RemoveStackReference(key);
-                        engine.ReferenceCounter.RemoveStackReference(map[key]);
+                        engine.ReferenceCounter.RemoveStackReference(old);
                     }
-
-                    map.Remove(key);
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
