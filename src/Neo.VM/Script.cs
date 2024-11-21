@@ -31,11 +31,7 @@ namespace Neo.VM
         /// <summary>
         /// The length of the script.
         /// </summary>
-        public int Length
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get;
-        }
+        public int Length { get; }
 
         /// <summary>
         /// Gets the <see cref="OpCode"/> at the specified index.
