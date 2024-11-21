@@ -123,7 +123,6 @@ namespace Neo.VM
         /// <summary>
         /// Execute the next instruction.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected internal void ExecuteNext()
         {
             if (InvocationStack.Count == 0)
