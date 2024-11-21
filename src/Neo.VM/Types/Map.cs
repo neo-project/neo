@@ -165,9 +165,8 @@ namespace Neo.VM.Types
         /// </summary>
         /// <param name="key">The key of the element to remove.</param>
         /// <returns>
-        /// <see langword="true" /> if the element is successfully removed;
-        /// otherwise, <see langword="false"/>.
-        /// This method also returns <see langword="false"/> if <paramref name="key"/> was not found in the original map.
+        /// <see cref="StackItem"/> if the element is successfully removed;
+        /// otherwise, <see langword="null"/>.
         /// </returns>
         public StackItem? RemoveKey(PrimitiveType key)
         {
