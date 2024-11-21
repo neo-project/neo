@@ -176,12 +176,12 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        /// <param name="referenceCounter">Reference Counter</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        /// <param name="referenceCounter">Reference Counter</param>
         protected unsafe ApplicationEngine(
             TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock,
-            ProtocolSettings settings, long gas, IDiagnostic diagnostic, IReferenceCounter? referenceCounter = null, JumpTable jumpTable = null)
-            : base(referenceCounter ?? new ReferenceCounterV2(), jumpTable ?? DefaultJumpTable)
+            ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null, IReferenceCounter? referenceCounter = null)
+            : base(jumpTable ?? DefaultJumpTable, referenceCounter ?? new ReferenceCounterV2())
         {
             Trigger = trigger;
             ScriptContainer = container;
@@ -409,7 +409,7 @@ namespace Neo.SmartContract
                 new ReferenceCounterV2() : new ReferenceCounter();
 
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
-                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, referenceCounter, jumpTable);
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable, referenceCounter);
         }
 
         public override void LoadContext(ExecutionContext context)

@@ -136,7 +136,7 @@ namespace Neo.Test
             sb.Emit(OpCode.DROP); //{}|{B[]}:1
             sb.Emit(OpCode.RET); //{}:0
 
-            using ExecutionEngine engine = new(new ReferenceCounterV2());
+            using ExecutionEngine engine = new();
             Debugger debugger = new(engine);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
@@ -234,7 +234,7 @@ namespace Neo.Test
         {
             using ScriptBuilder sb = new();
             sb.Emit(OpCode.RET);
-            using ExecutionEngine engine = new(new ReferenceCounterV2());
+            using ExecutionEngine engine = new();
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(0, engine.ReferenceCounter.Count);
             Array array = new(new StackItem[] { 1, 2, 3, 4 });
@@ -258,7 +258,7 @@ namespace Neo.Test
 
             arr.Add(arr2);
 
-            var engine = new ExecutionEngine(new ReferenceCounterV2());
+            var engine = new ExecutionEngine();
             engine.LoadScript(new Script((byte[])[(byte)OpCode.NOP]));
 
             engine.CurrentContext.EvaluationStack.Push(arr);

@@ -83,13 +83,11 @@ namespace Neo.VM
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
-        /// <param name="referenceCounter">The reference counter to be used.
-        /// referenceCounter is shared cross ExecutionContexts.</param>
         /// <param name="jumpTable">The jump table to be used.</param>
-        public ExecutionEngine(IReferenceCounter? referenceCounter = null, JumpTable? jumpTable = null)
+        /// <param name="referenceCounter">The reference counter to be used.</param>
+        public ExecutionEngine(JumpTable? jumpTable = null, IReferenceCounter? referenceCounter = null)
             : this(jumpTable, referenceCounter, ExecutionEngineLimits.Default)
         {
-
         }
 
         /// <summary>
