@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Benchmarks_DeepCopy.cs file belongs to the neo project and is free
+// Benchmarks_DeepCopyRCV1.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,8 +14,13 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.VM.Benchmark
 {
-    public class Benchmarks_DeepCopy
+    public class Benchmarks_DeepCopyRCV1
     {
+        public virtual IReferenceCounter CreateReferenceCounter()
+        {
+            return new ReferenceCounter();
+        }
+
         public IEnumerable<(int Depth, int ElementsPerLevel)> ParamSource()
         {
             int[] depths = [2, 4];
@@ -39,7 +44,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedArrayDeepCopy()
         {
-            var root = new Array(new ReferenceCounterV2());
+            var root = new Array(CreateReferenceCounter());
             CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel);
             _ = root.DeepCopy();
         }
@@ -47,7 +52,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedArrayDeepCopyWithReferenceCounter()
         {
-            var referenceCounter = new ReferenceCounterV2();
+            var referenceCounter = CreateReferenceCounter();
             var root = new Array(referenceCounter);
             CreateNestedArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
             _ = root.DeepCopy();
@@ -56,7 +61,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedTestArrayDeepCopy()
         {
-            var root = new TestArray(new ReferenceCounterV2());
+            var root = new TestArray(CreateReferenceCounter());
             CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel);
             _ = root.DeepCopy();
         }
@@ -64,7 +69,7 @@ namespace Neo.VM.Benchmark
         [Benchmark]
         public void BenchNestedTestArrayDeepCopyWithReferenceCounter()
         {
-            var referenceCounter = new ReferenceCounterV2();
+            var referenceCounter = CreateReferenceCounter();
             var root = new TestArray(referenceCounter);
             CreateNestedTestArray(root, Params.Depth, Params.ElementsPerLevel, referenceCounter);
             _ = root.DeepCopy();

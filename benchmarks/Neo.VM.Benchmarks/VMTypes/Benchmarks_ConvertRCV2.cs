@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Benchmarks_Convert.cs file belongs to the neo project and is free
+// Benchmarks_ConvertRCV2.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,102 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using BenchmarkDotNet.Attributes;
-using Neo.VM.Types;
-using Array = Neo.VM.Types.Array;
-using Buffer = Neo.VM.Types.Buffer;
-
 namespace Neo.VM.Benchmark
 {
-    public class Benchmarks_Convert
+    public class Benchmarks_ConvertRCV2 : Benchmarks_ConvertRCV1
     {
-        private Dictionary<StackItemType, List<StackItem>>? testItemsByType;
-
-        [GlobalSetup]
-        public void Setup()
+        public override IReferenceCounter CreateReferenceCounter()
         {
-            testItemsByType = CreateTestItemsByType();
-        }
-
-        [Benchmark]
-        [ArgumentsSource(nameof(GetTypeConversionPairs))]
-        public void BenchConvertTo(StackItemType fromType, StackItemType toType)
-        {
-            if (testItemsByType is null)
-                throw new InvalidOperationException($"{nameof(testItemsByType)} not initialized");
-
-            foreach (var item in testItemsByType[fromType])
-            {
-                try
-                {
-                    _ = item.ConvertTo(toType);
-                }
-                catch (Exception)
-                {
-                    // Ignore invalid casts as they're expected for some conversions
-                }
-            }
-        }
-
-        public IEnumerable<object[]> GetTypeConversionPairs()
-        {
-            var types = (StackItemType[])Enum.GetValues(typeof(StackItemType));
-            foreach (var fromType in types)
-            {
-                foreach (var toType in types)
-                {
-                    yield return new object[] { fromType, toType };
-                }
-            }
-        }
-
-        private Dictionary<StackItemType, List<StackItem>> CreateTestItemsByType()
-        {
-            var referenceCounter = new ReferenceCounterV2();
-            var result = new Dictionary<StackItemType, List<StackItem>>();
-
-            foreach (StackItemType type in Enum.GetValues(typeof(StackItemType)))
-            {
-                result[type] = new List<StackItem>();
-            }
-
-            result[StackItemType.Boolean].Add(StackItem.True);
-            result[StackItemType.Boolean].Add(StackItem.False);
-
-            result[StackItemType.Integer].Add(new Integer(42));
-            result[StackItemType.Integer].Add(new Integer(-1));
-
-            result[StackItemType.ByteString].Add(new ByteString(new byte[] { 1, 2, 3 }));
-            result[StackItemType.ByteString].Add(new ByteString(new byte[] { 255, 0, 128 }));
-
-            // Create a 128-byte buffer
-            var longBuffer = new byte[128];
-            for (int i = 0; i < 128; i++) longBuffer[i] = (byte)(i % 256);
-            result[StackItemType.Buffer].Add(new Buffer(longBuffer));
-            result[StackItemType.Buffer].Add(new Buffer(new byte[128])); // Another 128-byte buffer, all zeros
-
-            // Create an array with 10 items
-            var longArray = new Array(referenceCounter);
-            for (int i = 0; i < 10; i++) longArray.Add(new Integer(i));
-            result[StackItemType.Array].Add(longArray);
-            result[StackItemType.Array].Add(new Array(referenceCounter) { StackItem.True, new ByteString(new byte[] { 3, 4, 5 }) });
-
-            // Create a struct with 10 items
-            var longStruct = new Struct(referenceCounter);
-            for (int i = 0; i < 10; i++) longStruct.Add(new Integer(i * 10));
-            result[StackItemType.Struct].Add(longStruct);
-            result[StackItemType.Struct].Add(new Struct(referenceCounter) { StackItem.False, new Buffer(new byte[] { 6, 7, 8 }) });
-
-            // Create a map with 10 items
-            var longMap = new Map(referenceCounter);
-            for (int i = 0; i < 10; i++) longMap[new Integer(i)] = new ByteString(new byte[] { (byte)(i * 20) });
-            result[StackItemType.Map].Add(longMap);
-            result[StackItemType.Map].Add(new Map(referenceCounter) { [new ByteString(new byte[] { 9 })] = StackItem.True });
-
-            result[StackItemType.InteropInterface].Add(new InteropInterface(new object()));
-            result[StackItemType.InteropInterface].Add(new InteropInterface("test string"));
-
-            return result;
+            return new ReferenceCounterV2();
         }
     }
 }
