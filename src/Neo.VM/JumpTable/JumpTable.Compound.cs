@@ -452,7 +452,7 @@ namespace Neo.VM
                             engine.ReferenceCounter.RemoveStackReference(array[index]);
                         array[index] = value;
                         if (isRC2)
-                            engine.ReferenceCounter.AddStackReference(array[index]);
+                            engine.ReferenceCounter.AddStackReference(value);
                         break;
                     }
                 case Map map:
