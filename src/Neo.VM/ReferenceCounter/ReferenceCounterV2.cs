@@ -9,14 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM.StronglyConnectedComponents;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using Array = Neo.VM.Types.Array;
-using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM
 {
@@ -25,7 +20,7 @@ namespace Neo.VM
     /// </summary>
     public sealed class ReferenceCounterV2 : IReferenceCounter
     {
-        public RCVersion Version { get; init; } = RCVersion.V2;
+        public RCVersion Version { get; } = RCVersion.V2;
 
         private readonly ExecutionEngineLimits _limits = ExecutionEngineLimits.Default;
 
@@ -35,7 +30,7 @@ namespace Neo.VM
         /// <inheritdoc/>
         public int Count => _referencesCount;
 
-        public ReferenceCounterV2(ExecutionEngineLimits limits = null)
+        public ReferenceCounterV2(ExecutionEngineLimits? limits = null)
         {
             _limits = limits ?? ExecutionEngineLimits.Default;
         }

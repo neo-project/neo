@@ -38,7 +38,7 @@ namespace Neo.VM
         // Keeps the total count of references.
         private int _referencesCount = 0;
 
-        public RCVersion Version { get; init; } = RCVersion.V1;
+        public RCVersion Version { get; } = RCVersion.V1;
 
         /// <inheritdoc/>
         public int Count => _referencesCount;
