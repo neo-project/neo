@@ -32,12 +32,14 @@ namespace Neo.VM.Types
         /// <param name="referenceCounter">The reference counter to be used.</param>
         protected CompoundType(IReferenceCounter? referenceCounter = null)
         {
-            if (referenceCounter is { Version: RCVersion.V2 })
-                ReferenceCounter = null;
-            else
+            if (referenceCounter?.Version == RCVersion.V1)
             {
                 ReferenceCounter = referenceCounter;
-                referenceCounter?.AddZeroReferred(this);
+                referenceCounter.AddZeroReferred(this);
+            }
+            else
+            {
+                ReferenceCounter = null;
             }
         }
 
