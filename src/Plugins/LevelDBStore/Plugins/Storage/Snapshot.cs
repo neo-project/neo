@@ -9,10 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
 using System.Collections.Generic;
-using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
+using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
 {
@@ -48,7 +48,7 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return _db.Seek(_options, prefix, direction, (k, v) => (k, v));
+            return _db.Seek(_options, prefix, direction);
         }
 
         public void Put(byte[] key, byte[] value)

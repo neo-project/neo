@@ -9,13 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Neo.Plugins.Storage
 {
-    internal class Store : IStore
+    internal class Store : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private readonly DB _db;
 
@@ -53,6 +54,12 @@ namespace Neo.Plugins.Storage
         }
 
         public IEnumerable<(byte[], byte[])> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
-            _db.Seek(ReadOptions.Default, prefix, direction, (k, v) => (k, v));
+            _db.Seek(ReadOptions.Default, prefix, direction);
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator() =>
+            _db.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// WriteBatch holds a collection of updates to apply atomically to a DB.

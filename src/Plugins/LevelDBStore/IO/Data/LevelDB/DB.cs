@@ -10,15 +10,17 @@
 // modifications are permitted.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// A DB is a persistent ordered map from keys to values.
     /// A DB is safe for concurrent access from multiple threads without any external synchronization.
     /// </summary>
-    public class DB : LevelDBHandle
+    public class DB : LevelDBHandle, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private DB(IntPtr handle) : base(handle) { }
 
@@ -121,6 +123,23 @@ namespace Neo.IO.Data.LevelDB
         {
             Native.leveldb_write(Handle, options.Handle, write_batch.Handle, out var error);
             NativeHelper.CheckError(error);
+        }
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        {
+            using var sn = GetSnapshot();
+            using var iterator = NewIterator(new ReadOptions { Snapshot = sn });
+            iterator.SeekToFirst();
+            while (iterator.Valid())
+            {
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
+                iterator.Next();
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

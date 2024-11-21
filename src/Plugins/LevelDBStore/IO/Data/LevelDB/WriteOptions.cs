@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// Options that control write operations.
