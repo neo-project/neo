@@ -416,6 +416,7 @@ namespace Neo.SmartContract
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
+
         /// <summary>
         /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
         /// <see cref="OpCode.SUBSTR"/>
