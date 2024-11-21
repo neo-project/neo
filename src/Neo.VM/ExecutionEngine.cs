@@ -34,7 +34,7 @@ namespace Neo.VM
         /// <summary>
         /// Used for reference counting of objects in the VM.
         /// </summary>
-        public IReferenceCounter ReferenceCounter { get; set; }
+        public IReferenceCounter ReferenceCounter { get; }
 
         /// <summary>
         /// The invocation stack of the VM.
@@ -86,19 +86,8 @@ namespace Neo.VM
         /// <param name="referenceCounter">The reference counter to be used.
         /// referenceCounter is shared cross ExecutionContexts.</param>
         /// <param name="jumpTable">The jump table to be used.</param>
-        public ExecutionEngine(IReferenceCounter referenceCounter, JumpTable? jumpTable = null)
+        public ExecutionEngine(IReferenceCounter? referenceCounter = null, JumpTable? jumpTable = null)
             : this(jumpTable, referenceCounter, ExecutionEngineLimits.Default)
-        {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
-        /// </summary>
-        /// <param name="jumpTable">The jump table to be used.</param>
-        [Obsolete("Use ExecutionEngine(IReferenceCounter) to specify the reference counter.")]
-        public ExecutionEngine(JumpTable? jumpTable = null)
-            : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
         {
 
         }
@@ -109,12 +98,12 @@ namespace Neo.VM
         /// <param name="jumpTable">The jump table to be used.</param>
         /// <param name="referenceCounter">The reference counter to be used.</param>
         /// <param name="limits">Restrictions on the VM.</param>
-        protected ExecutionEngine(JumpTable? jumpTable, IReferenceCounter referenceCounter, ExecutionEngineLimits limits)
+        protected ExecutionEngine(JumpTable? jumpTable, IReferenceCounter? referenceCounter, ExecutionEngineLimits limits)
         {
             JumpTable = jumpTable ?? JumpTable.Default;
             Limits = limits;
-            ReferenceCounter = referenceCounter;
-            ResultStack = new EvaluationStack(referenceCounter);
+            ReferenceCounter = referenceCounter ?? new ReferenceCounterV2();
+            ResultStack = new EvaluationStack(ReferenceCounter);
         }
 
         public virtual void Dispose()
@@ -312,8 +301,8 @@ namespace Neo.VM
             }
             else
             {
-                if (ReferenceCounter.Count <= Limits.MaxStackSize) return;
-                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
+                if (ReferenceCounter.Count > Limits.MaxStackSize)
+                    throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
             }
         }
 
