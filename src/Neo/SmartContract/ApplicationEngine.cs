@@ -433,6 +433,7 @@ namespace Neo.SmartContract
             if (index < 0)
                 throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
             var x = engine.Pop().GetSpan();
+            // Note: here it's the main change
             if (index + count > x.Length)
                 throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
 
