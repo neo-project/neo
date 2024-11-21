@@ -36,16 +36,9 @@ namespace Neo.VM
         }
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool NeedTrack(StackItem item)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc/>
         public void AddReference(StackItem item, CompoundType parent)
         {
-            throw new NotImplementedException();
+            // This call should not be made
         }
 
         /// <inheritdoc/>
@@ -74,7 +67,7 @@ namespace Neo.VM
         /// <inheritdoc/>
         public void AddZeroReferred(StackItem item)
         {
-            throw new NotImplementedException();
+            // This call should not be made
         }
 
         /// <inheritdoc/>
@@ -86,7 +79,7 @@ namespace Neo.VM
         /// <inheritdoc/>
         public void RemoveReference(StackItem item, CompoundType parent)
         {
-            throw new NotImplementedException();
+            // This call should not be made
         }
 
         /// <inheritdoc/>
