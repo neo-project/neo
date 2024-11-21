@@ -60,6 +60,6 @@ namespace Neo.Plugins.Storage
             _db.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() =>
-            GetEnumerator();
+            _db.GetEnumerator();
     }
 }
