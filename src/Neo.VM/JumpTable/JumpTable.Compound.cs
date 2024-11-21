@@ -440,6 +440,7 @@ namespace Neo.VM
             if (value is Struct s) value = s.Clone(engine.Limits);
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
+            var isRC2 = engine.ReferenceCounter.Version == RCVersion.V2;
             switch (x)
             {
                 case VMArray array:
@@ -447,16 +448,16 @@ namespace Neo.VM
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
                             throw new CatchableException($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).");
-                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                        if (isRC2)
                             engine.ReferenceCounter.RemoveStackReference(array[index]);
                         array[index] = value;
-                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                        if (isRC2)
                             engine.ReferenceCounter.AddStackReference(array[index]);
                         break;
                     }
                 case Map map:
                     {
-                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                        if (isRC2)
                         {
                             if (!map.TryGetValue(key, out var value1))
                             {
@@ -469,7 +470,7 @@ namespace Neo.VM
                         }
 
                         map[key] = value;
-                        if (engine.ReferenceCounter.Version == RCVersion.V2)
+                        if (isRC2)
                             engine.ReferenceCounter.AddStackReference(value);
                         break;
                     }
