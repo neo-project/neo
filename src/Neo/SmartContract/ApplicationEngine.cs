@@ -399,11 +399,53 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            // Adjust jump table according persistingBlock
-            var jumpTable = ApplicationEngine.DefaultJumpTable;
+            var jumpTable = GetJumpTable(settings, persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot));
 
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+        }
+
+        /// <summary>
+        /// Adjust jump table according persistingBlock
+        /// </summary>
+        /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
+        /// <param name="index">Block index</param>
+        /// <returns></returns>
+        public static JumpTable GetJumpTable(ProtocolSettings settings, uint index)
+        {
+            if (settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+            {
+                var jumpTable = ComposeDefaultJumpTable();
+                jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
+                return jumpTable;
+            }
+
+            return ApplicationEngine.DefaultJumpTable;
+        }
+
+        /// <summary>
+        /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
+        /// <see cref="OpCode.SUBSTR"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 3, Push 1</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
+        {
+            var count = (int)engine.Pop().GetInteger();
+            if (count < 0)
+                throw new InvalidOperationException($"The count can not be negative for {nameof(OpCode.SUBSTR)}, count: {count}.");
+            var index = (int)engine.Pop().GetInteger();
+            if (index < 0)
+                throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
+            var x = engine.Pop().GetSpan();
+            if (index + count > x.Length)
+                throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
+
+            VM.Types.Buffer result = new(count, false);
+            x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
+            engine.Push(result);
         }
 
         public override void LoadContext(ExecutionContext context)
