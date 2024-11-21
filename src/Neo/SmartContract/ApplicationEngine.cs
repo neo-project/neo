@@ -713,7 +713,10 @@ namespace Neo.SmartContract
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
             // Return true if PersistingBlock is null and Hardfork is enabled
-            return PersistingBlock is null ? ProtocolSettings.Hardforks.ContainsKey(hardfork) : ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+
+            return PersistingBlock is null ?
+                ProtocolSettings.Hardforks.ContainsKey(hardfork) :
+                ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
         }
     }
 }
