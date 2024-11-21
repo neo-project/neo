@@ -34,7 +34,7 @@ namespace Neo.SmartContract
     public partial class ApplicationEngine : ExecutionEngine
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
-        protected static readonly JumpTable NotEchidnaJumpTable = ComposeEchidnaJumpTable();
+        protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -215,7 +215,7 @@ namespace Neo.SmartContract
             return table;
         }
 
-        public static JumpTable ComposeEchidnaJumpTable()
+        public static JumpTable ComposeNotEchidnaJumpTable()
         {
             var jumpTable = ComposeDefaultJumpTable();
             jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
