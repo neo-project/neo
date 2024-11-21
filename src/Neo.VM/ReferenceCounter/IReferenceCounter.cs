@@ -84,10 +84,8 @@ namespace Neo.VM
         void RemoveStackReference(StackItem item);
 
         /// <summary>
-        /// Checks and processes items that have zero references.
-        /// This method is used to check items in the zero-referred list and clean up those that are no longer needed.
+        /// Called after an instruction is executed.
         /// </summary>
-        /// <returns>The current reference count.</returns>
-        int CheckZeroReferred();
+        void CheckPostExecution();
     }
 }

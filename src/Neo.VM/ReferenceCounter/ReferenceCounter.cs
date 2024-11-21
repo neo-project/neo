@@ -22,6 +22,8 @@ namespace Neo.VM
     /// </summary>
     public sealed class ReferenceCounter : IReferenceCounter
     {
+        private readonly ExecutionEngineLimits _limits;
+
         // If set to true, all items will be tracked regardless of their type.
         private const bool TrackAllItems = false;
 
@@ -42,6 +44,11 @@ namespace Neo.VM
 
         /// <inheritdoc/>
         public int Count => _referencesCount;
+
+        public ReferenceCounter(ExecutionEngineLimits? limits = null)
+        {
+            _limits = limits ?? ExecutionEngineLimits.Default;
+        }
 
         /// <summary>
         /// Determines if an item needs to be tracked based on its type.
@@ -123,6 +130,14 @@ namespace Neo.VM
             _trackedItems.Add(item);
         }
 
+        /// <inheritdoc/>
+        public void CheckPostExecution()
+        {
+            if (Count < _limits.MaxStackSize) return;
+            if (CheckZeroReferred() > _limits.MaxStackSize)
+                throw new System.InvalidOperationException($"MaxStackSize exceed: {Count}/{_limits.MaxStackSize}");
+        }
+
         /// <summary>
         /// Checks and processes items that have zero references.
         ///
@@ -132,7 +147,7 @@ namespace Neo.VM
         /// Use this method periodically to clean up items with zero references and free up memory.
         /// </summary>
         /// <returns>The current reference count.</returns>
-        public int CheckZeroReferred()
+        private int CheckZeroReferred()
         {
             // If there are items with zero references, process them.
             if (_zeroReferred.Count > 0)

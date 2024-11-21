@@ -291,17 +291,7 @@ namespace Neo.VM
         /// </summary>
         protected virtual void PostExecuteInstruction(Instruction instruction)
         {
-            if (ReferenceCounter.Version == RCVersion.V1)
-            {
-                if (ReferenceCounter.Count < Limits.MaxStackSize) return;
-                if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                    throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
-            }
-            else
-            {
-                if (ReferenceCounter.Count > Limits.MaxStackSize)
-                    throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
-            }
+            ReferenceCounter.CheckPostExecution();
         }
 
         /// <summary>

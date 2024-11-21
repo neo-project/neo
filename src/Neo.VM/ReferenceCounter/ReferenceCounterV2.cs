@@ -11,7 +11,6 @@
 
 using Neo.VM.Types;
 using System;
-using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
@@ -22,7 +21,7 @@ namespace Neo.VM
     {
         public RCVersion Version { get; } = RCVersion.V2;
 
-        private readonly ExecutionEngineLimits _limits = ExecutionEngineLimits.Default;
+        private readonly ExecutionEngineLimits _limits;
 
         // Keeps the total count of references.
         private int _referencesCount = 0;
@@ -71,9 +70,10 @@ namespace Neo.VM
         }
 
         /// <inheritdoc/>
-        public int CheckZeroReferred()
+        public void CheckPostExecution()
         {
-            throw new NotImplementedException();
+            if (Count > _limits.MaxStackSize)
+                throw new InvalidOperationException($"MaxStackSize exceed: {Count}/{_limits.MaxStackSize}");
         }
 
         /// <inheritdoc/>
