@@ -14,6 +14,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Types
 {
@@ -36,6 +37,7 @@ namespace Neo.VM.Types
         /// <returns>The element that has the specified key in the map.</returns>
         public StackItem this[PrimitiveType key]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (key.Size > MaxKeySize)
