@@ -10,17 +10,35 @@
 // modifications are permitted.
 
 using FluentAssertions;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.UnitTests.Extensions;
+using Neo.VM;
+using Neo.Wallets;
+using System;
+using System;
 using System;
 using System.Linq;
+using System.Linq;
+using System.Numerics;
+using System.Numerics;
 using System.Numerics;
 using System.Threading.Tasks;
+using VMTypes = Neo.VM.Types;
+// using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -150,6 +168,62 @@ namespace Neo.UnitTests.SmartContract.Native
                 Id = NativeContract.GAS.Id,
                 Key = buffer
             };
+        }
+
+        [TestMethod]
+        public void Check_OnPersist_NotaryAssisted()
+        {
+            // Hardcode test values.
+            const uint defaultNotaryssestedFeePerKey = 1000_0000;
+            const byte NKeys1 = 4;
+            const byte NKeys2 = 6;
+
+            // Generate two transactions with NotaryAssisted attributes with hardcoded NKeys values.
+            var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var tx1 = TestUtils.GetTransaction(from);
+            tx1.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = NKeys1 } };
+            var netFee1 = 1_0000_0000;
+            tx1.NetworkFee = netFee1;
+            var tx2 = TestUtils.GetTransaction(from);
+            tx2.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = NKeys2 } };
+            var netFee2 = 2_0000_0000;
+            tx2.NetworkFee = netFee2;
+
+            // Calculate expected Notary nodes reward.
+            var expectedNotaryReward = (NKeys1 + 1) * defaultNotaryssestedFeePerKey + (NKeys2 + 1) * defaultNotaryssestedFeePerKey;
+
+            // Build block to check transaction fee distribution during Gas OnPersist.
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = (uint)TestProtocolSettings.Default.CommitteeMembersCount,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                },
+                Transactions = new Transaction[] { tx1, tx2 }
+            };
+            var snapshot = _snapshot.CreateSnapshot();
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+
+            // Check that block's Primary balance is 0.
+            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
+            NativeContract.GAS.BalanceOf(engine.Snapshot, primary).Should().Be(0);
+
+            // Execute OnPersist script.
+            engine.LoadScript(script.ToArray());
+            Assert.IsTrue(engine.Execute() == VMState.HALT);
+
+            // Check that proper amount of GAS was minted to block's Primary and the rest
+            // will be minted to Notary nodes as a reward once Notary contract is implemented.
+            Assert.AreEqual(2 + 1, engine.Notifications.Count()); // burn tx1 and tx2 network fee + mint primary reward
+            Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, engine.Notifications[2].State[2]);
+            NativeContract.GAS.BalanceOf(engine.Snapshot, primary).Should().Be(netFee1 + netFee2 - expectedNotaryReward);
         }
     }
 }
