@@ -76,6 +76,9 @@ namespace Neo.SmartContract.Native
 
         internal bool Initialized(DataCache snapshot)
         {
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
             return snapshot.Find(CreateStorageKey(Prefix_Block).ToArray()).Any();
         }
 
@@ -94,6 +97,9 @@ namespace Neo.SmartContract.Native
         /// <returns>The hash of the block.</returns>
         public UInt256 GetBlockHash(DataCache snapshot, uint index)
         {
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
             if (item is null) return null;
             return new UInt256(item.Value.Span);
@@ -107,7 +113,10 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt256 CurrentHash(DataCache snapshot)
         {
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
+            return snapshot[CreateStorageKey(Prefix_CurrentBlock)]?.GetInteroperable<HashIndexState>()?.Hash;
         }
 
         /// <summary>
@@ -118,7 +127,10 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint CurrentIndex(DataCache snapshot)
         {
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
+            return snapshot[CreateStorageKey(Prefix_CurrentBlock)]?.GetInteroperable<HashIndexState>()?.Index ?? 0;
         }
 
         /// <summary>
@@ -129,6 +141,9 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the blockchain contains the block; otherwise, <see langword="false"/>.</returns>
         public bool ContainsBlock(DataCache snapshot, UInt256 hash)
         {
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
             return snapshot.Contains(CreateStorageKey(Prefix_Block).Add(hash));
         }
 
@@ -155,6 +170,12 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the blockchain contains the hash of the conflicting transaction; otherwise, <see langword="false"/>.</returns>
         public bool ContainsConflictHash(DataCache snapshot, UInt256 hash, IEnumerable<UInt160> signers, uint maxTraceableBlocks)
         {
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
+            if (signers is null)
+                throw new ArgumentNullException(nameof(signers));
+
             // Check the dummy stub firstly to define whether there's exist at least one conflict record.
             var stub = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
             if (stub is null || stub.Transaction is not null || !IsTraceableBlock(snapshot, stub.BlockIndex, maxTraceableBlocks))
@@ -179,6 +200,9 @@ namespace Neo.SmartContract.Native
         /// <returns>The trimmed block.</returns>
         public TrimmedBlock GetTrimmedBlock(DataCache snapshot, UInt256 hash)
         {
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_Block).Add(hash));
             if (item is null) return null;
             return item.Value.AsSerializable<TrimmedBlock>();
@@ -262,6 +286,9 @@ namespace Neo.SmartContract.Native
         /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
         public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
         {
+            if (snapshot is null)
+                throw new ArgumentNullException(nameof(snapshot));
+
             var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
             if (state?.Transaction is null) return null;
             return state;
