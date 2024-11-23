@@ -347,9 +347,9 @@ namespace Neo.SmartContract.Native
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
-        private protected KeyBuilder CreateStorageKey(byte prefix)
+        private protected KeyBuilder CreateStorageKey(byte prefix, int capacityHint = 0)
         {
-            return new KeyBuilder(Id, prefix);
+            return new KeyBuilder(Id, prefix, capacityHint);
         }
 
         /// <summary>

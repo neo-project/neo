@@ -10,11 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.AspNetCore.Authorization;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Plugins.ApplicationLogs.Store;
 using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.Plugins.ApplicationsLogs.Tests.Setup;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,6 +59,14 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 Assert.NotNull(actualState.NotifyLogIds);
                 Assert.Single(actualState.NotifyLogIds);
                 Assert.Equal(expectedGuid, actualState.NotifyLogIds[0]);
+
+                var foundStates = lss.FindBlockState(expectedHash);
+                Assert.NotNull(foundStates);
+
+                var states = foundStates.ToArray();
+                Assert.Equal(1, states.Length);
+                Assert.Equal(expectedAppTrigger, states[0].Trigger);
+                Assert.Equal(expectedGuid, states[0].State.NotifyLogIds[0]);
             }
         }
 
@@ -150,6 +160,59 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 Assert.NotNull(actualState.StackItemIds);
                 Assert.Single(actualState.StackItemIds);
                 Assert.Equal(expectedItemGuid, actualState.StackItemIds[0]);
+            }
+        }
+
+        [Fact]
+        public void Test_Put_Get_PutExecutionState_Storage()
+        {
+            var expectedGuid = Guid.Empty;
+            using (var snapshot = TestStorage.Store.GetSnapshot())
+            {
+                using (var lss = new LogStorageStore(snapshot))
+                {
+                    expectedGuid = lss.PutExecutionState(new ExecutionLogState());
+                    snapshot.Commit();
+                }
+            }
+
+            using (var lss = new LogStorageStore(TestStorage.Store.GetSnapshot()))
+            {
+                var found = lss.TryGetExecutionState(expectedGuid, out var state);
+                Assert.True(found);
+                Assert.NotNull(state);
+                Assert.Equal(VMState.NONE, state.VmState);
+                Assert.Equal(0, state.GasConsumed);
+                Assert.NotNull(state.StackItemIds);
+                Assert.Empty(state.StackItemIds);
+            }
+        }
+
+        [Fact]
+        public void Test_Put_Get_PutContractState_Storage()
+        {
+            var expectedGuid = Guid.Empty;
+            var scriptHash = UInt160.Parse("0x0000000000000000000000000000000000000011");
+            using (var snapshot = TestStorage.Store.GetSnapshot())
+            {
+                using (var lss = new LogStorageStore(snapshot))
+                {
+                    lss.PutContractState(scriptHash, 123, 1, new ContractLogState());
+                    snapshot.Commit();
+                }
+            }
+
+            using (var lss = new LogStorageStore(TestStorage.Store.GetSnapshot()))
+            {
+                var found = lss.TryGetContractState(scriptHash, 123, 1, out var state);
+                Assert.True(found);
+                Assert.NotNull(state);
+                Assert.Equal(state.TransactionHash, UInt256.Zero);
+                Assert.Equal(state.Trigger, TriggerType.All);
+
+                var states = lss.FindContractState(scriptHash, 0, 100);
+                Assert.NotNull(states);
+                Assert.Equal(state, Assert.Single(states));
             }
         }
     }

@@ -21,15 +21,22 @@ namespace Neo.SmartContract
     /// </summary>
     public class KeyBuilder
     {
-        private readonly MemoryStream stream = new();
+        private readonly MemoryStream stream;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyBuilder"/> class.
         /// </summary>
         /// <param name="id">The id of the contract.</param>
         /// <param name="prefix">The prefix of the key.</param>
-        public KeyBuilder(int id, byte prefix)
+        /// <param name="capacityHint">
+        /// The initial capacity of the stream.
+        /// It is better to set this to the expected size of the key(not including the id and prefix).
+        /// </param>
+        public KeyBuilder(int id, byte prefix, int capacityHint = 0)
         {
+            var prefixSize = sizeof(int) + sizeof(byte);
+            stream = capacityHint > 0 ? new MemoryStream(prefixSize + capacityHint) : new MemoryStream(prefixSize);
+
             var data = new byte[sizeof(int)];
             BinaryPrimitives.WriteInt32LittleEndian(data, id);
 

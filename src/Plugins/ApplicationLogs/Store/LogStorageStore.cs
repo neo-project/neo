@@ -70,8 +70,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
         public Guid PutEngineState(EngineLogState state)
         {
             var id = Guid.NewGuid();
-            var key = new KeyBuilder(Prefix_Id, Prefix_Engine)
-                .Add(id.ToByteArray())
+            var data = id.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_Engine, data.Length)
+                .Add(data)
                 .ToArray();
             _snapshot.Put(key, state.ToArray());
             return id;
@@ -79,7 +80,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void PutTransactionEngineState(UInt256 hash, TransactionEngineLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Engine_Transaction)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Engine_Transaction, hash.Size)
                 .Add(hash)
                 .ToArray();
             _snapshot.Put(key, state.ToArray());
@@ -87,7 +88,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void PutBlockState(UInt256 hash, TriggerType trigger, BlockLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Block)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Block, hash.Size + sizeof(byte))
                 .Add(hash)
                 .Add((byte)trigger)
                 .ToArray();
@@ -97,8 +98,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
         public Guid PutNotifyState(NotifyLogState state)
         {
             var id = Guid.NewGuid();
-            var key = new KeyBuilder(Prefix_Id, Prefix_Notify)
-                .Add(id.ToByteArray())
+            var data = id.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_Notify, data.Length)
+                .Add(data)
                 .ToArray();
             _snapshot.Put(key, state.ToArray());
             return id;
@@ -106,7 +108,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void PutContractState(UInt160 scriptHash, ulong timestamp, uint iterIndex, ContractLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size + sizeof(ulong) + sizeof(uint))
                 .Add(scriptHash)
                 .AddBigEndian(timestamp)
                 .AddBigEndian(iterIndex)
@@ -117,8 +119,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
         public Guid PutExecutionState(ExecutionLogState state)
         {
             var id = Guid.NewGuid();
-            var key = new KeyBuilder(Prefix_Id, Prefix_Execution)
-                .Add(id.ToByteArray())
+            var data = id.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_Execution, data.Length)
+                .Add(data)
                 .ToArray();
             _snapshot.Put(key, state.ToArray());
             return id;
@@ -126,7 +129,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void PutExecutionBlockState(UInt256 blockHash, TriggerType trigger, Guid executionStateId)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Block)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Block, blockHash.Size + sizeof(byte))
                 .Add(blockHash)
                 .Add((byte)trigger)
                 .ToArray();
@@ -135,7 +138,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void PutExecutionTransactionState(UInt256 txHash, Guid executionStateId)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Transaction)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Transaction, txHash.Size)
                 .Add(txHash)
                 .ToArray();
             _snapshot.Put(key, executionStateId.ToByteArray());
@@ -152,8 +155,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
         public Guid PutStackItemState(StackItem stackItem)
         {
             var id = Guid.NewGuid();
-            var key = new KeyBuilder(Prefix_Id, Prefix_StackItem)
-                .Add(id.ToByteArray())
+            var data = id.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_StackItem, data.Length)
+                .Add(data)
                 .ToArray();
             try
             {
@@ -172,7 +176,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public IEnumerable<(BlockLogState State, TriggerType Trigger)> FindBlockState(UInt256 hash)
         {
-            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Block)
+            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Block, hash.Size)
                 .Add(hash)
                 .ToArray();
             foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Forward))
@@ -186,10 +190,10 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public IEnumerable<ContractLogState> FindContractState(UInt160 scriptHash, uint page, uint pageSize)
         {
-            var prefix = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var prefix = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size)
                 .Add(scriptHash)
                 .ToArray();
-            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size + sizeof(ulong))
                 .Add(scriptHash)
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
@@ -209,10 +213,10 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public IEnumerable<ContractLogState> FindContractState(UInt160 scriptHash, TriggerType trigger, uint page, uint pageSize)
         {
-            var prefix = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var prefix = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size)
                 .Add(scriptHash)
                 .ToArray();
-            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size + sizeof(ulong))
                 .Add(scriptHash)
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
@@ -236,10 +240,10 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public IEnumerable<ContractLogState> FindContractState(UInt160 scriptHash, TriggerType trigger, string eventName, uint page, uint pageSize)
         {
-            var prefix = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var prefix = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size)
                 .Add(scriptHash)
                 .ToArray();
-            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size + sizeof(ulong))
                 .Add(scriptHash)
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
@@ -263,7 +267,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public IEnumerable<(Guid ExecutionStateId, TriggerType Trigger)> FindExecutionBlockState(UInt256 hash)
         {
-            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Execution_Block)
+            var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Execution_Block, hash.Size)
                 .Add(hash)
                 .ToArray();
             foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Forward))
@@ -281,8 +285,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetEngineState(Guid engineStateId, out EngineLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Engine)
-                .Add(engineStateId.ToByteArray())
+            var stateId = engineStateId.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_Engine, stateId.Length)
+                .Add(stateId)
                 .ToArray();
             var data = _snapshot.TryGet(key);
             state = data?.AsSerializable<EngineLogState>()!;
@@ -291,7 +296,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetTransactionEngineState(UInt256 hash, out TransactionEngineLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Engine_Transaction)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Engine_Transaction, hash.Size)
                 .Add(hash)
                 .ToArray();
             var data = _snapshot.TryGet(key);
@@ -301,7 +306,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetBlockState(UInt256 hash, TriggerType trigger, out BlockLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Block)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Block, hash.Size + sizeof(byte))
                 .Add(hash)
                 .Add((byte)trigger)
                 .ToArray();
@@ -312,8 +317,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetNotifyState(Guid notifyStateId, out NotifyLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Notify)
-                .Add(notifyStateId.ToByteArray())
+            var stateId = notifyStateId.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_Notify, stateId.Length)
+                .Add(stateId)
                 .ToArray();
             var data = _snapshot.TryGet(key);
             state = data?.AsSerializable<NotifyLogState>()!;
@@ -322,7 +328,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetContractState(UInt160 scriptHash, ulong timestamp, uint iterIndex, out ContractLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Contract)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Contract, scriptHash.Size + sizeof(ulong) + sizeof(uint))
                 .Add(scriptHash)
                 .AddBigEndian(timestamp)
                 .AddBigEndian(iterIndex)
@@ -334,8 +340,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetExecutionState(Guid executionStateId, out ExecutionLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Execution)
-                .Add(executionStateId.ToByteArray())
+            var stateId = executionStateId.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_Execution, stateId.Length)
+                .Add(stateId)
                 .ToArray();
             var data = _snapshot.TryGet(key);
             state = data?.AsSerializable<ExecutionLogState>()!;
@@ -344,7 +351,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetExecutionBlockState(UInt256 blockHash, TriggerType trigger, out Guid executionStateId)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Block)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Block, blockHash.Size + sizeof(byte))
                 .Add(blockHash)
                 .Add((byte)trigger)
                 .ToArray();
@@ -363,7 +370,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetExecutionTransactionState(UInt256 txHash, out Guid executionStateId)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Transaction)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Execution_Transaction, txHash.Size)
                 .Add(txHash)
                 .ToArray();
             var data = _snapshot.TryGet(key);
@@ -381,7 +388,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetTransactionState(UInt256 hash, out TransactionLogState state)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_Transaction)
+            var key = new KeyBuilder(Prefix_Id, Prefix_Transaction, hash.Size)
                 .Add(hash)
                 .ToArray();
             var data = _snapshot.TryGet(key);
@@ -391,8 +398,9 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public bool TryGetStackItemState(Guid stackItemId, out StackItem stackItem)
         {
-            var key = new KeyBuilder(Prefix_Id, Prefix_StackItem)
-                .Add(stackItemId.ToByteArray())
+            var itemId = stackItemId.ToByteArray();
+            var key = new KeyBuilder(Prefix_Id, Prefix_StackItem, itemId.Length)
+                .Add(itemId)
                 .ToArray();
             var data = _snapshot.TryGet(key);
             if (data == null)
