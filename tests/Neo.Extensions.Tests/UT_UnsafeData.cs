@@ -31,7 +31,7 @@ namespace Neo.Extensions.Tests
                 else if (i == 2)
                 {
                     int result = UnsafeData.GetVarSize(uint.MaxValue);
-                    int old = OldGetVarSize(ushort.MaxValue);
+                    int old = OldGetVarSize(int.MaxValue);
                     Assert.AreEqual(5, result);
                     Assert.AreEqual(5, old);
                 }
