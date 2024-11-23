@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)]?.GetInteroperable<HashIndexState>()?.Hash;
+            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)]?.GetInteroperable<HashIndexState>()?.Index ?? 0;
+            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
         }
 
         /// <summary>
