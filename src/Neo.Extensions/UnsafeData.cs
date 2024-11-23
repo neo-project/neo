@@ -18,7 +18,7 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="value">The length of the data.</param>
         /// <returns>The size of variable-length of the data.</returns>
-        public static int GetVarSize(long value)
+        public static byte GetVarSize(long value)
         {
             if (value < 0xFD)
                 return sizeof(byte);
