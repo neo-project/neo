@@ -12,22 +12,33 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestGetVarSizeInt()
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 if (i == 0)
                 {
                     int result = UnsafeData.GetVarSize(1);
+                    int old = OldGetVarSize(1);
                     Assert.AreEqual(1, result);
+                    Assert.AreEqual(1, old);
                 }
                 else if (i == 1)
                 {
-                    int result = UnsafeData.GetVarSize(0xFFFF);
+                    int result = UnsafeData.GetVarSize(ushort.MaxValue);
+                    int old = OldGetVarSize(ushort.MaxValue);
                     Assert.AreEqual(3, result);
+                    Assert.AreEqual(3, old);
+                }
+                else if (i == 2)
+                {
+                    int result = UnsafeData.GetVarSize(uint.MaxValue);
+                    int old = OldGetVarSize(ushort.MaxValue);
+                    Assert.AreEqual(5, result);
+                    Assert.AreEqual(5, old);
                 }
                 else
                 {
-                    int result = UnsafeData.GetVarSize(0xFFFFFF);
-                    Assert.AreEqual(5, result);
+                    int result = UnsafeData.GetVarSize(long.MaxValue);
+                    Assert.AreEqual(9, result);
                 }
             }
         }
@@ -158,6 +169,16 @@ namespace Neo.Extensions.Tests
         enum TestEnum6 : long
         {
             case1 = 1, case2 = 2
+        }
+
+        public static int OldGetVarSize(int value)
+        {
+            if (value < 0xFD)
+                return sizeof(byte);
+            else if (value <= ushort.MaxValue)
+                return sizeof(byte) + sizeof(ushort);
+            else
+                return sizeof(byte) + sizeof(uint);
         }
     }
 }
