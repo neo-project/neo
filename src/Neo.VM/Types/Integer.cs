@@ -62,6 +62,7 @@ namespace Neo.VM.Types
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
             return !value.IsZero;
@@ -72,6 +73,7 @@ namespace Neo.VM.Types
             return HashCode.Combine(value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override BigInteger GetInteger()
         {
             return value;

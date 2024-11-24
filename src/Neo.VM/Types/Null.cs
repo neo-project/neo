@@ -11,6 +11,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Types
 {
@@ -36,11 +37,13 @@ namespace Neo.VM.Types
             return other is Null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
         {
             return 0;
