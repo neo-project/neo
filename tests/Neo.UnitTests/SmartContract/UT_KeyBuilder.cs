@@ -42,5 +42,40 @@ namespace Neo.UnitTests.SmartContract
             key = key.AddBigEndian(1);
             Assert.AreEqual("010000000000000001", key.ToArray().ToHexString());
         }
+
+        [TestMethod]
+        public void TestAdd()
+        {
+            var key = new KeyBuilder(1, 2);
+            Assert.AreEqual("0100000002", key.ToArray().ToHexString());
+
+            // add int
+            key = new KeyBuilder(1, 2);
+            key = key.AddBigEndian(-1);
+            key = key.AddBigEndian(2);
+            key = key.AddBigEndian(3);
+            Assert.AreEqual("0100000002ffffffff0000000200000003", key.ToArray().ToHexString());
+
+            // add ulong
+            key = new KeyBuilder(1, 2);
+            key = key.AddBigEndian(1ul);
+            key = key.AddBigEndian(2ul);
+            key = key.AddBigEndian(ulong.MaxValue);
+            Assert.AreEqual("010000000200000000000000010000000000000002ffffffffffffffff", key.ToArray().ToHexString());
+
+            // add uint
+            key = new KeyBuilder(1, 2);
+            key = key.AddBigEndian(1u);
+            key = key.AddBigEndian(2u);
+            key = key.AddBigEndian(uint.MaxValue);
+            Assert.AreEqual("01000000020000000100000002ffffffff", key.ToArray().ToHexString());
+
+            // add byte
+            key = new KeyBuilder(1, 2);
+            key = key.Add((byte)1);
+            key = key.Add((byte)2);
+            key = key.Add((byte)3);
+            Assert.AreEqual("0100000002010203", key.ToArray().ToHexString());
+        }
     }
 }

@@ -13,6 +13,7 @@ using Neo.IO;
 using System;
 using System.Buffers.Binary;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
 {
@@ -21,18 +22,20 @@ namespace Neo.SmartContract
     /// </summary>
     public class KeyBuilder
     {
-        private readonly MemoryStream stream = new();
+        private readonly MemoryStream stream;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyBuilder"/> class.
         /// </summary>
         /// <param name="id">The id of the contract.</param>
         /// <param name="prefix">The prefix of the key.</param>
-        public KeyBuilder(int id, byte prefix)
+        /// <param name="keySizeHint">The hint of the storage key size.</param>
+        public KeyBuilder(int id, byte prefix, int keySizeHint = ApplicationEngine.MaxStorageKeySize)
         {
-            var data = new byte[sizeof(int)];
+            Span<byte> data = stackalloc byte[sizeof(int)];
             BinaryPrimitives.WriteInt32LittleEndian(data, id);
 
+            stream = new(keySizeHint);
             stream.Write(data);
             stream.WriteByte(prefix);
         }
@@ -42,6 +45,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(byte key)
         {
             stream.WriteByte(key);
@@ -53,6 +57,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(ReadOnlySpan<byte> key)
         {
             stream.Write(key);
@@ -79,9 +84,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder AddBigEndian(int key)
         {
-            var data = new byte[sizeof(int)];
+            Span<byte> data = stackalloc byte[sizeof(int)];
             BinaryPrimitives.WriteInt32BigEndian(data, key);
 
             return Add(data);
@@ -92,9 +98,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder AddBigEndian(uint key)
         {
-            var data = new byte[sizeof(uint)];
+            Span<byte> data = stackalloc byte[sizeof(uint)];
             BinaryPrimitives.WriteUInt32BigEndian(data, key);
 
             return Add(data);
@@ -105,9 +112,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder AddBigEndian(long key)
         {
-            var data = new byte[sizeof(long)];
+            Span<byte> data = stackalloc byte[sizeof(long)];
             BinaryPrimitives.WriteInt64BigEndian(data, key);
 
             return Add(data);
@@ -118,9 +126,10 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder AddBigEndian(ulong key)
         {
-            var data = new byte[sizeof(ulong)];
+            Span<byte> data = stackalloc byte[sizeof(ulong)];
             BinaryPrimitives.WriteUInt64BigEndian(data, key);
 
             return Add(data);
