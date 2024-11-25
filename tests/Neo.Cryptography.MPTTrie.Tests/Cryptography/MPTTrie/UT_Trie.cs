@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Neo.Extensions.HashSetExtensions;
 
 namespace Neo.Cryptography.MPTTrie.Tests
 {
@@ -51,6 +50,11 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var result = store.TryGetValue(StoreKey(key), out byte[] value);
             if (result) return value;
             return null;
+        }
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            return store.TryGetValue(StoreKey(key), out value);
         }
 
         public void Dispose() { throw new System.NotImplementedException(); }

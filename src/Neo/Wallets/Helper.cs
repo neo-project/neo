@@ -18,6 +18,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using static Neo.SmartContract.Helper;
 
@@ -118,44 +119,85 @@ namespace Neo.Wallets
 
                 if (witnessScript is null || witnessScript.Length == 0)
                 {
+                    // Contract-based verification
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null)
-                        throw new ArgumentException($"The smart contract or address {hash} is not found");
+                        throw new ArgumentException($"The smart contract or address {hash} ({hash.ToAddress(settings.AddressVersion)}) is not found. " +
+                            $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");
                     var md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
                     if (md is null)
                         throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
                     if (md.ReturnType != ContractParameterType.Boolean)
                         throw new ArgumentException("The verify method doesn't return boolean value.");
                     if (md.Parameters.Length > 0 && invocationScript is null)
-                        throw new ArgumentException("The verify method requires parameters that need to be passed via the witness' invocation script.");
+                    {
+                        var script = new ScriptBuilder();
+                        foreach (var par in md.Parameters)
+                        {
+                            switch (par.Type)
+                            {
+                                case ContractParameterType.Any:
+                                case ContractParameterType.Signature:
+                                case ContractParameterType.String:
+                                case ContractParameterType.ByteArray:
+                                    script.EmitPush(new byte[64]);
+                                    break;
+                                case ContractParameterType.Boolean:
+                                    script.EmitPush(true);
+                                    break;
+                                case ContractParameterType.Integer:
+                                    script.Emit(OpCode.PUSHINT256, new byte[Integer.MaxSize]);
+                                    break;
+                                case ContractParameterType.Hash160:
+                                    script.EmitPush(new byte[UInt160.Length]);
+                                    break;
+                                case ContractParameterType.Hash256:
+                                    script.EmitPush(new byte[UInt256.Length]);
+                                    break;
+                                case ContractParameterType.PublicKey:
+                                    script.EmitPush(new byte[33]);
+                                    break;
+                                case ContractParameterType.Array:
+                                    script.Emit(OpCode.NEWARRAY0);
+                                    break;
+                            }
+                        }
+                        invocationScript = script.ToArray();
+                    }
 
                     // Empty verification and non-empty invocation scripts
-                    var invSize = invocationScript?.GetVarSize() ?? Array.Empty<byte>().GetVarSize();
-                    size += Array.Empty<byte>().GetVarSize() + invSize;
+                    var invSize = invocationScript?.GetVarSize() ?? System.Array.Empty<byte>().GetVarSize();
+                    size += System.Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
-                    if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
-
+                    if (engine.Execute() == VMState.HALT)
+                    {
+                        // https://github.com/neo-project/neo/issues/2805
+                        if (engine.ResultStack.Count != 1) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
+                        _ = engine.ResultStack.Pop().GetBoolean(); // Ensure that the result is boolean
+                    }
                     maxExecutionCost -= engine.FeeConsumed;
                     if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
                     networkFee += engine.FeeConsumed;
                 }
-                else if (IsSignatureContract(witnessScript))
+                else
                 {
-                    size += 67 + witnessScript.GetVarSize();
-                    networkFee += exec_fee_factor * SignatureContractCost();
+                    // Regular signature verification.
+                    if (IsSignatureContract(witnessScript))
+                    {
+                        size += 67 + witnessScript.GetVarSize();
+                        networkFee += exec_fee_factor * SignatureContractCost();
+                    }
+                    else if (IsMultiSigContract(witnessScript, out int m, out int n))
+                    {
+                        int size_inv = 66 * m;
+                        size += UnsafeData.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
+                        networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
+                    }
                 }
-                else if (IsMultiSigContract(witnessScript, out int m, out int n))
-                {
-                    int size_inv = 66 * m;
-                    size += UnsafeData.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
-                    networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
-                }
-                // We can support more contract types in the future.
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
             foreach (TransactionAttribute attr in tx.Attributes)
