@@ -18,6 +18,20 @@ namespace Neo.Extensions
     public static class MemoryExtensions
     {
         /// <summary>
+        /// Converts a byte array to an <see cref="ISerializable"/> array.
+        /// </summary>
+        /// <typeparam name="T">The type of the array element.</typeparam>
+        /// <param name="value">The byte array to be converted.</param>
+        /// <param name="max">The maximum number of elements contained in the converted array.</param>
+        /// <returns>The converted <see cref="ISerializable"/> array.</returns>
+        public static T[] AsSerializableArray<T>(this ReadOnlyMemory<byte> value, int max = 0x1000000) where T : ISerializable, new()
+        {
+            if (value.IsEmpty) throw new FormatException();
+            MemoryReader reader = new(value);
+            return reader.ReadSerializableArray<T>(max);
+        }
+
+        /// <summary>
         /// Converts a byte array to an <see cref="ISerializable"/> object.
         /// </summary>
         /// <typeparam name="T">The type to convert to.</typeparam>
