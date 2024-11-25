@@ -46,5 +46,17 @@ namespace Neo.SmartContract.Benchmark
             if (bytes.Length != prefixSize + 3 * testBytes.Length)
                 throw new InvalidOperationException();
         }
+
+        [Benchmark]
+        public void KeyBuilder_AddUInt160()
+        {
+            Span<byte> value = stackalloc byte[UInt160.Length];
+            var key = new KeyBuilder(1, 0)
+                .Add(new UInt160(value));
+
+            var bytes = key.ToArray();
+            if (bytes.Length != prefixSize + UInt160.Length)
+                throw new InvalidOperationException();
+        }
     }
 }
