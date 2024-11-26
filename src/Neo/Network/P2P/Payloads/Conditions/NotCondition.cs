@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
@@ -16,13 +17,14 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
     /// <summary>
     /// Reverse another condition.
     /// </summary>
-    public class NotCondition : WitnessCondition
+    public class NotCondition : WitnessCondition, IEquatable<NotCondition>
     {
         /// <summary>
         /// The expression of the condition to be reversed.
@@ -31,6 +33,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + Expression.Size;
         public override WitnessConditionType Type => WitnessConditionType.Not;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(NotCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null) return false;
+            return
+                Type == other.Type &&
+                Expression.Equals(other.Expression);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is NotCondition nc && Equals(nc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Expression.GetHashCode());
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -66,6 +91,24 @@ namespace Neo.Network.P2P.Payloads.Conditions
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Expression.ToStackItem(referenceCounter));
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(NotCondition left, NotCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(NotCondition left, NotCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

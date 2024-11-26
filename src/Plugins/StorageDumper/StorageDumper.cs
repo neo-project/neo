@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Extensions;
 using Neo.IEventHandlers;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;

@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.IO;
@@ -51,7 +52,8 @@ namespace Neo.Network.P2P.Payloads
         {
             HashStart = reader.ReadSerializable<UInt256>();
             Count = reader.ReadInt16();
-            if (Count < -1 || Count == 0) throw new FormatException();
+            if (Count < -1 || Count == 0)
+                throw new FormatException($"Invalid count: {Count}.");
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
