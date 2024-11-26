@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native
     {
         private readonly CheckCallFlagsDelegate _checkCallFlags;
 
-        public delegate bool CheckCallFlagsDelegate(ContractMethodMetadata sender, ApplicationEngine engine, CallFlags callFlags);
+        public delegate bool CheckCallFlagsDelegate(ContractMethodMetadata method, ApplicationEngine engine, CallFlags callFlags);
 
         public string Name { get; }
         public MethodInfo Handler { get; }
