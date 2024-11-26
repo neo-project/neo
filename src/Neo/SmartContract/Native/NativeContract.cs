@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native
             {
                 var attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
-                listMethods.Add(CreateMethodMetadataInternal(member, attribute));
+                listMethods.Add(new ContractMethodMetadata(member, attribute));
             }
             _methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
 
@@ -168,11 +168,6 @@ namespace Neo.SmartContract.Native
                     .Cast<Hardfork>().ToImmutableHashSet();
             s_contractsList.Add(this);
             s_contractsDictionary.Add(Hash, this);
-        }
-
-        internal virtual ContractMethodMetadata CreateMethodMetadataInternal(MemberInfo member, ContractMethodAttribute attribute)
-        {
-            return new ContractMethodMetadata(member, attribute);
         }
 
         /// <summary>
@@ -384,7 +379,7 @@ namespace Neo.SmartContract.Native
                 if (method.DeprecatedIn is not null && engine.IsHardforkEnabled(method.DeprecatedIn.Value))
                     throw new InvalidOperationException($"Cannot call this method after hardfork {method.DeprecatedIn}.");
                 var state = context.GetState<ExecutionContextState>();
-                if (!method.CheckCallFlags(engine, state.CallFlags))
+                if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
