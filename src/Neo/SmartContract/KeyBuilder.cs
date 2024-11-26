@@ -29,7 +29,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="id">The id of the contract.</param>
         /// <param name="prefix">The prefix of the key.</param>
-        /// <param name="keySizeHint">The hint of the storage key size(not including the id and prefix).</param>
+        /// <param name="keySizeHint">The hint of the storage key size(including the id and prefix).</param>
         public KeyBuilder(int id, byte prefix, int keySizeHint = ApplicationEngine.MaxStorageKeySize)
         {
             Span<byte> data = stackalloc byte[sizeof(int)];
