@@ -100,7 +100,7 @@ namespace Neo.SmartContract.Native
         }
 
         // This is for solving the hardfork issue in https://github.com/neo-project/neo/pull/3209
-        [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15, Name = "verifyWithECDsa")]
+        [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15, Name = nameof(VerifyWithECDsa))]
         public static bool VerifyWithECDsaV0(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curve)
         {
             if (curve != NamedCurveHash.secp256k1SHA256 && curve != NamedCurveHash.secp256r1SHA256)
