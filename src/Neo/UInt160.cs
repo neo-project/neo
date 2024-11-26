@@ -108,7 +108,9 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<byte> GetSpan()
         {
-            return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+            if (BitConverter.IsLittleEndian)
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+            return this.ToArray().AsSpan(); // Keep the same output as Serialize when BigEndian
         }
 
         /// <summary>
