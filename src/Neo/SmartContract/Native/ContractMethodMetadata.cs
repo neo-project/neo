@@ -26,6 +26,10 @@ namespace Neo.SmartContract.Native
     [DebuggerDisplay("{Name}")]
     internal class ContractMethodMetadata : IHardforkActivable
     {
+        private readonly CheckCallFlagsDelegate _checkCallFlags;
+
+        public delegate bool CheckCallFlagsDelegate(ContractMethodMetadata sender, ApplicationEngine engine, CallFlags callFlags);
+
         public string Name { get; }
         public MethodInfo Handler { get; }
         public InteropParameterDescriptor[] Parameters { get; }
@@ -38,7 +42,7 @@ namespace Neo.SmartContract.Native
         public Hardfork? ActiveIn { get; init; } = null;
         public Hardfork? DeprecatedIn { get; init; } = null;
 
-        public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
+        public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute, CheckCallFlagsDelegate checkCallFlags = null)
         {
             Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
             Handler = member switch
@@ -47,7 +51,7 @@ namespace Neo.SmartContract.Native
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(null, nameof(member))
             };
-            ParameterInfo[] parameterInfos = Handler.GetParameters();
+            var parameterInfos = Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
                 NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
@@ -60,6 +64,7 @@ namespace Neo.SmartContract.Native
             CpuFee = attribute.CpuFee;
             StorageFee = attribute.StorageFee;
             RequiredCallFlags = attribute.RequiredCallFlags;
+            _checkCallFlags = checkCallFlags ?? DefaultCheckCallFlags;
             ActiveIn = attribute.ActiveIn;
             DeprecatedIn = attribute.DeprecatedIn;
             Descriptor = new ContractMethodDescriptor
@@ -69,6 +74,16 @@ namespace Neo.SmartContract.Native
                 Parameters = Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
                 Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
             };
+        }
+
+        public bool CheckCallFlags(ApplicationEngine engine, CallFlags callFlags)
+        {
+            return _checkCallFlags(this, engine, callFlags);
+        }
+
+        private static bool DefaultCheckCallFlags(ContractMethodMetadata sender, ApplicationEngine engine, CallFlags callFlags)
+        {
+            return callFlags.HasFlag(sender.RequiredCallFlags);
         }
 
         private static ContractParameterType ToParameterType(Type type)

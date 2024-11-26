@@ -23,6 +23,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 
 namespace Neo.SmartContract.Native
 {
@@ -70,6 +71,29 @@ namespace Neo.SmartContract.Native
         internal NeoToken() : base()
         {
             TotalAmount = 100000000 * Factor;
+        }
+
+        internal override ContractMethodMetadata CreateMethodMetadataInternal(MemberInfo member, ContractMethodAttribute attribute)
+        {
+            if (member.Name == nameof(RegisterCandidate) ||
+                member.Name == nameof(UnregisterCandidate))
+            {
+                return new ContractMethodMetadata(member, attribute, RegisterAndUnregisterCallflags);
+            }
+
+            return base.CreateMethodMetadataInternal(member, attribute);
+        }
+
+        private static bool RegisterAndUnregisterCallflags(ContractMethodMetadata sender, ApplicationEngine engine, CallFlags callFlags)
+        {
+            var requiredCallFlags = sender.RequiredCallFlags;
+
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+            {
+                requiredCallFlags = CallFlags.States;
+            }
+
+            return callFlags.HasFlag(requiredCallFlags);
         }
 
         public override BigInteger TotalSupply(DataCache snapshot)
@@ -327,7 +351,7 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -344,7 +368,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
