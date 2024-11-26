@@ -131,7 +131,7 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(Stream stream)
         {
-            var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
+            using var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
             var section = config.GetSection("ProtocolConfiguration");
             var settings = Load(section);
             CheckingHardfork(settings);
