@@ -248,7 +248,8 @@ namespace Neo.Test
         {
             using (ScriptBuilder script = new())
             {
-                Assert.ThrowsException<ArgumentNullException>(() => script.EmitPush((byte[])null));
+                script.EmitPush((byte[])null);
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
 
             using (ScriptBuilder script = new())
