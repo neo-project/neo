@@ -77,5 +77,77 @@ namespace Neo.UnitTests
 
             CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
         }
+
+        [TestMethod]
+        public void TestToHexString()
+        {
+            byte[] nullStr = null;
+            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
+            byte[] empty = Array.Empty<byte>();
+            empty.ToHexString().Should().Be("");
+            empty.ToHexString(false).Should().Be("");
+            empty.ToHexString(true).Should().Be("");
+
+            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
+            str1.ToHexString().Should().Be("6e656f");
+            str1.ToHexString(false).Should().Be("6e656f");
+            str1.ToHexString(true).Should().Be("6f656e");
+        }
+
+        [TestMethod]
+        public void TestGetVersion()
+        {
+            // assembly without version
+
+            var asm = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(u => u.FullName == "Anonymously Hosted DynamicMethods Assembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
+                .FirstOrDefault();
+            string version = asm?.GetVersion() ?? "";
+            version.Should().Be("0.0.0");
+        }
+
+        [TestMethod]
+        public void TestToByteArrayStandard()
+        {
+            BigInteger number = BigInteger.Zero;
+            Assert.AreEqual("", number.ToByteArrayStandard().ToHexString());
+
+            number = BigInteger.One;
+            Assert.AreEqual("01", number.ToByteArrayStandard().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestNextBigIntegerForRandom()
+        {
+            Random ran = new();
+            Action action1 = () => ran.NextBigInteger(-1);
+            action1.Should().Throw<ArgumentException>();
+
+            ran.NextBigInteger(0).Should().Be(0);
+            ran.NextBigInteger(8).Should().NotBeNull();
+            ran.NextBigInteger(9).Should().NotBeNull();
+        }
+
+        [TestMethod]
+        public void TestUnmapForIPAddress()
+        {
+            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            addr.UnMap().Should().Be(addr);
+
+            var addr2 = addr.MapToIPv6();
+            addr2.UnMap().Should().Be(addr);
+        }
+
+        [TestMethod]
+        public void TestUnmapForIPEndPoin()
+        {
+            var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
+            var endPoint = new IPEndPoint(addr, 8888);
+            endPoint.UnMap().Should().Be(endPoint);
+
+            var addr2 = addr.MapToIPv6();
+            var endPoint2 = new IPEndPoint(addr2, 8888);
+            endPoint2.UnMap().Should().Be(endPoint);
+        }
     }
 }
