@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -125,6 +126,19 @@ namespace Neo.UnitTests.IO
         {
             Assert.AreEqual(true, UInt160.Zero <= UInt160.Zero);
             Assert.IsTrue(UInt160.Zero >= "0x0000000000000000000000000000000000000000");
+        }
+
+        [TestMethod]
+        public void TestSpanAndSerialize()
+        {
+            // random data
+            var random = new Random();
+            var data = new byte[UInt160.Length];
+            random.NextBytes(data);
+
+            var value = new UInt160(data);
+            var span = value.GetSpan();
+            Assert.IsTrue(span.SequenceEqual(value.ToArray()));
         }
     }
 }
