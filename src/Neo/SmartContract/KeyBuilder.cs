@@ -35,7 +35,7 @@ namespace Neo.SmartContract
             Span<byte> data = stackalloc byte[sizeof(int)];
             BinaryPrimitives.WriteInt32LittleEndian(data, id);
 
-            stream = new(sizeof(int) + sizeof(byte) + keySizeHint);
+            stream = new(keySizeHint);
             stream.Write(data);
             stream.WriteByte(prefix);
         }
