@@ -47,16 +47,13 @@ namespace Neo.Test
         {
             using (ScriptBuilder script = new())
             {
-                Assert.ThrowsException<ArgumentNullException>(() =>
-                {
-                    ReadOnlySpan<byte> span = null;
-                    script.EmitPush(span);
-                });
-                Assert.ThrowsException<ArgumentNullException>(() =>
-                {
-                    ReadOnlySpan<byte> span = [];
-                    script.EmitPush(span);
-                });
+                ReadOnlySpan<byte> span = null;
+                script.EmitPush(span);
+
+                span = [];
+                script.EmitPush(span);
+
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0, (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
         }
 
