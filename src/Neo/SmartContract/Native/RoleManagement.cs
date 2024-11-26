@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Native
                 return ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1);
             }
 
-            protected override StackItem ElementToStackItem(ECPoint element, ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ECPoint element, IReferenceCounter referenceCounter)
             {
                 return element.ToArray();
             }
