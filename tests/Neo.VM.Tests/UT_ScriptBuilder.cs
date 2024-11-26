@@ -49,7 +49,7 @@ namespace Neo.Test
             {
                 Assert.ThrowsException<ArgumentNullException>(() =>
                 {
-                    ReadOnlySpan<byte> span = [];
+                    ReadOnlySpan<byte> span = null;
                     script.EmitPush(span);
                 });
                 Assert.ThrowsException<ArgumentNullException>(() =>
