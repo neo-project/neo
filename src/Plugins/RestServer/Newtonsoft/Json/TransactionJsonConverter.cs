@@ -13,20 +13,21 @@ using Neo.Network.P2P.Payloads;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-public class TransactionJsonConverter : JsonConverter<Transaction>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override bool CanRead => false;
-
-    public override bool CanWrite => true;
-
-    public override Transaction ReadJson(JsonReader reader, Type objectType, Transaction? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, Transaction? value, JsonSerializer serializer)
+    public class TransactionJsonConverter : JsonConverter<Transaction>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override bool CanRead => false;
 
-        var j = RestServerUtility.TransactionToJToken(value, serializer);
-        j.WriteTo(writer);
+        public override bool CanWrite => true;
+
+        public override Transaction ReadJson(JsonReader reader, Type objectType, Transaction? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, Transaction? value, JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            var j = RestServerUtility.TransactionToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }

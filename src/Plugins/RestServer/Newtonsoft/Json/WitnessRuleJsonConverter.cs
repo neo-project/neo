@@ -13,16 +13,17 @@ using Neo.Network.P2P.Payloads;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-public class WitnessRuleJsonConverter : JsonConverter<WitnessRule>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override WitnessRule ReadJson(JsonReader reader, Type objectType, WitnessRule? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, WitnessRule? value, JsonSerializer serializer)
+    public class WitnessRuleJsonConverter : JsonConverter<WitnessRule>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override WitnessRule ReadJson(JsonReader reader, Type objectType, WitnessRule? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, WitnessRule? value, JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
 
-        var j = RestServerUtility.WitnessRuleToJToken(value, serializer);
-        j.WriteTo(writer);
+            var j = RestServerUtility.WitnessRuleToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }

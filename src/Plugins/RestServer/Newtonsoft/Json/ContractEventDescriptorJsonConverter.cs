@@ -13,20 +13,21 @@ using Neo.SmartContract.Manifest;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-public class ContractEventDescriptorJsonConverter : JsonConverter<ContractEventDescriptor>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override bool CanRead => false;
-
-    public override bool CanWrite => true;
-
-    public override ContractEventDescriptor ReadJson(JsonReader reader, Type objectType, ContractEventDescriptor? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, ContractEventDescriptor? value, JsonSerializer serializer)
+    public class ContractEventDescriptorJsonConverter : JsonConverter<ContractEventDescriptor>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override bool CanRead => false;
 
-        var j = RestServerUtility.ContractEventToJToken(value, serializer);
-        j.WriteTo(writer);
+        public override bool CanWrite => true;
+
+        public override ContractEventDescriptor ReadJson(JsonReader reader, Type objectType, ContractEventDescriptor? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, ContractEventDescriptor? value, JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            var j = RestServerUtility.ContractEventToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }

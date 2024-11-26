@@ -13,20 +13,21 @@ using Neo.SmartContract.Manifest;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-public class ContractMethodJsonConverter : JsonConverter<ContractMethodDescriptor>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override bool CanRead => false;
-
-    public override bool CanWrite => true;
-
-    public override ContractMethodDescriptor ReadJson(JsonReader reader, Type objectType, ContractMethodDescriptor? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, ContractMethodDescriptor? value, JsonSerializer serializer)
+    public class ContractMethodJsonConverter : JsonConverter<ContractMethodDescriptor>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override bool CanRead => false;
 
-        var j = RestServerUtility.ContractMethodToJToken(value, serializer);
-        j.WriteTo(writer);
+        public override bool CanWrite => true;
+
+        public override ContractMethodDescriptor ReadJson(JsonReader reader, Type objectType, ContractMethodDescriptor? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, ContractMethodDescriptor? value, JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            var j = RestServerUtility.ContractMethodToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }

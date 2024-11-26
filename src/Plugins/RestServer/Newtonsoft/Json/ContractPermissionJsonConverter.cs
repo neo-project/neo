@@ -13,20 +13,21 @@ using Neo.SmartContract.Manifest;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-internal class ContractPermissionJsonConverter : JsonConverter<ContractPermission>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override bool CanRead => false;
-
-    public override bool CanWrite => true;
-
-    public override ContractPermission ReadJson(JsonReader reader, Type objectType, ContractPermission? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, ContractPermission? value, JsonSerializer serializer)
+    internal class ContractPermissionJsonConverter : JsonConverter<ContractPermission>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override bool CanRead => false;
 
-        var j = RestServerUtility.ContractPermissionToJToken(value, serializer);
-        j.WriteTo(writer);
+        public override bool CanWrite => true;
+
+        public override ContractPermission ReadJson(JsonReader reader, Type objectType, ContractPermission? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, ContractPermission? value, JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            var j = RestServerUtility.ContractPermissionToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }

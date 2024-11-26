@@ -13,20 +13,21 @@ using Neo.SmartContract.Manifest;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-public class ContractParameterDefinitionJsonConverter : JsonConverter<ContractParameterDefinition>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override bool CanRead => false;
-
-    public override bool CanWrite => true;
-
-    public override ContractParameterDefinition ReadJson(JsonReader reader, Type objectType, ContractParameterDefinition? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, ContractParameterDefinition? value, JsonSerializer serializer)
+    public class ContractParameterDefinitionJsonConverter : JsonConverter<ContractParameterDefinition>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override bool CanRead => false;
 
-        var j = RestServerUtility.ContractParameterDefinitionToJToken(value, serializer);
-        j.WriteTo(writer);
+        public override bool CanWrite => true;
+
+        public override ContractParameterDefinition ReadJson(JsonReader reader, Type objectType, ContractParameterDefinition? existingValue, bool hasExistingValue, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, ContractParameterDefinition? value, JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            var j = RestServerUtility.ContractParameterDefinitionToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }

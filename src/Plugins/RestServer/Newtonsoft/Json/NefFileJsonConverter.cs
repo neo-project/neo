@@ -13,16 +13,17 @@ using Neo.SmartContract;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-public class NefFileJsonConverter : JsonConverter<NefFile>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override NefFile ReadJson(JsonReader reader, Type objectType, NefFile? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, NefFile? value, global::Newtonsoft.Json.JsonSerializer serializer)
+    public class NefFileJsonConverter : JsonConverter<NefFile>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override NefFile ReadJson(JsonReader reader, Type objectType, NefFile? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, NefFile? value, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
 
-        var j = RestServerUtility.ContractNefFileToJToken(value, serializer);
-        j.WriteTo(writer);
+            var j = RestServerUtility.ContractNefFileToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }

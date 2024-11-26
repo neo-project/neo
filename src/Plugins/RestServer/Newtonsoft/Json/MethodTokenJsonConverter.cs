@@ -13,20 +13,21 @@ using Neo.SmartContract;
 using Newtonsoft.Json;
 using System;
 
-namespace Neo.Plugins.RestServer.Newtonsoft.Json;
-
-public class MethodTokenJsonConverter : JsonConverter<MethodToken>
+namespace Neo.Plugins.RestServer.Newtonsoft.Json
 {
-    public override bool CanRead => false;
-
-    public override bool CanWrite => true;
-
-    public override MethodToken ReadJson(JsonReader reader, Type objectType, MethodToken? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => throw new NotImplementedException();
-    public override void WriteJson(JsonWriter writer, MethodToken? value, global::Newtonsoft.Json.JsonSerializer serializer)
+    public class MethodTokenJsonConverter : JsonConverter<MethodToken>
     {
-        if (value is null) throw new ArgumentNullException(nameof(value));
+        public override bool CanRead => false;
 
-        var j = RestServerUtility.MethodTokenToJToken(value, serializer);
-        j.WriteTo(writer);
+        public override bool CanWrite => true;
+
+        public override MethodToken ReadJson(JsonReader reader, Type objectType, MethodToken? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, MethodToken? value, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            var j = RestServerUtility.MethodTokenToJToken(value, serializer);
+            j.WriteTo(writer);
+        }
     }
 }
