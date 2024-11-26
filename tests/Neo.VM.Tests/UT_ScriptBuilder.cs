@@ -54,7 +54,6 @@ namespace Neo.Test
                 });
                 Assert.ThrowsException<ArgumentNullException>(() =>
                 {
-
                     ReadOnlySpan<byte> span = [];
                     script.EmitPush(span);
                 });
