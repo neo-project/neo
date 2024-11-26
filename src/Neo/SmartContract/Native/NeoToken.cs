@@ -84,9 +84,9 @@ namespace Neo.SmartContract.Native
             return base.CreateMethodMetadataInternal(member, attribute);
         }
 
-        private static bool RegisterAndUnregisterCallflags(ContractMethodMetadata sender, ApplicationEngine engine, CallFlags callFlags)
+        private static bool RegisterAndUnregisterCallflags(ContractMethodMetadata method, ApplicationEngine engine, CallFlags callFlags)
         {
-            var requiredCallFlags = sender.RequiredCallFlags;
+            var requiredCallFlags = method.RequiredCallFlags;
 
             if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna))
             {

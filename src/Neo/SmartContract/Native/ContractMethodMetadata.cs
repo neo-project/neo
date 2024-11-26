@@ -81,9 +81,9 @@ namespace Neo.SmartContract.Native
             return _checkCallFlags(this, engine, callFlags);
         }
 
-        private static bool DefaultCheckCallFlags(ContractMethodMetadata sender, ApplicationEngine engine, CallFlags callFlags)
+        private static bool DefaultCheckCallFlags(ContractMethodMetadata method, ApplicationEngine engine, CallFlags callFlags)
         {
-            return callFlags.HasFlag(sender.RequiredCallFlags);
+            return callFlags.HasFlag(method.RequiredCallFlags);
         }
 
         private static ContractParameterType ToParameterType(Type type)
