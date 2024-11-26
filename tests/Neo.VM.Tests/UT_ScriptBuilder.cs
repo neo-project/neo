@@ -52,10 +52,12 @@ namespace Neo.Test
                     ReadOnlySpan<byte> span = null;
                     script.EmitPush(span);
                 });
+                Assert.ThrowsException<ArgumentNullException>(() =>
+                {
 
-                ReadOnlySpan<byte> span = [];
-                script.EmitPush(span);
-                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
+                    ReadOnlySpan<byte> span = [];
+                    script.EmitPush(span);
+                });
             }
         }
 
