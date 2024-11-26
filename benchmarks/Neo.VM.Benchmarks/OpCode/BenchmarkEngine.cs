@@ -24,6 +24,14 @@ namespace Neo.VM.Benchmark.OpCode
         private readonly Dictionary<Script, HashSet<uint>> _breakPoints = new();
         private long _gasConsumed = 0;
 
+        private static readonly Dictionary<VM.OpCode, (int, float)> s_opCodeValueRanges = new()
+        {
+            [VM.OpCode.UNPACK] = (16, 1),
+            [VM.OpCode.PACK] = (16, 0.5f),
+            [VM.OpCode.REVERSEN] = (256, 0.005f),
+        };
+
+
         /// <summary>
         /// Add a breakpoint at the specified position of the specified script. The VM will break the execution when it reaches the breakpoint.
         /// </summary>
@@ -81,48 +89,27 @@ namespace Neo.VM.Benchmark.OpCode
             while (State != VMState.HALT && State != VMState.FAULT)
             {
                 var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3;
+
+                if (s_opCodeValueRanges.TryGetValue(instruction.OpCode, out var opCodeRange))
+                {
+                    var gasPrice = _complexFactor >= opCodeRange.Item1
+                        ? (int)(_complexFactor * opCodeRange.Item2)
+                        : 1;
+                    // Console.WriteLine("opCodeRange = "+opCodeRange + " _complexFactor = "+ _complexFactor+ " gasPrice: "+gasPrice);
+                    _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3 * gasPrice;
+                }
+                else
+                {
+                    _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3;
+                }
+
+
                 if (_gasConsumed >= maxGas)
                 {
                     State = VMState.HALT;
                 }
-#if DEBUG
-                var stopwatch = Stopwatch.StartNew();
-#endif
                 ExecuteNext();
-#if DEBUG
-                stopwatch.Stop();
-                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
-#endif
             }
-#if DEBUG
-            PrintOpcodeStats();
-#endif
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ExecuteTwentyGASBenchmark()
-        {
-            while (State != VMState.HALT && State != VMState.FAULT)
-            {
-                var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
-                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3;
-                if (_gasConsumed >= 20 * Benchmark_Opcode.OneGasDatoshi)
-                {
-                    State = VMState.HALT;
-                }
-#if DEBUG
-                var stopwatch = Stopwatch.StartNew();
-#endif
-                ExecuteNext();
-#if DEBUG
-                stopwatch.Stop();
-                UpdateOpcodeStats(instruction.OpCode, stopwatch.Elapsed);
-#endif
-            }
-#if DEBUG
-            PrintOpcodeStats();
-#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

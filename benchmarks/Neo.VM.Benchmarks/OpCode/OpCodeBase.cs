@@ -15,8 +15,8 @@ namespace Neo.VM.Benchmark.OpCode
 {
     public abstract class OpCodeBase
     {
-        [Params(2, 32, 128, 1024, 2040)]
-        public int ItemCount { get; set; } = 2;
+        [Params(4, 8, 16, 32, 64, 128, 256, 512, 1024, 2040)]
+        public int ItemCount { get; set; } = 4;
 
         private readonly byte[] nopScript;
 
@@ -44,13 +44,18 @@ namespace Neo.VM.Benchmark.OpCode
             oneGasEngine.Dispose();
         }
 
-        [Benchmark]
-        public void Bench_OneOpCode() =>
-            engine.ExecuteNext();
+        // [Benchmark]
+        // public void Bench_OneOpCode() =>
+        //     engine.ExecuteNext();
 
         [Benchmark]
-        public void Bench_OneGAS() =>
+        public void Bench_OneGAS() {
             oneGasEngine.ExecuteOneGASBenchmark();
+            if (oneGasEngine.State != VMState.HALT)
+            {
+                throw new Exception();
+            }
+        }
 
         protected abstract byte[] CreateOneOpCodeScript();
 

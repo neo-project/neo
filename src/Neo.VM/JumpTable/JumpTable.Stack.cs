@@ -222,6 +222,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             engine.CurrentContext!.EvaluationStack.Reverse(n);
+            engine._complexFactor = n;
         }
     }
 }

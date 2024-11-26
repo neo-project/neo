@@ -60,42 +60,45 @@ namespace Neo.VM.Benchmark.OpCode
             return builder.ToArray();
         }
     }
-
-    // | Method          | ItemCount | Mean      | Error     | StdDev    | Median    |
-    //     |---------------- |---------- |----------:|----------:|----------:|----------:|
-    //     | Bench_OneOpCode | 1         |  2.783 us | 0.0543 us | 0.1269 us |  2.800 us |
-    //     | Bench_OneOpCode | 32        |  4.376 us | 0.0962 us | 0.2517 us |  4.300 us |
-    //     | Bench_OneOpCode | 128       |  7.482 us | 0.1429 us | 0.1468 us |  7.500 us |
-    //     | Bench_OneOpCode | 1024      | 41.694 us | 0.8339 us | 1.6846 us | 41.800 us |
-    //     | Bench_OneOpCode | 2040      | 60.055 us | 1.1531 us | 1.4161 us | 60.450 us |
-
-    // for buffer: size ushort.max*2
-
-    // | Method          | ItemCount | Mean       | Error      | StdDev     | Median     |
-    //     |---------------- |---------- |-----------:|-----------:|-----------:|-----------:|
-    //     | Bench_OneOpCode | 1         |   3.231 us |  0.1004 us |  0.2627 us |   3.100 us |
-    //     | Bench_OneOpCode | 32        |   9.148 us |  0.2127 us |  0.6034 us |   9.100 us |
-    //     | Bench_OneOpCode | 128       |  26.184 us |  2.2478 us |  6.6276 us |  21.400 us |
-    //     | Bench_OneOpCode | 1024      |  81.564 us |  2.6738 us |  7.2287 us |  80.000 us |
-    //     | Bench_OneOpCode | 2040      | 198.662 us | 31.1163 us | 90.7677 us | 149.500 us |
 }
 
 
-// |---------------- |---------- |----------:|----------:|-----------:|----------:|
-//     | Bench_OneOpCode | 2         |  2.829 us | 0.0710 us |  0.1920 us |  2.800 us |
-//     | Bench_OneOpCode | 32        |  5.847 us | 0.2570 us |  0.7373 us |  5.600 us |
-//     | Bench_OneOpCode | 128       | 14.698 us | 1.1027 us |  3.1816 us | 13.600 us |
-//     | Bench_OneOpCode | 1024      | 27.040 us | 2.3996 us |  6.9233 us | 28.700 us |
-//     | Bench_OneOpCode | 2040      | 46.012 us | 4.1584 us | 11.3133 us | 44.350 us |
+//     | Method       | ItemCount | Mean       | Error     | StdDev    | Median     |
+//     |------------- |---------- |-----------:|----------:|----------:|-----------:|
+//     | Bench_OneGAS | 4         |   211.7 ms |   4.03 ms |   4.14 ms |   212.3 ms |
+//     | Bench_OneGAS | 8         |   438.8 ms |   8.65 ms |  16.87 ms |   436.4 ms |
+//     | Bench_OneGAS | 16        |   806.1 ms |  26.74 ms |  77.56 ms |   813.8 ms |
+//     | Bench_OneGAS | 32        | 1,991.2 ms |  87.72 ms | 258.63 ms | 1,962.8 ms |
+//     | Bench_OneGAS | 64        | 2,509.9 ms | 132.85 ms | 391.70 ms | 2,518.2 ms |
+//     | Bench_OneGAS | 128       | 2,570.8 ms | 138.76 ms | 409.14 ms | 2,510.1 ms |
+//     | Bench_OneGAS | 256       | 2,221.8 ms | 117.59 ms | 343.00 ms | 2,097.9 ms |
+//     | Bench_OneGAS | 1024      | 1,712.6 ms | 112.45 ms | 331.56 ms | 1,713.3 ms |
+//     | Bench_OneGAS | 2040      | 1,679.2 ms |  80.55 ms | 234.98 ms | 1,694.8 ms |
 
 
+//     | Method       | ItemCount | Mean     | Error    | StdDev    |
+//     |------------- |---------- |---------:|---------:|----------:|
+//     | Bench_OneGAS | 4         | 211.9 ms |  4.13 ms |   4.24 ms |
+//     | Bench_OneGAS | 8         | 464.5 ms |  9.14 ms |  25.32 ms |
+//     | Bench_OneGAS | 16        | 808.3 ms | 28.21 ms |  83.17 ms |
+//     | Bench_OneGAS | 32        | 135.2 ms |  7.29 ms |  21.37 ms |
+//     | Bench_OneGAS | 64        | 254.2 ms | 16.88 ms |  49.77 ms |
+//     | Bench_OneGAS | 128       | 383.6 ms | 28.51 ms |  84.08 ms |
+//     | Bench_OneGAS | 256       | 508.7 ms | 35.22 ms | 103.29 ms |
+//     | Bench_OneGAS | 512       | 703.4 ms | 47.16 ms | 139.05 ms |
+//     | Bench_OneGAS | 1024      | 879.6 ms | 55.22 ms | 161.09 ms |
+//     | Bench_OneGAS | 2040      | 811.7 ms | 23.07 ms |  67.65 ms |
 
 
-// | Method          | ItemCount | Mean      | Error    | StdDev    |
-//     |---------------- |---------- |----------:|---------:|----------:|
-//     | Bench_OneOpCode | 1         |  57.70 ms | 1.150 ms |  2.475 ms |
-//     | Bench_OneOpCode | 2         | 100.87 ms | 2.015 ms |  3.530 ms |
-//     | Bench_OneOpCode | 32        | 133.31 ms | 4.967 ms | 14.644 ms |
-//     | Bench_OneOpCode | 128       | 324.87 ms | 6.387 ms | 12.755 ms |
-//     | Bench_OneOpCode | 1024      | 156.63 ms | 3.842 ms | 11.328 ms |
-//     | Bench_OneOpCode | 2040      | 120.45 ms | 2.008 ms |  1.879 ms |
+// | Method       | ItemCount | Mean     | Error    | StdDev    |
+//     |------------- |---------- |---------:|---------:|----------:|
+//     | Bench_OneGAS | 4         | 213.3 ms |  4.15 ms |   3.88 ms |
+//     | Bench_OneGAS | 8         | 447.0 ms |  8.92 ms |   9.91 ms |
+//     | Bench_OneGAS | 16        | 248.6 ms |  8.97 ms |  26.32 ms |
+//     | Bench_OneGAS | 32        | 520.8 ms | 22.70 ms |  66.93 ms |
+//     | Bench_OneGAS | 64        | 656.0 ms | 40.10 ms | 116.96 ms |
+//     | Bench_OneGAS | 128       | 574.1 ms | 38.14 ms | 112.44 ms |
+//     | Bench_OneGAS | 256       | 526.4 ms | 46.25 ms | 135.65 ms |
+//     | Bench_OneGAS | 512       | 435.6 ms | 28.42 ms |  83.35 ms |
+//     | Bench_OneGAS | 1024      | 465.7 ms | 34.07 ms |  99.37 ms |
+//     | Bench_OneGAS | 2040      | 282.0 ms |  5.44 ms |   9.38 ms |

@@ -40,26 +40,42 @@ namespace Neo.VM.Benchmark.OpCode
 
         protected override byte[] CreateOneGASScript( )
         {
-            throw new NotImplementedException();
+            var builder = new InstructionBuilder();
+            var initBegin = new JumpTarget();
+
+            builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+            builder.Push(ushort.MaxValue * 2);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            // builder.Push(0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.AddInstruction(VM.OpCode.DEC);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.Jump(VM.OpCode.JMPIF, initBegin);
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.PACK);
+            builder.AddInstruction(VM.OpCode.DUP);
+            builder.AddInstruction(Opcode);
+            builder.AddInstruction(VM.OpCode.DROP);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
+            return builder.ToArray();
         }
     }
-
-
-    // 0
-    // | Method          | ItemCount | Mean      | Error     | StdDev    | Median    |
-    //     |---------------- |---------- |----------:|----------:|----------:|----------:|
-    //     | Bench_OneOpCode | 1         |  1.285 us | 0.0368 us | 0.1000 us |  1.300 us |
-    //     | Bench_OneOpCode | 32        |  2.140 us | 0.1974 us | 0.5821 us |  1.800 us |
-    //     | Bench_OneOpCode | 128       |  3.188 us | 0.0654 us | 0.0850 us |  3.200 us |
-    //     | Bench_OneOpCode | 1024      | 18.344 us | 0.4455 us | 1.2711 us | 18.150 us |
-    //     | Bench_OneOpCode | 2040      | 21.559 us | 0.5000 us | 1.4507 us | 21.300 us |
-
-    // ushort.max *2
-    // | Method          | ItemCount | Mean      | Error     | StdDev     | Median    |
-    //     |---------------- |---------- |----------:|----------:|-----------:|----------:|
-    //     | Bench_OneOpCode | 1         |  1.771 us | 0.0460 us |  0.1297 us |  1.700 us |
-    //     | Bench_OneOpCode | 32        |  3.852 us | 0.1563 us |  0.4583 us |  3.800 us |
-    //     | Bench_OneOpCode | 128       |  9.921 us | 0.8772 us |  2.5588 us |  8.750 us |
-    //     | Bench_OneOpCode | 1024      | 29.629 us | 3.6489 us | 10.1110 us | 34.700 us |
-    //     | Bench_OneOpCode | 2040      | 49.573 us | 5.8885 us | 16.5120 us | 49.800 us |
 }
+
+    // | Method          | ItemCount | Mean             | Error           | StdDev          | Median           |
+    // |---------------- |---------- |-----------------:|----------------:|----------------:|-----------------:|
+    // | Bench_OneOpCode | 2         |         2.582 us |       0.1131 us |       0.3154 us |         2.500 us |
+    // | Bench_OneGAS    | 2         | 1,008,326.260 us |  19,946.4808 us |  49,302.7585 us | 1,012,292.300 us |
+    // | Bench_OneOpCode | 32        |         4.115 us |       0.1515 us |       0.4370 us |         4.100 us |
+    // | Bench_OneGAS    | 32        | 2,011,062.912 us |  77,177.9314 us | 227,560.8721 us | 1,960,167.600 us |
+    // | Bench_OneOpCode | 128       |         9.494 us |       0.3439 us |       0.9812 us |         9.600 us |
+    // | Bench_OneGAS    | 128       | 2,433,229.635 us | 163,868.4023 us | 483,169.6814 us | 2,398,037.650 us |
+    // | Bench_OneOpCode | 1024      |        23.914 us |       5.6959 us |      16.7050 us |        34.000 us |
+    // | Bench_OneGAS    | 1024      | 1,738,123.511 us | 111,164.9318 us | 327,772.3096 us | 1,778,298.650 us |
+    // | Bench_OneOpCode | 2040      |        30.093 us |       6.0103 us |      17.5325 us |        38.750 us |
+    // | Bench_OneGAS    | 2040      | 1,660,719.746 us |  62,732.2144 us | 183,982.7256 us | 1,678,398.200 us |

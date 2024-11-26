@@ -50,7 +50,37 @@ namespace Neo.VM.Benchmark.OpCode
 
         protected override byte[] CreateOneGASScript( )
         {
-            throw new NotImplementedException();
+            var builder = new InstructionBuilder();
+            var initBegin = new JumpTarget();
+            builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
+
+            builder.Push(ItemCount / 2);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+
+            builder.Push(ushort.MaxValue * 2);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            builder.Push(sbyte.MaxValue);
+            builder.AddInstruction(VM.OpCode.NEWBUFFER);
+            builder.AddInstruction(new Instruction
+            {
+                _opCode = VM.OpCode.CONVERT,
+                _operand = [(byte)StackItemType.ByteString]
+            });
+            // builder.Push(0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.AddInstruction(VM.OpCode.DEC);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.Jump(VM.OpCode.JMPIF, initBegin);
+            builder.Push(ItemCount / 2);
+            builder.AddInstruction(VM.OpCode.PACKMAP);
+            builder.AddInstruction(Opcode);
+            builder.AddInstruction(VM.OpCode.CLEAR);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
+            return builder.ToArray();
         }
     }
 

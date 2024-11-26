@@ -24,6 +24,8 @@ namespace Neo.VM
         private VMState state = VMState.BREAK;
         internal bool isJumping = false;
 
+        internal int _complexFactor = 1;
+
         public JumpTable JumpTable { get; }
 
         /// <summary>
@@ -140,6 +142,7 @@ namespace Neo.VM
         /// </summary>
         protected internal void ExecuteNext()
         {
+
             if (InvocationStack.Count == 0)
             {
                 State = VMState.HALT;
@@ -167,6 +170,7 @@ namespace Neo.VM
                     {
                         JumpTable.ExecuteThrow(this, ex.Message);
                     }
+
                     PostExecuteInstruction(instruction);
                     if (!isJumping) context.MoveNext();
                     isJumping = false;

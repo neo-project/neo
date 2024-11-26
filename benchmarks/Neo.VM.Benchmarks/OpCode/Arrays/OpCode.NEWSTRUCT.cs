@@ -19,21 +19,24 @@ namespace Neo.VM.Benchmark.OpCode
         protected override byte[] CreateOneOpCodeScript()
         {
             var builder = new InstructionBuilder();
-            // builder.Push(ItemCount);
-            // builder.AddInstruction(VM.OpCode.NEWSTRUCT);
-
-            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
             builder.Push(ItemCount);
             builder.AddInstruction(VM.OpCode.NEWSTRUCT);
-            builder.AddInstruction(VM.OpCode.DROP);
-            builder.Jump(VM.OpCode.JMP, loopBegin);
-
             return builder.ToArray();
         }
 
         protected override byte[] CreateOneGASScript( )
         {
-            throw new NotImplementedException();
+            var builder = new InstructionBuilder();
+            // builder.Push(ItemCount);
+            // builder.AddInstruction(VM.OpCode.NEWSTRUCT);
+
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
+            builder.Push(ItemCount);
+            builder.AddInstruction(Opcode);
+            builder.AddInstruction(VM.OpCode.DROP);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
+
+            return builder.ToArray();
         }
     }
 

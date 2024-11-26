@@ -197,7 +197,7 @@ namespace Neo.VM.Benchmark.OpCode
             [VM.OpCode.PACKMAP] = 1 << 11,
             [VM.OpCode.PACKSTRUCT] = 1 << 11,
             [VM.OpCode.PACK] = 1 << 11,
-            [VM.OpCode.UNPACK] = 1 << 11,
+            [VM.OpCode.UNPACK] = 1 << 8,
             [VM.OpCode.NEWARRAY0] = 1 << 4,
             [VM.OpCode.NEWARRAY] = 1 << 9,
             [VM.OpCode.NEWARRAY_T] = 1 << 9,

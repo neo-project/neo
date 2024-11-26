@@ -44,6 +44,7 @@ namespace Neo.VM
                 var value = engine.Pop();
                 map[key] = value;
             }
+            engine._complexFactor = size;
             engine.Push(map);
         }
 
@@ -66,6 +67,7 @@ namespace Neo.VM
                 var item = engine.Pop();
                 @struct.Add(item);
             }
+            engine._complexFactor = size;
             engine.Push(@struct);
         }
 
@@ -88,6 +90,7 @@ namespace Neo.VM
                 var item = engine.Pop();
                 array.Add(item);
             }
+            engine._complexFactor = size;
             engine.Push(array);
         }
 
@@ -120,6 +123,7 @@ namespace Neo.VM
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {compound.Type}");
             }
+            engine._complexFactor = compound.Count;
             engine.Push(compound.Count);
         }
 
@@ -154,6 +158,7 @@ namespace Neo.VM
                 throw new InvalidOperationException($"The array size is out of valid range, {n}/[0, {engine.Limits.MaxStackSize}].");
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
+            engine._complexFactor = n;
             engine.Push(new VMArray(engine.ReferenceCounter, nullArray));
         }
 
@@ -184,6 +189,7 @@ namespace Neo.VM
             };
             var itemArray = new StackItem[n];
             Array.Fill(itemArray, item);
+            engine._complexFactor = n;
             engine.Push(new VMArray(engine.ReferenceCounter, itemArray));
         }
 
@@ -216,6 +222,7 @@ namespace Neo.VM
 
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
+            engine._complexFactor = n;
             engine.Push(new Struct(engine.ReferenceCounter, nullArray));
         }
 
@@ -328,6 +335,7 @@ namespace Neo.VM
         {
             var map = engine.Pop<Map>();
             engine.Push(new VMArray(engine.ReferenceCounter, map.Keys));
+            engine._complexFactor = map.Keys.Count();
         }
 
         /// <summary>
@@ -353,6 +361,7 @@ namespace Neo.VM
                     newArray.Add(s.Clone(engine.Limits));
                 else
                     newArray.Add(item);
+            engine._complexFactor = values.Count();
             engine.Push(newArray);
         }
 
@@ -507,6 +516,7 @@ namespace Neo.VM
             {
                 case VMArray array:
                     array.Reverse();
+                    engine._complexFactor = array.Count;
                     break;
                 case Types.Buffer buffer:
                     buffer.InnerBuffer.Span.Reverse();
@@ -574,6 +584,7 @@ namespace Neo.VM
             }
 
             x.Clear();
+            engine._complexFactor = x.Count;
         }
 
         /// <summary>
