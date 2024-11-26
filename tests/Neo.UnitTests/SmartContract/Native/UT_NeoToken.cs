@@ -58,40 +58,44 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshotCache).Should().Be(0);
 
         [TestMethod]
-        public void Test_HF_Echidna()
+        public void Test_HF_EchidnaStates()
         {
             string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 10");
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
             var settings = ProtocolSettings.Load(stream);
 
             var clonedCache = _snapshotCache.CloneCache();
+            var persistingBlock = new Block { Header = new Header() };
 
-            // Test WITHOUT HF_Echidna
-
-            var persistingBlock = new Block { Header = new Header { Index = 9 } };
-
-            using (var engine = ApplicationEngine.Create(TriggerType.Application,
-               new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+            foreach (var method in new string[] { "vote", "registerCandidate", "unregisterCandidate" })
             {
-                var methods = NativeContract.NEO.GetContractMethods(engine);
-                var vote = methods.Values.Where(u => u.Name == "vote").ToArray();
+                // Test WITHOUT HF_Echidna
 
-                Assert.AreEqual(vote.Length, 1);
-                Assert.AreEqual(vote[0].RequiredCallFlags, CallFlags.States);
-            }
+                persistingBlock.Header.Index = 9;
 
-            // Test WITH HF_Echidna
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                    new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
 
-            persistingBlock.Header.Index = 10;
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States);
+                }
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application,
-                 new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
-            {
-                var methods = NativeContract.NEO.GetContractMethods(engine);
-                var vote = methods.Values.Where(u => u.Name == "vote").ToArray();
+                // Test WITH HF_Echidna
 
-                Assert.AreEqual(vote.Length, 1);
-                Assert.AreEqual(vote[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+                persistingBlock.Header.Index = 10;
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                     new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
+
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+                }
             }
         }
 

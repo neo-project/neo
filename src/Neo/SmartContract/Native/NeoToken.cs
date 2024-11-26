@@ -327,7 +327,7 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
-        [ContractMethod(true, Hardfork.HF_Echidna, Name = nameof(RegisterCandidate), RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(true, Hardfork.HF_Echidna, Name = nameof(RegisterCandidate), RequiredCallFlags = CallFlags.States)]
         private bool OldRegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             return RegisterCandidate(engine, pubkey);
