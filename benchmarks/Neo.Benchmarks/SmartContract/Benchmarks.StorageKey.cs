@@ -35,6 +35,19 @@ namespace Neo.SmartContract.Benchmark
         }
 
         [Benchmark]
+        public void KeyBuilder_AddIntWithoutPrealloc()
+        {
+            var key = new KeyBuilder(1, 0, 0)
+                .AddBigEndian(1)
+                .AddBigEndian(2)
+                .AddBigEndian(3);
+
+            var bytes = key.ToArray();
+            if (bytes.Length != prefixSize + 3 * sizeof(int))
+                throw new InvalidOperationException();
+        }
+
+        [Benchmark]
         public void KeyBuilder_AddBytes()
         {
             var key = new KeyBuilder(1, 0)
