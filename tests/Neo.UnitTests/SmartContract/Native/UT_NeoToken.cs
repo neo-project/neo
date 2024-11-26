@@ -22,8 +22,11 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Principal;
+using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -53,6 +56,44 @@ namespace Neo.UnitTests.SmartContract.Native
 
         [TestMethod]
         public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshotCache).Should().Be(0);
+
+        [TestMethod]
+        public void Test_HF_Echidna()
+        {
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 10");
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            var settings = ProtocolSettings.Load(stream);
+
+            var clonedCache = _snapshotCache.CloneCache();
+
+            // Test WITHOUT HF_Echidna
+
+            var persistingBlock = new Block { Header = new Header { Index = 9 } };
+
+            using (var engine = ApplicationEngine.Create(TriggerType.Application,
+               new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+            {
+                var methods = NativeContract.NEO.GetContractMethods(engine);
+                var vote = methods.Values.Where(u => u.Name == "vote").ToArray();
+
+                Assert.AreEqual(vote.Length, 1);
+                Assert.AreEqual(vote[0].RequiredCallFlags, CallFlags.States);
+            }
+
+            // Test WITH HF_Echidna
+
+            persistingBlock.Header.Index = 10;
+
+            using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                 new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+            {
+                var methods = NativeContract.NEO.GetContractMethods(engine);
+                var vote = methods.Values.Where(u => u.Name == "vote").ToArray();
+
+                Assert.AreEqual(vote.Length, 1);
+                Assert.AreEqual(vote[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+            }
+        }
 
         [TestMethod]
         public void Check_Vote()
