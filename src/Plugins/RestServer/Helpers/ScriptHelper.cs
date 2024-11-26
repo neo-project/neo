@@ -47,7 +47,7 @@ namespace Neo.Plugins.RestServer.Helpers
                 Script = script,
                 Witnesses = [.. signers.Select(s => new Witness())],
             };
-            using var engine = ApplicationEngine.Run(script, snapshot, settings: protocolSettings, gas: RestServerSettings.Current.MaxGasInvoke);
+            using var engine = ApplicationEngine.Run(script, snapshot, tx, settings: protocolSettings, gas: RestServerSettings.Current.MaxGasInvoke);
             return engine;
         }
 
