@@ -125,13 +125,13 @@ namespace Neo
         public static ProtocolSettings Custom { get; set; }
 
         /// <summary>
-        /// Loads the <see cref="ProtocolSettings"/> at the specified path.
+        /// Loads the <see cref="ProtocolSettings"/> from the specified stream.
         /// </summary>
         /// <param name="stream">The stream of the settings.</param>
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(Stream stream)
         {
-            using var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
+            var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
             var section = config.GetSection("ProtocolConfiguration");
             var settings = Load(section);
             CheckingHardfork(settings);
@@ -146,11 +146,21 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(string path, bool optional = true)
         {
-            using var config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
-            var section = config.GetSection("ProtocolConfiguration");
-            var settings = Load(section);
-            CheckingHardfork(settings);
-            return settings;
+            if (!File.Exists(path))
+            {
+                if (optional)
+                {
+                    // Same as default
+                    return Load(Default);
+                }
+                else
+                {
+                    throw new FileNotFoundException(path);
+                }
+            }
+
+            using var stream = File.OpenRead(path);
+            return Load(stream);
         }
 
         /// <summary>
@@ -181,6 +191,29 @@ namespace Neo
                     : Default.Hardforks
             };
             return Custom;
+        }
+
+        /// <summary>
+        /// Loads the <see cref="ProtocolSettings"/> cloning another <see cref="ProtocolSettings"/>.
+        /// </summary>
+        /// <param name="settings">The <see cref="IConfigurationSection"/> to be cloned.</param>
+        /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
+        public static ProtocolSettings Load(ProtocolSettings settings)
+        {
+            return Custom = new ProtocolSettings
+            {
+                Network = settings.Network,
+                AddressVersion = settings.AddressVersion,
+                StandbyCommittee = [.. settings.StandbyCommittee], // Clone
+                ValidatorsCount = settings.ValidatorsCount,
+                SeedList = [.. settings.SeedList], // Clone
+                MillisecondsPerBlock = settings.MillisecondsPerBlock,
+                MaxTransactionsPerBlock = settings.MaxTransactionsPerBlock,
+                MemoryPoolMaxTransactions = settings.MemoryPoolMaxTransactions,
+                MaxTraceableBlocks = settings.MaxTraceableBlocks,
+                InitialGasDistribution = settings.InitialGasDistribution,
+                Hardforks = settings.Hardforks // Already immutable
+            };
         }
 
         /// <summary>
