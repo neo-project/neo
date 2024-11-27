@@ -51,7 +51,7 @@ namespace Neo.VM.Types
             else
             {
                 Size = value.GetByteCount();
-                if (Size > MaxSize) throw new VMUncatchableException($"MaxSize exceed: {Size}");
+                if (Size > MaxSize) throw new VmUncatchableException($"MaxSize exceed: {Size}");
             }
             this.value = value;
         }

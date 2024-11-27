@@ -382,7 +382,7 @@ namespace Neo.VM
         {
             var x = engine.Pop<Pointer>();
             if (x.Script != engine.CurrentContext!.Script)
-                throw new VMUncatchableException("Pointers can't be shared between scripts");
+                throw new VmUncatchableException("Pointers can't be shared between scripts");
             ExecuteCall(engine, x.Position);
         }
 
@@ -395,7 +395,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void CallT(ExecutionEngine engine, Instruction instruction)
         {
-            throw new VMUncatchableException($"Token not found: {instruction.TokenU16}");
+            throw new VmUncatchableException($"Token not found: {instruction.TokenU16}");
         }
 
         /// <summary>
@@ -422,7 +422,7 @@ namespace Neo.VM
         {
             var x = engine.Pop().GetBoolean();
             if (!x)
-                throw new VMUncatchableException($"{OpCode.ASSERT} is executed with false result.");
+                throw new VmUncatchableException($"{OpCode.ASSERT} is executed with false result.");
         }
 
         /// <summary>
@@ -514,9 +514,9 @@ namespace Neo.VM
         public virtual void EndFinally(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.CurrentContext!.TryStack is null)
-                throw new VMUncatchableException($"The corresponding TRY block cannot be found.");
+                throw new VmUncatchableException($"The corresponding TRY block cannot be found.");
             if (!engine.CurrentContext.TryStack.TryPop(out var currentTry))
-                throw new VMUncatchableException($"The corresponding TRY block cannot be found.");
+                throw new VmUncatchableException($"The corresponding TRY block cannot be found.");
 
             if (engine.UncaughtException is null)
                 engine.CurrentContext.InstructionPointer = currentTry.EndPointer;
@@ -544,7 +544,7 @@ namespace Neo.VM
                     // It typically occurs due to compilation errors caused by potential issues in the compiler, resulting in either too many or too few
                     // items left on the stack compared to what was anticipated by the return value count.
                     // When you run into this problem, try to reach core-devs at https://github.com/neo-project/neo for help.
-                    throw new VMUncatchableException($"Return value count mismatch: expected {context_pop.RVCount}, but got {context_pop.EvaluationStack.Count} items on the evaluation stack");
+                    throw new VmUncatchableException($"Return value count mismatch: expected {context_pop.RVCount}, but got {context_pop.EvaluationStack.Count} items on the evaluation stack");
                 context_pop.EvaluationStack.CopyTo(stack_eval);
             }
             if (engine.InvocationStack.Count == 0)
@@ -562,7 +562,7 @@ namespace Neo.VM
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Syscall(ExecutionEngine engine, Instruction instruction)
         {
-            throw new VMUncatchableException($"Syscall not found: {instruction.TokenU32}");
+            throw new VmUncatchableException($"Syscall not found: {instruction.TokenU32}");
         }
 
         #region Execute methods
@@ -587,11 +587,11 @@ namespace Neo.VM
         public virtual void ExecuteEndTry(ExecutionEngine engine, int endOffset)
         {
             if (engine.CurrentContext!.TryStack is null)
-                throw new VMUncatchableException($"The corresponding TRY block cannot be found.");
+                throw new VmUncatchableException($"The corresponding TRY block cannot be found.");
             if (!engine.CurrentContext.TryStack.TryPeek(out var currentTry))
-                throw new VMUncatchableException($"The corresponding TRY block cannot be found.");
+                throw new VmUncatchableException($"The corresponding TRY block cannot be found.");
             if (currentTry.State == ExceptionHandlingState.Finally)
-                throw new VMUncatchableException($"The opcode {OpCode.ENDTRY} can't be executed in a FINALLY block.");
+                throw new VmUncatchableException($"The opcode {OpCode.ENDTRY} can't be executed in a FINALLY block.");
 
             var endPointer = checked(engine.CurrentContext.InstructionPointer + endOffset);
             if (currentTry.HasFinally)
@@ -617,7 +617,7 @@ namespace Neo.VM
         public virtual void ExecuteJump(ExecutionEngine engine, int position)
         {
             if (position < 0 || position >= engine.CurrentContext!.Script.Length)
-                throw new VMUncatchableException($"Jump out of range for position: {position}");
+                throw new VmUncatchableException($"Jump out of range for position: {position}");
             engine.CurrentContext.InstructionPointer = position;
             engine.isJumping = true;
         }
@@ -643,11 +643,11 @@ namespace Neo.VM
         public virtual void ExecuteTry(ExecutionEngine engine, int catchOffset, int finallyOffset)
         {
             if (catchOffset == 0 && finallyOffset == 0)
-                throw new VMUncatchableException($"catchOffset and finallyOffset can't be 0 in a TRY block");
+                throw new VmUncatchableException($"catchOffset and finallyOffset can't be 0 in a TRY block");
             if (engine.CurrentContext!.TryStack is null)
                 engine.CurrentContext.TryStack = new Stack<ExceptionHandlingContext>();
             else if (engine.CurrentContext.TryStack.Count >= engine.Limits.MaxTryNestingDepth)
-                throw new VMUncatchableException("MaxTryNestingDepth exceed.");
+                throw new VmUncatchableException("MaxTryNestingDepth exceed.");
             var catchPointer = catchOffset == 0 ? -1 : checked(engine.CurrentContext.InstructionPointer + catchOffset);
             var finallyPointer = finallyOffset == 0 ? -1 : checked(engine.CurrentContext.InstructionPointer + finallyOffset);
             engine.CurrentContext.TryStack.Push(new ExceptionHandlingContext(catchPointer, finallyPointer));

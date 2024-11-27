@@ -48,7 +48,7 @@ namespace Neo.VM
             var x = engine.Pop();
             var type = (StackItemType)instruction.TokenU8;
             if (type == StackItemType.Any || !Enum.IsDefined(typeof(StackItemType), type))
-                throw new VMUncatchableException($"Invalid type: {type}");
+                throw new VmUncatchableException($"Invalid type: {type}");
             engine.Push(x.Type == type);
         }
 

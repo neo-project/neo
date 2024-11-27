@@ -14,9 +14,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Neo.UnitTests.Wallets.NEP6;
-
-  public class UnsafeWalletLoadingTests
+namespace Neo.UnitTests.Wallets.NEP6
+{
+    public class UnsafeWalletLoadingTests
     {
         private class UnsafeWalletContainer
         {
@@ -84,3 +84,4 @@ namespace Neo.UnitTests.Wallets.NEP6;
             Assert.True(partiallyConstructedObservations > 0, "No partially constructed wallet was observed. This doesn't mean the issue doesn't exist, just that it wasn't reproduced in this run.");
         }
     }
+}

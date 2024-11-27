@@ -77,7 +77,7 @@ namespace Neo.VM
             internal set
             {
                 if (value < 0 || value > Script.Length)
-                    throw new VMUncatchableException($"Insert out of range: {value}");
+                    throw new VmUncatchableException($"Insert out of range: {value}");
                 instructionPointer = value;
             }
         }
@@ -116,7 +116,7 @@ namespace Neo.VM
         private ExecutionContext(SharedStates shared_states, int rvcount, int initialPosition)
         {
             if (rvcount < -1 || rvcount > ushort.MaxValue)
-                throw new VMUncatchableException($"Insert out of range: {rvcount}");
+                throw new VmUncatchableException($"Insert out of range: {rvcount}");
             this.shared_states = shared_states;
             RVCount = rvcount;
             InstructionPointer = initialPosition;

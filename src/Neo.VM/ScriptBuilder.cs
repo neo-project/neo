@@ -78,7 +78,7 @@ namespace Neo.VM
         public ScriptBuilder EmitJump(OpCode opcode, int offset)
         {
             if (opcode < OpCode.JMP || opcode > OpCode.JMPLE_L)
-                throw new VMUncatchableException("Invalid jump opcode");
+                throw new VmUncatchableException("Invalid jump opcode");
             if ((int)opcode % 2 == 0 && (offset < sbyte.MinValue || offset > sbyte.MaxValue))
                 opcode += 1;
             if ((int)opcode % 2 == 0)
@@ -97,7 +97,7 @@ namespace Neo.VM
             if (value >= -1 && value <= 16) return Emit(OpCode.PUSH0 + (byte)(int)value);
             Span<byte> buffer = stackalloc byte[32];
             if (!value.TryWriteBytes(buffer, out int bytesWritten, isUnsigned: false, isBigEndian: false))
-                throw new VMUncatchableException("BigInteger write failure");
+                throw new VmUncatchableException("BigInteger write failure");
             return bytesWritten switch
             {
                 1 => Emit(OpCode.PUSHINT8, PadRight(buffer, bytesWritten, 1, value.Sign < 0)),
@@ -106,7 +106,7 @@ namespace Neo.VM
                 <= 8 => Emit(OpCode.PUSHINT64, PadRight(buffer, bytesWritten, 8, value.Sign < 0)),
                 <= 16 => Emit(OpCode.PUSHINT128, PadRight(buffer, bytesWritten, 16, value.Sign < 0)),
                 <= 32 => Emit(OpCode.PUSHINT256, PadRight(buffer, bytesWritten, 32, value.Sign < 0)),
-                _ => throw new VMUncatchableException("Invalid value: BigInteger is too large"),
+                _ => throw new VmUncatchableException("Invalid value: BigInteger is too large"),
             };
         }
 
@@ -128,7 +128,7 @@ namespace Neo.VM
         public ScriptBuilder EmitPush(ReadOnlySpan<byte> data)
         {
             if (data == null)
-                throw new VMUncatchableException("data can't be null");
+                throw new VmUncatchableException("data can't be null");
             if (data.Length < 0x100)
             {
                 Emit(OpCode.PUSHDATA1);

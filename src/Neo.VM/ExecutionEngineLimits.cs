@@ -68,7 +68,7 @@ namespace Neo.VM
         {
             if (size < 0 || size > MaxItemSize)
             {
-                throw new VMUncatchableException($"MaxItemSize exceed: {size}");
+                throw new VmUncatchableException($"MaxItemSize exceed: {size}");
             }
         }
 
@@ -81,7 +81,7 @@ namespace Neo.VM
         {
             if (shift > MaxShift || shift < 0)
             {
-                throw new VMUncatchableException($"Invalid shift value: {shift}");
+                throw new VmUncatchableException($"Invalid shift value: {shift}");
             }
         }
     }

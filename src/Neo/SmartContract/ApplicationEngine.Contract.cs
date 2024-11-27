@@ -78,9 +78,9 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
-            if (contract is null) throw new VMUncatchableException($"Called Contract Does Not Exist: {contractHash}.{method}");
+            if (contract is null) throw new VmUncatchableException($"Called Contract Does Not Exist: {contractHash}.{method}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
-            if (md is null) throw new VMUncatchableException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
+            if (md is null) throw new VmUncatchableException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
             ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
@@ -96,9 +96,9 @@ namespace Neo.SmartContract
         {
             NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
-                throw new VMUncatchableException("It is not allowed to use \"System.Contract.CallNative\" directly.");
+                throw new VmUncatchableException("It is not allowed to use \"System.Contract.CallNative\" directly.");
             if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(SnapshotCache)))
-                throw new VMUncatchableException($"The native contract {contract.Name} is not active.");
+                throw new VmUncatchableException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
         }
 
@@ -155,7 +155,7 @@ namespace Neo.SmartContract
             try
             {
                 if (Trigger != TriggerType.OnPersist)
-                    throw new VMUncatchableException("Trigger type must be 'OnPersist'.");
+                    throw new VmUncatchableException("Trigger type must be 'OnPersist'.");
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
@@ -177,7 +177,7 @@ namespace Neo.SmartContract
             try
             {
                 if (Trigger != TriggerType.PostPersist)
-                    throw new VMUncatchableException("Trigger type must be 'PostPersist'.");
+                    throw new VmUncatchableException("Trigger type must be 'PostPersist'.");
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))

@@ -130,7 +130,7 @@ namespace Neo.VM
         {
             var position = checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI32);
             if (position < 0 || position > engine.CurrentContext.Script.Length)
-                throw new VMUncatchableException($"Bad pointer address(Instruction instruction) {position}");
+                throw new VmUncatchableException($"Bad pointer address(Instruction instruction) {position}");
             engine.Push(new Pointer(engine.CurrentContext.Script, position));
         }
 

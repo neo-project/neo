@@ -171,7 +171,7 @@ namespace Neo.VM
         public virtual void LoadContext(ExecutionContext context)
         {
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
-                throw new VMUncatchableException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
+                throw new VmUncatchableException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
             InvocationStack.Push(context);
             if (EntryContext is null) EntryContext = context;
             CurrentContext = context;
@@ -292,7 +292,7 @@ namespace Neo.VM
         {
             if (ReferenceCounter.Count < Limits.MaxStackSize) return;
             if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                throw new VMUncatchableException($"MaxStackSize exceed: {ReferenceCounter.Count}");
+                throw new VmUncatchableException($"MaxStackSize exceed: {ReferenceCounter.Count}");
         }
 
         /// <summary>

@@ -36,7 +36,7 @@ namespace Neo.VM
         /// <summary>
         /// Jump table constructor
         /// </summary>
-        /// <exception cref="VMUncatchableException">Throw an exception if the opcode was already set</exception>
+        /// <exception cref="VmUncatchableException">Throw an exception if the opcode was already set</exception>
         public JumpTable()
         {
             // Fill defined
@@ -47,7 +47,7 @@ namespace Neo.VM
                 {
                     if (Table[(byte)opCode] is not null)
                     {
-                        throw new VMUncatchableException($"Opcode {opCode} is already defined.");
+                        throw new VmUncatchableException($"Opcode {opCode} is already defined.");
                     }
 
                     Table[(byte)opCode] = (DelAction)mi.CreateDelegate(typeof(DelAction), this);
@@ -66,7 +66,7 @@ namespace Neo.VM
 
         public virtual void InvalidOpcode(ExecutionEngine engine, Instruction instruction)
         {
-            throw new VMUncatchableException($"Opcode {instruction.OpCode} is undefined.");
+            throw new VmUncatchableException($"Opcode {instruction.OpCode} is undefined.");
         }
     }
 }

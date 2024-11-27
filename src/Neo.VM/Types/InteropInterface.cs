@@ -31,7 +31,7 @@ namespace Neo.VM.Types
         /// <param name="value">The wrapped <see cref="object"/>.</param>
         public InteropInterface(object value)
         {
-            _object = value ?? throw new VMUncatchableException("Interop value can't be null");
+            _object = value ?? throw new VmUncatchableException("Interop value can't be null");
         }
 
         public override bool Equals(StackItem? other)

@@ -31,9 +31,9 @@ namespace Neo.VM
         public virtual void InitSSlot(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.CurrentContext!.StaticFields != null)
-                throw new VMUncatchableException($"{instruction.OpCode} cannot be executed twice.");
+                throw new VmUncatchableException($"{instruction.OpCode} cannot be executed twice.");
             if (instruction.TokenU8 == 0)
-                throw new VMUncatchableException($"The operand {instruction.TokenU8} is invalid for OpCode.{instruction.OpCode}.");
+                throw new VmUncatchableException($"The operand {instruction.TokenU8} is invalid for OpCode.{instruction.OpCode}.");
             engine.CurrentContext.StaticFields = new Slot(instruction.TokenU8, engine.ReferenceCounter);
         }
 
@@ -47,9 +47,9 @@ namespace Neo.VM
         public virtual void InitSlot(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.CurrentContext!.LocalVariables != null || engine.CurrentContext.Arguments != null)
-                throw new VMUncatchableException($"{instruction.OpCode} cannot be executed twice.");
+                throw new VmUncatchableException($"{instruction.OpCode} cannot be executed twice.");
             if (instruction.TokenU16 == 0)
-                throw new VMUncatchableException($"The operand {instruction.TokenU16} is invalid for OpCode.{instruction.OpCode}.");
+                throw new VmUncatchableException($"The operand {instruction.TokenU16} is invalid for OpCode.{instruction.OpCode}.");
             if (instruction.TokenU8 > 0)
             {
                 engine.CurrentContext.LocalVariables = new Slot(instruction.TokenU8, engine.ReferenceCounter);
@@ -658,9 +658,9 @@ namespace Neo.VM
         public virtual void ExecuteStoreToSlot(ExecutionEngine engine, Slot? slot, int index)
         {
             if (slot is null)
-                throw new VMUncatchableException("Slot has not been initialized.");
+                throw new VmUncatchableException("Slot has not been initialized.");
             if (index < 0 || index >= slot.Count)
-                throw new VMUncatchableException($"Index out of range when storing to slot: {index}");
+                throw new VmUncatchableException($"Index out of range when storing to slot: {index}");
             slot[index] = engine.Pop();
         }
 
@@ -673,9 +673,9 @@ namespace Neo.VM
         public virtual void ExecuteLoadFromSlot(ExecutionEngine engine, Slot? slot, int index)
         {
             if (slot is null)
-                throw new VMUncatchableException("Slot has not been initialized.");
+                throw new VmUncatchableException("Slot has not been initialized.");
             if (index < 0 || index >= slot.Count)
-                throw new VMUncatchableException($"Index out of range when loading from slot: {index}");
+                throw new VmUncatchableException($"Index out of range when loading from slot: {index}");
             engine.Push(slot[index]);
         }
 

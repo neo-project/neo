@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -26,7 +27,7 @@ namespace Neo.VM.Types
         public override StackItem ConvertTo(StackItemType type)
         {
             if (type == StackItemType.Any || !Enum.IsDefined(typeof(StackItemType), type))
-                throw new VMUncatchableException($"Type can't be converted to StackItemType: {type}");
+                throw new VmUncatchableException($"Type can't be converted to StackItemType: {type}");
             return this;
         }
 

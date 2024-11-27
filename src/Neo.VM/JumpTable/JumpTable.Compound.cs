@@ -37,7 +37,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size * 2 > engine.CurrentContext!.EvaluationStack.Count)
-                throw new VMUncatchableException($"The value {size} is out of range.");
+                throw new VmUncatchableException($"The value {size} is out of range.");
             Map map = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -60,7 +60,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
-                throw new VMUncatchableException($"The value {size} is out of range.");
+                throw new VmUncatchableException($"The value {size} is out of range.");
             Struct @struct = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -82,7 +82,7 @@ namespace Neo.VM
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
-                throw new VMUncatchableException($"The value {size} is out of range.");
+                throw new VmUncatchableException($"The value {size} is out of range.");
             VMArray array = new(engine.ReferenceCounter);
             for (var i = 0; i < size; i++)
             {
@@ -119,7 +119,7 @@ namespace Neo.VM
                     }
                     break;
                 default:
-                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {compound.Type}");
+                    throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {compound.Type}");
             }
             engine.Push(compound.Count);
         }
@@ -152,7 +152,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new VMUncatchableException($"MaxStackSize exceed: {n}");
+                throw new VmUncatchableException($"MaxStackSize exceed: {n}");
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
             engine.Push(new VMArray(engine.ReferenceCounter, nullArray));
@@ -170,11 +170,11 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new VMUncatchableException($"MaxStackSize exceed: {n}");
+                throw new VmUncatchableException($"MaxStackSize exceed: {n}");
 
             var type = (StackItemType)instruction.TokenU8;
             if (!Enum.IsDefined(typeof(StackItemType), type))
-                throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {instruction.TokenU8}");
+                throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {instruction.TokenU8}");
 
             var item = instruction.TokenU8 switch
             {
@@ -213,7 +213,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
-                throw new VMUncatchableException($"MaxStackSize exceed: {n}");
+                throw new VmUncatchableException($"MaxStackSize exceed: {n}");
 
             var nullArray = new StackItem[n];
             Array.Fill(nullArray, StackItem.Null);
@@ -257,7 +257,7 @@ namespace Neo.VM
                     engine.Push(buffer.Size);
                     break;
                 default:
-                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -282,7 +282,7 @@ namespace Neo.VM
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new VMUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new VmUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < array.Count);
                         break;
                     }
@@ -298,7 +298,7 @@ namespace Neo.VM
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new VMUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new VmUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < buffer.Size);
                         break;
                     }
@@ -308,12 +308,12 @@ namespace Neo.VM
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
-                            throw new VMUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
+                            throw new VmUncatchableException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < array.Size);
                         break;
                     }
                 default:
-                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -346,7 +346,7 @@ namespace Neo.VM
             {
                 VMArray array => array,
                 Map map => map.Values,
-                _ => throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}"),
+                _ => throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}"),
             };
             VMArray newArray = new(engine.ReferenceCounter);
             foreach (var item in values)
@@ -405,7 +405,7 @@ namespace Neo.VM
                         break;
                     }
                 default:
-                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -460,16 +460,16 @@ namespace Neo.VM
                         if (index < 0 || index >= buffer.Size)
                             throw new VMCatchableException($"The value {index} is out of range.");
                         if (value is not PrimitiveType p)
-                            throw new VMUncatchableException($"Value must be a primitive type in {instruction.OpCode}");
+                            throw new VmUncatchableException($"Value must be a primitive type in {instruction.OpCode}");
                         var b = (int)p.GetInteger();
                         if (b < sbyte.MinValue || b > byte.MaxValue)
-                            throw new VMUncatchableException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
+                            throw new VmUncatchableException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
                         buffer.InnerBuffer.Span[index] = (byte)b;
                         buffer.InvalidateHashCode();
                         break;
                     }
                 default:
-                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -494,7 +494,7 @@ namespace Neo.VM
                     buffer.InvalidateHashCode();
                     break;
                 default:
-                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -515,14 +515,14 @@ namespace Neo.VM
                 case VMArray array:
                     var index = (int)key.GetInteger();
                     if (index < 0 || index >= array.Count)
-                        throw new VMUncatchableException($"The value {index} is out of range.");
+                        throw new VmUncatchableException($"The value {index} is out of range.");
                     array.RemoveAt(index);
                     break;
                 case Map map:
                     map.Remove(key);
                     break;
                 default:
-                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VmUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 

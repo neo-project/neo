@@ -133,7 +133,7 @@ namespace Neo.Test
             stack.Insert(1, 1);
             stack.Insert(1, 2);
 
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Insert(4, 2));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Insert(4, 2));
 
             Assert.AreEqual(3, stack.Count);
             CollectionAssert.AreEqual(new Integer[] { 1, 2, 3 }, stack.ToArray());
@@ -142,7 +142,7 @@ namespace Neo.Test
             Assert.AreEqual(2, stack.Peek(1));
             Assert.AreEqual(1, stack.Peek(-1));
 
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Peek(-4));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Peek(-4));
         }
 
         [TestMethod]
@@ -154,7 +154,7 @@ namespace Neo.Test
             Assert.AreEqual(2, stack.Pop());
             Assert.AreEqual(1, stack.Pop());
 
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Pop());
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Pop());
 
             stack = CreateOrderedStack(3);
 
@@ -162,7 +162,7 @@ namespace Neo.Test
             Assert.IsTrue(stack.Pop<Integer>().Equals(2));
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
 
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Pop<Integer>());
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Pop<Integer>());
         }
 
         [TestMethod]
@@ -174,8 +174,8 @@ namespace Neo.Test
             Assert.IsTrue(stack.Remove<Integer>(0).Equals(2));
             Assert.IsTrue(stack.Remove<Integer>(-1).Equals(1));
 
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Remove<Integer>(0));
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Remove<Integer>(-1));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Remove<Integer>(0));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Remove<Integer>(-1));
         }
 
         [TestMethod]
@@ -187,18 +187,18 @@ namespace Neo.Test
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
             Assert.IsTrue(stack.Pop<Integer>().Equals(2));
             Assert.IsTrue(stack.Pop<Integer>().Equals(3));
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Pop<Integer>().Equals(0));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Pop<Integer>().Equals(0));
 
             stack = CreateOrderedStack(3);
 
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Reverse(-1));
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Reverse(4));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Reverse(-1));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Reverse(4));
 
             stack.Reverse(1);
             Assert.IsTrue(stack.Pop<Integer>().Equals(3));
             Assert.IsTrue(stack.Pop<Integer>().Equals(2));
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
-            Assert.ThrowsException<VMUncatchableException>(() => stack.Pop<Integer>().Equals(0));
+            Assert.ThrowsException<VmUncatchableException>(() => stack.Pop<Integer>().Equals(0));
         }
 
         [TestMethod]

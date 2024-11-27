@@ -47,19 +47,19 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             int si = (int)engine.Pop().GetInteger();
             if (si < 0)
-                throw new VMUncatchableException($"The value {si} is out of range.");
+                throw new VmUncatchableException($"The value {si} is out of range.");
             ReadOnlySpan<byte> src = engine.Pop().GetSpan();
             if (checked(si + count) > src.Length)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             int di = (int)engine.Pop().GetInteger();
             if (di < 0)
-                throw new VMUncatchableException($"The value {di} is out of range.");
+                throw new VmUncatchableException($"The value {di} is out of range.");
             Types.Buffer dst = engine.Pop<Types.Buffer>();
             if (checked(di + count) > dst.Size)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             // TODO: check if we can optimize the memcpy by using peek instead of  dup then pop
             src.Slice(si, count).CopyTo(dst.InnerBuffer.Span[di..]);
             dst.InvalidateHashCode();
@@ -97,13 +97,13 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             int index = (int)engine.Pop().GetInteger();
             if (index < 0)
-                throw new VMUncatchableException($"The value {index} is out of range.");
+                throw new VmUncatchableException($"The value {index} is out of range.");
             var x = engine.Pop().GetSpan();
             if (index + count > x.Length)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             Types.Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
@@ -121,10 +121,10 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             var x = engine.Pop().GetSpan();
             if (count > x.Length)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             Types.Buffer result = new(count, false);
             x[..count].CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
@@ -142,10 +142,10 @@ namespace Neo.VM
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             var x = engine.Pop().GetSpan();
             if (count > x.Length)
-                throw new VMUncatchableException($"The value {count} is out of range.");
+                throw new VmUncatchableException($"The value {count} is out of range.");
             Types.Buffer result = new(count, false);
             x[^count..^0].CopyTo(result.InnerBuffer.Span);
             engine.Push(result);

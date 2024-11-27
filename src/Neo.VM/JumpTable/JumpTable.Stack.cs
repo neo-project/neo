@@ -71,7 +71,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0)
-                throw new VMUncatchableException($"The negative value {n} is invalid for OpCode.{instruction.OpCode}.");
+                throw new VmUncatchableException($"The negative value {n} is invalid for OpCode.{instruction.OpCode}.");
             engine.CurrentContext!.EvaluationStack.Remove<StackItem>(n);
         }
 
@@ -125,7 +125,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0)
-                throw new VMUncatchableException($"The negative value {n} is invalid for OpCode.{instruction.OpCode}.");
+                throw new VmUncatchableException($"The negative value {n} is invalid for OpCode.{instruction.OpCode}.");
             engine.Push(engine.Peek(n));
         }
 
@@ -181,7 +181,7 @@ namespace Neo.VM
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0)
-                throw new VMUncatchableException($"The negative value {n} is invalid for OpCode.{instruction.OpCode}.");
+                throw new VmUncatchableException($"The negative value {n} is invalid for OpCode.{instruction.OpCode}.");
             if (n == 0) return;
             var x = engine.CurrentContext!.EvaluationStack.Remove<StackItem>(n);
             engine.Push(x);

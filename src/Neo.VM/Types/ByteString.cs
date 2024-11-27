@@ -61,7 +61,7 @@ namespace Neo.VM.Types
         internal bool Equals(StackItem? other, ref uint limits)
         {
             if (Size > limits || limits == 0)
-                throw new VMUncatchableException("The operand exceeds the maximum comparable size.");
+                throw new VmUncatchableException("The operand exceeds the maximum comparable size.");
             uint comparedSize = 1;
             try
             {
@@ -69,7 +69,7 @@ namespace Neo.VM.Types
                 comparedSize = Math.Max((uint)Math.Max(Size, b.Size), comparedSize);
                 if (ReferenceEquals(this, b)) return true;
                 if (b.Size > limits)
-                    throw new VMUncatchableException("The operand exceeds the maximum comparable size.");
+                    throw new VmUncatchableException("The operand exceeds the maximum comparable size.");
                 return Equals(b);
             }
             finally

@@ -20,11 +20,7 @@ namespace Neo.VM.Exceptions
     /// Represents an unhandled exception in the VM.
     /// Thrown when there is an exception in the VM that is not caught by any script.
     /// </summary>
-<<<<<<<< HEAD:src/Neo.VM/VMExceptions/VMUnhandledException.cs
     public class VMUnhandledException : VMCatchableException
-========
-    public class VMUnhandledException : Exception, IVMException
->>>>>>>> 3db7457a55dc584dd29e5d9cff882d560ba46db0:src/Neo.VM/Exceptions/VMUnhandledException.cs
     {
         /// <summary>
         /// The unhandled exception in the VM.

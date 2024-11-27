@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 
 namespace Neo.VM
@@ -16,7 +17,7 @@ namespace Neo.VM
     /// <summary>
     /// Represents the exception thrown when the bad script is parsed.
     /// </summary>
-    public class BadScriptException : VMUncatchableException
+    public class BadScriptException : VmUncatchableException
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BadScriptException"/> class.

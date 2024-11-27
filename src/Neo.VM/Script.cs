@@ -146,10 +146,10 @@ namespace Neo.VM
         /// <exception cref="ArgumentException">In strict mode, the <see cref="Instruction"/> was not found at the specified position.</exception>
         public Instruction GetInstruction(int ip)
         {
-            if (ip >= Length) throw new VMUncatchableException("ip is out of bounds");
+            if (ip >= Length) throw new VmUncatchableException("ip is out of bounds");
             if (!_instructions.TryGetValue(ip, out Instruction? instruction))
             {
-                if (strictMode) throw new VMUncatchableException("ip not found with strict mode");
+                if (strictMode) throw new VmUncatchableException("ip not found with strict mode");
                 instruction = new Instruction(_value, ip);
                 _instructions.Add(ip, instruction);
             }
