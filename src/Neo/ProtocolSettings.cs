@@ -150,8 +150,10 @@ namespace Neo
             {
                 if (optional)
                 {
-                    // Same as default
-                    return Load(Default);
+                    // Load with default values
+                    var configuration = new ConfigurationBuilder().Build();
+                    var emptySection = configuration.GetSection("EmptySection");
+                    return Load(emptySection);
                 }
                 else
                 {
@@ -191,29 +193,6 @@ namespace Neo
                     : Default.Hardforks
             };
             return Custom;
-        }
-
-        /// <summary>
-        /// Loads the <see cref="ProtocolSettings"/> cloning another <see cref="ProtocolSettings"/>.
-        /// </summary>
-        /// <param name="settings">The <see cref="IConfigurationSection"/> to be cloned.</param>
-        /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
-        public static ProtocolSettings Load(ProtocolSettings settings)
-        {
-            return Custom = new ProtocolSettings
-            {
-                Network = settings.Network,
-                AddressVersion = settings.AddressVersion,
-                StandbyCommittee = [.. settings.StandbyCommittee], // Clone
-                ValidatorsCount = settings.ValidatorsCount,
-                SeedList = [.. settings.SeedList], // Clone
-                MillisecondsPerBlock = settings.MillisecondsPerBlock,
-                MaxTransactionsPerBlock = settings.MaxTransactionsPerBlock,
-                MemoryPoolMaxTransactions = settings.MemoryPoolMaxTransactions,
-                MaxTraceableBlocks = settings.MaxTraceableBlocks,
-                InitialGasDistribution = settings.InitialGasDistribution,
-                Hardforks = settings.Hardforks // Already immutable
-            };
         }
 
         /// <summary>
