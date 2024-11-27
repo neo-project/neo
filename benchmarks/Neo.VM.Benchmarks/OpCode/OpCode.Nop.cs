@@ -13,31 +13,28 @@ using BenchmarkDotNet.Attributes;
 
 namespace Neo.VM.Benchmark.OpCode
 {
-    public class OpCode_Nop
+    public class OpCode_Nop : OpCodeBase
     {
-        protected VM.OpCode Opcode => VM.OpCode.NOP;
+        protected override VM.OpCode Opcode => VM.OpCode.NOP;
 
-        private BenchmarkEngine _engine;
-
-        [IterationSetup]
-        public void Setup()
+        protected override byte[] CreateOneOpCodeScript()
         {
             var builder = new InstructionBuilder();
-            builder.AddInstruction(VM.OpCode.NOP);
-
-            _engine = new BenchmarkEngine();
-            _engine.LoadScript(builder.ToArray());
-            _engine.ExecuteUntil(Opcode);
+            builder.Push(ItemCount);
+            builder.AddInstruction(Opcode);
+            return builder.ToArray();
         }
 
-        [IterationCleanup]
-        public void Cleanup()
+        protected override byte[] CreateOneGASScript()
         {
-            _engine.Dispose();
+            var builder = new InstructionBuilder();
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
+            builder.Push(ItemCount);
+            builder.AddInstruction(Opcode);
+            builder.AddInstruction(VM.OpCode.DROP);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
+            return builder.ToArray();
         }
-
-        [Benchmark]
-        public void Bench() => _engine.ExecuteNext();
     }
 }
 

@@ -102,7 +102,7 @@ namespace Neo.VM.Benchmark.OpCode
             [VM.OpCode.ROLL] = 1 << 4,
             [VM.OpCode.REVERSE3] = 1 << 1,
             [VM.OpCode.REVERSE4] = 1 << 1,
-            [VM.OpCode.REVERSEN] = 1 << 4,
+            [VM.OpCode.REVERSEN] = 1 << 2,
             [VM.OpCode.INITSSLOT] = 1 << 4,
             [VM.OpCode.INITSLOT] = 1 << 6,
             [VM.OpCode.LDSFLD0] = 1 << 1,

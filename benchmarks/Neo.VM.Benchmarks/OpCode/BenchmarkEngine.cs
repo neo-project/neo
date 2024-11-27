@@ -28,7 +28,7 @@ namespace Neo.VM.Benchmark.OpCode
         {
             [VM.OpCode.UNPACK] = (16, 1),
             [VM.OpCode.PACK] = (16, 0.5f),
-            [VM.OpCode.REVERSEN] = (256, 0.005f),
+            [VM.OpCode.REVERSEN] = (64, 0.02f),
         };
 
 
@@ -93,7 +93,7 @@ namespace Neo.VM.Benchmark.OpCode
                 if (s_opCodeValueRanges.TryGetValue(instruction.OpCode, out var opCodeRange))
                 {
                     var gasPrice = _complexFactor >= opCodeRange.Item1
-                        ? (int)(_complexFactor * opCodeRange.Item2)
+                        ? (int)(_complexFactor * opCodeRange.Item2 + 1)
                         : 1;
                     // Console.WriteLine("opCodeRange = "+opCodeRange + " _complexFactor = "+ _complexFactor+ " gasPrice: "+gasPrice);
                     _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3 * gasPrice;
