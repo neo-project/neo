@@ -134,9 +134,7 @@ namespace Neo
         {
             var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
             var section = config.GetSection("ProtocolConfiguration");
-            var settings = Load(section);
-            CheckingHardfork(settings);
-            return settings;
+            return Load(section);
         }
 
         /// <summary>
@@ -154,9 +152,7 @@ namespace Neo
                     // Load with default values
                     var configuration = new ConfigurationBuilder().Build();
                     var section = configuration.GetSection("EmptySection");
-                    var settings = Load(section);
-                    CheckingHardfork(settings);
-                    return settings;
+                    return Load(section);
                 }
                 else
                 {
@@ -195,6 +191,7 @@ namespace Neo
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
                     : Default.Hardforks
             };
+            CheckingHardfork(Custom);
             return Custom;
         }
 
