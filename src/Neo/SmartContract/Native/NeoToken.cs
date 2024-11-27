@@ -327,13 +327,8 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
-        [ContractMethod(true, Hardfork.HF_Echidna, Name = nameof(RegisterCandidate), RequiredCallFlags = CallFlags.States)]
-        private bool OldRegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
-        {
-            return RegisterCandidate(engine, pubkey);
-        }
-
-        [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -350,13 +345,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(true, Hardfork.HF_Echidna, Name = nameof(UnregisterCandidate), CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
-        private bool OldUnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
-        {
-            return UnregisterCandidate(engine, pubkey);
-        }
-
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -373,13 +363,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(true, Hardfork.HF_Echidna, Name = nameof(Vote), CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
-        private async ContractTask<bool> OldVote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
-        {
-            return await Vote(engine, account, voteTo);
-        }
-
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
