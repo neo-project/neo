@@ -11,18 +11,19 @@
 
 using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Neo.Plugins.Storage
 {
-    internal class Store : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
+    internal class Store : IStore
     {
         private readonly DB _db;
+        private readonly Options _options;
 
         public Store(string path)
         {
-            _db = DB.Open(path, new Options { CreateIfMissing = true, FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15) });
+            _options = new Options { CreateIfMissing = true, FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15) };
+            _db = DB.Open(path, _options);
         }
 
         public void Delete(byte[] key)
@@ -30,7 +31,11 @@ namespace Neo.Plugins.Storage
             _db.Delete(WriteOptions.Default, key);
         }
 
-        public void Dispose() => _db.Dispose();
+        public void Dispose()
+        {
+            _db.Dispose();
+            _options.Dispose();
+        }
 
         public ISnapshot GetSnapshot() =>
             new Snapshot(_db);
@@ -55,11 +60,5 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[], byte[])> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
             _db.Seek(ReadOptions.Default, prefix, direction);
-
-        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator() =>
-            _db.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() =>
-            _db.GetEnumerator();
     }
 }
