@@ -11,7 +11,7 @@
 <p align="center">
    A modern distributed network for the Smart Economy.
   <br>
-  <a href="https://developers.neo.org/docs/"><strong>Documentation »</strong></a>
+  <a href="https://docs.neo.org/"><strong>Documentation »</strong></a>
   <br>
   <br>
   <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
