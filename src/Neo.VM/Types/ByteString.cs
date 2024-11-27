@@ -9,9 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM.Cryptography;
+using Neo.VM.Exceptions;
 using System;
-using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -28,9 +27,6 @@ namespace Neo.VM.Types
         /// An empty <see cref="ByteString"/>.
         /// </summary>
         public static readonly ByteString Empty = ReadOnlyMemory<byte>.Empty;
-
-        private static readonly uint s_seed = unchecked((uint)new Random().Next());
-        private int _hashCode = 0;
 
         public override ReadOnlyMemory<byte> Memory { get; }
         public override StackItemType Type => StackItemType.ByteString;
@@ -65,7 +61,7 @@ namespace Neo.VM.Types
         internal bool Equals(StackItem? other, ref uint limits)
         {
             if (Size > limits || limits == 0)
-                throw new VMUncatchableException($"The operand exceeds the maximum comparable size: {Size}/{limits}");
+                throw new VMUncatchableException("The operand exceeds the maximum comparable size.");
             uint comparedSize = 1;
             try
             {
@@ -73,7 +69,7 @@ namespace Neo.VM.Types
                 comparedSize = Math.Max((uint)Math.Max(Size, b.Size), comparedSize);
                 if (ReferenceEquals(this, b)) return true;
                 if (b.Size > limits)
-                    throw new VMUncatchableException($"The operand exceeds the maximum comparable size: {b.Size}/{limits}");
+                    throw new VMUncatchableException("The operand exceeds the maximum comparable size.");
                 return Equals(b);
             }
             finally
@@ -84,23 +80,13 @@ namespace Neo.VM.Types
 
         public override bool GetBoolean()
         {
-            if (Size > Integer.MaxSize) throw new VMUncatchableException($"The operand exceeds the maximum comparable size: {Size}/{Integer.MaxSize}");
-            return Unsafe.NotZero(GetSpan());
-        }
-
-        public override int GetHashCode()
-        {
-            if (_hashCode == 0)
-            {
-                using Murmur32 murmur = new(s_seed);
-                _hashCode = BinaryPrimitives.ReadInt32LittleEndian(murmur.ComputeHash(GetSpan().ToArray()));
-            }
-            return _hashCode;
+            if (Size > Integer.MaxSize) throw new InvalidCastException();
+            return GetSpan().NotZero();
         }
 
         public override BigInteger GetInteger()
         {
-            if (Size > Integer.MaxSize) throw new VMUncatchableException($"The operand exceeds the maximum comparable size: {Size}/{Integer.MaxSize}");
+            if (Size > Integer.MaxSize) throw new InvalidCastException($"MaxSize exceed: {Size}");
             return new BigInteger(GetSpan());
         }
 

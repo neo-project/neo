@@ -11,10 +11,9 @@
 
 using System;
 
-namespace Neo.VM;
-
-public class VMUncatchableException : Exception
+namespace Neo.VM.Exceptions
 {
+<<<<<<<< HEAD:src/Neo.VM/VMExceptions/VMUncatchableException.cs
     /// <summary>
     /// Represents an exception that will be thrown during the execution of the VM,
     /// is not catchable by the VM, and will directly cause the VM execution to fault.
@@ -22,5 +21,14 @@ public class VMUncatchableException : Exception
     /// <param name="message">The error message that explains the reason for the exception.</param>
     public VMUncatchableException(string message) : base(message)
     {
+========
+    public class VMUncatchableException : Exception, IVMException
+    {
+        public VMUncatchableException(string message) : base(message)
+        {
+            if (string.IsNullOrEmpty(message))
+                throw new VMUncatchableException("Message cannot be null or empty.");
+        }
+>>>>>>>> 3db7457a55dc584dd29e5d9cff882d560ba46db0:src/Neo.VM/Exceptions/VMUncatchableException.cs
     }
 }

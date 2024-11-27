@@ -9,12 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo.VM
 {
@@ -59,7 +58,7 @@ namespace Neo.VM
         public EvaluationStack ResultStack { get; }
 
         /// <summary>
-        /// The VM object representing the uncaught vm-catchable exception.
+        /// The VM object representing the uncaught exception.
         /// </summary>
         public StackItem? UncaughtException { get; internal set; }
 
@@ -172,7 +171,7 @@ namespace Neo.VM
         public virtual void LoadContext(ExecutionContext context)
         {
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
-                throw new VMUncatchableException($"MaxInvocationStackSize exceed: {InvocationStack.Count}/{Limits.MaxInvocationStackSize}");
+                throw new VMUncatchableException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
             InvocationStack.Push(context);
             if (EntryContext is null) EntryContext = context;
             CurrentContext = context;
@@ -293,7 +292,7 @@ namespace Neo.VM
         {
             if (ReferenceCounter.Count < Limits.MaxStackSize) return;
             if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                throw new VMUncatchableException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
+                throw new VMUncatchableException($"MaxStackSize exceed: {ReferenceCounter.Count}");
         }
 
         /// <summary>

@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -43,8 +44,8 @@ namespace Neo.VM
 
         public static BigInteger ModInverse(this BigInteger value, BigInteger modulus)
         {
-            if (value <= 0) throw new VMUncatchableException($"The value {nameof(value)} is less than or equal to 0: {value}");
-            if (modulus < 2) throw new VMUncatchableException($"The modulus {nameof(modulus)} is less than 2: {modulus}");
+            if (value <= 0) throw new VMUncatchableException("value less or equal to zero");
+            if (modulus < 2) throw new VMUncatchableException("modulus can't be less than 2");
             BigInteger r = value, old_r = modulus, s = 1, old_s = 0;
             while (r > 0)
             {
@@ -54,13 +55,13 @@ namespace Neo.VM
             }
             var result = old_s % modulus;
             if (result < 0) result += modulus;
-            if (!(value * result % modulus).IsOne) throw new VMUncatchableException($"The value {nameof(value)} and result {result} are not coprime with modulus {modulus}");
+            if (!(value * result % modulus).IsOne) throw new VMUncatchableException("Invalid ModInverse result");
             return result;
         }
 
         public static BigInteger Sqrt(this BigInteger value)
         {
-            if (value < 0) throw new VMUncatchableException($"The value {nameof(value)} can not be negative: {value}");
+            if (value < 0) throw new VMUncatchableException("value can not be negative");
             if (value.IsZero) return BigInteger.Zero;
             if (value < 4) return BigInteger.One;
 

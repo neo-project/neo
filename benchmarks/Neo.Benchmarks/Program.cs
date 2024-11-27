@@ -14,3 +14,4 @@ using Neo.Benchmark;
 
 // BenchmarkRunner.Run<Benchmarks_PoCs>();
 BenchmarkRunner.Run<Benchmarks_UInt160>();
+BenchmarkRunner.Run<Benchmarks_Hash>();

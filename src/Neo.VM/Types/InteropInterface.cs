@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Diagnostics;
 
@@ -30,7 +31,7 @@ namespace Neo.VM.Types
         /// <param name="value">The wrapped <see cref="object"/>.</param>
         public InteropInterface(object value)
         {
-            _object = value ?? throw new VMUncatchableException($"InteropInterface {nameof(value)} can not be null.");
+            _object = value ?? throw new VMUncatchableException("Interop value can't be null");
         }
 
         public override bool Equals(StackItem? other)
@@ -53,7 +54,7 @@ namespace Neo.VM.Types
         public override T GetInterface<T>()
         {
             if (_object is T t) return t;
-            throw new VMUncatchableException($"The interopInterface item can't be casted to type {typeof(T)}");
+            throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
         }
 
         internal object GetInterface()

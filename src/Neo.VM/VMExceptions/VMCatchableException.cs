@@ -11,12 +11,17 @@
 
 using System;
 
-namespace Neo.VM
+namespace Neo.VM.Exceptions
 {
-    public class VMCatchableException : Exception
+    public class VMCatchableException : Exception, IVMException
     {
         public VMCatchableException(string message) : base($"{message}")
         {
+<<<<<<<< HEAD:src/Neo.VM/VMExceptions/VMCatchableException.cs
+========
+            if (string.IsNullOrEmpty(message))
+                throw new VMUncatchableException("Message cannot be null or empty.");
+>>>>>>>> 3db7457a55dc584dd29e5d9cff882d560ba46db0:src/Neo.VM/Exceptions/VMCatchableException.cs
         }
     }
 }

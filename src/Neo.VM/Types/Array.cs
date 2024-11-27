@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -32,7 +33,7 @@ namespace Neo.VM.Types
             get => _array[index];
             set
             {
-                if (IsReadOnly) throw new VMUncatchableException("The Array object is readonly, can not set item.");
+                if (IsReadOnly) throw new VMUncatchableException("The object is readonly.");
                 ReferenceCounter?.RemoveReference(_array[index], this);
                 _array[index] = value;
                 if (ReferenceCounter != null && value is CompoundType { ReferenceCounter: null })
@@ -95,7 +96,7 @@ namespace Neo.VM.Types
         /// <param name="item">The item to be added.</param>
         public void Add(StackItem item)
         {
-            if (IsReadOnly) throw new VMUncatchableException("The Array object is readonly, can not add item.");
+            if (IsReadOnly) throw new VMUncatchableException("The object is readonly.");
             _array.Add(item);
 
             if (ReferenceCounter == null) return;
@@ -109,7 +110,7 @@ namespace Neo.VM.Types
 
         public override void Clear()
         {
-            if (IsReadOnly) throw new VMUncatchableException("The Array object is readonly, can not clear.");
+            if (IsReadOnly) throw new VMUncatchableException("The object is readonly.");
             if (ReferenceCounter != null)
                 foreach (StackItem item in _array)
                     ReferenceCounter.RemoveReference(item, this);
@@ -150,7 +151,7 @@ namespace Neo.VM.Types
         /// <param name="index">The index of the item to be removed.</param>
         public void RemoveAt(int index)
         {
-            if (IsReadOnly) throw new VMUncatchableException("The Array object is readonly, can not remove item.");
+            if (IsReadOnly) throw new VMUncatchableException("The object is readonly.");
             ReferenceCounter?.RemoveReference(_array[index], this);
             _array.RemoveAt(index);
         }
@@ -160,7 +161,7 @@ namespace Neo.VM.Types
         /// </summary>
         public void Reverse()
         {
-            if (IsReadOnly) throw new VMUncatchableException("The Array object is readonly, can not reverse.");
+            if (IsReadOnly) throw new VMUncatchableException("The object is readonly.");
             _array.Reverse();
         }
     }

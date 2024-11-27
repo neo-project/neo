@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using Neo.VM.Types;
 using System;
 using System.Linq;
@@ -345,7 +346,7 @@ namespace Neo.VM
             {
                 VMArray array => array,
                 Map map => map.Values,
-                _ => throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}"),
+                _ => throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}"),
             };
             VMArray newArray = new(engine.ReferenceCounter);
             foreach (var item in values)
@@ -404,7 +405,7 @@ namespace Neo.VM
                         break;
                     }
                 default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -459,15 +460,16 @@ namespace Neo.VM
                         if (index < 0 || index >= buffer.Size)
                             throw new VMCatchableException($"The value {index} is out of range.");
                         if (value is not PrimitiveType p)
-                            throw new InvalidOperationException($"Value must be a primitive type in {instruction.OpCode}");
+                            throw new VMUncatchableException($"Value must be a primitive type in {instruction.OpCode}");
                         var b = (int)p.GetInteger();
                         if (b < sbyte.MinValue || b > byte.MaxValue)
-                            throw new InvalidOperationException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
+                            throw new VMUncatchableException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
                         buffer.InnerBuffer.Span[index] = (byte)b;
+                        buffer.InvalidateHashCode();
                         break;
                     }
                 default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -489,9 +491,10 @@ namespace Neo.VM
                     break;
                 case Types.Buffer buffer:
                     buffer.InnerBuffer.Span.Reverse();
+                    buffer.InvalidateHashCode();
                     break;
                 default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 
@@ -512,14 +515,14 @@ namespace Neo.VM
                 case VMArray array:
                     var index = (int)key.GetInteger();
                     if (index < 0 || index >= array.Count)
-                        throw new InvalidOperationException($"The value {index} is out of range.");
+                        throw new VMUncatchableException($"The value {index} is out of range.");
                     array.RemoveAt(index);
                     break;
                 case Map map:
                     map.Remove(key);
                     break;
                 default:
-                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+                    throw new VMUncatchableException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
         }
 

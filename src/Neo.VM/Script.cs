@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Exceptions;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace Neo.VM
     [DebuggerDisplay("Length={Length}")]
     public class Script
     {
+        private int _hashCode = 0;
         private readonly ReadOnlyMemory<byte> _value;
         private readonly bool strictMode;
         private readonly Dictionary<int, Instruction> _instructions = new();
@@ -144,10 +146,10 @@ namespace Neo.VM
         /// <exception cref="ArgumentException">In strict mode, the <see cref="Instruction"/> was not found at the specified position.</exception>
         public Instruction GetInstruction(int ip)
         {
-            if (ip >= Length) throw new VMUncatchableException($"InstructionPointer {nameof(ip)} out of range: {ip}/{Length}");
+            if (ip >= Length) throw new VMUncatchableException("ip is out of bounds");
             if (!_instructions.TryGetValue(ip, out Instruction? instruction))
             {
-                if (strictMode) throw new VMUncatchableException($"ip not found with strict mode, {nameof(ip)}: {ip}");
+                if (strictMode) throw new VMUncatchableException("ip not found with strict mode");
                 instruction = new Instruction(_value, ip);
                 _instructions.Add(ip, instruction);
             }
@@ -157,5 +159,15 @@ namespace Neo.VM
         public static implicit operator ReadOnlyMemory<byte>(Script script) => script._value;
         public static implicit operator Script(ReadOnlyMemory<byte> script) => new(script);
         public static implicit operator Script(byte[] script) => new(script);
+
+        public override int GetHashCode()
+        {
+            if (_hashCode == 0)
+            {
+                return _hashCode = HashCode.Combine(Unsafe.HashBytes(_value.Span));
+            }
+
+            return _hashCode;
+        }
     }
 }

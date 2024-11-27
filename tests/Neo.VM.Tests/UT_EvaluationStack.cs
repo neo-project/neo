@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Test.Extensions;
 using Neo.VM;
+using Neo.VM.Exceptions;
 using Neo.VM.Types;
 using System;
 using System.Collections;
