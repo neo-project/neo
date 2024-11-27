@@ -38,8 +38,9 @@ namespace Neo.Network.P2P.Payloads
 
         public void Deserialize(ref MemoryReader reader)
         {
-            if (reader.ReadByte() != (byte)Type)
-                throw new FormatException();
+            var type = reader.ReadByte();
+            if (type != (byte)Type)
+                throw new FormatException($"Expected {Type}, got {type}.");
             DeserializeWithoutType(ref reader);
         }
 
@@ -52,7 +53,7 @@ namespace Neo.Network.P2P.Payloads
         {
             TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
             if (ReflectionCache<TransactionAttributeType>.CreateInstance(type) is not TransactionAttribute attribute)
-                throw new FormatException();
+                throw new FormatException($"Invalid attribute type: {type}.");
             attribute.DeserializeWithoutType(ref reader);
             return attribute;
         }
