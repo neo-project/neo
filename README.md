@@ -106,7 +106,7 @@
 ## Overview
 This repository contain main classes of the 
 [Neo](https://neo.org) blockchain.   
-Visit the [tutorials](https://developers.neo.org) to get started.
+Visit the [tutorials](https://docs.neo.org) to get started.
 
 
 ## Project structure
