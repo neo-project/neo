@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Neo
 {
@@ -152,8 +153,10 @@ namespace Neo
                 {
                     // Load with default values
                     var configuration = new ConfigurationBuilder().Build();
-                    var emptySection = configuration.GetSection("EmptySection");
-                    return Load(emptySection);
+                    var section = configuration.GetSection("EmptySection");
+                    var settings = Load(section);
+                    CheckingHardfork(settings);
+                    return settings;
                 }
                 else
                 {
