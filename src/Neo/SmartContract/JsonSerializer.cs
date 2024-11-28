@@ -35,14 +35,15 @@ namespace Neo.SmartContract
         /// Serializes a <see cref="StackItem"/> to a <see cref="JToken"/>.
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
+        /// <param name="hardforkChecker">Hardfork checker</param>
         /// <returns>The serialized object.</returns>
-        public static JToken Serialize(StackItem item)
+        public static JToken Serialize(StackItem item, Func<Hardfork, bool> hardforkChecker = null)
         {
             switch (item)
             {
                 case Array array:
                     {
-                        return array.Select(p => Serialize(p)).ToArray();
+                        return array.Select(p => Serialize(p, hardforkChecker)).ToArray();
                     }
                 case ByteString _:
                 case Buffer _:
@@ -51,7 +52,7 @@ namespace Neo.SmartContract
                     }
                 case Integer num:
                     {
-                        return num.GetInteger();
+                        return new JNumber((long)num.GetInteger(), hardforkChecker == null || hardforkChecker(Hardfork.HF_Echidna));
                     }
                 case Boolean boolean:
                     {
@@ -66,7 +67,7 @@ namespace Neo.SmartContract
                             if (entry.Key is not ByteString) throw new FormatException();
 
                             var key = entry.Key.GetString();
-                            var value = Serialize(entry.Value);
+                            var value = Serialize(entry.Value, hardforkChecker);
 
                             ret[key] = value;
                         }

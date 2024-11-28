@@ -39,12 +39,17 @@ namespace Neo.Json
         /// Initializes a new instance of the <see cref="JNumber"/> class with the specified value.
         /// </summary>
         /// <param name="value">The value of the JSON token.</param>
-        public JNumber(double value = 0)
+        /// <param name="checkMinMax">True if we want to ensure that the value is in the limits.</param>
+        public JNumber(double value = 0, bool checkMinMax = true)
         {
-            if (value > MAX_SAFE_INTEGER)
-                throw new ArgumentException("value is higher than MAX_SAFE_INTEGER", nameof(value));
-            if (value < MIN_SAFE_INTEGER)
-                throw new ArgumentException("value is lower than MIN_SAFE_INTEGER", nameof(value));
+            if (checkMinMax)
+            {
+                if (value > MAX_SAFE_INTEGER)
+                    throw new ArgumentException("value is higher than MAX_SAFE_INTEGER", nameof(value));
+                if (value < MIN_SAFE_INTEGER)
+                    throw new ArgumentException("value is lower than MIN_SAFE_INTEGER", nameof(value));
+            }
+
             if (!double.IsFinite(value))
                 throw new ArgumentException("value is not finite", nameof(value));
 
