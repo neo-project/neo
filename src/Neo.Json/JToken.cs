@@ -296,12 +296,12 @@ namespace Neo.Json
 
         public static implicit operator JToken(bool value)
         {
-            return (JBoolean)value;
+            return new JBoolean(value);
         }
 
         public static implicit operator JToken(double value)
         {
-            return (JNumber)value;
+            return new JNumber(value);
         }
 
         public static implicit operator JToken(BigInteger value)
