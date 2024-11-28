@@ -28,7 +28,7 @@ namespace Neo.Plugins
 
         public static string ToBase64(this ReadOnlySpan<byte> item)
         {
-            return item == null ? String.Empty : Convert.ToBase64String(item);
+            return item.IsEmpty ? String.Empty : Convert.ToBase64String(item);
         }
 
         public static int GetVarSize(this ByteString item)
