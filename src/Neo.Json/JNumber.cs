@@ -132,6 +132,11 @@ namespace Neo.Json
             return new JNumber(value);
         }
 
+        public static implicit operator JNumber(long value)
+        {
+            return new JNumber(value);
+        }
+
         public static implicit operator JNumber(BigInteger value)
         {
             return new JNumber((long)value);
