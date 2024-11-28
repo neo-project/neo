@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System.Globalization;
 using System.Numerics;
 
@@ -37,11 +38,11 @@ namespace Neo.Cryptography.ECC
         private ECCurve(BigInteger Q, BigInteger A, BigInteger B, BigInteger N, byte[] G)
         {
             this.Q = Q;
-            this.ExpectedECPointLength = ((int)VM.Utility.GetBitLength(Q) + 7) / 8;
+            ExpectedECPointLength = ((int)VM.Utility.GetBitLength(Q) + 7) / 8;
             this.A = new ECFieldElement(A, this);
             this.B = new ECFieldElement(B, this);
             this.N = N;
-            this.Infinity = new ECPoint(null, null, this);
+            Infinity = new ECPoint(null, null, this);
             this.G = ECPoint.DecodePoint(G, this);
         }
 

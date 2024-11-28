@@ -23,7 +23,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// Represents a deployed contract.
     /// </summary>
-    public class ContractState : IInteroperable
+    public class ContractState : IInteroperableVerifiable
     {
         /// <summary>
         /// The id of the contract.
@@ -69,7 +69,7 @@ namespace Neo.SmartContract
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            ContractState from = (ContractState)replica;
+            var from = (ContractState)replica;
             Id = from.Id;
             UpdateCounter = from.UpdateCounter;
             Hash = from.Hash;
@@ -79,11 +79,16 @@ namespace Neo.SmartContract
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Array array = (Array)stackItem;
+            ((IInteroperableVerifiable)this).FromStackItem(stackItem, true);
+        }
+
+        void IInteroperableVerifiable.FromStackItem(StackItem stackItem, bool verify)
+        {
+            var array = (Array)stackItem;
             Id = (int)array[0].GetInteger();
             UpdateCounter = (ushort)array[1].GetInteger();
             Hash = new UInt160(array[2].GetSpan());
-            Nef = ((ByteString)array[3]).Memory.AsSerializable<NefFile>();
+            Nef = NefFile.Parse(((ByteString)array[3]).Memory, verify);
             Manifest = array[4].ToInteroperable<ContractManifest>();
         }
 
@@ -114,7 +119,7 @@ namespace Neo.SmartContract
             };
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter) });
         }

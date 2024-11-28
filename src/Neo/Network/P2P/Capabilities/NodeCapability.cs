@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <param name="type">The type of the <see cref="NodeCapability"/>.</param>
         protected NodeCapability(NodeCapabilityType type)
         {
-            this.Type = type;
+            Type = type;
         }
 
         void ISerializable.Deserialize(ref MemoryReader reader)
@@ -56,9 +56,7 @@ namespace Neo.Network.P2P.Capabilities
             NodeCapabilityType type = (NodeCapabilityType)reader.ReadByte();
             NodeCapability capability = type switch
             {
-#pragma warning disable CS0612 // Type or member is obsolete
-                NodeCapabilityType.TcpServer or NodeCapabilityType.WsServer => new ServerCapability(type),
-#pragma warning restore CS0612 // Type or member is obsolete
+                NodeCapabilityType.TcpServer => new ServerCapability(type),
                 NodeCapabilityType.FullNode => new FullNodeCapability(),
                 _ => throw new FormatException(),
             };

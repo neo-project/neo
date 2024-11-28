@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Properties;
@@ -90,12 +91,12 @@ namespace Neo.GUI
             using ApplicationEngine engine = ApplicationEngine.Run(tx_test.Script, Service.NeoSystem.StoreView, container: tx_test);
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"VM State: {engine.State}");
-            sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
+            sb.AppendLine($"Gas Consumed: {engine.FeeConsumed}");
             sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
             textBox7.Text = sb.ToString();
             if (engine.State != VMState.FAULT)
             {
-                label7.Text = engine.GasConsumed + " gas";
+                label7.Text = engine.FeeConsumed + " gas";
                 button3.Enabled = true;
             }
             else

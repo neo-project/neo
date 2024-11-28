@@ -20,7 +20,7 @@ namespace Neo.VM
     /// </summary>
     public class Slot : IReadOnlyList<StackItem>
     {
-        private readonly ReferenceCounter referenceCounter;
+        private readonly IReferenceCounter referenceCounter;
         private readonly StackItem[] items;
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="items">The items to be contained.</param>
         /// <param name="referenceCounter">The reference counter to be used.</param>
-        public Slot(StackItem[] items, ReferenceCounter referenceCounter)
+        public Slot(StackItem[] items, IReferenceCounter referenceCounter)
         {
             this.referenceCounter = referenceCounter;
             this.items = items;
@@ -66,10 +66,10 @@ namespace Neo.VM
         /// </summary>
         /// <param name="count">Indicates the number of items contained in the slot.</param>
         /// <param name="referenceCounter">The reference counter to be used.</param>
-        public Slot(int count, ReferenceCounter referenceCounter)
+        public Slot(int count, IReferenceCounter referenceCounter)
         {
             this.referenceCounter = referenceCounter;
-            this.items = new StackItem[count];
+            items = new StackItem[count];
             System.Array.Fill(items, StackItem.Null);
             referenceCounter.AddStackReference(StackItem.Null, count);
         }

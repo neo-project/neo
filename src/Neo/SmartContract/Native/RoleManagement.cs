@@ -12,11 +12,9 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.SmartContract.Native
@@ -26,31 +24,19 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class RoleManagement : NativeContract
     {
-        internal RoleManagement()
-        {
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "Designation",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Role",
-                            Type = ContractParameterType.Integer
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "BlockIndex",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                }
-            };
+        [ContractEvent(0, name: "Designation",
+            "Role", ContractParameterType.Integer,
+            "BlockIndex", ContractParameterType.Integer,
+            Hardfork.HF_Echidna)]
 
-            Manifest.Abi.Events = events.ToArray();
-        }
+        [ContractEvent(Hardfork.HF_Echidna, 0, name: "Designation",
+            "Role", ContractParameterType.Integer,
+            "BlockIndex", ContractParameterType.Integer,
+            "Old", ContractParameterType.Array,
+            "New", ContractParameterType.Array
+            )]
+
+        internal RoleManagement() : base() { }
 
         /// <summary>
         /// Gets the list of nodes for the specified role.
@@ -74,6 +60,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [Obsolete]
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0 || nodes.Length > 32)
@@ -86,13 +73,23 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             uint index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
-            if (engine.Snapshot.Contains(key))
+            if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException();
             NodeList list = new();
             list.AddRange(nodes);
             list.Sort();
-            engine.Snapshot.Add(key, new StorageItem(list));
-            engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock.Index }));
+            engine.SnapshotCache.Add(key, new StorageItem(list));
+            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+            {
+                var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.Snapshot, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
+                var newNodes = new VM.Types.Array(engine.ReferenceCounter, nodes.Select(u => (ByteString)u.EncodePoint(true)));
+
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
+            }
+            else
+            {
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index]));
+            }
         }
 
         private class NodeList : InteroperableList<ECPoint>
@@ -102,7 +99,7 @@ namespace Neo.SmartContract.Native
                 return ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1);
             }
 
-            protected override StackItem ElementToStackItem(ECPoint element, ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ECPoint element, IReferenceCounter referenceCounter)
             {
                 return element.ToArray();
             }

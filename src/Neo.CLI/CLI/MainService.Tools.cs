@@ -10,12 +10,20 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
+using Neo.SmartContract;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
+using System.Text;
 
 namespace Neo.CLI
 {
@@ -27,23 +35,21 @@ namespace Neo.CLI
         [ConsoleCommand("parse", Category = "Base Commands", Description = "Parse a value to its possible conversions.")]
         private void OnParseCommand(string value)
         {
-            var parseFunctions = new Dictionary<string, Func<string, string?>>()
-            {
-                { "Address to ScriptHash", AddressToScripthash },
-                { "Address to Base64", AddressToBase64 },
-                { "ScriptHash to Address", ScripthashToAddress },
-                { "Base64 to Address", Base64ToAddress },
-                { "Base64 to String", Base64ToString },
-                { "Base64 to Big Integer", Base64ToNumber },
-                { "Big Integer to Hex String", NumberToHex },
-                { "Big Integer to Base64", NumberToBase64 },
-                { "Hex String to String", HexToString },
-                { "Hex String to Big Integer", HexToNumber },
-                { "String to Hex String", StringToHex },
-                { "String to Base64", StringToBase64 }
-            };
+            value = Base64Fixed(value);
 
-            bool any = false;
+            var parseFunctions = new Dictionary<string, Func<string, string?>>();
+            var methods = GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance);
+
+            foreach (var method in methods)
+            {
+                var attribute = method.GetCustomAttribute<ParseFunctionAttribute>();
+                if (attribute != null)
+                {
+                    parseFunctions.Add(attribute.Description, (Func<string, string?>)Delegate.CreateDelegate(typeof(Func<string, string?>), this, method));
+                }
+            }
+
+            var any = false;
 
             foreach (var pair in parseFunctions)
             {
@@ -52,7 +58,8 @@ namespace Neo.CLI
 
                 if (result != null)
                 {
-                    Console.WriteLine($"{pair.Key,-30}\t{result}");
+                    ConsoleHelper.Info("", "-----", pair.Key, "-----");
+                    ConsoleHelper.Info("", result, Environment.NewLine);
                     any = true;
                 }
             }
@@ -64,118 +71,49 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an hexadecimal value to an UTF-8 string
+        /// Read .nef file from path and print its content in base64
         /// </summary>
-        /// <param name="hexString">
-        /// Hexadecimal value to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when is not possible to parse the hexadecimal value to a UTF-8
-        /// string or when the converted string is not printable; otherwise, returns
-        /// the string represented by the hexadecimal value
-        /// </returns>
-        private string? HexToString(string hexString)
+        [ParseFunction(".nef file path to content base64")]
+        private string? NefFileToBase64(string path)
         {
-            try
-            {
-                var clearHexString = ClearHexString(hexString);
-                var bytes = clearHexString.HexToBytes();
-                var utf8String = Utility.StrictUTF8.GetString(bytes);
-                return IsPrintable(utf8String) ? utf8String : null;
-            }
-            catch
-            {
-                return null;
-            }
+            if (Path.GetExtension(path).ToLower() != ".nef") return null;
+            if (!File.Exists(path)) return null;
+            return Convert.ToBase64String(File.ReadAllBytes(path));
         }
 
         /// <summary>
-        /// Converts an hex value to a big integer
+        /// Little-endian to Big-endian
+        /// input:  ce616f7f74617e0fc4b805583af2602a238df63f
+        /// output: 0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
         /// </summary>
-        /// <param name="hexString">
-        /// Hexadecimal value to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when is not possible to parse the hex value to big integer value;
-        /// otherwise, returns the string that represents the converted big integer.
-        /// </returns>
-        private string? HexToNumber(string hexString)
+        [ParseFunction("Little-endian to Big-endian")]
+        private string? LittleEndianToBigEndian(string hex)
         {
             try
             {
-                var clearHexString = ClearHexString(hexString);
-                var bytes = clearHexString.HexToBytes();
-                var number = new BigInteger(bytes);
-
-                return number.ToString();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Formats a string value to a default hexadecimal representation of a byte array
-        /// </summary>
-        /// <param name="hexString">
-        /// The string value to be formatted
-        /// </param>
-        /// <returns>
-        /// Returns the formatted string.
-        /// </returns>
-        /// <exception cref="ArgumentException">
-        /// Throw when is the string is not a valid hex representation of a byte array.
-        /// </exception>
-        private string ClearHexString(string hexString)
-        {
-            bool hasHexPrefix = hexString.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
-
-            try
-            {
-                if (hasHexPrefix)
-                {
-                    hexString = hexString.Substring(2);
-                }
-
-                if (hexString.Length % 2 == 1)
-                {
-                    // if the length is an odd number, it cannot be parsed to a byte array
-                    // it may be a valid hex string, so include a leading zero to parse correctly
-                    hexString = "0" + hexString;
-                }
-
-                if (hasHexPrefix)
-                {
-                    // if the input value starts with '0x', the first byte is the less significant
-                    // to parse correctly, reverse the byte array
-                    return hexString.HexToBytes().Reverse().ToArray().ToHexString();
-                }
+                if (!IsHex(hex)) return null;
+                return "0x" + hex.HexToBytes().Reverse().ToArray().ToHexString();
             }
             catch (FormatException)
             {
-                throw new ArgumentException();
+                return null;
             }
-
-            return hexString;
         }
 
         /// <summary>
-        /// Converts a string in a hexadecimal value
+        /// Big-endian to Little-endian
+        /// input:  0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
+        /// output: ce616f7f74617e0fc4b805583af2602a238df63f
         /// </summary>
-        /// <param name="strParam">
-        /// String value to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when it is not possible to parse the string value to a hexadecimal
-        /// value; otherwise returns the hexadecimal value that represents the converted string
-        /// </returns>
-        private string? StringToHex(string strParam)
+        [ParseFunction("Big-endian to Little-endian")]
+        private string? BigEndianToLittleEndian(string hex)
         {
             try
             {
-                var bytesParam = Utility.StrictUTF8.GetBytes(strParam);
-                return bytesParam.ToHexString();
+                var hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
+                hex = hasHexPrefix ? hex[2..] : hex;
+                if (!hasHexPrefix || !IsHex(hex)) return null;
+                return hex.HexToBytes().Reverse().ToArray().ToHexString();
             }
             catch
             {
@@ -184,25 +122,17 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts a string in Base64 string
+        /// String to Base64
+        /// input:  Hello World!
+        /// output: SGVsbG8gV29ybGQh
         /// </summary>
-        /// <param name="strParam">
-        /// String value to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when is not possible to parse the string value to a Base64 value;
-        /// otherwise returns the Base64 value that represents the converted string
-        /// </returns>
-        /// <exception cref="ArgumentException">
-        /// Throw .
-        /// </exception>
+        [ParseFunction("String to Base64")]
         private string? StringToBase64(string strParam)
         {
             try
             {
-                byte[] bytearray = Utility.StrictUTF8.GetBytes(strParam);
-                string base64 = Convert.ToBase64String(bytearray.AsSpan());
-                return base64;
+                var bytearray = Utility.StrictUTF8.GetBytes(strParam);
+                return Convert.ToBase64String(bytearray.AsSpan());
             }
             catch
             {
@@ -211,43 +141,11 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts a string number in hexadecimal format
+        /// Big Integer to Base64
+        /// input:  123456
+        /// output: QOIB
         /// </summary>
-        /// <param name="strParam">
-        /// String that represents the number to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent a big integer value or when
-        /// it is not possible to parse the big integer value to hexadecimal; otherwise,
-        /// returns the string that represents the converted hexadecimal value
-        /// </returns>
-        private string? NumberToHex(string strParam)
-        {
-            try
-            {
-                if (!BigInteger.TryParse(strParam, out var numberParam))
-                {
-                    return null;
-                }
-                return numberParam.ToByteArray().ToHexString();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Converts a string number in Base64 byte array
-        /// </summary>
-        /// <param name="strParam">
-        /// String that represents the number to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent a big integer value or when
-        /// it is not possible to parse the big integer value to Base64 value; otherwise,
-        /// returns the string that represents the converted Base64 value
-        /// </returns>
+        [ParseFunction("Big Integer to Base64")]
         private string? NumberToBase64(string strParam)
         {
             try
@@ -256,10 +154,8 @@ namespace Neo.CLI
                 {
                     return null;
                 }
-                byte[] bytearray = number.ToByteArray();
-                string base64 = Convert.ToBase64String(bytearray.AsSpan());
-
-                return base64;
+                var bytearray = number.ToByteArray();
+                return Convert.ToBase64String(bytearray.AsSpan());
             }
             catch
             {
@@ -267,23 +163,55 @@ namespace Neo.CLI
             }
         }
 
+        private static bool IsHex(string str) => str.Length % 2 == 0 && str.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+
         /// <summary>
-        /// Converts an address to its corresponding scripthash
+        /// Fix for Base64 strings containing unicode
+        /// input:  DCECbzTesnBofh/Xng1SofChKkBC7jhVmLxCN1vk\u002B49xa2pBVuezJw==
+        /// output: DCECbzTesnBofh/Xng1SofChKkBC7jhVmLxCN1vk+49xa2pBVuezJw==
         /// </summary>
-        /// <param name="address">
-        /// String that represents the address to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent an address or when
-        /// it is not possible to parse the address to scripthash; otherwise returns
-        /// the string that represents the converted scripthash
-        /// </returns>
+        /// <param name="str">Base64 strings containing unicode</param>
+        /// <returns>Correct Base64 string</returns>
+        private static string Base64Fixed(string str)
+        {
+            var sb = new StringBuilder();
+            for (var i = 0; i < str.Length; i++)
+            {
+                if (str[i] == '\\' && i + 5 < str.Length && str[i + 1] == 'u')
+                {
+                    var hex = str.Substring(i + 2, 4);
+                    if (IsHex(hex))
+                    {
+                        var bts = new byte[2];
+                        bts[0] = (byte)int.Parse(hex.Substring(2, 2), NumberStyles.HexNumber);
+                        bts[1] = (byte)int.Parse(hex.Substring(0, 2), NumberStyles.HexNumber);
+                        sb.Append(Encoding.Unicode.GetString(bts));
+                        i += 5;
+                    }
+                    else
+                    {
+                        sb.Append(str[i]);
+                    }
+                }
+                else
+                {
+                    sb.Append(str[i]);
+                }
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Address to ScriptHash (big-endian)
+        /// input:  NejD7DJWzD48ZG4gXKDVZt3QLf1fpNe1PF
+        /// output: 0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
+        /// </summary>
+        [ParseFunction("Address to ScriptHash (big-endian)")]
         private string? AddressToScripthash(string address)
         {
             try
             {
                 var bigEndScript = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
-
                 return bigEndScript.ToString();
             }
             catch
@@ -293,24 +221,17 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an address to Base64 byte array
+        /// Address to ScriptHash (blittleig-endian)
+        /// input:  NejD7DJWzD48ZG4gXKDVZt3QLf1fpNe1PF
+        /// output: ce616f7f74617e0fc4b805583af2602a238df63f
         /// </summary>
-        /// <param name="address">
-        /// String that represents the address to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent an address or when it is 
-        /// not possible to parse the address to Base64 value; otherwise returns
-        /// the string that represents the converted Base64 value.
-        /// </returns>
-        private string? AddressToBase64(string address)
+        [ParseFunction("Address to ScriptHash (little-endian)")]
+        private string? AddressToScripthashLE(string address)
         {
             try
             {
-                var script = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
-                string base64 = Convert.ToBase64String(script.ToArray().AsSpan());
-
-                return base64;
+                var bigEndScript = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                return bigEndScript.ToArray().ToHexString();
             }
             catch
             {
@@ -319,15 +240,30 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts a big end script hash to its equivalent address
+        /// Address to Base64
+        /// input:  NejD7DJWzD48ZG4gXKDVZt3QLf1fpNe1PF
+        /// output: zmFvf3Rhfg/EuAVYOvJgKiON9j8=
         /// </summary>
-        /// <param name="script">
-        /// String that represents the scripthash to be converted
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent an scripthash;
-        /// otherwise, returns the string that represents the converted address
-        /// </returns>
+        [ParseFunction("Address to Base64")]
+        private string? AddressToBase64(string address)
+        {
+            try
+            {
+                var script = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                return Convert.ToBase64String(script.ToArray().AsSpan());
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ScriptHash to Address
+        /// input:  0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
+        /// output: NejD7DJWzD48ZG4gXKDVZt3QLf1fpNe1PF
+        /// </summary>
+        [ParseFunction("ScriptHash to Address")]
         private string? ScripthashToAddress(string script)
         {
             try
@@ -346,15 +282,14 @@ namespace Neo.CLI
                     {
                         return null;
                     }
-                    string bigEndScript = littleEndScript.ToArray().ToHexString();
+                    var bigEndScript = littleEndScript.ToArray().ToHexString();
                     if (!UInt160.TryParse(bigEndScript, out scriptHash))
                     {
                         return null;
                     }
                 }
 
-                var hexScript = scriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
-                return hexScript;
+                return scriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
             }
             catch
             {
@@ -363,30 +298,24 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an Base64 byte array to address
+        /// Base64 to Address
+        /// input:  zmFvf3Rhfg/EuAVYOvJgKiON9j8=
+        /// output: NejD7DJWzD48ZG4gXKDVZt3QLf1fpNe1PF
         /// </summary>
-        /// <param name="bytearray">
-        /// String that represents the Base64 value
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent an Base64 value or when
-        /// it is not possible to parse the Base64 value to address; otherwise,
-        /// returns the string that represents the converted address
-        /// </returns>
+        [ParseFunction("Base64 to Address")]
         private string? Base64ToAddress(string bytearray)
         {
             try
             {
-                byte[] result = Convert.FromBase64String(bytearray).Reverse().ToArray();
-                string hex = result.ToHexString();
+                var result = Convert.FromBase64String(bytearray).Reverse().ToArray();
+                var hex = result.ToHexString();
 
                 if (!UInt160.TryParse(hex, out var scripthash))
                 {
                     return null;
                 }
 
-                string address = scripthash.ToAddress(NeoSystem.Settings.AddressVersion);
-                return address;
+                return scripthash.ToAddress(NeoSystem.Settings.AddressVersion);
             }
             catch
             {
@@ -395,23 +324,17 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an Base64 hex string to string
+        /// Base64 to String
+        /// input:  SGVsbG8gV29ybGQh
+        /// output: Hello World!
         /// </summary>
-        /// <param name="bytearray">
-        /// String that represents the Base64 value
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent an Base64 value or when
-        /// it is not possible to parse the Base64 value to string value or the converted
-        /// string is not printable; otherwise, returns the string that represents
-        /// the Base64 value.
-        /// </returns>
+        [ParseFunction("Base64 to String")]
         private string? Base64ToString(string bytearray)
         {
             try
             {
-                byte[] result = Convert.FromBase64String(bytearray);
-                string utf8String = Utility.StrictUTF8.GetString(result);
+                var result = Convert.FromBase64String(bytearray);
+                var utf8String = Utility.StrictUTF8.GetString(result);
                 return IsPrintable(utf8String) ? utf8String : null;
             }
             catch
@@ -421,16 +344,11 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an Base64 hex string to big integer value
+        /// Base64 to Big Integer
+        /// input:  QOIB
+        /// output: 123456
         /// </summary>
-        /// <param name="bytearray">
-        /// String that represents the Base64 value
-        /// </param>
-        /// <returns>
-        /// Returns null when the string does not represent an Base64 value or when
-        /// it is not possible to parse the Base64 value to big integer value; otherwise
-        /// returns the string that represents the converted big integer
-        /// </returns>
+        [ParseFunction("Base64 to Big Integer")]
         private string? Base64ToNumber(string bytearray)
         {
             try
@@ -446,6 +364,149 @@ namespace Neo.CLI
         }
 
         /// <summary>
+        /// Public Key to Address
+        /// input:  03dab84c1243ec01ab2500e1a8c7a1546a26d734628180b0cf64e72bf776536997
+        /// output: NU7RJrzNgCSnoPLxmcY7C72fULkpaGiSpJ
+        /// </summary>
+        [ParseFunction("Public Key to Address")]
+        private string? PublicKeyToAddress(string pubKey)
+        {
+            if (ECPoint.TryParse(pubKey, ECCurve.Secp256r1, out var publicKey) == false)
+                return null;
+            return Contract.CreateSignatureContract(publicKey)
+                .ScriptHash
+                .ToAddress(NeoSystem.Settings.AddressVersion);
+        }
+
+        /// <summary>
+        /// WIF to Public Key
+        /// </summary>
+        [ParseFunction("WIF to Public Key")]
+        private string? WIFToPublicKey(string wif)
+        {
+            try
+            {
+                var privateKey = Wallet.GetPrivateKeyFromWIF(wif);
+                var account = new KeyPair(privateKey);
+                return account.PublicKey.ToArray().ToHexString();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// WIF to Address
+        /// </summary>
+        [ParseFunction("WIF to Address")]
+        private string? WIFToAddress(string wif)
+        {
+            try
+            {
+                var pubKey = WIFToPublicKey(wif);
+                return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Base64 Smart Contract Script Analysis
+        /// input: DARkYXRhAgBlzR0MFPdcrAXPVptVduMEs2lf1jQjxKIKDBT3XKwFz1abVXbjBLNpX9Y0I8SiChTAHwwIdHJhbnNmZXIMFKNSbimM12LkFYX/8KGvm2ttFxulQWJ9W1I=
+        /// output:
+        /// PUSHDATA1 data
+        /// PUSHINT32 500000000
+        /// PUSHDATA1 0x0aa2c42334d65f69b304e376559b56cf05ac5cf7
+        /// PUSHDATA1 0x0aa2c42334d65f69b304e376559b56cf05ac5cf7
+        /// PUSH4
+        /// PACK
+        /// PUSH15
+        /// PUSHDATA1 transfer
+        /// PUSHDATA1 0xa51b176d6b9bafa1f0ff8515e462d78c296e52a3
+        /// SYSCALL System.Contract.Call
+        /// </summary>
+        [ParseFunction("Base64 Smart Contract Script Analysis")]
+        private string? ScriptsToOpCode(string base64)
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(base64);
+                var sb = new StringBuilder();
+                var line = 0;
+
+                foreach (var instruct in new VMInstruction(bytes))
+                {
+                    if (instruct.OperandSize == 0)
+                        sb.AppendFormat("L{0:D04}:{1:X04} {2}{3}", line, instruct.Position, instruct.OpCode, Environment.NewLine);
+                    else
+                        sb.AppendFormat("L{0:D04}:{1:X04} {2,-10}{3}{4}", line, instruct.Position, instruct.OpCode, instruct.DecodeOperand(), Environment.NewLine);
+                    line++;
+                }
+
+                return sb.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Base64 .nef file Analysis
+        /// </summary>
+        [ParseFunction("Base64 .nef file Analysis")]
+        private string? NefFileAnalyis(string base64)
+        {
+            byte[] nefData;
+            if (File.Exists(base64))  // extension name not considered
+                nefData = File.ReadAllBytes(base64);
+            else
+            {
+                try
+                {
+                    nefData = Convert.FromBase64String(base64);
+                }
+                catch { return null; }
+            }
+            NefFile nef;
+            Script script;
+            bool verifyChecksum = false;
+            bool strictMode = false;
+            try
+            {
+                nef = NefFile.Parse(nefData, true);
+                verifyChecksum = true;
+            }
+            catch (FormatException)
+            {
+                nef = NefFile.Parse(nefData, false);
+            }
+            catch { return null; }
+            try
+            {
+                script = new Script(nef.Script, true);
+                strictMode = true;
+            }
+            catch (BadScriptException)
+            {
+                script = new Script(nef.Script, false);
+            }
+            catch { return null; }
+            string? result = ScriptsToOpCode(Convert.ToBase64String(nef.Script.ToArray()));
+            if (result == null)
+                return null;
+            string prefix = $"\r\n# Compiler: {nef.Compiler}";
+            if (!verifyChecksum)
+                prefix += $"\r\n# Warning: Invalid .nef file checksum";
+            if (!strictMode)
+                prefix += $"\r\n# Warning: Failed in {nameof(strictMode)}";
+            return prefix + result;
+        }
+
+        /// <summary>
         /// Checks if the string is null or cannot be printed.
         /// </summary>
         /// <param name="value">
@@ -455,7 +516,7 @@ namespace Neo.CLI
         /// Returns false if the string is null, or if it is empty, or if each character cannot be printed;
         /// otherwise, returns true.
         /// </returns>
-        private bool IsPrintable(string value)
+        private static bool IsPrintable(string value)
         {
             return !string.IsNullOrWhiteSpace(value) && value.Any(c => !char.IsControl(c));
         }

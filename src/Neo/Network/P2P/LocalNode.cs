@@ -78,7 +78,7 @@ namespace Neo.Network.P2P
         {
             Random rand = new();
             Nonce = (uint)rand.Next();
-            UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetVersion()}/";
+            UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)}/";
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Neo.Network.P2P
         public LocalNode(NeoSystem system)
         {
             this.system = system;
-            this.SeedList = new IPEndPoint[system.Settings.SeedList.Length];
+            SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
             // Start dns resolution in parallel
             string[] seedList = system.Settings.SeedList;

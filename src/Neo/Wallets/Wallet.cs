@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -22,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -412,6 +414,10 @@ namespace Neo.Wallets
         /// <returns>The imported account.</returns>
         public virtual WalletAccount Import(X509Certificate2 cert)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                throw new PlatformNotSupportedException("Importing certificates is not supported on macOS.");
+            }
             byte[] privateKey;
             using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
             {
@@ -535,7 +541,7 @@ namespace Neo.Wallets
         /// <param name="sender">The sender of the transaction.</param>
         /// <param name="cosigners">The cosigners to be added to the transaction.</param>
         /// <param name="attributes">The attributes to be added to the transaction.</param>
-        /// <param name="maxGas">The maximum gas that can be spent to execute the script.</param>
+        /// <param name="maxGas">The maximum gas that can be spent to execute the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
         /// <returns>The created transaction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
@@ -569,106 +575,19 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, settings: ProtocolSettings, gas: maxGas, persistingBlock: persistingBlock))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CloneCache(), tx, settings: ProtocolSettings, gas: maxGas, persistingBlock: persistingBlock))
                 {
                     if (engine.State == VMState.FAULT)
                     {
                         throw new InvalidOperationException($"Failed execution for '{Convert.ToBase64String(script.Span)}'", engine.FaultException);
                     }
-                    tx.SystemFee = engine.GasConsumed;
+                    tx.SystemFee = engine.FeeConsumed;
                 }
 
-                tx.NetworkFee = CalculateNetworkFee(snapshot, tx, maxGas);
+                tx.NetworkFee = tx.CalculateNetworkFee(snapshot, ProtocolSettings, (a) => GetAccount(a)?.Contract?.Script, maxGas);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
-        }
-
-        /// <summary>
-        /// Calculates the network fee for the specified transaction.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="tx">The transaction to calculate.</param>
-        /// <param name="maxExecutionCost">The maximum cost that can be spent when a contract is executed.</param>
-        /// <returns>The network fee of the transaction.</returns>
-        public long CalculateNetworkFee(DataCache snapshot, Transaction tx, long maxExecutionCost = ApplicationEngine.TestModeGas)
-        {
-            UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
-
-            // base size for transaction: includes const_header + signers + attributes + script + hashes
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
-            uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            long networkFee = 0;
-            int index = -1;
-            foreach (UInt160 hash in hashes)
-            {
-                index++;
-                byte[] witness_script = GetAccount(hash)?.Contract?.Script;
-                byte[] invocationScript = null;
-
-                if (tx.Witnesses != null)
-                {
-                    if (witness_script is null)
-                    {
-                        // Try to find the script in the witnesses
-                        Witness witness = tx.Witnesses[index];
-                        witness_script = witness?.VerificationScript.ToArray();
-
-                        if (witness_script is null || witness_script.Length == 0)
-                        {
-                            // Then it's a contract-based witness, so try to get the corresponding invocation script for it
-                            invocationScript = witness?.InvocationScript.ToArray();
-                        }
-                    }
-                }
-
-                if (witness_script is null || witness_script.Length == 0)
-                {
-                    var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
-                    if (contract is null)
-                        throw new ArgumentException($"The smart contract or address {hash} is not found");
-                    var md = contract.Manifest.Abi.GetMethod("verify", -1);
-                    if (md is null)
-                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
-                    if (md.ReturnType != ContractParameterType.Boolean)
-                        throw new ArgumentException("The verify method doesn't return boolean value.");
-                    if (md.Parameters.Length > 0 && invocationScript is null)
-                        throw new ArgumentException("The verify method requires parameters that need to be passed via the witness' invocation script.");
-
-                    // Empty verification and non-empty invocation scripts
-                    var invSize = invocationScript?.GetVarSize() ?? Array.Empty<byte>().GetVarSize();
-                    size += Array.Empty<byte>().GetVarSize() + invSize;
-
-                    // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings, gas: maxExecutionCost);
-                    engine.LoadContract(contract, md, CallFlags.ReadOnly);
-                    if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
-                    if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
-
-                    maxExecutionCost -= engine.GasConsumed;
-                    if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
-                    networkFee += engine.GasConsumed;
-                }
-                else if (IsSignatureContract(witness_script))
-                {
-                    size += 67 + witness_script.GetVarSize();
-                    networkFee += exec_fee_factor * SignatureContractCost();
-                }
-                else if (IsMultiSigContract(witness_script, out int m, out int n))
-                {
-                    int size_inv = 66 * m;
-                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
-                }
-                // We can support more contract types in the future.
-            }
-            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            foreach (TransactionAttribute attr in tx.Attributes)
-            {
-                networkFee += attr.CalculateNetworkFee(snapshot, tx);
-            }
-            return networkFee;
         }
 
         /// <summary>
@@ -717,7 +636,7 @@ namespace Neo.Wallets
 
                 // Try Smart contract verification
 
-                var contract = NativeContract.ContractManagement.GetContract(context.Snapshot, scriptHash);
+                var contract = NativeContract.ContractManagement.GetContract(context.SnapshotCache, scriptHash);
 
                 if (contract != null)
                 {

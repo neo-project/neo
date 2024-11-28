@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.SmartContract;
 using System;
@@ -131,6 +132,34 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestContractParameterCyclicReference()
+        {
+            var map = new ContractParameter
+            {
+                Type = ContractParameterType.Map,
+                Value = new List<KeyValuePair<ContractParameter, ContractParameter>>
+                {
+                    new(
+                        new ContractParameter { Type = ContractParameterType.Integer, Value = 1 },
+                        new ContractParameter { Type = ContractParameterType.Integer, Value = 2 }
+                    )
+                }
+            };
+
+            var value = new List<ContractParameter> { map, map };
+            var item = new ContractParameter { Type = ContractParameterType.Array, Value = value };
+
+            // just check there is no exception
+            var json = item.ToJson();
+            Assert.AreEqual(json.ToString(), ContractParameter.FromJson(json).ToJson().ToString());
+
+            // check cyclic reference
+            value.Add(item);
+            Action action = () => item.ToJson();
+            action.Should().Throw<InvalidOperationException>();
+        }
+
+        [TestMethod]
         public void TestSetValue()
         {
             ContractParameter contractParameter1 = new(ContractParameterType.Signature);
@@ -187,8 +216,10 @@ namespace Neo.UnitTests.SmartContract
             ContractParameter contractParameter1 = new();
             Assert.AreEqual("(null)", contractParameter1.ToString());
 
-            ContractParameter contractParameter2 = new(ContractParameterType.ByteArray);
-            contractParameter2.Value = new byte[1];
+            ContractParameter contractParameter2 = new(ContractParameterType.ByteArray)
+            {
+                Value = new byte[1]
+            };
             Assert.AreEqual("00", contractParameter2.ToString());
 
             ContractParameter contractParameter3 = new(ContractParameterType.Array);

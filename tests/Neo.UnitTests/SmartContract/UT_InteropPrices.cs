@@ -64,19 +64,19 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(System.Array.Empty<byte>());
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
             debugger.StepInto();
             debugger.StepInto();
-            var setupPrice = ae.GasConsumed;
+            var setupPrice = ae.FeeConsumed;
             debugger.Execute();
-            (ae.GasConsumed - setupPrice).Should().Be(ae.StoragePrice * value.Length + (1 << 15) * 30);
+            (ae.FeeConsumed - setupPrice).Should().Be(ae.StoragePrice * value.Length + (1 << 15) * 30);
         }
 
         /// <summary>
@@ -95,19 +95,19 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(value);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(applicationEngine);
             applicationEngine.LoadScript(script);
             debugger.StepInto();
             debugger.StepInto();
             debugger.StepInto();
-            var setupPrice = applicationEngine.GasConsumed;
+            var setupPrice = applicationEngine.FeeConsumed;
             debugger.Execute();
-            (applicationEngine.GasConsumed - setupPrice).Should().Be(1 * applicationEngine.StoragePrice + (1 << 15) * 30);
+            (applicationEngine.FeeConsumed - setupPrice).Should().Be(1 * applicationEngine.StoragePrice + (1 << 15) * 30);
         }
 
         /// <summary>
@@ -128,20 +128,20 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
             debugger.StepInto();
             debugger.StepInto();
-            var setupPrice = ae.GasConsumed;
+            var setupPrice = ae.FeeConsumed;
             debugger.StepInto();
             debugger.StepInto();
-            (ae.GasConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ae.StoragePrice + (1 << 15) * 30);
+            (ae.FeeConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ae.StoragePrice + (1 << 15) * 30);
         }
 
         /// <summary>
@@ -162,11 +162,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
 
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            snapshot.Add(skey, sItem);
-            snapshot.AddContract(script.ToScriptHash(), contractState);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            snapshotCache.Add(skey, sItem);
+            snapshotCache.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto(); //push value
@@ -176,9 +176,9 @@ namespace Neo.UnitTests.SmartContract
             debugger.StepInto(); //push value
             debugger.StepInto(); //push key
             debugger.StepInto(); //syscall Storage.GetContext
-            var setupPrice = ae.GasConsumed;
+            var setupPrice = ae.FeeConsumed;
             debugger.StepInto(); //syscall Storage.Put
-            (ae.GasConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ae.StoragePrice + (1 << 15) * 30); // = PUT basic fee
+            (ae.FeeConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ae.StoragePrice + (1 << 15) * 30); // = PUT basic fee
         }
 
         private static byte[] CreateMultiplePutScript(byte[] key, byte[] value, int times = 2)

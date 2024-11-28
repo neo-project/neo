@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -21,13 +23,23 @@ namespace Neo.UnitTests.Extensions
 {
     public static class NativeContractExtensions
     {
-        public static ContractState DeployContract(this DataCache snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long gas = 200_00000000)
+        /// <summary>
+        /// Deploy a contract to the blockchain.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used for deploying the contract.</param>
+        /// <param name="sender">The address of the contract deployer.</param>
+        /// <param name="nefFile">The <see cref="NefFile"/> file of the contract to be deployed.</param>
+        /// <param name="manifest">The manifest of the contract to be deployed.</param>
+        /// <param name="datoshi">The gas fee to spend for deploying the contract in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static ContractState DeployContract(this DataCache snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long datoshi = 200_00000000)
         {
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } }, Attributes = System.Array.Empty<TransactionAttribute>() } : null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: gas);
+                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } }, Attributes = System.Array.Empty<TransactionAttribute>() } : null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: datoshi);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)
@@ -90,14 +102,26 @@ namespace Neo.UnitTests.Extensions
 
         public static void AddContract(this DataCache snapshot, UInt160 hash, ContractState state)
         {
+            //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
             snapshot.Add(key, new StorageItem(state));
+            //key: id, value: hash
+            var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(state.Id);
+            if (!snapshot.Contains(key2)) snapshot.Add(key2, new StorageItem(hash.ToArray()));
         }
 
         public static void DeleteContract(this DataCache snapshot, UInt160 hash)
         {
+            //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
+            var value = snapshot.TryGet(key)?.GetInteroperable<ContractState>();
             snapshot.Delete(key);
+            if (value != null)
+            {
+                //key: id, value: hash
+                var key2 = new KeyBuilder(NativeContract.ContractManagement.Id, 12).AddBigEndian(value.Id);
+                snapshot.Delete(key2);
+            }
         }
 
         public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, params ContractParameter[] args)

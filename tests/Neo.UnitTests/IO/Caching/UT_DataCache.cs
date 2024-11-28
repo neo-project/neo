@@ -122,18 +122,24 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key3, value4);
             Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
 
+            // If we use myDataCache after it is committed, it will return wrong result.
             myDataCache.Commit();
             Assert.AreEqual(0, myDataCache.GetChangeSet().Count());
 
             store.TryGet(key1.ToArray()).SequenceEqual(value1.ToArray()).Should().BeTrue();
             store.TryGet(key2.ToArray()).Should().BeNull();
             store.TryGet(key3.ToArray()).SequenceEqual(value4.ToArray()).Should().BeTrue();
+
+            myDataCache.TryGet(key1).Value.ToArray().SequenceEqual(value1.ToArray()).Should().BeTrue();
+            // Though value is deleted from the store, the value can still be gotten from the snapshot cache.
+            myDataCache.TryGet(key2).Value.ToArray().SequenceEqual(value2.ToArray()).Should().BeTrue();
+            myDataCache.TryGet(key3).Value.ToArray().SequenceEqual(value4.ToArray()).Should().BeTrue();
         }
 
         [TestMethod]
         public void TestCreateSnapshot()
         {
-            myDataCache.CreateSnapshot().Should().NotBeNull();
+            myDataCache.CloneCache().Should().NotBeNull();
         }
 
         [TestMethod]

@@ -134,7 +134,7 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        internal void ChangePasswordRoolback()
+        internal void ChangePasswordRollback()
         {
             nep2KeyNew = null;
         }

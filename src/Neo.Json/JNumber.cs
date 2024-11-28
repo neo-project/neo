@@ -48,7 +48,7 @@ namespace Neo.Json
             if (value < MIN_SAFE_INTEGER)
                 throw new ArgumentException("value is lower than MIN_SAFE_INTEGER", nameof(value));
 
-            this.Value = value;
+            Value = value;
         }
 
         /// <summary>
@@ -103,11 +103,12 @@ namespace Neo.Json
             }
             catch (OverflowException)
             {
-                throw new InvalidCastException();
+                throw new InvalidCastException($"The value is out of range for the enum {enumType.FullName}");
             }
+
             object result = Enum.ToObject(enumType, value);
             if (!Enum.IsDefined(enumType, result))
-                throw new InvalidCastException();
+                throw new InvalidCastException($"The value is not defined in the enum {enumType.FullName}");
             return (T)result;
         }
 

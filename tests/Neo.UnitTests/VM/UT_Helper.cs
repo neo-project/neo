@@ -12,11 +12,13 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using Org.BouncyCastle.Asn1.Tsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,11 +42,13 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestToJson()
         {
-            var item = new VM.Types.Array();
-            item.Add(5);
-            item.Add("hello world");
-            item.Add(new byte[] { 1, 2, 3 });
-            item.Add(true);
+            var item = new VM.Types.Array
+            {
+                5,
+                "hello world",
+                new byte[] { 1, 2, 3 },
+                true
+            };
 
             Assert.AreEqual("{\"type\":\"Integer\",\"value\":\"5\"}", item[0].ToJson().ToString());
             Assert.AreEqual("{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"}", item[1].ToJson().ToString());
@@ -103,6 +107,30 @@ namespace Neo.UnitTests.VMT
         }
 
         [TestMethod]
+        public void TestEmitStruct()
+        {
+            var expected = new BigInteger[] { 1, 2, 3 };
+            var sb = new ScriptBuilder();
+            sb.CreateStruct(expected);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<VM.Types.Struct>().Select(u => u.GetInteger()).ToArray());
+
+            expected = new BigInteger[] { };
+            sb = new ScriptBuilder();
+            sb.CreateStruct(expected);
+
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine2.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine2.Execute());
+
+            Assert.AreEqual(0, engine2.ResultStack.Pop<VM.Types.Struct>().Count);
+        }
+
+        [TestMethod]
         public void TestEmitMap()
         {
             var expected = new Dictionary<BigInteger, BigInteger>() { { 1, 2 }, { 3, 4 } };
@@ -149,7 +177,7 @@ namespace Neo.UnitTests.VMT
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA", true);
             byte[] tempArray = new byte[38];
             tempArray[0] = (byte)OpCode.PUSHT;
-            tempArray[1] = (byte)OpCode.PUSH1;//arg.Length 
+            tempArray[1] = (byte)OpCode.PUSH1;//arg.Length
             tempArray[2] = (byte)OpCode.PACK;
             tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
             tempArray[4] = (byte)OpCode.PUSHDATA1;
@@ -274,9 +302,11 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             ContractParameter parameter = new ContractParameter(ContractParameterType.Array);
-            IList<ContractParameter> values = new List<ContractParameter>();
-            values.Add(new ContractParameter(ContractParameterType.Integer));
-            values.Add(new ContractParameter(ContractParameterType.Integer));
+            IList<ContractParameter> values = new List<ContractParameter>
+            {
+                new ContractParameter(ContractParameterType.Integer),
+                new ContractParameter(ContractParameterType.Integer)
+            };
             parameter.Value = values;
             sb.EmitPush(parameter);
             byte[] tempArray = new byte[4];
@@ -396,6 +426,7 @@ namespace Neo.UnitTests.VMT
             TestEmitPush3Byte();
             TestEmitPush3Short();
             TestEmitPush3Ushort();
+            TestEmitPush3Char();
             TestEmitPush3Int();
             TestEmitPush3Uint();
             TestEmitPush3Long();
@@ -461,6 +492,16 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             ushort temp = 0;
+            VM.Helper.EmitPush(sb, temp);
+            byte[] tempArray = new byte[1];
+            tempArray[0] = (byte)OpCode.PUSH0;
+            CollectionAssert.AreEqual(tempArray, sb.ToArray());
+        }
+
+        private void TestEmitPush3Char()
+        {
+            ScriptBuilder sb = new ScriptBuilder();
+            char temp = char.MinValue;
             VM.Helper.EmitPush(sb, temp);
             byte[] tempArray = new byte[1];
             tempArray[0] = (byte)OpCode.PUSH0;
@@ -624,6 +665,53 @@ namespace Neo.UnitTests.VMT
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.Array, parameter.Type);
             Assert.AreEqual(0, ((List<ContractParameter>)parameter.Value).Count);
+        }
+
+        [TestMethod]
+        public void TestCharAsUInt16()
+        {
+            Assert.AreEqual(ushort.MaxValue, char.MaxValue);
+            Assert.AreEqual(ushort.MinValue, char.MinValue);
+
+            // test every char in a loop
+            for (int i = ushort.MinValue; i < char.MinValue; i++)
+            {
+                var c = Convert.ToChar(i);
+                Assert.AreEqual(i, c);
+            }
+
+            for (int i = ushort.MinValue; i < ushort.MaxValue; i++)
+            {
+                using var sbUInt16 = new ScriptBuilder();
+                using var sbChar = new ScriptBuilder();
+                sbUInt16.EmitPush((ushort)i);
+                sbChar.EmitPush(Convert.ToChar(i));
+                CollectionAssert.AreEqual(sbUInt16.ToArray(), sbChar.ToArray());
+            }
+        }
+
+        [TestMethod]
+        public void TestCyclicReference()
+        {
+            var map = new VM.Types.Map
+            {
+                [1] = 2,
+            };
+
+            var item = new VM.Types.Array
+            {
+                   map,
+                   map
+            };
+
+            // just check there is no exception
+            var json = item.ToJson();
+            Assert.AreEqual(json.ToString(), @"{""type"":""Array"",""value"":[{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]},{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]}]}");
+
+            // check cyclic reference
+            map[2] = item;
+            var action = () => item.ToJson();
+            action.Should().Throw<System.InvalidOperationException>();
         }
     }
 }

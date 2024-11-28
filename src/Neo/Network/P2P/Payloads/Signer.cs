@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -19,13 +20,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
     /// Represents a signer of a <see cref="Transaction"/>.
     /// </summary>
-    public class Signer : IInteroperable, ISerializable
+    public class Signer : IInteroperable, ISerializable, IEquatable<Signer>
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -64,6 +66,39 @@ namespace Neo.Network.P2P.Payloads
             /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
             /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0) +
             /*Rules*/               (Scopes.HasFlag(WitnessScope.WitnessRules) ? Rules.GetVarSize() : 0);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(Signer other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (other is null) return false;
+            if (Account != other.Account || Scopes != other.Scopes)
+                return false;
+
+            if (Scopes.HasFlag(WitnessScope.CustomContracts) && !AllowedContracts.SequenceEqual(other.AllowedContracts))
+                return false;
+
+            if (Scopes.HasFlag(WitnessScope.CustomGroups) && !AllowedGroups.SequenceEqual(other.AllowedGroups))
+                return false;
+
+            if (Scopes.HasFlag(WitnessScope.WitnessRules) && !Rules.SequenceEqual(other.Rules))
+                return false;
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            return obj is Signer signerObj && Equals(signerObj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Account.GetHashCode(), Scopes);
+        }
 
         public void Deserialize(ref MemoryReader reader)
         {
@@ -110,7 +145,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.CustomContracts))
                 {
-                    foreach (UInt160 hash in AllowedContracts)
+                    foreach (var hash in AllowedContracts)
                         yield return new WitnessRule
                         {
                             Action = WitnessRuleAction.Allow,
@@ -119,7 +154,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 {
-                    foreach (ECPoint group in AllowedGroups)
+                    foreach (var group in AllowedGroups)
                         yield return new WitnessRule
                         {
                             Action = WitnessRuleAction.Allow,
@@ -128,7 +163,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 {
-                    foreach (WitnessRule rule in Rules)
+                    foreach (var rule in Rules)
                         yield return rule;
                 }
             }
@@ -153,9 +188,11 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The converted signer.</returns>
         public static Signer FromJson(JObject json)
         {
-            Signer signer = new();
-            signer.Account = UInt160.Parse(json["account"].GetString());
-            signer.Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString());
+            Signer signer = new()
+            {
+                Account = UInt160.Parse(json["account"].GetString()),
+                Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString())
+            };
             if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
                 signer.AllowedContracts = ((JArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetString())).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
@@ -188,16 +225,34 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        VM.Types.StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new VM.Types.StackItem[]
-            {
+            return new VM.Types.Array(referenceCounter,
+            [
                 Account.ToArray(),
                 (byte)Scopes,
-                new VM.Types.Array(referenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
-                new VM.Types.Array(referenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))),
-                new VM.Types.Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter)))
-            });
+                Scopes.HasFlag(WitnessScope.CustomContracts) ? new VM.Types.Array(referenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))) : new VM.Types.Array(referenceCounter),
+                Scopes.HasFlag(WitnessScope.CustomGroups) ? new VM.Types.Array(referenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))) : new VM.Types.Array(referenceCounter),
+                Scopes.HasFlag(WitnessScope.WitnessRules) ? new VM.Types.Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter))) : new VM.Types.Array(referenceCounter)
+            ]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(Signer left, Signer right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(Signer left, Signer right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

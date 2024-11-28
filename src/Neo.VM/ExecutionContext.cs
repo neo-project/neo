@@ -107,7 +107,7 @@ namespace Neo.VM
             }
         }
 
-        internal ExecutionContext(Script script, int rvcount, ReferenceCounter referenceCounter)
+        internal ExecutionContext(Script script, int rvcount, IReferenceCounter referenceCounter)
             : this(new SharedStates(script, referenceCounter), rvcount, 0)
         {
         }
@@ -117,8 +117,8 @@ namespace Neo.VM
             if (rvcount < -1 || rvcount > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(rvcount));
             this.shared_states = shared_states;
-            this.RVCount = rvcount;
-            this.InstructionPointer = initialPosition;
+            RVCount = rvcount;
+            InstructionPointer = initialPosition;
         }
 
         /// <summary>

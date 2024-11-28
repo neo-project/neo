@@ -11,7 +11,7 @@
 <p align="center">
    A modern distributed network for the Smart Economy.
   <br>
-  <a href="https://docs.neo.org/docs/en-us/index.html"><strong>Documentation »</strong></a>
+  <a href="https://developers.neo.org/docs/"><strong>Documentation »</strong></a>
   <br>
   <br>
   <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
@@ -105,8 +105,8 @@
 
 ## Overview
 This repository contain main classes of the 
-[Neo](https://www.neo.org) blockchain.   
-Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get started.
+[Neo](https://neo.org) blockchain.   
+Visit the [tutorials](https://developers.neo.org) to get started.
 
 
 ## Project structure

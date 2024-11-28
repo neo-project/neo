@@ -77,7 +77,7 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetStorageContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -92,7 +92,7 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetReadOnlyContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -126,7 +126,7 @@ namespace Neo.SmartContract
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
         protected internal ReadOnlyMemory<byte>? Get(StorageContext context, byte[] key)
         {
-            return Snapshot.TryGet(new StorageKey
+            return SnapshotCache.TryGet(new StorageKey
             {
                 Id = context.Id,
                 Key = key
@@ -155,7 +155,7 @@ namespace Neo.SmartContract
                 throw new ArgumentException(null, nameof(options));
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
             SeekDirection direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
-            return new StorageIterator(Snapshot.Find(prefix_key, direction).GetEnumerator(), prefix.Length, options);
+            return new StorageIterator(SnapshotCache.Find(prefix_key, direction).GetEnumerator(), prefix.Length, options);
         }
 
         /// <summary>
@@ -177,11 +177,11 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            StorageItem item = Snapshot.GetAndChange(skey);
+            StorageItem item = SnapshotCache.GetAndChange(skey);
             if (item is null)
             {
                 newDataSize = key.Length + value.Length;
-                Snapshot.Add(skey, item = new StorageItem());
+                SnapshotCache.Add(skey, item = new StorageItem());
             }
             else
             {
@@ -194,7 +194,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddGas(newDataSize * StoragePrice);
+            AddFee(newDataSize * StoragePrice);
 
             item.Value = value;
         }
@@ -208,7 +208,7 @@ namespace Neo.SmartContract
         protected internal void Delete(StorageContext context, byte[] key)
         {
             if (context.IsReadOnly) throw new ArgumentException(null, nameof(context));
-            Snapshot.Delete(new StorageKey
+            SnapshotCache.Delete(new StorageKey
             {
                 Id = context.Id,
                 Key = key

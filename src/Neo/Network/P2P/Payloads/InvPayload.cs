@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Collections.Generic;
@@ -59,16 +60,14 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="type">The type of the inventories.</param>
         /// <param name="hashes">The hashes of the inventories.</param>
         /// <returns>The created payloads.</returns>
-        public static IEnumerable<InvPayload> CreateGroup(InventoryType type, UInt256[] hashes)
+        public static IEnumerable<InvPayload> CreateGroup(InventoryType type, IReadOnlyCollection<UInt256> hashes)
         {
-            for (int i = 0; i < hashes.Length; i += MaxHashesCount)
+            foreach (var chunk in hashes.Chunk(MaxHashesCount))
             {
-                int endIndex = i + MaxHashesCount;
-                if (endIndex > hashes.Length) endIndex = hashes.Length;
                 yield return new InvPayload
                 {
                     Type = type,
-                    Hashes = hashes[i..endIndex]
+                    Hashes = chunk,
                 };
             }
         }

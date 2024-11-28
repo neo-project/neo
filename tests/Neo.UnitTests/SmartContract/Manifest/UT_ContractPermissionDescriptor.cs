@@ -9,9 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Json;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
+using System;
 using System.Security.Cryptography;
 
 namespace Neo.UnitTests.SmartContract.Manifest
@@ -33,7 +37,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
-        public void TestFromAndToJson()
+        public void TestContractPermissionDescriptorFromAndToJson()
         {
             byte[] privateKey = new byte[32];
             RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -43,6 +47,33 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractPermissionDescriptor result = ContractPermissionDescriptor.FromJson(temp.ToJson());
             Assert.AreEqual(null, result.Hash);
             Assert.AreEqual(result.Group, result.Group);
+            Assert.ThrowsException<FormatException>(() => ContractPermissionDescriptor.FromJson(string.Empty));
+        }
+
+        [TestMethod]
+        public void TestContractManifestFromJson()
+        {
+            Assert.ThrowsException<NullReferenceException>(() => ContractManifest.FromJson(new Json.JObject()));
+            var jsonFiles = System.IO.Directory.GetFiles(System.IO.Path.Combine("SmartContract", "Manifest", "TestFile"));
+            foreach (var item in jsonFiles)
+            {
+                var json = JObject.Parse(System.IO.File.ReadAllText(item)) as JObject;
+                var manifest = ContractManifest.FromJson(json);
+                manifest.ToJson().ToString().Should().Be(json.ToString());
+            }
+        }
+
+        [TestMethod]
+        public void TestEquals()
+        {
+            var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
+            var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+
+            Assert.AreNotEqual(descriptor1, descriptor2);
+
+            var descriptor3 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+
+            Assert.AreEqual(descriptor2, descriptor3);
         }
     }
 }

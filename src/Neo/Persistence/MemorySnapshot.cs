@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,8 +27,8 @@ namespace Neo.Persistence
         public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
         {
             this.innerData = innerData;
-            this.immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            this.writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+            immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
+            writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()
@@ -67,6 +68,11 @@ namespace Neo.Persistence
         {
             immutableData.TryGetValue(key, out byte[] value);
             return value?[..];
+        }
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            return immutableData.TryGetValue(key, out value);
         }
 
         public bool Contains(byte[] key)

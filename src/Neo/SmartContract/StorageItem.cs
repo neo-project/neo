@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.VM;
 using System;
@@ -69,7 +70,7 @@ namespace Neo.SmartContract
         /// <param name="value">The integer value of the <see cref="StorageItem"/>.</param>
         public StorageItem(BigInteger value)
         {
-            this.cache = value;
+            cache = value;
         }
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace Neo.SmartContract
         /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
         public StorageItem(IInteroperable interoperable)
         {
-            this.cache = interoperable;
+            cache = interoperable;
         }
 
         /// <summary>
@@ -145,6 +146,24 @@ namespace Neo.SmartContract
             return (T)cache;
         }
 
+        /// <summary>
+        /// Gets an <see cref="IInteroperable"/> from the storage.
+        /// </summary>
+        /// <param name="verify">Verify deserialization</param>
+        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
+        public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
+        {
+            if (cache is null)
+            {
+                var interoperable = new T();
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default), verify);
+                cache = interoperable;
+            }
+            value = null;
+            return (T)cache;
+        }
+
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Value.Span);
@@ -160,10 +179,30 @@ namespace Neo.SmartContract
             value = null;
         }
 
+        /// <summary>
+        /// Sets the interoperable value of the storage.
+        /// </summary>
+        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
+        public void Set(IInteroperable interoperable)
+        {
+            cache = interoperable;
+            value = null;
+        }
+
         public static implicit operator BigInteger(StorageItem item)
         {
             item.cache ??= new BigInteger(item.value.Span);
             return (BigInteger)item.cache;
+        }
+
+        public static implicit operator StorageItem(BigInteger value)
+        {
+            return new StorageItem(value);
+        }
+
+        public static implicit operator StorageItem(byte[] value)
+        {
+            return new StorageItem(value);
         }
     }
 }

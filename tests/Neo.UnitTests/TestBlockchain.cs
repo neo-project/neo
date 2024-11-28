@@ -22,10 +22,17 @@ namespace Neo.UnitTests
         public static readonly UInt160[] DefaultExtensibleWitnessWhiteList;
         private static readonly MemoryStore Store = new();
 
+        private class StoreProvider : IStoreProvider
+        {
+            public string Name => "TestProvider";
+
+            public IStore GetStore(string path) => Store;
+        }
+
         static TestBlockchain()
         {
             Console.WriteLine("initialize NeoSystem");
-            TheNeoSystem = new NeoSystem(TestProtocolSettings.Default, Store);
+            TheNeoSystem = new NeoSystem(TestProtocolSettings.Default, new StoreProvider());
         }
 
         internal static void ResetStore()
@@ -34,9 +41,11 @@ namespace Neo.UnitTests
             TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        internal static DataCache GetTestSnapshot()
+        internal static SnapshotCache GetTestSnapshotCache(bool reset = true)
         {
-            return TheNeoSystem.GetSnapshot().CreateSnapshot();
+            if (reset)
+                ResetStore();
+            return TheNeoSystem.GetSnapshot();
         }
     }
 }

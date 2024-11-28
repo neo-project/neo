@@ -41,32 +41,38 @@ namespace Neo.Cryptography
         /// <summary>
         /// Initializes a new instance of the <see cref="BloomFilter"/> class.
         /// </summary>
-        /// <param name="m">The size of the bit array used by the bloom filter.</param>
-        /// <param name="k">The number of hash functions used by the bloom filter.</param>
+        /// <param name="m">The size of the bit array used by the bloom filter, and must be greater than 0.</param>
+        /// <param name="k">The number of hash functions used by the bloom filter, and must be greater than 0.</param>
         /// <param name="nTweak">Used to generate the seeds of the murmur hash functions.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak)
         {
-            if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
-            this.seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            this.bits = new BitArray(m);
-            this.bits.Length = m;
-            this.Tweak = nTweak;
+            if (k <= 0 || m <= 0) throw new ArgumentOutOfRangeException();
+            seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            bits = new BitArray(m)
+            {
+                Length = m
+            };
+            Tweak = nTweak;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BloomFilter"/> class.
         /// </summary>
-        /// <param name="m">The size of the bit array used by the bloom filter.</param>
-        /// <param name="k">The number of hash functions used by the bloom filter.</param>
+        /// <param name="m">The size of the bit array used by the bloom filter, and must be greater than 0.</param>
+        /// <param name="k">The number of hash functions used by the bloom filter, and must be greater than 0.</param>
         /// <param name="nTweak">Used to generate the seeds of the murmur hash functions.</param>
         /// <param name="elements">The initial elements contained in this <see cref="BloomFilter"/> object.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="k"/> or <paramref name="m"/> is less than or equal to 0.</exception>
         public BloomFilter(int m, int k, uint nTweak, ReadOnlyMemory<byte> elements)
         {
-            if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
-            this.seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            this.bits = new BitArray(elements.ToArray());
-            this.bits.Length = m;
-            this.Tweak = nTweak;
+            if (k <= 0 || m <= 0) throw new ArgumentOutOfRangeException();
+            seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            bits = new BitArray(elements.ToArray())
+            {
+                Length = m
+            };
+            Tweak = nTweak;
         }
 
         /// <summary>

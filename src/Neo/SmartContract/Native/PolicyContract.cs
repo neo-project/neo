@@ -35,6 +35,7 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// The default network fee per byte of transactions.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const uint DefaultFeePerByte = 1000;
 
@@ -64,15 +65,16 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
 
-        internal PolicyContract()
-        {
-        }
+        internal PolicyContract() : base() { }
 
-        internal override ContractTask Initialize(ApplicationEngine engine)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
-            engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+            if (hardfork == ActiveIn)
+            {
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+            }
             return ContractTask.CompletedTask;
         }
 
@@ -144,7 +146,7 @@ namespace Neo.SmartContract.Native
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -152,7 +154,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_FeePerByte)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_FeePerByte)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -160,7 +162,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -168,14 +170,14 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_StoragePrice)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_StoragePrice)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            return BlockAccount(engine.Snapshot, account);
+            return BlockAccount(engine.SnapshotCache, account);
         }
 
         internal bool BlockAccount(DataCache snapshot, UInt160 account)
@@ -195,9 +197,9 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
-            if (!engine.Snapshot.Contains(key)) return false;
+            if (!engine.SnapshotCache.Contains(key)) return false;
 
-            engine.Snapshot.Delete(key);
+            engine.SnapshotCache.Delete(key);
             return true;
         }
     }

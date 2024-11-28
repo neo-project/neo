@@ -18,7 +18,7 @@ namespace Neo.GUI
         private InputBox(string text, string caption, string content)
         {
             InitializeComponent();
-            this.Text = caption;
+            Text = caption;
             groupBox1.Text = text;
             textBox1.Text = content;
         }

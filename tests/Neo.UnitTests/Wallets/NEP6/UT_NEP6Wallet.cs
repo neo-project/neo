@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -19,6 +20,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Contract = Neo.SmartContract.Contract;
@@ -88,10 +90,10 @@ namespace Neo.UnitTests.Wallets.NEP6
                 Script = new byte[1],
                 Signers = new Signer[] { new Signer() { Account = acc.ScriptHash } },
             };
-            var ctx = new ContractParametersContext(TestBlockchain.GetTestSnapshot(), tx, TestProtocolSettings.Default.Network);
+            var ctx = new ContractParametersContext(TestBlockchain.GetTestSnapshotCache(), tx, TestProtocolSettings.Default.Network);
             Assert.IsTrue(uut.Sign(ctx));
             tx.Witnesses = ctx.GetWitnesses();
-            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, TestBlockchain.GetTestSnapshot(), long.MaxValue));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, TestBlockchain.GetTestSnapshotCache(), long.MaxValue));
             Assert.ThrowsException<ArgumentNullException>(() => uut.CreateAccount((byte[])null));
             Assert.ThrowsException<ArgumentException>(() => uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551".HexToBytes()));
         }
@@ -302,6 +304,11 @@ namespace Neo.UnitTests.Wallets.NEP6
             X509Certificate2 cert = NewCertificate();
             Assert.IsNotNull(cert);
             Assert.AreEqual(true, cert.HasPrivateKey);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Assert.ThrowsException<PlatformNotSupportedException>(() => uut.Import(cert));
+                return;
+            }
             WalletAccount account = uut.Import(cert);
             Assert.IsNotNull(account);
         }

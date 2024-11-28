@@ -21,10 +21,12 @@ namespace Neo.Json.UnitTests
         [TestInitialize]
         public void SetUp()
         {
-            od = new OrderedDictionary<string, uint>();
-            od.Add("a", 1);
-            od.Add("b", 2);
-            od.Add("c", 3);
+            od = new OrderedDictionary<string, uint>
+            {
+                { "a", 1 },
+                { "b", 2 },
+                { "c", 3 }
+            };
         }
 
         [TestMethod]

@@ -61,7 +61,7 @@ namespace Neo
                 ReadOnlySpan<byte> buffer = new(p, 16);
                 this.value = new BigInteger(buffer[..12], isUnsigned: true);
                 if (buffer[15] != 0) this.value = -this.value;
-                this.decimals = buffer[14];
+                decimals = buffer[14];
             }
         }
 

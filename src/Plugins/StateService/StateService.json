@@ -1,0 +1,13 @@
+{
+  "PluginConfiguration": {
+    "Path": "Data_MPT_{0}",
+    "FullState": false,
+    "Network": 860833102,
+    "AutoVerify": false,
+    "MaxFindResultItems": 100,
+    "UnhandledExceptionPolicy": "StopPlugin"
+  },
+  "Dependency": [
+    "RpcServer"
+  ]
+}

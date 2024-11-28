@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System;
 using System.Numerics;
 
@@ -25,7 +26,7 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentNullException(nameof(curve));
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
-            this.Value = value;
+            Value = value;
             this.curve = curve;
         }
 
@@ -117,7 +118,7 @@ namespace Neo.Cryptography.ECC
                 return null;
             BigInteger u = qMinusOne >> 2;
             BigInteger k = (u << 1) + 1;
-            BigInteger Q = this.Value;
+            BigInteger Q = Value;
             BigInteger fourQ = (Q << 2).Mod(curve.Q);
             BigInteger U, V;
             do

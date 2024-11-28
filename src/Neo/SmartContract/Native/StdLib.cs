@@ -11,6 +11,7 @@
 
 #pragma warning disable IDE0051
 
+using Microsoft.IdentityModel.Tokens;
 using Neo.Cryptography;
 using Neo.Json;
 using Neo.VM.Types;
@@ -27,7 +28,7 @@ namespace Neo.SmartContract.Native
     {
         private const int MaxInputLength = 1024;
 
-        internal StdLib() { }
+        internal StdLib() : base() { }
 
         [ContractMethod(CpuFee = 1 << 12)]
         private static byte[] Serialize(ApplicationEngine engine, StackItem item)
@@ -129,6 +130,28 @@ namespace Neo.SmartContract.Native
         public static byte[] Base64Decode([MaxLength(MaxInputLength)] string s)
         {
             return Convert.FromBase64String(s);
+        }
+
+        /// <summary>
+        /// Encodes a byte array into a base64Url string.
+        /// </summary>
+        /// <param name="data">The base64Url to be encoded.</param>
+        /// <returns>The encoded base64Url string.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 5)]
+        public static string Base64UrlEncode([MaxLength(MaxInputLength)] string data)
+        {
+            return Base64UrlEncoder.Encode(data);
+        }
+
+        /// <summary>
+        /// Decodes a byte array from a base64Url string.
+        /// </summary>
+        /// <param name="s">The base64Url string.</param>
+        /// <returns>The decoded base64Url string.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 5)]
+        public static string Base64UrlDecode([MaxLength(MaxInputLength)] string s)
+        {
+            return Base64UrlEncoder.Decode(s);
         }
 
         /// <summary>

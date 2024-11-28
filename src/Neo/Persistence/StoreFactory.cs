@@ -11,40 +11,50 @@
 
 using System.Collections.Generic;
 
-namespace Neo.Persistence;
-
-public static class StoreFactory
+namespace Neo.Persistence
 {
-    private class MemoryStoreProvider : IStoreProvider
+    public static class StoreFactory
     {
-        public string Name => nameof(MemoryStore);
-        public IStore GetStore(string path) => new MemoryStore();
-    }
+        private static readonly Dictionary<string, IStoreProvider> providers = new();
 
-    private static readonly Dictionary<string, IStoreProvider> providers = new();
+        static StoreFactory()
+        {
+            var memProvider = new MemoryStoreProvider();
+            RegisterProvider(memProvider);
 
-    static StoreFactory()
-    {
-        var memProvider = new MemoryStoreProvider();
-        RegisterProvider(memProvider);
+            // Default cases
+            providers.Add("", memProvider);
+        }
 
-        // Default cases
-        providers.Add("", memProvider);
-    }
+        public static void RegisterProvider(IStoreProvider provider)
+        {
+            providers.Add(provider.Name, provider);
+        }
 
-    public static void RegisterProvider(IStoreProvider provider)
-    {
-        providers.Add(provider.Name, provider);
-    }
+        /// <summary>
+        /// Get store provider by name
+        /// </summary>
+        /// <param name="name">Name</param>
+        /// <returns>Store provider</returns>
+        public static IStoreProvider GetStoreProvider(string name)
+        {
+            if (providers.TryGetValue(name, out var provider))
+            {
+                return provider;
+            }
 
-    /// <summary>
-    /// Get store from name
-    /// </summary>
-    /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
-    /// <param name="path">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
-    /// <returns>The storage engine.</returns>
-    public static IStore GetStore(string storageEngine, string path)
-    {
-        return providers[storageEngine].GetStore(path);
+            return null;
+        }
+
+        /// <summary>
+        /// Get store from name
+        /// </summary>
+        /// <param name="storageProvider">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+        /// <param name="path">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        /// <returns>The storage engine.</returns>
+        public static IStore GetStore(string storageProvider, string path)
+        {
+            return providers[storageProvider].GetStore(path);
+        }
     }
 }

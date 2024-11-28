@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.VM;
@@ -86,6 +87,20 @@ namespace Neo.SmartContract
             Script.GetVarSize() +   // Script
             sizeof(uint);           // Checksum
 
+        /// <summary>
+        /// Parse NefFile from memory
+        /// </summary>
+        /// <param name="memory">Memory</param>
+        /// <param name="verify">Do checksum and MaxItemSize checks</param>
+        /// <returns>NefFile</returns>
+        public static NefFile Parse(ReadOnlyMemory<byte> memory, bool verify = true)
+        {
+            var reader = new MemoryReader(memory);
+            var nef = new NefFile();
+            nef.Deserialize(ref reader, verify);
+            return nef;
+        }
+
         public void Serialize(BinaryWriter writer)
         {
             SerializeHeader(writer);
@@ -103,7 +118,9 @@ namespace Neo.SmartContract
             writer.WriteFixedString(Compiler, 64);
         }
 
-        public void Deserialize(ref MemoryReader reader)
+        public void Deserialize(ref MemoryReader reader) => Deserialize(ref reader, true);
+
+        public void Deserialize(ref MemoryReader reader, bool verify = true)
         {
             long startPosition = reader.Position;
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
@@ -115,8 +132,11 @@ namespace Neo.SmartContract
             Script = reader.ReadVarMemory((int)ExecutionEngineLimits.Default.MaxItemSize);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
             CheckSum = reader.ReadUInt32();
-            if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
-            if (reader.Position - startPosition > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException("Max vm item size exceed");
+            if (verify)
+            {
+                if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
+                if (reader.Position - startPosition > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException("Max vm item size exceed");
+            }
         }
 
         /// <summary>

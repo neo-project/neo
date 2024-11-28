@@ -12,6 +12,7 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
+using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -21,7 +22,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using static Neo.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
@@ -32,6 +32,7 @@ namespace Neo.Cryptography
     public static class Helper
     {
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
@@ -153,6 +154,40 @@ namespace Neo.Cryptography
             return Sha256((ReadOnlySpan<byte>)value);
         }
 
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this byte[] value)
+        {
+            KeccakDigest keccak = new(256);
+            keccak.BlockUpdate(value, 0, value.Length);
+            byte[] result = new byte[keccak.GetDigestSize()];
+            keccak.DoFinal(result, 0);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this ReadOnlySpan<byte> value)
+        {
+            return Keccak256(value.ToArray());
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Keccak256(this Span<byte> value)
+        {
+            return Keccak256(value.ToArray());
+        }
+
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
             if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
@@ -160,7 +195,9 @@ namespace Neo.Cryptography
             var cipherBytes = new byte[plainData.Length];
             if (!IsOSX)
             {
+#pragma warning disable SYSLIB0053 // Type or member is obsolete
                 using var cipher = new AesGcm(key);
+#pragma warning restore SYSLIB0053 // Type or member is obsolete
                 cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
             }
             else
@@ -176,7 +213,7 @@ namespace Neo.Cryptography
                 var length = cipher.ProcessBytes(plainData, 0, plainData.Length, cipherBytes, 0);
                 cipher.DoFinal(cipherBytes, length);
             }
-            return Concat(nonce, cipherBytes, tag);
+            return [.. nonce, .. cipherBytes, .. tag];
         }
 
         public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
@@ -188,7 +225,9 @@ namespace Neo.Cryptography
             var decryptedData = new byte[cipherBytes.Length];
             if (!IsOSX)
             {
+#pragma warning disable SYSLIB0053 // Type or member is obsolete
                 using var cipher = new AesGcm(key);
+#pragma warning restore SYSLIB0053 // Type or member is obsolete
                 cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
             }
             else

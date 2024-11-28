@@ -52,10 +52,10 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         public NotifyEventArgs(IVerifiable container, UInt160 script_hash, string eventName, Array state)
         {
-            this.ScriptContainer = container;
-            this.ScriptHash = script_hash;
-            this.EventName = eventName;
-            this.State = state;
+            ScriptContainer = container;
+            ScriptHash = script_hash;
+            EventName = eventName;
+            State = state;
         }
 
         public void FromStackItem(StackItem stackItem)
@@ -63,14 +63,34 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State
+                };
+        }
+
+        public StackItem ToStackItem(IReferenceCounter referenceCounter, ApplicationEngine engine)
+        {
+            if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {
-                ScriptHash.ToArray(),
-                EventName,
-                State
-            };
+                return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State.OnStack ? State : State.DeepCopy(true)
+                };
+            }
+
+            return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State
+                };
         }
     }
 }
