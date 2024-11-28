@@ -49,6 +49,8 @@ namespace Neo.Json.UnitTests
             ((JNumber)BigInteger.One).AsNumber().Should().Be(1);
             ((JNumber)BigInteger.Zero).AsNumber().Should().Be(0);
             ((JNumber)BigInteger.MinusOne).AsNumber().Should().Be(-1);
+            ((JNumber)JNumber.MAX_SAFE_INTEGER).AsNumber().Should().Be(JNumber.MAX_SAFE_INTEGER);
+            ((JNumber)JNumber.MIN_SAFE_INTEGER).AsNumber().Should().Be(JNumber.MIN_SAFE_INTEGER);
         }
 
         [TestMethod]
