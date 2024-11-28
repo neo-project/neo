@@ -25,7 +25,7 @@ namespace Neo.Extensions.Tests
         public void TestToHexString()
         {
             byte[] nullStr = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
+            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
             byte[] empty = Array.Empty<byte>();
             empty.ToHexString().Should().Be("");
             empty.ToHexString(false).Should().Be("");
