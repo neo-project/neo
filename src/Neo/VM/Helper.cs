@@ -30,6 +30,20 @@ namespace Neo.VM
     public static class Helper
     {
         /// <summary>
+        /// Generates the script for calling a contract dynamically.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the contract to be called.</param>
+        /// <param name="method">The method to be called in the contract.</param>
+        /// <param name="args">The arguments for calling the contract.</param>
+        /// <returns>The generated script.</returns>
+        public static byte[] MakeScript(this UInt160 scriptHash, string method, params object[] args)
+        {
+            using ScriptBuilder sb = new();
+            sb.EmitDynamicCall(scriptHash, method, args);
+            return sb.ToArray();
+        }
+
+        /// <summary>
         /// Converts the <see cref="StackItem"/> to a JSON object.
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to convert.</param>
