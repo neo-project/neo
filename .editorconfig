@@ -48,8 +48,18 @@ indent_size = 2
 end_of_line = lf
 indent_size = 2
 
+# YAML files
+[*.yml]
+end_of_line = lf
+indent_size = 2
+
 # Dotnet code style settings:
 [*.{cs,vb}]
+# Use block-scoped namespace
+csharp_style_namespace_declarations = block_scoped:error
+dotnet_diagnostic.IDE0160.severity = error
+dotnet_diagnostic.IDE0161.severity = error
+
 # Member can be made 'readonly'
 csharp_style_prefer_readonly_struct_member = true
 dotnet_diagnostic.IDE0251.severity = warning

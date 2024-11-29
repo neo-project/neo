@@ -241,7 +241,7 @@ namespace Neo.SmartContract.Native
                 return (ulong)item.GetInteger();
             }
 
-            protected override StackItem ElementToStackItem(ulong element, ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element, IReferenceCounter referenceCounter)
             {
                 return element;
             }

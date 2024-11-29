@@ -72,7 +72,8 @@ namespace Neo.Network.P2P.Payloads
             Id = reader.ReadUInt64();
             Code = (OracleResponseCode)reader.ReadByte();
             if (!Enum.IsDefined(typeof(OracleResponseCode), Code))
-                throw new FormatException();
+                throw new FormatException($"Invalid response code: {Code}.");
+
             Result = reader.ReadVarMemory(MaxResultSize);
             if (Code != OracleResponseCode.Success && Result.Length > 0)
                 throw new FormatException();

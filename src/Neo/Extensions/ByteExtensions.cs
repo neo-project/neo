@@ -14,7 +14,7 @@ using System;
 
 namespace Neo.Extensions
 {
-    public static class ByteExtensions2
+    public static class ByteExtensions
     {
         /// <summary>
         /// Compresses the specified data using the LZ4 algorithm.

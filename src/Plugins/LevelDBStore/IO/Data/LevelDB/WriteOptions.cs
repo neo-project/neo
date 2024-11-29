@@ -9,28 +9,42 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.IO.Data.LevelDB
 {
-    public class WriteOptions
+    /// <summary>
+    /// Options that control write operations.
+    /// </summary>
+    public class WriteOptions : LevelDBHandle
     {
-        public static readonly WriteOptions Default = new WriteOptions();
-        public static readonly WriteOptions SyncWrite = new WriteOptions { Sync = true };
+        public static readonly WriteOptions Default = new();
+        public static readonly WriteOptions SyncWrite = new() { Sync = true };
 
-        internal readonly IntPtr handle = Native.leveldb_writeoptions_create();
+        public WriteOptions() : base(Native.leveldb_writeoptions_create()) { }
 
+        /// <summary>
+        /// If true, the write will be flushed from the operating system
+        /// buffer cache (by calling WritableFile::Sync()) before the write
+        /// is considered complete.  If this flag is true, writes will be
+        /// slower.
+        ///
+        /// If this flag is false, and the machine crashes, some recent
+        /// writes may be lost.  Note that if it is just the process that
+        /// crashes (i.e., the machine does not reboot), no writes will be
+        /// lost even if sync==false.
+        ///
+        /// In other words, a DB write with sync==false has similar
+        /// crash semantics as the "write()" system call.  A DB write
+        /// with sync==true has similar crash semantics to a "write()"
+        /// system call followed by "fsync()".
+        /// </summary>
         public bool Sync
         {
-            set
-            {
-                Native.leveldb_writeoptions_set_sync(handle, value);
-            }
+            set { Native.leveldb_writeoptions_set_sync(Handle, value); }
         }
 
-        ~WriteOptions()
+        protected override void FreeUnManagedObjects()
         {
-            Native.leveldb_writeoptions_destroy(handle);
+            Native.leveldb_writeoptions_destroy(Handle);
         }
     }
 }

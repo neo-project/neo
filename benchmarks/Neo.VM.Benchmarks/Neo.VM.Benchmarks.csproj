@@ -2,15 +2,19 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <RootNamespace>Neo.VM</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
+    <ProjectReference Include="..\..\src\Neo.Extensions\Neo.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\Neo.Json\Neo.Json.csproj" />
     <ProjectReference Include="..\..\src\Neo.VM\Neo.VM.csproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+    <ProjectReference Include="..\..\tests\Neo.VM.Tests\Neo.VM.Tests.csproj" />
   </ItemGroup>
 
 </Project>

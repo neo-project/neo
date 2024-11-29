@@ -107,6 +107,30 @@ namespace Neo.UnitTests.VMT
         }
 
         [TestMethod]
+        public void TestEmitStruct()
+        {
+            var expected = new BigInteger[] { 1, 2, 3 };
+            var sb = new ScriptBuilder();
+            sb.CreateStruct(expected);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<VM.Types.Struct>().Select(u => u.GetInteger()).ToArray());
+
+            expected = new BigInteger[] { };
+            sb = new ScriptBuilder();
+            sb.CreateStruct(expected);
+
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine2.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine2.Execute());
+
+            Assert.AreEqual(0, engine2.ResultStack.Pop<VM.Types.Struct>().Count);
+        }
+
+        [TestMethod]
         public void TestEmitMap()
         {
             var expected = new Dictionary<BigInteger, BigInteger>() { { 1, 2 }, { 3, 4 } };
@@ -664,6 +688,30 @@ namespace Neo.UnitTests.VMT
                 sbChar.EmitPush(Convert.ToChar(i));
                 CollectionAssert.AreEqual(sbUInt16.ToArray(), sbChar.ToArray());
             }
+        }
+
+        [TestMethod]
+        public void TestCyclicReference()
+        {
+            var map = new VM.Types.Map
+            {
+                [1] = 2,
+            };
+
+            var item = new VM.Types.Array
+            {
+                   map,
+                   map
+            };
+
+            // just check there is no exception
+            var json = item.ToJson();
+            Assert.AreEqual(json.ToString(), @"{""type"":""Array"",""value"":[{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]},{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]}]}");
+
+            // check cyclic reference
+            map[2] = item;
+            var action = () => item.ToJson();
+            action.Should().Throw<System.InvalidOperationException>();
         }
     }
 }

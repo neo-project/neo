@@ -66,7 +66,6 @@ namespace Neo.Extensions.Tests
             }
         }
 
-
         [TestMethod]
         public void TestGetVarSizeGeneric()
         {

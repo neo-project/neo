@@ -17,51 +17,42 @@ namespace Neo.Plugins.Storage
 {
     internal class Store : IStore
     {
-        private readonly DB db;
+        private readonly DB _db;
 
         public Store(string path)
         {
-            db = DB.Open(path, new Options { CreateIfMissing = true, FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15) });
+            _db = DB.Open(path, new Options { CreateIfMissing = true, FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15) });
         }
 
         public void Delete(byte[] key)
         {
-            db.Delete(WriteOptions.Default, key);
+            _db.Delete(WriteOptions.Default, key);
         }
 
-        public void Dispose()
+        public void Dispose() => _db.Dispose();
+
+        public ISnapshot GetSnapshot() =>
+            new Snapshot(_db);
+
+        public void Put(byte[] key, byte[] value) =>
+            _db.Put(WriteOptions.Default, key, value);
+
+        public void PutSync(byte[] key, byte[] value) =>
+            _db.Put(WriteOptions.SyncWrite, key, value);
+
+        public bool Contains(byte[] key) =>
+            _db.Contains(ReadOptions.Default, key);
+
+        public byte[] TryGet(byte[] key) =>
+            _db.Get(ReadOptions.Default, key);
+
+        public bool TryGet(byte[] key, out byte[] value)
         {
-            db.Dispose();
+            value = _db.Get(ReadOptions.Default, key);
+            return value != null;
         }
 
-        public IEnumerable<(byte[], byte[])> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
-        {
-            return db.Seek(ReadOptions.Default, prefix, direction, (k, v) => (k, v));
-        }
-
-        public ISnapshot GetSnapshot()
-        {
-            return new Snapshot(db);
-        }
-
-        public void Put(byte[] key, byte[] value)
-        {
-            db.Put(WriteOptions.Default, key, value);
-        }
-
-        public void PutSync(byte[] key, byte[] value)
-        {
-            db.Put(WriteOptions.SyncWrite, key, value);
-        }
-
-        public bool Contains(byte[] key)
-        {
-            return db.Contains(ReadOptions.Default, key);
-        }
-
-        public byte[] TryGet(byte[] key)
-        {
-            return db.Get(ReadOptions.Default, key);
-        }
+        public IEnumerable<(byte[], byte[])> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
+            _db.Seek(ReadOptions.Default, prefix, direction, (k, v) => (k, v));
     }
 }

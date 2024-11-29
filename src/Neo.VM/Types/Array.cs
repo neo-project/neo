@@ -12,6 +12,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Types
 {
@@ -29,12 +30,18 @@ namespace Neo.VM.Types
         /// <returns>The item at the specified index.</returns>
         public StackItem this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _array[index];
             set
             {
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
                 ReferenceCounter?.RemoveReference(_array[index], this);
                 _array[index] = value;
+                if (ReferenceCounter != null && value is CompoundType { ReferenceCounter: null })
+                {
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+                }
+
                 ReferenceCounter?.AddReference(value, this);
             }
         }
@@ -57,11 +64,11 @@ namespace Neo.VM.Types
         }
 
         /// <summary>
-        /// Create an array containing the specified items. And make the array use the specified <see cref="ReferenceCounter"/>.
+        /// Create an array containing the specified items. And make the array use the specified <see cref="IReferenceCounter"/>.
         /// </summary>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> to be used by this array.</param>
+        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> to be used by this array.</param>
         /// <param name="items">The items to be included in the array.</param>
-        public Array(ReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
+        public Array(IReferenceCounter? referenceCounter, IEnumerable<StackItem>? items = null)
             : base(referenceCounter)
         {
             _array = items switch
@@ -70,9 +77,18 @@ namespace Neo.VM.Types
                 List<StackItem> list => list,
                 _ => new List<StackItem>(items)
             };
-            if (referenceCounter != null)
-                foreach (StackItem item in _array)
-                    referenceCounter.AddReference(item, this);
+
+            if (referenceCounter == null) return;
+
+            foreach (var item in _array)
+            {
+                if (item is CompoundType { ReferenceCounter: null })
+                {
+                    throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+                }
+
+                referenceCounter.AddReference(item, this);
+            }
         }
 
         /// <summary>
@@ -81,14 +97,21 @@ namespace Neo.VM.Types
         /// <param name="item">The item to be added.</param>
         public void Add(StackItem item)
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not add item.");
             _array.Add(item);
-            ReferenceCounter?.AddReference(item, this);
+
+            if (ReferenceCounter == null) return;
+
+            if (item is CompoundType { ReferenceCounter: null })
+            {
+                throw new InvalidOperationException("Can not set a CompoundType without a ReferenceCounter.");
+            }
+            ReferenceCounter.AddReference(item, this);
         }
 
         public override void Clear()
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not clear.");
             if (ReferenceCounter != null)
                 foreach (StackItem item in _array)
                     ReferenceCounter.RemoveReference(item, this);
@@ -129,7 +152,7 @@ namespace Neo.VM.Types
         /// <param name="index">The index of the item to be removed.</param>
         public void RemoveAt(int index)
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not remove item.");
             ReferenceCounter?.RemoveReference(_array[index], this);
             _array.RemoveAt(index);
         }
@@ -139,7 +162,7 @@ namespace Neo.VM.Types
         /// </summary>
         public void Reverse()
         {
-            if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
+            if (IsReadOnly) throw new InvalidOperationException("The array is readonly, can not reverse.");
             _array.Reverse();
         }
     }
