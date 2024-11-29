@@ -79,7 +79,7 @@ namespace Neo.Plugins.StateService.Verification
 
         public VerificationContext(Wallet wallet, uint index)
         {
-            this._wallet = wallet;
+            _wallet = wallet;
             _retries = 0;
             _myIndex = -1;
             _rootIndex = index;
