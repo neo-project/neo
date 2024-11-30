@@ -19,7 +19,7 @@ namespace Neo.Test.Types
     {
         public Exception FaultException { get; private set; }
 
-        public TestEngine() : base(ComposeJumpTable()) { }
+        public TestEngine() : base(new ReferenceCounterV2(), ComposeJumpTable()) { }
 
         private static JumpTable ComposeJumpTable()
         {

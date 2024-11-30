@@ -15,32 +15,50 @@ namespace Neo.VM.Benchmark.OpCode
 {
     public abstract class OpCodeBase
     {
-        [Params(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2040)]
-        public int ItemCount { get; set; } = 10;
-        protected byte[] baseLineScript = Array.Empty<byte>();
-        protected byte[] script = Array.Empty<byte>();
-        protected byte[] multiScript = Array.Empty<byte>();
+        [Params(4, 8, 16, 32, 64, 128, 256, 512, 1024, 2040)]
+        public int ItemCount { get; set; } = 4;
 
-        [GlobalSetup]
-        public void Setup()
+        private readonly byte[] nopScript;
+
+        private BenchmarkEngine engine;
+        private BenchmarkEngine oneGasEngine;
+
+        protected abstract VM.OpCode Opcode { get; }
+
+        [IterationSetup]
+        public void IterationSetup()
         {
-            script = CreateScript(BenchmarkMode.SimpleOpCode);
-            multiScript = CreateScript(BenchmarkMode.OneGAS);
-            baseLineScript = CreateScript(BenchmarkMode.BaseLine);
+            engine = new BenchmarkEngine();
+            engine.LoadScript(CreateOneOpCodeScript());
+            engine.ExecuteUntil(Opcode);
+
+            oneGasEngine = new BenchmarkEngine();
+            oneGasEngine.LoadScript(CreateOneGASScript());
+            oneGasEngine.ExecuteUntil(Opcode);
         }
 
-        [Benchmark(Baseline = true)]
-        public void Bench_BaseLine() => Benchmark_Opcode.RunScript(baseLineScript);
+        [GlobalCleanup]
+        public void Cleanup()
+        {
+            engine.Dispose();
+            oneGasEngine.Dispose();
+        }
+
+        // [Benchmark]
+        // public void Bench_OneOpCode() =>
+        //     engine.ExecuteNext();
 
         [Benchmark]
-        public void Bench_OneOpCode() => Benchmark_Opcode.RunScript(script);
+        public void Bench_OneGAS() {
+            oneGasEngine.ExecuteOneGASBenchmark();
+            if (oneGasEngine.State != VMState.HALT)
+            {
+                throw new Exception();
+            }
+        }
 
-        /// <summary>
-        /// Benchmark how long 1 GAS can run.
-        /// </summary>
-        [Benchmark]
-        public void Bench_OneGAS() => Benchmark_Opcode.LoadScript(multiScript).ExecuteOneGASBenchmark();
+        protected abstract byte[] CreateOneOpCodeScript();
 
-        protected abstract byte[] CreateScript(BenchmarkMode benchmarkMode);
+        protected abstract byte[] CreateOneGASScript();
     }
 }
