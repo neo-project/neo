@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// Options to control the behavior of a database (passed to Open)
