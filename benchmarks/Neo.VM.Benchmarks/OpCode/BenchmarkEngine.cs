@@ -27,8 +27,8 @@ namespace Neo.VM.Benchmark.OpCode
         private static readonly Dictionary<VM.OpCode, (int, float)> s_opCodeValueRanges = new()
         {
             [VM.OpCode.UNPACK] = (16, 1),
-            [VM.OpCode.PACK] = (16, 0.5f),
-            [VM.OpCode.REVERSEN] = (64, 0.02f),
+            [VM.OpCode.PACK] = (16, 0.7f),
+            [VM.OpCode.REVERSEN] = (64, 1),
         };
 
 
@@ -92,9 +92,11 @@ namespace Neo.VM.Benchmark.OpCode
 
                 if (s_opCodeValueRanges.TryGetValue(instruction.OpCode, out var opCodeRange))
                 {
-                    var gasPrice = _complexFactor >= opCodeRange.Item1
-                        ? (int)(_complexFactor * opCodeRange.Item2 + 1)
-                        : 1;
+
+                    var gasPrice =_complexFactor >= opCodeRange.Item1?(int)( 4 * ((_complexFactor + 4) >> 2)*opCodeRange.Item2): 1;
+                    // var gasPrice =
+                    //     ? (int)(_complexFactor * opCodeRange.Item2 + 1)
+                    //     : 1;
                     // Console.WriteLine("opCodeRange = "+opCodeRange + " _complexFactor = "+ _complexFactor+ " gasPrice: "+gasPrice);
                     _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3 * gasPrice;
                 }
