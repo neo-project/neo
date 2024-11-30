@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// An iterator yields a sequence of key/value pairs from a database.
