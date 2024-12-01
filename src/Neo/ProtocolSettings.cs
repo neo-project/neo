@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Neo
 {
@@ -141,23 +140,12 @@ namespace Neo
         /// Loads the <see cref="ProtocolSettings"/> at the specified path.
         /// </summary>
         /// <param name="path">The path of the settings file.</param>
-        /// <param name="optional">Indicates whether the file is optional.</param>
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
-        public static ProtocolSettings Load(string path, bool optional = true)
+        public static ProtocolSettings Load(string path)
         {
             if (!File.Exists(path))
             {
-                if (optional)
-                {
-                    // Load with default values
-                    var configuration = new ConfigurationBuilder().Build();
-                    var section = configuration.GetSection("EmptySection");
-                    return Load(section);
-                }
-                else
-                {
-                    throw new FileNotFoundException(path);
-                }
+                throw new FileNotFoundException(path);
             }
 
             using var stream = File.OpenRead(path);
