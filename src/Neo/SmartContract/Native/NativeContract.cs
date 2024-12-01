@@ -140,11 +140,12 @@ namespace Neo.SmartContract.Native
             // Reflection to get the methods
 
             List<ContractMethodMetadata> listMethods = [];
-            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (var member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
-                if (attribute is null) continue;
-                listMethods.Add(new ContractMethodMetadata(member, attribute));
+                foreach (var attribute in member.GetCustomAttributes<ContractMethodAttribute>())
+                {
+                    listMethods.Add(new ContractMethodMetadata(member, attribute));
+                }
             }
             _methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
 
