@@ -30,20 +30,6 @@ namespace Neo.VM
     public static class Helper
     {
         /// <summary>
-        /// Generates the script for calling a contract dynamically.
-        /// </summary>
-        /// <param name="scriptHash">The hash of the contract to be called.</param>
-        /// <param name="method">The method to be called in the contract.</param>
-        /// <param name="args">The arguments for calling the contract.</param>
-        /// <returns>The generated script.</returns>
-        public static byte[] MakeScript(this UInt160 scriptHash, string method, params object[] args)
-        {
-            using ScriptBuilder sb = new();
-            sb.EmitDynamicCall(scriptHash, method, args);
-            return sb.ToArray();
-        }
-
-        /// <summary>
         /// Converts the <see cref="StackItem"/> to a JSON object.
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to convert.</param>
@@ -54,24 +40,7 @@ namespace Neo.VM
             return ToJson(item, null, ref maxSize);
         }
 
-        /// <summary>
-        /// Converts the <see cref="EvaluationStack"/> to a JSON object.
-        /// </summary>
-        /// <param name="stack">The <see cref="EvaluationStack"/> to convert.</param>
-        /// <param name="maxSize">The maximum size in bytes of the result.</param>
-        /// <returns>The <see cref="EvaluationStack"/> represented by a JSON object.</returns>
-        public static JArray ToJson(this EvaluationStack stack, int maxSize = int.MaxValue)
-        {
-            if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize));
-            maxSize -= 2/*[]*/+ Math.Max(0, (stack.Count - 1))/*,*/;
-            JArray result = new();
-            foreach (var item in stack)
-                result.Add(ToJson(item, null, ref maxSize));
-            if (maxSize < 0) throw new InvalidOperationException("Max size reached.");
-            return result;
-        }
-
-        private static JObject ToJson(StackItem item, HashSet<StackItem> context, ref int maxSize)
+        public static JObject ToJson(this StackItem item, HashSet<StackItem> context, ref int maxSize)
         {
             JObject json = new()
             {
