@@ -13,9 +13,11 @@ using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Neo.Plugins.Storage
 {
+    [DebuggerTypeProxy(typeof(KeyValuePairsDebugView))]
     internal class Store : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private readonly DB _db;

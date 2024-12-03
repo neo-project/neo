@@ -11,8 +11,10 @@
 
 #nullable enable
 
+using Neo.Plugins.Storage;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace Neo.IO.Storage.LevelDB
@@ -21,6 +23,7 @@ namespace Neo.IO.Storage.LevelDB
     /// A DB is a persistent ordered map from keys to values.
     /// A DB is safe for concurrent access from multiple threads without any external synchronization.
     /// </summary>
+    [DebuggerTypeProxy(typeof(KeyValuePairsDebugView))]
     public class DB : LevelDBHandle, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private DB(nint handle) : base(handle) { }
