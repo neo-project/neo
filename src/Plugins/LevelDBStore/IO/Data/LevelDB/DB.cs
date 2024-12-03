@@ -11,7 +11,7 @@
 
 #nullable enable
 
-using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -21,13 +21,13 @@ namespace Neo.IO.Storage.LevelDB
     /// A DB is a persistent ordered map from keys to values.
     /// A DB is safe for concurrent access from multiple threads without any external synchronization.
     /// </summary>
-    public class DB : LevelDBHandle
+    public class DB : LevelDBHandle, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        private DB(IntPtr handle) : base(handle) { }
+        private DB(nint handle) : base(handle) { }
 
         protected override void FreeUnManagedObjects()
         {
-            if (Handle != IntPtr.Zero)
+            if (Handle != nint.Zero)
             {
                 Native.leveldb_close(Handle);
             }
@@ -40,7 +40,7 @@ namespace Neo.IO.Storage.LevelDB
         /// </summary>
         public void Delete(WriteOptions options, byte[] key)
         {
-            Native.leveldb_delete(Handle, options.Handle, key, (UIntPtr)key.Length, out var error);
+            Native.leveldb_delete(Handle, options.Handle, key, (nuint)key.Length, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -50,7 +50,7 @@ namespace Neo.IO.Storage.LevelDB
         /// </summary>
         public byte[] Get(ReadOptions options, byte[] key)
         {
-            var value = Native.leveldb_get(Handle, options.Handle, key, (UIntPtr)key.Length, out var length, out var error);
+            var value = Native.leveldb_get(Handle, options.Handle, key, (nuint)key.Length, out var length, out var error);
             try
             {
                 NativeHelper.CheckError(error);
@@ -58,16 +58,16 @@ namespace Neo.IO.Storage.LevelDB
             }
             finally
             {
-                if (value != IntPtr.Zero) Native.leveldb_free(value);
+                if (value != nint.Zero) Native.leveldb_free(value);
             }
         }
 
         public bool Contains(ReadOptions options, byte[] key)
         {
-            var value = Native.leveldb_get(Handle, options.Handle, key, (UIntPtr)key.Length, out _, out var error);
+            var value = Native.leveldb_get(Handle, options.Handle, key, (nuint)key.Length, out _, out var error);
             NativeHelper.CheckError(error);
 
-            if (value != IntPtr.Zero)
+            if (value != nint.Zero)
             {
                 Native.leveldb_free(value);
                 return true;
@@ -76,12 +76,12 @@ namespace Neo.IO.Storage.LevelDB
             return false;
         }
 
-        public Snapshot GetSnapshot()
+        public Snapshot CreateSnapshot()
         {
             return new Snapshot(Handle);
         }
 
-        public Iterator NewIterator(ReadOptions options)
+        public Iterator CreateIterator(ReadOptions options)
         {
             return new Iterator(Native.leveldb_create_iterator(Handle, options.Handle));
         }
@@ -104,7 +104,7 @@ namespace Neo.IO.Storage.LevelDB
         /// </summary>
         public void Put(WriteOptions options, byte[] key, byte[] value)
         {
-            Native.leveldb_put(Handle, options.Handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length, out var error);
+            Native.leveldb_put(Handle, options.Handle, key, (nuint)key.Length, value, (nuint)value.Length, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -126,18 +126,14 @@ namespace Neo.IO.Storage.LevelDB
             NativeHelper.CheckError(error);
         }
 
-        public IEnumerable<KeyValuePair<byte[], byte[]>> GetAll(Snapshot? snapshot = null)
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
         {
-            using var options = new ReadOptions();
-            if (snapshot != null) options.Snapshot = snapshot;
-
-            using var iterator = NewIterator(options);
-            iterator.SeekToFirst();
-            while (iterator.Valid())
-            {
+            using var iterator = CreateIterator(ReadOptions.Default);
+            for (iterator.SeekToFirst(); iterator.Valid(); iterator.Next())
                 yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
-                iterator.Next();
-            }
         }
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

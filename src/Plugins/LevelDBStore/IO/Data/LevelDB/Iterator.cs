@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
@@ -18,7 +16,7 @@ namespace Neo.IO.Storage.LevelDB
     /// </summary>
     public class Iterator : LevelDBHandle
     {
-        internal Iterator(IntPtr handle) : base(handle) { }
+        internal Iterator(nint handle) : base(handle) { }
 
         private void CheckError()
         {
@@ -28,7 +26,7 @@ namespace Neo.IO.Storage.LevelDB
 
         protected override void FreeUnManagedObjects()
         {
-            if (Handle != IntPtr.Zero)
+            if (Handle != nint.Zero)
             {
                 Native.leveldb_iter_destroy(Handle);
             }
@@ -67,9 +65,9 @@ namespace Neo.IO.Storage.LevelDB
         /// The iterator is Valid() after this call if the source contains
         /// an entry that comes at or past target.
         /// </summary>
-        public void Seek(byte[] target)
+        public void Seek(byte[] key)
         {
-            Native.leveldb_iter_seek(Handle, target, (UIntPtr)target.Length);
+            Native.leveldb_iter_seek(Handle, key, (nuint)key.Length);
         }
 
         public void SeekToFirst()

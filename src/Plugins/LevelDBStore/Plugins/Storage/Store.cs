@@ -11,18 +11,24 @@
 
 using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Neo.Plugins.Storage
 {
-    internal class Store : IStore
+    internal class Store : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private readonly DB _db;
         private readonly Options _options;
 
         public Store(string path)
         {
-            _options = new Options { CreateIfMissing = true, FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15) };
+            _options = new Options
+            {
+                CreateIfMissing = true,
+                FilterPolicy = Native.leveldb_filterpolicy_create_bloom(15),
+                CompressionLevel = CompressionType.SnappyCompression,
+            };
             _db = DB.Open(path, _options);
         }
 
@@ -60,5 +66,11 @@ namespace Neo.Plugins.Storage
 
         public IEnumerable<(byte[], byte[])> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
             _db.Seek(ReadOptions.Default, prefix, direction);
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator() =>
+            _db.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

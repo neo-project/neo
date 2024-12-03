@@ -11,12 +11,13 @@
 
 using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
+using System.Collections;
 using System.Collections.Generic;
 using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
 {
-    internal class Snapshot : ISnapshot
+    internal class Snapshot : ISnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private readonly DB _db;
         private readonly LSnapshot _snapshot;
@@ -27,7 +28,7 @@ namespace Neo.Plugins.Storage
         public Snapshot(DB db)
         {
             _db = db;
-            _snapshot = db.GetSnapshot();
+            _snapshot = db.CreateSnapshot();
             _readOptions = new ReadOptions { FillCache = false, Snapshot = _snapshot };
             _batch = new WriteBatch();
         }
@@ -76,5 +77,15 @@ namespace Neo.Plugins.Storage
             value = _db.Get(_readOptions, key);
             return value != null;
         }
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        {
+            using var iterator = _db.CreateIterator(_readOptions);
+            for (iterator.SeekToFirst(); iterator.Valid(); iterator.Next())
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }
