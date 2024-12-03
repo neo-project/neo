@@ -19,7 +19,7 @@ namespace Neo.Plugins.Storage
         byte[] key,
         byte[] value)
     {
-        private readonly string _key = key is null ? string.Empty : $"[{string.Join(", ", key.Select(s => "0x" + s.ToString("x02")))}]";
-        private readonly string _value = value is null ? string.Empty : $"[{string.Join(", ", value.Select(s => "0x" + s.ToString("x02")))}]";
+        private readonly string _key = $"[{string.Join(", ", key.Select(s => "0x" + s.ToString("x02")))}]";
+        private readonly string _value = $"[{string.Join(", ", value.Select(s => "0x" + s.ToString("x02")))}]";
     }
 }
