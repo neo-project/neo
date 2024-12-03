@@ -11,11 +11,7 @@
 
 using Neo.Json;
 using Neo.SmartContract;
-
-#if !NET5_0_OR_GREATER
 using Neo.VM;
-#endif
-
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -52,12 +48,13 @@ namespace Neo.Extensions
                 case Array array:
                     {
                         context ??= new(ReferenceEqualityComparer.Instance);
-                        if (!context.Add(array)) throw new InvalidOperationException();
+                        if (!context.Add(array)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
                         JArray a = [];
                         foreach (var stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
+                        if (!context.Remove(array)) throw new InvalidOperationException("Circular reference.");
                         break;
                     }
                 case Boolean boolean:
@@ -85,9 +82,9 @@ namespace Neo.Extensions
                 case Map map:
                     {
                         context ??= new(ReferenceEqualityComparer.Instance);
-                        if (!context.Add(map)) throw new InvalidOperationException();
+                        if (!context.Add(map)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (map.Count - 1))/*,*/;
-                        JArray a = [];
+                        JArray a = new();
                         foreach (var (k, v) in map)
                         {
                             maxSize -= 17/*{"key":,"value":}*/;
@@ -99,6 +96,7 @@ namespace Neo.Extensions
                             a.Add(i);
                         }
                         value = a;
+                        if (!context.Remove(map)) throw new InvalidOperationException("Circular reference.");
                         break;
                     }
                 case Pointer pointer:
