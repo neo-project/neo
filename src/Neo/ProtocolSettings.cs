@@ -145,7 +145,7 @@ namespace Neo
         {
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException(path);
+                return Default;
             }
 
             using var stream = File.OpenRead(path);
