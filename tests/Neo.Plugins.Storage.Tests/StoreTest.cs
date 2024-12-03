@@ -81,7 +81,6 @@ namespace Neo.Plugins.Storage.Tests
             db.Put(WriteOptions.Default, [0x00, 0x00, 0x01], [0x01]);
             db.Put(WriteOptions.Default, [0x00, 0x00, 0x02], [0x02]);
             db.Put(WriteOptions.Default, [0x00, 0x00, 0x03], [0x03]);
-            db.Put(WriteOptions.Default, [0], null);
 
             CollectionAssert.AreEqual(new byte[] { 0x01, }, db.Get(ReadOptions.Default, [0x00, 0x00, 0x01]));
             CollectionAssert.AreEqual(new byte[] { 0x02, }, db.Get(ReadOptions.Default, [0x00, 0x00, 0x02]));
