@@ -30,7 +30,7 @@ namespace Neo.Plugins.ApplicationLogs
     {
         #region Globals
 
-        private NeoStore _neostore;
+        internal NeoStore _neostore;
         private NeoSystem _neosystem;
         private readonly List<LogEventArgs> _logEvents;
 
@@ -38,6 +38,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         public override string Name => "ApplicationLogs";
         public override string Description => "Synchronizes smart contract VM executions and notifications (NotifyLog) on blockchain.";
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
 
         #region Ctor
 
@@ -122,7 +123,7 @@ namespace Neo.Plugins.ApplicationLogs
         #region Console Commands
 
         [ConsoleCommand("log block", Category = "ApplicationLog Commands")]
-        private void OnGetBlockCommand(string blockHashOrIndex, string eventName = null)
+        internal void OnGetBlockCommand(string blockHashOrIndex, string eventName = null)
         {
             UInt256 blockhash;
             if (uint.TryParse(blockHashOrIndex, out var blockIndex))
@@ -153,7 +154,7 @@ namespace Neo.Plugins.ApplicationLogs
         }
 
         [ConsoleCommand("log tx", Category = "ApplicationLog Commands")]
-        private void OnGetTransactionCommand(UInt256 txhash, string eventName = null)
+        internal void OnGetTransactionCommand(UInt256 txhash, string eventName = null)
         {
             var txApplication = string.IsNullOrEmpty(eventName) ?
                 _neostore.GetTransactionLog(txhash) :
@@ -166,7 +167,7 @@ namespace Neo.Plugins.ApplicationLogs
         }
 
         [ConsoleCommand("log contract", Category = "ApplicationLog Commands")]
-        private void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string eventName = null)
+        internal void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string eventName = null)
         {
             if (page == 0)
             {

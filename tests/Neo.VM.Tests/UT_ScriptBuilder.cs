@@ -43,6 +43,21 @@ namespace Neo.Test
         }
 
         [TestMethod]
+        public void TestNullAndEmpty()
+        {
+            using (ScriptBuilder script = new())
+            {
+                ReadOnlySpan<byte> span = null;
+                script.EmitPush(span);
+
+                span = [];
+                script.EmitPush(span);
+
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0, (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
+            }
+        }
+
+        [TestMethod]
         public void TestBigInteger()
         {
             using (ScriptBuilder script = new())
@@ -143,41 +158,63 @@ namespace Neo.Test
         [TestMethod]
         public void TestEmitPushBigInteger()
         {
-            using (ScriptBuilder script = new())
-            {
-                script.EmitPush(BigInteger.MinusOne);
-                CollectionAssert.AreEqual(new byte[] { 0x0F }, script.ToArray());
-            }
-
-            using (ScriptBuilder script = new())
-            {
-                script.EmitPush(BigInteger.Zero);
-                CollectionAssert.AreEqual(new byte[] { 0x10 }, script.ToArray());
-            }
-
-            for (byte x = 1; x <= 16; x++)
+            // Test small integers (-1 to 16)
+            for (var i = -1; i <= 16; i++)
             {
                 using ScriptBuilder script = new();
-                script.EmitPush(new BigInteger(x));
-                CollectionAssert.AreEqual(new byte[] { (byte)(OpCode.PUSH0 + x) }, script.ToArray());
+                script.EmitPush(new BigInteger(i));
+                CollectionAssert.AreEqual(new[] { (byte)(OpCode.PUSH0 + (byte)i) }, script.ToArray());
             }
 
-            CollectionAssert.AreEqual("0080".FromHexString(), new ScriptBuilder().EmitPush(sbyte.MinValue).ToArray());
-            CollectionAssert.AreEqual("007f".FromHexString(), new ScriptBuilder().EmitPush(sbyte.MaxValue).ToArray());
-            CollectionAssert.AreEqual("01ff00".FromHexString(), new ScriptBuilder().EmitPush(byte.MaxValue).ToArray());
-            CollectionAssert.AreEqual("010080".FromHexString(), new ScriptBuilder().EmitPush(short.MinValue).ToArray());
-            CollectionAssert.AreEqual("01ff7f".FromHexString(), new ScriptBuilder().EmitPush(short.MaxValue).ToArray());
-            CollectionAssert.AreEqual("02ffff0000".FromHexString(), new ScriptBuilder().EmitPush(ushort.MaxValue).ToArray());
-            CollectionAssert.AreEqual("0200000080".FromHexString(), new ScriptBuilder().EmitPush(int.MinValue).ToArray());
-            CollectionAssert.AreEqual("02ffffff7f".FromHexString(), new ScriptBuilder().EmitPush(int.MaxValue).ToArray());
-            CollectionAssert.AreEqual("03ffffffff00000000".FromHexString(), new ScriptBuilder().EmitPush(uint.MaxValue).ToArray());
-            CollectionAssert.AreEqual("030000000000000080".FromHexString(), new ScriptBuilder().EmitPush(long.MinValue).ToArray());
-            CollectionAssert.AreEqual("03ffffffffffffff7f".FromHexString(), new ScriptBuilder().EmitPush(long.MaxValue).ToArray());
-            CollectionAssert.AreEqual("04ffffffffffffffff0000000000000000".FromHexString(), new ScriptBuilder().EmitPush(ulong.MaxValue).ToArray());
-            CollectionAssert.AreEqual("050100000000000000feffffffffffffff00000000000000000000000000000000".FromHexString(), new ScriptBuilder().EmitPush(new BigInteger(ulong.MaxValue) * new BigInteger(ulong.MaxValue)).ToArray());
+            // Test -1
+            Assert.AreEqual("0x0f", new ScriptBuilder().EmitPush(BigInteger.MinusOne).ToArray().ToHexString());
 
+            // Test edge cases for different sizes
+            // PUSHINT8
+            Assert.AreEqual("0x0080", new ScriptBuilder().EmitPush(sbyte.MinValue).ToArray().ToHexString());
+            Assert.AreEqual("0x007f", new ScriptBuilder().EmitPush(sbyte.MaxValue).ToArray().ToHexString());
+
+            // PUSHINT16
+            Assert.AreEqual("0x010080", new ScriptBuilder().EmitPush(short.MinValue).ToArray().ToHexString());
+            Assert.AreEqual("0x01ff7f", new ScriptBuilder().EmitPush(short.MaxValue).ToArray().ToHexString());
+
+            // PUSHINT32
+            Assert.AreEqual("0x0200000080", new ScriptBuilder().EmitPush(int.MinValue).ToArray().ToHexString());
+            Assert.AreEqual("0x02ffffff7f", new ScriptBuilder().EmitPush(int.MaxValue).ToArray().ToHexString());
+
+            // PUSHINT64
+            Assert.AreEqual("0x030000000000000080", new ScriptBuilder().EmitPush(long.MinValue).ToArray().ToHexString());
+            Assert.AreEqual("0x03ffffffffffffff7f", new ScriptBuilder().EmitPush(long.MaxValue).ToArray().ToHexString());
+
+            // PUSHINT128
+            Assert.AreEqual("0x04ffffffffffffffff0000000000000000", new ScriptBuilder().EmitPush(new BigInteger(ulong.MaxValue)).ToArray().ToHexString());
+            Assert.AreEqual("0x0400000000000000000100000000000000", new ScriptBuilder().EmitPush(new BigInteger(ulong.MaxValue) + 1).ToArray().ToHexString());
+
+            // PUSHINT256, case from https://en.wikipedia.org/wiki/256-bit_computing#:~:text=The%20range%20of%20a%20signed,%2C%E2%80%8B819%2C%E2%80%8B967.
+            Assert.AreEqual("0x050000000000000000000000000000000000000000000000000000000000000080",
+                new ScriptBuilder().EmitPush(BigInteger.Parse("-57896044618658097711785492504343953926634992332820282019728792003956564819968")).ToArray().ToHexString());
+
+            Assert.AreEqual("0x05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+                new ScriptBuilder().EmitPush(BigInteger.Parse("57896044618658097711785492504343953926634992332820282019728792003956564819967")).ToArray().ToHexString());
+
+            // Test exceeding 256-bit value (2^256)
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+                new ScriptBuilder().EmitPush(BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639936")));
+
+            // Test negative numbers
+            Assert.AreEqual("0x00fe", new ScriptBuilder().EmitPush(new BigInteger(-2)).ToArray().ToHexString());
+            Assert.AreEqual("0x0100ff", new ScriptBuilder().EmitPush(new BigInteger(-256)).ToArray().ToHexString());
+
+            // Test numbers that are exactly at the boundary
+            Assert.AreEqual("0x04ffffffffffffffff0000000000000000", new ScriptBuilder().EmitPush(BigInteger.Parse("18446744073709551615")).ToArray().ToHexString());
+            Assert.AreEqual("0x0400000000000000000100000000000000", new ScriptBuilder().EmitPush(BigInteger.Parse("18446744073709551616")).ToArray().ToHexString());
+
+            // Test very large negative number
+            Assert.AreEqual("0x040000000000000000ffffffffffffffff", new ScriptBuilder().EmitPush(BigInteger.Parse("-18446744073709551616")).ToArray().ToHexString());
+
+            // Test exception for too large BigInteger
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ScriptBuilder().EmitPush(
-                new BigInteger("050100000000000000feffffffffffffff0100000000000000feffffffffffffff00000000000000000000000000000000".FromHexString())));
+                BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639937")));
         }
 
         [TestMethod]
@@ -211,7 +248,8 @@ namespace Neo.Test
         {
             using (ScriptBuilder script = new())
             {
-                Assert.ThrowsException<ArgumentNullException>(() => script.EmitPush((byte[])null));
+                script.EmitPush((byte[])null);
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
 
             using (ScriptBuilder script = new())

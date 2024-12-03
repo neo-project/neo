@@ -52,75 +52,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestHexToBytes()
-        {
-            string nullStr = null;
-            _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
-            string emptyStr = "";
-            emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
-            string str1 = "hab";
-            Action action = () => str1.HexToBytes();
-            action.Should().Throw<FormatException>();
-            string str2 = "0102";
-            byte[] bytes = str2.HexToBytes();
-            bytes.ToHexString().Should().Be(new byte[] { 0x01, 0x02 }.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestRemoveHashsetDictionary()
-        {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new Dictionary<int, object>
-            {
-                [2] = null
-            };
-
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
-
-            b[4] = null;
-            b[5] = null;
-            b[1] = null;
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
-        }
-
-        [TestMethod]
-        public void TestRemoveHashsetSet()
-        {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new SortedSet<int>()
-            {
-                2
-            };
-
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
-
-            b.Add(4);
-            b.Add(5);
-            b.Add(1);
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
-        }
-
-        [TestMethod]
         public void TestRemoveHashsetHashSetCache()
         {
             var a = new HashSet<int>
@@ -151,7 +82,7 @@ namespace Neo.UnitTests
         public void TestToHexString()
         {
             byte[] nullStr = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
+            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
             byte[] empty = Array.Empty<byte>();
             empty.ToHexString().Should().Be("");
             empty.ToHexString(false).Should().Be("");

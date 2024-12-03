@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Native
                 return ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1);
             }
 
-            protected override StackItem ElementToStackItem(ECPoint element, ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ECPoint element, IReferenceCounter referenceCounter)
             {
                 return element.ToArray();
             }

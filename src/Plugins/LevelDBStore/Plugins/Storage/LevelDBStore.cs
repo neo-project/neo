@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
 using System;
 using System.Linq;

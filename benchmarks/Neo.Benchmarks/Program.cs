@@ -11,5 +11,9 @@
 
 using BenchmarkDotNet.Running;
 using Neo.Benchmark;
+using Neo.SmartContract.Benchmark;
 
-BenchmarkRunner.Run<Benchmarks_PoCs>();
+// BenchmarkRunner.Run<Benchmarks_PoCs>();
+BenchmarkRunner.Run<Benchmarks_UInt160>();
+BenchmarkRunner.Run<Benchmarks_Hash>();
+BenchmarkRunner.Run<Benchmarks_StorageKey>();

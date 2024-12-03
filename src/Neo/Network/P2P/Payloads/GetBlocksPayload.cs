@@ -52,7 +52,8 @@ namespace Neo.Network.P2P.Payloads
         {
             HashStart = reader.ReadSerializable<UInt256>();
             Count = reader.ReadInt16();
-            if (Count < -1 || Count == 0) throw new FormatException();
+            if (Count < -1 || Count == 0)
+                throw new FormatException($"Invalid count: {Count}.");
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

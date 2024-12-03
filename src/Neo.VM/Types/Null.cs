@@ -11,6 +11,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Types
 {
@@ -26,7 +27,7 @@ namespace Neo.VM.Types
         public override StackItem ConvertTo(StackItemType type)
         {
             if (type == StackItemType.Any || !Enum.IsDefined(typeof(StackItemType), type))
-                throw new InvalidCastException($"Type can't be converted to StackItemType: {type}");
+                throw new InvalidCastException($"Type {nameof(Null)} can't be converted to StackItemType: {type}");
             return this;
         }
 
@@ -36,11 +37,13 @@ namespace Neo.VM.Types
             return other is Null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
         {
             return 0;

@@ -15,11 +15,13 @@ using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class ScriptHashCondition : WitnessCondition
+    public class ScriptHashCondition : WitnessCondition, IEquatable<ScriptHashCondition>
     {
         /// <summary>
         /// The script hash to be checked.
@@ -28,6 +30,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + UInt160.Length;
         public override WitnessConditionType Type => WitnessConditionType.ScriptHash;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(ScriptHashCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null) return false;
+            return
+                Type == other.Type &&
+                Hash == other.Hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is ScriptHashCondition sc && Equals(sc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Hash);
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -56,11 +81,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Hash.ToArray());
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(ScriptHashCondition left, ScriptHashCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(ScriptHashCondition left, ScriptHashCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }
