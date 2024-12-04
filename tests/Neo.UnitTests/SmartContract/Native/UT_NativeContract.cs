@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract.Native
             string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             Assert.IsFalse(NativeContract.IsActive(new active() { ActiveIn = Hardfork.HF_Cockatrice, DeprecatedIn = null }, settings.IsHardforkEnabled, 1));
@@ -87,7 +87,7 @@ namespace Neo.UnitTests.SmartContract.Native
             string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 20");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             var before = NativeContract.RoleManagement.GetContractState(settings.IsHardforkEnabled, 19);
@@ -112,7 +112,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 0, out var hf));

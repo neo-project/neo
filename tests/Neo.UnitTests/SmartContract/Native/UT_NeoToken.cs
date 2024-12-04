@@ -22,8 +22,11 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Principal;
+using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -53,6 +56,48 @@ namespace Neo.UnitTests.SmartContract.Native
 
         [TestMethod]
         public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshotCache).Should().Be(0);
+
+        [TestMethod]
+        public void Test_HF_EchidnaStates()
+        {
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 10");
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            var settings = ProtocolSettings.Load(stream);
+
+            var clonedCache = _snapshotCache.CloneCache();
+            var persistingBlock = new Block { Header = new Header() };
+
+            foreach (var method in new string[] { "vote", "registerCandidate", "unregisterCandidate" })
+            {
+                // Test WITHOUT HF_Echidna
+
+                persistingBlock.Header.Index = 9;
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                    new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
+
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States);
+                }
+
+                // Test WITH HF_Echidna
+
+                persistingBlock.Header.Index = 10;
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                     new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
+
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+                }
+            }
+        }
 
         [TestMethod]
         public void Check_Vote()
