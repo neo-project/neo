@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageId>Neo.Plugins.RestServer</PackageId>
     <RootNamespace>Neo.Plugins.RestServer</RootNamespace>
     <Nullable>enable</Nullable>

@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.Plugins.RestServer.Helpers;
 using Neo.SmartContract;
