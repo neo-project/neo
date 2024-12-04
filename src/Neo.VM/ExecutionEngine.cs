@@ -84,7 +84,9 @@ namespace Neo.VM
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
         /// <param name="jumpTable">The jump table to be used.</param>
-        public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
+        /// <param name="referenceCounter">The reference counter to be used.</param>
+        public ExecutionEngine(JumpTable? jumpTable = null, IReferenceCounter? referenceCounter = null)
+            : this(jumpTable, referenceCounter, ExecutionEngineLimits.Default)
         {
         }
 
@@ -94,12 +96,12 @@ namespace Neo.VM
         /// <param name="jumpTable">The jump table to be used.</param>
         /// <param name="referenceCounter">The reference counter to be used.</param>
         /// <param name="limits">Restrictions on the VM.</param>
-        protected ExecutionEngine(JumpTable? jumpTable, IReferenceCounter referenceCounter, ExecutionEngineLimits limits)
+        protected ExecutionEngine(JumpTable? jumpTable, IReferenceCounter? referenceCounter, ExecutionEngineLimits limits)
         {
             JumpTable = jumpTable ?? JumpTable.Default;
             Limits = limits;
-            ReferenceCounter = referenceCounter;
-            ResultStack = new EvaluationStack(referenceCounter);
+            ReferenceCounter = referenceCounter ?? new ReferenceCounterV2();
+            ResultStack = new EvaluationStack(ReferenceCounter);
         }
 
         public virtual void Dispose()
@@ -289,9 +291,7 @@ namespace Neo.VM
         /// </summary>
         protected virtual void PostExecuteInstruction(Instruction instruction)
         {
-            if (ReferenceCounter.Count < Limits.MaxStackSize) return;
-            if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
+            ReferenceCounter.CheckPostExecution();
         }
 
         /// <summary>
