@@ -327,13 +327,35 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
+        [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
+        {
+            if (engine.CallingScriptHash != GAS.Hash)
+                throw new InvalidOperationException("only GAS is accepted");
+
+            if ((long)amount != GetRegisterPrice(engine.SnapshotCache))
+                throw new ArgumentException("incorrect GAS amount for registration");
+
+            var pubkey = ECPoint.DecodePoint(data.GetSpan(), ECCurve.Secp256r1);
+
+            if (!RegisterInternal(engine, pubkey))
+                throw new InvalidOperationException("failed to register candidate");
+
+            await GAS.Burn(engine, Hash, amount);
+        }
+
         [ContractMethod(RequiredCallFlags = CallFlags.States)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
-            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
-                return false;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
+            return RegisterInternal(engine, pubkey);
+        }
+
+        private bool RegisterInternal(ApplicationEngine engine, ECPoint pubkey)
+        {
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                return false;
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             StorageItem item = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
