@@ -20,6 +20,7 @@ namespace Neo.IO.Storage.LevelDB
     /// <summary>
     /// A DB is a persistent ordered map from keys to values.
     /// A DB is safe for concurrent access from multiple threads without any external synchronization.
+    /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
     /// </summary>
     public class DB : LevelDBHandle, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
