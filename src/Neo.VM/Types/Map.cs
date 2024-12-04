@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM.Collections;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,7 +28,7 @@ namespace Neo.VM.Types
         /// </summary>
         public const int MaxKeySize = 64;
 
-        private readonly OrderedDictionary<PrimitiveType, StackItem> dictionary = new();
+        private readonly Collections.OrderedDictionary<PrimitiveType, StackItem> dictionary = new();
 
         /// <summary>
         /// Gets or sets the element that has the specified key in the map.

@@ -50,12 +50,16 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="value">The byte array to convert.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[] value)
         {
 #if NET9_0_OR_GREATER
             return Convert.ToHexStringLower(value);
 #else
+            if (value is null)
+                throw new ArgumentNullException(nameof(value));
+
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {
                 for (var i = 0; i < bytes.Length; i++)
@@ -74,11 +78,15 @@ namespace Neo.Extensions
         /// <param name="value">The byte array to convert.</param>
         /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[] value, bool reverse = false)
         {
             if (!reverse)
                 return ToHexString(value);
+
+            if (value is null)
+                throw new ArgumentNullException(nameof(value));
 
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {

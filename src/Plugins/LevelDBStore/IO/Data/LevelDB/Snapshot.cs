@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// A Snapshot is an immutable object and can therefore be safely
