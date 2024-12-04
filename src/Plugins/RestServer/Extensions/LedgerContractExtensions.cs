@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.Plugins.RestServer.Models.Blockchain;
 using Neo.SmartContract;
@@ -30,8 +29,8 @@ namespace Neo.Plugins.RestServer.Extensions
 
         public static IEnumerable<(StorageKey key, StorageItem value)> GetStorageByPrefix(this ContractState contractState, DataCache snapshot, byte[] prefix)
         {
-            ArgumentNullException.ThrowIfNull(nameof(contractState));
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(contractState, nameof(contractState));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             if (prefix?.Length == 0)
                 throw new ArgumentNullException(nameof(prefix));
             foreach (var (key, value) in snapshot.Find(StorageKey.CreateSearchPrefix(contractState.Id, prefix)))
@@ -40,8 +39,8 @@ namespace Neo.Plugins.RestServer.Extensions
 
         public static StorageItem? GetStorageByKey(this ContractState contractState, DataCache snapshot, byte[] storageKey)
         {
-            ArgumentNullException.ThrowIfNull(nameof(contractState));
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(contractState, nameof(contractState));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             if (storageKey?.Length == 0)
                 throw new ArgumentNullException(nameof(storageKey));
             foreach (var (key, value) in snapshot.Find(StorageKey.CreateSearchPrefix(contractState.Id, storageKey)))
@@ -52,14 +51,14 @@ namespace Neo.Plugins.RestServer.Extensions
 
         public static IEnumerable<(StorageKey key, StorageItem value)> GetStorage(this ContractState contractState, DataCache snapshot)
         {
-            ArgumentNullException.ThrowIfNull(nameof(contractState));
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(contractState, nameof(contractState));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             return ListContractStorage(snapshot, contractState.Id);
         }
 
         public static IEnumerable<(StorageKey key, StorageItem value)> ListContractStorage(DataCache snapshot, int contractId)
         {
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             if (contractId < 0)
                 throw new ArgumentOutOfRangeException(nameof(contractId));
             foreach (var (key, value) in snapshot.Find(StorageKey.CreateSearchPrefix(contractId, ReadOnlySpan<byte>.Empty)))
@@ -68,7 +67,7 @@ namespace Neo.Plugins.RestServer.Extensions
 
         public static IEnumerable<TrimmedBlock> ListBlocks(this LedgerContract ledger, DataCache snapshot)
         {
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             var kb = new KeyBuilder(ledger.Id, _prefix_block);
             var prefixKey = kb.ToArray();
             foreach (var (key, value) in snapshot.Seek(prefixKey, SeekDirection.Forward))
@@ -80,7 +79,7 @@ namespace Neo.Plugins.RestServer.Extensions
 
         public static IEnumerable<TransactionState> ListTransactions(this LedgerContract ledger, DataCache snapshot, uint page, uint pageSize)
         {
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             var kb = new KeyBuilder(ledger.Id, _prefix_transaction);
             var prefixKey = kb.ToArray();
             uint index = 1;
@@ -99,7 +98,7 @@ namespace Neo.Plugins.RestServer.Extensions
 
         public static IEnumerable<AccountDetails> ListAccounts(this GasToken gasToken, DataCache snapshot, ProtocolSettings protocolSettings)
         {
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             var kb = new KeyBuilder(gasToken.Id, _prefix_account);
             var prefixKey = kb.ToArray();
             foreach (var (key, value) in snapshot.Seek(prefixKey, SeekDirection.Forward))
@@ -122,7 +121,7 @@ namespace Neo.Plugins.RestServer.Extensions
 
         public static IEnumerable<AccountDetails> ListAccounts(this NeoToken neoToken, DataCache snapshot, ProtocolSettings protocolSettings)
         {
-            ArgumentNullException.ThrowIfNull(nameof(snapshot));
+            ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             var kb = new KeyBuilder(neoToken.Id, _prefix_account);
             var prefixKey = kb.ToArray();
             foreach (var (key, value) in snapshot.Seek(prefixKey, SeekDirection.Forward))
