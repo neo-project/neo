@@ -9,10 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System;
+using System.Collections.Generic;
 using System.IO;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// A DB is a persistent ordered map from keys to values.
@@ -90,9 +93,9 @@ namespace Neo.IO.Data.LevelDB
 
         public static DB Open(string name, Options options)
         {
-            var Handle = Native.leveldb_open(options.Handle, Path.GetFullPath(name), out var error);
+            var handle = Native.leveldb_open(options.Handle, Path.GetFullPath(name), out var error);
             NativeHelper.CheckError(error);
-            return new DB(Handle);
+            return new DB(handle);
         }
 
         /// <summary>
@@ -121,6 +124,20 @@ namespace Neo.IO.Data.LevelDB
         {
             Native.leveldb_write(Handle, options.Handle, write_batch.Handle, out var error);
             NativeHelper.CheckError(error);
+        }
+
+        public IEnumerable<KeyValuePair<byte[], byte[]>> GetAll(Snapshot? snapshot = null)
+        {
+            using var options = new ReadOptions();
+            if (snapshot != null) options.Snapshot = snapshot;
+
+            using var iterator = NewIterator(options);
+            iterator.SeekToFirst();
+            while (iterator.Valid())
+            {
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
+                iterator.Next();
+            }
         }
     }
 }
