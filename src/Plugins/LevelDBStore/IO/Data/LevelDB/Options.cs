@@ -126,12 +126,12 @@ namespace Neo.IO.Storage.LevelDB
         /// incompressible, the kSnappyCompression implementation will
         /// efficiently detect that and will switch to uncompressed mode.
         /// </summary>
-        public CompressionType Compression
+        public CompressionType CompressionLevel
         {
             set { Native.leveldb_options_set_compression(Handle, value); }
         }
 
-        public IntPtr FilterPolicy
+        public nint FilterPolicy
         {
             set { Native.leveldb_options_set_filter_policy(Handle, value); }
         }
