@@ -9,76 +9,89 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
-    public class Iterator : IDisposable
+    /// <summary>
+    /// An iterator yields a sequence of key/value pairs from a database.
+    /// </summary>
+    public class Iterator : LevelDBHandle
     {
-        private IntPtr handle;
-
-        internal Iterator(IntPtr handle)
-        {
-            this.handle = handle;
-        }
+        internal Iterator(nint handle) : base(handle) { }
 
         private void CheckError()
         {
-            Native.leveldb_iter_get_error(handle, out IntPtr error);
+            Native.leveldb_iter_get_error(Handle, out var error);
             NativeHelper.CheckError(error);
         }
 
-        public void Dispose()
+        protected override void FreeUnManagedObjects()
         {
-            if (handle != IntPtr.Zero)
+            if (Handle != nint.Zero)
             {
-                Native.leveldb_iter_destroy(handle);
-                handle = IntPtr.Zero;
+                Native.leveldb_iter_destroy(Handle);
             }
         }
 
+        /// <summary>
+        /// Return the key for the current entry.
+        /// REQUIRES: Valid()
+        /// </summary>
         public byte[] Key()
         {
-            IntPtr key = Native.leveldb_iter_key(handle, out UIntPtr length);
+            var key = Native.leveldb_iter_key(Handle, out var length);
             CheckError();
             return key.ToByteArray(length);
         }
 
+        /// <summary>
+        /// Moves to the next entry in the source.
+        /// After this call, Valid() is true if the iterator was not positioned at the last entry in the source.
+        /// REQUIRES: Valid()
+        /// </summary>
         public void Next()
         {
-            Native.leveldb_iter_next(handle);
+            Native.leveldb_iter_next(Handle);
             CheckError();
         }
 
         public void Prev()
         {
-            Native.leveldb_iter_prev(handle);
+            Native.leveldb_iter_prev(Handle);
             CheckError();
         }
 
-        public void Seek(byte[] target)
+        /// <summary>
+        /// Position at the first key in the source that at or past target
+        /// The iterator is Valid() after this call if the source contains
+        /// an entry that comes at or past target.
+        /// </summary>
+        public void Seek(byte[] key)
         {
-            Native.leveldb_iter_seek(handle, target, (UIntPtr)target.Length);
+            Native.leveldb_iter_seek(Handle, key, (nuint)key.Length);
         }
 
         public void SeekToFirst()
         {
-            Native.leveldb_iter_seek_to_first(handle);
+            Native.leveldb_iter_seek_to_first(Handle);
         }
 
+        /// <summary>
+        /// Position at the last key in the source.
+        /// The iterator is Valid() after this call if the source is not empty.
+        /// </summary>
         public void SeekToLast()
         {
-            Native.leveldb_iter_seek_to_last(handle);
+            Native.leveldb_iter_seek_to_last(Handle);
         }
 
         public bool Valid()
         {
-            return Native.leveldb_iter_valid(handle);
+            return Native.leveldb_iter_valid(Handle);
         }
 
         public byte[] Value()
         {
-            IntPtr value = Native.leveldb_iter_value(handle, out UIntPtr length);
+            var value = Native.leveldb_iter_value(Handle, out var length);
             CheckError();
             return value.ToByteArray(length);
         }

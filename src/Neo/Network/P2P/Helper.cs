@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using System.IO;
 

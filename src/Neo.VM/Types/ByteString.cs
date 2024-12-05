@@ -60,7 +60,7 @@ namespace Neo.VM.Types
         internal bool Equals(StackItem? other, ref uint limits)
         {
             if (Size > limits || limits == 0)
-                throw new InvalidOperationException("The operand exceeds the maximum comparable size.");
+                throw new InvalidOperationException($"The operand exceeds the maximum comparable size, {Size}/{limits}.");
             uint comparedSize = 1;
             try
             {
@@ -68,7 +68,7 @@ namespace Neo.VM.Types
                 comparedSize = Math.Max((uint)Math.Max(Size, b.Size), comparedSize);
                 if (ReferenceEquals(this, b)) return true;
                 if (b.Size > limits)
-                    throw new InvalidOperationException("The operand exceeds the maximum comparable size.");
+                    throw new InvalidOperationException($"The operand exceeds the maximum comparable size, {b.Size}/{limits}.");
                 return Equals(b);
             }
             finally
@@ -77,15 +77,17 @@ namespace Neo.VM.Types
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
             if (Size > Integer.MaxSize) throw new InvalidCastException();
-            return Unsafe.NotZero(GetSpan());
+            return GetSpan().NotZero();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override BigInteger GetInteger()
         {
-            if (Size > Integer.MaxSize) throw new InvalidCastException($"MaxSize exceed: {Size}");
+            if (Size > Integer.MaxSize) throw new InvalidCastException($"Can not convert {nameof(ByteString)} to an integer, MaxSize of {nameof(Types.Integer)} is exceeded: {Size}/{Integer.MaxSize}.");
             return new BigInteger(GetSpan());
         }
 

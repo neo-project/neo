@@ -12,6 +12,9 @@
 
 using FluentAssertions;
 using System;
+using System.IO.Hashing;
+using System.Linq;
+using System.Text;
 
 namespace Neo.Extensions.Tests
 {
@@ -22,7 +25,10 @@ namespace Neo.Extensions.Tests
         public void TestToHexString()
         {
             byte[] nullStr = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
+            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
+            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(false));
+            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(true));
+
             byte[] empty = Array.Empty<byte>();
             empty.ToHexString().Should().Be("");
             empty.ToHexString(false).Should().Be("");
@@ -32,6 +38,13 @@ namespace Neo.Extensions.Tests
             str1.ToHexString().Should().Be("6e656f");
             str1.ToHexString(false).Should().Be("6e656f");
             str1.ToHexString(true).Should().Be("6f656e");
+        }
+
+        [TestMethod]
+        public void TestXxHash3()
+        {
+            byte[] data = Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("Hello, World!^_^", 16 * 1024)));
+            data.XxHash3_32().Should().Be(HashCode.Combine(XxHash3.HashToUInt64(data, 40343)));
         }
 
         [TestMethod]
