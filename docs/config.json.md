@@ -42,10 +42,10 @@ This README provides an explanation for each field in the JSON configuration fil
 - **AddressVersion**: Version byte used in Neo address generation. Default is `53`.
 
 ### MillisecondsPerBlock
-- **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `15000` (15 seconds).
+- **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `3600` (3 seconds).
 
 ### MaxTransactionsPerBlock
-- **MaxTransactionsPerBlock**: Maximum number of transactions allowed per block. Default is `512`.
+- **MaxTransactionsPerBlock**: Maximum number of transactions allowed per block. Default is `256`.
 
 ### MemoryPoolMaxTransactions
 - **MemoryPoolMaxTransactions**: Maximum number of transactions that can be held in the memory pool. Default is `50000`.

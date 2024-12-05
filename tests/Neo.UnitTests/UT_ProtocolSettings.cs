@@ -46,7 +46,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetMillisecondsPerBlock()
         {
-            TestProtocolSettings.Default.MillisecondsPerBlock.Should().Be(15000);
+            TestProtocolSettings.Default.MillisecondsPerBlock.Should().Be(3000);
         }
 
         [TestMethod]
@@ -131,8 +131,8 @@ namespace Neo.UnitTests
   ""ProtocolConfiguration"": {
     ""Network"": 860833102,
     ""AddressVersion"": 53,
-    ""MillisecondsPerBlock"": 15000,
-    ""MaxTransactionsPerBlock"": 512,
+    ""MillisecondsPerBlock"": 3000,
+    ""MaxTransactionsPerBlock"": 256,
     ""MemoryPoolMaxTransactions"": 50000,
     ""MaxTraceableBlocks"": 2102400,
     ""Hardforks"": {

@@ -30,8 +30,8 @@
   "ProtocolConfiguration": {
     "Network": 5195086,
     "AddressVersion": 53,
-    "MillisecondsPerBlock": 15000,
-    "MaxTransactionsPerBlock": 512,
+    "MillisecondsPerBlock": 3000,
+    "MaxTransactionsPerBlock": 256,
     "MemoryPoolMaxTransactions": 50000,
     "MaxTraceableBlocks": 2102400,
     "Hardforks": {
