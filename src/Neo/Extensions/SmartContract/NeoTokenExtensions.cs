@@ -20,14 +20,12 @@ namespace Neo.Extensions
 {
     public static class NeoTokenExtensions
     {
-        private const byte Prefix_Account = 20;
-
         public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this NeoToken neoToken, DataCache snapshot)
         {
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            var kb = new KeyBuilder(neoToken.Id, Prefix_Account);
+            var kb = new KeyBuilder(neoToken.Id, NeoToken.Prefix_Account);
             var prefixKey = kb.ToArray();
 
             foreach (var (key, value) in snapshot.Seek(prefixKey, SeekDirection.Forward))
@@ -52,7 +50,7 @@ namespace Neo.Extensions
             if (address is null)
                 throw new ArgumentNullException(nameof(address));
 
-            var kb = new KeyBuilder(neoToken.Id, Prefix_Account)
+            var kb = new KeyBuilder(neoToken.Id, NeoToken.Prefix_Account)
                 .Add(address);
 
             var prefixKey = kb.ToArray();
