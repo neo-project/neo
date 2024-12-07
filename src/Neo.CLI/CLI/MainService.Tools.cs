@@ -14,10 +14,12 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -66,6 +68,17 @@ namespace Neo.CLI
             {
                 ConsoleHelper.Warning($"Was not possible to convert: '{value}'");
             }
+        }
+
+        /// <summary>
+        /// Read .nef file from path and print its content in base64
+        /// </summary>
+        [ParseFunction(".nef file path to content base64")]
+        private string? NefFileToBase64(string path)
+        {
+            if (Path.GetExtension(path).ToLower() != ".nef") return null;
+            if (!File.Exists(path)) return null;
+            return Convert.ToBase64String(File.ReadAllBytes(path));
         }
 
         /// <summary>
@@ -439,6 +452,58 @@ namespace Neo.CLI
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Base64 .nef file Analysis
+        /// </summary>
+        [ParseFunction("Base64 .nef file Analysis")]
+        private string? NefFileAnalyis(string base64)
+        {
+            byte[] nefData;
+            if (File.Exists(base64))  // extension name not considered
+                nefData = File.ReadAllBytes(base64);
+            else
+            {
+                try
+                {
+                    nefData = Convert.FromBase64String(base64);
+                }
+                catch { return null; }
+            }
+            NefFile nef;
+            Script script;
+            bool verifyChecksum = false;
+            bool strictMode = false;
+            try
+            {
+                nef = NefFile.Parse(nefData, true);
+                verifyChecksum = true;
+            }
+            catch (FormatException)
+            {
+                nef = NefFile.Parse(nefData, false);
+            }
+            catch { return null; }
+            try
+            {
+                script = new Script(nef.Script, true);
+                strictMode = true;
+            }
+            catch (BadScriptException)
+            {
+                script = new Script(nef.Script, false);
+            }
+            catch { return null; }
+            string? result = ScriptsToOpCode(Convert.ToBase64String(nef.Script.ToArray()));
+            if (result == null)
+                return null;
+            string prefix = $"\r\n# Compiler: {nef.Compiler}";
+            if (!verifyChecksum)
+                prefix += $"\r\n# Warning: Invalid .nef file checksum";
+            if (!strictMode)
+                prefix += $"\r\n# Warning: Failed in {nameof(strictMode)}";
+            return prefix + result;
         }
 
         /// <summary>

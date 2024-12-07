@@ -78,5 +78,16 @@ namespace Neo.UnitTests.Cryptography
             foreach (byte value in result)
                 value.Should().Be(0);
         }
+
+        [TestMethod]
+        public void TestInvalidArguments()
+        {
+            uint nTweak = 123456;
+            Action action = () => new BloomFilter(0, 3, nTweak);
+            action.Should().Throw<ArgumentOutOfRangeException>();
+
+            action = () => new BloomFilter(3, 0, nTweak);
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
     }
 }

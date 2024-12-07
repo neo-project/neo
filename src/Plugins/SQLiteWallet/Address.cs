@@ -9,9 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Wallets.SQLite;
-
-class Address
+namespace Neo.Wallets.SQLite
 {
-    public byte[] ScriptHash { get; set; }
+    class Address
+    {
+        public byte[] ScriptHash { get; set; }
+    }
 }

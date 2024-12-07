@@ -18,13 +18,14 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
     /// <summary>
     /// Represents the condition that all conditions must be met.
     /// </summary>
-    public class AndCondition : WitnessCondition
+    public class AndCondition : WitnessCondition, IEquatable<AndCondition>
     {
         /// <summary>
         /// The expressions of the condition.
@@ -33,6 +34,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.And;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(AndCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null) return false;
+            return
+                Type == other.Type &&
+                Expressions.SequenceEqual(other.Expressions);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is AndCondition ac && Equals(ac);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Expressions);
+        }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
@@ -67,11 +91,29 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(AndCondition left, AndCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(AndCondition left, AndCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }
