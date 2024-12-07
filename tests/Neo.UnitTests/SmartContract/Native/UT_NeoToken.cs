@@ -744,7 +744,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             (BigInteger, bool) result = Check_GetGasPerBlock(clonedCache, persistingBlock);
             result.Item2.Should().BeTrue();
-            result.Item1.Should().Be(5 * NativeContract.GAS.Factor);
+            result.Item1.Should().Be(5 * NativeContract.GAS.Factor); // Test should occur with all hardfork enable TODO
 
             persistingBlock = new Block { Header = new Header { Index = 10 } };
             (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(clonedCache, 10 * NativeContract.GAS.Factor, persistingBlock);
