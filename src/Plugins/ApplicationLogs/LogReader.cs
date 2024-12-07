@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Extensions;
 using Neo.IEventHandlers;
 using Neo.Json;
 using Neo.Ledger;
@@ -20,7 +21,6 @@ using Neo.Plugins.ApplicationLogs.Store.Models;
 using Neo.Plugins.RpcServer;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using System.Numerics;
 using static System.IO.Path;
 

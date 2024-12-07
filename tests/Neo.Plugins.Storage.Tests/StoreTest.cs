@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
 using System.IO;
 using System.Linq;
@@ -70,6 +71,20 @@ namespace Neo.Plugins.Storage.Tests
             TestPersistenceRead(levelDbStore.GetStore(path_leveldb), true);
             TestPersistenceDelete(levelDbStore.GetStore(path_leveldb));
             TestPersistenceRead(levelDbStore.GetStore(path_leveldb), false);
+        }
+
+        [TestMethod]
+        public void TestLevelDbDatabase()
+        {
+            using var db = DB.Open(Path.GetRandomFileName(), new() { CreateIfMissing = true });
+
+            db.Put(WriteOptions.Default, [0x00, 0x00, 0x01], [0x01]);
+            db.Put(WriteOptions.Default, [0x00, 0x00, 0x02], [0x02]);
+            db.Put(WriteOptions.Default, [0x00, 0x00, 0x03], [0x03]);
+
+            CollectionAssert.AreEqual(new byte[] { 0x01, }, db.Get(ReadOptions.Default, [0x00, 0x00, 0x01]));
+            CollectionAssert.AreEqual(new byte[] { 0x02, }, db.Get(ReadOptions.Default, [0x00, 0x00, 0x02]));
+            CollectionAssert.AreEqual(new byte[] { 0x03, }, db.Get(ReadOptions.Default, [0x00, 0x00, 0x03]));
         }
 
         [TestMethod]

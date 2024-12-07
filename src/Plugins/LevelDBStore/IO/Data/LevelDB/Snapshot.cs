@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
@@ -19,16 +17,16 @@ namespace Neo.IO.Storage.LevelDB
     /// </summary>
     public class Snapshot : LevelDBHandle
     {
-        internal IntPtr _db;
+        internal nint _db;
 
-        internal Snapshot(IntPtr db) : base(Native.leveldb_create_snapshot(db))
+        internal Snapshot(nint db) : base(Native.leveldb_create_snapshot(db))
         {
             _db = db;
         }
 
         protected override void FreeUnManagedObjects()
         {
-            if (Handle != IntPtr.Zero)
+            if (Handle != nint.Zero)
             {
                 Native.leveldb_release_snapshot(_db, Handle);
             }

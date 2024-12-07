@@ -20,7 +20,7 @@ namespace Neo.IO.Storage.LevelDB
     {
         public static IEnumerable<(byte[], byte[])> Seek(this DB db, ReadOptions options, byte[] prefix, SeekDirection direction)
         {
-            using Iterator it = db.NewIterator(options);
+            using Iterator it = db.CreateIterator(options);
             if (direction == SeekDirection.Forward)
             {
                 for (it.Seek(prefix); it.Valid(); it.Next())
