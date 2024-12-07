@@ -20,6 +20,7 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -160,8 +161,26 @@ namespace Neo.Ledger
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
                     throw new InvalidOperationException();
-                if (verify && !block.Verify(system.Settings, system.StoreView))
-                    throw new InvalidOperationException();
+
+                if (verify)
+                {
+                    const int CheckpointInterval = 1_000_000;
+                    var maxCheckpoint = system.Settings.CheckPoint.Count * CheckpointInterval;
+                    if (block.Index % CheckpointInterval == 0 && block.Index >= CheckpointInterval && block.Index <= maxCheckpoint)
+                    {
+                        var checkpointIndex = (int)(block.Index / CheckpointInterval - 1);
+                        if (system.Settings.CheckPoint[checkpointIndex] != block.Hash.ToString())
+                        {
+                            throw new InvalidOperationException("Invalid block hash for checkpoint.");
+                        }
+                    }
+
+                    if (!block.Verify(system.Settings, system.StoreView))
+                    {
+                        throw new InvalidOperationException("Block verification failed.");
+                    }
+                }
+
                 Persist(block);
                 ++currentHeight;
             }
@@ -475,6 +494,7 @@ namespace Neo.Ledger
             }
             InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
+
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
