@@ -22,6 +22,9 @@ namespace Neo.Extensions
     {
         public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this GasToken gasToken, DataCache snapshot)
         {
+            if (gasToken is null)
+                throw new ArgumentNullException(nameof(gasToken));
+
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
