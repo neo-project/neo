@@ -49,16 +49,5 @@ namespace Neo.UnitTests.Extensions
             Assert.AreEqual(expected, actual.Address);
             Assert.AreEqual(100000000, actual.Balance);
         }
-
-        [TestMethod]
-        public void TestBalanceOf()
-        {
-            UInt160 account = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
-            var expected = new BigInteger(100000000);
-
-            var actualBalance = NativeContract.NEO.BalanceOf(system.StoreView, account);
-
-            Assert.AreEqual(expected, actualBalance);
-        }
     }
 }

@@ -41,21 +41,5 @@ namespace Neo.Extensions
                     yield break;
             }
         }
-
-        public static BigInteger BalanceOf(this NeoToken neoToken, DataCache snapshot, UInt160 address)
-        {
-            if (snapshot is null)
-                throw new ArgumentNullException(nameof(snapshot));
-
-            if (address is null)
-                throw new ArgumentNullException(nameof(address));
-
-            var kb = new KeyBuilder(neoToken.Id, NeoToken.Prefix_Account)
-                .Add(address);
-
-            var prefixKey = kb.ToArray();
-            var account = snapshot.TryGet(prefixKey);
-            return account.GetInteroperable<AccountState>().Balance;
-        }
     }
 }
