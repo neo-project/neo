@@ -11,11 +11,7 @@
 
 using Neo.Json;
 using Neo.SmartContract;
-
-#if !NET5_0_OR_GREATER
 using Neo.VM;
-#endif
-
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;

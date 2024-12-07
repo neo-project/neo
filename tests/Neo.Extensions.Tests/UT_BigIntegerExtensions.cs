@@ -21,7 +21,6 @@ namespace Neo.Extensions.Tests
     [TestClass]
     public class UT_BigIntegerExtensions
     {
-
         [TestMethod]
         public void TestGetLowestSetBit()
         {
