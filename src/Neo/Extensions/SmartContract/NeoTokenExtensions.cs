@@ -42,7 +42,7 @@ namespace Neo.Extensions
             }
         }
 
-        public static BigInteger GetAccountBalance(this NeoToken neoToken, DataCache snapshot, UInt160 address)
+        public static BigInteger BalanceOf(this NeoToken neoToken, DataCache snapshot, UInt160 address)
         {
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
