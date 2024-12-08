@@ -6,7 +6,7 @@
     "KeepAliveTimeout": 120,
     "SslCertFile": "",
     "SslCertPassword": "",
-    "TrustedAuthorities": [], // Example: "aec13cdd5ea6a3998aec14ac331ad96bedbb770f" (Thumbprint)
+    "TrustedAuthorities": [],
     "EnableBasicAuthentication": false,
     "RestUser": "",
     "RestPass": "",
