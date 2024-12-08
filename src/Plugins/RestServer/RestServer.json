@@ -11,7 +11,7 @@
     "RestUser": "",
     "RestPass": "",
     "EnableCors": true,
-    "AllowOrigins": [], // Example: "http://www.example.com"
+    "AllowOrigins": [],
     "DisableControllers": [],
     "EnableCompression": true,
     "CompressionLevel": "SmallestSize", // "Fastest" or "Optimal" or "NoCompression" or "SmallestSize"
