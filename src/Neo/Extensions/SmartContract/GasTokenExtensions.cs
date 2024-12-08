@@ -31,17 +31,11 @@ namespace Neo.Extensions
             var kb = new KeyBuilder(gasToken.Id, GasToken.Prefix_Account);
             var prefixKey = kb.ToArray();
 
-            foreach (var (key, value) in snapshot.Seek(prefixKey, SeekDirection.Forward))
+            foreach (var (key, value) in snapshot.Find(prefixKey, SeekDirection.Forward))
             {
                 var keyBytes = key.ToArray();
-
-                if (keyBytes.AsSpan().StartsWith(prefixKey))
-                {
-                    var addressHash = new UInt160(keyBytes.AsSpan(prefixKey.Length));
-                    yield return new(addressHash, value.GetInteroperable<AccountState>().Balance);
-                }
-                else
-                    yield break;
+                var addressHash = new UInt160(keyBytes.AsSpan(prefixKey.Length));
+                yield return new(addressHash, value.GetInteroperable<AccountState>().Balance);
             }
         }
     }
