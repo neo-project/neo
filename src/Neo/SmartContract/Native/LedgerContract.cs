@@ -33,7 +33,12 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Block = 5;
         private const byte Prefix_Transaction = 11;
 
-        internal LedgerContract() : base() { }
+        private readonly StorageKey _currentBlock;
+
+        internal LedgerContract() : base()
+        {
+            _currentBlock = CreateStorageKey(Prefix_CurrentBlock);
+        }
 
         internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
@@ -68,7 +73,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
-            HashIndexState state = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            HashIndexState state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
             return ContractTask.CompletedTask;
@@ -116,7 +121,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
+            return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Hash;
         }
 
         /// <summary>
@@ -130,7 +135,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
+            return snapshot[_currentBlock].GetInteroperable<HashIndexState>().Index;
         }
 
         /// <summary>
