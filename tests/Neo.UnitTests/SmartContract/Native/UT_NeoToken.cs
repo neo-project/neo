@@ -52,7 +52,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Symbol() => NativeContract.NEO.Symbol(_snapshotCache).Should().Be("NEO");
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshotCache).Should().Be(0);
+        public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshotCache).Should().Be(8);
 
         [TestMethod]
         public void Check_Vote()
@@ -338,7 +338,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState()));
             var accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
-            accountState.Balance = 20000000;
+            accountState.Balance = 20000000 * NativeContract.NEO.Factor;
             var ret = Check_RegisterValidator(clonedCache, ECCurve.Secp256r1.G.ToArray(), persistingBlock);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
@@ -408,15 +408,15 @@ namespace Neo.UnitTests.SmartContract.Native
             // Transfer
 
             NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.One, false, persistingBlock).Should().BeFalse(); // Not signed
-            NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.One, true, persistingBlock).Should().BeTrue();
-            NativeContract.NEO.BalanceOf(clonedCache, from).Should().Be(99999999);
-            NativeContract.NEO.BalanceOf(clonedCache, to).Should().Be(1);
+            NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.One * NativeContract.NEO.Factor, true, persistingBlock).Should().BeTrue();
+            NativeContract.NEO.BalanceOf(clonedCache, from).Should().Be(99999999 * NativeContract.NEO.Factor);
+            NativeContract.NEO.BalanceOf(clonedCache, to).Should().Be(1 * NativeContract.NEO.Factor);
 
             var (from_balance, _, _) = GetAccountState(clonedCache, new UInt160(from));
             var (to_balance, _, _) = GetAccountState(clonedCache, new UInt160(to));
 
-            from_balance.Should().Be(99999999);
-            to_balance.Should().Be(1);
+            from_balance.Should().Be(99999999 * NativeContract.NEO.Factor);
+            to_balance.Should().Be(1 * NativeContract.NEO.Factor);
 
             // Check unclaim
 
@@ -430,7 +430,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             keyCount = clonedCache.GetChangeSet().Count();
 
-            NativeContract.NEO.Transfer(clonedCache, to, from, BigInteger.One, true, persistingBlock).Should().BeTrue();
+            NativeContract.NEO.Transfer(clonedCache, to, from, BigInteger.One * NativeContract.NEO.Factor, true, persistingBlock).Should().BeTrue();
             NativeContract.NEO.BalanceOf(clonedCache, to).Should().Be(0);
             clonedCache.GetChangeSet().Count().Should().Be(keyCount - 1);  // Remove neo balance from address two
 
@@ -451,7 +451,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var clonedCache = _snapshotCache.CloneCache();
             byte[] account = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
-            NativeContract.NEO.BalanceOf(clonedCache, account).Should().Be(100_000_000);
+            NativeContract.NEO.BalanceOf(clonedCache, account).Should().Be(100_000_000 * NativeContract.NEO.Factor);
 
             account[5]++; // Without existing balance
 
@@ -732,7 +732,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestTotalSupply()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            NativeContract.NEO.TotalSupply(clonedCache).Should().Be(new BigInteger(100000000));
+            NativeContract.NEO.TotalSupply(clonedCache).Should().Be(100000000 * NativeContract.NEO.Factor);
         }
 
         [TestMethod]
@@ -760,7 +760,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Check calculate bonus
             StorageItem storage = clonedCache.GetOrAdd(CreateStorageKey(20, UInt160.Zero.ToArray()), () => new StorageItem(new NeoAccountState()));
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            state.Balance = 1000;
+            state.Balance = 1000 * NativeContract.NEO.Factor;
             state.BalanceHeight = 0;
             height.Index = persistingBlock.Index + 1;
             NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, persistingBlock.Index + 2).Should().Be(6500);

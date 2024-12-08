@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock).Should().BeTrue();
             Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
             Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
-            NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000);
+            NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000 * NativeContract.NEO.Factor);
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
 
             NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(52000500_00000000);

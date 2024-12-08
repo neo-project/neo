@@ -51,7 +51,7 @@ namespace Neo.UnitTests.Wallets
             descriptor.AssetName.Should().Be(nameof(NeoToken));
             descriptor.ToString().Should().Be(nameof(NeoToken));
             descriptor.Symbol.Should().Be("NEO");
-            descriptor.Decimals.Should().Be(0);
+            descriptor.Decimals.Should().Be(8);
         }
     }
 }

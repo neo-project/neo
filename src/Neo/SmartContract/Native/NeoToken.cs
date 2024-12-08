@@ -73,7 +73,7 @@ namespace Neo.SmartContract.Native
            "new", ContractParameterType.Array)]
         internal NeoToken() : base()
         {
-            TotalAmount = 100000000 * Factor;
+            TotalAmount = 100_000_000 * Factor;
         }
 
         public override BigInteger TotalSupply(DataCache snapshot)
