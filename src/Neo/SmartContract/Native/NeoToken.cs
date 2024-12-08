@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
     {
         public override string Symbol => "NEO";
 
-        [ContractMethod(true, Hardfork.HF_Domovoi, Name = "Decimals")]
+        [ContractMethod(true, Hardfork.HF_Echidna, Name = "Decimals")]
         public byte OldDecimals => 0;
 
         [ContractMethod(Hardfork.HF_Echidna)]
