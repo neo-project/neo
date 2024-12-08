@@ -84,7 +84,7 @@ namespace Neo.Plugins.OracleService
             if (system.Settings.Network != Settings.Default.Network) return;
             _system = system;
             _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-            RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
+            RpcServer.RpcServer.RegisterMethods(this, Settings.Default.Network);
         }
 
 

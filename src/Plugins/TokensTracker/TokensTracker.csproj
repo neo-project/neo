@@ -10,10 +10,4 @@
     <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="TokensTracker.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

@@ -13,12 +13,12 @@ using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
+using Neo.Plugins.Storage;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -36,7 +36,6 @@ using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using Array = System.Array;
 
 namespace Neo.CLI
@@ -378,6 +377,15 @@ namespace Neo.CLI
             CustomApplicationSettings(options, Settings.Default);
             try
             {
+                // Load old plugins
+                _ = new LevelDBStore();
+                _ = new RocksDBStore();
+
+                foreach (var item in Settings.Default.Extras!)
+                {
+                    _ = Activator.CreateInstance(item, $"Neo.Plugins.{item}.{item}");
+                }
+
                 NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
                     string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             }
@@ -424,12 +432,6 @@ namespace Neo.CLI
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
 
-            // installing plugins
-            var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select(p => InstallPluginAsync(p));
-            if (installTasks is not null)
-            {
-                await Task.WhenAll(installTasks);
-            }
             foreach (var plugin in Plugin.Plugins)
             {
                 // Register plugins commands

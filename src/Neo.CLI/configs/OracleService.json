@@ -15,8 +15,5 @@
       "Timeout": 15000
     },
     "AutoStart": false
-  },
-  "Dependency": [
-    "RpcServer"
-  ]
+  }
 }

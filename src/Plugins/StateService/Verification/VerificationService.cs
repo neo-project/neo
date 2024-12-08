@@ -29,7 +29,7 @@ namespace Neo.Plugins.StateService.Verification
         public class BlockPersisted { public uint Index; }
         public const int MaxCachedVerificationProcessCount = 10;
         private class Timer { public uint Index; }
-        private static readonly uint TimeoutMilliseconds = StatePlugin._system.Settings.MillisecondsPerBlock;
+        private static readonly uint TimeoutMilliseconds = StateService._system.Settings.MillisecondsPerBlock;
         private static readonly uint DelayMilliseconds = 3000;
         private readonly Wallet wallet;
         private readonly ConcurrentDictionary<uint, VerificationContext> contexts = new ConcurrentDictionary<uint, VerificationContext>();
@@ -37,14 +37,14 @@ namespace Neo.Plugins.StateService.Verification
         public VerificationService(Wallet wallet)
         {
             this.wallet = wallet;
-            StatePlugin._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            StateService._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         private void SendVote(VerificationContext context)
         {
             if (context.VoteMessage is null) return;
             Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay vote, height={context.RootIndex}, retry={context.Retries}");
-            StatePlugin._system.Blockchain.Tell(context.VoteMessage);
+            StateService._system.Blockchain.Tell(context.VoteMessage);
         }
 
         private void OnStateRootVote(Vote vote)
@@ -61,7 +61,7 @@ namespace Neo.Plugins.StateService.Verification
             {
                 if (context.StateRootMessage is null) return;
                 Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay state root, height={context.StateRoot.Index}, root={context.StateRoot.RootHash}");
-                StatePlugin._system.Blockchain.Tell(context.StateRootMessage);
+                StateService._system.Blockchain.Tell(context.StateRootMessage);
             }
         }
 
@@ -148,7 +148,7 @@ namespace Neo.Plugins.StateService.Verification
                     OnTimer(timer.Index);
                     break;
                 case Blockchain.RelayResult rr:
-                    if (rr.Result == VerifyResult.Succeed && rr.Inventory is ExtensiblePayload payload && payload.Category == StatePlugin.StatePayloadCategory)
+                    if (rr.Result == VerifyResult.Succeed && rr.Inventory is ExtensiblePayload payload && payload.Category == StateService.StatePayloadCategory)
                     {
                         OnVoteMessage(payload);
                     }

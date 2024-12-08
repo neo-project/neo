@@ -13,8 +13,6 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using static System.IO.Path;
 
 namespace Neo.Plugins
@@ -33,15 +31,14 @@ namespace Neo.Plugins
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
-        public static readonly string PluginsDirectory =
-            Combine(GetDirectoryName(System.AppContext.BaseDirectory), "Plugins");
+        public static readonly string PluginsConfigurationDirectory = Combine(AppContext.BaseDirectory, "configs");
 
         private static readonly FileSystemWatcher configWatcher;
 
         /// <summary>
         /// Indicates the root path of the plugin.
         /// </summary>
-        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name);
+        public string RootPath => PluginsConfigurationDirectory;
 
         /// <summary>
         /// Indicates the location of the plugin configuration file.
@@ -61,7 +58,7 @@ namespace Neo.Plugins
         /// <summary>
         /// Indicates the location of the plugin dll file.
         /// </summary>
-        public virtual string Path => Combine(RootPath, GetType().Assembly.ManifestModule.ScopeName);
+        public virtual string Path => AppContext.BaseDirectory;
 
         /// <summary>
         /// Indicates the version of the plugin.
@@ -82,8 +79,8 @@ namespace Neo.Plugins
 
         static Plugin()
         {
-            if (!Directory.Exists(PluginsDirectory)) return;
-            configWatcher = new FileSystemWatcher(PluginsDirectory)
+            if (!Directory.Exists(PluginsConfigurationDirectory)) return;
+            configWatcher = new FileSystemWatcher(PluginsConfigurationDirectory)
             {
                 EnableRaisingEvents = true,
                 IncludeSubdirectories = true,
@@ -94,7 +91,6 @@ namespace Neo.Plugins
             configWatcher.Created += ConfigWatcher_Changed;
             configWatcher.Renamed += ConfigWatcher_Changed;
             configWatcher.Deleted += ConfigWatcher_Changed;
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
         /// <summary>
@@ -119,40 +115,9 @@ namespace Neo.Plugins
             switch (GetExtension(e.Name))
             {
                 case ".json":
-                case ".dll":
                     Utility.Log(nameof(Plugin), LogLevel.Warning,
                         $"File {e.Name} is {e.ChangeType}, please restart node.");
                     break;
-            }
-        }
-
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            if (args.Name.Contains(".resources"))
-                return null;
-
-            AssemblyName an = new(args.Name);
-
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
-                                AppDomain.CurrentDomain.GetAssemblies()
-                                    .FirstOrDefault(a => a.GetName().Name == an.Name);
-            if (assembly != null) return assembly;
-
-            string filename = an.Name + ".dll";
-            string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory), filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
-            if (!File.Exists(path)) return null;
-
-            try
-            {
-                return Assembly.Load(File.ReadAllBytes(path));
-            }
-            catch (Exception ex)
-            {
-                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
-                return null;
             }
         }
 
@@ -168,47 +133,6 @@ namespace Neo.Plugins
         {
             return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build()
                 .GetSection("PluginConfiguration");
-        }
-
-        private static void LoadPlugin(Assembly assembly)
-        {
-            foreach (Type type in assembly.ExportedTypes)
-            {
-                if (!type.IsSubclassOf(typeof(Plugin))) continue;
-                if (type.IsAbstract) continue;
-
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
-                try
-                {
-                    constructor?.Invoke(null);
-                }
-                catch (Exception ex)
-                {
-                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
-                }
-            }
-        }
-
-        internal static void LoadPlugins()
-        {
-            if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = new();
-            foreach (string rootPath in Directory.GetDirectories(PluginsDirectory))
-            {
-                foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
-                {
-                    try
-                    {
-                        assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
-                    }
-                    catch { }
-                }
-            }
-
-            foreach (Assembly assembly in assemblies)
-            {
-                LoadPlugin(assembly);
-            }
         }
 
         /// <summary>

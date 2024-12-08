@@ -20,12 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="OracleService.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <InternalsVisibleTo Include="Neo.Plugins.OracleService.Tests" />
   </ItemGroup>
 

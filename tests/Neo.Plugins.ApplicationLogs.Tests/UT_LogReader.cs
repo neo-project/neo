@@ -68,13 +68,13 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             public WalletAccount _walletAccount;
             public Transaction[] txs;
             public Block block;
-            public LogReader logReader;
+            public ApplicationLogs.ApplicationLogs logReader;
 
             public NeoSystemFixture()
             {
                 _memoryStore = new MemoryStore();
                 _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
-                logReader = new LogReader();
+                logReader = new ApplicationLogs.ApplicationLogs();
                 Plugin.Plugins.Add(logReader);  // initialize before NeoSystem to let NeoSystem load the plugin
                 _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode with { Network = ApplicationLogs.Settings.Default.Network }, _memoryStoreProvider);
                 _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");

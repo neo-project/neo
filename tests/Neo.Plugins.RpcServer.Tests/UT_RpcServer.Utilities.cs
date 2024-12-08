@@ -32,11 +32,11 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             JArray resp = (JArray)_rpcServer.ListPlugins([]);
             Assert.AreEqual(resp.Count, 0);
-            Plugins.Plugin.Plugins.Add(new RpcServerPlugin());
+            Plugins.Plugin.Plugins.Add(new RpcServer());
             resp = (JArray)_rpcServer.ListPlugins([]);
             Assert.AreEqual(resp.Count, 2);
             foreach (JObject p in resp)
-                Assert.AreEqual(p["name"], nameof(RpcServer));
+                Assert.AreEqual(p["name"], nameof(Server));
         }
 
         [TestMethod]
