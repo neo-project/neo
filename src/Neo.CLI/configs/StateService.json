@@ -6,8 +6,5 @@
     "AutoVerify": false,
     "MaxFindResultItems": 100,
     "UnhandledExceptionPolicy": "StopPlugin"
-  },
-  "Dependency": [
-    "RpcServer"
-  ]
+  }
 }

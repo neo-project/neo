@@ -5,8 +5,5 @@
     "MaxStackSize": 65535,
     "Debug": false,
     "UnhandledExceptionPolicy": "StopPlugin"
-  },
-  "Dependency": [
-    "RpcServer"
-  ]
+  }
 }
