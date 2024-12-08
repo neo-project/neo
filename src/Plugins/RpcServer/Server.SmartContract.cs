@@ -29,7 +29,7 @@ using Array = System.Array;
 
 namespace Neo.Plugins.RpcServer
 {
-    partial class RpcServer
+    partial class Server
     {
         private readonly Dictionary<Guid, Session> sessions = new();
         private Timer timer;

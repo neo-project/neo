@@ -24,7 +24,7 @@ using System.Linq;
 
 namespace Neo.Plugins.RpcServer
 {
-    partial class RpcServer
+    partial class Server
     {
         /// <summary>
         /// Gets the hash of the best (most recent) block.

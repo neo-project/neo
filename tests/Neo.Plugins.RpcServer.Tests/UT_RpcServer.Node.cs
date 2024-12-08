@@ -43,7 +43,7 @@ namespace Neo.Plugins.RpcServer.Tests
             localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 11332) });
             localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 12332) });
             localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 13332) });
-            var rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
+            var rpcServer = new Server(neoSystem, RpcServerSettings.Default);
 
             var result = rpcServer.GetPeers();
             Assert.IsInstanceOfType(result, typeof(JObject));

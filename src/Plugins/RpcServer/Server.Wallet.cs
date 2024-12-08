@@ -27,7 +27,7 @@ using System.Numerics;
 
 namespace Neo.Plugins.RpcServer
 {
-    partial class RpcServer
+    partial class Server
     {
         private class DummyWallet : Wallet
         {

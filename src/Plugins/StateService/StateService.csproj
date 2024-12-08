@@ -13,10 +13,4 @@
     <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="StateService.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

@@ -26,7 +26,7 @@ using static System.IO.Path;
 
 namespace Neo.Plugins.ApplicationLogs
 {
-    public class LogReader : Plugin, ICommittingHandler, ICommittedHandler, ILogHandler
+    public class ApplicationLogs : Plugin, ICommittingHandler, ICommittedHandler, ILogHandler
     {
         #region Globals
 
@@ -42,7 +42,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         #region Ctor
 
-        public LogReader()
+        public ApplicationLogs()
         {
             _logEvents = new();
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
@@ -77,7 +77,7 @@ namespace Neo.Plugins.ApplicationLogs
             var store = system.LoadStore(GetFullPath(path));
             _neostore = new NeoStore(store);
             _neosystem = system;
-            RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
+            RpcServer.RpcServer.RegisterMethods(this, Settings.Default.Network);
 
             if (Settings.Default.Debug)
                 ApplicationEngine.Log += ((ILogHandler)this).ApplicationEngine_Log_Handler;

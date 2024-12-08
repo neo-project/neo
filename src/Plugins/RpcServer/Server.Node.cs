@@ -21,7 +21,7 @@ using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.RpcServer
 {
-    partial class RpcServer
+    partial class Server
     {
 
         /// <summary>

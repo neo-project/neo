@@ -32,7 +32,7 @@ namespace Neo.Plugins.RpcServer.Tests
     {
         private NeoSystem _neoSystem;
         private RpcServerSettings _rpcServerSettings;
-        private RpcServer _rpcServer;
+        private Server _rpcServer;
         private TestMemoryStoreProvider _memoryStoreProvider;
         private MemoryStore _memoryStore;
         private readonly NEP6Wallet _wallet = TestUtils.GenerateTestWallet("123");
@@ -54,7 +54,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 MaxGasInvoke = 1500_0000_0000,
                 Network = TestProtocolSettings.SoleNode.Network,
             };
-            _rpcServer = new RpcServer(_neoSystem, _rpcServerSettings);
+            _rpcServer = new Server(_neoSystem, _rpcServerSettings);
             _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
             var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(_walletAccount.ScriptHash);
             var snapshot = _neoSystem.GetSnapshotCache();
@@ -102,7 +102,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 RpcUser = "testuser",
                 RpcPass = "testpass",
             };
-            var rpcServer = new RpcServer(neoSystem, rpcServerSettings);
+            var rpcServer = new Server(neoSystem, rpcServerSettings);
 
             var context = new DefaultHttpContext();
             context.Request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));

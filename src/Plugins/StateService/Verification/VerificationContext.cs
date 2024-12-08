@@ -83,7 +83,7 @@ namespace Neo.Plugins.StateService.Verification
             Retries = 0;
             myIndex = -1;
             rootIndex = index;
-            verifiers = NativeContract.RoleManagement.GetDesignatedByRole(StatePlugin._system.StoreView, Role.StateValidator, index);
+            verifiers = NativeContract.RoleManagement.GetDesignatedByRole(StateService._system.StoreView, Role.StateValidator, index);
             if (wallet is null) return;
             for (int i = 0; i < verifiers.Length; i++)
             {
@@ -100,7 +100,7 @@ namespace Neo.Plugins.StateService.Verification
             if (StateRoot is null) return null;
             if (!signatures.TryGetValue(myIndex, out byte[] sig))
             {
-                sig = StateRoot.Sign(keyPair, StatePlugin._system.Settings.Network);
+                sig = StateRoot.Sign(keyPair, StateService._system.Settings.Network);
                 signatures[myIndex] = sig;
             }
             return CreatePayload(MessageType.Vote, new Vote
@@ -118,7 +118,7 @@ namespace Neo.Plugins.StateService.Verification
             if (signatures.ContainsKey(index)) return false;
             Utility.Log(nameof(VerificationContext), LogLevel.Info, $"vote received, height={rootIndex}, index={index}");
             ECPoint validator = verifiers[index];
-            byte[] hash_data = StateRoot?.GetSignData(StatePlugin._system.Settings.Network);
+            byte[] hash_data = StateRoot?.GetSignData(StateService._system.Settings.Network);
             if (hash_data is null || !Crypto.VerifySignature(hash_data, sig, validator))
             {
                 Utility.Log(nameof(VerificationContext), LogLevel.Info, "incorrect vote, invalid signature");
@@ -134,7 +134,7 @@ namespace Neo.Plugins.StateService.Verification
             if (StateRoot.Witness is null)
             {
                 Contract contract = Contract.CreateMultiSigContract(M, verifiers);
-                ContractParametersContext sc = new(StatePlugin._system.StoreView, StateRoot, StatePlugin._system.Settings.Network);
+                ContractParametersContext sc = new(StateService._system.StoreView, StateRoot, StateService._system.Settings.Network);
                 for (int i = 0, j = 0; i < verifiers.Length && j < M; i++)
                 {
                     if (!signatures.TryGetValue(i, out byte[] sig)) continue;
@@ -162,13 +162,13 @@ namespace Neo.Plugins.StateService.Verification
             }
             ExtensiblePayload msg = new ExtensiblePayload
             {
-                Category = StatePlugin.StatePayloadCategory,
+                Category = StateService.StatePayloadCategory,
                 ValidBlockStart = StateRoot.Index,
                 ValidBlockEnd = StateRoot.Index + validBlockEndThreshold,
                 Sender = Contract.CreateSignatureRedeemScript(verifiers[MyIndex]).ToScriptHash(),
                 Data = data,
             };
-            ContractParametersContext sc = new ContractParametersContext(StatePlugin._system.StoreView, msg, StatePlugin._system.Settings.Network);
+            ContractParametersContext sc = new ContractParametersContext(StateService._system.StoreView, msg, StateService._system.Settings.Network);
             wallet.Sign(sc);
             msg.Witness = sc.GetWitnesses()[0];
             return msg;

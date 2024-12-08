@@ -25,7 +25,7 @@ namespace Neo.Plugins.StateService.Storage
 {
     class StateStore : UntypedActor
     {
-        private readonly StatePlugin system;
+        private readonly StateService system;
         private readonly IStore store;
         private const int MaxCacheCount = 100;
         private readonly Dictionary<uint, StateRoot> cache = new Dictionary<uint, StateRoot>();
@@ -45,13 +45,13 @@ namespace Neo.Plugins.StateService.Storage
             }
         }
 
-        public StateStore(StatePlugin system, string path)
+        public StateStore(StateService system, string path)
         {
             if (singleton != null) throw new InvalidOperationException(nameof(StateStore));
             this.system = system;
-            store = StatePlugin._system.LoadStore(path);
+            store = StateService._system.LoadStore(path);
             singleton = this;
-            StatePlugin._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            StateService._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
             UpdateCurrentSnapshot();
         }
 
@@ -78,7 +78,7 @@ namespace Neo.Plugins.StateService.Storage
                     OnNewStateRoot(state_root);
                     break;
                 case Blockchain.RelayResult rr:
-                    if (rr.Result == VerifyResult.Succeed && rr.Inventory is ExtensiblePayload payload && payload.Category == StatePlugin.StatePayloadCategory)
+                    if (rr.Result == VerifyResult.Succeed && rr.Inventory is ExtensiblePayload payload && payload.Category == StateService.StatePayloadCategory)
                         OnStatePayload(payload);
                     break;
                 default:
@@ -115,7 +115,7 @@ namespace Neo.Plugins.StateService.Storage
             using var state_snapshot = Singleton.GetSnapshot();
             StateRoot local_root = state_snapshot.GetStateRoot(state_root.Index);
             if (local_root is null || local_root.Witness != null) return false;
-            if (!state_root.Verify(StatePlugin._system.Settings, StatePlugin._system.StoreView)) return false;
+            if (!state_root.Verify(StateService._system.Settings, StateService._system.StoreView)) return false;
             if (local_root.RootHash != state_root.RootHash) return false;
             state_snapshot.AddValidatedStateRoot(state_root);
             state_snapshot.Commit();
@@ -181,7 +181,7 @@ namespace Neo.Plugins.StateService.Storage
             base.PostStop();
         }
 
-        public static Props Props(StatePlugin system, string path)
+        public static Props Props(StateService system, string path)
         {
             return Akka.Actor.Props.Create(() => new StateStore(system, path));
         }

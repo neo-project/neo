@@ -33,11 +33,46 @@
     <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo\Neo.csproj" />
+    <ProjectReference Include="..\Plugins\ApplicationLogs\ApplicationLogs.csproj" />
+    <ProjectReference Include="..\Plugins\DBFTPlugin\DBFTPlugin.csproj" />
+    <ProjectReference Include="..\Plugins\LevelDBStore\LevelDBStore.csproj" />
+    <ProjectReference Include="..\Plugins\MPTTrie\MPTTrie.csproj" />
+    <ProjectReference Include="..\Plugins\OracleService\OracleService.csproj" />
+    <ProjectReference Include="..\Plugins\RocksDBStore\RocksDBStore.csproj" />
+    <ProjectReference Include="..\Plugins\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\Plugins\SQLiteWallet\SQLiteWallet.csproj" />
+    <ProjectReference Include="..\Plugins\StateService\StateService.csproj" />
+    <ProjectReference Include="..\Plugins\StorageDumper\StorageDumper.csproj" />
+    <ProjectReference Include="..\Plugins\TokensTracker\TokensTracker.csproj" />
   </ItemGroup>
 
   <ItemGroup>
       <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
       <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="configs\ApplicationLogs.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="configs\DBFTPlugin.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="configs\OracleService.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="configs\RpcServer.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="configs\StateService.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="configs\StorageDumper.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="configs\TokensTracker.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

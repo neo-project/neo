@@ -34,7 +34,7 @@ using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.StateService
 {
-    public class StatePlugin : Plugin, ICommittingHandler, ICommittedHandler, IWalletChangedHandler, IServiceAddedHandler
+    public class StateService : Plugin, ICommittingHandler, ICommittedHandler, IWalletChangedHandler, IServiceAddedHandler
     {
         public const string StatePayloadCategory = "StateService";
         public override string Name => "StateService";
@@ -49,7 +49,7 @@ namespace Neo.Plugins.StateService
         internal static NeoSystem _system;
         private IWalletProvider walletProvider;
 
-        public StatePlugin()
+        public StateService()
         {
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
@@ -66,7 +66,7 @@ namespace Neo.Plugins.StateService
             _system = system;
             Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"))));
             _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
-            RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
+            RpcServer.RpcServer.RegisterMethods(this, Settings.Default.Network);
         }
 
         void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)

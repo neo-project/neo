@@ -15,7 +15,7 @@ using System.Linq;
 
 namespace Neo.Plugins.RpcServer
 {
-    partial class RpcServer
+    partial class Server
     {
         [RpcMethod]
         protected internal virtual JToken ListPlugins(JArray _params)
