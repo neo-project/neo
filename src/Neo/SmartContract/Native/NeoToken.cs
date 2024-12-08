@@ -13,7 +13,6 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.VM;
@@ -32,7 +31,12 @@ namespace Neo.SmartContract.Native
     public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     {
         public override string Symbol => "NEO";
-        public override byte Decimals => 0;
+
+        [ContractMethod(true, Hardfork.HF_Domovoi, Name = "Decimals")]
+        public byte OldDecimals => 0;
+
+        [ContractMethod(Hardfork.HF_Echidna)]
+        public override byte Decimals => 8;
 
         /// <summary>
         /// Indicates the total amount of NEO.
