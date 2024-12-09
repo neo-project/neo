@@ -15,25 +15,25 @@ namespace Neo.Plugins.ApplicationLogs
 {
     internal class Settings : PluginSettings
     {
+        public bool AutoStart { get; }
         public string Path { get; }
-        public uint Network { get; }
         public int MaxStackSize { get; }
 
         public bool Debug { get; }
 
-        public static Settings Default { get; private set; }
+        public static Settings Current { get; private set; }
 
         private Settings(IConfigurationSection section) : base(section)
         {
+            AutoStart = section.GetValue("AutoStart", false);
             Path = section.GetValue("Path", "ApplicationLogs_{0}");
-            Network = section.GetValue("Network", 5195086u);
             MaxStackSize = section.GetValue("MaxStackSize", (int)ushort.MaxValue);
             Debug = section.GetValue("Debug", false);
         }
 
         public static void Load(IConfigurationSection section)
         {
-            Default = new Settings(section);
+            Current = new Settings(section);
         }
     }
 }

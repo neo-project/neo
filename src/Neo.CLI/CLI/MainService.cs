@@ -13,12 +13,12 @@ using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
+using Neo.Plugins.ApplicationLogs;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -380,6 +380,10 @@ namespace Neo.CLI
             {
                 NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
                     string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+
+                // Add old plugins here
+                var appLogs = new ApplicationLogsPlugin($"{AppContext.BaseDirectory}\\configs", NeoSystem);
+                RegisterCommand(appLogs, "ApplicationLogsPlugin");
             }
             catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
             {
