@@ -42,22 +42,22 @@ namespace Neo.UnitTests.Extensions
         [TestMethod]
         public void TestGetStorage()
         {
-            var contractStorage = NativeContract.ContractManagement.GetContractStorage(system.StoreView, NativeContract.NEO.Id);
+            var contractStorage = NativeContract.ContractManagement.FindContractStorage(system.StoreView, NativeContract.NEO.Id);
 
             Assert.IsNotNull(contractStorage);
 
             var neoContract = NativeContract.ContractManagement.GetContractById(system.StoreView, NativeContract.NEO.Id);
 
-            contractStorage = neoContract.GetStorage(system.StoreView);
+            contractStorage = neoContract.FindStorage(system.StoreView);
 
             Assert.IsNotNull(contractStorage);
 
-            contractStorage = neoContract.GetStorage(system.StoreView, [20]);
+            contractStorage = neoContract.FindStorage(system.StoreView, [20]);
 
             Assert.IsNotNull(contractStorage);
 
             UInt160 address = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
-            var item = neoContract.GetStorageItem(system.StoreView, [20, .. address.ToArray()]);
+            var item = neoContract.GetStorage(system.StoreView, [20, .. address.ToArray()]);
 
             Assert.IsNotNull(item);
             Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
