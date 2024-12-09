@@ -10,7 +10,9 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.Extensions.SmartContract;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
@@ -43,6 +45,22 @@ namespace Neo.UnitTests.Extensions
             var contractStorage = NativeContract.ContractManagement.GetContractStorage(system.StoreView, NativeContract.NEO.Id);
 
             Assert.IsNotNull(contractStorage);
+
+            var neoContract = NativeContract.ContractManagement.GetContractById(system.StoreView, NativeContract.NEO.Id);
+
+            contractStorage = neoContract.GetStorage(system.StoreView);
+
+            Assert.IsNotNull(contractStorage);
+
+            contractStorage = neoContract.GetStorage(system.StoreView, [20]);
+
+            Assert.IsNotNull(contractStorage);
+
+            UInt160 address = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
+            var item = neoContract.GetStorageItem(system.StoreView, [20, .. address.ToArray()]);
+
+            Assert.IsNotNull(item);
+            Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
         }
     }
 }
