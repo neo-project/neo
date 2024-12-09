@@ -46,8 +46,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 }
 
                 // Timeout extension due to prepare response sent
-            // around 4*3/M=12.0/5 ~ 80% block time (for M=5)
-            ExtendTimerByFactor(4);
+                // around 4*3/M=12.0/5 ~ 80% block time (for M=5)
+                ExtendTimerByFactor(4);
 
                 Log($"Sending {nameof(PrepareResponse)}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
