@@ -11,7 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;

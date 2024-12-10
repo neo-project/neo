@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;

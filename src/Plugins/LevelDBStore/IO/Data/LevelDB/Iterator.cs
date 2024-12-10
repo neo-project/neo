@@ -11,32 +11,26 @@
 
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// An iterator yields a sequence of key/value pairs from a database.
     /// </summary>
-    public class Iterator : IDisposable
+    public class Iterator : LevelDBHandle
     {
-        private IntPtr handle;
-
-        internal Iterator(IntPtr handle)
-        {
-            this.handle = handle;
-        }
+        internal Iterator(IntPtr handle) : base(handle) { }
 
         private void CheckError()
         {
-            Native.leveldb_iter_get_error(handle, out IntPtr error);
+            Native.leveldb_iter_get_error(Handle, out var error);
             NativeHelper.CheckError(error);
         }
 
-        public void Dispose()
+        protected override void FreeUnManagedObjects()
         {
-            if (handle != IntPtr.Zero)
+            if (Handle != IntPtr.Zero)
             {
-                Native.leveldb_iter_destroy(handle);
-                handle = IntPtr.Zero;
+                Native.leveldb_iter_destroy(Handle);
             }
         }
 
@@ -46,7 +40,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public byte[] Key()
         {
-            IntPtr key = Native.leveldb_iter_key(handle, out UIntPtr length);
+            var key = Native.leveldb_iter_key(Handle, out var length);
             CheckError();
             return key.ToByteArray(length);
         }
@@ -58,13 +52,13 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Next()
         {
-            Native.leveldb_iter_next(handle);
+            Native.leveldb_iter_next(Handle);
             CheckError();
         }
 
         public void Prev()
         {
-            Native.leveldb_iter_prev(handle);
+            Native.leveldb_iter_prev(Handle);
             CheckError();
         }
 
@@ -75,12 +69,12 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Seek(byte[] target)
         {
-            Native.leveldb_iter_seek(handle, target, (UIntPtr)target.Length);
+            Native.leveldb_iter_seek(Handle, target, (UIntPtr)target.Length);
         }
 
         public void SeekToFirst()
         {
-            Native.leveldb_iter_seek_to_first(handle);
+            Native.leveldb_iter_seek_to_first(Handle);
         }
 
         /// <summary>
@@ -89,17 +83,17 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void SeekToLast()
         {
-            Native.leveldb_iter_seek_to_last(handle);
+            Native.leveldb_iter_seek_to_last(Handle);
         }
 
         public bool Valid()
         {
-            return Native.leveldb_iter_valid(handle);
+            return Native.leveldb_iter_valid(Handle);
         }
 
         public byte[] Value()
         {
-            IntPtr value = Native.leveldb_iter_value(handle, out UIntPtr length);
+            var value = Native.leveldb_iter_value(Handle, out var length);
             CheckError();
             return value.ToByteArray(length);
         }

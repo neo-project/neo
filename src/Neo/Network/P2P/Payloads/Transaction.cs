@@ -231,13 +231,18 @@ namespace Neo.Network.P2P.Payloads
         public void DeserializeUnsigned(ref MemoryReader reader)
         {
             Version = reader.ReadByte();
-            if (Version > 0) throw new FormatException();
+            if (Version > 0) throw new FormatException($"Invalid version: {Version}.");
+
             Nonce = reader.ReadUInt32();
             SystemFee = reader.ReadInt64();
-            if (SystemFee < 0) throw new FormatException();
+            if (SystemFee < 0) throw new FormatException($"Invalid system fee: {SystemFee}.");
+
             NetworkFee = reader.ReadInt64();
-            if (NetworkFee < 0) throw new FormatException();
-            if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
+            if (NetworkFee < 0) throw new FormatException($"Invalid network fee: {NetworkFee}.");
+
+            if (SystemFee + NetworkFee < SystemFee)
+                throw new FormatException($"Invalid fee: {SystemFee} + {NetworkFee} < {SystemFee}.");
+
             ValidUntilBlock = reader.ReadUInt32();
             Signers = DeserializeSigners(ref reader, MaxTransactionAttributes);
             Attributes = DeserializeAttributes(ref reader, MaxTransactionAttributes - Signers.Length);

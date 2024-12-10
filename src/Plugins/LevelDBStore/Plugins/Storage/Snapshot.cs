@@ -9,10 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
 using System.Collections.Generic;
-using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
+using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
 {
@@ -20,55 +20,60 @@ namespace Neo.Plugins.Storage
     {
         private readonly DB _db;
         private readonly LSnapshot _snapshot;
-        private readonly ReadOptions _options;
+        private readonly ReadOptions _readOptions;
         private readonly WriteBatch _batch;
+        private readonly object _lock = new();
 
         public Snapshot(DB db)
         {
             _db = db;
             _snapshot = db.GetSnapshot();
-            _options = new ReadOptions { FillCache = false, Snapshot = _snapshot };
+            _readOptions = new ReadOptions { FillCache = false, Snapshot = _snapshot };
             _batch = new WriteBatch();
         }
 
         public void Commit()
         {
-            _db.Write(WriteOptions.Default, _batch);
+            lock (_lock)
+                _db.Write(WriteOptions.Default, _batch);
         }
 
         public void Delete(byte[] key)
         {
-            _batch.Delete(key);
+            lock (_lock)
+                _batch.Delete(key);
         }
 
         public void Dispose()
         {
             _snapshot.Dispose();
+            _readOptions.Dispose();
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return _db.Seek(_options, prefix, direction, (k, v) => (k, v));
+            return _db.Seek(_readOptions, prefix, direction);
         }
 
         public void Put(byte[] key, byte[] value)
         {
-            _batch.Put(key, value);
+            lock (_lock)
+                _batch.Put(key, value);
         }
 
         public bool Contains(byte[] key)
         {
-            return _db.Contains(_options, key);
+            return _db.Contains(_readOptions, key);
         }
 
         public byte[] TryGet(byte[] key)
         {
-            return _db.Get(_options, key);
+            return _db.Get(_readOptions, key);
         }
 
         public bool TryGet(byte[] key, out byte[] value)
         {
-            value = _db.Get(_options, key);
+            value = _db.Get(_readOptions, key);
             return value != null;
         }
     }

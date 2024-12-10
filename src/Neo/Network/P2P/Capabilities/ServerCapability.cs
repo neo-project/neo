@@ -32,11 +32,13 @@ namespace Neo.Network.P2P.Capabilities
         /// <summary>
         /// Initializes a new instance of the <see cref="ServerCapability"/> class.
         /// </summary>
-        /// <param name="type">The type of the <see cref="ServerCapability"/>. It must be <see cref="NodeCapabilityType.TcpServer"/></param>
+        /// <param name="type">The type of the <see cref="ServerCapability"/>. It must be <see cref="NodeCapabilityType.TcpServer"/> or <see cref="NodeCapabilityType.WsServer"/></param>
         /// <param name="port">The port that the node is listening on.</param>
         public ServerCapability(NodeCapabilityType type, ushort port = 0) : base(type)
         {
-            if (type != NodeCapabilityType.TcpServer)
+#pragma warning disable CS0612 // Type or member is obsolete
+            if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.WsServer)
+#pragma warning restore CS0612 // Type or member is obsolete
             {
                 throw new ArgumentException(nameof(type));
             }
