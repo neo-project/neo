@@ -77,8 +77,7 @@ namespace Neo.VM.Types
                 List<StackItem> list => list,
                 _ => new List<StackItem>(items)
             };
-
-            if (referenceCounter == null) return;
+            if (referenceCounter == null || referenceCounter.Version == RCVersion.V2) return;
 
             foreach (var item in _array)
             {
