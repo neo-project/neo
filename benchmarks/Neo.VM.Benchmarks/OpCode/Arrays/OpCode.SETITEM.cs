@@ -38,28 +38,28 @@ namespace Neo.VM.Benchmark.OpCode
             return builder.ToArray();
         }
 
-        protected override byte[] CreateOneGASScript( )
+        protected override byte[] CreateOneGASScript()
         {
-                var builder = new InstructionBuilder();
-                var initBegin = new JumpTarget();
-                builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
-                builder.Push(ItemCount);
-                builder.AddInstruction(VM.OpCode.NEWARRAY);
-                var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
-                builder.Push(ItemCount);
-                builder.AddInstruction(VM.OpCode.STLOC0);
-                initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
-                builder.AddInstruction(VM.OpCode.DUP);
-                builder.Push(ItemCount/2);
-                builder.Push(0);
-                builder.AddInstruction(VM.OpCode.SETITEM);
-                builder.AddInstruction(VM.OpCode.LDLOC0);
-                builder.AddInstruction(VM.OpCode.DEC);
-                builder.AddInstruction(VM.OpCode.STLOC0);
-                builder.AddInstruction(VM.OpCode.LDLOC0);
-                builder.Jump(VM.OpCode.JMPIF, initBegin);
-                builder.Jump(VM.OpCode.JMP, loopBegin);
-                return builder.ToArray();
+            var builder = new InstructionBuilder();
+            var initBegin = new JumpTarget();
+            builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.NEWARRAY);
+            var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
+            builder.Push(ItemCount);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            initBegin._instruction = builder.AddInstruction(VM.OpCode.NOP);
+            builder.AddInstruction(VM.OpCode.DUP);
+            builder.Push(ItemCount / 2);
+            builder.Push(0);
+            builder.AddInstruction(VM.OpCode.SETITEM);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.AddInstruction(VM.OpCode.DEC);
+            builder.AddInstruction(VM.OpCode.STLOC0);
+            builder.AddInstruction(VM.OpCode.LDLOC0);
+            builder.Jump(VM.OpCode.JMPIF, initBegin);
+            builder.Jump(VM.OpCode.JMP, loopBegin);
+            return builder.ToArray();
         }
     }
 }

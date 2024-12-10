@@ -27,7 +27,7 @@ namespace Neo.VM.Benchmark.OpCode
             return builder.ToArray();
         }
 
-        protected override byte[] CreateOneGASScript( )
+        protected override byte[] CreateOneGASScript()
         {
             throw new NotImplementedException();
         }

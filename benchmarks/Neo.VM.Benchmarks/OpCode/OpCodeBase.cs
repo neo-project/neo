@@ -44,12 +44,13 @@ namespace Neo.VM.Benchmark.OpCode
             oneGasEngine.Dispose();
         }
 
-        // [Benchmark]
-        // public void Bench_OneOpCode() =>
-        //     engine.ExecuteNext();
+        [Benchmark]
+        public void Bench_OneOpCode() =>
+            engine.ExecuteNext();
 
         [Benchmark]
-        public void Bench_OneGAS() {
+        public void Bench_OneGAS()
+        {
             oneGasEngine.ExecuteOneGASBenchmark();
             if (oneGasEngine.State != VMState.HALT)
             {

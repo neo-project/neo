@@ -16,7 +16,7 @@ namespace Neo.VM.Benchmark.OpCode
 
         protected override VM.OpCode Opcode => VM.OpCode.SIZE;
 
-          protected override byte[] CreateOneOpCodeScript()
+        protected override byte[] CreateOneOpCodeScript()
         {
             var builder = new InstructionBuilder();
             var initBegin = new JumpTarget();

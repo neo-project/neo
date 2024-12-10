@@ -37,7 +37,7 @@ namespace Neo.VM.Benchmark.OpCode
             return builder.ToArray();
         }
 
-        protected override byte[] CreateOneGASScript( )
+        protected override byte[] CreateOneGASScript()
         {
             var builder = new InstructionBuilder();
             var initBegin = new JumpTarget();
@@ -79,29 +79,29 @@ namespace Neo.VM.Benchmark.OpCode
 //     | Bench_OneOpCode | 2040      | 6.112 us | 0.6347 us | 1.8715 us |
 
 
-    // | Method       | ItemCount | Mean       | Error    | StdDev   |
-    // |------------- |---------- |-----------:|---------:|---------:|
-    // | Bench_OneGAS | 4         |   174.9 ms |  1.24 ms |  1.10 ms |
-    // | Bench_OneGAS | 8         |   182.5 ms |  3.28 ms |  2.91 ms |
-    // | Bench_OneGAS | 16        |   202.4 ms |  2.36 ms |  2.09 ms |
-    // | Bench_OneGAS | 32        |   244.1 ms |  3.49 ms |  2.92 ms |
-    // | Bench_OneGAS | 64        |   302.2 ms |  5.39 ms |  5.05 ms |
-    // | Bench_OneGAS | 128       |   417.8 ms |  4.31 ms |  3.82 ms |
-    // | Bench_OneGAS | 256       |   644.1 ms |  8.12 ms |  7.59 ms |
-    // | Bench_OneGAS | 512       | 1,119.7 ms |  8.87 ms |  8.29 ms |
-    // | Bench_OneGAS | 1024      | 2,057.8 ms | 11.39 ms | 10.10 ms |
-    // | Bench_OneGAS | 2040      | 4,009.0 ms | 12.07 ms | 10.08 ms |
+// | Method       | ItemCount | Mean       | Error    | StdDev   |
+// |------------- |---------- |-----------:|---------:|---------:|
+// | Bench_OneGAS | 4         |   174.9 ms |  1.24 ms |  1.10 ms |
+// | Bench_OneGAS | 8         |   182.5 ms |  3.28 ms |  2.91 ms |
+// | Bench_OneGAS | 16        |   202.4 ms |  2.36 ms |  2.09 ms |
+// | Bench_OneGAS | 32        |   244.1 ms |  3.49 ms |  2.92 ms |
+// | Bench_OneGAS | 64        |   302.2 ms |  5.39 ms |  5.05 ms |
+// | Bench_OneGAS | 128       |   417.8 ms |  4.31 ms |  3.82 ms |
+// | Bench_OneGAS | 256       |   644.1 ms |  8.12 ms |  7.59 ms |
+// | Bench_OneGAS | 512       | 1,119.7 ms |  8.87 ms |  8.29 ms |
+// | Bench_OneGAS | 1024      | 2,057.8 ms | 11.39 ms | 10.10 ms |
+// | Bench_OneGAS | 2040      | 4,009.0 ms | 12.07 ms | 10.08 ms |
 
 
-     // | Method       | ItemCount | Mean     | Error    | StdDev   |
-     // |------------- |---------- |---------:|---------:|---------:|
-     // | Bench_OneGAS | 4         | 447.6 ms |  7.13 ms |  6.67 ms |
-     // | Bench_OneGAS | 8         | 459.8 ms |  9.08 ms |  8.49 ms |
-     // | Bench_OneGAS | 16        | 521.0 ms |  7.90 ms |  7.39 ms |
-     // | Bench_OneGAS | 32        | 628.7 ms | 12.46 ms | 13.85 ms |
-     // | Bench_OneGAS | 64        | 511.1 ms |  9.64 ms |  9.02 ms |
-     // | Bench_OneGAS | 128       | 523.2 ms |  6.63 ms |  6.21 ms |
-     // | Bench_OneGAS | 256       | 469.7 ms |  6.49 ms |  6.08 ms |
-     // | Bench_OneGAS | 512       | 473.5 ms |  3.18 ms |  2.98 ms |
-     // | Bench_OneGAS | 1024      | 469.4 ms |  8.33 ms |  7.80 ms |
-     // | Bench_OneGAS | 2040      | 465.1 ms |  6.58 ms |  6.15 ms |
+// | Method       | ItemCount | Mean     | Error    | StdDev   |
+// |------------- |---------- |---------:|---------:|---------:|
+// | Bench_OneGAS | 4         | 447.6 ms |  7.13 ms |  6.67 ms |
+// | Bench_OneGAS | 8         | 459.8 ms |  9.08 ms |  8.49 ms |
+// | Bench_OneGAS | 16        | 521.0 ms |  7.90 ms |  7.39 ms |
+// | Bench_OneGAS | 32        | 628.7 ms | 12.46 ms | 13.85 ms |
+// | Bench_OneGAS | 64        | 511.1 ms |  9.64 ms |  9.02 ms |
+// | Bench_OneGAS | 128       | 523.2 ms |  6.63 ms |  6.21 ms |
+// | Bench_OneGAS | 256       | 469.7 ms |  6.49 ms |  6.08 ms |
+// | Bench_OneGAS | 512       | 473.5 ms |  3.18 ms |  2.98 ms |
+// | Bench_OneGAS | 1024      | 469.4 ms |  8.33 ms |  7.80 ms |
+// | Bench_OneGAS | 2040      | 465.1 ms |  6.58 ms |  6.15 ms |

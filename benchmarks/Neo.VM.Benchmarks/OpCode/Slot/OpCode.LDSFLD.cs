@@ -31,7 +31,7 @@ namespace Neo.VM.Benchmark.OpCode
             return builder.ToArray();
         }
 
-        protected override byte[] CreateOneGASScript( )
+        protected override byte[] CreateOneGASScript()
         {
             var builder = new InstructionBuilder();
             builder.AddInstruction(new Instruction { _opCode = VM.OpCode.INITSLOT, _operand = [1, 0] });

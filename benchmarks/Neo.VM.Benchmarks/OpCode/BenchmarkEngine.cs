@@ -90,20 +90,20 @@ namespace Neo.VM.Benchmark.OpCode
             {
                 var instruction = CurrentContext!.CurrentInstruction ?? VM.Instruction.RET;
 
-                if (s_opCodeValueRanges.TryGetValue(instruction.OpCode, out var opCodeRange))
-                {
+                //if (s_opCodeValueRanges.TryGetValue(instruction.OpCode, out var opCodeRange))
+                //{
 
-                    var gasPrice =_complexFactor >= opCodeRange.Item1?(int)( 4 * ((_complexFactor + 4) >> 2)*opCodeRange.Item2): 1;
-                    // var gasPrice =
-                    //     ? (int)(_complexFactor * opCodeRange.Item2 + 1)
-                    //     : 1;
-                    // Console.WriteLine("opCodeRange = "+opCodeRange + " _complexFactor = "+ _complexFactor+ " gasPrice: "+gasPrice);
-                    _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3 * gasPrice;
-                }
-                else
-                {
-                    _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3;
-                }
+                //    var gasPrice =_complexFactor >= opCodeRange.Item1?(int)( 4 * ((_complexFactor + 4) >> 2)*opCodeRange.Item2): 1;
+                //    // var gasPrice =
+                //    //     ? (int)(_complexFactor * opCodeRange.Item2 + 1)
+                //    //     : 1;
+                //    // Console.WriteLine("opCodeRange = "+opCodeRange + " _complexFactor = "+ _complexFactor+ " gasPrice: "+gasPrice);
+                //    _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3 * gasPrice;
+                //}
+                //else
+                //{
+                _gasConsumed += Benchmark_Opcode.OpCodePrices[instruction.OpCode] * 3;
+                //}
 
 
                 if (_gasConsumed >= maxGas)
