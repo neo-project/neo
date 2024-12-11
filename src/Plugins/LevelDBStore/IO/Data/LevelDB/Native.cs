@@ -17,8 +17,8 @@ namespace Neo.IO.Storage.LevelDB
 {
     public enum CompressionType : byte
     {
-        kNoCompression = 0x0,
-        kSnappyCompression = 0x1
+        NoCompression = 0x0,
+        SnappyCompression = 0x1
     }
 
     public static class Native
