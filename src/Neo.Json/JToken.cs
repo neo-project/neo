@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Numerics;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -295,10 +296,15 @@ namespace Neo.Json
 
         public static implicit operator JToken(bool value)
         {
-            return (JBoolean)value;
+            return new JBoolean(value);
         }
 
         public static implicit operator JToken(double value)
+        {
+            return new JNumber(value);
+        }
+
+        public static implicit operator JToken(BigInteger value)
         {
             return (JNumber)value;
         }

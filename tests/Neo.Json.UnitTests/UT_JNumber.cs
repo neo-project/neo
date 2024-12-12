@@ -39,20 +39,47 @@ namespace Neo.Json.UnitTests
         public void TestAsBoolean()
         {
             maxInt.AsBoolean().Should().BeTrue();
+            minInt.AsBoolean().Should().BeTrue();
             zero.AsBoolean().Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestBigInteger()
+        {
+            ((JNumber)BigInteger.One).AsNumber().Should().Be(1);
+            ((JNumber)BigInteger.Zero).AsNumber().Should().Be(0);
+            ((JNumber)BigInteger.MinusOne).AsNumber().Should().Be(-1);
+            ((JNumber)JNumber.MAX_SAFE_INTEGER).AsNumber().Should().Be(JNumber.MAX_SAFE_INTEGER);
+            ((JNumber)JNumber.MIN_SAFE_INTEGER).AsNumber().Should().Be(JNumber.MIN_SAFE_INTEGER);
+        }
+
+        [TestMethod]
+        public void TestNullEqual()
+        {
+            JNumber nullJNumber = null;
+
+            Assert.IsFalse(maxInt.Equals(null));
+            Assert.IsFalse(maxInt == null);
+            Assert.IsFalse(minInt.Equals(null));
+            Assert.IsFalse(minInt == null);
+            Assert.IsFalse(zero == null);
+
+            Assert.ThrowsException<NullReferenceException>(() => nullJNumber == maxInt);
+            Assert.ThrowsException<NullReferenceException>(() => nullJNumber == minInt);
+            Assert.ThrowsException<NullReferenceException>(() => nullJNumber == zero);
         }
 
         [TestMethod]
         public void TestAsString()
         {
             Action action1 = () => new JNumber(double.PositiveInfinity).AsString();
-            action1.Should().Throw<FormatException>();
+            action1.Should().Throw<ArgumentException>();
 
             Action action2 = () => new JNumber(double.NegativeInfinity).AsString();
-            action2.Should().Throw<FormatException>();
+            action2.Should().Throw<ArgumentException>();
 
             Action action3 = () => new JNumber(double.NaN).AsString();
-            action3.Should().Throw<FormatException>();
+            action3.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
