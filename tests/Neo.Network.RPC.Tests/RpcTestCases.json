@@ -3148,7 +3148,7 @@
         "protocol": {
           "network": 0,
           "validatorscount": 0,
-          "msperblock": 15000,
+          "msperblock": 3000,
           "maxvaliduntilblockincrement": 1,
           "maxtraceableblocks": 1,
           "addressversion": 0,
