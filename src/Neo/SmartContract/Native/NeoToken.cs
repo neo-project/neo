@@ -351,7 +351,7 @@ namespace Neo.SmartContract.Native
             // RegisterInternal does this anyway.
             var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache);
             if (!engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Echidna, index) &&
-        !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
