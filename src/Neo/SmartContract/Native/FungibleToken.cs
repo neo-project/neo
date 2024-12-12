@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The prefix for storing account states.
         /// </summary>
-        protected const byte Prefix_Account = 20;
+        protected internal const byte Prefix_Account = 20;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
