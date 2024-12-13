@@ -61,6 +61,7 @@ namespace Neo.Persistence
             snapshot?.Dispose();
         }
 
+        /// <inheritdoc/>
         protected override StorageItem GetInternal(StorageKey key)
         {
             byte[] value = store.TryGet(key.ToArray());
