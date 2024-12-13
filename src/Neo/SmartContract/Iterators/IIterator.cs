@@ -30,6 +30,6 @@ namespace Neo.SmartContract.Iterators
         /// Gets the element in the collection at the current position of the iterator.
         /// </summary>
         /// <returns>The element in the collection at the current position of the iterator.</returns>
-        StackItem Value(ReferenceCounter referenceCounter);
+        StackItem Value(IReferenceCounter referenceCounter);
     }
 }

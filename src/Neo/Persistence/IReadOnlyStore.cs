@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Collections.Generic;
 
 namespace Neo.Persistence
@@ -31,7 +32,16 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
+        /// <seealso cref="TryGet(byte[], out byte[])"/>. Obsolete it later for avoiding complier warning.
         byte[] TryGet(byte[] key);
+
+        /// <summary>
+        /// Reads a specified entry from the database.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="value">The data of the entry.</param>
+        /// <returns><see langword="true"/> if the entry exists; otherwise, <see langword="false"/>.</returns>
+        bool TryGet(byte[] key, out byte[] value);
 
         /// <summary>
         /// Determines whether the database contains the specified entry.

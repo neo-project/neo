@@ -293,12 +293,18 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public JObject ToJson()
         {
+            NEP6Account[] accountValues;
+            lock (accounts)
+            {
+                accountValues = accounts.Values.ToArray();
+            }
+
             return new()
             {
                 ["name"] = name,
                 ["version"] = version.ToString(),
                 ["scrypt"] = Scrypt.ToJson(),
-                ["accounts"] = accounts.Values.Select(p => p.ToJson()).ToArray(),
+                ["accounts"] = accountValues.Select(p => p.ToJson()).ToArray(),
                 ["extra"] = extra
             };
         }
@@ -345,26 +351,28 @@ namespace Neo.Wallets.NEP6
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
             bool succeed = true;
+            NEP6Account[] accountsValues;
             lock (accounts)
             {
-                Parallel.ForEach(accounts.Values, (account, state) =>
-                {
-                    if (!account.ChangePasswordPrepare(oldPassword, newPassword))
-                    {
-                        state.Stop();
-                        succeed = false;
-                    }
-                });
+                accountsValues = accounts.Values.ToArray();
             }
+            Parallel.ForEach(accountsValues, (account, state) =>
+            {
+                if (!account.ChangePasswordPrepare(oldPassword, newPassword))
+                {
+                    state.Stop();
+                    succeed = false;
+                }
+            });
             if (succeed)
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (NEP6Account account in accountsValues)
                     account.ChangePasswordCommit();
                 password = newPassword.ToSecureString();
             }
             else
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (NEP6Account account in accountsValues)
                     account.ChangePasswordRollback();
             }
             return succeed;

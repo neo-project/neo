@@ -9,61 +9,86 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
+using System.Collections;
 using System.Collections.Generic;
-using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
+using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
 {
-    internal class Snapshot : ISnapshot
+    /// <summary>
+    /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
+    /// </summary>
+    internal class Snapshot : ISnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        private readonly DB db;
-        private readonly LSnapshot snapshot;
-        private readonly ReadOptions options;
-        private readonly WriteBatch batch;
+        private readonly DB _db;
+        private readonly LSnapshot _snapshot;
+        private readonly ReadOptions _readOptions;
+        private readonly WriteBatch _batch;
+        private readonly object _lock = new();
 
         public Snapshot(DB db)
         {
-            this.db = db;
-            snapshot = db.GetSnapshot();
-            options = new ReadOptions { FillCache = false, Snapshot = snapshot };
-            batch = new WriteBatch();
+            _db = db;
+            _snapshot = db.CreateSnapshot();
+            _readOptions = new ReadOptions { FillCache = false, Snapshot = _snapshot };
+            _batch = new WriteBatch();
         }
 
         public void Commit()
         {
-            db.Write(WriteOptions.Default, batch);
+            lock (_lock)
+                _db.Write(WriteOptions.Default, _batch);
         }
 
         public void Delete(byte[] key)
         {
-            batch.Delete(key);
+            lock (_lock)
+                _batch.Delete(key);
         }
 
         public void Dispose()
         {
-            snapshot.Dispose();
+            _snapshot.Dispose();
+            _readOptions.Dispose();
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return db.Seek(options, prefix, direction, (k, v) => (k, v));
+            return _db.Seek(_readOptions, prefix, direction);
         }
 
         public void Put(byte[] key, byte[] value)
         {
-            batch.Put(key, value);
+            lock (_lock)
+                _batch.Put(key, value);
         }
 
         public bool Contains(byte[] key)
         {
-            return db.Contains(options, key);
+            return _db.Contains(_readOptions, key);
         }
 
         public byte[] TryGet(byte[] key)
         {
-            return db.Get(options, key);
+            return _db.Get(_readOptions, key);
         }
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            value = _db.Get(_readOptions, key);
+            return value != null;
+        }
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        {
+            using var iterator = _db.CreateIterator(_readOptions);
+            for (iterator.SeekToFirst(); iterator.Valid(); iterator.Next())
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

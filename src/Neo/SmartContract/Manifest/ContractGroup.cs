@@ -11,7 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Manifest
             Signature = @struct[1].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { PubKey.ToArray(), Signature };
         }

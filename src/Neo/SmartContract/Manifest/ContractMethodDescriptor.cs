@@ -14,13 +14,14 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// Represents a method in a smart contract ABI.
     /// </summary>
-    public class ContractMethodDescriptor : ContractEventDescriptor
+    public class ContractMethodDescriptor : ContractEventDescriptor, IEquatable<ContractMethodDescriptor>
     {
         /// <summary>
         /// Indicates the return type of the method. It can be any value of <see cref="ContractParameterType"/>.
@@ -47,7 +48,7 @@ namespace Neo.SmartContract.Manifest
             Safe = @struct[4].GetBoolean();
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             Struct @struct = (Struct)base.ToStackItem(referenceCounter);
             @struct.Add((byte)ReturnType);
@@ -89,6 +90,48 @@ namespace Neo.SmartContract.Manifest
             json["offset"] = Offset;
             json["safe"] = Safe;
             return json;
+        }
+
+        public bool Equals(ContractMethodDescriptor other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+
+            return
+                base.Equals(other) && // Already check null
+                ReturnType == other.ReturnType
+                && Offset == other.Offset
+                && Safe == other.Safe;
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other is not ContractMethodDescriptor ev)
+                return false;
+
+            return Equals(ev);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ReturnType, Offset, Safe, base.GetHashCode());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(ContractMethodDescriptor left, ContractMethodDescriptor right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(ContractMethodDescriptor left, ContractMethodDescriptor right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

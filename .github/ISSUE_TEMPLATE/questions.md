@@ -2,7 +2,7 @@
 name: Questions
 about: Questions about Neo Platform
 title: ''
-labels: question
+labels: Question
 assignees: ''
 ---
 

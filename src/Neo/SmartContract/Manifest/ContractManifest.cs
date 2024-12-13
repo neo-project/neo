@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Manifest
             Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter)
             {

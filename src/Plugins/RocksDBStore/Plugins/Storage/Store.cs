@@ -59,6 +59,12 @@ namespace Neo.Plugins.Storage
             return db.Get(key);
         }
 
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            value = db.Get(key);
+            return value != null;
+        }
+
         public void Delete(byte[] key)
         {
             db.Remove(key);

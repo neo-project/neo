@@ -54,7 +54,7 @@ namespace Neo.Test
             var random = new Random();
 
             // Big Number (net standard didn't work)
-            VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680);
+            Assert.ThrowsException<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
 
             // Trivial cases
             //                     sign bit|shortest two's complement

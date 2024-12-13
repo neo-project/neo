@@ -7,7 +7,7 @@ on:
 
 # Define environment variables
 env:
-  DOTNET_VERSION: 8.0.x
+  DOTNET_VERSION: 9.0.x
   CONFIGURATION: Release
   DIST_PATH: /tmp/dist
   OUTPUT_PATH: /tmp/out
@@ -106,7 +106,7 @@ jobs:
       run: |
         dotnet publish ./src/Neo.CLI \
         --version-suffix ${{ matrix.runtime }} \
-        --framework net8.0 \
+        --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --runtime ${{ matrix.runtime }} \
         --self-contained true \
@@ -128,7 +128,7 @@ jobs:
       run: |
         dotnet build ./src/Plugins/LevelDBStore \
         --version-suffix ${{ matrix.runtime }} \
-        --framework net8.0 \
+        --framework net9.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal \

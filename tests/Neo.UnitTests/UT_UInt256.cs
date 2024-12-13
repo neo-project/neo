@@ -13,6 +13,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.IO;
@@ -154,6 +155,18 @@ namespace Neo.UnitTests.IO
         public void TestOperatorSmallerAndEqual()
         {
             Assert.AreEqual(true, UInt256.Zero <= UInt256.Zero);
+        }
+
+        [TestMethod]
+        public void TestSpanAndSerialize()
+        {
+            var random = new Random();
+            var data = new byte[UInt256.Length];
+            random.NextBytes(data);
+
+            var value = new UInt256(data);
+            var span = value.GetSpan();
+            Assert.IsTrue(span.SequenceEqual(value.ToArray()));
         }
     }
 }

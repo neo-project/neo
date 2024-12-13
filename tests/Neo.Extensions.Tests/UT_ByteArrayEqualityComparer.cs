@@ -14,7 +14,7 @@ using Neo.IO;
 using System;
 using System.Linq;
 
-namespace Neo.UnitTests
+namespace Neo.Extensions.Tests
 {
     [TestClass]
     public class UT_ByteArrayEqualityComparer

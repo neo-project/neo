@@ -521,13 +521,13 @@ namespace Neo.CLI
                 if (writeStart)
                 {
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start += BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
                 }
                 else
                 {
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start = BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(0, SeekOrigin.Begin);
                 }

@@ -278,7 +278,7 @@ namespace Neo.Network.P2P
 
             if (notFound.Count > 0)
             {
-                foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound.ToArray()))
+                foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound))
                     EnqueueMessage(Message.Create(MessageCommand.NotFound, entry));
             }
         }

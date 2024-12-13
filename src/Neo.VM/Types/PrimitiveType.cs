@@ -47,12 +47,6 @@ namespace Neo.VM.Types
 
         public abstract override bool Equals(StackItem? other);
 
-        /// <summary>
-        /// Get the hash code of the VM object, which is used for key comparison in the <see cref="Map"/>.
-        /// </summary>
-        /// <returns>The hash code of this VM object.</returns>
-        public abstract override int GetHashCode();
-
         public sealed override ReadOnlySpan<byte> GetSpan()
         {
             return Memory.Span;

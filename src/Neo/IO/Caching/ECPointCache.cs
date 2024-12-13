@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 
 namespace Neo.IO.Caching
 {

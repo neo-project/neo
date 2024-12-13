@@ -81,6 +81,11 @@ namespace Neo.VM.Types
         internal int LowLink = 0;
 
         /// <summary>
+        /// Stack Item hashcode
+        /// </summary>
+        protected int _hashCode = 0;
+
+        /// <summary>
         /// Indicates whether the item is currently on the stack for Tarjan's algorithm.
         ///
         /// <remarks>
@@ -120,7 +125,14 @@ namespace Neo.VM.Types
         /// Use this method when you need a hash code for a StackItem.
         /// </summary>
         /// <returns>The hash code for the StackItem.</returns>
-        public override int GetHashCode() =>
-            HashCode.Combine(GetSpan().ToArray());
+        public override int GetHashCode()
+        {
+            if (_hashCode == 0)
+            {
+                return _hashCode = HashCode.Combine(Type, Unsafe.HashBytes(GetSpan()));
+            }
+
+            return _hashCode;
+        }
     }
 }

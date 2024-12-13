@@ -12,15 +12,16 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 
-namespace Neo.Plugins.RpcServer.Tests;
-
-[TestClass]
-public class UT_Result
+namespace Neo.Plugins.RpcServer.Tests
 {
-    [TestMethod]
-    public void TestNotNull_Or()
+    [TestClass]
+    public class UT_Result
     {
-        ContractState? contracts = null;
-        Assert.ThrowsException<RpcException>(() => contracts.NotNull_Or(RpcError.UnknownContract).ToJson());
+        [TestMethod]
+        public void TestNotNull_Or()
+        {
+            ContractState? contracts = null;
+            Assert.ThrowsException<RpcException>(() => contracts.NotNull_Or(RpcError.UnknownContract).ToJson());
+        }
     }
 }

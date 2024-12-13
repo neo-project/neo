@@ -96,11 +96,12 @@ namespace Neo.Json
             }
             catch (OverflowException)
             {
-                throw new InvalidCastException();
+                throw new InvalidCastException($"The value is out of range for the enum {enumType.FullName}");
             }
+
             object result = Enum.ToObject(enumType, value);
             if (!Enum.IsDefined(enumType, result))
-                throw new InvalidCastException();
+                throw new InvalidCastException($"The value is not defined in the enum {enumType.FullName}");
             return (T)result;
         }
 

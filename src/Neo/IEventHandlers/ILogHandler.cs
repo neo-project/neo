@@ -11,15 +11,16 @@
 
 using Neo.SmartContract;
 
-namespace Neo.IEventHandlers;
-
-public interface ILogHandler
+namespace Neo.IEventHandlers
 {
-    /// <summary>
-    /// The handler of Log event from the <see cref="ApplicationEngine"/>.
-    /// Triggered when a contract calls System.Runtime.Log.
-    /// </summary>
-    /// <param name="sender">The source of the event.</param>
-    /// <param name="logEventArgs">The arguments <see cref="LogEventArgs"/> of the log.</param>
-    void ApplicationEngine_Log_Handler(object sender, LogEventArgs logEventArgs);
+    public interface ILogHandler
+    {
+        /// <summary>
+        /// The handler of Log event from the <see cref="ApplicationEngine"/>.
+        /// Triggered when a contract calls System.Runtime.Log.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="logEventArgs">The arguments <see cref="LogEventArgs"/> of the log.</param>
+        void ApplicationEngine_Log_Handler(object sender, LogEventArgs logEventArgs);
+    }
 }

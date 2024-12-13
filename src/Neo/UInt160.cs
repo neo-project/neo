@@ -102,6 +102,18 @@ namespace Neo
         }
 
         /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value in little-endian.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value in little-endian.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            if (BitConverter.IsLittleEndian)
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+            return this.ToArray().AsSpan(); // Keep the same output as Serialize when BigEndian
+        }
+
+        /// <summary>
         /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
         /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>

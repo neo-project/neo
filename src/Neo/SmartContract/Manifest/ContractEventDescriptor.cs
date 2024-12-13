@@ -14,6 +14,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
@@ -21,7 +22,7 @@ namespace Neo.SmartContract.Manifest
     /// <summary>
     /// Represents an event in a smart contract ABI.
     /// </summary>
-    public class ContractEventDescriptor : IInteroperable
+    public class ContractEventDescriptor : IInteroperable, IEquatable<ContractEventDescriptor>
     {
         /// <summary>
         /// The name of the event or method.
@@ -40,7 +41,7 @@ namespace Neo.SmartContract.Manifest
             Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter)
             {
@@ -76,6 +77,45 @@ namespace Neo.SmartContract.Manifest
             json["name"] = Name;
             json["parameters"] = new JArray(Parameters.Select(u => u.ToJson()).ToArray());
             return json;
+        }
+
+        public bool Equals(ContractEventDescriptor other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return Name == other.Name && Parameters.SequenceEqual(other.Parameters);
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other is not ContractEventDescriptor ev)
+                return false;
+
+            return Equals(ev);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Parameters);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(ContractEventDescriptor left, ContractEventDescriptor right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(ContractEventDescriptor left, ContractEventDescriptor right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

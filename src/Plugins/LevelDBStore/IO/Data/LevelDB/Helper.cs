@@ -14,17 +14,17 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     public static class Helper
     {
-        public static IEnumerable<T> Seek<T>(this DB db, ReadOptions options, byte[] prefix, SeekDirection direction, Func<byte[], byte[], T> resultSelector)
+        public static IEnumerable<(byte[], byte[])> Seek(this DB db, ReadOptions options, byte[] prefix, SeekDirection direction)
         {
-            using Iterator it = db.NewIterator(options);
+            using Iterator it = db.CreateIterator(options);
             if (direction == SeekDirection.Forward)
             {
                 for (it.Seek(prefix); it.Valid(); it.Next())
-                    yield return resultSelector(it.Key(), it.Value());
+                    yield return new(it.Key(), it.Value());
             }
             else
             {
@@ -37,18 +37,7 @@ namespace Neo.IO.Data.LevelDB
                     it.Prev();
 
                 for (; it.Valid(); it.Prev())
-                    yield return resultSelector(it.Key(), it.Value());
-            }
-        }
-
-        public static IEnumerable<T> FindRange<T>(this DB db, ReadOptions options, byte[] startKey, byte[] endKey, Func<byte[], byte[], T> resultSelector)
-        {
-            using Iterator it = db.NewIterator(options);
-            for (it.Seek(startKey); it.Valid(); it.Next())
-            {
-                byte[] key = it.Key();
-                if (key.AsSpan().SequenceCompareTo(endKey) > 0) break;
-                yield return resultSelector(key, it.Value());
+                    yield return new(it.Key(), it.Value());
             }
         }
 

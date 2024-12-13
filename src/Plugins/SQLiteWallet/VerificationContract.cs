@@ -13,45 +13,46 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
 
-namespace Neo.Wallets.SQLite;
-
-class VerificationContract : SmartContract.Contract, IEquatable<VerificationContract>, ISerializable
+namespace Neo.Wallets.SQLite
 {
-    public int Size => ParameterList.GetVarSize() + Script.GetVarSize();
-
-    public void Deserialize(ref MemoryReader reader)
+    class VerificationContract : SmartContract.Contract, IEquatable<VerificationContract>, ISerializable
     {
-        ReadOnlySpan<byte> span = reader.ReadVarMemory().Span;
-        ParameterList = new ContractParameterType[span.Length];
-        for (int i = 0; i < span.Length; i++)
+        public int Size => ParameterList.GetVarSize() + Script.GetVarSize();
+
+        public void Deserialize(ref MemoryReader reader)
         {
-            ParameterList[i] = (ContractParameterType)span[i];
-            if (!Enum.IsDefined(typeof(ContractParameterType), ParameterList[i]))
-                throw new FormatException();
+            ReadOnlySpan<byte> span = reader.ReadVarMemory().Span;
+            ParameterList = new ContractParameterType[span.Length];
+            for (int i = 0; i < span.Length; i++)
+            {
+                ParameterList[i] = (ContractParameterType)span[i];
+                if (!Enum.IsDefined(typeof(ContractParameterType), ParameterList[i]))
+                    throw new FormatException();
+            }
+            Script = reader.ReadVarMemory().ToArray();
         }
-        Script = reader.ReadVarMemory().ToArray();
-    }
 
-    public bool Equals(VerificationContract other)
-    {
-        if (ReferenceEquals(this, other)) return true;
-        if (other is null) return false;
-        return ScriptHash.Equals(other.ScriptHash);
-    }
+        public bool Equals(VerificationContract other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (other is null) return false;
+            return ScriptHash.Equals(other.ScriptHash);
+        }
 
-    public override bool Equals(object obj)
-    {
-        return Equals(obj as VerificationContract);
-    }
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as VerificationContract);
+        }
 
-    public override int GetHashCode()
-    {
-        return ScriptHash.GetHashCode();
-    }
+        public override int GetHashCode()
+        {
+            return ScriptHash.GetHashCode();
+        }
 
-    public void Serialize(BinaryWriter writer)
-    {
-        writer.WriteVarBytes(ParameterList.Select(p => (byte)p).ToArray());
-        writer.WriteVarBytes(Script);
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.WriteVarBytes(ParameterList.Select(p => (byte)p).ToArray());
+            writer.WriteVarBytes(Script);
+        }
     }
 }

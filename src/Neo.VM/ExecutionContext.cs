@@ -107,7 +107,7 @@ namespace Neo.VM
             }
         }
 
-        internal ExecutionContext(Script script, int rvcount, ReferenceCounter referenceCounter)
+        internal ExecutionContext(Script script, int rvcount, IReferenceCounter referenceCounter)
             : this(new SharedStates(script, referenceCounter), rvcount, 0)
         {
         }

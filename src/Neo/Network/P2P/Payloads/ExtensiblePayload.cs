@@ -86,7 +86,7 @@ namespace Neo.Network.P2P.Payloads
             }
             set
             {
-                if (value.Length != 1) throw new ArgumentException();
+                if (value.Length != 1) throw new ArgumentException($"Expected 1 witness, got {value.Length}.");
                 Witness = value[0];
             }
         }
@@ -94,7 +94,9 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(ref reader);
-            if (reader.ReadByte() != 1) throw new FormatException();
+            var count = reader.ReadByte();
+            if (count != 1)
+                throw new FormatException($"Expected 1 witness, got {count}.");
             Witness = reader.ReadSerializable<Witness>();
         }
 
@@ -103,7 +105,8 @@ namespace Neo.Network.P2P.Payloads
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
-            if (ValidBlockStart >= ValidBlockEnd) throw new FormatException();
+            if (ValidBlockStart >= ValidBlockEnd)
+                throw new FormatException($"Invalid valid block range: {ValidBlockStart} >= {ValidBlockEnd}.");
             Sender = reader.ReadSerializable<UInt160>();
             Data = reader.ReadVarMemory();
         }

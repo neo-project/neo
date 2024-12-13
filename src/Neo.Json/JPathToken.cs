@@ -63,7 +63,7 @@ namespace Neo.Json
                         i += token.Content.Length - 1;
                         break;
                     default:
-                        throw new FormatException();
+                        throw new FormatException($"Invalid character '{expr[i]}' at position {i}");
                 }
                 yield return token;
             }
@@ -78,7 +78,7 @@ namespace Neo.Json
                 end++;
                 if (c == '\'') return expr[start..end];
             }
-            throw new FormatException();
+            throw new FormatException("Unterminated string");
         }
 
         public static string ParseIdentifier(string expr, int start)
@@ -112,7 +112,7 @@ namespace Neo.Json
         private static JPathToken DequeueToken(Queue<JPathToken> tokens)
         {
             if (!tokens.TryDequeue(out JPathToken? token))
-                throw new FormatException();
+                throw new FormatException("Unexpected end of expression");
             return token;
         }
 
@@ -132,7 +132,7 @@ namespace Neo.Json
                         ProcessBracket(ref objects, ref maxDepth, maxObjects, tokens);
                         break;
                     default:
-                        throw new FormatException();
+                        throw new FormatException($"Unexpected token {token.Type}");
                 }
             }
         }
@@ -152,7 +152,7 @@ namespace Neo.Json
                     Descent(ref objects, ref maxDepth, maxObjects, token.Content!);
                     break;
                 default:
-                    throw new FormatException();
+                    throw new FormatException($"Unexpected token {token.Type}");
             }
         }
 
@@ -162,8 +162,9 @@ namespace Neo.Json
             switch (token.Type)
             {
                 case JPathTokenType.Asterisk:
-                    if (DequeueToken(tokens).Type != JPathTokenType.RightBracket)
-                        throw new FormatException();
+                    var rightBracket = DequeueToken(tokens);
+                    if (rightBracket.Type != JPathTokenType.RightBracket)
+                        throw new FormatException($"Unexpected token {rightBracket.Type}");
                     Descent(ref objects, ref maxDepth, maxObjects);
                     break;
                 case JPathTokenType.Colon:
@@ -183,7 +184,7 @@ namespace Neo.Json
                             Descent(ref objects, ref maxDepth, maxObjects, int.Parse(token.Content!));
                             break;
                         default:
-                            throw new FormatException();
+                            throw new FormatException($"Unexpected token {next.Type}");
                     }
                     break;
                 case JPathTokenType.String:
@@ -197,11 +198,11 @@ namespace Neo.Json
                             Descent(ref objects, ref maxDepth, maxObjects, JToken.Parse($"\"{token.Content!.Trim('\'')}\"")!.GetString());
                             break;
                         default:
-                            throw new FormatException();
+                            throw new FormatException($"Unexpected token {next.Type}");
                     }
                     break;
                 default:
-                    throw new FormatException();
+                    throw new FormatException($"Unexpected token {token.Type}");
             }
         }
 
@@ -209,7 +210,9 @@ namespace Neo.Json
         {
             List<JToken?> results = new();
             JPathToken token = DequeueToken(tokens);
-            if (token.Type != JPathTokenType.Identifier) throw new FormatException();
+            if (token.Type != JPathTokenType.Identifier)
+                throw new FormatException($"Unexpected token {token.Type}");
+
             while (objects.Length > 0)
             {
                 results.AddRange(objects.OfType<JObject>().SelectMany(p => p.Properties).Where(p => p.Key == token.Content).Select(p => p.Value));
@@ -225,15 +228,16 @@ namespace Neo.Json
             switch (token.Type)
             {
                 case JPathTokenType.Number:
-                    if (DequeueToken(tokens).Type != JPathTokenType.RightBracket)
-                        throw new FormatException();
+                    var next = DequeueToken(tokens);
+                    if (next.Type != JPathTokenType.RightBracket)
+                        throw new FormatException($"Unexpected token {next.Type}");
                     DescentRange(ref objects, ref maxDepth, maxObjects, start, int.Parse(token.Content!));
                     break;
                 case JPathTokenType.RightBracket:
                     DescentRange(ref objects, ref maxDepth, maxObjects, start, 0);
                     break;
                 default:
-                    throw new FormatException();
+                    throw new FormatException($"Unexpected token {token.Type}");
             }
         }
 
@@ -243,14 +247,16 @@ namespace Neo.Json
             while (true)
             {
                 JPathToken token = DequeueToken(tokens);
-                if (token.Type != first.Type) throw new FormatException();
+                if (token.Type != first.Type)
+                    throw new FormatException($"Unexpected token {token.Type} != {first.Type}");
                 items.Add(token);
                 token = DequeueToken(tokens);
                 if (token.Type == JPathTokenType.RightBracket)
                     break;
                 if (token.Type != JPathTokenType.Comma)
-                    throw new FormatException();
+                    throw new FormatException($"Unexpected token {token.Type} != {JPathTokenType.Comma}");
             }
+
             switch (first.Type)
             {
                 case JPathTokenType.Number:
@@ -260,16 +266,19 @@ namespace Neo.Json
                     Descent(ref objects, ref maxDepth, maxObjects, items.Select(p => JToken.Parse($"\"{p.Content!.Trim('\'')}\"")!.GetString()).ToArray());
                     break;
                 default:
-                    throw new FormatException();
+                    throw new FormatException($"Unexpected token {first.Type}");
             }
         }
 
         private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects)
         {
-            if (maxDepth <= 0) throw new InvalidOperationException();
+            if (maxDepth <= 0)
+                throw new InvalidOperationException("Exceeded max depth");
             --maxDepth;
+
             objects = objects.OfType<JContainer>().SelectMany(p => p.Children).ToArray();
-            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
+            if (objects.Length > maxObjects)
+                throw new InvalidOperationException(nameof(maxObjects));
         }
 
         private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects, params string[] names)
@@ -280,10 +289,14 @@ namespace Neo.Json
                     if (obj.ContainsProperty(name))
                         yield return obj[name];
             }
-            if (maxDepth <= 0) throw new InvalidOperationException();
+
+            if (maxDepth <= 0)
+                throw new InvalidOperationException("Exceeded max depth");
             --maxDepth;
+
             objects = objects.OfType<JObject>().SelectMany(p => GetProperties(p, names)).ToArray();
-            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
+            if (objects.Length > maxObjects)
+                throw new InvalidOperationException(nameof(maxObjects));
         }
 
         private static void Descent(ref JToken?[] objects, ref int maxDepth, int maxObjects, params int[] indexes)
@@ -297,16 +310,22 @@ namespace Neo.Json
                         yield return array[i];
                 }
             }
-            if (maxDepth <= 0) throw new InvalidOperationException();
+
+            if (maxDepth <= 0)
+                throw new InvalidOperationException("Exceeded max depth");
             --maxDepth;
+
             objects = objects.OfType<JArray>().SelectMany(p => GetElements(p, indexes)).ToArray();
-            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
+            if (objects.Length > maxObjects)
+                throw new InvalidOperationException(nameof(maxObjects));
         }
 
         private static void DescentRange(ref JToken?[] objects, ref int maxDepth, int maxObjects, int start, int end)
         {
-            if (maxDepth <= 0) throw new InvalidOperationException();
+            if (maxDepth <= 0)
+                throw new InvalidOperationException("Exceeded max depth");
             --maxDepth;
+
             objects = objects.OfType<JArray>().SelectMany(p =>
             {
                 int iStart = start >= 0 ? start : start + p.Count;
@@ -315,6 +334,7 @@ namespace Neo.Json
                 int count = iEnd - iStart;
                 return p.Skip(iStart).Take(count);
             }).ToArray();
+
             if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
         }
     }

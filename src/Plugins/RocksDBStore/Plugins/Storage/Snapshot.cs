@@ -73,6 +73,12 @@ namespace Neo.Plugins.Storage
             return db.Get(key, readOptions: options);
         }
 
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            value = db.Get(key, readOptions: options);
+            return value != null;
+        }
+
         public void Dispose()
         {
             snapshot.Dispose();

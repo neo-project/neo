@@ -43,6 +43,21 @@ namespace Neo.Test
         }
 
         [TestMethod]
+        public void TestNullAndEmpty()
+        {
+            using (ScriptBuilder script = new())
+            {
+                ReadOnlySpan<byte> span = null;
+                script.EmitPush(span);
+
+                span = [];
+                script.EmitPush(span);
+
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0, (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
+            }
+        }
+
+        [TestMethod]
         public void TestBigInteger()
         {
             using (ScriptBuilder script = new())
@@ -233,7 +248,8 @@ namespace Neo.Test
         {
             using (ScriptBuilder script = new())
             {
-                Assert.ThrowsException<ArgumentNullException>(() => script.EmitPush((byte[])null));
+                script.EmitPush((byte[])null);
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
 
             using (ScriptBuilder script = new())

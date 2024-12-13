@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -61,6 +61,7 @@ namespace Neo.Persistence
             snapshot?.Dispose();
         }
 
+        /// <inheritdoc/>
         protected override StorageItem GetInternal(StorageKey key)
         {
             byte[] value = store.TryGet(key.ToArray());
