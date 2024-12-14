@@ -120,6 +120,7 @@ namespace Neo.VM
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {compound.Type}");
             }
+            engine.ReferenceCounter.TryCleanTrackedItem(compound);
             engine.Push(compound.Count);
         }
 

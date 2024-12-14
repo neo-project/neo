@@ -246,5 +246,16 @@ namespace Neo.VM
             if (--item.StackReferences == 0)
                 _zeroReferred.Add(item);
         }
+
+        public bool TryCleanTrackedItem(CompoundType item)
+        {
+            if (item.StackReferences > 0 || item.ObjectReferences?.Values.Any(p => p.References > 0 && p.Item.OnStack) == true)
+                // Still referred by stack or some compound item
+                return false;
+            if (item is CompoundType compound)
+                _referencesCount -= compound.SubItemsCount;
+            item.Cleanup();
+            return _trackedItems.Remove(item);
+        }
     }
 }
