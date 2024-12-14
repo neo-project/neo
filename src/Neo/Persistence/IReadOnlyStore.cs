@@ -32,7 +32,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        /// <seealso cref="TryGet(byte[], out byte[])"/>. Obsolete it later for avoiding complier warning.
+        [Obsolete("use TryGet(byte[] key, out byte[] value) instead.")]
         byte[] TryGet(byte[] key);
 
         /// <summary>

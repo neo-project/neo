@@ -30,7 +30,7 @@ namespace Neo.Plugins.StateService.Storage
 
         public StateRoot GetStateRoot(uint index)
         {
-            return snapshot.TryGet(Keys.StateRoot(index))?.AsSerializable<StateRoot>();
+            return snapshot.TryGet(Keys.StateRoot(index), out var data) ? data.AsSerializable<StateRoot>() : null;
         }
 
         public void AddLocalStateRoot(StateRoot state_root)
@@ -41,9 +41,9 @@ namespace Neo.Plugins.StateService.Storage
 
         public uint? CurrentLocalRootIndex()
         {
-            var bytes = snapshot.TryGet(Keys.CurrentLocalRootIndex);
-            if (bytes is null) return null;
-            return BitConverter.ToUInt32(bytes);
+            if (snapshot.TryGet(Keys.CurrentLocalRootIndex, out var bytes))
+                return BitConverter.ToUInt32(bytes);
+            return null;
         }
 
         public UInt256 CurrentLocalRootHash()
@@ -63,9 +63,9 @@ namespace Neo.Plugins.StateService.Storage
 
         public uint? CurrentValidatedRootIndex()
         {
-            var bytes = snapshot.TryGet(Keys.CurrentValidatedRootIndex);
-            if (bytes is null) return null;
-            return BitConverter.ToUInt32(bytes);
+            if (snapshot.TryGet(Keys.CurrentValidatedRootIndex, out var bytes))
+                return BitConverter.ToUInt32(bytes);
+            return null;
         }
 
         public UInt256 CurrentValidatedRootHash()
