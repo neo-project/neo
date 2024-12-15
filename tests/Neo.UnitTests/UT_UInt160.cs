@@ -98,6 +98,8 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual("0x1230000000000000000000000000000000000000", temp.ToString());
             Assert.AreEqual(false, UInt160.TryParse("000000000000000000000000000000000000000", out _));
             Assert.AreEqual(false, UInt160.TryParse("0xKK00000000000000000000000000000000000000", out _));
+
+            Assert.AreEqual(false, UInt160.TryParse(" 1 2 3 45 000000000000000000000000000000", out _));
         }
 
         [TestMethod]
