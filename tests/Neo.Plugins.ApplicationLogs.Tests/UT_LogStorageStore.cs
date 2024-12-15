@@ -178,9 +178,9 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         [Fact]
         public void Test_StackItemState()
         {
-            var store = new MemoryStore();
-            var snapshot = store.GetSnapshot();
-            var lss = new LogStorageStore(snapshot);
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
 
             var ok = lss.TryGetStackItemState(Guid.NewGuid(), out var actualState);
             Assert.False(ok);
@@ -191,12 +191,13 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
 
             snapshot.Commit();
 
-            lss = new LogStorageStore(store.GetSnapshot());
-            ok = lss.TryGetStackItemState(id1, out var actualState1);
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetStackItemState(id1, out var actualState1);
             Assert.True(ok);
             Assert.Equal(new Integer(1), actualState1);
 
-            ok = lss.TryGetStackItemState(id2, out var actualState2);
+            ok = lss2.TryGetStackItemState(id2, out var actualState2);
             Assert.True(ok);
             Assert.Equal(new Integer(2), actualState2);
         }
@@ -204,9 +205,9 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         [Fact]
         public void Test_TransactionState()
         {
-            var store = new MemoryStore();
-            var snapshot = store.GetSnapshot();
-            var lss = new LogStorageStore(snapshot);
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
 
             // random 32 bytes
             var bytes = new byte[32];
@@ -221,8 +222,9 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             lss.PutTransactionState(hash, TransactionLogState.Create([guid]));
             snapshot.Commit();
 
-            lss = new LogStorageStore(store.GetSnapshot());
-            ok = lss.TryGetTransactionState(hash, out actualState);
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetTransactionState(hash, out actualState);
             Assert.True(ok);
             Assert.Equal(TransactionLogState.Create([guid]), actualState);
         }
@@ -230,17 +232,17 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         [Fact]
         public void Test_ExecutionState()
         {
-            var store = new MemoryStore();
-            var snapshot = store.GetSnapshot();
-            var lss = new LogStorageStore(snapshot);
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
 
             var ok = lss.TryGetExecutionState(Guid.NewGuid(), out var actualState);
             Assert.False(ok);
             Assert.Null(actualState);
 
             // ExecutionLogState.Serialize
-            var stream = new MemoryStream();
-            var writer = new BinaryWriter(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.Write((byte)VMState.HALT);
             writer.WriteVarString("Test");
             writer.Write(100ul);
@@ -257,8 +259,9 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             var guid = lss.PutExecutionState(state);
             snapshot.Commit();
 
-            lss = new LogStorageStore(store.GetSnapshot());
-            ok = lss.TryGetExecutionState(guid, out actualState);
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetExecutionState(guid, out actualState);
             Assert.True(ok);
             Assert.Equal(state, actualState);
         }
@@ -266,9 +269,9 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
         [Fact]
         public void Test_ContractState()
         {
-            var store = new MemoryStore();
-            var snapshot = store.GetSnapshot();
-            var lss = new LogStorageStore(snapshot);
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
 
             var guid = Guid.NewGuid();
             var scriptHash = UInt160.Parse("0x0000000000000000000000000000000000000000");
@@ -284,8 +287,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             Random.Shared.NextBytes(bytes);
 
             // ContractLogState.Serialize
-            var stream = new MemoryStream();
-            var writer = new BinaryWriter(stream);
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
             writer.Write(new UInt256(bytes));
             writer.Write((byte)TriggerType.All);
             writer.Write(scriptHash);
@@ -302,8 +305,9 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             lss.PutContractState(scriptHash, timestamp, index, state);
             snapshot.Commit();
 
-            lss = new LogStorageStore(store.GetSnapshot());
-            ok = lss.TryGetContractState(scriptHash, timestamp, index, out actualState);
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetContractState(scriptHash, timestamp, index, out actualState);
             Assert.True(ok);
             Assert.Equal(state, actualState);
         }
