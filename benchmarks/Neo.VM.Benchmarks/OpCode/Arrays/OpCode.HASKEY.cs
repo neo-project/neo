@@ -73,25 +73,25 @@ namespace Neo.VM.Benchmark.OpCode
     }
 }
 
-/// | Method | ItemCount | Mean | Error | StdDev | Median |
-/// | ---------------- | ---------- | --------------:| --------------:| --------------:| --------------:|
-/// | Bench_OneOpCode | 4 | 3.248 us | 0.0962 us | 0.2568 us | 3.200 us |
-/// | Bench_OneGAS | 4 | 74,225.206 us | 1,378.1887 us | 1,415.2983 us | 74,352.600 us |
-/// | Bench_OneOpCode | 8 | 3.612 us | 0.1824 us | 0.5321 us | 3.500 us |
-/// | Bench_OneGAS | 8 | 76,327.457 us | 1,045.4895 us | 926.7992 us | 76,400.250 us |
-/// | Bench_OneOpCode | 16 | 4.079 us | 0.2004 us | 0.5846 us | 3.900 us |
-/// | Bench_OneGAS | 16 | 75,192.031 us | 1,415.8505 us | 1,390.5545 us | 74,870.650 us |
-/// | Bench_OneOpCode | 32 | 5.112 us | 0.2663 us | 0.7725 us | 5.000 us |
-/// | Bench_OneGAS | 32 | 75,857.130 us | 1,469.6428 us | 1,858.6276 us | 76,339.200 us |
-/// | Bench_OneOpCode | 64 | 6.219 us | 0.3227 us | 0.9463 us | 6.300 us |
-/// | Bench_OneGAS | 64 | 75,104.112 us | 1,462.8695 us | 1,502.2592 us | 75,085.000 us |
-/// | Bench_OneOpCode | 128 | 7.916 us | 1.2663 us | 3.7337 us | 6.000 us |
-/// | Bench_OneGAS | 128 | 74,524.787 us | 1,190.4420 us | 1,113.5401 us | 74,585.500 us |
-/// | Bench_OneOpCode | 256 | 11.904 us | 1.5944 us | 4.7012 us | 13.300 us |
-/// | Bench_OneGAS | 256 | 74,676.473 us | 1,443.9591 us | 1,350.6803 us | 74,575.900 us |
-/// | Bench_OneOpCode | 512 | 6.166 us | 0.5779 us | 1.5426 us | 6.300 us |
-/// | Bench_OneGAS | 512 | 74,311.340 us | 1,373.6849 us | 1,284.9457 us | 74,257.900 us |
-/// | Bench_OneOpCode | 1024 | 8.280 us | 0.5787 us | 1.6133 us | 8.300 us |
-/// | Bench_OneGAS | 1024 | 76,817.562 us | 1,492.8381 us | 1,466.1666 us | 76,597.800 us |
-/// | Bench_OneOpCode | 2040 | 13.983 us | 0.6613 us | 1.9079 us | 14.200 us |
-/// | Bench_OneGAS | 2040 | 76,128.674 us | 1,412.1090 us | 1,569.5554 us | 75,931.400 us |
+/// | Method          | ItemCount | Mean          | Error         | StdDev        | Median        |
+/// |---------------- |---------- |--------------:|--------------:|--------------:|--------------:|
+/// | Bench_OneOpCode | 4         |      3.281 us |     0.1592 us |     0.4594 us |      3.200 us |
+/// | Bench_OneGAS    | 4         | 72,665.600 us | 1,171.0190 us | 1,095.3719 us | 72,533.200 us |
+/// | Bench_OneOpCode | 8         |      3.404 us |     0.1509 us |     0.4305 us |      3.300 us |
+/// | Bench_OneGAS    | 8         | 73,338.887 us | 1,337.2319 us | 1,250.8475 us | 72,975.200 us |
+/// | Bench_OneOpCode | 16        |      3.993 us |     0.1712 us |     0.4967 us |      3.900 us |
+/// | Bench_OneGAS    | 16        | 73,448.600 us | 1,412.2191 us | 1,681.1465 us | 72,856.900 us |
+/// | Bench_OneOpCode | 32        |      4.548 us |     0.1744 us |     0.5004 us |      4.500 us |
+/// | Bench_OneGAS    | 32        | 71,313.640 us | 1,156.6631 us | 1,081.9434 us | 71,279.300 us |
+/// | Bench_OneOpCode | 64        |      6.204 us |     0.3064 us |     0.8742 us |      6.150 us |
+/// | Bench_OneGAS    | 64        | 71,925.185 us | 1,001.9698 us |   836.6901 us | 72,058.200 us |
+/// | Bench_OneOpCode | 128       |      7.931 us |     1.0725 us |     3.1453 us |      8.800 us |
+/// | Bench_OneGAS    | 128       | 73,325.780 us | 1,161.4638 us | 1,086.4340 us | 73,661.000 us |
+/// | Bench_OneOpCode | 256       |      9.272 us |     1.9466 us |     5.7397 us |      6.250 us |
+/// | Bench_OneGAS    | 256       | 72,817.990 us | 1,155.0164 us | 1,080.4031 us | 73,065.850 us |
+/// | Bench_OneOpCode | 512       |      6.177 us |     0.6341 us |     1.7357 us |      5.800 us |
+/// | Bench_OneGAS    | 512       | 74,204.424 us | 1,475.0676 us | 2,162.1351 us | 74,178.300 us |
+/// | Bench_OneOpCode | 1024      |      6.474 us |     0.3918 us |     1.0988 us |      6.600 us |
+/// | Bench_OneGAS    | 1024      | 73,362.183 us | 1,432.1909 us | 1,532.4282 us | 73,365.550 us |
+/// | Bench_OneOpCode | 2040      |     11.054 us |     0.6791 us |     1.9701 us |     10.600 us |
+/// | Bench_OneGAS    | 2040      | 71,487.580 us | 1,120.5841 us | 1,048.1951 us | 70,965.200 us |

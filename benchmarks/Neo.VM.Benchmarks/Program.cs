@@ -20,7 +20,7 @@ using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
 // Define the benchmark or execute class
-var benchmarkType = typeof(OpCode_KEYS);
+var benchmarkType = typeof(OpCode_PICKITEM);
 
 /*
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

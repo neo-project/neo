@@ -77,25 +77,25 @@ namespace Neo.VM.Benchmark.OpCode
     }
 }
 
-/// | Method | ItemCount | Mean | Error | StdDev | Median |
-/// | ---------------- | ---------- | ---------------:| --------------:| --------------:| ---------------:|
-/// | Bench_OneOpCode | 4 | 6.076 us | 0.4348 us | 1.2751 us | 5.500 us |
-/// | Bench_OneGAS | 4 | 311,189.871 us | 5,036.3181 us | 4,464.5648 us | 311,286.500 us |
-/// | Bench_OneOpCode | 8 | 5.319 us | 0.1088 us | 0.1818 us | 5.300 us |
-/// | Bench_OneGAS | 8 | 317,724.307 us | 3,762.3339 us | 3,335.2110 us | 318,146.950 us |
-/// | Bench_OneOpCode | 16 | 6.031 us | 0.3499 us | 1.0150 us | 5.600 us |
-/// | Bench_OneGAS | 16 | 305,824.240 us | 5,264.4883 us | 4,924.4056 us | 304,434.000 us |
-/// | Bench_OneOpCode | 32 | 6.469 us | 0.4033 us | 1.1828 us | 6.100 us |
-/// | Bench_OneGAS | 32 | 318,095.000 us | 2,928.8930 us | 2,739.6883 us | 318,514.600 us |
-/// | Bench_OneOpCode | 64 | 6.109 us | 0.3671 us | 1.0766 us | 5.700 us |
-/// | Bench_OneGAS | 64 | 315,642.073 us | 4,854.5661 us | 4,540.9642 us | 314,314.000 us |
-/// | Bench_OneOpCode | 128 | 6.690 us | 0.3704 us | 1.0804 us | 6.400 us |
-/// | Bench_OneGAS | 128 | 318,420.779 us | 4,122.0329 us | 3,654.0748 us | 318,497.100 us |
-/// | Bench_OneOpCode | 256 | 6.869 us | 0.3237 us | 0.9340 us | 6.500 us |
-/// | Bench_OneGAS | 256 | 317,932.773 us | 5,932.4303 us | 5,549.1990 us | 316,874.000 us |
-/// | Bench_OneOpCode | 512 | 7.047 us | 0.4292 us | 1.2655 us | 6.600 us |
-/// | Bench_OneGAS | 512 | 309,127.043 us | 2,595.8056 us | 2,301.1141 us | 309,353.300 us |
-/// | Bench_OneOpCode | 1024 | NA | NA | NA | NA |
-/// | Bench_OneGAS | 1024 | NA | NA | NA | NA |
-/// | Bench_OneOpCode | 2040 | NA | NA | NA | NA |
-/// | Bench_OneGAS | 2040 | NA | NA | NA | NA |
+/// | Method          | ItemCount | Mean           | Error         | StdDev        | Median         |
+/// |---------------- |---------- |---------------:|--------------:|--------------:|---------------:|
+/// | Bench_OneOpCode | 4         |       5.770 us |     0.1180 us |     0.3002 us |       5.700 us |
+/// | Bench_OneGAS    | 4         | 321,068.540 us | 5,352.9497 us | 5,007.1525 us | 319,411.700 us |
+/// | Bench_OneOpCode | 8         |       5.795 us |     0.1193 us |     0.3142 us |       5.800 us |
+/// | Bench_OneGAS    | 8         | 319,080.907 us | 5,478.2962 us | 4,856.3669 us | 317,455.100 us |
+/// | Bench_OneOpCode | 16        |       5.776 us |     0.1187 us |     0.2728 us |       5.700 us |
+/// | Bench_OneGAS    | 16        | 312,350.647 us | 4,151.8398 us | 3,883.6335 us | 311,264.300 us |
+/// | Bench_OneOpCode | 32        |       6.224 us |     0.3306 us |     0.9746 us |       5.800 us |
+/// | Bench_OneGAS    | 32        | 316,735.927 us | 2,684.2112 us | 2,510.8128 us | 317,492.800 us |
+/// | Bench_OneOpCode | 64        |       6.163 us |     0.2396 us |     0.6876 us |       5.900 us |
+/// | Bench_OneGAS    | 64        | 316,759.207 us | 3,102.5177 us | 2,902.0970 us | 316,835.500 us |
+/// | Bench_OneOpCode | 128       |       5.588 us |     0.2422 us |     0.6547 us |       5.600 us |
+/// | Bench_OneGAS    | 128       | 315,794.640 us | 2,477.8688 us | 2,317.8000 us | 315,204.400 us |
+/// | Bench_OneOpCode | 256       |       6.369 us |     0.3181 us |     0.9228 us |       6.000 us |
+/// | Bench_OneGAS    | 256       | 313,106.920 us | 2,772.6315 us | 2,593.5212 us | 313,483.200 us |
+/// | Bench_OneOpCode | 512       |       6.661 us |     0.2829 us |     0.7978 us |       6.400 us |
+/// | Bench_OneGAS    | 512       | 314,332.029 us | 1,938.6764 us | 1,718.5861 us | 314,657.850 us |
+/// | Bench_OneOpCode | 1024      |             NA |            NA |            NA |             NA |
+/// | Bench_OneGAS    | 1024      |             NA |            NA |            NA |             NA |
+/// | Bench_OneOpCode | 2040      |             NA |            NA |            NA |             NA |
+/// | Bench_OneGAS    | 2040      |             NA |            NA |            NA |             NA |
