@@ -57,7 +57,7 @@ namespace Neo.VM.Benchmark.OpCode
             builder.AddInstruction(VM.OpCode.PACK);
 
             var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
-            builder.AddInstruction(VM.OpCode.DUP);
+            builder.AddInstruction(Opcode);
             builder.AddInstruction(VM.OpCode.DROP);
             builder.Jump(VM.OpCode.JMP, loopBegin);
 

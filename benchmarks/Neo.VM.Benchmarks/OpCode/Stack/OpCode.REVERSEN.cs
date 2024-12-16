@@ -32,7 +32,7 @@ namespace Neo.VM.Benchmark.OpCode
             builder.Jump(VM.OpCode.JMPIF, initBegin);
             // var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
             builder.Push(ItemCount);
-            builder.AddInstruction(VM.OpCode.REVERSEN);
+            builder.AddInstruction(Opcode);
             // builder.Jump(VM.OpCode.JMP, loopBegin);
             return builder.ToArray();
         }
@@ -54,7 +54,7 @@ namespace Neo.VM.Benchmark.OpCode
             builder.Jump(VM.OpCode.JMPIF, initBegin);
             var loopBegin = new JumpTarget { _instruction = builder.AddInstruction(VM.OpCode.NOP) };
             builder.Push(ItemCount);
-            builder.AddInstruction(VM.OpCode.REVERSEN);
+            builder.AddInstruction(Opcode);
             builder.Jump(VM.OpCode.JMP, loopBegin);
             return builder.ToArray();
         }
