@@ -136,7 +136,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsNotNull(resp["error"]);
             Assert.AreEqual(resp["error"]["code"], -32602);
 
-        _rpcServer.wallet = null;
+            _rpcServer.wallet = null;
         }
 
         [TestMethod]
