@@ -161,7 +161,7 @@ namespace Neo
                 var data = new byte[Length];
                 for (var i = 0; i < Length; i++)
                 {
-                    if (!byte.TryParse(str.AsSpan(i * 2 + startIndex, 2), NumberStyles.HexNumber, null, out data[Length - i - 1]))
+                    if (!byte.TryParse(str.AsSpan(i * 2 + startIndex, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
                         return false;
                 }
                 result = new(data);
