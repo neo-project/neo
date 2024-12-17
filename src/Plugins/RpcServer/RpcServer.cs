@@ -377,7 +377,14 @@ namespace Neo.Plugins.RpcServer
             }
             catch (RpcException ex)
             {
+
+#if DEBUG
+                return CreateErrorResponse(request["id"],
+                    RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
+#else
                 return CreateErrorResponse(request["id"], ex.GetError());
+#endif
+
             }
         }
 
