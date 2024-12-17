@@ -14,6 +14,7 @@ using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -127,6 +128,7 @@ namespace Neo.Ledger
         {
             _system = system;
             Capacity = system.Settings.MemoryPoolMaxTransactions;
+            _metrics = new MempoolMetrics(Capacity) { BaseMinFee = 1_0000 }; // 0.0001 GAS
             MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
             MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
         }
@@ -299,6 +301,14 @@ namespace Neo.Ledger
             var poolItem = new PoolItem(tx);
 
             if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
+
+            // Only check minimum fee when congestion is above 50%
+            if (_metrics.CongestionLevel > 0.5)
+            {
+                long minFee = GetMinimumRequiredFee();
+                if (tx.NetworkFee < minFee)
+                    return VerifyResult.InsufficientFunds;
+            }
 
             List<Transaction>? removedTransactions = null;
             _txRwLock.EnterWriteLock();
@@ -685,6 +695,45 @@ namespace Neo.Ledger
             {
                 _txRwLock.ExitReadLock();
             }
+        }
+
+        private class MempoolMetrics(int capacity)
+        {
+            public long BaseMinFee { get; set; }
+            public DateTime LastUpdateTime { get; set; }
+            public int TransactionCount { get; set; }
+            public double CongestionLevel => (double)TransactionCount / capacity;
+
+            // Exponential fee increase based on congestion
+            public double GetFeeMultiplier()
+            {
+                const double BaseMultiplier = 2.0;
+                const double ExponentScale = 10.0;
+
+                return Math.Pow(BaseMultiplier, CongestionLevel * ExponentScale);
+            }
+        }
+
+        private readonly MempoolMetrics _metrics;
+
+        // Maximum fee multiplier to prevent excessive fees
+        private const double MaxFeeMultiplier = 1000.0;  // maximum fee-barrier is 0.1 GAS
+        private const int MetricsUpdateIntervalMs = 5000;
+
+        private long GetMinimumRequiredFee()
+        {
+            var now = TimeProvider.Current.UtcNow;
+
+            // Update metrics periodically
+            if ((now - _metrics.LastUpdateTime).TotalMilliseconds >= MetricsUpdateIntervalMs)
+            {
+                _metrics.TransactionCount = Count;
+                _metrics.LastUpdateTime = now;
+            }
+
+            // Calculate dynamic multiplier with exponential growth based on congestion
+            var multiplier = Math.Min(_metrics.GetFeeMultiplier(), MaxFeeMultiplier);
+            return (long)(_metrics.BaseMinFee * multiplier);
         }
     }
 }
