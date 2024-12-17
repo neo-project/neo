@@ -274,7 +274,7 @@ namespace Neo.Plugins.RpcServer
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-        private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
+        internal async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
             var @params = request["params"] ?? new JArray();
@@ -315,11 +315,13 @@ namespace Neo.Plugins.RpcServer
                             {
                                 if (param.ParameterType == typeof(UInt160))
                                 {
-                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i], system.Settings.AddressVersion);
+                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i],
+                                        system.Settings.AddressVersion);
                                 }
                                 else
                                 {
-                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i], param.ParameterType);
+                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i],
+                                        param.ParameterType);
                                 }
                             }
                             catch (Exception e) when (e is not RpcException)
@@ -333,7 +335,8 @@ namespace Neo.Plugins.RpcServer
                             {
                                 args[i] = param.DefaultValue;
                             }
-                            else if (param.ParameterType.IsValueType && Nullable.GetUnderlyingType(param.ParameterType) == null)
+                            else if (param.ParameterType.IsValueType &&
+                                     Nullable.GetUnderlyingType(param.ParameterType) == null)
                             {
                                 throw new ArgumentException($"Required parameter '{param.Name}' is missing");
                             }
@@ -366,10 +369,15 @@ namespace Neo.Plugins.RpcServer
             catch (Exception ex) when (ex is not RpcException)
             {
 #if DEBUG
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
+                return CreateErrorResponse(request["id"],
+                    RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
 #else
         return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
 #endif
+            }
+            catch (RpcException ex)
+            {
+                return CreateErrorResponse(request["id"], ex.GetError());
             }
         }
 

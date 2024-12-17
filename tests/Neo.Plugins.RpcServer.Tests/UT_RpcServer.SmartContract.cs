@@ -64,8 +64,74 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestInvokeFunction()
         {
             _rpcServer.wallet = _wallet;
-
             JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "totalSupply", new JArray([]), validatorSigner, true));
+            Assert.AreEqual(resp.Count, 8);
+            Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
+            Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
+            Assert.IsTrue(resp.ContainsProperty("diagnostics"));
+            Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
+            Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 0);
+            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["exception"], null);
+            Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
+            Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Integer));
+            Assert.AreEqual(resp["stack"][0]["value"], "100000000");
+            Assert.IsTrue(resp.ContainsProperty("tx"));
+
+            resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "symbol"));
+            Assert.AreEqual(resp.Count, 6);
+            Assert.IsTrue(resp.ContainsProperty("script"));
+            Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
+            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["exception"], null);
+            Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
+            Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.ByteString));
+            Assert.AreEqual(resp["stack"][0]["value"], Convert.ToBase64String(Encoding.UTF8.GetBytes("NEO")));
+
+            // This call triggers not only NEO but also unclaimed GAS
+            resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "transfer", new JArray([
+                new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = MultisigScriptHash.ToString() },
+                new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = ValidatorScriptHash.ToString() },
+                new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "1" },
+                new JObject() { ["type"] = nameof(ContractParameterType.Any) },
+            ]), multisigSigner, true));
+            Assert.AreEqual(resp.Count, 7);
+            Assert.AreEqual(resp["script"], NeoTransferScript);
+            Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
+            Assert.IsTrue(resp.ContainsProperty("diagnostics"));
+            Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
+            Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 4);
+            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash} ({MultisigAddress}) is not found. " +
+                                $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");
+            JArray notifications = (JArray)resp["notifications"];
+            Assert.AreEqual(notifications.Count, 2);
+            Assert.AreEqual(notifications[0]["eventname"].AsString(), "Transfer");
+            Assert.AreEqual(notifications[0]["contract"].AsString(), NeoToken.NEO.Hash.ToString());
+            Assert.AreEqual(notifications[0]["state"]["value"][2]["value"], "1");
+            Assert.AreEqual(notifications[1]["eventname"].AsString(), "Transfer");
+            Assert.AreEqual(notifications[1]["contract"].AsString(), GasToken.GAS.Hash.ToString());
+            Assert.AreEqual(notifications[1]["state"]["value"][2]["value"], "50000000");
+
+            _rpcServer.wallet = null;
+        }
+
+        [TestMethod]
+        public void TestInvokeFunctionInvalid()
+        {
+            _rpcServer.wallet = _wallet;
+
+            HttpContext context = new DefaultHttpContext();
+
+            var json = new JObject();
+            json["id"] = 1;
+            json["jsonrpc"] = "2.0";
+            json["method"] = "invokefunction";
+            json["params"] = new JArray("0", "totalSupply", new JArray([]), validatorSigner, true);
+
+            var resp = _rpcServer.ProcessRequestAsync(context, json).GetAwaiter().GetResult();
+
+            Console.WriteLine(resp);
             Assert.AreEqual(resp.Count, 8);
             Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
             Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
