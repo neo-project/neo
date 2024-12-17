@@ -16,6 +16,7 @@ namespace Neo.Plugins.RpcServer
     public class RpcException : Exception
     {
         private readonly RpcError _rpcError;
+
         public RpcException(RpcError error) : base(error.ErrorMessage)
         {
             HResult = error.Code;
