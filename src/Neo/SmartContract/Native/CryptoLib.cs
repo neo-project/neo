@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(Hardfork.HF_Aspidochelone, CpuFee = 1 << 10)]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 10)]
         public static ECPoint[] ECrecover(byte[] message, byte[] signature, NamedCurveHash curveHash)
         {
             try
