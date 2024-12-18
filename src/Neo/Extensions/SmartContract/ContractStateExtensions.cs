@@ -73,7 +73,7 @@ namespace Neo.Extensions.SmartContract
         /// <param name="contractId">Id of the contract.</param>
         /// <param name="seekDirection"></param>
         /// <returns>All storage of the given contract.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindContractStorage(this ContractManagement contractManagement, DataCache snapshot, int contractId, byte[] prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
         {
             if (snapshot is null)
