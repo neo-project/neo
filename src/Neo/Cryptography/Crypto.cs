@@ -10,10 +10,13 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Utilities.Encoders;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -24,21 +27,18 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Crypto
     {
+        /// <summary>
+        /// 64 bytes ECDSA signature + 1 byte recovery id
+        /// </summary>
+        private const int RecuperableSignatureLength = 64 + 1;
+        /// <summary>
+        /// 64 bytes ECDSA signature
+        /// </summary>
+        private const int SignatureLength = 64;
+        private static readonly BigInteger s_prime = new(1, Hex.Decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"));
         private static readonly ECDsaCache CacheECDsa = new();
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         private static readonly ECCurve secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
-        private static readonly X9ECParameters bouncySecp256k1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
-        private static readonly X9ECParameters bouncySecp256r1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
-
-        /// <summary>
-        /// Holds domain parameters for Secp256r1 elliptic curve.
-        /// </summary>
-        private static readonly ECDomainParameters secp256r1DomainParams = new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H);
-
-        /// <summary>
-        /// Holds domain parameters for Secp256k1 elliptic curve.
-        /// </summary>
-        private static readonly ECDomainParameters secp256k1DomainParams = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
 
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
@@ -72,13 +72,9 @@ namespace Neo.Cryptography
         {
             if (hasher == Hasher.Keccak256 || (IsOSX && ecCurve == ECC.ECCurve.Secp256k1))
             {
-                var domain =
-                    ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? secp256r1DomainParams :
-                    ecCurve == ECC.ECCurve.Secp256k1 ? secp256k1DomainParams :
-                    throw new NotSupportedException(nameof(ecCurve));
                 var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
                 var privateKey = new BigInteger(1, priKey);
-                var priKeyParameters = new ECPrivateKeyParameters(privateKey, domain);
+                var priKeyParameters = new ECPrivateKeyParameters(privateKey, ecCurve.BouncyCastleDomainParams);
                 signer.Init(true, priKeyParameters);
                 var messageHash =
                     hasher == Hasher.SHA256 ? message.Sha256() :
@@ -113,6 +109,107 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// ECRecover
+        /// </summary>
+        /// <param name="curve">Curve</param>
+        /// <param name="signature">Signature</param>
+        /// <param name="hash">Message hash</param>
+        /// <param name="format">Signature format</param>
+        /// <returns>Allowed Public keys</returns>
+        public static ECC.ECPoint[] ECRecover(ECC.ECCurve curve, byte[] signature, byte[] hash, SignatureFormat format = SignatureFormat.Der)
+        {
+            BigInteger r, s;
+            int recId = 0, recIdTo = 4;
+
+            // Decode signature
+
+            switch (format)
+            {
+                case SignatureFormat.Der:
+                    {
+                        var derSequence = (DerSequence)Asn1Object.FromByteArray(signature);
+                        r = ((DerInteger)derSequence[0]).Value;
+                        s = ((DerInteger)derSequence[1]).Value;
+
+                        if (derSequence.Count == 3)
+                        {
+                            recId = ((DerInteger)derSequence[2]).IntValueExact;
+                            recIdTo = recId + 1;
+                        }
+                        break;
+                    }
+                case SignatureFormat.Fixed32:
+                    {
+                        r = new(1, signature, 0, 32);
+                        s = new(1, signature, 32, 32);
+
+                        if (signature.Length == RecuperableSignatureLength)
+                        {
+                            recId = signature[SignatureLength];
+                            recIdTo = recId + 1;
+                        }
+                        break;
+                    }
+                default: throw new InvalidOperationException("Invalid signature format");
+            }
+
+            // Validate values
+
+            if (recId < 0 || recId >= 4) throw new ArgumentException("v should be positive less than 4");
+            if (r.SignValue < 0) throw new ArgumentException("r should be positive");
+            if (s.SignValue < 0) throw new ArgumentException("s should be positive");
+
+            // Precompute variables
+
+            var n = curve.BouncyCastleCurve.N;
+            var e = new BigInteger(1, hash);
+            var eInv = BigInteger.Zero.Subtract(e).Mod(n);
+            var rInv = r.ModInverse(n);
+            var srInv = rInv.Multiply(s).Mod(n);
+            var eInvrInv = rInv.Multiply(eInv).Mod(n);
+
+            // Do the work
+
+            var recovered = new List<ECC.ECPoint>();
+
+            for (; recId < recIdTo; ++recId)
+            {
+                var i = BigInteger.ValueOf((long)recId / 2);
+                var x = r.Add(i.Multiply(n));
+
+                if (x.CompareTo(s_prime) >= 0)
+                {
+                    continue;
+                }
+
+                var decompressedRKey = DecompressKey(curve.BouncyCastleCurve.Curve, x, (recId & 1) == 1);
+                if (!decompressedRKey.Multiply(n).IsInfinity)
+                {
+                    continue;
+                }
+
+                var q = Org.BouncyCastle.Math.EC.ECAlgorithms.SumOfTwoMultiplies(curve.BouncyCastleCurve.G, eInvrInv, decompressedRKey, srInv);
+                recovered.Add(ECC.ECPoint.FromBytes(q.Normalize().GetEncoded(false), curve));
+            }
+
+            return [.. recovered];
+        }
+
+        /// <summary>
+        /// Decompress key
+        /// </summary>
+        /// <param name="curve">ECC curve</param>
+        /// <param name="xBN">xBN</param>
+        /// <param name="yBit">yBit</param>
+        /// <returns>ECPoint</returns>
+        private static Org.BouncyCastle.Math.EC.ECPoint DecompressKey(Org.BouncyCastle.Math.EC.ECCurve curve, BigInteger xBN, bool yBit)
+        {
+            var compEnc = X9IntegerConverter.IntegerToBytes(xBN, 1 + X9IntegerConverter.GetByteLength(curve));
+            compEnc[0] = (byte)(yBit ? 0x03 : 0x02);
+            return curve.DecodePoint(compEnc);
+        }
+
+        /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key, message and hash algorithm.
         /// </summary>
         /// <param name="message">The signed message.</param>
@@ -126,18 +223,10 @@ namespace Neo.Cryptography
 
             if (hasher == Hasher.Keccak256 || (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
-                var domain =
-                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? secp256r1DomainParams :
-                    pubkey.Curve == ECC.ECCurve.Secp256k1 ? secp256k1DomainParams :
-                    throw new NotSupportedException(nameof(pubkey.Curve));
-                var curve =
-                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? bouncySecp256r1.Curve :
-                    bouncySecp256k1.Curve;
-
-                var point = curve.CreatePoint(
+                var point = pubkey.Curve.BouncyCastleCurve.Curve.CreatePoint(
                     new BigInteger(pubkey.X.Value.ToString()),
                     new BigInteger(pubkey.Y.Value.ToString()));
-                var pubKey = new ECPublicKeyParameters("ECDSA", point, domain);
+                var pubKey = new ECPublicKeyParameters("ECDSA", point, pubkey.Curve.BouncyCastleDomainParams);
                 var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
                 signer.Init(false, pubKey);
 

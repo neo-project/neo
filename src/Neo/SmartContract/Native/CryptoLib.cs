@@ -81,6 +81,49 @@ namespace Neo.SmartContract.Native
         /// Verifies that a digital signature is appropriate for the provided key and message using the ECDSA algorithm.
         /// </summary>
         /// <param name="message">The signed message.</param>
+        /// <param name="signature">The signature to be verified.</param>
+        /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
+        /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
+        [ContractMethod(Hardfork.HF_Aspidochelone, CpuFee = 1 << 10)]
+        public static ECPoint[] ECrecover(byte[] message, byte[] signature, NamedCurveHash curveHash)
+        {
+            try
+            {
+                var ch = s_curves[curveHash];
+                var messageHash =
+                   ch.Hasher == Hasher.SHA256 ? message.Sha256() :
+                   ch.Hasher == Hasher.Keccak256 ? message.Keccak256() :
+                   throw new NotSupportedException(nameof(ch.Hasher));
+
+                switch (curveHash)
+                {
+                    case NamedCurveHash.secp256k1Keccak256:
+                    case NamedCurveHash.secp256k1SHA256:
+                        {
+                            return Crypto.ECRecover(ECCurve.Secp256k1, signature, messageHash,
+                                // TODO: only accept 65?
+                                signature.Length == 64 ? SignatureFormat.Fixed32 : SignatureFormat.Der);
+                        }
+
+                    // TODO: Not tested, check if it works
+                    case NamedCurveHash.secp256r1Keccak256:
+                    case NamedCurveHash.secp256r1SHA256:
+                        {
+                            return Crypto.ECRecover(ECCurve.Secp256r1, signature, messageHash,
+                                // TODO: only accept 65?
+                                signature.Length == 64 ? SignatureFormat.Fixed32 : SignatureFormat.Der);
+                        }
+                }
+            }
+            catch { }
+
+            throw new NotSupportedException(nameof(curveHash));
+        }
+
+        /// <summary>
+        /// Verifies that a digital signature is appropriate for the provided key and message using the ECDSA algorithm.
+        /// </summary>
+        /// <param name="message">The signed message.</param>
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
