@@ -102,7 +102,7 @@ namespace Neo.SmartContract.Native
                         {
                             return Crypto.ECRecover(ECCurve.Secp256k1, signature, messageHash,
                                 // TODO: only accept 65?
-                                signature.Length == 64 ? SignatureFormat.Fixed32 : SignatureFormat.Der);
+                                signature.Length == 64 || signature.Length == 65 ? SignatureFormat.Fixed32 : SignatureFormat.Der);
                         }
 
                     // TODO: Not tested, check if it works
@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Native
                         {
                             return Crypto.ECRecover(ECCurve.Secp256r1, signature, messageHash,
                                 // TODO: only accept 65?
-                                signature.Length == 64 ? SignatureFormat.Fixed32 : SignatureFormat.Der);
+                                signature.Length == 64 || signature.Length == 65 ? SignatureFormat.Fixed32 : SignatureFormat.Der);
                         }
                 }
             }
