@@ -26,7 +26,7 @@ namespace Neo.Extensions.SmartContract
         /// <param name="snapshot">Snapshot of the database.</param>
         /// <param name="storageKey">Key in the storage map.</param>
         /// <returns>Storage value of the item.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
         public static StorageItem GetStorage(this ContractState contractState, DataCache snapshot, byte[] storageKey)
         {
             if (contractState is null)
