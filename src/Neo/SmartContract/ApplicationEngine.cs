@@ -408,6 +408,7 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
+            if (settings == null) settings = ProtocolSettings.Default;
             var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
 
             // Adjust jump table according persistingBlock
