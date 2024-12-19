@@ -15,7 +15,7 @@ using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 
-namespace Neo.Extensions.SmartContract
+namespace Neo.Extensions
 {
     public static class ContractStateExtensions
     {
