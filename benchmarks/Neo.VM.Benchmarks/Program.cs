@@ -59,7 +59,6 @@ else
     }
 
     var methods = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-
     foreach (var method in methods)
     {
         if (method.DeclaringType == benchmarkType && !method.GetCustomAttributes<GlobalSetupAttribute>().Any())
