@@ -197,7 +197,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
-            if (Settings.Current.AutoStart == false)
+            if (!Settings.Current.AutoStart)
                 return;
 
             if (NeoStore is null)
@@ -218,7 +218,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            if (Settings.Current.AutoStart == false)
+            if (!Settings.Current.AutoStart)
                 return;
             if (NeoStore is null)
                 return;
@@ -230,7 +230,7 @@ namespace Neo.Plugins.ApplicationLogs
             if (Settings.Current.AutoStart == false)
                 return;
 
-            if (Settings.Current.Debug == false)
+            if (!Settings.Current.Debug)
                 return;
 
             if (e.ScriptContainer == null)
