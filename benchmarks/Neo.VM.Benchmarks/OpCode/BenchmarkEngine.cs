@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Test.Types;
+using Neo.VM.Types;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -18,11 +18,13 @@ namespace Neo.VM.Benchmark.OpCode
     /// <summary>
     /// A simple benchmark engine for <see cref="ExecutionEngine"/>.
     /// </summary>
-    public class BenchmarkEngine : TestEngine
+    public class BenchmarkEngine : ExecutionEngine
     {
         private readonly Dictionary<VM.OpCode, (int Count, TimeSpan TotalTime)> _opcodeStats = new();
         private readonly Dictionary<Script, HashSet<uint>> _breakPoints = new();
         private long _gasConsumed = 0;
+
+        public BenchmarkEngine() : base(ComposeJumpTable()) { }
 
         /// <summary>
         /// Add a breakpoint at the specified position of the specified script. The VM will break the execution when it reaches the breakpoint.
@@ -186,6 +188,24 @@ namespace Neo.VM.Benchmark.OpCode
                                   $"Total Time: {kvp.Value.TotalTime.TotalMilliseconds * 1000,10:F2} μs " +
                                   $"Avg Time: {kvp.Value.TotalTime.TotalMilliseconds * 1000 / kvp.Value.Count,10:F2} μs");
             }
+        }
+
+        private static JumpTable ComposeJumpTable()
+        {
+            JumpTable jumpTable = new JumpTable();
+            jumpTable[VM.OpCode.SYSCALL] = OnSysCall;
+            return jumpTable;
+        }
+
+        private static void OnSysCall(ExecutionEngine engine, VM.Instruction instruction)
+        {
+            uint method = instruction.TokenU32;
+            if (method == 0x77777777)
+                engine.CurrentContext!.EvaluationStack.Push(StackItem.FromInterface(new object()));
+            else if (method == 0xaddeadde)
+                engine.JumpTable.ExecuteThrow(engine, "error");
+            else
+                throw new Exception();
         }
     }
 }
