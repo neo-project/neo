@@ -408,12 +408,11 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+            var index = persistingBlock?.Index ?? (snapshot == null ? 0 : NativeContract.Ledger.CurrentIndex(snapshot));
 
             // Adjust jump table according persistingBlock
 
-            var jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
-
+            var jumpTable = settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
