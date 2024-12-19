@@ -35,6 +35,7 @@ namespace Neo.SmartContract
     public partial class ApplicationEngine : ExecutionEngine
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+        protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -213,6 +214,13 @@ namespace Neo.SmartContract
             table[OpCode.CALLT] = OnCallT;
 
             return table;
+        }
+
+        public static JumpTable ComposeNotEchidnaJumpTable()
+        {
+            var jumpTable = ComposeDefaultJumpTable();
+            jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
+            return jumpTable;
         }
 
         protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
@@ -400,11 +408,39 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            // Adjust jump table according persistingBlock
-            var jumpTable = ApplicationEngine.DefaultJumpTable;
+            var index = persistingBlock?.Index ?? (snapshot == null ? 0 : NativeContract.Ledger.CurrentIndex(snapshot));
 
+            // Adjust jump table according persistingBlock
+
+            var jumpTable = settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+        }
+
+        /// <summary>
+        /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
+        /// <see cref="OpCode.SUBSTR"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 3, Push 1</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
+        {
+            var count = (int)engine.Pop().GetInteger();
+            if (count < 0)
+                throw new InvalidOperationException($"The count can not be negative for {nameof(OpCode.SUBSTR)}, count: {count}.");
+            var index = (int)engine.Pop().GetInteger();
+            if (index < 0)
+                throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
+            var x = engine.Pop().GetSpan();
+            // Note: here it's the main change
+            if (index + count > x.Length)
+                throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
+
+            VM.Types.Buffer result = new(count, false);
+            x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
+            engine.Push(result);
         }
 
         public override void LoadContext(ExecutionContext context)
