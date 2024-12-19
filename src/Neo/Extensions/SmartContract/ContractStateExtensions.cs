@@ -82,7 +82,7 @@ namespace Neo.Extensions.SmartContract
             if (prefix is null)
                 prefix = [];
 
-            return snapshot.Find(StorageKey.CreateSearchPrefix(contractId, []), seekDirection);
+            return snapshot.Find(StorageKey.CreateSearchPrefix(contractId, prefix), seekDirection);
         }
     }
 }
