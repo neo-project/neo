@@ -94,6 +94,12 @@ namespace Neo.UnitTests.Cryptography
 
             Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1)
                 .Should().BeTrue();
+
+            var messageHash = message.Sha256();
+            var recover = Crypto.ECRecover(Neo.Cryptography.ECC.ECCurve.Secp256k1, signature, messageHash, SignatureFormat.Fixed32);
+
+            recover.Length.Should().Be(2);
+            recover[0].ToArray().Should().BeEquivalentTo(pubKey);
         }
     }
 }
