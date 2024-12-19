@@ -26,7 +26,7 @@ namespace Neo.Extensions.SmartContract
         /// <param name="snapshot">Snapshot of the database.</param>
         /// <param name="storageKey">Key in the storage map.</param>
         /// <returns>Storage value of the item.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
         public static StorageItem GetStorage(this ContractState contractState, DataCache snapshot, byte[] storageKey)
         {
             if (contractState is null)
@@ -49,7 +49,7 @@ namespace Neo.Extensions.SmartContract
         /// <param name="prefix">Prefix of the key.</param>
         /// <param name="seekDirection"></param>
         /// <returns>All storage of the given contract.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="contractState"/> or <paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindStorage(this ContractState contractState, DataCache snapshot, byte[] prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
         {
             if (contractState is null)
@@ -73,7 +73,7 @@ namespace Neo.Extensions.SmartContract
         /// <param name="contractId">Id of the contract.</param>
         /// <param name="seekDirection"></param>
         /// <returns>All storage of the given contract.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="snapshot"/> is null</exception>
         public static IEnumerable<(StorageKey Key, StorageItem Value)> FindContractStorage(this ContractManagement contractManagement, DataCache snapshot, int contractId, byte[] prefix = null, SeekDirection seekDirection = SeekDirection.Forward)
         {
             if (snapshot is null)
