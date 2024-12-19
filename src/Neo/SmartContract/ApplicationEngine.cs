@@ -412,15 +412,7 @@ namespace Neo.SmartContract
 
             // Adjust jump table according persistingBlock
 
-            JumpTable jumpTable;
-            if (settings != null)
-            {
-                jumpTable = settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
-            }
-            else
-            {
-                jumpTable = DefaultJumpTable;
-            }
+            var jumpTable = settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
