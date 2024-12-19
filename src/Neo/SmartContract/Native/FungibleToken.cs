@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The prefix for storing account states.
         /// </summary>
-        protected const byte Prefix_Account = 20;
+        protected internal const byte Prefix_Account = 20;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.

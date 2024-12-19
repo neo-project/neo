@@ -77,12 +77,14 @@ namespace Neo.VM.Types
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
             if (Size > Integer.MaxSize) throw new InvalidCastException();
             return GetSpan().NotZero();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override BigInteger GetInteger()
         {
             if (Size > Integer.MaxSize) throw new InvalidCastException($"Can not convert {nameof(ByteString)} to an integer, MaxSize of {nameof(Types.Integer)} is exceeded: {Size}/{Integer.MaxSize}.");

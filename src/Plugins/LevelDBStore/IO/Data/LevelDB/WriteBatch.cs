@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// WriteBatch holds a collection of updates to apply atomically to a DB.
@@ -25,21 +25,16 @@ namespace Neo.IO.Data.LevelDB
     ///    batch.Put("key", "v2");
     ///    batch.Put("key", "v3");
     /// </summary>
-    public class WriteBatch
+    public class WriteBatch : LevelDBHandle
     {
-        internal readonly IntPtr handle = Native.leveldb_writebatch_create();
-
-        ~WriteBatch()
-        {
-            Native.leveldb_writebatch_destroy(handle);
-        }
+        public WriteBatch() : base(Native.leveldb_writebatch_create()) { }
 
         /// <summary>
         /// Clear all updates buffered in this batch.
         /// </summary>
         public void Clear()
         {
-            Native.leveldb_writebatch_clear(handle);
+            Native.leveldb_writebatch_clear(Handle);
         }
 
         /// <summary>
@@ -47,7 +42,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Put(byte[] key, byte[] value)
         {
-            Native.leveldb_writebatch_put(handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length);
+            Native.leveldb_writebatch_put(Handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length);
         }
 
         /// <summary>
@@ -56,7 +51,12 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Delete(byte[] key)
         {
-            Native.leveldb_writebatch_delete(handle, key, (UIntPtr)key.Length);
+            Native.leveldb_writebatch_delete(Handle, key, (UIntPtr)key.Length);
+        }
+
+        protected override void FreeUnManagedObjects()
+        {
+            Native.leveldb_writebatch_destroy(Handle);
         }
     }
 }

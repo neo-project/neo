@@ -9,17 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// Options that control read operations.
     /// </summary>
-    public class ReadOptions
+    public class ReadOptions : LevelDBHandle
     {
-        public static readonly ReadOptions Default = new ReadOptions();
-        internal readonly IntPtr handle = Native.leveldb_readoptions_create();
+        public static readonly ReadOptions Default = new();
+
+        public ReadOptions() : base(Native.leveldb_readoptions_create()) { }
 
         /// <summary>
         /// If true, all data read from underlying storage will be
@@ -27,7 +26,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public bool VerifyChecksums
         {
-            set { Native.leveldb_readoptions_set_verify_checksums(handle, value); }
+            set { Native.leveldb_readoptions_set_verify_checksums(Handle, value); }
         }
 
         /// <summary>
@@ -37,7 +36,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public bool FillCache
         {
-            set { Native.leveldb_readoptions_set_fill_cache(handle, value); }
+            set { Native.leveldb_readoptions_set_fill_cache(Handle, value); }
         }
 
         /// <summary>
@@ -49,12 +48,12 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public Snapshot Snapshot
         {
-            set { Native.leveldb_readoptions_set_snapshot(handle, value.handle); }
+            set { Native.leveldb_readoptions_set_snapshot(Handle, value.Handle); }
         }
 
-        ~ReadOptions()
+        protected override void FreeUnManagedObjects()
         {
-            Native.leveldb_readoptions_destroy(handle);
+            Native.leveldb_readoptions_destroy(Handle);
         }
     }
 }

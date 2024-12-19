@@ -9,35 +9,28 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+#nullable enable
+
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// A DB is a persistent ordered map from keys to values.
     /// A DB is safe for concurrent access from multiple threads without any external synchronization.
+    /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
     /// </summary>
-    public class DB : IDisposable
+    public class DB : LevelDBHandle, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        private IntPtr handle;
+        private DB(nint handle) : base(handle) { }
 
-        /// <summary>
-        /// Return true if haven't got valid handle
-        /// </summary>
-        public bool IsDisposed => handle == IntPtr.Zero;
-
-        private DB(IntPtr handle)
+        protected override void FreeUnManagedObjects()
         {
-            this.handle = handle;
-        }
-
-        public void Dispose()
-        {
-            if (handle != IntPtr.Zero)
+            if (Handle != nint.Zero)
             {
-                Native.leveldb_close(handle);
-                handle = IntPtr.Zero;
+                Native.leveldb_close(Handle);
             }
         }
 
@@ -48,7 +41,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Delete(WriteOptions options, byte[] key)
         {
-            Native.leveldb_delete(handle, options.handle, key, (UIntPtr)key.Length, out IntPtr error);
+            Native.leveldb_delete(Handle, options.Handle, key, (nuint)key.Length, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -58,7 +51,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public byte[] Get(ReadOptions options, byte[] key)
         {
-            IntPtr value = Native.leveldb_get(handle, options.handle, key, (UIntPtr)key.Length, out UIntPtr length, out IntPtr error);
+            var value = Native.leveldb_get(Handle, options.Handle, key, (nuint)key.Length, out var length, out var error);
             try
             {
                 NativeHelper.CheckError(error);
@@ -66,16 +59,16 @@ namespace Neo.IO.Data.LevelDB
             }
             finally
             {
-                if (value != IntPtr.Zero) Native.leveldb_free(value);
+                if (value != nint.Zero) Native.leveldb_free(value);
             }
         }
 
         public bool Contains(ReadOptions options, byte[] key)
         {
-            IntPtr value = Native.leveldb_get(handle, options.handle, key, (UIntPtr)key.Length, out _, out IntPtr error);
+            var value = Native.leveldb_get(Handle, options.Handle, key, (nuint)key.Length, out _, out var error);
             NativeHelper.CheckError(error);
 
-            if (value != IntPtr.Zero)
+            if (value != nint.Zero)
             {
                 Native.leveldb_free(value);
                 return true;
@@ -84,14 +77,14 @@ namespace Neo.IO.Data.LevelDB
             return false;
         }
 
-        public Snapshot GetSnapshot()
+        public Snapshot CreateSnapshot()
         {
-            return new Snapshot(handle);
+            return new Snapshot(Handle);
         }
 
-        public Iterator NewIterator(ReadOptions options)
+        public Iterator CreateIterator(ReadOptions options)
         {
-            return new Iterator(Native.leveldb_create_iterator(handle, options.handle));
+            return new Iterator(Native.leveldb_create_iterator(Handle, options.Handle));
         }
 
         public static DB Open(string name)
@@ -101,7 +94,7 @@ namespace Neo.IO.Data.LevelDB
 
         public static DB Open(string name, Options options)
         {
-            IntPtr handle = Native.leveldb_open(options.handle, Path.GetFullPath(name), out IntPtr error);
+            var handle = Native.leveldb_open(options.Handle, Path.GetFullPath(name), out var error);
             NativeHelper.CheckError(error);
             return new DB(handle);
         }
@@ -112,7 +105,7 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public void Put(WriteOptions options, byte[] key, byte[] value)
         {
-            Native.leveldb_put(handle, options.handle, key, (UIntPtr)key.Length, value, (UIntPtr)value.Length, out IntPtr error);
+            Native.leveldb_put(Handle, options.Handle, key, (nuint)key.Length, value, (nuint)value.Length, out var error);
             NativeHelper.CheckError(error);
         }
 
@@ -124,14 +117,24 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public static void Repair(string name, Options options)
         {
-            Native.leveldb_repair_db(options.handle, Path.GetFullPath(name), out IntPtr error);
+            Native.leveldb_repair_db(options.Handle, Path.GetFullPath(name), out var error);
             NativeHelper.CheckError(error);
         }
 
         public void Write(WriteOptions options, WriteBatch write_batch)
         {
-            Native.leveldb_write(handle, options.handle, write_batch.handle, out IntPtr error);
+            Native.leveldb_write(Handle, options.Handle, write_batch.Handle, out var error);
             NativeHelper.CheckError(error);
         }
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        {
+            using var iterator = CreateIterator(ReadOptions.Default);
+            for (iterator.SeekToFirst(); iterator.Valid(); iterator.Next())
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

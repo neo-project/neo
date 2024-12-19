@@ -38,6 +38,7 @@ namespace Neo.Persistence
             return innerCache.Contains(key);
         }
 
+        /// <inheritdoc/>
         protected override StorageItem GetInternal(StorageKey key)
         {
             return innerCache[key].Clone();

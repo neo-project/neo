@@ -12,6 +12,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Types
 {
@@ -29,6 +30,7 @@ namespace Neo.VM.Types
         /// <returns>The item at the specified index.</returns>
         public StackItem this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _array[index];
             set
             {

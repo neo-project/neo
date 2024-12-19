@@ -55,6 +55,9 @@ namespace Neo.SmartContract.Native
         private const byte CommitteeRewardRatio = 10;
         private const byte VoterRewardRatio = 80;
 
+        private readonly StorageKey _votersCount;
+        private readonly StorageKey _registerPrice;
+
         [ContractEvent(1, name: "CandidateStateChanged",
            "pubkey", ContractParameterType.PublicKey,
            "registered", ContractParameterType.Boolean,
@@ -70,6 +73,8 @@ namespace Neo.SmartContract.Native
         internal NeoToken() : base()
         {
             TotalAmount = 100000000 * Factor;
+            _votersCount = CreateStorageKey(Prefix_VotersCount);
+            _registerPrice = CreateStorageKey(Prefix_RegisterPrice);
         }
 
         public override BigInteger TotalSupply(DataCache snapshot)
@@ -87,7 +92,7 @@ namespace Neo.SmartContract.Native
             }
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
-            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
+            engine.SnapshotCache.GetAndChange(_votersCount).Add(amount);
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state.VoteTo);
             CandidateState candidate = engine.SnapshotCache.GetAndChange(key).GetInteroperable<CandidateState>();
             candidate.Votes += amount;
@@ -186,9 +191,9 @@ namespace Neo.SmartContract.Native
             {
                 var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
-                engine.SnapshotCache.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
+                engine.SnapshotCache.Add(_votersCount, new StorageItem(System.Array.Empty<byte>()));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
-                engine.SnapshotCache.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
+                engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
             }
             return ContractTask.CompletedTask;
@@ -288,7 +293,7 @@ namespace Neo.SmartContract.Native
             if (registerPrice <= 0)
                 throw new ArgumentOutOfRangeException(nameof(registerPrice));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RegisterPrice)).Set(registerPrice);
+            engine.SnapshotCache.GetAndChange(_registerPrice).Set(registerPrice);
         }
 
         /// <summary>
@@ -300,7 +305,7 @@ namespace Neo.SmartContract.Native
         public long GetRegisterPrice(DataCache snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_RegisterPrice)];
+            return (long)(BigInteger)snapshot[_registerPrice];
         }
 
         private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
@@ -327,7 +332,8 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -344,7 +350,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -361,7 +368,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
@@ -377,7 +385,7 @@ namespace Neo.SmartContract.Native
             }
             if (state_account.VoteTo is null ^ voteTo is null)
             {
-                StorageItem item = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_VotersCount));
+                StorageItem item = engine.SnapshotCache.GetAndChange(_votersCount);
                 if (state_account.VoteTo is null)
                     item.Add(state_account.Balance);
                 else
@@ -521,7 +529,7 @@ namespace Neo.SmartContract.Native
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
         {
-            decimal votersCount = (decimal)(BigInteger)snapshot[CreateStorageKey(Prefix_VotersCount)];
+            decimal votersCount = (decimal)(BigInteger)snapshot[_votersCount];
             decimal voterTurnout = votersCount / (decimal)TotalAmount;
             var candidates = GetCandidatesInternal(snapshot)
                 .Select(p => (p.PublicKey, p.State.Votes))

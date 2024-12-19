@@ -9,19 +9,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
-namespace Neo.IO.Data.LevelDB
+namespace Neo.IO.Storage.LevelDB
 {
     /// <summary>
     /// Options that control write operations.
     /// </summary>
-    public class WriteOptions
+    public class WriteOptions : LevelDBHandle
     {
         public static readonly WriteOptions Default = new();
         public static readonly WriteOptions SyncWrite = new() { Sync = true };
 
-        internal readonly IntPtr handle = Native.leveldb_writeoptions_create();
+        public WriteOptions() : base(Native.leveldb_writeoptions_create()) { }
 
         /// <summary>
         /// If true, the write will be flushed from the operating system
@@ -41,12 +39,12 @@ namespace Neo.IO.Data.LevelDB
         /// </summary>
         public bool Sync
         {
-            set { Native.leveldb_writeoptions_set_sync(handle, value); }
+            set { Native.leveldb_writeoptions_set_sync(Handle, value); }
         }
 
-        ~WriteOptions()
+        protected override void FreeUnManagedObjects()
         {
-            Native.leveldb_writeoptions_destroy(handle);
+            Native.leveldb_writeoptions_destroy(Handle);
         }
     }
 }

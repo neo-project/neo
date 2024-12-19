@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -63,7 +64,6 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestInvokeFunction()
         {
             _rpcServer.wallet = _wallet;
-
             JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "totalSupply", new JArray([]), validatorSigner, true));
             Assert.AreEqual(resp.Count, 8);
             Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
@@ -112,6 +112,29 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(notifications[1]["eventname"].AsString(), "Transfer");
             Assert.AreEqual(notifications[1]["contract"].AsString(), GasToken.GAS.Hash.ToString());
             Assert.AreEqual(notifications[1]["state"]["value"][2]["value"], "50000000");
+
+            _rpcServer.wallet = null;
+        }
+
+        [TestMethod]
+        public void TestInvokeFunctionInvalid()
+        {
+            _rpcServer.wallet = _wallet;
+
+            HttpContext context = new DefaultHttpContext();
+
+            var json = new JObject();
+            json["id"] = 1;
+            json["jsonrpc"] = "2.0";
+            json["method"] = "invokefunction";
+            json["params"] = new JArray("0", "totalSupply", new JArray([]), validatorSigner, true);
+
+            var resp = _rpcServer.ProcessRequestAsync(context, json).GetAwaiter().GetResult();
+
+            Console.WriteLine(resp);
+            Assert.AreEqual(resp.Count, 3);
+            Assert.IsNotNull(resp["error"]);
+            Assert.AreEqual(resp["error"]["code"], -32602);
 
             _rpcServer.wallet = null;
         }
