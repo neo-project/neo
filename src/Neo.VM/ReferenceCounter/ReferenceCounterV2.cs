@@ -92,7 +92,7 @@ namespace Neo.VM
 
             if (item is CompoundType compoundType)
             {
-                // Increment the item's stack references by the specified count.
+                // Decrease the item's stack references.
                 compoundType.StackReferences--;
 
                 if (compoundType.StackReferences < 0)
