@@ -325,7 +325,11 @@ namespace Neo.SmartContract
             state.CallingContext = currentContext;
 
             for (int i = args.Count - 1; i >= 0; i--)
+            {
+                if (!CheckItemType(args[i], method.Parameters[i].Type))
+                    throw new InvalidOperationException($"The type of the argument `{args[i]}` does not match the formal parameter.");
                 context_new.EvaluationStack.Push(args[i]);
+            }
 
             return context_new;
         }
