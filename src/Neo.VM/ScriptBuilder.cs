@@ -104,7 +104,8 @@ namespace Neo.VM
                 <= 4 => Emit(OpCode.PUSHINT32, PadRight(buffer, bytesWritten, 4, value.Sign < 0)),
                 <= 8 => Emit(OpCode.PUSHINT64, PadRight(buffer, bytesWritten, 8, value.Sign < 0)),
                 <= 16 => Emit(OpCode.PUSHINT128, PadRight(buffer, bytesWritten, 16, value.Sign < 0)),
-                _ => Emit(OpCode.PUSHINT256, PadRight(buffer, bytesWritten, 32, value.Sign < 0)),
+                <= 32 => Emit(OpCode.PUSHINT256, PadRight(buffer, bytesWritten, 32, value.Sign < 0)),
+                _ => throw new ArgumentOutOfRangeException(nameof(value), "Invalid value: BigInteger is too large"),
             };
         }
 
@@ -125,8 +126,6 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(ReadOnlySpan<byte> data)
         {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data));
             if (data.Length < 0x100)
             {
                 Emit(OpCode.PUSHDATA1);

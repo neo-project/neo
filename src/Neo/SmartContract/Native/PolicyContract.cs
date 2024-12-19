@@ -65,15 +65,25 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
 
-        internal PolicyContract() : base() { }
+        private readonly StorageKey _feePerByte;
+        private readonly StorageKey _execFeeFactor;
+        private readonly StorageKey _storagePrice;
+
+
+        internal PolicyContract() : base()
+        {
+            _feePerByte = CreateStorageKey(Prefix_FeePerByte);
+            _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
+            _storagePrice = CreateStorageKey(Prefix_StoragePrice);
+        }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
             {
-                engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
-                engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
-                engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+                engine.SnapshotCache.Add(_feePerByte, new StorageItem(DefaultFeePerByte));
+                engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
+                engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
             }
             return ContractTask.CompletedTask;
         }
@@ -86,7 +96,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetFeePerByte(DataCache snapshot)
         {
-            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_FeePerByte)];
+            return (long)(BigInteger)snapshot[_feePerByte];
         }
 
         /// <summary>
@@ -97,7 +107,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetExecFeeFactor(DataCache snapshot)
         {
-            return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_ExecFeeFactor)];
+            return (uint)(BigInteger)snapshot[_execFeeFactor];
         }
 
         /// <summary>
@@ -108,7 +118,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetStoragePrice(DataCache snapshot)
         {
-            return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_StoragePrice)];
+            return (uint)(BigInteger)snapshot[_storagePrice];
         }
 
         /// <summary>
@@ -146,7 +156,7 @@ namespace Neo.SmartContract.Native
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -154,7 +164,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_FeePerByte)).Set(value);
+            engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -162,7 +172,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor)).Set(value);
+            engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -170,14 +180,14 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_StoragePrice)).Set(value);
+            engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            return BlockAccount(engine.Snapshot, account);
+            return BlockAccount(engine.SnapshotCache, account);
         }
 
         internal bool BlockAccount(DataCache snapshot, UInt160 account)
@@ -197,9 +207,9 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
-            if (!engine.Snapshot.Contains(key)) return false;
+            if (!engine.SnapshotCache.Contains(key)) return false;
 
-            engine.Snapshot.Delete(key);
+            engine.SnapshotCache.Delete(key);
             return true;
         }
     }

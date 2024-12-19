@@ -12,8 +12,8 @@
 using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.MPTTrie;
+using Neo.Extensions;
 using Neo.IEventHandlers;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -40,6 +40,8 @@ namespace Neo.Plugins.StateService
         public override string Name => "StateService";
         public override string Description => "Enables MPT for the node";
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "StateService.json");
+
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
 
         internal IActorRef Store;
         internal IActorRef Verifier;

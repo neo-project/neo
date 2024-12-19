@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Extensions;
 using Neo.IEventHandlers;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -30,7 +30,7 @@ namespace Neo.Plugins.StorageDumper
         /// </summary>
         private JObject? _currentBlock;
         private string? _lastCreateDirectory;
-
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
         public override string Description => "Exports Neo-CLI status data";
 

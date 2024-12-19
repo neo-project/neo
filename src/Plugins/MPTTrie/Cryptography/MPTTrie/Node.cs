@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.IO;
@@ -31,11 +32,11 @@ namespace Neo.Cryptography.MPTTrie
                 switch (type)
                 {
                     case NodeType.BranchNode:
-                        return size + BranchSize + IO.Helper.GetVarSize(Reference);
+                        return size + BranchSize + UnsafeData.GetVarSize(Reference);
                     case NodeType.ExtensionNode:
-                        return size + ExtensionSize + IO.Helper.GetVarSize(Reference);
+                        return size + ExtensionSize + UnsafeData.GetVarSize(Reference);
                     case NodeType.LeafNode:
-                        return size + LeafSize + IO.Helper.GetVarSize(Reference);
+                        return size + LeafSize + UnsafeData.GetVarSize(Reference);
                     case NodeType.HashNode:
                         return size + HashSize;
                     case NodeType.Empty:

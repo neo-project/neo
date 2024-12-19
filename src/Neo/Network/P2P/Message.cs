@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.IO;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Caching;
 using System;
@@ -143,7 +144,7 @@ namespace Neo.Network.P2P
                 payloadIndex += 8;
             }
 
-            if (length > PayloadMaxSize) throw new FormatException();
+            if (length > PayloadMaxSize) throw new FormatException($"Invalid payload length: {length}.");
 
             if (data.Count < (int)length + payloadIndex) return 0;
 

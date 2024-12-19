@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using Array = Neo.VM.Types.Array;
@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native
             UserData = array[6].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
             {

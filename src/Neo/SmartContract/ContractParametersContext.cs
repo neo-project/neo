@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -73,7 +74,18 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read data.
         /// </summary>
-        public readonly DataCache Snapshot;
+        [Obsolete("Use SnapshotCache instead")]
+        public DataCache Snapshot => SnapshotCache;
+
+        /// <summary>
+        /// The snapshotcache <see cref="SnapshotCache"/> used to read data.
+        /// </summary>
+        public readonly DataCache SnapshotCache;
+
+        // /// <summary>
+        // /// The snapshot used to read data.
+        // /// </summary>
+        // public readonly DataCache Snapshot;
 
         /// <summary>
         /// The magic number of the network.
@@ -99,18 +111,18 @@ namespace Neo.SmartContract
         /// <summary>
         /// Gets the script hashes to be verified for the <see cref="Verifiable"/>.
         /// </summary>
-        public IReadOnlyList<UInt160> ScriptHashes => _ScriptHashes ??= Verifiable.GetScriptHashesForVerifying(Snapshot);
+        public IReadOnlyList<UInt160> ScriptHashes => _ScriptHashes ??= Verifiable.GetScriptHashesForVerifying(SnapshotCache);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractParametersContext"/> class.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="snapshotCache">The snapshot used to read data.</param>
         /// <param name="verifiable">The <see cref="IVerifiable"/> to add witnesses.</param>
         /// <param name="network">The magic number of the network.</param>
-        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable, uint network)
+        public ContractParametersContext(DataCache snapshotCache, IVerifiable verifiable, uint network)
         {
             Verifiable = verifiable;
-            Snapshot = snapshot;
+            SnapshotCache = snapshotCache;
             ContextItems = new Dictionary<UInt160, ContextItem>();
             Network = network;
         }

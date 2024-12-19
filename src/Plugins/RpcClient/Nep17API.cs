@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract;
@@ -19,7 +20,6 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
-using static Neo.Helper;
 
 namespace Neo.Network.RPC
 {
@@ -88,10 +88,10 @@ namespace Neo.Network.RPC
         public async Task<RpcNep17TokenInfo> GetTokenInfoAsync(UInt160 scriptHash)
         {
             var contractState = await rpcClient.GetContractStateAsync(scriptHash.ToString()).ConfigureAwait(false);
-            byte[] script = Concat(
-                scriptHash.MakeScript("symbol"),
-                scriptHash.MakeScript("decimals"),
-                scriptHash.MakeScript("totalSupply"));
+            byte[] script = [
+                .. scriptHash.MakeScript("symbol"),
+                .. scriptHash.MakeScript("decimals"),
+                .. scriptHash.MakeScript("totalSupply")];
             var name = contractState.Manifest.Name;
             var result = await rpcClient.InvokeScriptAsync(script).ConfigureAwait(false);
             var stack = result.Stack;
@@ -108,10 +108,10 @@ namespace Neo.Network.RPC
         public async Task<RpcNep17TokenInfo> GetTokenInfoAsync(string contractHash)
         {
             var contractState = await rpcClient.GetContractStateAsync(contractHash).ConfigureAwait(false);
-            byte[] script = Concat(
-                contractState.Hash.MakeScript("symbol"),
-                contractState.Hash.MakeScript("decimals"),
-                contractState.Hash.MakeScript("totalSupply"));
+            byte[] script = [
+                .. contractState.Hash.MakeScript("symbol"),
+                .. contractState.Hash.MakeScript("decimals"),
+                .. contractState.Hash.MakeScript("totalSupply")];
             var name = contractState.Manifest.Name;
             var result = await rpcClient.InvokeScriptAsync(script).ConfigureAwait(false);
             var stack = result.Stack;

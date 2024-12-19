@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>Neo.Consensus.DBFT</PackageId>
     <RootNamespace>Neo.Consensus</RootNamespace>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>

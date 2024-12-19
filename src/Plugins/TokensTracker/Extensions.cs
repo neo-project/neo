@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.VM.Types;
@@ -27,19 +28,19 @@ namespace Neo.Plugins
 
         public static string ToBase64(this ReadOnlySpan<byte> item)
         {
-            return item == null ? String.Empty : Convert.ToBase64String(item);
+            return item.IsEmpty ? String.Empty : Convert.ToBase64String(item);
         }
 
         public static int GetVarSize(this ByteString item)
         {
             var length = item.GetSpan().Length;
-            return IO.Helper.GetVarSize(length) + length;
+            return UnsafeData.GetVarSize(length) + length;
         }
 
         public static int GetVarSize(this BigInteger item)
         {
             var length = item.GetByteCount();
-            return IO.Helper.GetVarSize(length) + length;
+            return UnsafeData.GetVarSize(length) + length;
         }
 
         public static IEnumerable<(TKey, TValue)> FindPrefix<TKey, TValue>(this IStore db, byte[] prefix)

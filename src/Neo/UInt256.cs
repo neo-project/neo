@@ -9,10 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Neo
@@ -98,6 +100,18 @@ namespace Neo
         public override int GetHashCode()
         {
             return (int)value1;
+        }
+
+        /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value in little-endian.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value in little-endian.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            if (BitConverter.IsLittleEndian)
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+            return this.ToArray().AsSpan(); // Keep the same output as Serialize when BigEndian
         }
 
         /// <summary>

@@ -260,8 +260,8 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
-                    signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid).Signers;
+                    OracleRequest request = NativeContract.Oracle.GetRequest(SnapshotCache, response.Id);
+                    signers = NativeContract.Ledger.GetTransaction(SnapshotCache, request.OriginalTxid).Signers;
                 }
                 Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
@@ -280,7 +280,7 @@ namespace Neo.SmartContract
             ValidateCallFlags(CallFlags.ReadStates);
 
             // only for non-Transaction types (Block, etc)
-            return ScriptContainer.GetScriptHashesForVerifying(Snapshot).Contains(hash);
+            return ScriptContainer.GetScriptHashesForVerifying(SnapshotCache).Contains(hash);
         }
 
         /// <summary>

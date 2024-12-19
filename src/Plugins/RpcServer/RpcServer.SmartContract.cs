@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -39,7 +40,7 @@ namespace Neo.Plugins.RpcServer
                 timer = new(OnTimer, null, settings.SessionExpirationTime, settings.SessionExpirationTime);
         }
 
-        private void Dispose_SmartContract()
+        internal void Dispose_SmartContract()
         {
             timer?.Dispose();
             Session[] toBeDestroyed;
@@ -52,7 +53,7 @@ namespace Neo.Plugins.RpcServer
                 session.Dispose();
         }
 
-        private void OnTimer(object state)
+        internal void OnTimer(object state)
         {
             List<(Guid Id, Session Session)> toBeDestroyed = new();
             lock (sessions)
@@ -92,7 +93,7 @@ namespace Neo.Plugins.RpcServer
                     json["diagnostics"] = new JObject()
                     {
                         ["invokedcontracts"] = ToJson(diagnostic.InvocationTree.Root),
-                        ["storagechanges"] = ToJson(session.Engine.Snapshot.GetChangeSet())
+                        ["storagechanges"] = ToJson(session.Engine.SnapshotCache.GetChangeSet())
                     };
                 }
                 var stack = new JArray();
@@ -189,7 +190,7 @@ namespace Neo.Plugins.RpcServer
 
             // Validate format
 
-            _ = IO.Helper.ToByteArray(ret).AsSerializableArray<Signer>();
+            _ = ret.ToByteArray().AsSerializableArray<Signer>();
 
             return ret;
         }
@@ -213,7 +214,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken InvokeFunction(JArray _params)
+        protected internal virtual JToken InvokeFunction(JArray _params)
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
             string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
@@ -231,7 +232,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken InvokeScript(JArray _params)
+        protected internal virtual JToken InvokeScript(JArray _params)
         {
             byte[] script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
             Signer[] signers = _params.Count >= 2 ? SignersFromJson((JArray)_params[1], system.Settings) : null;
@@ -241,7 +242,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken TraverseIterator(JArray _params)
+        protected internal virtual JToken TraverseIterator(JArray _params)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
             Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData($"Invalid session id {nameof(sid)}"));
@@ -262,7 +263,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken TerminateSession(JArray _params)
+        protected internal virtual JToken TerminateSession(JArray _params)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
             Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData("Invalid session id"));
@@ -278,7 +279,7 @@ namespace Neo.Plugins.RpcServer
         }
 
         [RpcMethod]
-        protected virtual JToken GetUnclaimedGas(JArray _params)
+        protected internal virtual JToken GetUnclaimedGas(JArray _params)
         {
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invalid address {nameof(address)}"));
             JObject json = new();

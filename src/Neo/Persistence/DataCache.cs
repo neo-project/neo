@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -310,7 +310,8 @@ namespace Neo.Persistence
         /// Reads a specified entry from the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
-        /// <returns>The data of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
+        /// <returns>The data of the entry. Or throw <see cref="KeyNotFoundException"/> if the entry doesn't exist.</returns>
+        /// <exception cref="KeyNotFoundException">If the entry doesn't exist.</exception>
         protected abstract StorageItem GetInternal(StorageKey key);
 
         /// <summary>

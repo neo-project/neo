@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
 using Org.BouncyCastle.Crypto.Digests;
@@ -22,7 +22,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using static Neo.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
@@ -33,6 +32,7 @@ namespace Neo.Cryptography
     public static class Helper
     {
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
@@ -213,7 +213,7 @@ namespace Neo.Cryptography
                 var length = cipher.ProcessBytes(plainData, 0, plainData.Length, cipherBytes, 0);
                 cipher.DoFinal(cipherBytes, length);
             }
-            return Concat(nonce, cipherBytes, tag);
+            return [.. nonce, .. cipherBytes, .. tag];
         }
 
         public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)

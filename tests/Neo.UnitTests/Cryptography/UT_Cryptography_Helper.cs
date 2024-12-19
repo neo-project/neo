@@ -12,12 +12,15 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Collections.Generic;
+using System.IO.Hashing;
 using System.Linq;
 using System.Text;
 
@@ -59,8 +62,7 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] value = Encoding.ASCII.GetBytes("hello world");
             byte[] result = value.Sha256(0, value.Length);
-            string resultStr = result.ToHexString();
-            resultStr.Should().Be("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
+            result.ToHexString().Should().Be("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
             value.Sha256().Should().Equal(result);
             ((Span<byte>)value).Sha256().Should().Equal(result);
             ((ReadOnlySpan<byte>)value).Sha256().Should().Equal(result);
@@ -81,8 +83,7 @@ namespace Neo.UnitTests.Cryptography
         {
             ReadOnlySpan<byte> value = Encoding.ASCII.GetBytes("hello world");
             byte[] result = value.RIPEMD160();
-            string resultStr = result.ToHexString();
-            resultStr.Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+            result.ToHexString().Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
         }
 
         [TestMethod]

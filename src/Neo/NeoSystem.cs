@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -220,7 +221,7 @@ namespace Neo
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
-            inbox.Receive(TimeSpan.FromMinutes(5));
+            inbox.Receive(TimeSpan.FromSeconds(30));
         }
 
         /// <summary>

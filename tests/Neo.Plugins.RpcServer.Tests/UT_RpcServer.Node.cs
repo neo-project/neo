@@ -9,22 +9,55 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using System;
+using System.Collections.Generic;
+using System.Net;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
     partial class UT_RpcServer
     {
         [TestMethod]
+        public void TestGetConnectionCount()
+        {
+            var result = _rpcServer.GetConnectionCount();
+            result.GetType().Should().Be(typeof(JNumber));
+        }
+
+        [TestMethod]
+        public void TestGetPeers()
+        {
+            var settings = TestProtocolSettings.SoleNode;
+            var neoSystem = new NeoSystem(settings, _memoryStoreProvider);
+            var localNode = neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 11332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 12332) });
+            localNode.AddPeers(new List<IPEndPoint>() { new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 13332) });
+            var rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
+
+            var result = rpcServer.GetPeers();
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            var json = (JObject)result;
+            json.ContainsProperty("unconnected").Should().BeTrue();
+            (json["unconnected"] as JArray).Count.Should().Be(3);
+            json.ContainsProperty("bad").Should().BeTrue();
+            json.ContainsProperty("connected").Should().BeTrue();
+        }
+
+        [TestMethod]
         public void TestGetVersion()
         {
-            var result = _rpcServer.GetVersion(new JArray());
+            var result = _rpcServer.GetVersion();
             Assert.IsInstanceOfType(result, typeof(JObject));
 
             var json = (JObject)result;
@@ -42,6 +75,8 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(protocol.ContainsProperty("maxvaliduntilblockincrement"));
             Assert.IsTrue(protocol.ContainsProperty("maxtransactionsperblock"));
             Assert.IsTrue(protocol.ContainsProperty("memorypoolmaxtransactions"));
+            Assert.IsTrue(protocol.ContainsProperty("standbycommittee"));
+            Assert.IsTrue(protocol.ContainsProperty("seedlist"));
         }
 
         #region SendRawTransaction Tests
@@ -53,7 +88,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var result = _rpcServer.SendRawTransaction(new JArray(txString));
+            var result = _rpcServer.SendRawTransaction(txString);
             Assert.IsInstanceOfType(result, typeof(JObject));
             Assert.IsTrue(((JObject)result).ContainsProperty("hash"));
         }
@@ -62,7 +97,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestSendRawTransaction_InvalidTransactionFormat()
         {
             Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray("invalid_transaction_string")),
+                _rpcServer.SendRawTransaction("invalid_transaction_string"),
                 "Should throw RpcException for invalid transaction format");
         }
 
@@ -74,7 +109,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for insufficient balance");
             Assert.AreEqual(RpcError.InsufficientFunds.Code, exception.HResult);
         }
@@ -87,7 +122,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid signature");
             Assert.AreEqual(RpcError.InvalidSignature.Code, exception.HResult);
         }
@@ -100,7 +135,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid script");
             Assert.AreEqual(RpcError.InvalidScript.Code, exception.HResult);
         }
@@ -113,7 +148,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid attribute");
             // Transaction with invalid attribute can not pass the Transaction deserialization
             // and will throw invalid params exception.
@@ -128,7 +163,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid format transaction");
             // Oversized transaction will not pass the deserialization.
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
@@ -142,7 +177,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for expired transaction");
             Assert.AreEqual(RpcError.ExpiredTransaction.Code, exception.HResult);
         }
@@ -157,7 +192,7 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for conflicting transaction");
             Assert.AreEqual(RpcError.PolicyFailed.Code, exception.HResult);
         }
@@ -171,7 +206,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(txString)),
+                _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for transaction already in memory pool");
             Assert.AreEqual(RpcError.AlreadyInPool.Code, exception.HResult);
         }
@@ -184,7 +219,7 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.AddTransactionToBlockchain(snapshot, tx);
             snapshot.Commit();
             var txString = Convert.ToBase64String(tx.ToArray());
-            var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendRawTransaction(new JArray(txString)));
+            var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendRawTransaction(txString));
             Assert.AreEqual(RpcError.AlreadyExists.Code, exception.HResult);
         }
 
@@ -199,7 +234,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 1);
             var blockString = Convert.ToBase64String(block.ToArray());
 
-            var result = _rpcServer.SubmitBlock(new JArray(blockString));
+            var result = _rpcServer.SubmitBlock(blockString);
             Assert.IsInstanceOfType(result, typeof(JObject));
             Assert.IsTrue(((JObject)result).ContainsProperty("hash"));
         }
@@ -210,7 +245,7 @@ namespace Neo.Plugins.RpcServer.Tests
             string invalidBlockString = TestUtils.CreateInvalidBlockFormat();
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(new JArray(invalidBlockString)),
+                _rpcServer.SubmitBlock(invalidBlockString),
                 "Should throw RpcException for invalid block format");
 
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
@@ -227,7 +262,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var blockString = Convert.ToBase64String(block.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(new JArray(blockString)),
+                _rpcServer.SubmitBlock(blockString),
                 "Should throw RpcException when block already exists");
             Assert.AreEqual(RpcError.AlreadyExists.Code, exception.HResult);
         }
@@ -241,7 +276,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var blockString = Convert.ToBase64String(block.ToArray());
 
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(new JArray(blockString)),
+                _rpcServer.SubmitBlock(blockString),
                 "Should throw RpcException for invalid block");
             Assert.AreEqual(RpcError.VerificationFailed.Code, exception.HResult);
         }
@@ -254,7 +289,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestSendRawTransaction_NullInput()
         {
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray((string)null)),
+                _rpcServer.SendRawTransaction((string)null),
                 "Should throw RpcException for null input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }
@@ -263,7 +298,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestSendRawTransaction_EmptyInput()
         {
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(new JArray(string.Empty)),
+                _rpcServer.SendRawTransaction(string.Empty),
                 "Should throw RpcException for empty input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }
@@ -272,7 +307,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestSubmitBlock_NullInput()
         {
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(new JArray((string)null)),
+                _rpcServer.SubmitBlock((string)null),
                 "Should throw RpcException for null input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }
@@ -281,7 +316,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestSubmitBlock_EmptyInput()
         {
             var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(new JArray(string.Empty)),
+                _rpcServer.SubmitBlock(string.Empty),
                 "Should throw RpcException for empty input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }

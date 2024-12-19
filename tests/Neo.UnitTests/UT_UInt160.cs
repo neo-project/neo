@@ -9,11 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#pragma warning disable CS1718
-
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using System;
+using System.Security.Cryptography;
 
 namespace Neo.UnitTests.IO
 {
@@ -36,8 +36,16 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGernerator2()
         {
-            UInt160 uInt160 = new UInt160(new byte[20]);
+            UInt160 uInt160 = new byte[20];
             Assert.IsNotNull(uInt160);
+        }
+
+        [TestMethod]
+        public void TestGernerator3()
+        {
+            UInt160 uInt160 = "0xff00000000000000000000000000000000000001";
+            Assert.IsNotNull(uInt160);
+            Assert.IsTrue(uInt160.ToString() == "0xff00000000000000000000000000000000000001");
         }
 
         [TestMethod]
@@ -57,9 +65,13 @@ namespace Neo.UnitTests.IO
             byte[] temp = new byte[20];
             temp[19] = 0x01;
             UInt160 result = new UInt160(temp);
-            Assert.AreEqual(true, UInt160.Zero.Equals(UInt160.Zero));
-            Assert.AreEqual(false, UInt160.Zero.Equals(result));
-            Assert.AreEqual(false, result.Equals(null));
+            Assert.IsTrue(UInt160.Zero.Equals(UInt160.Zero));
+            Assert.IsFalse(UInt160.Zero.Equals(result));
+            Assert.IsFalse(result.Equals(null));
+            Assert.IsTrue(UInt160.Zero == UInt160.Zero);
+            Assert.IsFalse(UInt160.Zero != UInt160.Zero);
+            Assert.IsTrue(UInt160.Zero == "0x0000000000000000000000000000000000000000");
+            Assert.IsFalse(UInt160.Zero == "0x0000000000000000000000000000000000000001");
         }
 
         [TestMethod]
@@ -86,30 +98,48 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual("0x1230000000000000000000000000000000000000", temp.ToString());
             Assert.AreEqual(false, UInt160.TryParse("000000000000000000000000000000000000000", out _));
             Assert.AreEqual(false, UInt160.TryParse("0xKK00000000000000000000000000000000000000", out _));
+            Assert.AreEqual(false, UInt160.TryParse(" 1 2 3 45 000000000000000000000000000000", out _));
         }
 
         [TestMethod]
         public void TestOperatorLarger()
         {
             Assert.AreEqual(false, UInt160.Zero > UInt160.Zero);
+            Assert.IsFalse(UInt160.Zero > "0x0000000000000000000000000000000000000000");
         }
 
         [TestMethod]
         public void TestOperatorLargerAndEqual()
         {
             Assert.AreEqual(true, UInt160.Zero >= UInt160.Zero);
+            Assert.IsTrue(UInt160.Zero >= "0x0000000000000000000000000000000000000000");
         }
 
         [TestMethod]
         public void TestOperatorSmaller()
         {
             Assert.AreEqual(false, UInt160.Zero < UInt160.Zero);
+            Assert.IsFalse(UInt160.Zero < "0x0000000000000000000000000000000000000000");
         }
 
         [TestMethod]
         public void TestOperatorSmallerAndEqual()
         {
             Assert.AreEqual(true, UInt160.Zero <= UInt160.Zero);
+            Assert.IsTrue(UInt160.Zero >= "0x0000000000000000000000000000000000000000");
+        }
+
+        [TestMethod]
+        public void TestSpanAndSerialize()
+        {
+            // random data
+            var random = new Random();
+            var data = new byte[UInt160.Length];
+            random.NextBytes(data);
+
+            var value = new UInt160(data);
+            var span = value.GetSpan();
+            Assert.IsTrue(span.SequenceEqual(value.ToArray()));
         }
     }
 }

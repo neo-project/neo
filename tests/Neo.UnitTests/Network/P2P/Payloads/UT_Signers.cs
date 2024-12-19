@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -22,6 +23,85 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Signers
     {
+        [TestMethod]
+        public void Test_IEquatable()
+        {
+            var ecPoint = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+            var expected = new Signer()
+            {
+                Account = UInt160.Zero,
+                Scopes = WitnessScope.Global,
+                AllowedContracts = [UInt160.Zero],
+                AllowedGroups = [ecPoint],
+                Rules = [
+                    new WitnessRule
+                    {
+                        Condition = new BooleanCondition
+                        {
+                            Expression = true,
+                        },
+                        Action = WitnessRuleAction.Allow,
+                    },
+                ]
+            };
+
+            var actual = new Signer()
+            {
+                Account = UInt160.Zero,
+                Scopes = WitnessScope.Global,
+                AllowedContracts = [UInt160.Zero],
+                AllowedGroups = [ecPoint],
+                Rules = [
+                    new WitnessRule
+                    {
+                        Condition = new BooleanCondition
+                        {
+                            Expression = true,
+                        },
+                        Action = WitnessRuleAction.Allow,
+                    },
+                ]
+            };
+
+            var notEqual = new Signer()
+            {
+                Account = UInt160.Zero,
+                Scopes = WitnessScope.WitnessRules,
+                AllowedContracts = [],
+                AllowedGroups = [],
+                Rules = []
+            };
+
+            var cnull = new Signer
+            {
+                Account = null,
+                Scopes = WitnessScope.Global,
+                AllowedContracts = null,
+                AllowedGroups = null,
+                Rules = null,
+            };
+
+            Assert.IsTrue(expected.Equals(expected));
+
+            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected == actual);
+            Assert.IsTrue(expected.Equals(actual));
+
+            Assert.AreNotEqual(expected, notEqual);
+            Assert.IsTrue(expected != notEqual);
+            Assert.IsFalse(expected.Equals(notEqual));
+
+            Assert.IsFalse(expected == null);
+            Assert.IsFalse(null == expected);
+            Assert.AreNotEqual(expected, null);
+            Assert.IsFalse(expected.Equals(null));
+
+            //Check null
+            Assert.AreNotEqual(cnull, notEqual);
+            Assert.IsFalse(cnull.Equals(notEqual));
+        }
+
+
         [TestMethod]
         public void Serialize_Deserialize_Global()
         {

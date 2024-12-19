@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography;
+using Neo.Extensions;
 using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
@@ -33,8 +33,15 @@ namespace Neo.SmartContract
 
         private byte[] cache = null;
 
+        // NOTE: StorageKey is readonly, so we can cache the hash code.
+        private int _hashCode = 0;
+
         public StorageKey() { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageKey"/> class.
+        /// </summary>
+        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
         internal StorageKey(byte[] cache)
         {
             this.cache = cache;
@@ -67,7 +74,9 @@ namespace Neo.SmartContract
 
         public override int GetHashCode()
         {
-            return Id + (int)Key.Span.Murmur32(0);
+            if (_hashCode == 0)
+                _hashCode = HashCode.Combine(Id, Key.Span.XxHash3_32());
+            return _hashCode;
         }
 
         public byte[] ToArray()

@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -230,13 +231,18 @@ namespace Neo.Network.P2P.Payloads
         public void DeserializeUnsigned(ref MemoryReader reader)
         {
             Version = reader.ReadByte();
-            if (Version > 0) throw new FormatException();
+            if (Version > 0) throw new FormatException($"Invalid version: {Version}.");
+
             Nonce = reader.ReadUInt32();
             SystemFee = reader.ReadInt64();
-            if (SystemFee < 0) throw new FormatException();
+            if (SystemFee < 0) throw new FormatException($"Invalid system fee: {SystemFee}.");
+
             NetworkFee = reader.ReadInt64();
-            if (NetworkFee < 0) throw new FormatException();
-            if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
+            if (NetworkFee < 0) throw new FormatException($"Invalid network fee: {NetworkFee}.");
+
+            if (SystemFee + NetworkFee < SystemFee)
+                throw new FormatException($"Invalid fee: {SystemFee} + {NetworkFee} < {SystemFee}.");
+
             ValidUntilBlock = reader.ReadUInt32();
             Signers = DeserializeSigners(ref reader, MaxTransactionAttributes);
             Attributes = DeserializeAttributes(ref reader, MaxTransactionAttributes - Signers.Length);
@@ -458,7 +464,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             if (_signers == null || _signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
             return new Array(referenceCounter, new StackItem[]
