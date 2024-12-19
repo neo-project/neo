@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -24,6 +25,14 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_JsonSerializer
     {
+        private DataCache _snapshotCache;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        }
+
         [TestMethod]
         public void JsonTest_WrongJson()
         {
@@ -193,7 +202,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_WrongJson()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            var snapshot = _snapshotCache.CloneCache();
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             Assert.ThrowsException<FormatException>(() => JsonSerializer.Deserialize(engine, JObject.Parse("x"), ExecutionEngineLimits.Default));
         }
 
@@ -228,7 +238,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_EmptyObject()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            var snapshot = _snapshotCache.CloneCache();
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("{}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
@@ -247,7 +258,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_EmptyArray()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            var snapshot = _snapshotCache.CloneCache();
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
@@ -272,7 +284,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Map_Test()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null, null, ProtocolSettings.Default);
+            var snapshot = _snapshotCache.CloneCache();
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("{\"test1\":123,\"test2\":321}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
@@ -302,7 +315,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Array_Bool_Str_Num()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null, null, ProtocolSettings.Default);
+            var snapshot = _snapshotCache.CloneCache();
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
@@ -333,7 +347,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Array_OfArray()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null, null, ProtocolSettings.Default);
+            var snapshot = _snapshotCache.CloneCache();
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
