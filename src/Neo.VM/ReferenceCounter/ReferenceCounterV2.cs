@@ -85,7 +85,7 @@ namespace Neo.VM
         /// <inheritdoc/>
         public void RemoveStackReference(StackItem item)
         {
-            // Increment the reference count by the specified count.
+            // Decrease the reference count.
             _referencesCount--;
             if (_referencesCount < 0)
                 throw new IndexOutOfRangeException("Circular reference detected, execution stopped.");
