@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.Extensions.SmartContract;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.RpcServer.Model;
