@@ -24,6 +24,8 @@ namespace Neo.VM
         private VMState state = VMState.BREAK;
         internal bool isJumping = false;
 
+        internal int _complexFactor = 1;
+
         public JumpTable JumpTable { get; }
 
         /// <summary>
@@ -34,7 +36,7 @@ namespace Neo.VM
         /// <summary>
         /// Used for reference counting of objects in the VM.
         /// </summary>
-        public IReferenceCounter ReferenceCounter { get; }
+        public IReferenceCounter ReferenceCounter { get; set; }
 
         /// <summary>
         /// The invocation stack of the VM.
@@ -83,9 +85,24 @@ namespace Neo.VM
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
+        /// <param name="referenceCounter">The reference counter to be used.
+        /// referenceCounter is shared cross ExecutionContexts.</param>
         /// <param name="jumpTable">The jump table to be used.</param>
-        public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
+        public ExecutionEngine(IReferenceCounter referenceCounter, JumpTable? jumpTable = null)
+            : this(jumpTable, referenceCounter, ExecutionEngineLimits.Default)
         {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
+        /// </summary>
+        /// <param name="jumpTable">The jump table to be used.</param>
+        [Obsolete("Use ExecutionEngine(IReferenceCounter) to specify the reference counter.")]
+        public ExecutionEngine(JumpTable? jumpTable = null)
+            : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
+        {
+
         }
 
         /// <summary>
@@ -125,6 +142,7 @@ namespace Neo.VM
         /// </summary>
         protected internal void ExecuteNext()
         {
+
             if (InvocationStack.Count == 0)
             {
                 State = VMState.HALT;
@@ -152,6 +170,7 @@ namespace Neo.VM
                     {
                         JumpTable.ExecuteThrow(this, ex.Message);
                     }
+
                     PostExecuteInstruction(instruction);
                     if (!isJumping) context.MoveNext();
                     isJumping = false;
@@ -289,9 +308,17 @@ namespace Neo.VM
         /// </summary>
         protected virtual void PostExecuteInstruction(Instruction instruction)
         {
-            if (ReferenceCounter.Count < Limits.MaxStackSize) return;
-            if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
+            if (ReferenceCounter.Version == RCVersion.V1)
+            {
+                if (ReferenceCounter.Count < Limits.MaxStackSize) return;
+                if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
+                    throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
+            }
+            else
+            {
+                if (ReferenceCounter.Count <= Limits.MaxStackSize) return;
                 throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
+            }
         }
 
         /// <summary>
