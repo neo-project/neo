@@ -147,27 +147,22 @@ namespace Neo
         /// <returns><see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string s, out UInt256 result)
         {
-            if (s == null)
+            result = null;
+            var data = s.AsSpan(); // AsSpan is null safe
+            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+                data = data[2..];
+
+            if (data.Length != Length * 2) return false;
+
+            try
             {
-                result = null;
+                result = new UInt256(data.HexToBytesReversed());
+                return true;
+            }
+            catch
+            {
                 return false;
             }
-            if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                s = s[2..];
-            if (s.Length != Length * 2)
-            {
-                result = null;
-                return false;
-            }
-            byte[] data = new byte[Length];
-            for (int i = 0; i < Length; i++)
-                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
-                {
-                    result = null;
-                    return false;
-                }
-            result = new UInt256(data);
-            return true;
         }
 
         public static bool operator ==(UInt256 left, UInt256 right)

@@ -13,3 +13,4 @@ using BenchmarkDotNet.Running;
 using Neo.Extensions;
 
 BenchmarkRunner.Run(typeof(Benchmark_ByteArrayComparer));
+BenchmarkRunner.Run(typeof(Benchmark_StringExtensions));

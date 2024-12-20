@@ -34,6 +34,13 @@ namespace Neo.Extensions.Tests
             string str2 = "0102";
             byte[] bytes = str2.HexToBytes();
             bytes.ToHexString().Should().Be(new byte[] { 0x01, 0x02 }.ToHexString());
+
+            string str3 = "0A0b0C";
+            bytes = str3.AsSpan().HexToBytes();
+            bytes.ToHexString().Should().Be(new byte[] { 0x0A, 0x0B, 0x0C }.ToHexString());
+
+            bytes = str3.AsSpan().HexToBytesReversed();
+            bytes.ToHexString().Should().Be(new byte[] { 0x0C, 0x0B, 0x0A }.ToHexString());
         }
 
         [TestMethod]
