@@ -140,11 +140,12 @@ namespace Neo.SmartContract.Native
             // Reflection to get the methods
 
             List<ContractMethodMetadata> listMethods = [];
-            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (var member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
-                if (attribute is null) continue;
-                listMethods.Add(new ContractMethodMetadata(member, attribute));
+                foreach (var attribute in member.GetCustomAttributes<ContractMethodAttribute>())
+                {
+                    listMethods.Add(new ContractMethodMetadata(member, attribute));
+                }
             }
             _methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
 
@@ -363,6 +364,13 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
+        internal Dictionary<int, ContractMethodMetadata> GetContractMethods(ApplicationEngine engine)
+        {
+            var nativeContracts = engine.GetState(() => new NativeContractsCache());
+            var currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine);
+            return currentAllowedMethods.Methods;
+        }
+
         internal async void Invoke(ApplicationEngine engine, byte version)
         {
             try
@@ -370,16 +378,15 @@ namespace Neo.SmartContract.Native
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 // Get native contracts invocation cache
-                NativeContractsCache nativeContracts = engine.GetState(() => new NativeContractsCache());
-                NativeContractsCache.CacheEntry currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine);
+                var currentAllowedMethods = GetContractMethods(engine);
                 // Check if the method is allowed
-                ExecutionContext context = engine.CurrentContext;
-                ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
+                var context = engine.CurrentContext;
+                var method = currentAllowedMethods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
                 if (method.DeprecatedIn is not null && engine.IsHardforkEnabled(method.DeprecatedIn.Value))
                     throw new InvalidOperationException($"Cannot call this method after hardfork {method.DeprecatedIn}.");
-                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                var state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
