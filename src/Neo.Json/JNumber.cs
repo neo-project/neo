@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 
 namespace Neo.Json
@@ -38,9 +39,20 @@ namespace Neo.Json
         /// Initializes a new instance of the <see cref="JNumber"/> class with the specified value.
         /// </summary>
         /// <param name="value">The value of the JSON token.</param>
-        public JNumber(double value = 0)
+        /// <param name="checkMinMax">True if we want to ensure that the value is in the limits.</param>
+        public JNumber(double value = 0, bool checkMinMax = true)
         {
-            if (!double.IsFinite(value)) throw new FormatException();
+            if (checkMinMax)
+            {
+                if (value > MAX_SAFE_INTEGER)
+                    throw new ArgumentException("value is higher than MAX_SAFE_INTEGER", nameof(value));
+                if (value < MIN_SAFE_INTEGER)
+                    throw new ArgumentException("value is lower than MIN_SAFE_INTEGER", nameof(value));
+            }
+
+            if (!double.IsFinite(value))
+                throw new ArgumentException("value is not finite", nameof(value));
+
             Value = value;
         }
 
@@ -125,6 +137,22 @@ namespace Neo.Json
             return new JNumber(value);
         }
 
+        public static implicit operator JNumber(BigInteger value)
+        {
+            return new JNumber((long)value);
+        }
+
+        /// <summary>
+        /// Check if two JNumber are equal.
+        /// </summary>
+        /// <param name="left">Non null <see cref="JNumber"></see> value </param>
+        /// <param name="right">Nullable <see cref="JNumber"></see> value</param>
+        /// <returns>bool</returns>
+        /// <remarks>
+        /// If the left is null, throw an <exception cref="NullReferenceException"></exception>.
+        /// If the right is null, return false.
+        /// If the left and right are the same object, return true.
+        /// </remarks>
         public static bool operator ==(JNumber left, JNumber? right)
         {
             if (right is null) return false;
