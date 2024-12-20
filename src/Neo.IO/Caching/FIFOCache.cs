@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    internal abstract class FIFOCache<TKey, TValue>
+    public abstract class FIFOCache<TKey, TValue>
         (int max_capacity, IEqualityComparer<TKey>? comparer = null) : Cache<TKey, TValue>(max_capacity, comparer)
         where TKey : notnull
     {

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Helper.cs file belongs to the neo project and is free
+// StackItemExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,25 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
-using Neo.Extensions;
 using Neo.Json;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
 
-namespace Neo.VM
+namespace Neo.Extensions
 {
-    /// <summary>
-    /// A helper class related to NeoVM.
-    /// </summary>
-    public static class Helper
+    public static class StackItemExtensions
     {
         /// <summary>
         /// Converts the <see cref="StackItem"/> to a JSON object.
@@ -55,8 +50,8 @@ namespace Neo.VM
                         context ??= new(ReferenceEqualityComparer.Instance);
                         if (!context.Add(array)) throw new InvalidOperationException("Circular reference.");
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
-                        JArray a = new();
-                        foreach (StackItem stackItem in array)
+                        JArray a = [];
+                        foreach (var stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
                         value = a;
                         if (!context.Remove(array)) throw new InvalidOperationException("Circular reference.");
@@ -64,7 +59,7 @@ namespace Neo.VM
                     }
                 case Boolean boolean:
                     {
-                        bool b = boolean.GetBoolean();
+                        var b = boolean.GetBoolean();
                         maxSize -= b ? 4/*true*/: 5/*false*/;
                         value = b;
                         break;
@@ -72,14 +67,14 @@ namespace Neo.VM
                 case Buffer _:
                 case ByteString _:
                     {
-                        string s = Convert.ToBase64String(item.GetSpan());
+                        var s = Convert.ToBase64String(item.GetSpan());
                         maxSize -= 2/*""*/+ s.Length;
                         value = s;
                         break;
                     }
                 case Integer integer:
                     {
-                        string s = integer.GetInteger().ToString();
+                        var s = integer.GetInteger().ToString();
                         maxSize -= 2/*""*/+ s.Length;
                         value = s;
                         break;
@@ -130,7 +125,7 @@ namespace Neo.VM
             return ToParameter(item, null);
         }
 
-        private static ContractParameter ToParameter(StackItem item, List<(StackItem, ContractParameter)> context)
+        public static ContractParameter ToParameter(this StackItem item, List<(StackItem, ContractParameter)> context)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
             ContractParameter parameter = null;
@@ -138,7 +133,7 @@ namespace Neo.VM
             {
                 case Array array:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (_, parameter) = context.FirstOrDefault(p => ReferenceEquals(p.Item1, item));
                     if (parameter is null)
@@ -150,7 +145,7 @@ namespace Neo.VM
                     break;
                 case Map map:
                     if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
+                        context = [];
                     else
                         (_, parameter) = context.FirstOrDefault(p => ReferenceEquals(p.Item1, item));
                     if (parameter is null)
@@ -197,76 +192,6 @@ namespace Neo.VM
                     throw new ArgumentException($"StackItemType({item.Type}) is not supported to ContractParameter.");
             }
             return parameter;
-        }
-
-        /// <summary>
-        /// Converts the <see cref="ContractParameter"/> to a <see cref="StackItem"/>.
-        /// </summary>
-        /// <param name="parameter">The <see cref="ContractParameter"/> to convert.</param>
-        /// <returns>The converted <see cref="StackItem"/>.</returns>
-        public static StackItem ToStackItem(this ContractParameter parameter)
-        {
-            return ToStackItem(parameter, null);
-        }
-
-        private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
-        {
-            if (parameter is null) throw new ArgumentNullException(nameof(parameter));
-            if (parameter.Value is null) return StackItem.Null;
-            StackItem stackItem = null;
-            switch (parameter.Type)
-            {
-                case ContractParameterType.Array:
-                    if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
-                    else
-                        (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
-                    if (stackItem is null)
-                    {
-                        stackItem = new Array(((IList<ContractParameter>)parameter.Value).Select(p => ToStackItem(p, context)));
-                        context.Add((stackItem, parameter));
-                    }
-                    break;
-                case ContractParameterType.Map:
-                    if (context is null)
-                        context = new List<(StackItem, ContractParameter)>();
-                    else
-                        (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
-                    if (stackItem is null)
-                    {
-                        Map map = new();
-                        foreach (var pair in (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value)
-                            map[(PrimitiveType)ToStackItem(pair.Key, context)] = ToStackItem(pair.Value, context);
-                        stackItem = map;
-                        context.Add((stackItem, parameter));
-                    }
-                    break;
-                case ContractParameterType.Boolean:
-                    stackItem = (bool)parameter.Value;
-                    break;
-                case ContractParameterType.ByteArray:
-                case ContractParameterType.Signature:
-                    stackItem = (byte[])parameter.Value;
-                    break;
-                case ContractParameterType.Integer:
-                    stackItem = (BigInteger)parameter.Value;
-                    break;
-                case ContractParameterType.Hash160:
-                    stackItem = ((UInt160)parameter.Value).ToArray();
-                    break;
-                case ContractParameterType.Hash256:
-                    stackItem = ((UInt256)parameter.Value).ToArray();
-                    break;
-                case ContractParameterType.PublicKey:
-                    stackItem = ((ECPoint)parameter.Value).EncodePoint(true);
-                    break;
-                case ContractParameterType.String:
-                    stackItem = (string)parameter.Value;
-                    break;
-                default:
-                    throw new ArgumentException($"ContractParameterType({parameter.Type}) is not supported to StackItem.");
-            }
-            return stackItem;
         }
     }
 }

@@ -69,12 +69,13 @@ var methods = allMethods.Where(m => m.GetCustomAttribute<BenchmarkAttribute>() !
 
 foreach (var method in methods.Where(p => p.GetCustomAttribute<GenerateTestsAttribute>() == null))
 {
-
     try
     {
         method.Invoke(instance, null);
     }
     catch (Exception e)
+    var methods = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
+    foreach (var method in methods)
     {
         Console.WriteLine(e);
         throw;
