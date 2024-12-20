@@ -37,6 +37,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private ICancelable timer_token;
         private DateTime block_received_time;
         private uint block_received_index;
+        private DateTime onPrepareReceivedTime;
+        private uint onPrepareBlockIndex;
         private bool started = false;
 
         /// <summary>
@@ -95,9 +97,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 else
                 {
                     TimeSpan span = neoSystem.Settings.TimePerBlock;
-                    if (block_received_index + 1 == context.Block.Index)
+                    if (block_received_index + 1 == context.Block.Index && onPrepareBlockIndex + 1 == context.Block.Index)
                     {
-                        var diff = TimeProvider.Current.UtcNow - block_received_time;
+                        // Include the consensus time into the consensus intervals.
+                        var diff = TimeProvider.Current.UtcNow - onPrepareReceivedTime;
                         if (diff >= span)
                             span = TimeSpan.Zero;
                         else
