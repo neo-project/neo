@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
-using System.Globalization;
 
 namespace Neo.Extensions
 {
