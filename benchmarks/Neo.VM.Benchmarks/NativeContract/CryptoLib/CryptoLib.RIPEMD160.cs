@@ -72,16 +72,16 @@ namespace Neo.VM.Benchmark.NativeContract.CryptoLib
         private byte[] AppCall()
         {
             var builder = new ScriptBuilder();
-            foreach (var o in _args)
-            {
-                builder.EmitPush(o);
-            }
-            builder.EmitPush(_args.Length);
-            builder.Emit(VM.OpCode.PACK);
-            builder.EmitPush((byte)CallFlags.None);
-            builder.EmitPush(Method);
-            builder.EmitPush(_nativeContract.Hash);
-            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            //foreach (var o in _args)
+            //{
+            //    builder.EmitPush(o);
+            //}
+            //builder.EmitPush(_args.Length);
+            //builder.Emit(VM.OpCode.PACK);
+            //builder.EmitPush((byte)CallFlags.None);
+            //builder.EmitPush(Method);
+            //builder.EmitPush(_nativeContract.Hash);
+            //builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return builder.ToArray();
         }
     }
