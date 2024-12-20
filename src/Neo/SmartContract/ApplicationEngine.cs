@@ -179,10 +179,11 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        /// <param name="referenceCounter">Reference Counter</param>
         protected unsafe ApplicationEngine(
             TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock,
-            ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
-            : base(jumpTable ?? DefaultJumpTable)
+            ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null, IReferenceCounter? referenceCounter = null)
+            : base(jumpTable ?? DefaultJumpTable, referenceCounter ?? new ReferenceCounterV2())
         {
             Trigger = trigger;
             ScriptContainer = container;
@@ -411,10 +412,13 @@ namespace Neo.SmartContract
             var index = persistingBlock?.Index ?? (snapshot == null ? 0 : NativeContract.Ledger.CurrentIndex(snapshot));
 
             // Adjust jump table according persistingBlock
-
             var jumpTable = settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
+            IReferenceCounter referenceCounter =
+                settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ?
+                new ReferenceCounterV2() : new ReferenceCounter();
+
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
-                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable, referenceCounter);
         }
 
         /// <summary>
@@ -744,10 +748,10 @@ namespace Neo.SmartContract
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
             // Return true if PersistingBlock is null and Hardfork is enabled
-            if (PersistingBlock is null)
-                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
 
-            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+            return PersistingBlock is null ?
+                ProtocolSettings.Hardforks.ContainsKey(hardfork) :
+                ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
         }
     }
 }
