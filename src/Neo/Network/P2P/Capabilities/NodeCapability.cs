@@ -16,7 +16,12 @@ using System.IO;
 namespace Neo.Network.P2P.Capabilities
 {
     /// <summary>
-    /// Represents the capabilities of a NEO node.
+    /// Represents the capabilities of a Neo node. Each capability has a type
+    /// and some type-specific node metadata to other peers that can take it
+    /// into account when interacting with this node. This metadata is
+    /// serialized in a type-specific way, but for compatibility reasons any
+    /// new capabilities MUST be compatible with UnknownCapability serialization
+    /// scheme.
     /// </summary>
     public abstract class NodeCapability : ISerializable
     {
@@ -60,7 +65,7 @@ namespace Neo.Network.P2P.Capabilities
                 NodeCapabilityType.TcpServer or NodeCapabilityType.WsServer => new ServerCapability(type),
 #pragma warning restore CS0612 // Type or member is obsolete
                 NodeCapabilityType.FullNode => new FullNodeCapability(),
-                _ => throw new FormatException(),
+                _ => new UnknownCapability(type),
             };
             capability.DeserializeWithoutType(ref reader);
             return capability;
