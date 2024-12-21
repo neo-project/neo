@@ -33,10 +33,10 @@ namespace Neo.Network.P2P.Capabilities
 
         #endregion
 
-        #region Others
+        #region Data availability
 
         /// <summary>
-        /// Indicates that the node has complete block data.
+        /// Indicates that the node has complete current state.
         /// </summary>
         FullNode = 0x10
 
