@@ -40,6 +40,13 @@ namespace Neo.Network.P2P.Capabilities
         /// </summary>
         FullNode = 0x10,
 
+        /// <summary>
+        /// Indicates that the node stores full block history. These nodes can be used
+        /// for P2P synchronization from genesis (other ones can cut the tail and
+        /// won't respond to requests for old (wrt MaxTraceableBlocks) blocks).
+        /// </summary>
+        ArchivalNode = 0x11,
+
         #endregion
 
         #region Private extensions

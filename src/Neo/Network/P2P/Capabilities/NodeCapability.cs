@@ -65,6 +65,7 @@ namespace Neo.Network.P2P.Capabilities
                 NodeCapabilityType.TcpServer or NodeCapabilityType.WsServer => new ServerCapability(type),
 #pragma warning restore CS0612 // Type or member is obsolete
                 NodeCapabilityType.FullNode => new FullNodeCapability(),
+                NodeCapabilityType.ArchivalNode => new ArchivalNodeCapability(),
                 _ => new UnknownCapability(type),
             };
             capability.DeserializeWithoutType(ref reader);
