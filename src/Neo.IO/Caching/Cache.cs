@@ -17,7 +17,7 @@ using System.Threading;
 
 namespace Neo.IO.Caching
 {
-    internal abstract class Cache<TKey, TValue>
+    public abstract class Cache<TKey, TValue>
         (int max_capacity, IEqualityComparer<TKey>? comparer = null) : ICollection<TValue>, IDisposable
         where TKey : notnull
     {
