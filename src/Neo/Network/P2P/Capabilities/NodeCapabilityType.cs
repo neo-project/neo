@@ -38,7 +38,17 @@ namespace Neo.Network.P2P.Capabilities
         /// <summary>
         /// Indicates that the node has complete current state.
         /// </summary>
-        FullNode = 0x10
+        FullNode = 0x10,
+
+        #endregion
+
+        #region Private extensions
+
+        /// <summary>
+        /// The first extension ID. Any subsequent can be used in an
+        /// implementation-specific way.
+        /// </summary>
+        Extension0 = 0xf0
 
         #endregion
     }
