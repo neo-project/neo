@@ -26,7 +26,6 @@ namespace Neo.Plugins.Storage
         private readonly LSnapshot _snapshot;
         private readonly ReadOptions _readOptions;
         private readonly WriteBatch _batch;
-        private readonly object _lock = new();
 
         public Snapshot(DB db)
         {
@@ -36,17 +35,11 @@ namespace Neo.Plugins.Storage
             _batch = new WriteBatch();
         }
 
-        public void Commit()
-        {
-            lock (_lock)
-                _db.Write(WriteOptions.Default, _batch);
-        }
+        public void Commit() => _db.Write(WriteOptions.Default, _batch);
 
-        public void Delete(byte[] key)
-        {
-            lock (_lock)
-                _batch.Delete(key);
-        }
+        public void Delete(byte[] key) => _batch.Delete(key);
+
+        public void Put(byte[] key, byte[] value) => _batch.Put(key, value);
 
         public void Dispose()
         {
@@ -58,12 +51,6 @@ namespace Neo.Plugins.Storage
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             return _db.Seek(_readOptions, keyOrPrefix, direction);
-        }
-
-        public void Put(byte[] key, byte[] value)
-        {
-            lock (_lock)
-                _batch.Put(key, value);
         }
 
         public bool Contains(byte[] key)

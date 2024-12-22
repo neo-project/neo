@@ -22,13 +22,13 @@ namespace Neo.Persistence
     {
         private readonly ConcurrentDictionary<byte[], byte[]> innerData;
         private readonly ImmutableDictionary<byte[], byte[]> immutableData;
-        private readonly ConcurrentDictionary<byte[], byte[]> writeBatch;
+        private readonly Dictionary<byte[], byte[]> writeBatch;
 
         public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
         {
             this.innerData = innerData;
             immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+            writeBatch = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()
