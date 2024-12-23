@@ -259,7 +259,7 @@ namespace Neo.SmartContract.Native
                 Extra = null
             };
 
-            OnManifestCompose(manifest);
+            OnManifestCompose(hfChecker, blockHeight, manifest);
 
             // Return ContractState
             return new ContractState
@@ -271,7 +271,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        protected virtual void OnManifestCompose(ContractManifest manifest) { }
+        protected virtual void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest) { }
 
         /// <summary>
         /// It is the initialize block
