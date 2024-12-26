@@ -33,12 +33,29 @@ namespace Neo.Network.P2P.Capabilities
 
         #endregion
 
-        #region Others
+        #region Data availability
 
         /// <summary>
-        /// Indicates that the node has complete block data.
+        /// Indicates that the node has complete current state.
         /// </summary>
-        FullNode = 0x10
+        FullNode = 0x10,
+
+        /// <summary>
+        /// Indicates that the node stores full block history. These nodes can be used
+        /// for P2P synchronization from genesis (other ones can cut the tail and
+        /// won't respond to requests for old (wrt MaxTraceableBlocks) blocks).
+        /// </summary>
+        ArchivalNode = 0x11,
+
+        #endregion
+
+        #region Private extensions
+
+        /// <summary>
+        /// The first extension ID. Any subsequent can be used in an
+        /// implementation-specific way.
+        /// </summary>
+        Extension0 = 0xf0
 
         #endregion
     }

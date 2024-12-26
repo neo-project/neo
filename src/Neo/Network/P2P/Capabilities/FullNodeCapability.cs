@@ -15,7 +15,7 @@ using System.IO;
 namespace Neo.Network.P2P.Capabilities
 {
     /// <summary>
-    /// Indicates that a node has complete block data.
+    /// Indicates that a node has complete current state.
     /// </summary>
     public class FullNodeCapability : NodeCapability
     {
