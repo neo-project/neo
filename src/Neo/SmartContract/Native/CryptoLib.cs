@@ -78,47 +78,24 @@ namespace Neo.SmartContract.Native
             return data.Keccak256();
         }
 
-        private static byte[] GetMessageHash(byte[] message, NamedCurveHash curveHash)
+        private static byte[] GetMessageHash(byte[] message, Hasher hasher)
         {
-            return curveHash switch
+            return hasher switch
             {
-                NamedCurveHash.secp256k1SHA256 => message.Sha256(),
-                NamedCurveHash.secp256k1Keccak256 => message.Keccak256(),
-                NamedCurveHash.secp256r1SHA256 => message.Sha256(),
-                NamedCurveHash.secp256r1Keccak256 => message.Keccak256(),
+                Hasher.SHA256 => message.Sha256(),
+                Hasher.Keccak256 => message.Keccak256(),
                 _ => null
             };
         }
 
-        private static ECPoint[] RecoverSecp256K1(byte[] messageHash, byte[] signature, SignatureFormat format)
+        private static ECPoint ECrecover(byte[] message, byte[] signature, Hasher hasher)
         {
-            try
-            {
-                return Crypto.ECRecover(ECCurve.Secp256k1, signature, messageHash, format);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static ECPoint[] ECrecover(byte[] message, byte[] signature, NamedCurveHash curveHash)
-        {
-            var messageHash = GetMessageHash(message, curveHash);
+            var messageHash = GetMessageHash(message, hasher);
             if (messageHash == null) return null;
 
-            var format = signature.Length == 64 || signature.Length == 65 ? SignatureFormat.Fixed32 : SignatureFormat.Der;
-
             try
             {
-                return curveHash switch
-                {
-                    NamedCurveHash.secp256k1SHA256 or NamedCurveHash.secp256k1Keccak256
-                        => RecoverSecp256K1(messageHash, signature, format),
-                    NamedCurveHash.secp256r1SHA256 or NamedCurveHash.secp256r1Keccak256
-                        => Crypto.ECRecover(ECCurve.Secp256r1, signature, messageHash, format),
-                    _ => null
-                };
+                return Crypto.ECRecover(signature, messageHash);
             }
             catch
             {
@@ -169,11 +146,11 @@ namespace Neo.SmartContract.Native
         /// Recovers the public key from a secp256k1 signature in a single byte array format.
         /// </summary>
         /// <param name="message">The original message that was signed.</param>
-        /// <param name="curveHash">The hash algorithm to be used (secp256k1SHA256 or secp256k1Keccak256).</param>
+        /// <param name="hasher">The hash algorithm to be used (SHA256 or Keccak256).</param>
         /// <param name="signature">The 65-byte signature in format: r[32] + s[32] + v[1], where v must be 27 or 28.</param>
         /// <returns>The recovered public key in compressed format, or null if recovery fails.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 10, Name = "secp256k1Recover")]
-        public static byte[] Secp256k1Recover(byte[] message, NamedCurveHash curveHash, byte[] signature)
+        public static byte[] Secp256K1Recover(byte[] message, Hasher hasher, byte[] signature)
         {
             if (signature is not { Length: 65 })
                 return null;
@@ -182,26 +159,24 @@ namespace Neo.SmartContract.Native
             if (v != 27 && v != 28)
                 return null;
 
-            var points = ECrecover(message, signature, curveHash);
-            if (points == null || points.Length == 0)
-                return null;
+            var point = ECrecover(message, signature, hasher);
 
-            return points[0].EncodePoint(true);
+            return point?.EncodePoint(true);
         }
 
         /// <summary>
         /// Recovers the public key from a secp256k1 signature with separate r, s, and v components.
         /// </summary>
         /// <param name="message">The original message that was signed.</param>
-        /// <param name="curveHash">The hash algorithm to be used (secp256k1SHA256 or secp256k1Keccak256).</param>
+        /// <param name="hasher">The hash algorithm to be used (SHA256 or Keccak256).</param>
         /// <param name="r">The r component of the signature (32 bytes).</param>
         /// <param name="s">The s component of the signature (32 bytes).</param>
         /// <param name="v">The recovery identifier (must be 27 or 28).</param>
         /// <returns>The recovered public key in compressed format, or null if recovery fails.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 10, Name = "secp256k1Recover")]
-        public static byte[] Secp256k1Recover(byte[] message, NamedCurveHash curveHash, byte[] r, byte[] s, BigInteger v)
+        public static byte[] Secp256K1Recover(byte[] message, Hasher hasher, byte[] r, byte[] s, BigInteger v)
         {
-            if (r == null || s == null || r.Length != 32 || s.Length != 32 || (v != 27 && v != 28))
+            if (r == null || s == null || r.Length != 32 || s.Length != 32)// || (v != 27 && v != 28)) Should we assume v as either 27/28
                 return null;
 
             var signature = new byte[65];
@@ -209,7 +184,7 @@ namespace Neo.SmartContract.Native
             s.CopyTo(signature, 32);
             signature[64] = (byte)v;
 
-            return Secp256k1Recover(message, curveHash, signature);
+            return Secp256K1Recover(message, hasher, signature);
         }
     }
 }

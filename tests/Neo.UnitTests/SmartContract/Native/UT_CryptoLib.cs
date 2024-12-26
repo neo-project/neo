@@ -41,7 +41,7 @@ namespace Neo.UnitTests.SmartContract.Native
         private readonly byte[] not_g1 =
             "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".ToLower().HexToBytes();
         private readonly byte[] not_g2 =
-            "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".ToLower().HexToBytes();
+            "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".ToLower().HexToBytes();
 
         [TestMethod]
         public void TestG1()
@@ -912,21 +912,41 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var message = new byte[] { 0x01, 0x02, 0x03 };
 
+            // Test with SHA256
             // Sign the message
             var signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1);
             byte[] r = signature.Take(32).ToArray();
             byte[] s = signature.Skip(32).Take(32).ToArray();
             BigInteger v = 27;
 
-            // Act & Assert
-            var recoveredKey = CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, r, s, v);
+            CryptoLib.VerifyWithECDsa(message, pubK1.EncodePoint(true), signature, NamedCurveHash.secp256k1SHA256).Should().BeTrue();
+
+            // Act & Assert for SHA256
+            var recoveredKey = CryptoLib.Secp256K1Recover(message, Hasher.SHA256, r, s, v);
             recoveredKey.Should().NotBeNull();
             ECPoint.DecodePoint(recoveredKey, ECCurve.Secp256k1).Should().Be(pubK1);
 
-            // Test failure cases
-            CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, null, s, v).Should().BeNull();
-            CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, r, null, v).Should().BeNull();
-            CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, r, s, 26).Should().BeNull();
+            // Test with Keccak256
+            var signatureKeccak = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.Keccak256);
+            byte[] rKeccak = signatureKeccak.Take(32).ToArray();
+            byte[] sKeccak = signatureKeccak.Skip(32).Take(32).ToArray();
+            BigInteger vKeccak = 27;
+
+            CryptoLib.VerifyWithECDsa(message, pubK1.EncodePoint(true), signatureKeccak, NamedCurveHash.secp256k1Keccak256).Should().BeTrue();
+
+            // Act & Assert for Keccak256
+            var recoveredKeyKeccak = CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, rKeccak, sKeccak, vKeccak);
+            recoveredKeyKeccak.Should().NotBeNull();
+            ECPoint.DecodePoint(recoveredKeyKeccak, ECCurve.Secp256k1).Should().Be(pubK1);
+
+            // Test failure cases for both hash types
+            CryptoLib.Secp256K1Recover(message, Hasher.SHA256, null, s, v).Should().BeNull();
+            CryptoLib.Secp256K1Recover(message, Hasher.SHA256, r, null, v).Should().BeNull();
+            CryptoLib.Secp256K1Recover(message, Hasher.SHA256, r, s, 26).Should().BeNull();
+
+            CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, null, sKeccak, vKeccak).Should().BeNull();
+            CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, rKeccak, null, vKeccak).Should().BeNull();
+            CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, rKeccak, sKeccak, 26).Should().BeNull();
         }
 
         [TestMethod]
@@ -938,24 +958,68 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var message = new byte[] { 0x04, 0x05, 0x06 };
 
+            // Test with SHA256
             // Create combined signature
             var rawSignature = Crypto.Sign(message, privK1, ECCurve.Secp256k1);
             var signature = new byte[65];
             rawSignature.CopyTo(signature, 0);
-            signature[64] = 27;
 
-            // Act & Assert
-            var recoveredKey = CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, signature);
+            // Calculate v: check which recovery ID (0 or 1) gives us back our public key
+            byte recId = 0;
+            // Try both possible v values
+            signature[64] = 27; // recId = 0
+            var recovered = CryptoLib.Secp256K1Recover(message, Hasher.SHA256, signature);
+            if (recovered == null || !pubK1.Equals(ECPoint.DecodePoint(recovered, ECCurve.Secp256k1)))
+            {
+                signature[64] = 28; // recId = 1
+                recId = 1;
+            }
+
+            CryptoLib.VerifyWithECDsa(message, pubK1.EncodePoint(true), rawSignature, NamedCurveHash.secp256k1SHA256).Should().BeTrue();
+
+            // Act & Assert for SHA256
+            var recoveredKey = CryptoLib.Secp256K1Recover(message, Hasher.SHA256, signature);
             recoveredKey.Should().NotBeNull();
             ECPoint.DecodePoint(recoveredKey, ECCurve.Secp256k1).Should().Be(pubK1);
 
-            // Test failure cases
-            CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, null).Should().BeNull();
-            CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, new byte[64]).Should().BeNull();
+            // Test with Keccak256
+            var rawSignatureKeccak = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.Keccak256);
+            var signatureKeccak = new byte[65];
+            rawSignatureKeccak.CopyTo(signatureKeccak, 0);
+
+            // Calculate v for Keccak256
+            byte recIdKeccak = 0;
+
+            // Try both possible v values
+            signatureKeccak[64] = 27; // recId = 0
+            var recoveredKeccak = CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, signatureKeccak);
+            if (recoveredKeccak == null || !pubK1.Equals(ECPoint.DecodePoint(recoveredKeccak, ECCurve.Secp256k1)))
+            {
+                signatureKeccak[64] = 28; // recId = 1
+                recIdKeccak = 1;
+            }
+
+            CryptoLib.VerifyWithECDsa(message, pubK1.EncodePoint(true), rawSignatureKeccak, NamedCurveHash.secp256k1Keccak256).Should().BeTrue();
+
+            // Act & Assert for Keccak256
+            var recoveredKeyKeccak = CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, signatureKeccak);
+            recoveredKeyKeccak.Should().NotBeNull();
+            ECPoint.DecodePoint(recoveredKeyKeccak, ECCurve.Secp256k1).Should().Be(pubK1);
+
+            // Test failure cases for both hash types
+            CryptoLib.Secp256K1Recover(message, Hasher.SHA256, null).Should().BeNull();
+            CryptoLib.Secp256K1Recover(message, Hasher.SHA256, new byte[64]).Should().BeNull();
 
             var invalidVSignature = signature.ToArray();
-            invalidVSignature[64] = 29;
-            CryptoLib.Secp256k1Recover(message, NamedCurveHash.secp256k1SHA256, invalidVSignature).Should().BeNull();
+            invalidVSignature[64] = 29; // Invalid v value
+            CryptoLib.Secp256K1Recover(message, Hasher.SHA256, invalidVSignature).Should().BeNull();
+
+            CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, null).Should().BeNull();
+            CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, new byte[64]).Should().BeNull();
+
+            var invalidVSignatureKeccak = signatureKeccak.ToArray();
+            invalidVSignatureKeccak[64] = 29; // Invalid v value
+            CryptoLib.Secp256K1Recover(message, Hasher.Keccak256, invalidVSignatureKeccak).Should().BeNull();
         }
     }
 }

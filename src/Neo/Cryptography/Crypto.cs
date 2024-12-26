@@ -10,13 +10,11 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
-using Org.BouncyCastle.Asn1;
-using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Utilities.Encoders;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -30,7 +28,7 @@ namespace Neo.Cryptography
         /// <summary>
         /// 64 bytes ECDSA signature + 1 byte recovery id
         /// </summary>
-        private const int RecuperableSignatureLength = 64 + 1;
+        private const int RecoverableSignatureLength = 64 + 1;
         /// <summary>
         /// 64 bytes ECDSA signature
         /// </summary>
@@ -108,105 +106,97 @@ namespace Neo.Cryptography
             return ecdsa.SignData(message, hashAlg);
         }
 
+
         /// <summary>
-        /// ECRecover
+        /// Recovers the public key from a signature and message hash.
         /// </summary>
-        /// <param name="curve">Curve</param>
-        /// <param name="signature">Signature</param>
-        /// <param name="hash">Message hash</param>
-        /// <param name="format">Signature format</param>
-        /// <returns>Allowed Public keys</returns>
-        public static ECC.ECPoint[] ECRecover(ECC.ECCurve curve, byte[] signature, byte[] hash, SignatureFormat format = SignatureFormat.Der)
+        /// <param name="signature">65-byte signature (r[32] || s[32] || v[1])</param>
+        /// <param name="hash">32-byte message hash</param>
+        /// <returns>The recovered public key</returns>
+        /// <exception cref="ArgumentException">Thrown when signature or hash parameters are invalid</exception>
+        public static ECC.ECPoint ECRecover(byte[] signature, byte[] hash)
         {
-            BigInteger r, s;
-            int recId = 0, recIdTo = 4;
+            if (signature is not { Length: RecoverableSignatureLength })
+                throw new ArgumentException("Signature must be 65 bytes with recovery value", nameof(signature));
+            if (hash is not { Length: 32 })
+                throw new ArgumentException("Message hash must be 32 bytes", nameof(hash));
 
-            // Decode signature
-
-            switch (format)
+            try
             {
-                case SignatureFormat.Der:
-                    {
-                        var derSequence = (DerSequence)Asn1Object.FromByteArray(signature);
-                        r = ((DerInteger)derSequence[0]).Value;
-                        s = ((DerInteger)derSequence[1]).Value;
+                // Extract r, s components (32 bytes each)
+                var r = new BigInteger(1, signature.Take(32).ToArray());
+                var s = new BigInteger(1, signature.Skip(32).Take(32).ToArray());
 
-                        if (derSequence.Count == 3)
-                        {
-                            recId = ((DerInteger)derSequence[2]).IntValueExact;
-                            recIdTo = recId + 1;
-                        }
-                        break;
-                    }
-                case SignatureFormat.Fixed32:
-                    {
-                        r = new(1, signature, 0, 32);
-                        s = new(1, signature, 32, 32);
+                // Get recovery id, allowing both 0-3 and 27-30
+                var v = signature[SignatureLength];
+                var recId = v >= 27 ? v - 27 : v;
+                if (recId > 3)
+                    throw new ArgumentException("Recovery value must be 0-3 or 27-30", nameof(signature));
 
-                        if (signature.Length == RecuperableSignatureLength)
-                        {
-                            recId = signature[SignatureLength];
-                            recIdTo = recId + 1;
-                        }
-                        break;
-                    }
-                default: throw new InvalidOperationException("Invalid signature format");
-            }
+                // Get curve parameters
+                var curve = ECC.ECCurve.Secp256k1.BouncyCastleCurve;
+                var n = curve.N;
 
-            // Validate values
+                // Validate r, s values
+                if (r.SignValue <= 0 || r.CompareTo(n) >= 0)
+                    throw new ArgumentException("r must be in range [1, N-1]", nameof(signature));
+                if (s.SignValue <= 0 || s.CompareTo(n) >= 0)
+                    throw new ArgumentException("s must be in range [1, N-1]", nameof(signature));
 
-            if (recId < 0 || recId >= 4) throw new ArgumentException("v should be positive less than 4");
-            if (r.SignValue < 0) throw new ArgumentException("r should be positive");
-            if (s.SignValue < 0) throw new ArgumentException("s should be positive");
-
-            // Precompute variables
-
-            var n = curve.BouncyCastleCurve.N;
-            var e = new BigInteger(1, hash);
-            var eInv = BigInteger.Zero.Subtract(e).Mod(n);
-            var rInv = r.ModInverse(n);
-            var srInv = rInv.Multiply(s).Mod(n);
-            var eInvrInv = rInv.Multiply(eInv).Mod(n);
-
-            // Do the work
-
-            var recovered = new List<ECC.ECPoint>();
-
-            for (; recId < recIdTo; ++recId)
-            {
-                var i = BigInteger.ValueOf((long)recId / 2);
+                // Calculate x coordinate
+                var i = BigInteger.ValueOf(recId >> 1);
                 var x = r.Add(i.Multiply(n));
 
-                if (x.CompareTo(s_prime) >= 0)
-                {
-                    continue;
-                }
+                // Get curve field
+                var field = curve.Curve.Field;
+                if (x.CompareTo(field.Characteristic) >= 0)
+                    throw new ArgumentException("Invalid x coordinate", nameof(signature));
 
-                var decompressedRKey = DecompressKey(curve.BouncyCastleCurve.Curve, x, (recId & 1) == 1);
-                if (!decompressedRKey.Multiply(n).IsInfinity)
-                {
-                    continue;
-                }
+                // Convert x to field element
+                var xField = curve.Curve.FromBigInteger(x);
 
-                var q = Org.BouncyCastle.Math.EC.ECAlgorithms.SumOfTwoMultiplies(curve.BouncyCastleCurve.G, eInvrInv, decompressedRKey, srInv);
-                recovered.Add(ECC.ECPoint.FromBytes(q.Normalize().GetEncoded(false), curve));
+                // Compute right-hand side of curve equation: y^2 = x^3 + ax + b
+                var rhs = xField.Square().Multiply(xField).Add(curve.Curve.A.Multiply(xField)).Add(curve.Curve.B);
+
+                // Compute y coordinate
+                var y = rhs.Sqrt();
+                if (y == null)
+                    throw new ArgumentException("Invalid x coordinate - no square root exists", nameof(signature));
+
+                // Ensure y has correct parity
+                if (y.ToBigInteger().TestBit(0) != ((recId & 1) == 1))
+                    y = y.Negate();
+
+                // Create R point
+                var R = curve.Curve.CreatePoint(x, y.ToBigInteger());
+
+                // Check R * n = infinity
+                if (!R.Multiply(n).IsInfinity)
+                    throw new ArgumentException("Invalid R point order", nameof(signature));
+
+                // Calculate e = -hash mod n
+                var e = new BigInteger(1, hash).Negate().Mod(n);
+
+                // Calculate r^-1
+                var rInv = r.ModInverse(n);
+
+                // Calculate Q = r^-1 (sR - eG)
+                var Q = R.Multiply(s).Add(curve.G.Multiply(e)).Multiply(rInv);
+
+                if (Q.IsInfinity)
+                    throw new ArgumentException("Invalid public key point at infinity", nameof(signature));
+
+                // Convert to Neo ECPoint format
+                return ECC.ECPoint.FromBytes(Q.GetEncoded(false), ECC.ECCurve.Secp256k1);
             }
-
-            return [.. recovered];
-        }
-
-        /// <summary>
-        /// Decompress key
-        /// </summary>
-        /// <param name="curve">ECC curve</param>
-        /// <param name="xBN">xBN</param>
-        /// <param name="yBit">yBit</param>
-        /// <returns>ECPoint</returns>
-        private static Org.BouncyCastle.Math.EC.ECPoint DecompressKey(Org.BouncyCastle.Math.EC.ECCurve curve, BigInteger xBN, bool yBit)
-        {
-            var compEnc = X9IntegerConverter.IntegerToBytes(xBN, 1 + X9IntegerConverter.GetByteLength(curve));
-            compEnc[0] = (byte)(yBit ? 0x03 : 0x02);
-            return curve.DecodePoint(compEnc);
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException("Invalid signature parameters", nameof(signature), ex);
+            }
         }
 
         /// <summary>
