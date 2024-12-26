@@ -44,6 +44,7 @@ namespace Neo.CLI
                 AddrPayload.Create(
                     NetworkAddressWithTime.Create(
                         payload, DateTime.UtcNow.ToTimestamp(),
+                        new ArchivalNodeCapability(),
                         new FullNodeCapability(),
                         new ServerCapability(NodeCapabilityType.TcpServer, port))
                     ));

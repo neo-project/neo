@@ -15,76 +15,7 @@ namespace Neo.Benchmark
 {
     public class Benchmarks_UInt160
     {
-        static readonly OldUInt160 s_oldUInt160 = new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
         static readonly UInt160 s_newUInt160 = new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-
-        [Benchmark]
-        public void TestOldUInt160Gernerator1()
-        {
-            _ = new OldUInt160();
-        }
-
-        [Benchmark]
-        public void TestOldUInt160Gernerator2()
-        {
-            _ = new OldUInt160(new byte[20]);
-        }
-
-        [Benchmark]
-        public void TestOldUInt160CompareTo()
-        {
-            OldUInt160.Zero.CompareTo(OldUInt160.Zero);
-            OldUInt160.Zero.CompareTo(s_oldUInt160);
-            s_oldUInt160.CompareTo(OldUInt160.Zero);
-        }
-
-        [Benchmark]
-        public void TestOldUInt160Equals()
-        {
-            OldUInt160.Zero.Equals(OldUInt160.Zero);
-            OldUInt160.Zero.Equals(s_oldUInt160);
-            s_oldUInt160.Equals(null);
-        }
-
-        [Benchmark]
-        public void TestOldUInt160Parse()
-        {
-            _ = OldUInt160.Parse("0x0000000000000000000000000000000000000000");
-            _ = OldUInt160.Parse("0000000000000000000000000000000000000000");
-        }
-
-        [Benchmark]
-        public void TestOldUInt160TryParse()
-        {
-            OldUInt160.TryParse(null, out _);
-            OldUInt160.TryParse("0x0000000000000000000000000000000000000000", out var temp);
-            OldUInt160.TryParse("0x1230000000000000000000000000000000000000", out temp);
-            OldUInt160.TryParse("000000000000000000000000000000000000000", out _);
-        }
-
-        [Benchmark]
-        public void TestOldUInt160OperatorLarger()
-        {
-            _ = s_oldUInt160 > OldUInt160.Zero;
-        }
-
-        [Benchmark]
-        public void TestOldUInt160OperatorLargerAndEqual()
-        {
-            _ = s_oldUInt160 >= OldUInt160.Zero;
-        }
-
-        [Benchmark]
-        public void TestOldUInt160OperatorSmaller()
-        {
-            _ = s_oldUInt160 < OldUInt160.Zero;
-        }
-
-        [Benchmark]
-        public void TestOldUInt160OperatorSmallerAndEqual()
-        {
-            _ = s_oldUInt160 <= OldUInt160.Zero;
-        }
 
         [Benchmark]
         public void TestGernerator1()
