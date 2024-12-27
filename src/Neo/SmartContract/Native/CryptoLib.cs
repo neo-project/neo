@@ -78,13 +78,18 @@ namespace Neo.SmartContract.Native
             return data.Keccak256();
         }
 
-        private static byte[] GetMessageHash(byte[] message, Hasher hasher)
+        internal static byte[] GetMessageHash(byte[] message, Hasher hasher)
+        {
+            return GetMessageHash(message.AsSpan(), hasher);
+        }
+
+        internal static byte[] GetMessageHash(ReadOnlySpan<byte> message, Hasher hasher)
         {
             return hasher switch
             {
                 Hasher.SHA256 => message.Sha256(),
                 Hasher.Keccak256 => message.Keccak256(),
-                _ => null
+                _ => throw new NotSupportedException(nameof(hasher))
             };
         }
 
@@ -152,7 +157,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 10, Name = "secp256k1Recover")]
         public static byte[] Secp256K1Recover(byte[] message, Hasher hasher, byte[] signature)
         {
-            if (signature is not { Length: 65 })
+            if (signature.Length != 65)
                 return null;
 
             var v = signature[64];

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
+using Neo.SmartContract.Native;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Utilities.Encoders;
@@ -74,10 +75,7 @@ namespace Neo.Cryptography
                 var privateKey = new BigInteger(1, priKey);
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, ecCurve.BouncyCastleDomainParams);
                 signer.Init(true, priKeyParameters);
-                var messageHash =
-                    hasher == Hasher.SHA256 ? message.Sha256() :
-                    hasher == Hasher.Keccak256 ? message.Keccak256() :
-                    throw new NotSupportedException(nameof(hasher));
+                var messageHash = CryptoLib.GetMessageHash(message, hasher);
                 var signature = signer.GenerateSignature(messageHash);
 
                 var signatureBytes = new byte[64];
@@ -115,9 +113,9 @@ namespace Neo.Cryptography
         /// <exception cref="ArgumentException">Thrown when signature or hash parameters are invalid</exception>
         public static ECC.ECPoint ECRecover(byte[] signature, byte[] hash)
         {
-            if (signature is not { Length: RecoverableSignatureLength })
+            if (signature.Length != RecoverableSignatureLength)
                 throw new ArgumentException("Signature must be 65 bytes with recovery value", nameof(signature));
-            if (hash is not { Length: 32 })
+            if (hash.Length != 32)
                 throw new ArgumentException("Message hash must be 32 bytes", nameof(hash));
 
             try
@@ -222,11 +220,7 @@ namespace Neo.Cryptography
                 var sig = signature.ToArray();
                 var r = new BigInteger(1, sig, 0, 32);
                 var s = new BigInteger(1, sig, 32, 32);
-
-                var messageHash =
-                    hasher == Hasher.SHA256 ? message.Sha256() :
-                    hasher == Hasher.Keccak256 ? message.Keccak256() :
-                    throw new NotSupportedException(nameof(hasher));
+                var messageHash = CryptoLib.GetMessageHash(message, hasher);
 
                 return signer.VerifySignature(messageHash, r, s);
             }
