@@ -12,7 +12,6 @@
 using Neo.SmartContract;
 using System.Collections.Generic;
 
-
 namespace Neo.Persistence
 {
     /// <summary>
