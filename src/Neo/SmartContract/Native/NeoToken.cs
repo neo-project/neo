@@ -16,6 +16,7 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -105,6 +106,18 @@ namespace Neo.SmartContract.Native
             var list = engine.CurrentContext.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
+        }
+
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        {
+            if (hfChecker(Hardfork.HF_Echidna, blockHeight))
+            {
+                manifest.SupportedStandards = new[] { "NEP-17", "NEP-27" };
+            }
+            else
+            {
+                manifest.SupportedStandards = new[] { "NEP-17" };
+            }
         }
 
         private GasDistribution DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
