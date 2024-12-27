@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.RpcServer.Model;
@@ -265,14 +264,13 @@ namespace Neo.Plugins.RpcServer
             }
 
             byte[] prefix = Result.Ok_Or(() => Convert.FromBase64String(base64KeyPrefix), RpcError.InvalidParams.WithData($"Invalid Base64 string{base64KeyPrefix}"));
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(id, prefix);
 
             JObject json = new();
             JArray jarr = new();
             int pageSize = settings.FindStoragePageSize;
             int i = 0;
 
-            using (var iter = snapshot.Find(prefix_key).Skip(count: start).GetEnumerator())
+            using (var iter = NativeContract.ContractManagement.FindContractStorage(snapshot, id, prefix).Skip(count: start).GetEnumerator())
             {
                 var hasMore = false;
                 while (iter.MoveNext())
