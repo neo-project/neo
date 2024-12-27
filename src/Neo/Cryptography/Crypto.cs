@@ -106,7 +106,6 @@ namespace Neo.Cryptography
             return ecdsa.SignData(message, hashAlg);
         }
 
-
         /// <summary>
         /// Recovers the public key from a signature and message hash.
         /// </summary>
