@@ -132,7 +132,6 @@ namespace Neo
         /// <returns>Full path of the file if found, null otherwise.</returns>
         public static string FindFile(string fileName, string path)
         {
-            string fullPath;
 
             // Check if the given path is relative
             if (!Path.IsPathRooted(path))
