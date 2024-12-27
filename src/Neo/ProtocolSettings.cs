@@ -142,7 +142,7 @@ namespace Neo
             }
 
             // Check if file exists in the specified (resolved) path
-            fullPath = Path.Combine(path, fileName);
+            var fullPath = Path.Combine(path, fileName);
             if (File.Exists(fullPath))
             {
                 return fullPath;
