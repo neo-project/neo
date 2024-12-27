@@ -125,6 +125,43 @@ namespace Neo
         public static ProtocolSettings Custom { get; set; }
 
         /// <summary>
+        /// Searches for a file in the given path. If not found, checks in the executable directory.
+        /// </summary>
+        /// <param name="fileName">The name of the file to search for.</param>
+        /// <param name="path">The primary path to search in.</param>
+        /// <returns>Full path of the file if found, null otherwise.</returns>
+        public static string FindFile(string fileName, string path)
+        {
+            string fullPath;
+
+            // Check if the given path is relative
+            if (!Path.IsPathRooted(path))
+            {
+                // Combine with the executable directory if relative
+                var executablePath = AppDomain.CurrentDomain.BaseDirectory;
+                path = Path.Combine(executablePath, path);
+            }
+
+            // Check if file exists in the specified (resolved) path
+            fullPath = Path.Combine(path, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // Check if file exists in the executable directory
+            var executableDir = AppDomain.CurrentDomain.BaseDirectory;
+            fullPath = Path.Combine(executableDir, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // File not found in either location
+            return null;
+        }
+
+        /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> from the specified stream.
         /// </summary>
         /// <param name="stream">The stream of the settings.</param>
@@ -143,7 +180,9 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(string path)
         {
-            if (!File.Exists(path))
+            path = FindFile(path, Environment.CurrentDirectory);
+
+            if (path is null)
             {
                 return Default;
             }
