@@ -20,15 +20,10 @@ namespace Neo.Benchmarks.Persistence.Benchmarks
     public class Bechmarks_ReadOnlyStoreView
     {
         private static StorageKey key1, key2;
-
         private static readonly byte[] value = new UInt256().GetSpan().ToArray();
-
         private const string PathLevelDB = "Data_LevelDB_Benchmarks";
-
         private static readonly LevelDBStore levelDb = new();
-
         private static IStore levelDbStore;
-
 
         [GlobalSetup]
         public void Setup()
