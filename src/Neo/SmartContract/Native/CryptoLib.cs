@@ -95,11 +95,11 @@ namespace Neo.SmartContract.Native
 
         private static ECPoint ECrecover(byte[] message, byte[] signature, Hasher hasher)
         {
-            var messageHash = GetMessageHash(message, hasher);
-            if (messageHash == null) return null;
-
             try
             {
+                var messageHash = GetMessageHash(message, hasher);
+                if (messageHash == null) return null;
+
                 return Crypto.ECRecover(signature, messageHash);
             }
             catch
