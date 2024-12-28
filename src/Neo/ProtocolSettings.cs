@@ -149,7 +149,7 @@ namespace Neo
             }
 
             // Check if file exists in the executable directory
-            var executableDir = AppDomain.CurrentDomain.BaseDirectory;
+            var executableDir = AppContext.BaseDirectory;
             fullPath = Path.Combine(executableDir, fileName);
             if (File.Exists(fullPath))
             {
