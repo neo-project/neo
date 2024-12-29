@@ -144,7 +144,7 @@ namespace Neo.Cryptography
                     // 64 bytes “compact” format: r[32] || yParityAndS[32]
                     // yParity is fused into the top bit of s.
 
-                    r = new BigInteger(1, signature.Take(32).ToArray());
+                    r = new BigInteger(1, [.. signature.Take(32)]);
                     var yParityAndS = new BigInteger(1, signature.Skip(32).ToArray());
 
                     // Mask out top bit to get s
