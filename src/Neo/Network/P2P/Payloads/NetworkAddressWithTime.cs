@@ -75,7 +75,10 @@ namespace Neo.Network.P2P.Payloads
             Capabilities = new NodeCapability[reader.ReadVarInt(VersionPayload.MaxCapabilities)];
             for (int x = 0, max = Capabilities.Length; x < max; x++)
                 Capabilities[x] = NodeCapability.DeserializeFrom(ref reader);
-            if (Capabilities.Select(p => p.Type).Distinct().Count() != Capabilities.Length)
+            // Verify that no duplicating capabilities are included. Unknown capabilities are not
+            // taken into account but still preserved to be able to share through the network.
+            var capabilities = Capabilities.Where(c => c is not UnknownCapability);
+            if (capabilities.Select(p => p.Type).Distinct().Count() != capabilities.Count())
                 throw new FormatException();
         }
 
