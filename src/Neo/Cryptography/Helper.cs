@@ -130,6 +130,7 @@ namespace Neo.Cryptography
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
 #if !NET5_0_OR_GREATER
