@@ -131,7 +131,7 @@ namespace Neo.Cryptography
                 {
                     // Format: r[32] || s[32] || v[1]
                     r = new BigInteger(1, [.. signature.Take(32)]);`
-                    s = new BigInteger(1, signature.Skip(32).Take(32).ToArray());
+                    s = new BigInteger(1, [.. signature.Skip(32).Take(32)]);
 
                     // v could be 0..3 or 27..30 (Ethereum style).
                     var v = signature[64];
