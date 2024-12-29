@@ -130,7 +130,7 @@ namespace Neo.Cryptography
                 if (signature.Length == 65)
                 {
                     // Format: r[32] || s[32] || v[1]
-                    r = new BigInteger(1, signature.Take(32).ToArray());
+                    r = new BigInteger(1, [.. signature.Take(32)]);`
                     s = new BigInteger(1, signature.Skip(32).Take(32).ToArray());
 
                     // v could be 0..3 or 27..30 (Ethereum style).
