@@ -146,6 +146,7 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this ReadOnlySpan<byte> value)
         {
             byte[] buffer = new byte[32];
