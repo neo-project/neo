@@ -58,8 +58,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             buf = buf.Concat(new byte[] { 0x10, 0x01, 0x00, 0x00, 0x00 }).ToArray(); // FullNode capability, 0x01 index.
 
             clone = buf.AsSerializable<VersionPayload>();
-            Assert.AreEqual(2, clone.Capabilities.Length);
-            Assert.AreEqual(0, clone.Capabilities.OfType<UnknownCapability>().Count());
+            Assert.AreEqual(4, clone.Capabilities.Length);
+            Assert.AreEqual(2, clone.Capabilities.OfType<UnknownCapability>().Count());
         }
     }
 }

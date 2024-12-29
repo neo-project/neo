@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Capabilities
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            throw new InvalidOperationException("Unknown capability can't be serialized");
+            writer.WriteVarBytes(Data.Span);
         }
     }
 }
