@@ -128,7 +128,7 @@ An overview of the project folders can be seen below.
 |[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master/src/Neo.Extensions)| Extensions class to expand the existing functionality.|
 |[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master/src/Neo.Json)| Neo's JSON Specification classes.|
 |[/src/Neo.VM/](https://github.com/neo-project/neo/tree/master/src/Neo.VM)|Neo base class virtual machine.|
-|[/src/plugins/](https://github.com/neo-project/neo/tree/master/src/plugins)| Include `ApplicationLogs`, `LevelDBStore`, `RpcServer`, `OracleService`, `DBFTPlugin` and more.|
+|[/src/plugins/](https://github.com/neo-project/neo/tree/master/src/Plugins)| Include `ApplicationLogs`, `LevelDBStore`, `RpcServer`, `OracleService`, `DBFTPlugin` and more.|
 |[/tests/](https://github.com/neo-project/neo/tree/master/tests)|All unit tests.|
 
 ## Related projects
