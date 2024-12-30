@@ -123,7 +123,7 @@ An overview of the project folders can be seen below.
 |[/src/Plugins/](https://github.com/neo-project/neo/tree/master/src/Plugins)|Interfaces used to extend Neo, including the storage interface.|
 |[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
 |[/src/neo/VM/](https://github.com/neo-project/neo/tree/master/src/Neo/VM)|Helper methods used to interact with the VM.|
-|[/src/neo/Wallet/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallet)|Wallet and account implementation.|
+|[/src/neo/Wallets/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallets)|Wallet and account implementation.|
 |[/src/Neo.CLI/](https://github.com/neo-project/neo/tree/master/src/Neo.CLI)| `neo-cli` console application for the running a _FULL_ node.|
 |[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master/src/Neo.Extensions)| Extensions class to expand the existing functionality.|
 |[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master/src/Neo.Json)| Neo's JSON Specification classes.|
