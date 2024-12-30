@@ -112,10 +112,15 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value)
         {
+#if !NET5_0_OR_GREATER
             using var sha256 = SHA256.Create();
             return sha256.ComputeHash(value);
+#else
+            return SHA256.HashData(value);
+#endif
         }
 
         /// <summary>
@@ -125,10 +130,15 @@ namespace Neo.Cryptography
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
+#if !NET5_0_OR_GREATER
             using var sha256 = SHA256.Create();
             return sha256.ComputeHash(value, offset, count);
+#else
+            return SHA256.HashData(value.AsSpan(offset, count));
+#endif
         }
 
         /// <summary>
@@ -136,11 +146,16 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this ReadOnlySpan<byte> value)
         {
             byte[] buffer = new byte[32];
+#if !NET5_0_OR_GREATER
             using var sha256 = SHA256.Create();
             sha256.TryComputeHash(value, buffer, out _);
+#else
+            SHA256.HashData(value, buffer);
+#endif
             return buffer;
         }
 
