@@ -120,7 +120,7 @@ An overview of the project folders can be seen below.
 |[/src/neo/Ledger/](https://github.com/neo-project/neo/tree/master/src/Neo/Ledger)|Classes responsible for the state control, including the `MemoryPool` and `Blockchain` classes.|
 |[/src/neo/Network/](https://github.com/neo-project/neo/tree/master/src/Neo/Network)|Peer-to-peer protocol implementation classes.|
 |[/src/neo/Persistence/](https://github.com/neo-project/neo/tree/master/src/Neo/Persistence)|Classes used to allow other classes to access application state.|
-|[/src/neo/Plugins/](https://github.com/neo-project/neo/tree/master/src/Neo/Plugins)|Interfaces used to extend Neo, including the storage interface.|
+|[/src/Plugins/](https://github.com/neo-project/neo/tree/master/src/Plugins)|Interfaces used to extend Neo, including the storage interface.|
 |[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
 |[/src/neo/VM/](https://github.com/neo-project/neo/tree/master/src/Neo/VM)|Helper methods used to interact with the VM.|
 |[/src/neo/Wallet/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallet)|Wallet and account implementation.|
