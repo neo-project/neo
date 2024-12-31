@@ -14,13 +14,14 @@ using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Persistence
 {
     /// <summary>
     /// Represents a cache for the underlying storage of the NEO blockchain.
     /// </summary>
-    public abstract class DataCache
+    public abstract class DataCache : IReadOnlyStoreView
     {
         /// <summary>
         /// Represents an entry in the cache.
@@ -509,6 +510,14 @@ namespace Neo.Persistence
                 });
                 return value;
             }
+        }
+
+        /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGet(StorageKey key, out StorageItem item)
+        {
+            item = TryGet(key);
+            return item != null;
         }
 
         /// <summary>
