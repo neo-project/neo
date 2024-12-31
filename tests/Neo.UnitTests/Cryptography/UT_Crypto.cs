@@ -155,38 +155,7 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestERC2098()
         {
-            //
-            // Private Key: 0x1234567890123456789012345678901234567890123456789012345678901234
-            // Message: "It's a small(er) world"
-            // Signature:
-            // r:  0x9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76
-            // s:  0x139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793
-            // v:  28
-
-
             // Test from https://eips.ethereum.org/EIPS/eip-2098
-            var privateKey = "1234567890123456789012345678901234567890123456789012345678901234".HexToBytes();
-
-            var expectedPubKey1 = (Neo.Cryptography.ECC.ECCurve.Secp256k1.G * privateKey).ToArray();
-
-            Console.WriteLine($"Expected PubKey: {expectedPubKey1.ToHexString()}");
-            var message1 = Encoding.UTF8.GetBytes("Hello World");
-            var messageHash1 = message1.Keccak256();
-            Console.WriteLine($"Message Hash: {Convert.ToHexString(messageHash1)}");
-
-            // Signature values from EIP-2098 test case
-            var r = "68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90".HexToBytes();
-            var s = "7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064".HexToBytes();
-            var signature1 = new byte[64];
-            Array.Copy(r, 0, signature1, 0, 32);
-            Array.Copy(s, 0, signature1, 32, 32);
-
-            Console.WriteLine($"r: {Convert.ToHexString(signature1.Take(32).ToArray())}");
-            Console.WriteLine($"s: {Convert.ToHexString(signature1.Skip(32).Take(32).ToArray())}");
-            Console.WriteLine($"yParity: {(signature1[32] & 0x80) != 0}");
-
-            var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
-
 
             // Private Key: 0x1234567890123456789012345678901234567890123456789012345678901234
             // Message: "Hello World"
@@ -194,6 +163,36 @@ namespace Neo.UnitTests.Cryptography
             // r:  0x68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90
             // s:  0x7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064
             // v:  27
+
+            var privateKey = "1234567890123456789012345678901234567890123456789012345678901234".HexToBytes();
+
+            var expectedPubKey1 = (Neo.Cryptography.ECC.ECCurve.Secp256k1.G * privateKey).ToArray();
+
+            Console.WriteLine($"Expected PubKey: {expectedPubKey1.ToHexString()}");
+            var message1 = Encoding.UTF8.GetBytes("Hello World");
+            var messageHash1 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message1.Count()}")).Concat(message1).ToArray().Keccak256();
+            Console.WriteLine($"Message Hash: {Convert.ToHexString(messageHash1)}");
+
+            // Signature values from EIP-2098 test case
+            var r = "68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90".HexToBytes();
+            var s = "7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064".HexToBytes();
+            var signature1 = new byte[65];
+            Array.Copy(r, 0, signature1, 0, 32);
+            Array.Copy(s, 0, signature1, 32, 32);
+            signature1[64] = 27;
+
+            Console.WriteLine($"r: {Convert.ToHexString(signature1.Take(32).ToArray())}");
+            Console.WriteLine($"s: {Convert.ToHexString(signature1.Skip(32).Take(32).ToArray())}");
+            Console.WriteLine($"yParity: {(signature1[32] & 0x80) != 0}");
+
+            var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
+
+            // Private Key: 0x1234567890123456789012345678901234567890123456789012345678901234
+            // Message: "It's a small(er) world"
+            // Signature:
+            // r:  0x9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76
+            // s:  0x139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793
+            // v:  28
 
             var sig = "68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90".HexToBytes()
             .Concat("7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064".HexToBytes())
@@ -207,7 +206,7 @@ namespace Neo.UnitTests.Cryptography
             recoveredKey1.EncodePoint(true).Should().BeEquivalentTo(expectedPubKey1);
 
             var message2 = Encoding.UTF8.GetBytes("It's a small(er) world");
-            var messageHash2 = message2.Keccak256();
+            var messageHash2 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message2.Count()}")).Concat(message2).ToArray().Keccak256();
             Console.WriteLine($"\nMessage Hash 2: {Convert.ToHexString(messageHash2)}");
 
             // Second test case from EIP-2098
