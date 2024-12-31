@@ -171,8 +171,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public bool Load()
         {
-            byte[] data = store?.TryGet(ConsensusStateKey);
-            if (data is null || data.Length == 0) return false;
+            if (store is null || !store.TryGet(ConsensusStateKey, out var data) || data.Length == 0)
+                return false;
+
             MemoryReader reader = new(data);
             try
             {

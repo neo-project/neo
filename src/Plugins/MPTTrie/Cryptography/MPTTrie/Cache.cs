@@ -60,7 +60,8 @@ namespace Neo.Cryptography.MPTTrie
             {
                 return t.Node?.Clone();
             }
-            var n = store.TryGet(Key(hash))?.AsSerializable<Node>();
+
+            var n = store.TryGet(Key(hash), out var data) ? data.AsSerializable<Node>() : null;
             cache.Add(hash, new Trackable
             {
                 Node = n,
