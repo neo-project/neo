@@ -26,6 +26,7 @@ using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -40,8 +41,7 @@ namespace Neo.UnitTests.SmartContract.Native
         private readonly byte[] not_g1 =
             "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".ToLower().HexToBytes();
         private readonly byte[] not_g2 =
-            "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-                .ToLower().HexToBytes();
+            "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".ToLower().HexToBytes();
 
         [TestMethod]
         public void TestG1()
@@ -243,7 +243,9 @@ namespace Neo.UnitTests.SmartContract.Native
                         }
                     case BLS12381PointType.GT:
                         {
-                            result.GetInterface<Gt>().ToArray().ToHexString().Should().Be(expected);
+                            var resultHex = result.GetInterface<Gt>().ToArray().ToHexString().TrimEnd('0');
+                            var expectedHex = expected.TrimEnd('0');
+                            resultHex.Should().Be(expectedHex);
                             break;
                         }
                     default:
@@ -865,10 +867,11 @@ namespace Neo.UnitTests.SmartContract.Native
             ECPoint pubR1 = ECPoint.Parse("04cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d736413643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
             byte[] privK1 = "0b5fb3a050385196b327be7d86cbce6e40a04c8832445af83ad19c82103b3ed9".HexToBytes();
             ECPoint pubK1 = ECPoint.Parse("04b6363b353c3ee1620c5af58594458aa00abf43a6d134d7c4cb2d901dc0f474fd74c94740bd7169aa0b1ef7bc657e824b1d7f4283c547e7ec18c8576acf84418a", ECCurve.Secp256k1);
-            byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
+
+            var message = new byte[] { 0x01, 0x02, 0x03 };
 
             // secp256r1 + SHA256
-            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.SHA256);
+            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1);
             Crypto.VerifySignature(message, signature, pubR1).Should().BeTrue(); // SHA256 hash is used by default.
             CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1SHA256).Should().Be(true);
 
@@ -878,7 +881,7 @@ namespace Neo.UnitTests.SmartContract.Native
             CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1Keccak256).Should().Be(true);
 
             // secp256k1 + SHA256
-            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.SHA256);
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1);
             Crypto.VerifySignature(message, signature, pubK1).Should().BeTrue(); // SHA256 hash is used by default.
             CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1SHA256).Should().Be(true);
 
