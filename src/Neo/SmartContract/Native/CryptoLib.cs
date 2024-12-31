@@ -195,7 +195,6 @@ namespace Neo.SmartContract.Native
                 return null;
             try
             {
-
                 return Crypto.ECRecover(signature, hash)?.EncodePoint(true);
             }
             catch
