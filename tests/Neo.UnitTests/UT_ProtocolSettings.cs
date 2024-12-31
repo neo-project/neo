@@ -56,7 +56,7 @@ namespace Neo.UnitTests
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
@@ -78,7 +78,7 @@ namespace Neo.UnitTests
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
@@ -100,7 +100,7 @@ namespace Neo.UnitTests
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
             settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
@@ -120,7 +120,7 @@ namespace Neo.UnitTests
             string json = CreateHFSettings("\"HF_Aspidochelone\": 4120001, \"HF_Basilisk\": 4120000");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            Assert.ThrowsException<ArgumentException>(() => ProtocolSettings.Load(file, false));
+            Assert.ThrowsException<ArgumentException>(() => ProtocolSettings.Load(file));
             File.Delete(file);
         }
 
@@ -316,7 +316,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestLoad()
         {
-            var loadedSetting = ProtocolSettings.Load("test.config.json", false);
+            var loadedSetting = ProtocolSettings.Load("test.config.json");
 
             // Comparing all properties
             TestProtocolSettings.Default.Network.Should().Be(loadedSetting.Network);

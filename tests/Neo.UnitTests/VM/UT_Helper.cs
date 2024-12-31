@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -31,6 +32,14 @@ namespace Neo.UnitTests.VMT
     [TestClass]
     public class UT_Helper
     {
+        private DataCache _snapshotCache;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        }
+
         [TestMethod]
         public void TestEmit()
         {
@@ -85,11 +94,12 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitArray()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var expected = new BigInteger[] { 1, 2, 3 };
             var sb = new ScriptBuilder();
             sb.CreateArray(expected);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
@@ -99,7 +109,7 @@ namespace Neo.UnitTests.VMT
             sb = new ScriptBuilder();
             sb.CreateArray(expected);
 
-            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
 
@@ -109,11 +119,12 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitStruct()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var expected = new BigInteger[] { 1, 2, 3 };
             var sb = new ScriptBuilder();
             sb.CreateStruct(expected);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
@@ -123,7 +134,7 @@ namespace Neo.UnitTests.VMT
             sb = new ScriptBuilder();
             sb.CreateStruct(expected);
 
-            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
 
@@ -133,11 +144,12 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitMap()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var expected = new Dictionary<BigInteger, BigInteger>() { { 1, 2 }, { 3, 4 } };
             var sb = new ScriptBuilder();
             sb.CreateMap(expected);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
