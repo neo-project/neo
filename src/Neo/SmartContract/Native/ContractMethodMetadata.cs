@@ -40,7 +40,8 @@ namespace Neo.SmartContract.Native
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
-            Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
+            Name = attribute.Name ?? member.Name;
+            Name = Name.ToLowerInvariant()[0] + Name[1..];
             Handler = member switch
             {
                 MethodInfo m => m,

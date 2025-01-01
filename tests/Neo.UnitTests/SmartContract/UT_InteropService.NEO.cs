@@ -244,7 +244,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_Find()
         {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var snapshot = _snapshotCache.CloneCache();
             var state = TestUtils.GetContract();
 
             var storageItem = new StorageItem
@@ -256,9 +256,9 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshotCache.AddContract(state.Hash, state);
-            snapshotCache.Add(storageKey, storageItem);
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+            snapshot.AddContract(state.Hash, state);
+            snapshot.Add(storageKey, storageItem);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
             var iterator = engine.Find(new StorageContext

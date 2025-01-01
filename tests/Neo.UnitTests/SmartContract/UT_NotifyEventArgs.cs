@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -21,6 +22,14 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_NotifyEventArgs
     {
+        private DataCache _snapshotCache;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        }
+
         [TestMethod]
         public void TestGetScriptContainer()
         {
@@ -30,11 +39,11 @@ namespace Neo.UnitTests.SmartContract
             args.ScriptContainer.Should().Be(container);
         }
 
-
         [TestMethod]
         public void TestIssue3300() // https://github.com/neo-project/neo/issues/3300
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            var snapshot = _snapshotCache.CloneCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: 1100_00000000);
             using (var script = new ScriptBuilder())
             {
                 // Build call script calling disallowed method.
