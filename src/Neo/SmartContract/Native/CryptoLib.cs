@@ -21,12 +21,12 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed partial class CryptoLib : NativeContract
     {
-        private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, Hasher Hasher)> s_curves = new()
+        private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, HashAlgorithmType HashAlgorithm)> s_curves = new()
         {
-            [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, Hasher.SHA256),
-            [NamedCurveHash.secp256r1SHA256] = (ECCurve.Secp256r1, Hasher.SHA256),
-            [NamedCurveHash.secp256k1Keccak256] = (ECCurve.Secp256k1, Hasher.Keccak256),
-            [NamedCurveHash.secp256r1Keccak256] = (ECCurve.Secp256r1, Hasher.Keccak256),
+            [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, HashAlgorithmType.SHA256),
+            [NamedCurveHash.secp256r1SHA256] = (ECCurve.Secp256r1, HashAlgorithmType.SHA256),
+            [NamedCurveHash.secp256k1Keccak256] = (ECCurve.Secp256k1, HashAlgorithmType.Keccak256),
+            [NamedCurveHash.secp256r1Keccak256] = (ECCurve.Secp256r1, HashAlgorithmType.Keccak256),
         };
 
         internal CryptoLib() : base() { }
@@ -91,7 +91,7 @@ namespace Neo.SmartContract.Native
             try
             {
                 var ch = s_curves[curveHash];
-                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.Hasher);
+                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
             }
             catch (ArgumentException)
             {
@@ -100,7 +100,7 @@ namespace Neo.SmartContract.Native
         }
 
         // This is for solving the hardfork issue in https://github.com/neo-project/neo/pull/3209
-        [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15, Name = "verifyWithECDsa")]
+        [ContractMethod(true, Hardfork.HF_Cockatrice, CpuFee = 1 << 15, Name = nameof(VerifyWithECDsa))]
         public static bool VerifyWithECDsaV0(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curve)
         {
             if (curve != NamedCurveHash.secp256k1SHA256 && curve != NamedCurveHash.secp256r1SHA256)

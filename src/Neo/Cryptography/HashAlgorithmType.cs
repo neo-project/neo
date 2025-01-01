@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Hasher.cs file belongs to the neo project and is free
+// HashAlgorithmType.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,15 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
 namespace Neo.Cryptography
 {
-    /// <summary>
-    /// Represents hash function identifiers supported by ECDSA message signature and verification.
-    /// </summary>
-    [Obsolete("Use HashAlgorithmType instead")]
-    public enum Hasher : byte
+    public enum HashAlgorithmType : byte
     {
         /// <summary>
         /// The SHA256 hash algorithm.
