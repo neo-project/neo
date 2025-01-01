@@ -27,7 +27,7 @@ namespace Neo.Test
         [TestMethod]
         public void TestStateTest()
         {
-            var context = new ExecutionContext(Array.Empty<byte>(), -1, new ReferenceCounter());
+            var context = new ExecutionContext(Array.Empty<byte>(), -1, new ReferenceCounterV2());
 
             // Test factory
 
