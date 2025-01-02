@@ -21,12 +21,12 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed partial class CryptoLib : NativeContract
     {
-        private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, HashAlgorithmType HashAlgorithm)> s_curves = new()
+        private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, HashAlgorithm HashAlgorithm)> s_curves = new()
         {
-            [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, HashAlgorithmType.SHA256),
-            [NamedCurveHash.secp256r1SHA256] = (ECCurve.Secp256r1, HashAlgorithmType.SHA256),
-            [NamedCurveHash.secp256k1Keccak256] = (ECCurve.Secp256k1, HashAlgorithmType.Keccak256),
-            [NamedCurveHash.secp256r1Keccak256] = (ECCurve.Secp256r1, HashAlgorithmType.Keccak256),
+            [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, HashAlgorithm.SHA256),
+            [NamedCurveHash.secp256r1SHA256] = (ECCurve.Secp256r1, HashAlgorithm.SHA256),
+            [NamedCurveHash.secp256k1Keccak256] = (ECCurve.Secp256k1, HashAlgorithm.Keccak256),
+            [NamedCurveHash.secp256r1Keccak256] = (ECCurve.Secp256r1, HashAlgorithm.Keccak256),
         };
 
         internal CryptoLib() : base() { }

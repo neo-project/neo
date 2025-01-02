@@ -16,7 +16,7 @@ namespace Neo.Cryptography
     /// <summary>
     /// Represents hash function identifiers supported by ECDSA message signature and verification.
     /// </summary>
-    [Obsolete("Use HashAlgorithmType instead")]
+    [Obsolete("Use HashAlgorithm instead")]
     public enum Hasher : byte
     {
         /// <summary>

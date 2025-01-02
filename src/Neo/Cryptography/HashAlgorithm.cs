@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// HashAlgorithmType.cs file belongs to the neo project and is free
+// HashAlgorithm.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,7 +11,7 @@
 
 namespace Neo.Cryptography
 {
-    public enum HashAlgorithmType : byte
+    public enum HashAlgorithm : byte
     {
         /// <summary>
         /// The SHA256 hash algorithm.

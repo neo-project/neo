@@ -68,10 +68,10 @@ namespace Neo.Cryptography
         /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature.</param>
         /// <param name="hasher">The hash algorithm to hash the message.</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
-        [Obsolete("Use Sign(byte[], byte[], ECC.ECCurve, HashAlgorithmType) instead")]
+        [Obsolete("Use Sign(byte[], byte[], ECC.ECCurve, HashAlgorithm) instead")]
         public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve, Hasher hasher)
         {
-            return Sign(message, priKey, ecCurve, (HashAlgorithmType)hasher);
+            return Sign(message, priKey, ecCurve, (HashAlgorithm)hasher);
         }
 
         /// <summary>
@@ -82,9 +82,9 @@ namespace Neo.Cryptography
         /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
         /// <param name="hashAlgorithm">The hash algorithm to hash the message, default is SHA256.</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
-        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null, HashAlgorithmType hashAlgorithm = HashAlgorithmType.SHA256)
+        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
-            if (hashAlgorithm == HashAlgorithmType.Keccak256 || (IsOSX && ecCurve == ECC.ECCurve.Secp256k1))
+            if (hashAlgorithm == HashAlgorithm.Keccak256 || (IsOSX && ecCurve == ECC.ECCurve.Secp256k1))
             {
                 var domain =
                     ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? secp256r1DomainParams :
@@ -95,8 +95,8 @@ namespace Neo.Cryptography
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, domain);
                 signer.Init(true, priKeyParameters);
                 var messageHash =
-                    hashAlgorithm == HashAlgorithmType.SHA256 ? message.Sha256() :
-                    hashAlgorithm == HashAlgorithmType.Keccak256 ? message.Keccak256() :
+                    hashAlgorithm == HashAlgorithm.SHA256 ? message.Sha256() :
+                    hashAlgorithm == HashAlgorithm.Keccak256 ? message.Keccak256() :
                     throw new NotSupportedException(nameof(hashAlgorithm));
                 var signature = signer.GenerateSignature(messageHash);
 
@@ -121,7 +121,7 @@ namespace Neo.Cryptography
                 D = priKey,
             });
             var hashAlg =
-                hashAlgorithm == HashAlgorithmType.SHA256 ? HashAlgorithmName.SHA256 :
+                hashAlgorithm == HashAlgorithm.SHA256 ? HashAlgorithmName.SHA256 :
                 throw new NotSupportedException($"The hash algorithm {nameof(hashAlgorithm)} is not supported.");
             return ecdsa.SignData(message, hashAlg);
         }
@@ -134,10 +134,10 @@ namespace Neo.Cryptography
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="hasher">The hash algorithm to be used to hash the message.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [Obsolete("Use VerifySignature(ReadOnlySpan<byte>, ReadOnlySpan<byte>, ECC.ECPoint, HashAlgorithmType) instead")]
+        [Obsolete("Use VerifySignature(ReadOnlySpan<byte>, ReadOnlySpan<byte>, ECC.ECPoint, HashAlgorithm) instead")]
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, Hasher hasher)
         {
-            return VerifySignature(message, signature, pubkey, (HashAlgorithmType)hasher);
+            return VerifySignature(message, signature, pubkey, (HashAlgorithm)hasher);
         }
 
 
@@ -149,11 +149,11 @@ namespace Neo.Cryptography
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="hashAlgorithm">The hash algorithm to be used to hash the message, the default is SHA256.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, HashAlgorithmType hashAlgorithm = HashAlgorithmType.SHA256)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             if (signature.Length != 64) return false;
 
-            if (hashAlgorithm == HashAlgorithmType.Keccak256 || (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
+            if (hashAlgorithm == HashAlgorithm.Keccak256 || (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
                 var domain =
                     pubkey.Curve == ECC.ECCurve.Secp256r1 ? secp256r1DomainParams :
@@ -175,8 +175,8 @@ namespace Neo.Cryptography
                 var s = new BigInteger(1, sig, 32, 32);
 
                 var messageHash =
-                    hashAlgorithm == HashAlgorithmType.SHA256 ? message.Sha256() :
-                    hashAlgorithm == HashAlgorithmType.Keccak256 ? message.Keccak256() :
+                    hashAlgorithm == HashAlgorithm.SHA256 ? message.Sha256() :
+                    hashAlgorithm == HashAlgorithm.Keccak256 ? message.Keccak256() :
                     throw new NotSupportedException(nameof(hashAlgorithm));
 
                 return signer.VerifySignature(messageHash, r, s);
@@ -184,7 +184,7 @@ namespace Neo.Cryptography
 
             var ecdsa = CreateECDsa(pubkey);
             var hashAlg =
-                hashAlgorithm == HashAlgorithmType.SHA256 ? HashAlgorithmName.SHA256 :
+                hashAlgorithm == HashAlgorithm.SHA256 ? HashAlgorithmName.SHA256 :
                 throw new NotSupportedException($"The hash algorithm {nameof(hashAlgorithm)} is not supported.");
             return ecdsa.VerifyData(message, signature, hashAlg);
         }
@@ -228,10 +228,10 @@ namespace Neo.Cryptography
         /// <param name="curve">The curve to be used by the ECDSA algorithm.</param>
         /// <param name="hasher">The hash algorithm to be used hash the message, the default is SHA256.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [Obsolete("Use VerifySignature(ReadOnlySpan<byte>, ReadOnlySpan<byte>, ReadOnlySpan<byte>, ECC.ECCurve, HashAlgorithmType) instead")]
+        [Obsolete("Use VerifySignature(ReadOnlySpan<byte>, ReadOnlySpan<byte>, ReadOnlySpan<byte>, ECC.ECCurve, HashAlgorithm) instead")]
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, Hasher hasher)
         {
-            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve), (HashAlgorithmType)hasher);
+            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve), (HashAlgorithm)hasher);
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace Neo.Cryptography
         /// <param name="curve">The curve to be used by the ECDSA algorithm.</param>
         /// <param name="hashAlgorithm">The hash algorithm to be used hash the message, the default is SHA256.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, HashAlgorithmType hashAlgorithm = HashAlgorithmType.SHA256)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve), hashAlgorithm);
         }
