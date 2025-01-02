@@ -1,0 +1,9 @@
+{
+  "ApplicationLogs": {
+    "AutoStart": true,
+    "Path": "ApplicationLogs_{0}",
+    "MaxStackSize": 65535,
+    "Debug": false,
+    "UnhandledExceptionPolicy": "StopPlugin"
+  }
+}

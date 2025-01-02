@@ -1,12 +1,9 @@
 {
-  "PluginConfiguration": {
+  "ApplicationLogs": {
+    "AutoStart": false,
     "Path": "ApplicationLogs_{0}",
-    "Network": 860833102,
     "MaxStackSize": 65535,
     "Debug": false,
     "UnhandledExceptionPolicy": "StopPlugin"
-  },
-  "Dependency": [
-    "RpcServer"
-  ]
+  }
 }
