@@ -140,7 +140,6 @@ namespace Neo.Cryptography
             return VerifySignature(message, signature, pubkey, (HashAlgorithm)hasher);
         }
 
-
         /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key, message and hash algorithm.
         /// </summary>
