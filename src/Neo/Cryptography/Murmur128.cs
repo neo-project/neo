@@ -19,7 +19,7 @@ namespace Neo.Cryptography
     /// <summary>
     /// Computes the 128 bits murmur hash for the input data.
     /// </summary>
-    public sealed class Murmur128 : HashAlgorithm
+    public sealed class Murmur128 : System.Security.Cryptography.HashAlgorithm
     {
         private const ulong c1 = 0x87c37b91114253d5;
         private const ulong c2 = 0x4cf5ad432745937f;
