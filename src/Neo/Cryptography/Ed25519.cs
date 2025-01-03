@@ -14,7 +14,6 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Security;
 using System;
-using System.Linq;
 
 namespace Neo.Cryptography
 {
