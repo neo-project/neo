@@ -99,8 +99,8 @@ namespace Neo.Network.P2P.Payloads
             Capabilities = new NodeCapability[reader.ReadVarInt(MaxCapabilities)];
             for (int x = 0, max = Capabilities.Length; x < max; x++)
                 Capabilities[x] = NodeCapability.DeserializeFrom(ref reader);
-            Capabilities = Capabilities.Where(c => c is not UnknownCapability).ToArray();
-            if (Capabilities.Select(p => p.Type).Distinct().Count() != Capabilities.Length)
+            var capabilities = Capabilities.Where(c => c is not UnknownCapability);
+            if (capabilities.Select(p => p.Type).Distinct().Count() != capabilities.Count())
                 throw new FormatException();
         }
 
