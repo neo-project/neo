@@ -36,6 +36,7 @@ namespace Neo.Plugins.Storage
             return new Snapshot(db);
         }
 
+        /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();

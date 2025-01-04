@@ -22,10 +22,10 @@ namespace Neo.Persistence
         /// <summary>
         /// Seeks to the entry with the specified key.
         /// </summary>
-        /// <param name="key">The key to be sought.</param>
+        /// <param name="keyOrPrefix">The key(i.e. start key) or prefix to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] key, SeekDirection direction);
+        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction);
 
         /// <summary>
         /// Reads a specified entry from the database.
