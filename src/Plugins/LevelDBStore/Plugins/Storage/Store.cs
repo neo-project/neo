@@ -67,8 +67,9 @@ namespace Neo.Plugins.Storage
             return value != null;
         }
 
-        public IEnumerable<(byte[], byte[])> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward) =>
-            _db.Seek(ReadOptions.Default, prefix, direction);
+        /// <inheritdoc/>
+        public IEnumerable<(byte[], byte[])> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward) =>
+            _db.Seek(ReadOptions.Default, keyOrPrefix, direction);
 
         public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator() =>
             _db.GetEnumerator();
