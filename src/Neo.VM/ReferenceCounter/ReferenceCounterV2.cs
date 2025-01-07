@@ -47,7 +47,7 @@ namespace Neo.VM
             _referencesCount += count;
 
             if (_referencesCount > _limits.MaxStackSize)
-                throw new IndexOutOfRangeException("Circular reference detected, execution stopped.");
+                throw new IndexOutOfRangeException("Circular reference or too many VM StackItems.");
             if (item is CompoundType compoundType)
             {
                 // Increment the item's stack references by the specified count.
