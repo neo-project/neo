@@ -20,7 +20,7 @@ namespace Neo.Cryptography
     /// Computes the ripemd160 hash for the input data.
     /// </summary>
     [ComVisible(true)]
-    public class RIPEMD160Managed : HashAlgorithm
+    public class RIPEMD160Managed : System.Security.Cryptography.HashAlgorithm
     {
         private readonly byte[] _buffer;
         private long _count; // Number of bytes in the hashed message
