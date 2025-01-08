@@ -53,11 +53,10 @@ namespace Neo.Cryptography
         {
             using var ripemd160 = new RIPEMD160Managed();
 
-            var output = new Span<byte>(new byte[ripemd160.HashSize]);
-            if (!ripemd160.TryComputeHash(value, output, out _))
+            var output = new byte[ripemd160.HashSize / 8];
+            if (!ripemd160.TryComputeHash(value, output.AsSpan(), out _))
                 throw new Exception();
-
-            return output.ToArray();
+            return output;
         }
 
         /// <summary>
