@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 using static Neo.Json.Utility;
 
 namespace Neo.Json
@@ -19,6 +21,16 @@ namespace Neo.Json
     /// </summary>
     public abstract class JToken
     {
+        public readonly static JavaScriptEncoder DefaultEncoder;
+
+        static JToken()
+        {
+            var textSettings = new TextEncoderSettings(UnicodeRanges.BasicLatin);
+            textSettings.AllowCharacter('+');
+
+            DefaultEncoder = JavaScriptEncoder.Create(textSettings);
+        }
+
         /// <summary>
         /// Represents a <see langword="null"/> token.
         /// </summary>
@@ -239,6 +251,7 @@ namespace Neo.Json
             using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
             {
                 Indented = indented,
+                Encoder = DefaultEncoder,
                 SkipValidation = true
             });
             Write(writer);
