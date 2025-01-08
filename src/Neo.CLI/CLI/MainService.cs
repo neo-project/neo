@@ -372,6 +372,7 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
+            Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
