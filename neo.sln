@@ -84,7 +84,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Tests", "tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Benchmarks", "benchmarks\Neo.Extensions.Benchmarks\Neo.Extensions.Benchmarks.csproj", "{B6CB2559-10F9-41AC-8D58-364BFEF9688B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Json.Benchmarks", "Neo.Json.Benchmarks\Neo.Json.Benchmarks.csproj", "{5F984D2B-793F-4683-B53A-80050E6E0286}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Json.Benchmarks", "benchmarks\Neo.Json.Benchmarks\Neo.Json.Benchmarks.csproj", "{5F984D2B-793F-4683-B53A-80050E6E0286}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
