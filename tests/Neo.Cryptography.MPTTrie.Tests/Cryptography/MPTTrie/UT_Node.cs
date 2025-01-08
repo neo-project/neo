@@ -35,6 +35,20 @@ namespace Neo.Cryptography.MPTTrie.Tests
         }
 
         [TestMethod]
+        public void TestLogLevel()
+        {
+            Neo.Utility.LogLevel = LogLevel.Debug;
+            int raised = 0;
+            Neo.Utility.Logging += (a, b, c) => raised++;
+
+            Neo.Utility.Log("a", LogLevel.Warning, null);
+            Assert.AreEqual(1, raised);
+            Neo.Utility.LogLevel = LogLevel.Fatal;
+            Neo.Utility.Log("a", LogLevel.Warning, null);
+            Assert.AreEqual(1, raised);
+        }
+
+        [TestMethod]
         public void TestHashSerialize()
         {
             var n = Node.NewHash(UInt256.Zero);
