@@ -63,7 +63,7 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="command">Command</param>
         /// <returns>True if allow the compression</returns>
-        public static bool ShallICompress(MessageCommand command)
+        private static bool ShallICompress(MessageCommand command)
         {
             return
                 command == MessageCommand.Block ||
