@@ -179,9 +179,9 @@ namespace Neo.IO.Caching
         /// </summary>
         public void Clear()
         {
+            Array.Clear(_array, _head, _count);
             _head = 0;
             _count = 0;
-            Array.Clear(_array, 0, _array.Length);
         }
 
         /// <summary>
