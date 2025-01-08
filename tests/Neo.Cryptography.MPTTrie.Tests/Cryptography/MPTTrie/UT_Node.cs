@@ -20,7 +20,6 @@ using System.Text;
 
 namespace Neo.Cryptography.MPTTrie.Tests
 {
-
     [TestClass]
     public class UT_Node
     {
