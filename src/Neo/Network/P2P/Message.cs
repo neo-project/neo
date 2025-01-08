@@ -52,22 +52,13 @@ namespace Neo.Network.P2P
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
 
         /// <summary>
-        /// Creates a new instance of the <see cref="Message"/> class.
+        /// True if the message should be compressed
         /// </summary>
-        /// <param name="command">The command of the message.</param>
-        /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
-        /// <returns></returns>
-        public static Message Create(MessageCommand command, ISerializable payload = null)
+        /// <param name="command">Command</param>
+        /// <returns>True if allow the compression</returns>
+        public static bool ShallICompress(MessageCommand command)
         {
-            Message message = new()
-            {
-                Flags = MessageFlags.None,
-                Command = command,
-                Payload = payload,
-                _payload_compressed = payload?.ToArray() ?? Array.Empty<byte>()
-            };
-
-            bool tryCompression =
+            return
                 command == MessageCommand.Block ||
                 command == MessageCommand.Extensible ||
                 command == MessageCommand.Transaction ||
@@ -76,6 +67,25 @@ namespace Neo.Network.P2P
                 command == MessageCommand.MerkleBlock ||
                 command == MessageCommand.FilterLoad ||
                 command == MessageCommand.FilterAdd;
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="Message"/> class.
+        /// </summary>
+        /// <param name="command">The command of the message.</param>
+        /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
+        /// <returns><see cref="Message"/></returns>
+        public static Message Create(MessageCommand command, ISerializable payload = null)
+        {
+            var tryCompression = ShallICompress(command);
+
+            Message message = new()
+            {
+                Flags = MessageFlags.None,
+                Command = command,
+                Payload = payload,
+                _payload_compressed = payload?.ToArray() ?? Array.Empty<byte>()
+            };
 
             // Try compression
             if (tryCompression && message._payload_compressed.Length > CompressionMinSize)
@@ -94,7 +104,7 @@ namespace Neo.Network.P2P
         private void DecompressPayload()
         {
             if (_payload_compressed.Length == 0) return;
-            ReadOnlyMemory<byte> decompressed = Flags.HasFlag(MessageFlags.Compressed)
+            var decompressed = Flags.HasFlag(MessageFlags.Compressed)
                 ? _payload_compressed.Span.DecompressLz4(PayloadMaxSize)
                 : _payload_compressed;
             Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);
