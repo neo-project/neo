@@ -31,7 +31,7 @@ namespace Neo
             }
         }
 
-        public static LogLevel LogLevel { get; set; } = LogLevel.Debug;
+        public static LogLevel LogLevel { get; set; } = LogLevel.Info;
 
         public static event LogEventHandler? Logging;
 
