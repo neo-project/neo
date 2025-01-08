@@ -234,7 +234,7 @@ namespace Neo.Network.P2P
         private void SendMessage(Message message)
         {
             ack = false;
-            SendData(ByteString.FromBytes(message.ToArray()));
+            SendData(ByteString.FromBytes(message.ToArray(Version.AllowCompression)));
             sentCommands[(byte)message.Command] = true;
         }
 

@@ -47,7 +47,14 @@ namespace Neo.Network.P2P
         /// </summary>
         public ISerializable Payload;
 
-        private ReadOnlyMemory<byte> _payload_compressed;
+        private ReadOnlyMemory<byte>
+            _payload_raw,
+            _payload_compressed;
+
+        /// <summary>
+        /// True if the message is compressed
+        /// </summary>
+        public bool IsCompressed => Flags.HasFlag(MessageFlags.Compressed);
 
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
 
@@ -84,8 +91,10 @@ namespace Neo.Network.P2P
                 Flags = MessageFlags.None,
                 Command = command,
                 Payload = payload,
-                _payload_compressed = payload?.ToArray() ?? Array.Empty<byte>()
+                _payload_raw = payload?.ToArray() ?? Array.Empty<byte>()
             };
+
+            message._payload_compressed = message._payload_raw;
 
             // Try compression
             if (tryCompression && message._payload_compressed.Length > CompressionMinSize)
@@ -123,6 +132,28 @@ namespace Neo.Network.P2P
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
             writer.WriteVarBytes(_payload_compressed.Span);
+        }
+
+        public byte[] ToArray(bool enablecompression)
+        {
+            if (enablecompression || !IsCompressed)
+            {
+                return this.ToArray();
+            }
+            else
+            {
+                // Avoid compression
+
+                using MemoryStream ms = new();
+                using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+
+                writer.Write((byte)(Flags & ~MessageFlags.Compressed));
+                writer.Write((byte)Command);
+                writer.WriteVarBytes(_payload_raw.Span);
+
+                writer.Flush();
+                return ms.ToArray();
+            }
         }
 
         internal static int TryDeserialize(ByteString data, out Message msg)
