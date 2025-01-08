@@ -19,7 +19,6 @@ namespace Neo.UnitTests.Cryptography
     [TestClass]
     public class UT_RIPEMD160Managed
     {
-
         [TestMethod]
         public void TestHashCore()
         {
