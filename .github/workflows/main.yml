@@ -70,14 +70,14 @@ jobs:
         brew install leveldb
         dotnet build
         cp -vp /opt/homebrew/Cellar/leveldb/1.23_1/lib/libleveldb.dylib ./tests/Neo.Plugins.Storage.Tests/bin/Debug/net9.0/
-        dotnet test --blame-hang --blame-crash --no-build
+        dotnet test --no-build
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet build
-        dotnet test --blame-hang --blame-crash --no-build
+        dotnet test --no-build
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
