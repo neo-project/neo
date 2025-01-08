@@ -69,7 +69,7 @@ jobs:
       run: |
         brew install leveldb
         dotnet build
-        cp -vp /opt/homebrew/Cellar/leveldb/1.23_1/lib/libleveldb.dylib ./tests/Neo.Plugins.Storage.Tests/bin/Debug/net9.0/
+        cp -vp /opt/homebrew/Cellar/leveldb/1.23_2/lib/libleveldb.dylib ./tests/Neo.Plugins.Storage.Tests/bin/Debug/net9.0/
         dotnet test --no-build
 
     - name: Test (windows)
