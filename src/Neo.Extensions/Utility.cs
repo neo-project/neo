@@ -31,6 +31,8 @@ namespace Neo
             }
         }
 
+        public static LogLevel LogLevel { get; set; } = LogLevel.Debug;
+
         public static event LogEventHandler? Logging;
 
         /// <summary>
@@ -53,6 +55,8 @@ namespace Neo
         /// <param name="message">The message of the log.</param>
         public static void Log(string source, LogLevel level, object message)
         {
+            if ((int)level < (int)LogLevel) return;
+
             Logging?.Invoke(source, level, message);
         }
     }
