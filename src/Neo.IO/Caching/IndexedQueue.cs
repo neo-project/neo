@@ -181,6 +181,7 @@ namespace Neo.IO.Caching
         {
             _head = 0;
             _count = 0;
+            Array.Clear(_array, 0, _array.Length);
         }
 
         /// <summary>
