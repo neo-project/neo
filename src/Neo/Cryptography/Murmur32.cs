@@ -11,7 +11,6 @@
 
 using System;
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
@@ -31,7 +30,8 @@ namespace Neo.Cryptography
         private uint hash;
         private int length;
 
-        public override int HashSize => 32;
+        public const int HashSizeInBits = 32;
+        public override int HashSize => HashSizeInBits;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Murmur32"/> class with the specified seed.
@@ -40,6 +40,7 @@ namespace Neo.Cryptography
         public Murmur32(uint seed)
         {
             this.seed = seed;
+            HashSizeValue = HashSizeInBits;
             Initialize();
         }
 
