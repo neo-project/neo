@@ -26,7 +26,8 @@ namespace Neo.Cryptography
         private readonly uint[] _stateMD160;
         private readonly uint[] _blockDWords;
 
-        public override int HashSize => 160;
+        public const int HashSizeInBits = 160;
+        public override int HashSize => HashSizeInBits;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RIPEMD160Managed"/> class.
@@ -37,6 +38,7 @@ namespace Neo.Cryptography
             _blockDWords = new uint[16];
             _buffer = new byte[64];
 
+            HashSizeValue = HashSizeInBits;
             InitializeState();
         }
 
