@@ -43,13 +43,8 @@
   </ItemGroup>
 
   <Target Name="MoveLevelDbForBuild" BeforeTargets="PostBuildEvent">
-    <Move SourceFiles="$(OutputPath)/LevelDBStore.dll" DestinationFolder="$(OutDir)/Plugins/LevelDBStore/" />
-    <Move SourceFiles="$(OutputPath)/RocksDBStore.dll" DestinationFolder="$(OutDir)/Plugins/RocksDBStore/" />
-  </Target>
-
-  <Target Name="MoveLevelDbForBuild" BeforeTargets="Publish">
-    <Move SourceFiles="$(OutputPath)/LevelDBStore.dll" DestinationFolder="$(PublishUrl)/Plugins/LevelDBStore/" />
-    <Move SourceFiles="$(OutputPath)/RocksDBStore.dll" DestinationFolder="$(PublishUrl)/Plugins/RocksDBStore/" />
+    <Move SourceFiles="$(OutputPath)/LevelDBStore.dll" DestinationFolder="$(OutputPath)/Plugins/LevelDBStore/" />
+    <Move SourceFiles="$(OutputPath)/RocksDBStore.dll" DestinationFolder="$(OutputPath)/Plugins/RocksDBStore/" />
   </Target>
 
 </Project>
