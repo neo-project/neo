@@ -13,7 +13,6 @@ using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -373,6 +372,7 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
+            Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
