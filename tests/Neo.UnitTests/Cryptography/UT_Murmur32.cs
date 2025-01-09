@@ -27,24 +27,28 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
-        public void TestHashCore()
+        public void TestHashToUInt32()
         {
             byte[] array = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
             array.Murmur32(10u).Should().Be(378574820u);
         }
 
         [TestMethod]
-        public void TestTryComputeHash()
+        public void TestComputeHash()
         {
             var murmur3 = new Murmur32(10u);
-            var buffer = new byte[murmur3.HashSize / 8];
             var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
-
-            var ok = murmur3.TryComputeHash(data, buffer, out _);
-            ok.Should().BeTrue();
-
+            var buffer = murmur3.ComputeHash(data);
             var hash = BinaryPrimitives.ReadUInt32LittleEndian(buffer);
             hash.Should().Be(378574820u);
+        }
+
+        [TestMethod]
+        public void TestComputeHashUInt32()
+        {
+            var murmur3 = new Murmur32(10u);
+            var hash = murmur3.ComputeHashUInt32("hello worldhello world"u8.ToArray());
+            hash.Should().Be(60539726u);
         }
     }
 }
