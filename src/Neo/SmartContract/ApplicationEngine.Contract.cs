@@ -132,7 +132,7 @@ namespace Neo.SmartContract
         /// The implementation of System.Contract.CreateMultisigAccount.
         /// Calculates corresponding multisig account scripthash for the given public keys.
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
