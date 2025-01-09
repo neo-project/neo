@@ -76,6 +76,7 @@ jobs:
     - name: Remove files (junk)
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
       run: |
+        rm -v -R runtimes
         rm -v Neo*
         rm -v *.pdb
         rm -v *.xml

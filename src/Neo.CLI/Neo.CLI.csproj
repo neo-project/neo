@@ -33,6 +33,8 @@
     <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo\Neo.csproj" />
+    <ProjectReference Include="..\Plugins\LevelDBStore\LevelDBStore.csproj" />
+    <ProjectReference Include="..\Plugins\RocksDBStore\RocksDBStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,25 +42,14 @@
       <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
-  <Target Name="DownloadNativeLibs" BeforeTargets="PreBuildEvent">
-    <DownloadFile Condition="!Exists('runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceUrl="https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(BaseIntermediateOutputPath)" />
-    <Unzip Condition="Exists('$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip') And !Exists('runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceFiles="$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(BaseIntermediateOutputPath)" />
-    <Move SourceFiles="$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/%(NativeLib.Lib)" DestinationFolder="$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/" />
+  <Target Name="MoveLevelDbForBuild" BeforeTargets="PostBuildEvent">
+    <Move SourceFiles="$(OutputPath)/LevelDBStore.dll" DestinationFolder="$(OutDir)/Plugins/LevelDBStore/" />
+    <Move SourceFiles="$(OutputPath)/RocksDBStore.dll" DestinationFolder="$(OutDir)/Plugins/RocksDBStore/" />
   </Target>
 
-  <ItemGroup>
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-x64" Lib="libleveldb.dll" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-arm64" Lib="libleveldb.dll" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-x64" Lib="libleveldb.so" />
-    <!-- <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-arm64" Lib="libleveldb.so" /> -->
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-x64" Lib="libleveldb.dylib" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-arm64" Lib="libleveldb.dylib" />
-
-    <Content Include="@(NativeLib -> '$(BaseIntermediateOutputPath)libleveldb-%(RuntimeId)/runtimes/%(RuntimeId)/native/%(Lib)')" PackagePath="runtimes/%(RuntimeId)/native/%(Lib)" Link="runtimes/%(RuntimeId)/native/%(Lib)">
-      <Pack>true</Pack>
-      <Visible>false</Visible>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <Target Name="MoveLevelDbForBuild" BeforeTargets="Publish">
+    <Move SourceFiles="$(OutputPath)/LevelDBStore.dll" DestinationFolder="$(PublishUrl)/Plugins/LevelDBStore/" />
+    <Move SourceFiles="$(OutputPath)/RocksDBStore.dll" DestinationFolder="$(PublishUrl)/Plugins/RocksDBStore/" />
+  </Target>
 
 </Project>
