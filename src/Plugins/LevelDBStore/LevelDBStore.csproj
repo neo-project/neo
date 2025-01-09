@@ -18,7 +18,7 @@
     <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-x64" Lib="libleveldb.dll" />
     <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-arm64" Lib="libleveldb.dll" />
     <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-x64" Lib="libleveldb.so" />
-    <!-- <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-arm64" Lib="libleveldb.so" /> -->
+    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-arm64" Lib="libleveldb.so" />
     <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-x64" Lib="libleveldb.dylib" />
     <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-arm64" Lib="libleveldb.dylib" />
 
