@@ -14,7 +14,6 @@ env:
 
 jobs:
   build-neo-cli:
-    needs: [build-leveldb]
     name: ${{ matrix.runtime }}
     runs-on: ubuntu-latest
     strategy:
