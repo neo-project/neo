@@ -33,6 +33,7 @@
     <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo\Neo.csproj" />
+    <ProjectReference Include="..\Plugins\RocksDBStore\RocksDBStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
