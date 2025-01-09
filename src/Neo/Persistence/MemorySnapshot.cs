@@ -54,6 +54,7 @@ namespace Neo.Persistence
             writeBatch[key[..]] = value[..];
         }
 
+        /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;

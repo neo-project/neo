@@ -54,9 +54,10 @@ namespace Neo.Plugins.Storage
             _readOptions.Dispose();
         }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
+        /// <inheritdoc/>
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return _db.Seek(_readOptions, prefix, direction);
+            return _db.Seek(_readOptions, keyOrPrefix, direction);
         }
 
         public void Put(byte[] key, byte[] value)

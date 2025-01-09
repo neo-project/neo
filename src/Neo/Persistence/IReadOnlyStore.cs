@@ -22,17 +22,17 @@ namespace Neo.Persistence
         /// <summary>
         /// Seeks to the entry with the specified key.
         /// </summary>
-        /// <param name="key">The key to be sought.</param>
+        /// <param name="keyOrPrefix">The key(i.e. start key) or prefix to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] key, SeekDirection direction);
+        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction);
 
         /// <summary>
         /// Reads a specified entry from the database.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        /// <seealso cref="TryGet(byte[], out byte[])"/>. Obsolete it later for avoiding complier warning.
+        [Obsolete("use TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value) instead.")]
         byte[] TryGet(byte[] key);
 
         /// <summary>

@@ -11,26 +11,42 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {
     public static class StringExtensions
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] HexToBytes(this string value) => HexToBytes(value.AsSpan());
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] HexToBytesReversed(this ReadOnlySpan<char> value)
+        {
+            var data = HexToBytes(value);
+            Array.Reverse(data);
+            return data;
+        }
+
         /// <summary>
         /// Converts a hex <see cref="string"/> to byte array.
         /// </summary>
         /// <param name="value">The hex <see cref="string"/> to convert.</param>
         /// <returns>The converted byte array.</returns>
-        public static byte[] HexToBytes(this string value)
+        public static byte[] HexToBytes(this ReadOnlySpan<char> value)
         {
-            if (value == null || value.Length == 0)
+#if !NET9_0_OR_GREATER
+            if (value.IsEmpty)
                 return [];
             if (value.Length % 2 == 1)
                 throw new FormatException();
             var result = new byte[value.Length / 2];
             for (var i = 0; i < result.Length; i++)
-                result[i] = byte.Parse(value.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier);
+                result[i] = byte.Parse(value.Slice(i * 2, 2), NumberStyles.AllowHexSpecifier);
             return result;
+#else
+            return Convert.FromHexString(value);
+#endif
         }
 
         /// <summary>
