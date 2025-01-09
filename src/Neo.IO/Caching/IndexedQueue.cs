@@ -146,6 +146,7 @@ namespace Neo.IO.Caching
             if (_count == 0)
                 throw new InvalidOperationException("The queue is empty");
             var result = _array[_head];
+            _array[_head] = default!;
             ++_head;
             _head %= _array.Length;
             --_count;
@@ -179,6 +180,7 @@ namespace Neo.IO.Caching
         /// </summary>
         public void Clear()
         {
+            Array.Clear(_array, _head, _count);
             _head = 0;
             _count = 0;
         }
