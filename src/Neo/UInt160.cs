@@ -12,7 +12,6 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -145,26 +144,16 @@ namespace Neo
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string str, out UInt160 result)
         {
-            var startIndex = 0;
-
             result = null;
+            var data = str.AsSpan(); // AsSpan is null safe
+            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+                data = data[2..];
 
-            if (string.IsNullOrWhiteSpace(str)) return false;
-
-            if (str.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                startIndex = 2;
-
-            if ((str.Length - startIndex) != Length * 2) return false;
+            if (data.Length != Length * 2) return false;
 
             try
             {
-                var data = new byte[Length];
-                for (var i = 0; i < Length; i++)
-                {
-                    if (!byte.TryParse(str.AsSpan(i * 2 + startIndex, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
-                        return false;
-                }
-                result = new(data);
+                result = new UInt160(data.HexToBytesReversed());
                 return true;
             }
             catch

@@ -47,6 +47,7 @@ namespace Neo.Persistence
             _innerData[key[..]] = value[..];
         }
 
+        /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             if (direction == SeekDirection.Backward && keyOrPrefix?.Length == 0) yield break;
