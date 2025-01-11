@@ -60,6 +60,11 @@ namespace Neo.Network.P2P
         private class Timer { }
 
         /// <summary>
+        /// The default value for enable compression.
+        /// </summary>
+        public const bool DefaultEnableCompression = true;
+
+        /// <summary>
         /// The default minimum number of desired connections.
         /// </summary>
         public const int DefaultMinDesiredConnections = 10;
@@ -112,6 +117,11 @@ namespace Neo.Network.P2P
         /// Indicates the minimum number of desired connections.
         /// </summary>
         public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
+
+        /// <summary>
+        /// Indicates if the compression is enabled.
+        /// </summary>
+        public bool EnableCompression { get; private set; } = DefaultEnableCompression;
 
         /// <summary>
         /// Indicates the maximum number of connections.
@@ -228,7 +238,7 @@ namespace Neo.Network.P2P
         private void OnStart(ChannelsConfig config)
         {
             ListenerTcpPort = config.Tcp?.Port ?? 0;
-
+            EnableCompression = config.EnableCompression;
             MinDesiredConnections = config.MinDesiredConnections;
             MaxConnections = config.MaxConnections;
             MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;

@@ -11,6 +11,7 @@
     },
     "P2P": {
       "Port": 50333,
+      "EnableCompression": true,
       "MinDesiredConnections": 10,
       "MaxConnections": 40,
       "MaxConnectionsPerAddress": 3

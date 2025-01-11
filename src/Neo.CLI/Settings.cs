@@ -110,6 +110,7 @@ namespace Neo
     public class P2PSettings
     {
         public ushort Port { get; }
+        public bool EnableCompression { get; }
         public int MinDesiredConnections { get; }
         public int MaxConnections { get; }
         public int MaxConnectionsPerAddress { get; }
@@ -117,6 +118,7 @@ namespace Neo
         public P2PSettings(IConfigurationSection section)
         {
             Port = section.GetValue<ushort>(nameof(Port), 10333);
+            EnableCompression = section.GetValue(nameof(EnableCompression), Peer.DefaultEnableCompression);
             MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), Peer.DefaultMinDesiredConnections);
             MaxConnections = section.GetValue(nameof(MaxConnections), Peer.DefaultMaxConnections);
             MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), 3);
