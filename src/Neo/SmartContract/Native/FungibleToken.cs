@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
             Factor = BigInteger.Pow(10, Decimals);
         }
 
-        protected override void OnManifestCompose(ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
             manifest.SupportedStandards = new[] { "NEP-17" };
         }

@@ -103,7 +103,7 @@ namespace Neo.SmartContract
         public static byte[] CreateMultiSigRedeemScript(int m, IReadOnlyCollection<ECPoint> publicKeys)
         {
             if (!(1 <= m && m <= publicKeys.Count && publicKeys.Count <= 1024))
-                throw new ArgumentException();
+                throw new ArgumentException($"Invalid multisig parameters: m={m}, publicKeys.Count={publicKeys.Count}");
             using ScriptBuilder sb = new();
             sb.EmitPush(m);
             foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
