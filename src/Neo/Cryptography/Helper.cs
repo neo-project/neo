@@ -55,7 +55,7 @@ namespace Neo.Cryptography
 
             var output = new byte[ripemd160.HashSize / 8];
             if (!ripemd160.TryComputeHash(value, output.AsSpan(), out _))
-                throw new Exception();
+                throw new CryptographicException();
             return output;
         }
 
