@@ -16,6 +16,9 @@ using System.Collections.Generic;
 
 namespace Neo.Plugins.Storage
 {
+    /// <summary>
+    /// Write operations on a snapshot cannot be concurrent.
+    /// </summary>
     internal class Snapshot : ISnapshot
     {
         private readonly RocksDb db;
