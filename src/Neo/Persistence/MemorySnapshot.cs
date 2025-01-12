@@ -18,6 +18,9 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// Write operations on a snapshot cannot be concurrent.
+    /// </summary>
     internal class MemorySnapshot : ISnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]> innerData;

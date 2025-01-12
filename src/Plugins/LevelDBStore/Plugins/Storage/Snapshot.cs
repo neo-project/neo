@@ -19,6 +19,7 @@ namespace Neo.Plugins.Storage
 {
     /// <summary>
     /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
+    /// Write operations on a snapshot cannot be concurrent.
     /// </summary>
     internal class Snapshot : ISnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
@@ -35,10 +36,13 @@ namespace Neo.Plugins.Storage
             _batch = new WriteBatch();
         }
 
+        /// <inheritdoc/>
         public void Commit() => _db.Write(WriteOptions.Default, _batch);
 
+        /// <inheritdoc/>
         public void Delete(byte[] key) => _batch.Delete(key);
 
+        /// <inheritdoc/>
         public void Put(byte[] key, byte[] value) => _batch.Put(key, value);
 
         public void Dispose()
