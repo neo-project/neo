@@ -73,7 +73,7 @@ namespace Neo.Persistence
             return value?[..];
         }
 
-        public bool TryGet(byte[] key, [MaybeNullWhen(false)] out byte[]? value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             return _immutableData.TryGetValue(key, out value);
         }
