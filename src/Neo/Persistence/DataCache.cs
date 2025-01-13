@@ -211,12 +211,13 @@ namespace Neo.Persistence
             {
                 if (key_prefix == null)
                 {
-                    // Backwards seek for zero prefix is not supported for now.
+                    // Backwards seek for null prefix is not supported for now.
                     throw new ArgumentNullException(nameof(key_prefix));
                 }
                 if (key_prefix.Length == 0)
-                { // Backwards seek for zero prefix is not supported for now.
-                    throw new ArgumentOutOfRangeException();
+                {
+                    // Backwards seek for zero prefix is not supported for now.
+                    throw new ArgumentOutOfRangeException(nameof(key_prefix));
                 }
                 seek_prefix = null;
                 for (var i = key_prefix.Length - 1; i >= 0; i--)
