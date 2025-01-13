@@ -23,10 +23,13 @@ namespace Neo.Plugins.Storage
         private readonly WriteBatch batch;
         private readonly ReadOptions options;
 
-        public Snapshot(RocksDb db)
+        public SerializedCache SerializedCache { get; }
+
+        public Snapshot(RocksDb db, SerializedCache serializedCache)
         {
             this.db = db;
             snapshot = db.CreateSnapshot();
+            SerializedCache = serializedCache;
             batch = new WriteBatch();
 
             options = new ReadOptions();

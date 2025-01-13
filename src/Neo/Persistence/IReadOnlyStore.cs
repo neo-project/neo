@@ -20,6 +20,11 @@ namespace Neo.Persistence
     public interface IReadOnlyStore
     {
         /// <summary>
+        /// Serialized cache
+        /// </summary>
+        SerializedCache SerializedCache { get; }
+
+        /// <summary>
         /// Seeks to the entry with the specified key.
         /// </summary>
         /// <param name="keyOrPrefix">The key(i.e. start key) or prefix to be sought.</param>

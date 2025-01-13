@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.IO;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -20,29 +19,32 @@ namespace Neo.Persistence
 {
     internal class MemorySnapshot : ISnapshot
     {
-        private readonly ConcurrentDictionary<byte[], byte[]> innerData;
-        private readonly ImmutableDictionary<byte[], byte[]> immutableData;
-        private readonly ConcurrentDictionary<byte[], byte[]> writeBatch;
+        private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
+        private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
+        private readonly ConcurrentDictionary<byte[], byte[]> _writeBatch;
 
-        public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
+        public SerializedCache SerializedCache { get; }
+
+        public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData, SerializedCache serializedCache)
         {
-            this.innerData = innerData;
-            immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+            _innerData = innerData;
+            SerializedCache = serializedCache;
+            _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
+            _writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()
         {
-            foreach (var pair in writeBatch)
+            foreach (var pair in _writeBatch)
                 if (pair.Value is null)
-                    innerData.TryRemove(pair.Key, out _);
+                    _innerData.TryRemove(pair.Key, out _);
                 else
-                    innerData[pair.Key] = pair.Value;
+                    _innerData[pair.Key] = pair.Value;
         }
 
         public void Delete(byte[] key)
         {
-            writeBatch[key] = null;
+            _writeBatch[key] = null;
         }
 
         public void Dispose()
@@ -51,14 +53,14 @@ namespace Neo.Persistence
 
         public void Put(byte[] key, byte[] value)
         {
-            writeBatch[key[..]] = value[..];
+            _writeBatch[key[..]] = value[..];
         }
 
         /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
-            IEnumerable<KeyValuePair<byte[], byte[]>> records = immutableData;
+            IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
             if (keyOrPrefix?.Length > 0)
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
@@ -67,18 +69,18 @@ namespace Neo.Persistence
 
         public byte[] TryGet(byte[] key)
         {
-            immutableData.TryGetValue(key, out byte[] value);
+            _immutableData.TryGetValue(key, out byte[] value);
             return value?[..];
         }
 
         public bool TryGet(byte[] key, out byte[] value)
         {
-            return immutableData.TryGetValue(key, out value);
+            return _immutableData.TryGetValue(key, out value);
         }
 
         public bool Contains(byte[] key)
         {
-            return immutableData.ContainsKey(key);
+            return _immutableData.ContainsKey(key);
         }
     }
 }

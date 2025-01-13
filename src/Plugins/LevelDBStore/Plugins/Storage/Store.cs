@@ -24,6 +24,8 @@ namespace Neo.Plugins.Storage
         private readonly DB _db;
         private readonly Options _options;
 
+        public SerializedCache SerializedCache { get; }
+
         public Store(string path)
         {
             _options = new Options
@@ -33,6 +35,7 @@ namespace Neo.Plugins.Storage
                 CompressionLevel = CompressionType.SnappyCompression,
             };
             _db = DB.Open(path, _options);
+            SerializedCache = new();
         }
 
         public void Delete(byte[] key)
@@ -47,7 +50,7 @@ namespace Neo.Plugins.Storage
         }
 
         public ISnapshot GetSnapshot() =>
-            new Snapshot(_db);
+            new Snapshot(_db, SerializedCache);
 
         public void Put(byte[] key, byte[] value) =>
             _db.Put(WriteOptions.Default, key, value);

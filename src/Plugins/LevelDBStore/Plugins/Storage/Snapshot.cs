@@ -28,10 +28,13 @@ namespace Neo.Plugins.Storage
         private readonly WriteBatch _batch;
         private readonly object _lock = new();
 
-        public Snapshot(DB db)
+        public SerializedCache SerializedCache { get; }
+
+        public Snapshot(DB db, SerializedCache serializedCache)
         {
             _db = db;
             _snapshot = db.CreateSnapshot();
+            SerializedCache = serializedCache;
             _readOptions = new ReadOptions { FillCache = false, Snapshot = _snapshot };
             _batch = new WriteBatch();
         }

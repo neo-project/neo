@@ -23,6 +23,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
     class TestSnapshot : ISnapshot
     {
         public Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+        public SerializedCache SerializedCache { get; } = new();
 
         private byte[] StoreKey(byte[] key)
         {

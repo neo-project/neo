@@ -21,6 +21,8 @@ namespace Neo.Plugins.Storage
     {
         private readonly RocksDb db;
 
+        public SerializedCache SerializedCache { get; } = new();
+
         public Store(string path)
         {
             db = RocksDb.Open(Options.Default, Path.GetFullPath(path));
@@ -33,7 +35,7 @@ namespace Neo.Plugins.Storage
 
         public ISnapshot GetSnapshot()
         {
-            return new Snapshot(db);
+            return new Snapshot(db, SerializedCache);
         }
 
         /// <inheritdoc/>

@@ -9,55 +9,68 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.SmartContract;
+using System;
 using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
     class ClonedCache : DataCache
     {
-        private readonly DataCache innerCache;
+        private readonly DataCache _innerCache;
 
         public ClonedCache(DataCache innerCache)
         {
-            this.innerCache = innerCache;
+            _innerCache = innerCache;
+        }
+
+        public override T? GetCached<T>() where T : default
+        {
+            return _innerCache.GetCached<T>();
+        }
+
+        protected override void SetCacheInternal(Type type, object? value)
+        {
+            _innerCache.serializedCacheChanges[type] = value;
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {
-            innerCache.Add(key, value.Clone());
+            _innerCache.Add(key, value.Clone());
         }
 
         protected override void DeleteInternal(StorageKey key)
         {
-            innerCache.Delete(key);
+            _innerCache.Delete(key);
         }
 
         protected override bool ContainsInternal(StorageKey key)
         {
-            return innerCache.Contains(key);
+            return _innerCache.Contains(key);
         }
 
         /// <inheritdoc/>
         protected override StorageItem GetInternal(StorageKey key)
         {
-            return innerCache[key].Clone();
+            return _innerCache[key].Clone();
         }
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPreifx, SeekDirection direction)
         {
-            foreach (var (key, value) in innerCache.Seek(keyOrPreifx, direction))
+            foreach (var (key, value) in _innerCache.Seek(keyOrPreifx, direction))
                 yield return (key, value.Clone());
         }
 
-        protected override StorageItem TryGetInternal(StorageKey key)
+        protected override StorageItem? TryGetInternal(StorageKey key)
         {
-            return innerCache.TryGet(key)?.Clone();
+            return _innerCache.TryGet(key)?.Clone();
         }
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            innerCache.GetAndChange(key).FromReplica(value);
+            _innerCache.GetAndChange(key)?.FromReplica(value);
         }
     }
 }

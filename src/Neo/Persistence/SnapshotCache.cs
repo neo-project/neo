@@ -22,8 +22,8 @@ namespace Neo.Persistence
     /// </summary>
     public class SnapshotCache : DataCache, IDisposable
     {
-        private readonly IReadOnlyStore store;
-        private readonly ISnapshot snapshot;
+        private readonly IReadOnlyStore _store;
+        private readonly ISnapshot _snapshot;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnapshotCache"/> class.
@@ -31,58 +31,68 @@ namespace Neo.Persistence
         /// <param name="store">An <see cref="IReadOnlyStore"/> to create a readonly cache; or an <see cref="ISnapshot"/> to create a snapshot cache.</param>
         public SnapshotCache(IReadOnlyStore store)
         {
-            this.store = store;
-            snapshot = store as ISnapshot;
+            _store = store;
+            _snapshot = store as ISnapshot;
+        }
+
+        public override T? GetCached<T>() where T : default
+        {
+            return _store.SerializedCache.GetCached<T>();
+        }
+
+        protected override void SetCacheInternal(Type type, object? value)
+        {
+            _store.SerializedCache.Set(type, value);
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {
-            snapshot?.Put(key.ToArray(), value.ToArray());
+            _snapshot?.Put(key.ToArray(), value.ToArray());
         }
 
         protected override void DeleteInternal(StorageKey key)
         {
-            snapshot?.Delete(key.ToArray());
+            _snapshot?.Delete(key.ToArray());
         }
 
         public override void Commit()
         {
             base.Commit();
-            snapshot?.Commit();
+            _snapshot?.Commit();
         }
 
         protected override bool ContainsInternal(StorageKey key)
         {
-            return store.Contains(key.ToArray());
+            return _store.Contains(key.ToArray());
         }
 
         public void Dispose()
         {
-            snapshot?.Dispose();
+            _snapshot?.Dispose();
         }
 
         /// <inheritdoc/>
         protected override StorageItem GetInternal(StorageKey key)
         {
-            if (store.TryGet(key.ToArray(), out var value))
+            if (_store.TryGet(key.ToArray(), out var value))
                 return new(value);
             throw new KeyNotFoundException();
         }
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            return store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
+            return _store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
         /// <inheritdoc/>
         protected override StorageItem TryGetInternal(StorageKey key)
         {
-            return store.TryGet(key.ToArray(), out var value) ? new(value) : null;
+            return _store.TryGet(key.ToArray(), out var value) ? new(value) : null;
         }
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            snapshot?.Put(key.ToArray(), value.ToArray());
+            _snapshot?.Put(key.ToArray(), value.ToArray());
         }
     }
 }
