@@ -358,20 +358,25 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    trackable = new Trackable
-                    {
-                        Key = key,
-                        Item = TryGetInternal(key)
-                    };
-                    if (trackable.Item == null)
+                    var item = TryGetInternal(key);
+                    if (item == null)
                     {
                         if (factory == null) return null;
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Added;
+                        trackable = new Trackable
+                        {
+                            Key = key,
+                            Item = factory(),
+                            State = TrackState.Added
+                        };
                     }
                     else
                     {
-                        trackable.State = TrackState.Changed;
+                        trackable = new Trackable
+                        {
+                            Key = key,
+                            Item = item,
+                            State = TrackState.Changed
+                        };
                     }
                     _dictionary.Add(key, trackable);
                     _changeSet.Add(key);
