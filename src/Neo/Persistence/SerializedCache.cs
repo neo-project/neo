@@ -26,7 +26,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <typeparam name="T">Type</typeparam>
         /// <returns>Cache</returns>
-        public T? GetCached<T>()
+        public T? Get<T>()
         {
             if (_cache.TryGetValue(typeof(T), out var ret))
             {
@@ -34,6 +34,16 @@ namespace Neo.Persistence
             }
 
             return default;
+        }
+
+        /// <summary>
+        /// Set entry
+        /// </summary>
+        /// <typeparam name="T">Type</typeparam>
+        /// <param name="value">Value</param>
+        public void Set<T>(T? value)
+        {
+            Set(typeof(T), value);
         }
 
         /// <summary>

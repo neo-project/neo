@@ -21,14 +21,11 @@ namespace Neo.Persistence
     {
         private readonly DataCache _innerCache;
 
+        public override SerializedCache SerializedCache => _innerCache.SerializedCache;
+
         public ClonedCache(DataCache innerCache)
         {
             _innerCache = innerCache;
-        }
-
-        public override T? GetCached<T>() where T : default
-        {
-            return _innerCache.GetCached<T>();
         }
 
         protected override void SetCacheInternal(Type type, object? value)

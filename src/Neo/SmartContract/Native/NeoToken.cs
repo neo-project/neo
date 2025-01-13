@@ -13,7 +13,6 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.VM;
@@ -296,13 +295,21 @@ namespace Neo.SmartContract.Native
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
             var end = Ledger.CurrentIndex(snapshot) + 1;
-            var cached = snapshot.GetCached<LastGasPerBlock>();
+            var cached = snapshot.SerializedCache.Get<LastGasPerBlock>();
             if (cached != null && cached.Index < end)
             {
                 return cached.GasPerBlock;
             }
 
-            return GetSortedGasRecords(snapshot, end).First().GasPerBlock;
+            var last = GetSortedGasRecords(snapshot, end).First();
+
+            if (cached == null)
+            {
+                // Not cached
+                snapshot.SerializedCache.Set(new LastGasPerBlock() { Index = last.Index, GasPerBlock = last.GasPerBlock });
+            }
+
+            return last.GasPerBlock;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

@@ -52,6 +52,11 @@ namespace Neo.Persistence
         internal readonly Dictionary<Type, object?> serializedCacheChanges = new();
 
         /// <summary>
+        /// Serialized cache
+        /// </summary>
+        public abstract SerializedCache SerializedCache { get; }
+
+        /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -82,13 +87,6 @@ namespace Neo.Persistence
                 }
             }
         }
-
-        /// <summary>
-        /// Get cached item
-        /// </summary>
-        /// <typeparam name="T">Cached type</typeparam>
-        /// <returns>Serialized cache</returns>
-        public abstract T? GetCached<T>();
 
         /// <summary>
         /// Adds a new entry to the cache.
