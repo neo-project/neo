@@ -251,7 +251,7 @@ namespace Neo.Persistence
                     throw new ArgumentNullException(nameof(seek_prefix));
                 }
             }
-            return FindInternal(key_prefix, seek_prefix!, direction);
+            return FindInternal(key_prefix, seek_prefix, direction);
         }
 
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? key_prefix, byte[]? seek_prefix, SeekDirection direction)

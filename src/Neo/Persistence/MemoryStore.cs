@@ -9,10 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
-using Neo.IO;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -62,14 +64,14 @@ namespace Neo.Persistence
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            if (!_innerData.TryGetValue(key, out byte[] value)) return null;
+            if (!_innerData.TryGetValue(key, out var value)) return null;
             return value[..];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [MaybeNullWhen(false)] out byte[] value)
         {
             return _innerData.TryGetValue(key, out value);
         }
