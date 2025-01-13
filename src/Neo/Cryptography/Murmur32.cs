@@ -46,7 +46,11 @@ namespace Neo.Cryptography
             _seed = seed;
         }
 
-        private void HashCore(ReadOnlySpan<byte> source)
+        /// <summary>
+        /// Append data to murmur computation
+        /// </summary>
+        /// <param name="source">Source</param>
+        public void Append(ReadOnlySpan<byte> source)
         {
             _length += source.Length;
             for (; source.Length >= 4; source = source[4..])
@@ -114,7 +118,7 @@ namespace Neo.Cryptography
         public uint ComputeHashUInt32(ReadOnlySpan<byte> data)
         {
             Initialize();
-            HashCore(data);
+            Append(data);
             return GetCurrentHashUInt32();
         }
 
