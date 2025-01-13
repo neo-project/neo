@@ -29,8 +29,8 @@ namespace Neo.Cryptography
         private const uint n = 0xe6546b64;
 
         private readonly uint _seed;
-        private uint hash;
-        private int length;
+        private uint _hash;
+        private int _length;
 
         public const int HashSizeInBits = 32;
 
@@ -48,16 +48,16 @@ namespace Neo.Cryptography
 
         private void HashCore(ReadOnlySpan<byte> source)
         {
-            length += source.Length;
+            _length += source.Length;
             for (; source.Length >= 4; source = source[4..])
             {
-                uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
+                var k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;
                 k = Helper.RotateLeft(k, r1);
                 k *= c2;
-                hash ^= k;
-                hash = Helper.RotateLeft(hash, r2);
-                hash = hash * m + n;
+                _hash ^= k;
+                _hash = Helper.RotateLeft(_hash, r2);
+                _hash = _hash * m + n;
             }
             if (source.Length > 0)
             {
@@ -71,13 +71,13 @@ namespace Neo.Cryptography
                 remainingBytes *= c1;
                 remainingBytes = Helper.RotateLeft(remainingBytes, r1);
                 remainingBytes *= c2;
-                hash ^= remainingBytes;
+                _hash ^= remainingBytes;
             }
         }
 
         private uint GetCurrentHashUInt32()
         {
-            var state = hash ^ (uint)length;
+            var state = _hash ^ (uint)_length;
             state ^= state >> 16;
             state *= 0x85ebca6b;
             state ^= state >> 13;
@@ -89,8 +89,8 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Initialize()
         {
-            hash = _seed;
-            length = 0;
+            _hash = _seed;
+            _length = 0;
         }
 
         /// <summary>
