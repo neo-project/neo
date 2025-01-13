@@ -9,10 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -44,8 +47,8 @@ namespace Neo.Persistence
             public TrackState State;
         }
 
-        private readonly Dictionary<StorageKey, Trackable> dictionary = new();
-        private readonly HashSet<StorageKey> changeSet = new();
+        private readonly Dictionary<StorageKey, Trackable> _dictionary = new();
+        private readonly HashSet<StorageKey> _changeSet = new();
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -57,9 +60,9 @@ namespace Neo.Persistence
         {
             get
             {
-                lock (dictionary)
+                lock (_dictionary)
                 {
-                    if (dictionary.TryGetValue(key, out Trackable trackable))
+                    if (_dictionary.TryGetValue(key, out var trackable))
                     {
                         if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                             throw new KeyNotFoundException();
@@ -72,7 +75,7 @@ namespace Neo.Persistence
                             Item = GetInternal(key),
                             State = TrackState.None
                         };
-                        dictionary.Add(key, trackable);
+                        _dictionary.Add(key, trackable);
                     }
                     return trackable.Item;
                 }
@@ -88,9 +91,9 @@ namespace Neo.Persistence
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
         public void Add(StorageKey key, StorageItem value)
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (_dictionary.TryGetValue(key, out var trackable))
                 {
                     trackable.Item = value;
                     trackable.State = trackable.State switch
@@ -102,14 +105,14 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    dictionary[key] = new Trackable
+                    _dictionary[key] = new Trackable
                     {
                         Key = key,
                         Item = value,
                         State = TrackState.Added
                     };
                 }
-                changeSet.Add(key);
+                _changeSet.Add(key);
             }
         }
 
@@ -126,7 +129,7 @@ namespace Neo.Persistence
         public virtual void Commit()
         {
             LinkedList<StorageKey> deletedItem = new();
-            foreach (Trackable trackable in GetChangeSet())
+            foreach (var trackable in GetChangeSet())
                 switch (trackable.State)
                 {
                     case TrackState.Added:
@@ -144,9 +147,9 @@ namespace Neo.Persistence
                 }
             foreach (StorageKey key in deletedItem)
             {
-                dictionary.Remove(key);
+                _dictionary.Remove(key);
             }
-            changeSet.Clear();
+            _changeSet.Clear();
         }
 
         /// <summary>
@@ -174,32 +177,32 @@ namespace Neo.Persistence
         /// <param name="key">The key of the entry.</param>
         public void Delete(StorageKey key)
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (_dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Added)
                     {
                         trackable.State = TrackState.NotFound;
-                        changeSet.Remove(key);
+                        _changeSet.Remove(key);
                     }
                     else if (trackable.State != TrackState.NotFound)
                     {
                         trackable.State = TrackState.Deleted;
-                        changeSet.Add(key);
+                        _changeSet.Add(key);
                     }
                 }
                 else
                 {
-                    StorageItem item = TryGetInternal(key);
+                    var item = TryGetInternal(key);
                     if (item == null) return;
-                    dictionary.Add(key, new Trackable
+                    _dictionary.Add(key, new Trackable
                     {
                         Key = key,
                         Item = item,
                         State = TrackState.Deleted
                     });
-                    changeSet.Add(key);
+                    _changeSet.Add(key);
                 }
             }
         }
@@ -216,12 +219,18 @@ namespace Neo.Persistence
         /// <param name="key_prefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[] key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
         {
+            if (key_prefix == null)
+            {
+                // Backwards seek for zero prefix is not supported for now.
+                throw new ArgumentNullException(nameof(key_prefix));
+            }
+
             var seek_prefix = key_prefix;
             if (direction == SeekDirection.Backward)
             {
-                if (key_prefix == null || key_prefix.Length == 0)
+                if (key_prefix.Length == 0)
                 { // Backwards seek for zero prefix is not supported for now.
                     throw new ArgumentException();
                 }
@@ -278,10 +287,10 @@ namespace Neo.Persistence
         /// <returns>The change set.</returns>
         public IEnumerable<Trackable> GetChangeSet()
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                foreach (StorageKey key in changeSet)
-                    yield return dictionary[key];
+                foreach (StorageKey key in _changeSet)
+                    yield return _dictionary[key];
             }
         }
 
@@ -292,9 +301,9 @@ namespace Neo.Persistence
         /// <returns><see langword="true"/> if the cache contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
         public bool Contains(StorageKey key)
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (_dictionary.TryGetValue(key, out var trackable))
                     return trackable.State != TrackState.Deleted && trackable.State != TrackState.NotFound;
                 return ContainsInternal(key);
             }
@@ -321,11 +330,11 @@ namespace Neo.Persistence
         /// <param name="key">The key of the entry.</param>
         /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
         /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
-        public StorageItem GetAndChange(StorageKey key, Func<StorageItem> factory = null)
+        public StorageItem? GetAndChange(StorageKey key, Func<StorageItem>? factory = null)
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (_dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
@@ -338,13 +347,13 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            changeSet.Add(key);
+                            _changeSet.Add(key);
                         }
                     }
                     else if (trackable.State == TrackState.None)
                     {
                         trackable.State = TrackState.Changed;
-                        changeSet.Add(key);
+                        _changeSet.Add(key);
                     }
                 }
                 else
@@ -364,8 +373,8 @@ namespace Neo.Persistence
                     {
                         trackable.State = TrackState.Changed;
                     }
-                    dictionary.Add(key, trackable);
-                    changeSet.Add(key);
+                    _dictionary.Add(key, trackable);
+                    _changeSet.Add(key);
                 }
                 return trackable.Item;
             }
@@ -379,9 +388,9 @@ namespace Neo.Persistence
         /// <returns>The cached data.</returns>
         public StorageItem GetOrAdd(StorageKey key, Func<StorageItem> factory)
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (_dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
@@ -393,7 +402,7 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            changeSet.Add(key);
+                            _changeSet.Add(key);
                         }
                     }
                 }
@@ -408,13 +417,13 @@ namespace Neo.Persistence
                     {
                         trackable.Item = factory();
                         trackable.State = TrackState.Added;
-                        changeSet.Add(key);
+                        _changeSet.Add(key);
                     }
                     else
                     {
                         trackable.State = TrackState.None;
                     }
-                    dictionary.Add(key, trackable);
+                    _dictionary.Add(key, trackable);
                 }
                 return trackable.Item;
             }
@@ -426,14 +435,14 @@ namespace Neo.Persistence
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
-            lock (dictionary)
+            lock (_dictionary)
             {
-                cached = dictionary
+                cached = _dictionary
                     .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
                     .Select(p =>
                     (
@@ -443,7 +452,7 @@ namespace Neo.Persistence
                     ))
                     .OrderBy(p => p.KeyBytes, comparer)
                     .ToArray();
-                cachedKeySet = new HashSet<StorageKey>(dictionary.Keys);
+                cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
             var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))
@@ -490,19 +499,19 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The cached data. Or <see langword="null"/> if it is neither in the cache nor in the underlying storage.</returns>
-        public StorageItem TryGet(StorageKey key)
+        public StorageItem? TryGet(StorageKey key)
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (_dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                         return null;
                     return trackable.Item;
                 }
-                StorageItem value = TryGetInternal(key);
+                var value = TryGetInternal(key);
                 if (value == null) return null;
-                dictionary.Add(key, new Trackable
+                _dictionary.Add(key, new Trackable
                 {
                     Key = key,
                     Item = value,
@@ -514,7 +523,7 @@ namespace Neo.Persistence
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGet(StorageKey key, out StorageItem item)
+        public bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item)
         {
             item = TryGet(key);
             return item != null;
@@ -525,7 +534,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        protected abstract StorageItem TryGetInternal(StorageKey key);
+        protected abstract StorageItem? TryGetInternal(StorageKey key);
 
         /// <summary>
         /// Updates an entry in the underlying storage.
