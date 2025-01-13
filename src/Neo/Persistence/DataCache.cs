@@ -125,7 +125,6 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
-            LinkedList<StorageKey> deletedItem = new();
             lock (dictionary)
             {
                 foreach (var key in changeSet)
@@ -143,13 +142,9 @@ namespace Neo.Persistence
                             break;
                         case TrackState.Deleted:
                             DeleteInternal(key);
-                            deletedItem.AddFirst(key);
+                            dictionary.Remove(key);
                             break;
                     }
-                }
-                foreach (var key in deletedItem)
-                {
-                    dictionary.Remove(key);
                 }
                 changeSet.Clear();
             }
