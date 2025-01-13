@@ -28,11 +28,13 @@ namespace Neo.Cryptography
         private const uint m = 5;
         private const uint n = 0xe6546b64;
 
-        private readonly uint seed;
+        private readonly uint _seed;
         private uint hash;
         private int length;
 
         public const int HashSizeInBits = 32;
+
+        [Obsolete("Use HashSizeInBits")]
         public int HashSize => HashSizeInBits;
 
         /// <summary>
@@ -41,8 +43,7 @@ namespace Neo.Cryptography
         /// <param name="seed">The seed to be used.</param>
         public Murmur32(uint seed)
         {
-            this.seed = seed;
-            Initialize();
+            _seed = seed;
         }
 
         private void HashCore(ReadOnlySpan<byte> source)
@@ -88,7 +89,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Initialize()
         {
-            hash = seed;
+            hash = _seed;
             length = 0;
         }
 
@@ -112,11 +113,9 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ComputeHashUInt32(ReadOnlySpan<byte> data)
         {
-            HashCore(data);
-
-            var state = GetCurrentHashUInt32();
             Initialize();
-            return state;
+            HashCore(data);
+            return GetCurrentHashUInt32();
         }
 
         /// <summary>
