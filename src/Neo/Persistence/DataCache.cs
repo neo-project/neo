@@ -29,24 +29,22 @@ namespace Neo.Persistence
         /// <summary>
         /// Represents an entry in the cache.
         /// </summary>
-        public class Trackable
+        public class Trackable(StorageKey key, StorageItem item, TrackState state)
         {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
             /// <summary>
             /// The key of the entry.
             /// </summary>
-            public StorageKey Key;
+            public StorageKey Key { get; } = key;
 
             /// <summary>
             /// The data of the entry.
             /// </summary>
-            public StorageItem Item;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+            public StorageItem Item { get; set; } = item;
 
             /// <summary>
             /// The state of the entry.
             /// </summary>
-            public TrackState State;
+            public TrackState State { get; set; } = state;
         }
 
         private readonly Dictionary<StorageKey, Trackable> _dictionary = new();
@@ -71,12 +69,7 @@ namespace Neo.Persistence
                     }
                     else
                     {
-                        trackable = new Trackable
-                        {
-                            Key = key,
-                            Item = GetInternal(key),
-                            State = TrackState.None
-                        };
+                        trackable = new Trackable(key, GetInternal(key), TrackState.None);
                         _dictionary.Add(key, trackable);
                     }
                     return trackable.Item;
@@ -107,12 +100,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    _dictionary[key] = new Trackable
-                    {
-                        Key = key,
-                        Item = value,
-                        State = TrackState.Added
-                    };
+                    _dictionary[key] = new Trackable(key, value, TrackState.Added);
                 }
                 _changeSet.Add(key);
             }
@@ -198,12 +186,7 @@ namespace Neo.Persistence
                 {
                     var item = TryGetInternal(key);
                     if (item == null) return;
-                    _dictionary.Add(key, new Trackable
-                    {
-                        Key = key,
-                        Item = item,
-                        State = TrackState.Deleted
-                    });
+                    _dictionary.Add(key, new Trackable(key, item, TrackState.Deleted));
                     _changeSet.Add(key);
                 }
             }
@@ -363,21 +346,11 @@ namespace Neo.Persistence
                     if (item == null)
                     {
                         if (factory == null) return null;
-                        trackable = new Trackable
-                        {
-                            Key = key,
-                            Item = factory(),
-                            State = TrackState.Added
-                        };
+                        trackable = new Trackable(key, factory(), TrackState.Added);
                     }
                     else
                     {
-                        trackable = new Trackable
-                        {
-                            Key = key,
-                            Item = item,
-                            State = TrackState.Changed
-                        };
+                        trackable = new Trackable(key, item, TrackState.Changed);
                     }
                     _dictionary.Add(key, trackable);
                     _changeSet.Add(key);
@@ -417,22 +390,12 @@ namespace Neo.Persistence
                     var item = TryGetInternal(key);
                     if (item == null)
                     {
-                        trackable = new Trackable
-                        {
-                            Key = key,
-                            Item = factory(),
-                            State = TrackState.Added
-                        };
+                        trackable = new Trackable(key, factory(), TrackState.Added);
                         _changeSet.Add(key);
                     }
                     else
                     {
-                        trackable = new Trackable
-                        {
-                            Key = key,
-                            Item = item,
-                            State = TrackState.None
-                        };
+                        trackable = new Trackable(key, item, TrackState.None);
                     }
                     _dictionary.Add(key, trackable);
                 }
@@ -522,12 +485,7 @@ namespace Neo.Persistence
                 }
                 var value = TryGetInternal(key);
                 if (value == null) return null;
-                _dictionary.Add(key, new Trackable
-                {
-                    Key = key,
-                    Item = value,
-                    State = TrackState.None
-                });
+                _dictionary.Add(key, new Trackable(key, value, TrackState.None));
                 return value;
             }
         }
