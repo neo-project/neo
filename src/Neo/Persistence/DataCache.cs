@@ -31,6 +31,7 @@ namespace Neo.Persistence
         /// </summary>
         public class Trackable
         {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
             /// <summary>
             /// The key of the entry.
             /// </summary>
@@ -40,6 +41,7 @@ namespace Neo.Persistence
             /// The data of the entry.
             /// </summary>
             public StorageItem Item;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
             /// <summary>
             /// The state of the entry.
@@ -413,20 +415,25 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    trackable = new Trackable
+                    var item = TryGetInternal(key);
+                    if (item == null)
                     {
-                        Key = key,
-                        Item = TryGetInternal(key)
-                    };
-                    if (trackable.Item == null)
-                    {
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Added;
+                        trackable = new Trackable
+                        {
+                            Key = key,
+                            Item = factory(),
+                            State = TrackState.Added
+                        };
                         _changeSet.Add(key);
                     }
                     else
                     {
-                        trackable.State = TrackState.None;
+                        trackable = new Trackable
+                        {
+                            Key = key,
+                            Item = item,
+                            State = TrackState.None
+                        };
                     }
                     _dictionary.Add(key, trackable);
                 }
