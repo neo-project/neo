@@ -223,21 +223,20 @@ namespace Neo.Persistence
         /// <returns>The entries found with the desired prefix.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            if (key_prefix == null)
-            {
-                // Backwards seek for zero prefix is not supported for now.
-                throw new ArgumentNullException(nameof(key_prefix));
-            }
-
             var seek_prefix = key_prefix;
             if (direction == SeekDirection.Backward)
             {
+                if (key_prefix == null)
+                {
+                    // Backwards seek for zero prefix is not supported for now.
+                    throw new ArgumentNullException(nameof(key_prefix));
+                }
                 if (key_prefix.Length == 0)
                 { // Backwards seek for zero prefix is not supported for now.
                     throw new ArgumentException();
                 }
                 seek_prefix = null;
-                for (int i = key_prefix.Length - 1; i >= 0; i--)
+                for (var i = key_prefix.Length - 1; i >= 0; i--)
                 {
                     if (key_prefix[i] < 0xff)
                     {
@@ -249,18 +248,18 @@ namespace Neo.Persistence
                 }
                 if (seek_prefix == null)
                 {
-                    throw new ArgumentException();
+                    throw new ArgumentNullException(nameof(seek_prefix));
                 }
             }
-            return FindInternal(key_prefix, seek_prefix, direction);
+            return FindInternal(key_prefix, seek_prefix!, direction);
         }
 
-        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[] key_prefix, byte[] seek_prefix, SeekDirection direction)
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? key_prefix, byte[]? seek_prefix, SeekDirection direction)
         {
             foreach (var (key, value) in Seek(seek_prefix, direction))
-                if (key.ToArray().AsSpan().StartsWith(key_prefix))
+                if (key_prefix == null || key.ToArray().AsSpan().StartsWith(key_prefix))
                     yield return (key, value);
-                else if (direction == SeekDirection.Forward || !key.ToArray().SequenceEqual(seek_prefix))
+                else if (direction == SeekDirection.Forward || (seek_prefix == null || !key.ToArray().SequenceEqual(seek_prefix)))
                     yield break;
         }
 
