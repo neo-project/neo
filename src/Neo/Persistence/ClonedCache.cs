@@ -30,7 +30,7 @@ namespace Neo.Persistence
 
         protected override void SetCacheInternal(Type type, object? value)
         {
-            _innerCache.serializedCacheChanges[type] = value;
+            _innerCache.AddToCache(type, value);
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)

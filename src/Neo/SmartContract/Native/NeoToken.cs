@@ -306,7 +306,7 @@ namespace Neo.SmartContract.Native
             if (cached == null)
             {
                 // Not cached
-                snapshot.SerializedCache.Set(new LastGasPerBlock() { Index = last.Index, GasPerBlock = last.GasPerBlock });
+                snapshot.AddToCache(new LastGasPerBlock() { Index = last.Index, GasPerBlock = last.GasPerBlock });
             }
 
             return last.GasPerBlock;

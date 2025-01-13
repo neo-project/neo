@@ -49,7 +49,7 @@ namespace Neo.Persistence
 
         private readonly Dictionary<StorageKey, Trackable> dictionary = new();
         private readonly HashSet<StorageKey> changeSet = new();
-        internal readonly Dictionary<Type, object?> serializedCacheChanges = new();
+        private readonly Dictionary<Type, object?> _serializedCacheChanges = new();
 
         /// <summary>
         /// Serialized cache
@@ -135,7 +135,36 @@ namespace Neo.Persistence
             lock (dictionary)
             {
                 Add(key, value);
-                serializedCacheChanges[typeof(T)] = serializedChanges;
+                _serializedCacheChanges[typeof(T)] = serializedChanges;
+            }
+        }
+
+        /// <summary>
+        /// Adds a new entry to the cache.
+        /// </summary>
+        /// <param name="serializedChanges">Serialization changes</param>
+        /// <exception cref="ArgumentException">The entry has already been cached.</exception>
+        /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
+        public void AddToCache<T>(T? serializedChanges = default)
+        {
+            lock (dictionary)
+            {
+                _serializedCacheChanges[typeof(T)] = serializedChanges;
+            }
+        }
+
+        /// <summary>
+        /// Adds a new entry to the cache.
+        /// </summary>
+        /// <param name="type">Cache type</param>
+        /// <param name="serializedChanges">Serialization changes</param>
+        /// <exception cref="ArgumentException">The entry has already been cached.</exception>
+        /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
+        internal void AddToCache(Type type, object? serializedChanges)
+        {
+            lock (dictionary)
+            {
+                _serializedCacheChanges[type] = serializedChanges;
             }
         }
 
@@ -172,12 +201,12 @@ namespace Neo.Persistence
             {
                 dictionary.Remove(key);
             }
-            foreach (var serialized in serializedCacheChanges)
+            foreach (var serialized in _serializedCacheChanges)
             {
                 SetCacheInternal(serialized.Key, serialized);
             }
             changeSet.Clear();
-            serializedCacheChanges.Clear();
+            _serializedCacheChanges.Clear();
         }
 
         /// <summary>
@@ -419,7 +448,7 @@ namespace Neo.Persistence
         public StorageItem? GetAndChange<T>(StorageKey key, T serializedCache, Func<StorageItem>? factory = null)
         {
             var ret = GetAndChange(key, factory);
-            serializedCacheChanges[typeof(T)] = serializedCache;
+            _serializedCacheChanges[typeof(T)] = serializedCache;
             return ret;
         }
 
