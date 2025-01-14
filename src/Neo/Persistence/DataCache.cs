@@ -118,11 +118,11 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
-            lock (dictionary)
+            lock (_dictionary)
             {
-                foreach (var key in changeSet)
+                foreach (var key in _changeSet)
                 {
-                    var trackable = dictionary[key];
+                    var trackable = _dictionary[key];
                     switch (trackable.State)
                     {
                         case TrackState.Added:
@@ -135,11 +135,11 @@ namespace Neo.Persistence
                             break;
                         case TrackState.Deleted:
                             DeleteInternal(key);
-                            dictionary.Remove(key);
+                            _dictionary.Remove(key);
                             break;
                     }
                 }
-                changeSet.Clear();
+                _changeSet.Clear();
             }
         }
 
