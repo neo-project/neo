@@ -19,7 +19,7 @@ namespace Neo.Plugins.Storage
 {
     /// <summary>
     /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
-    /// Write operations on a snapshot cannot be concurrent.
+    /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
     internal class Snapshot : ISnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
@@ -27,7 +27,11 @@ namespace Neo.Plugins.Storage
         private readonly LSnapshot _snapshot;
         private readonly ReadOptions _readOptions;
         private readonly WriteBatch _batch;
-
+#if NET9_0_OR_GREATER
+        private readonly System.Threading.Lock _lock = new();
+#else
+        private readonly object _lock = new();
+#endif
         public Snapshot(DB db)
         {
             _db = db;
@@ -37,13 +41,25 @@ namespace Neo.Plugins.Storage
         }
 
         /// <inheritdoc/>
-        public void Commit() => _db.Write(WriteOptions.Default, _batch);
+        public void Commit()
+        {
+            lock (_lock)
+                _db.Write(WriteOptions.Default, _batch);
+        }
 
         /// <inheritdoc/>
-        public void Delete(byte[] key) => _batch.Delete(key);
+        public void Delete(byte[] key)
+        {
+            lock (_lock)
+                _batch.Delete(key);
+        }
 
         /// <inheritdoc/>
-        public void Put(byte[] key, byte[] value) => _batch.Put(key, value);
+        public void Put(byte[] key, byte[] value)
+        {
+            lock (_lock)
+                _batch.Put(key, value);
+        }
 
         public void Dispose()
         {
@@ -80,7 +96,6 @@ namespace Neo.Plugins.Storage
                 yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
         }
 
-        IEnumerator IEnumerable.GetEnumerator() =>
-            GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

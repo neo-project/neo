@@ -17,7 +17,7 @@ using System.Collections.Generic;
 namespace Neo.Plugins.Storage
 {
     /// <summary>
-    /// Write operations on a snapshot cannot be concurrent.
+    /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
     internal class Snapshot : ISnapshot
     {

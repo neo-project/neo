@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.IO;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -19,19 +18,19 @@ using System.Linq;
 namespace Neo.Persistence
 {
     /// <summary>
-    /// Write operations on a snapshot cannot be concurrent.
+    /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
     internal class MemorySnapshot : ISnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]> innerData;
         private readonly ImmutableDictionary<byte[], byte[]> immutableData;
-        private readonly Dictionary<byte[], byte[]> writeBatch;
+        private readonly ConcurrentDictionary<byte[], byte[]> writeBatch;
 
         public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
         {
             this.innerData = innerData;
             immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            writeBatch = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+            writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()
@@ -48,9 +47,7 @@ namespace Neo.Persistence
             writeBatch[key] = null;
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
 
         public void Put(byte[] key, byte[] value)
         {
