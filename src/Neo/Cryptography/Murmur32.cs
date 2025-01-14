@@ -50,7 +50,7 @@ namespace Neo.Cryptography
         /// Append data to murmur computation
         /// </summary>
         /// <param name="source">Source</param>
-        public void Append(ReadOnlySpan<byte> source)
+        private void Append(ReadOnlySpan<byte> source)
         {
             _length += source.Length;
             for (; source.Length >= 4; source = source[4..])
