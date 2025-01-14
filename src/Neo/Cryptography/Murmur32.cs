@@ -91,7 +91,7 @@ namespace Neo.Cryptography
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Initialize()
+        private void Initialize()
         {
             _hash = _seed;
             _length = 0;
