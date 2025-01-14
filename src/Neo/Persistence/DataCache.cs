@@ -118,28 +118,29 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
-            LinkedList<StorageKey> deletedItem = new();
-            foreach (var trackable in GetChangeSet())
-                switch (trackable.State)
-                {
-                    case TrackState.Added:
-                        AddInternal(trackable.Key, trackable.Item);
-                        trackable.State = TrackState.None;
-                        break;
-                    case TrackState.Changed:
-                        UpdateInternal(trackable.Key, trackable.Item);
-                        trackable.State = TrackState.None;
-                        break;
-                    case TrackState.Deleted:
-                        DeleteInternal(trackable.Key);
-                        deletedItem.AddFirst(trackable.Key);
-                        break;
-                }
-            foreach (StorageKey key in deletedItem)
+            lock (dictionary)
             {
-                _dictionary.Remove(key);
+                foreach (var key in changeSet)
+                {
+                    var trackable = dictionary[key];
+                    switch (trackable.State)
+                    {
+                        case TrackState.Added:
+                            AddInternal(key, trackable.Item);
+                            trackable.State = TrackState.None;
+                            break;
+                        case TrackState.Changed:
+                            UpdateInternal(key, trackable.Item);
+                            trackable.State = TrackState.None;
+                            break;
+                        case TrackState.Deleted:
+                            DeleteInternal(key);
+                            dictionary.Remove(key);
+                            break;
+                    }
+                }
+                changeSet.Clear();
             }
-            _changeSet.Clear();
         }
 
         /// <summary>
