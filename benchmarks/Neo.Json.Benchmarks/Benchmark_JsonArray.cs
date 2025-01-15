@@ -9,10 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.Collections;
 using BenchmarkDotNet.Attributes;
-using Neo.Json;
 
 namespace Neo.Json.Benchmarks
 {

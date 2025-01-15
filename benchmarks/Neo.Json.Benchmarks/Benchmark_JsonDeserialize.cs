@@ -20,7 +20,6 @@ namespace Neo.Json.Benchmarks
     public class Benchmark_JsonDeserialize
     {
         private string jsonString;
-        private List<RpcTestCase> testCases;
 
         [GlobalSetup]
         public void Setup()
