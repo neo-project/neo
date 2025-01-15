@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <Copyright>2015-2024 The Neo Project</Copyright>
-    <LangVersion>13.0</LangVersion>
+    <LangVersion>latest</LangVersion>
     <Authors>The Neo Project</Authors>
     <IsPackable>true</IsPackable>
     <PackageIcon>neo.png</PackageIcon>
