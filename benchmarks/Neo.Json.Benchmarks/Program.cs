@@ -17,13 +17,14 @@ namespace Neo.Json.Benchmarks
     {
         public static void Main(string[] args)
         {
-            BenchmarkRunner.Run<Benchmark_JsonDeserialize>();
+            //BenchmarkRunner.Run<Benchmark_JsonDeserialize>();
             //BenchmarkRunner.Run<Benchmark_OrderedDictionary>();
             //BenchmarkRunner.Run<Benchmark_JBoolean>();
             //BenchmarkRunner.Run<Benchmark_JNumber>();
             //BenchmarkRunner.Run<Benchmark_JObject>();
             //BenchmarkRunner.Run<Benchmark_JPath>();
             //BenchmarkRunner.Run<Benchmark_JString>();
+            BenchmarkRunner.Run<Benchmark_JsonArray>();
         }
     }
 }

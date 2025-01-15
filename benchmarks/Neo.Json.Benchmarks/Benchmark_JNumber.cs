@@ -10,10 +10,9 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
-using Neo.Json;
 
 namespace Neo.Json.Benchmarks
-{ 
+{
     [MemoryDiagnoser]
     [CsvMeasurementsExporter]
     [MarkdownExporter]
