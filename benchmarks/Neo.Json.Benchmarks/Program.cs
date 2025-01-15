@@ -17,12 +17,13 @@ namespace Neo.Json.Benchmarks
     {
         public static void Main(string[] args)
         {
-            BenchmarkRunner.Run<JsonBenchmark>();
+            BenchmarkRunner.Run<Benchmark_JsonDeserialize>();
+            //BenchmarkRunner.Run<Benchmark_OrderedDictionary>();
+            //BenchmarkRunner.Run<Benchmark_JBoolean>();
+            //BenchmarkRunner.Run<Benchmark_JNumber>();
+            //BenchmarkRunner.Run<Benchmark_JObject>();
+            //BenchmarkRunner.Run<Benchmark_JPath>();
+            //BenchmarkRunner.Run<Benchmark_JString>();
         }
     }
 }
-
-/// | Method                 | Mean     | Error    | StdDev    | Median   | Gen0    | Gen1    | Gen2    | Allocated |
-/// |----------------------- |---------:|---------:|----------:|---------:|--------:|--------:|--------:|----------:|
-/// | Newtonsoft_Deserialize | 627.4 us |  9.10 us |   8.07 us | 627.6 us | 79.1016 | 53.7109 |       - | 978.52 KB |
-/// | NeoJson_Deserialize    | 635.8 us | 41.54 us | 122.49 us | 720.1 us | 73.2422 | 36.1328 | 36.1328 | 919.45 KB |
