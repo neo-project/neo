@@ -143,8 +143,23 @@ namespace Neo.Json.Benchmarks
     }
 }
 
+/// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)
+/// 13th Gen Intel Core i9-13900H, 1 CPU, 20 logical and 14 physical cores
+/// .NET SDK 9.0.101
+///   [Host]     : .NET 9.0.0 (9.0.24.52809), X64 RyuJIT AVX2 [AttachedDebugger]
+/// DefaultJob: .NET 9.0.0(9.0.24.52809), X64 RyuJIT AVX2
+/// 
+/// | Method                 | Mean     | Error    | StdDev    | Gen0    | Gen1    | Gen2    | Allocated |
+/// |----------------------- |---------:|---------:|----------:|--------:|--------:|--------:|----------:|
+/// | Newtonsoft_Deserialize | 627.4 us |  9.10 us |   8.07 us | 79.1016 | 53.7109 |       - | 978.52 KB |
+/// | NeoJson_Deserialize    | 635.8 us | 41.54 us | 122.49 us | 73.2422 | 36.1328 | 36.1328 | 919.45 KB |
 
-/// | Method                 | Mean     | Error    | StdDev    | Median   | Gen0    | Gen1    | Gen2    | Allocated |
-/// |----------------------- |---------:|---------:|----------:|---------:|--------:|--------:|--------:|----------:|
-/// | Newtonsoft_Deserialize | 627.4 us |  9.10 us |   8.07 us | 627.6 us | 79.1016 | 53.7109 |       - | 978.52 KB |
-/// | NeoJson_Deserialize    | 635.8 us | 41.54 us | 122.49 us | 720.1 us | 73.2422 | 36.1328 | 36.1328 | 919.45 KB |
+/// | Method                 | Mean     | Error   | StdDev   | Gen0    | Gen1    | Gen2    | Allocated |
+/// |----------------------- |---------:|--------:|---------:|--------:|--------:|--------:|----------:|
+/// | Newtonsoft_Deserialize | 627.8 us | 7.35 us | 10.54 us | 79.1016 | 53.7109 |       - | 978.52 KB |
+/// | NeoJson_Deserialize    | 497.8 us | 8.37 us |  7.42 us | 73.2422 | 36.1328 | 36.1328 | 919.45 KB |
+
+/// | Method                 | Mean     | Error   | StdDev   | Gen0    | Gen1    | Gen2    | Allocated |
+/// |----------------------- |---------:|--------:|---------:|--------:|--------:|--------:|----------:|
+/// | Newtonsoft_Deserialize | 634.6 us | 7.48 us |  7.00 us | 79.1016 | 53.7109 |       - | 978.52 KB |
+/// | NeoJson_Deserialize    | 484.5 us | 9.49 us | 10.93 us | 73.7305 | 36.6211 | 36.6211 | 919.45 KB |

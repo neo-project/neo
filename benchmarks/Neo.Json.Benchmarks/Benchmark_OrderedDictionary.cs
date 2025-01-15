@@ -48,12 +48,6 @@ namespace Neo.Json.Benchmarks
         }
 
         [Benchmark]
-        public void TestAdd()
-        {
-            od.Add("d", 4);
-        }
-
-        [Benchmark]
         public void TestRemove()
         {
             od.Remove("a");
@@ -67,3 +61,16 @@ namespace Neo.Json.Benchmarks
     }
 
 }
+
+/// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)
+/// 13th Gen Intel Core i9-13900H, 1 CPU, 20 logical and 14 physical cores
+/// .NET SDK 9.0.101
+///   [Host]     : .NET 9.0.0 (9.0.24.52809), X64 RyuJIT AVX2 [AttachedDebugger]
+/// DefaultJob: .NET 9.0.0(9.0.24.52809), X64 RyuJIT AVX2
+/// 
+/// | Method          | Mean      | Error     | StdDev    | Median    | Allocated |
+/// |---------------- |----------:|----------:|----------:|----------:|----------:|
+/// | TestClear       | 0.3808 ns | 0.0216 ns | 0.0202 ns | 0.3774 ns |         - |
+/// | TestCount       | 0.0056 ns | 0.0085 ns | 0.0079 ns | 0.0021 ns |         - |
+/// | TestRemove      | 3.7165 ns | 0.0573 ns | 0.0479 ns | 3.7112 ns |         - |
+/// | TestTryGetValue | 5.4563 ns | 0.0918 ns | 0.0717 ns | 5.4239 ns |         - |

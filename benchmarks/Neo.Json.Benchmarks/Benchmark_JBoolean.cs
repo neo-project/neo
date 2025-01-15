@@ -45,3 +45,14 @@ namespace Neo.Json.Benchmarks
     }
 
 }
+
+/// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)
+/// 13th Gen Intel Core i9-13900H, 1 CPU, 20 logical and 14 physical cores
+/// .NET SDK 9.0.101
+///   [Host]     : .NET 9.0.0 (9.0.24.52809), X64 RyuJIT AVX2 [AttachedDebugger]
+/// DefaultJob: .NET 9.0.0(9.0.24.52809), X64 RyuJIT AVX2
+/// 
+/// | Method                 | Mean       | Error     | StdDev    | Median     | Gen0   | Allocated |
+/// |----------------------- |-----------:|----------:|----------:|-----------:|-------:|----------:|
+/// | TestAsNumber           |  0.0535 ns | 0.0233 ns | 0.0239 ns |  0.0427 ns |      - |         - |
+/// | TestConversionToString | 17.8216 ns | 0.2321 ns | 0.1938 ns | 17.7613 ns | 0.0051 |      64 B |
