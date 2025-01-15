@@ -27,11 +27,13 @@ namespace Neo.Plugins.Storage
         private readonly LSnapshot _snapshot;
         private readonly ReadOptions _readOptions;
         private readonly WriteBatch _batch;
+
 #if NET9_0_OR_GREATER
         private readonly System.Threading.Lock _lock = new();
 #else
         private readonly object _lock = new();
 #endif
+
         public Snapshot(DB db)
         {
             _db = db;
@@ -96,6 +98,7 @@ namespace Neo.Plugins.Storage
                 yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

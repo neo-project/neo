@@ -19,3 +19,4 @@ BenchmarkRunner.Run<Benchmarks_UInt160>();
 BenchmarkRunner.Run<Benchmarks_Hash>();
 BenchmarkRunner.Run<Benchmarks_StorageKey>();
 BenchmarkRunner.Run<Bechmarks_ReadOnlyStoreView>();
+BenchmarkRunner.Run<Bechmarks_LevelDB>();
