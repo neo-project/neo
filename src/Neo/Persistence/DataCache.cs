@@ -233,7 +233,7 @@ namespace Neo.Persistence
                 }
                 if (seek_prefix == null)
                 {
-                    throw new NullReferenceException($"{nameof(seek_prefix)} can't be null");
+                    throw new ArgumentException($"{nameof(key_prefix)} can't be empty.");
                 }
             }
             return FindInternal(key_prefix, seek_prefix, direction);
