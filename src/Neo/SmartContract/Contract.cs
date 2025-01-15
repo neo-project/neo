@@ -82,7 +82,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Creates a multi-sig contract.
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="publicKeys">The public keys of the contract.</param>
         /// <returns>The created contract.</returns>
         public static Contract CreateMultiSigContract(int m, IReadOnlyCollection<ECPoint> publicKeys)
@@ -97,7 +97,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Creates the script of multi-sig contract.
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="publicKeys">The public keys of the contract.</param>
         /// <returns>The created script.</returns>
         public static byte[] CreateMultiSigRedeemScript(int m, IReadOnlyCollection<ECPoint> publicKeys)
