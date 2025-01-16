@@ -44,7 +44,6 @@ namespace Neo.Json.Benchmarks
             _ = _jFalse.ToString();
         }
     }
-
 }
 
 /// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)
