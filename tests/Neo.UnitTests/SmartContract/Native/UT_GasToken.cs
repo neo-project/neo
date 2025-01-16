@@ -203,7 +203,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = new Transaction[] { tx1, tx2 }
             };
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
             var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
