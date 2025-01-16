@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -116,7 +117,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             this.wallet = wallet;
             this.neoSystem = neoSystem;
             dbftSettings = settings;
-            store = neoSystem.LoadStore(settings.RecoveryLogs);
+
+            if (dbftSettings.IgnoreRecoveryLogs == false)
+                store = neoSystem.LoadStore(settings.RecoveryLogs);
         }
 
         public Block CreateBlock()
@@ -168,8 +171,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public bool Load()
         {
-            byte[] data = store.TryGet(ConsensusStateKey);
-            if (data is null || data.Length == 0) return false;
+            if (store is null || !store.TryGet(ConsensusStateKey, out var data) || data.Length == 0)
+                return false;
+
             MemoryReader reader = new(data);
             try
             {
@@ -192,7 +196,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (viewNumber == 0)
             {
                 Snapshot?.Dispose();
-                Snapshot = neoSystem.GetSnapshot();
+                Snapshot = neoSystem.GetSnapshotCache();
                 uint height = NativeContract.Ledger.CurrentIndex(Snapshot);
                 Block = new Block
                 {
@@ -272,7 +276,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public void Save()
         {
-            store.PutSync(ConsensusStateKey, this.ToArray());
+            store?.PutSync(ConsensusStateKey, this.ToArray());
         }
 
         public void Deserialize(ref MemoryReader reader)

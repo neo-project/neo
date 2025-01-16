@@ -52,7 +52,7 @@ namespace Neo.Network.P2P.Payloads
             IndexStart = reader.ReadUInt32();
             Count = reader.ReadInt16();
             if (Count < -1 || Count == 0 || Count > HeadersPayload.MaxHeadersCount)
-                throw new FormatException();
+                throw new FormatException($"Invalid count: {Count}/{HeadersPayload.MaxHeadersCount}.");
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

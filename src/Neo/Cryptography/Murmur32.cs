@@ -11,14 +11,13 @@
 
 using System;
 using System.Buffers.Binary;
-using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
     /// <summary>
     /// Computes the murmur hash for the input data.
     /// </summary>
-    public sealed class Murmur32 : HashAlgorithm
+    public sealed class Murmur32 : System.Security.Cryptography.HashAlgorithm
     {
         private const uint c1 = 0xcc9e2d51;
         private const uint c2 = 0x1b873593;
@@ -31,7 +30,8 @@ namespace Neo.Cryptography
         private uint hash;
         private int length;
 
-        public override int HashSize => 32;
+        public const int HashSizeInBits = 32;
+        public override int HashSize => HashSizeInBits;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Murmur32"/> class with the specified seed.
@@ -40,6 +40,7 @@ namespace Neo.Cryptography
         public Murmur32(uint seed)
         {
             this.seed = seed;
+            HashSizeValue = HashSizeInBits;
             Initialize();
         }
 

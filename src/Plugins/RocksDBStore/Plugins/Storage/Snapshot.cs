@@ -49,6 +49,7 @@ namespace Neo.Plugins.Storage
             batch.Put(key, value);
         }
 
+        /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction)
         {
             if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();
@@ -71,6 +72,12 @@ namespace Neo.Plugins.Storage
         public byte[] TryGet(byte[] key)
         {
             return db.Get(key, readOptions: options);
+        }
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            value = db.Get(key, readOptions: options);
+            return value != null;
         }
 
         public void Dispose()

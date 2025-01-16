@@ -9,13 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Wallets.SQLite;
-
-class Contract
+namespace Neo.Wallets.SQLite
 {
-    public byte[] RawData { get; set; }
-    public byte[] ScriptHash { get; set; }
-    public byte[] PublicKeyHash { get; set; }
-    public Account Account { get; set; }
-    public Address Address { get; set; }
+    class Contract
+    {
+        public byte[] RawData { get; set; }
+        public byte[] ScriptHash { get; set; }
+        public byte[] PublicKeyHash { get; set; }
+        public Account Account { get; set; }
+        public Address Address { get; set; }
+    }
 }

@@ -1,0 +1,77 @@
+name: Publish (docker-image)
+
+on:
+  release:
+    types: [published]
+
+env:
+  DOTNET_VERSION: 9.0.x
+  DIST_DIR: ./dist
+
+jobs:
+  neo-cli-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set Application Version (Environment Variable)
+      run: |
+        APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+    - name: Checkout (GitHub)
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Build (neo-cli)
+      run: |
+        dotnet publish ./src/Neo.CLI \
+          --framework net9.0 \
+          --configuration Release \
+          --runtime linux-x64 \
+          --self-contained true \
+          --output ${{ env.DIST_DIR }} \
+          --verbosity normal \
+          -p:VersionPrefix=${{ env.APP_VERSION }} \
+          -p:RuntimeIdentifier=linux-x64 \
+          -p:SelfContained=true \
+          -p:IncludeNativeLibrariesForSelfExtract=false \
+          -p:PublishTrimmed=false \
+          -p:PublishSingleFile=true \
+          -p:PublishReadyToRun=true \
+          -p:EnableCompressionInSingleFile=true \
+          -p:DebugType=embedded \
+          -p:ServerGarbageCollection=true
+
+    - name: Build (LevelDbStore)
+      run: |
+        dotnet build ./src/Plugins/LevelDBStore \
+          --framework net9.0 \
+          --configuration Release \
+          --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \
+          --verbosity normal \
+          -p:VersionPrefix=${{ env.APP_VERSION }}
+
+    - name: Remove (junk)
+      run: |
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.pdb
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.xml
+        rm -v ${{ env.DIST_DIR }}/*.xml
+
+    - name: Docker Login
+      run: |
+        docker login ghcr.io \
+          --username ${{ github.repository_owner }} \
+          --password ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Docker Build
+      run: |
+        docker build . \
+          --file ./.neo/docker/neo-cli/Dockerfile \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:latest \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:${{ env.APP_VERSION }} \
+          --push

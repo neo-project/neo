@@ -61,7 +61,7 @@ namespace Neo.Plugins
             _network = config.GetValue("Network", 860833102u);
             _enabledTrackers = config.GetSection("EnabledTrackers").GetChildren().Select(p => p.Value).ToArray();
             var policyString = config.GetValue(nameof(UnhandledExceptionPolicy), nameof(UnhandledExceptionPolicy.StopNode));
-            if (Enum.TryParse(policyString, out UnhandledExceptionPolicy policy))
+            if (Enum.TryParse(policyString, true, out UnhandledExceptionPolicy policy))
             {
                 _exceptionPolicy = policy;
             }

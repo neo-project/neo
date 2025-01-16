@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.SmartContract;
@@ -51,91 +52,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetLowestSetBit()
-        {
-            var big1 = new BigInteger(0);
-            big1.GetLowestSetBit().Should().Be(-1);
-
-            var big2 = new BigInteger(512);
-            big2.GetLowestSetBit().Should().Be(9);
-
-            var big3 = new BigInteger(int.MinValue);
-            big3.GetLowestSetBit().Should().Be(31);
-
-            var big4 = new BigInteger(long.MinValue);
-            big4.GetLowestSetBit().Should().Be(63);
-        }
-
-        [TestMethod]
-        public void TestHexToBytes()
-        {
-            string nullStr = null;
-            _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
-            string emptyStr = "";
-            emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
-            string str1 = "hab";
-            Action action = () => str1.HexToBytes();
-            action.Should().Throw<FormatException>();
-            string str2 = "0102";
-            byte[] bytes = str2.HexToBytes();
-            bytes.ToHexString().Should().Be(new byte[] { 0x01, 0x02 }.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestRemoveHashsetDictionary()
-        {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new Dictionary<int, object>
-            {
-                [2] = null
-            };
-
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
-
-            b[4] = null;
-            b[5] = null;
-            b[1] = null;
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
-        }
-
-        [TestMethod]
-        public void TestRemoveHashsetSet()
-        {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new SortedSet<int>()
-            {
-                2
-            };
-
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
-
-            b.Add(4);
-            b.Add(5);
-            b.Add(1);
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
-        }
-
-        [TestMethod]
         public void TestRemoveHashsetHashSetCache()
         {
             var a = new HashSet<int>
@@ -166,7 +82,7 @@ namespace Neo.UnitTests
         public void TestToHexString()
         {
             byte[] nullStr = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
+            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
             byte[] empty = Array.Empty<byte>();
             empty.ToHexString().Should().Be("");
             empty.ToHexString(false).Should().Be("");
@@ -216,10 +132,10 @@ namespace Neo.UnitTests
         public void TestUnmapForIPAddress()
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
-            addr.Unmap().Should().Be(addr);
+            addr.UnMap().Should().Be(addr);
 
             var addr2 = addr.MapToIPv6();
-            addr2.Unmap().Should().Be(addr);
+            addr2.UnMap().Should().Be(addr);
         }
 
         [TestMethod]
@@ -227,11 +143,11 @@ namespace Neo.UnitTests
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
             var endPoint = new IPEndPoint(addr, 8888);
-            endPoint.Unmap().Should().Be(endPoint);
+            endPoint.UnMap().Should().Be(endPoint);
 
             var addr2 = addr.MapToIPv6();
             var endPoint2 = new IPEndPoint(addr2, 8888);
-            endPoint2.Unmap().Should().Be(endPoint);
+            endPoint2.UnMap().Should().Be(endPoint);
         }
     }
 }

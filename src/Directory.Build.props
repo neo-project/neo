@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <Copyright>2015-2024 The Neo Project</Copyright>
-    <LangVersion>12.0</LangVersion>
+    <LangVersion>latest</LangVersion>
     <Authors>The Neo Project</Authors>
     <IsPackable>true</IsPackable>
     <PackageIcon>neo.png</PackageIcon>
@@ -16,11 +16,12 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <VersionPrefix>3.7.5</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\.neo\neo.png" Pack="true" Visible="false" PackagePath=""/>
-    <None Include="..\..\.neo\README.md" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="$(SolutionDir)/.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>

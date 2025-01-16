@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 
@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
             Index = (uint)@struct[1].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { Hash.ToArray(), Index };
         }

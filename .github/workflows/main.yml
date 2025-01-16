@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 8.0.x
+  DOTNET_VERSION: 9.0.x
 
 jobs:
 
@@ -24,7 +24,7 @@ jobs:
     - name: Check Format (*.cs)
       run: dotnet format --verify-no-changes --verbosity diagnostic
 
-  Build-Test-Neo-Cli:
+  Test-Everything:
     needs: [Format]
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -37,16 +37,16 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
 
-    - name: Build (Neo.CLI)
-      run: dotnet build ./src/Neo.CLI --output ./out/Neo.CLI  
+    - name: Build (Everything)
+      run: dotnet build
 
     - name: Install dependencies
       run: |
         sudo apt-get install libleveldb-dev expect
-        find ./out -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
+        find ./bin -name 'config.json' | xargs perl -pi -e 's|LevelDBStore|MemoryStore|g' 
 
     - name: Run tests with expect
-      run: expect ./scripts/Neo.CLI/test-neo-cli.expect
+      run: expect ./scripts/Neo.CLI/test-neo-cli.exp
       
   Test:
     needs: [Format]
@@ -63,12 +63,21 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: Test
-      if: matrix.os != 'ubuntu-latest'
+
+    - name: Test (MacOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install leveldb
+        dotnet build
+        cp -vp /opt/homebrew/Cellar/leveldb/1.23_2/lib/libleveldb.dylib ./tests/Neo.Plugins.Storage.Tests/bin/Debug/net9.0/
+        dotnet test --no-build
+
+    - name: Test (windows)
+      if: matrix.os == 'windows-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
-        dotnet test
+        dotnet build
+        dotnet test --no-build
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
@@ -80,6 +89,7 @@ jobs:
         dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
         dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
         dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
+        dotnet test ./tests/Neo.Extensions.Tests --output ./bin/tests/Neo.Extensions.Tests
 
         # Plugins
         dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
@@ -87,6 +97,7 @@ jobs:
         dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests
         dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
         dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
+        dotnet test ./tests/Neo.Plugins.ApplicationLogs.Tests --output ./bin/tests/Neo.Plugins.ApplicationLogs.Tests
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
@@ -104,6 +115,8 @@ jobs:
           ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
           ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Plugins.ApplicationLogs.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/tests/Neo.Extensions.Tests/TestResults/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
@@ -123,18 +136,12 @@ jobs:
     - name: Set Version
       run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
 
-    - name : Pack (Neo)
+    - name : Pack (Everything)
       run: |
         dotnet pack \
         --configuration Release \
         --output ./out \
         --version-suffix ${{ env.VERSION_SUFFIX }}
-
-    - name: Remove Unwanted Files
-      working-directory: ./out
-      run: |
-        rm -v Neo.CLI*
-        rm -v Neo.GUI*
 
     - name: Publish to Github Packages
       working-directory: ./out

@@ -9,18 +9,19 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Persistence
 {
     /// <summary>
     /// Represents a cache for the underlying storage of the NEO blockchain.
     /// </summary>
-    public abstract class DataCache
+    public abstract class DataCache : IReadOnlyStoreView
     {
         /// <summary>
         /// Represents an entry in the cache.
@@ -124,35 +125,46 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
-            LinkedList<StorageKey> deletedItem = new();
-            foreach (Trackable trackable in GetChangeSet())
-                switch (trackable.State)
-                {
-                    case TrackState.Added:
-                        AddInternal(trackable.Key, trackable.Item);
-                        trackable.State = TrackState.None;
-                        break;
-                    case TrackState.Changed:
-                        UpdateInternal(trackable.Key, trackable.Item);
-                        trackable.State = TrackState.None;
-                        break;
-                    case TrackState.Deleted:
-                        DeleteInternal(trackable.Key);
-                        deletedItem.AddFirst(trackable.Key);
-                        break;
-                }
-            foreach (StorageKey key in deletedItem)
+            lock (dictionary)
             {
-                dictionary.Remove(key);
+                foreach (var key in changeSet)
+                {
+                    var trackable = dictionary[key];
+                    switch (trackable.State)
+                    {
+                        case TrackState.Added:
+                            AddInternal(key, trackable.Item);
+                            trackable.State = TrackState.None;
+                            break;
+                        case TrackState.Changed:
+                            UpdateInternal(key, trackable.Item);
+                            trackable.State = TrackState.None;
+                            break;
+                        case TrackState.Deleted:
+                            DeleteInternal(key);
+                            dictionary.Remove(key);
+                            break;
+                    }
+                }
+                changeSet.Clear();
             }
-            changeSet.Clear();
         }
 
         /// <summary>
         /// Creates a snapshot, which uses this instance as the underlying storage.
         /// </summary>
         /// <returns>The snapshot of this instance.</returns>
+        [Obsolete("CreateSnapshot is deprecated, please use CloneCache instead.")]
         public DataCache CreateSnapshot()
+        {
+            return new ClonedCache(this);
+        }
+
+        /// <summary>
+        /// Creates a clone of the snapshot cache, which uses this instance as the underlying storage.
+        /// </summary>
+        /// <returns>The <see cref="DataCache"/> of this <see cref="SnapshotCache"/> instance.</returns>
+        public DataCache CloneCache()
         {
             return new ClonedCache(this);
         }
@@ -300,7 +312,8 @@ namespace Neo.Persistence
         /// Reads a specified entry from the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
-        /// <returns>The data of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
+        /// <returns>The data of the entry. Or throw <see cref="KeyNotFoundException"/> if the entry doesn't exist.</returns>
+        /// <exception cref="KeyNotFoundException">If the entry doesn't exist.</exception>
         protected abstract StorageItem GetInternal(StorageKey key);
 
         /// <summary>
@@ -498,6 +511,14 @@ namespace Neo.Persistence
                 });
                 return value;
             }
+        }
+
+        /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGet(StorageKey key, out StorageItem item)
+        {
+            item = TryGet(key);
+            return item != null;
         }
 
         /// <summary>

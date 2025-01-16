@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.UnitTests.Extensions;
@@ -30,8 +31,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestNotify()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(System.Array.Empty<byte>());
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
@@ -66,9 +67,9 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateDummyBlock()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot, settings: TestProtocolSettings.Default);
+            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshotCache, settings: TestProtocolSettings.Default);
             engine.PersistingBlock.Version.Should().Be(0);
             engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
@@ -111,7 +112,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestSystem_Contract_Call_Permissions()
         {
             UInt160 scriptHash;
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             // Setup: put a simple contract to the storage.
             using (var script = new ScriptBuilder())
@@ -123,7 +124,7 @@ namespace Neo.UnitTests.SmartContract
                 // Mock contract and put it to the Managemant's storage.
                 scriptHash = script.ToArray().ToScriptHash();
 
-                snapshot.DeleteContract(scriptHash);
+                snapshotCache.DeleteContract(scriptHash);
                 var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any));
                 contract.Manifest.Abi.Methods = new[]
                 {
@@ -138,11 +139,11 @@ namespace Neo.UnitTests.SmartContract
                         Parameters = new ContractParameterDefinition[]{}
                     }
                 };
-                snapshot.AddContract(scriptHash, contract);
+                snapshotCache.AddContract(scriptHash, contract);
             }
 
             // Disallowed method call.
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Build call script calling disallowed method.
@@ -167,12 +168,19 @@ namespace Neo.UnitTests.SmartContract
                 };
                 var currentScriptHash = engine.EntryScriptHash;
 
+                Assert.AreEqual("", engine.GetEngineStackInfoOnFault());
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
                 Assert.IsTrue(engine.FaultException.ToString().Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}"));
+                string traceback = engine.GetEngineStackInfoOnFault();
+                Assert.IsTrue(traceback.Contains($"Cannot Call Method disallowed Of Contract {scriptHash.ToString()}"));
+                Assert.IsTrue(traceback.Contains("CurrentScriptHash"));
+                Assert.IsTrue(traceback.Contains("EntryScriptHash"));
+                Assert.IsTrue(traceback.Contains("InstructionPointer"));
+                Assert.IsTrue(traceback.Contains("OpCode SYSCALL, Script Length="));
             }
 
             // Allowed method call.
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Build call script.

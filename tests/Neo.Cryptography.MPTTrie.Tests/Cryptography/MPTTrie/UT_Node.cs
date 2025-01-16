@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,6 @@ using System.Text;
 
 namespace Neo.Cryptography.MPTTrie.Tests
 {
-
     [TestClass]
     public class UT_Node
     {
@@ -31,6 +31,20 @@ namespace Neo.Cryptography.MPTTrie.Tests
             n.SerializeAsChild(writer);
             writer.Flush();
             return ms.ToArray();
+        }
+
+        [TestMethod]
+        public void TestLogLevel()
+        {
+            Neo.Utility.LogLevel = LogLevel.Debug;
+            int raised = 0;
+            Neo.Utility.Logging += (a, b, c) => raised++;
+
+            Neo.Utility.Log("a", LogLevel.Warning, null);
+            Assert.AreEqual(1, raised);
+            Neo.Utility.LogLevel = LogLevel.Fatal;
+            Neo.Utility.Log("a", LogLevel.Warning, null);
+            Assert.AreEqual(1, raised);
         }
 
         [TestMethod]

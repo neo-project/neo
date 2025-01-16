@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -61,11 +61,12 @@ namespace Neo.Persistence
             snapshot?.Dispose();
         }
 
+        /// <inheritdoc/>
         protected override StorageItem GetInternal(StorageKey key)
         {
-            byte[] value = store.TryGet(key.ToArray());
-            if (value == null) throw new KeyNotFoundException();
-            return new(value);
+            if (store.TryGet(key.ToArray(), out var value))
+                return new(value);
+            throw new KeyNotFoundException();
         }
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
@@ -73,11 +74,10 @@ namespace Neo.Persistence
             return store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
+        /// <inheritdoc/>
         protected override StorageItem TryGetInternal(StorageKey key)
         {
-            byte[] value = store.TryGet(key.ToArray());
-            if (value == null) return null;
-            return new(value);
+            return store.TryGet(key.ToArray(), out var value) ? new(value) : null;
         }
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)

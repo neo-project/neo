@@ -9,10 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Neo
@@ -101,6 +103,18 @@ namespace Neo
         }
 
         /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value in little-endian.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value in little-endian.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            if (BitConverter.IsLittleEndian)
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+            return this.ToArray().AsSpan(); // Keep the same output as Serialize when BigEndian
+        }
+
+        /// <summary>
         /// Parses an <see cref="UInt256"/> from the specified <see cref="string"/>.
         /// </summary>
         /// <param name="value">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
@@ -133,27 +147,22 @@ namespace Neo
         /// <returns><see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string s, out UInt256 result)
         {
-            if (s == null)
+            result = null;
+            var data = s.AsSpan(); // AsSpan is null safe
+            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+                data = data[2..];
+
+            if (data.Length != Length * 2) return false;
+
+            try
             {
-                result = null;
+                result = new UInt256(data.HexToBytesReversed());
+                return true;
+            }
+            catch
+            {
                 return false;
             }
-            if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                s = s[2..];
-            if (s.Length != Length * 2)
-            {
-                result = null;
-                return false;
-            }
-            byte[] data = new byte[Length];
-            for (int i = 0; i < Length; i++)
-                if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[Length - i - 1]))
-                {
-                    result = null;
-                    return false;
-                }
-            result = new UInt256(data);
-            return true;
         }
 
         public static bool operator ==(UInt256 left, UInt256 right)

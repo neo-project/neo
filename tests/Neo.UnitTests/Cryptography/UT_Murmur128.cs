@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Extensions;
 using System.Text;
 
 namespace Neo.UnitTests.Cryptography
@@ -40,6 +41,16 @@ namespace Neo.UnitTests.Cryptography
 
             array = "718f952132679baa9c5c2aa0d329fd2a".HexToBytes();
             array.Murmur128(123u).ToHexString().ToString().Should().Be("9b4aa747ff0cf4e41b3d96251551c8ae");
+        }
+
+        [TestMethod]
+        public void TestTryComputeHash()
+        {
+            var murmur128 = new Murmur128(123u);
+            var buffer = new byte[murmur128.HashSize / 8];
+            var ok = murmur128.TryComputeHash("hello world"u8.ToArray(), buffer, out _);
+            ok.Should().BeTrue();
+            buffer.ToHexString().Should().Be("e0a0632d4f51302c55e3b3e48d28795d");
         }
     }
 }

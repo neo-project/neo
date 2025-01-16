@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -53,6 +54,7 @@ namespace Neo.Persistence
             writeBatch[key[..]] = value[..];
         }
 
+        /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
@@ -67,6 +69,11 @@ namespace Neo.Persistence
         {
             immutableData.TryGetValue(key, out byte[] value);
             return value?[..];
+        }
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            return immutableData.TryGetValue(key, out value);
         }
 
         public bool Contains(byte[] key)

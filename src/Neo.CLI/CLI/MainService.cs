@@ -12,7 +12,7 @@
 using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -33,7 +33,6 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -373,6 +372,7 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
+            Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
@@ -383,7 +383,7 @@ namespace Neo.CLI
             }
             catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (OperatingSystem.IsWindows())
                 {
                     if (File.Exists("libleveldb.dll"))
                     {
@@ -392,25 +392,32 @@ namespace Neo.CLI
                     }
                     else
                     {
-                        DisplayError("DLL not found, please get libleveldb.dll.");
+                        DisplayError("DLL not found, please get libleveldb.dll.",
+                            "Download from https://github.com/neo-ngd/leveldb/releases");
                     }
                 }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                else if (OperatingSystem.IsLinux())
+                {
+                    DisplayError("Shared library libleveldb.so not found, please get libleveldb.so.",
+                        "Use command \"sudo apt-get install libleveldb-dev\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
+                }
+                else if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
                 {
                     DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
-                        "From https://github.com/neo-project/neo/releases");
+                        "Use command \"brew install leveldb\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
                 }
                 else
                 {
                     DisplayError("Neo CLI is broken, please reinstall it.",
-                        "From https://github.com/neo-project/neo/releases");
+                        "Download from https://github.com/neo-project/neo/releases");
                 }
-
+                return;
             }
             catch (DllNotFoundException)
             {
                 DisplayError("Neo CLI is broken, please reinstall it.",
-                    "From https://github.com/neo-project/neo/releases");
+                    "Download from https://github.com/neo-project/neo/releases");
+                return;
             }
 
             NeoSystem.AddService(this);
@@ -514,13 +521,13 @@ namespace Neo.CLI
                 if (writeStart)
                 {
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start += BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
                 }
                 else
                 {
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start = BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(0, SeekOrigin.Begin);
                 }

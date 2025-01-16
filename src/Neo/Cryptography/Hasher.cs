@@ -9,11 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+
 namespace Neo.Cryptography
 {
     /// <summary>
     /// Represents hash function identifiers supported by ECDSA message signature and verification.
     /// </summary>
+    [Obsolete("Use HashAlgorithm instead")]
     public enum Hasher : byte
     {
         /// <summary>

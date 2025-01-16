@@ -23,7 +23,7 @@ namespace Neo.Plugins.RpcServer
         /// <typeparam name="T">The return type</typeparam>
         /// <returns>The execution result</returns>
         /// <exception cref="RpcException">The Rpc exception</exception>
-        public static T Ok_Or<T>(this Func<T> function, RpcError err, bool withData = false)
+        public static T Ok_Or<T>(Func<T> function, RpcError err, bool withData = false)
         {
             try
             {

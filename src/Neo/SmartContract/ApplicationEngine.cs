@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -22,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -55,7 +57,7 @@ namespace Neo.SmartContract
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         private readonly long _feeAmount;
         private Dictionary<Type, object> states;
-        private readonly DataCache originalSnapshot;
+        private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -95,7 +97,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
+        [Obsolete("This property is deprecated. Use SnapshotCache instead.")]
+        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
+
+        /// <summary>
+        /// The snapshotcache <see cref="SnapshotCache"/> used to read or write data.
+        /// </summary>
+        public DataCache SnapshotCache => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -164,26 +172,26 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="trigger">The trigger of the execution.</param>
         /// <param name="container">The container of the script.</param>
-        /// <param name="snapshot">The snapshot used by the engine during execution.</param>
+        /// <param name="snapshotCache">The snapshot used by the engine during execution.</param>
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
         protected unsafe ApplicationEngine(
-            TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock,
+            TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock,
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
             Trigger = trigger;
             ScriptContainer = container;
-            originalSnapshot = snapshot;
+            originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
             _feeAmount = gas;
             Diagnostic = diagnostic;
-            ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
-            StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
+            ExecFeeFactor = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+            StoragePrice = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshotCache);
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
@@ -235,9 +243,7 @@ namespace Neo.SmartContract
         {
             if (engine is ApplicationEngine app)
             {
-                uint method = instruction.TokenU32;
-
-                app.OnSysCall(services[method]);
+                app.OnSysCall(GetInteropDescriptor(instruction.TokenU32));
             }
             else
             {
@@ -274,7 +280,7 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Length);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
@@ -283,7 +289,7 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
-            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+            if (NativeContract.Policy.IsBlocked(SnapshotCache, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
 
             ExecutionContext currentContext = CurrentContext;
@@ -296,7 +302,7 @@ namespace Neo.SmartContract
             {
                 var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
                 ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
-                : NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
                 if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
@@ -352,7 +358,7 @@ namespace Neo.SmartContract
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (UncaughtException is null)
                 {
-                    state.Snapshot?.Commit();
+                    state.SnapshotCache?.Commit();
                     if (CurrentContext != null)
                     {
                         ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
@@ -460,7 +466,7 @@ namespace Neo.SmartContract
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             ExecutionContextState state = context.GetState<ExecutionContextState>();
-            state.Snapshot = Snapshot?.CreateSnapshot();
+            state.SnapshotCache = SnapshotCache?.CloneCache();
             configureState?.Invoke(state);
 
             // Load context
@@ -633,6 +639,17 @@ namespace Neo.SmartContract
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
+        }
+
+        /// <summary>
+        /// Get Interop Descriptor
+        /// </summary>
+        /// <param name="methodHash">Method Hash</param>
+        /// <returns>InteropDescriptor</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static InteropDescriptor GetInteropDescriptor(uint methodHash)
+        {
+            return services[methodHash];
         }
 
         /// <summary>

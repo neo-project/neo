@@ -11,7 +11,7 @@
 <p align="center">
    A modern distributed network for the Smart Economy.
   <br>
-  <a href="https://docs.neo.org/docs/en-us/index.html"><strong>Documentation »</strong></a>
+  <a href="https://docs.neo.org/"><strong>Documentation »</strong></a>
   <br>
   <br>
   <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
@@ -106,7 +106,7 @@
 ## Overview
 This repository contain main classes of the 
 [Neo](https://neo.org) blockchain.   
-Visit the [tutorials](https://developers.neo.org) to get started.
+Visit the [tutorials](https://docs.neo.org) to get started.
 
 
 ## Project structure
@@ -114,24 +114,30 @@ An overview of the project folders can be seen below.
 
 |Folder|Content|
 |---|---|
-|Consensus| Classes used in the dBFT consensus algorithm, including the `ConsensusService` actor.|
-|Cryptography|General cryptography classes including ECC implementation.|
-|IO|Data structures used for caching and collection interaction.|
-|Ledger|Classes responsible for the state control, including the `MemoryPool` and `Blockchain` classes.|
-|Network|Peer-to-peer protocol implementation classes.|
-|Persistence|Classes used to allow other classes to access application state.|
-|Plugins|Interfaces used to extend Neo, including the storage interface.|
-|SmartContract|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
-|VM|Helper methods used to interact with the VM.|
-|Wallet|Wallet and account implementation. |
-
+|[/src/neo/Cryptography/](https://github.com/neo-project/neo/tree/master/src/Neo/Cryptography)|General cryptography implementation, including ECC.|
+|[/src/neo/IO/](https://github.com/neo-project/neo/tree/master/src/Neo/IO)|Data structures used for caching and collection interaction.|
+|[/src/neo/Ledger/](https://github.com/neo-project/neo/tree/master/src/Neo/Ledger)|Classes responsible for the state control, including the `MemoryPool` and `Blockchain`.|
+|[/src/neo/Network/](https://github.com/neo-project/neo/tree/master/src/Neo/Network)|Peer-to-peer protocol implementation.|
+|[/src/neo/Persistence/](https://github.com/neo-project/neo/tree/master/src/Neo/Persistence)|Classes used to allow other classes to access application state.|
+|[/src/neo/Plugins/](https://github.com/neo-project/neo/tree/master/src/Neo/Plugins)|Interfaces used to extend Neo, including the storage interface.|
+|[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
+|[/src/neo/VM/](https://github.com/neo-project/neo/tree/master/src/Neo/VM)|Helper methods used to interact with the VM.|
+|[/src/neo/Wallets/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallets)|Wallet and account implementation.|
+|[/src/Neo.CLI/](https://github.com/neo-project/neo/tree/master/src/Neo.CLI)| `neo-cli` console application for running a _FULL_ node.|
+|[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master/src/Neo.Extensions)| Extensions to expand the existing functionality.|
+|[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master/src/Neo.Json)| Neo's JSON specification.|
+|[/src/Neo.VM/](https://github.com/neo-project/neo/tree/master/src/Neo.VM)|Neo virtual machine.|
+|[/src/plugins/](https://github.com/neo-project/neo/tree/master/src/Plugins)| Include `ApplicationLogs`, `LevelDBStore`, `RpcServer`, `OracleService`, `DBFTPlugin` and more.|
+|[/tests/](https://github.com/neo-project/neo/tree/master/tests)|All unit tests.|
 
 ## Related projects
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler. 
 
-* [neo:](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, p2p and IO modules.
-* [neo-modules:](https://github.com/neo-project/neo-modules/) Neo modules include additional tools and plugins to be used with Neo.
+* [neo:](https://github.com/neo-project/neo/) Included libraries are Neo, Neo-CLI, Neo-GUI, Neo-VM, test and plugin modules.
+* [neo-express:](https://github.com/neo-project/neo-express/) A private net optimized for development scenarios.
 * [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert a C# smart-contract into a *neo executable file*.
+* [neo-proposals:](https://github.com/neo-project/proposals) NEO Enhancement Proposals (NEPs) describe standards for the NEO platform, including core protocol specifications, client APIs, and contract standards.
+* [neo-non-native-contracts:](https://github.com/neo-project/non-native-contracts) Includes non-native contracts that live on the blockchain, included but not limited to NeoNameService.
 
 ## Opening a new issue
 Please feel free to create new issues to suggest features or ask questions.

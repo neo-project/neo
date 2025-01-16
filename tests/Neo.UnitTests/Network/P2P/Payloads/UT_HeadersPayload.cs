@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 
@@ -23,7 +24,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out _, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(null, header, UInt256.Zero, out _, out _, out _, out _, out _, out _);
 
             var test = HeadersPayload.Create();
             test.Size.Should().Be(1);
@@ -35,7 +36,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void DeserializeAndSerialize()
         {
             var header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out _, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(null, header, UInt256.Zero, out _, out _, out _, out _, out _, out _);
             var test = HeadersPayload.Create(header);
             var clone = test.ToArray().AsSerializable<HeadersPayload>();
 

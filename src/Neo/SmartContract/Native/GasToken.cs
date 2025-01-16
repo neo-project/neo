@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native
                     totalNetworkFee -= (notaryAssisted.NKeys + 1) * Policy.GetAttributeFee(engine.Snapshot, (byte)notaryAssisted.Type);
                 }
             }
-            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            ECPoint[] validators = NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             await Mint(engine, primary, totalNetworkFee, false);
         }
