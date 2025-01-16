@@ -209,9 +209,14 @@ namespace Neo.Network.P2P
                 new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
             };
 
+            if (!localNode.EnableCompression)
+            {
+                capabilities.Add(new DisableCompressionCapability());
+            }
+
             if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, [.. capabilities])));
         }
 
         protected override void PostStop()
@@ -229,7 +234,7 @@ namespace Neo.Network.P2P
         private void SendMessage(Message message)
         {
             ack = false;
-            SendData(ByteString.FromBytes(message.ToArray()));
+            SendData(ByteString.FromBytes(message.ToArray(Version.AllowCompression)));
             sentCommands[(byte)message.Command] = true;
         }
 
