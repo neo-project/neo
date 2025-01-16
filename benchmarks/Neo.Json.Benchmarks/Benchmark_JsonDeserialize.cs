@@ -14,9 +14,9 @@ using Newtonsoft.Json;
 
 namespace Neo.Json.Benchmarks
 {
-    [MemoryDiagnoser]  // 开启内存诊断器
-    [CsvMeasurementsExporter]  // 导出 CSV 格式的结果
-    [MarkdownExporter]  // 导出 Markdown 格式的结果
+    [MemoryDiagnoser]  // Enabling Memory Diagnostics
+    [CsvMeasurementsExporter]  // Export results in CSV format
+    [MarkdownExporter]  // Exporting results in Markdown format
     public class Benchmark_JsonDeserialize
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -26,12 +26,12 @@ namespace Neo.Json.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
-            // 读取 JSON 文件
+            // Reading JSON files
             _jsonString = File.ReadAllText("Data/RpcTestCases.json");
         }
 
         /// <summary>
-        /// 使用 Newtonsoft.Json 进行反序列化
+        /// Deserialization with Newtonsoft.Json
         /// </summary>
         [Benchmark]
         public List<RpcTestCaseN>? Newtonsoft_Deserialize()
@@ -40,14 +40,14 @@ namespace Neo.Json.Benchmarks
         }
 
         /// <summary>
-        /// 使用 Neo.Json 进行反序列化（支持嵌套解析）
+        /// Deserialization with Neo.Json (supports nested parsing)
         /// </summary>
         [Benchmark]
         public List<RpcTestCase> NeoJson_Deserialize()
         {
             var result = new List<RpcTestCase>();
 
-            // 解析为 JArray
+            // Parses into JArray
             var neoJsonObject = Neo.Json.JArray.Parse(_jsonString);
 
             foreach (var item in neoJsonObject as JArray)
@@ -75,7 +75,7 @@ namespace Neo.Json.Benchmarks
         }
 
         /// <summary>
-        /// 递归解析 params 和 stack 数组
+        /// Recursively parsing params and stack arrays
         /// </summary>
         private List<object> ParseParams(Neo.Json.JToken token)
         {
@@ -83,7 +83,7 @@ namespace Neo.Json.Benchmarks
 
             if (token is Neo.Json.JArray array)
             {
-                // ✅ 使用 foreach 正确解析 JArray
+                // Parsing JArray correctly with foreach
                 foreach (var item in array)
                 {
                     result.Add(ParseParams(item));
@@ -91,7 +91,7 @@ namespace Neo.Json.Benchmarks
             }
             else if (token is Neo.Json.JObject obj)
             {
-                // ✅ 使用 Neo.Json.JObject 的 Properties 遍历
+                // Properties traversal with Neo.Json.JObject
                 var dict = new Dictionary<string, object?>();
                 foreach (var property in obj.Properties)
                 {
@@ -101,7 +101,7 @@ namespace Neo.Json.Benchmarks
             }
             else
             {
-                // ✅ 如果是普通值，直接添加
+                // If it's a normal value, it's straightforward to add
                 result.Add(token.GetString());
             }
 
@@ -109,7 +109,7 @@ namespace Neo.Json.Benchmarks
         }
 
         /// <summary>
-        /// 将任意类型的 JSON 解析为 JToken[]（适用于嵌套结构）
+        /// Parses any type of JSON into a JToken[] (for nested structures)
         /// </summary>
         private Neo.Json.JToken[] ConvertToJTokenArray(Neo.Json.JToken token)
         {
@@ -117,7 +117,7 @@ namespace Neo.Json.Benchmarks
 
             if (token is Neo.Json.JArray array)
             {
-                // ✅ 如果是 JArray，则逐个解析并添加到结果中
+                // If it's a JArray, parse it one by one and add it to the result
                 foreach (var item in array)
                 {
                     result.AddRange(ConvertToJTokenArray(item));
@@ -125,7 +125,7 @@ namespace Neo.Json.Benchmarks
             }
             else if (token is Neo.Json.JObject obj)
             {
-                // ✅ 将 JObject 转换为 JToken（Dictionary 风格）
+                // Convert JObject to JToken (Dictionary type)
                 var newObj = new Neo.Json.JObject();
                 foreach (var property in obj.Properties)
                 {
@@ -135,11 +135,11 @@ namespace Neo.Json.Benchmarks
             }
             else
             {
-                // ✅ 直接添加基础类型 JToken
+                // Add the base type JToken directly
                 result.Add(token);
             }
 
-            return result.ToArray();  // ✅ 将 List 转换为 JToken 数组
+            return result.ToArray();  // Converting a List to an Array of JTokens
         }
     }
 }
