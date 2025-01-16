@@ -243,7 +243,7 @@ namespace Neo.Plugins.StateService
             using BinaryReader reader = new(ms, Utility.StrictUTF8);
 
             var key = reader.ReadVarBytes(Node.MaxKeyLength);
-            var count = reader.ReadVarInt();
+            var count = reader.ReadVarInt(ushort.MaxValue);
             for (ulong i = 0; i < count; i++)
             {
                 proofs.Add(reader.ReadVarBytes());
