@@ -19,22 +19,24 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]  // 导出 Markdown 格式的结果
     public class Benchmark_JsonDeserialize
     {
-        private string jsonString;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private string _jsonString;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [GlobalSetup]
         public void Setup()
         {
             // 读取 JSON 文件
-            jsonString = File.ReadAllText("Data/RpcTestCases.json");
+            _jsonString = File.ReadAllText("Data/RpcTestCases.json");
         }
 
         /// <summary>
         /// 使用 Newtonsoft.Json 进行反序列化
         /// </summary>
         [Benchmark]
-        public List<RpcTestCaseN> Newtonsoft_Deserialize()
+        public List<RpcTestCaseN>? Newtonsoft_Deserialize()
         {
-            return JsonConvert.DeserializeObject<List<RpcTestCaseN>>(jsonString);
+            return JsonConvert.DeserializeObject<List<RpcTestCaseN>>(_jsonString);
         }
 
         /// <summary>
@@ -46,25 +48,25 @@ namespace Neo.Json.Benchmarks
             var result = new List<RpcTestCase>();
 
             // 解析为 JArray
-            var neoJsonObject = Neo.Json.JArray.Parse(jsonString);
+            var neoJsonObject = Neo.Json.JArray.Parse(_jsonString);
 
             foreach (var item in neoJsonObject as JArray)
             {
                 var testCase = new RpcTestCase
                 {
-                    Name = item["Name"].GetString(),
+                    Name = item["Name"]?.GetString(),
                     Request = new RpcRequest
                     {
-                        JsonRpc = item["Request"]["jsonrpc"].GetString(),
-                        Method = item["Request"]["method"].GetString(),
-                        Params = ConvertToJTokenArray(item["Request"]["params"]),
-                        Id = (int)item["Request"]["id"].GetNumber()
+                        JsonRpc = item["Request"]?["jsonrpc"]?.GetString(),
+                        Method = item["Request"]?["method"]?.GetString(),
+                        Params = ConvertToJTokenArray(item["Request"]?["params"]),
+                        Id = (int)item["Request"]?["id"].GetNumber()
                     },
                     Response = new RpcResponse
                     {
-                        JsonRpc = item["Response"]["jsonrpc"].GetString(),
-                        Id = (int)item["Response"]["id"].GetNumber(),
-                        Result = item["Response"]["result"]
+                        JsonRpc = item["Response"]?["jsonrpc"].GetString(),
+                        Id = (int)item["Response"]?["id"]?.GetNumber(),
+                        Result = item["Response"]?["result"]
                     }
                 };
                 result.Add(testCase);
@@ -90,10 +92,10 @@ namespace Neo.Json.Benchmarks
             else if (token is Neo.Json.JObject obj)
             {
                 // ✅ 使用 Neo.Json.JObject 的 Properties 遍历
-                var dict = new Dictionary<string, object>();
+                var dict = new Dictionary<string, object?>();
                 foreach (var property in obj.Properties)
                 {
-                    dict[property.Key] = property.Value.GetString();
+                    dict[property.Key] = property.Value?.GetString();
                 }
                 result.Add(dict);
             }
@@ -127,7 +129,7 @@ namespace Neo.Json.Benchmarks
                 var newObj = new Neo.Json.JObject();
                 foreach (var property in obj.Properties)
                 {
-                    newObj[property.Key] = new Neo.Json.JString(property.Value.GetString());
+                    newObj[property.Key] = new Neo.Json.JString(property.Value?.GetString());
                 }
                 result.Add(newObj);
             }

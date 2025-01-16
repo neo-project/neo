@@ -9,9 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-
 using BenchmarkDotNet.Attributes;
-using Neo.Json;
 
 namespace Neo.Json.Benchmarks
 {
@@ -20,33 +18,34 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JString
     {
-        private JString testString;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JString _testString;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [GlobalSetup]
         public void Setup()
         {
-            testString = new JString("hello world");
+            _testString = new JString("hello world");
         }
 
         [Benchmark]
         public void TestLength()
         {
-            var length = testString.Value.Length;
+            _ = _testString.Value.Length;
         }
 
         [Benchmark]
         public void TestConversionToString()
         {
-            _ = testString.ToString();
+            _ = _testString.ToString();
         }
 
         [Benchmark]
         public void TestClone()
         {
-            var clone = testString.Clone();
+            _ = _testString.Clone();
         }
     }
-
 }
 
 ///BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)

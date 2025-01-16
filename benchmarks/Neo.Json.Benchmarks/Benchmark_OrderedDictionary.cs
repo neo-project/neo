@@ -9,57 +9,52 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-
 using BenchmarkDotNet.Attributes;
-using Neo.Json;
-using System.Collections.Generic;
 
 namespace Neo.Json.Benchmarks
 {
-
     [MemoryDiagnoser]
     [CsvMeasurementsExporter]
     [MarkdownExporter]
     public class Benchmark_OrderedDictionary
     {
-        private OrderedDictionary<string, uint> od;
+        private OrderedDictionary<string, uint> _od;
 
         [GlobalSetup]
         public void Setup()
         {
-            od = new OrderedDictionary<string, uint>
-        {
-            { "a", 1 },
-            { "b", 2 },
-            { "c", 3 }
-        };
+            _od = new OrderedDictionary<string, uint>
+            {
+                { "a", 1 },
+                { "b", 2 },
+                { "c", 3 }
+            };
         }
 
         [Benchmark]
         public void TestClear()
         {
-            od.Clear();
+            _od.Clear();
         }
 
         [Benchmark]
         public void TestCount()
         {
-            var count = od.Count;
+            _ = _od.Count;
         }
 
         [Benchmark]
         public void TestRemove()
         {
-            od.Remove("a");
+            _od.Remove("a");
         }
 
         [Benchmark]
         public void TestTryGetValue()
         {
-            od.TryGetValue("a", out uint value);
+            _od.TryGetValue("a", out _);
         }
     }
-
 }
 
 /// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)

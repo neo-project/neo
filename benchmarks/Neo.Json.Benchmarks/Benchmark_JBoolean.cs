@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
-using Neo.Json;
 
 namespace Neo.Json.Benchmarks
 {
@@ -19,28 +18,30 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JBoolean
     {
-        private JBoolean jFalse;
-        private JBoolean jTrue;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JBoolean _jFalse;
+        private JBoolean _jTrue;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [GlobalSetup]
         public void Setup()
         {
-            jFalse = new JBoolean();
-            jTrue = new JBoolean(true);
+            _jFalse = new JBoolean();
+            _jTrue = new JBoolean(true);
         }
 
         [Benchmark]
         public void TestAsNumber()
         {
-            _ = jFalse.AsNumber();
-            _ = jTrue.AsNumber();
+            _ = _jFalse.AsNumber();
+            _ = _jTrue.AsNumber();
         }
 
         [Benchmark]
         public void TestConversionToString()
         {
-            _ = jTrue.ToString();
-            _ = jFalse.ToString();
+            _ = _jTrue.ToString();
+            _ = _jFalse.ToString();
         }
     }
 

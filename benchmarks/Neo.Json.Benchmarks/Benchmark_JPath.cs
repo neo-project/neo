@@ -9,9 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-
 using BenchmarkDotNet.Attributes;
-using Neo.Json;
 
 namespace Neo.Json.Benchmarks
 {
@@ -20,12 +18,14 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JPath
     {
-        private JObject json;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JObject _json;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [GlobalSetup]
         public void Setup()
         {
-            json = new JObject
+            _json = new JObject
             {
                 ["store"] = new JObject
                 {
@@ -41,10 +41,9 @@ namespace Neo.Json.Benchmarks
         [Benchmark]
         public void TestJsonPathQuery()
         {
-            json.JsonPath("$.store.book[*].title");
+            _json.JsonPath("$.store.book[*].title");
         }
     }
-
 }
 
 /// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)

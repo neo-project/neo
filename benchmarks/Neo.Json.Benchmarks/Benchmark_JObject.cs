@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
-using Neo.Json;
 
 namespace Neo.Json.Benchmarks
 {
@@ -19,35 +18,30 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JObject
     {
-        private JObject alice;
-        private JObject bob;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JObject _alice;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [GlobalSetup]
         public void Setup()
         {
-            alice = new JObject
+            _alice = new JObject
             {
                 ["name"] = "Alice",
                 ["age"] = 30
-            };
-
-            bob = new JObject
-            {
-                ["name"] = "Bob",
-                ["age"] = 40
             };
         }
 
         [Benchmark]
         public void TestAddProperty()
         {
-            alice["city"] = "New York";
+            _alice["city"] = "New York";
         }
 
         [Benchmark]
         public void TestClone()
         {
-            var clone = alice.Clone();
+            _ = _alice.Clone();
         }
 
         [Benchmark]
@@ -56,7 +50,6 @@ namespace Neo.Json.Benchmarks
             JObject.Parse("{\"name\":\"John\", \"age\":25}");
         }
     }
-
 }
 
 /// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)

@@ -13,35 +13,35 @@ namespace Neo.Json.Benchmarks
 {
     public class RpcTestCase
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public RpcRequest Request { get; set; }
+        public RpcRequest? Request { get; set; }
 
-        public RpcResponse Response { get; set; }
+        public RpcResponse? Response { get; set; }
     }
 
     public class RpcRequest
     {
-        public JToken Id { get; set; }
+        public JToken? Id { get; set; }
 
-        public string JsonRpc { get; set; }
+        public string? JsonRpc { get; set; }
 
-        public string Method { get; set; }
+        public string? Method { get; set; }
 
-        public JToken[] Params { get; set; }
+        public JToken[]? Params { get; set; }
     }
 
     public class RpcResponse
     {
-        public JToken Id { get; set; }
+        public JToken? Id { get; set; }
 
-        public string JsonRpc { get; set; }
+        public string? JsonRpc { get; set; }
 
-        public RpcResponseError Error { get; set; }
+        public RpcResponseError? Error { get; set; }
 
-        public JToken Result { get; set; }
+        public JToken? Result { get; set; }
 
-        public string RawResponse { get; set; }
+        public string? RawResponse { get; set; }
 
     }
 
@@ -49,8 +49,8 @@ namespace Neo.Json.Benchmarks
     {
         public int Code { get; set; }
 
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
-        public JToken Data { get; set; }
+        public JToken? Data { get; set; }
     }
 }

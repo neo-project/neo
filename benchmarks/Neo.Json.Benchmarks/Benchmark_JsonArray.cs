@@ -18,14 +18,16 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]         // Markdown 格式导出
     public class Benchmark_JsonArray
     {
-        private JObject alice;
-        private JObject bob;
-        private JArray jArray;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JObject _alice;
+        private JObject _bob;
+        private JArray _jArray;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [GlobalSetup]
         public void Setup()
         {
-            alice = new JObject
+            _alice = new JObject
             {
                 ["name"] = "alice",
                 ["age"] = 30,
@@ -39,7 +41,7 @@ namespace Neo.Json.Benchmarks
                 }
             };
 
-            bob = new JObject
+            _bob = new JObject
             {
                 ["name"] = "bob",
                 ["age"] = 100000,
@@ -53,90 +55,90 @@ namespace Neo.Json.Benchmarks
                 }
             };
 
-            jArray = new JArray();
+            _jArray = new JArray();
         }
 
         [Benchmark]
         public void TestAdd()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Add(bob);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Add(_bob);
         }
 
         [Benchmark]
         public void TestSetItem()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray[0] = bob;
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray[0] = _bob;
         }
 
         [Benchmark]
         public void TestClear()
         {
-            jArray.Clear();
+            _jArray.Clear();
         }
 
         [Benchmark]
         public void TestContains()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            var contains = jArray.Contains(alice);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _ = _jArray.Contains(_alice);
         }
 
         [Benchmark]
         public void TestCopyTo()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Add(bob);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Add(_bob);
 
-            JObject[] objects = new JObject[2];
-            jArray.CopyTo(objects, 0);
+            var objects = new JObject[2];
+            _jArray.CopyTo(objects, 0);
         }
 
         [Benchmark]
         public void TestInsert()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Insert(0, bob);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Insert(0, _bob);
         }
 
         [Benchmark]
         public void TestIndexOf()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            int index = jArray.IndexOf(alice);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _ = _jArray.IndexOf(_alice);
         }
 
         [Benchmark]
         public void TestRemove()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Remove(alice);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Remove(_alice);
         }
 
         [Benchmark]
         public void TestRemoveAt()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Add(bob);
-            jArray.RemoveAt(1);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Add(_bob);
+            _jArray.RemoveAt(1);
         }
 
         [Benchmark]
         public void TestGetEnumerator()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Add(bob);
-            foreach (var item in jArray)
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Add(_bob);
+            foreach (var item in _jArray)
             {
                 // Do nothing, just enumerate
             }
@@ -145,49 +147,49 @@ namespace Neo.Json.Benchmarks
         [Benchmark]
         public void TestCount()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Add(bob);
-            var count = jArray.Count;
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Add(_bob);
+            _ = _jArray.Count;
         }
 
         [Benchmark]
         public void TestClone()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            var clonedArray = (JArray)jArray.Clone();
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _ = (JArray)_jArray.Clone();
         }
 
         [Benchmark]
         public void TestAddNull()
         {
-            jArray.Clear();
-            jArray.Add(null);
+            _jArray.Clear();
+            _jArray.Add(null);
         }
 
         [Benchmark]
         public void TestSetNull()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray[0] = null;
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray[0] = null;
         }
 
         [Benchmark]
         public void TestInsertNull()
         {
-            jArray.Clear();
-            jArray.Add(alice);
-            jArray.Insert(0, null);
+            _jArray.Clear();
+            _jArray.Add(_alice);
+            _jArray.Insert(0, null);
         }
 
         [Benchmark]
         public void TestRemoveNull()
         {
-            jArray.Clear();
-            jArray.Add(null);
-            jArray.Remove(null);
+            _jArray.Clear();
+            _jArray.Add(null);
+            _jArray.Remove(null);
         }
     }
 }

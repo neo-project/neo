@@ -18,32 +18,31 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_JNumber
     {
-        private JNumber maxInt;
-        private JNumber minInt;
-        private JNumber zero;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private JNumber _maxInt;
+        private JNumber _zero;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [GlobalSetup]
         public void Setup()
         {
-            maxInt = new JNumber(JNumber.MAX_SAFE_INTEGER);
-            minInt = new JNumber(JNumber.MIN_SAFE_INTEGER);
-            zero = new JNumber(0);
+            _maxInt = new JNumber(JNumber.MAX_SAFE_INTEGER);
+            _zero = new JNumber(0);
         }
 
         [Benchmark]
         public void TestAsBoolean()
         {
-            _ = maxInt.AsBoolean();
-            _ = zero.AsBoolean();
+            _ = _maxInt.AsBoolean();
+            _ = _zero.AsBoolean();
         }
 
         [Benchmark]
         public void TestAsString()
         {
-            _ = maxInt.AsString();
+            _ = _maxInt.AsString();
         }
     }
-
 }
 
 /// BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.2605)

@@ -13,35 +13,35 @@ namespace Neo.Json.Benchmarks
 {
     public class RpcTestCaseN
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public RpcRequestN Request { get; set; }
+        public RpcRequestN? Request { get; set; }
 
-        public RpcResponseN Response { get; set; }
+        public RpcResponseN? Response { get; set; }
     }
 
     public class RpcRequestN
     {
-        public Newtonsoft.Json.Linq.JToken Id { get; set; }
+        public Newtonsoft.Json.Linq.JToken? Id { get; set; }
 
-        public string JsonRpc { get; set; }
+        public string? JsonRpc { get; set; }
 
-        public string Method { get; set; }
+        public string? Method { get; set; }
 
-        public Newtonsoft.Json.Linq.JToken[] Params { get; set; }
+        public Newtonsoft.Json.Linq.JToken[]? Params { get; set; }
     }
 
     public class RpcResponseN
     {
-        public Newtonsoft.Json.Linq.JToken Id { get; set; }
+        public Newtonsoft.Json.Linq.JToken? Id { get; set; }
 
-        public string JsonRpc { get; set; }
+        public string? JsonRpc { get; set; }
 
-        public RpcResponseErrorN Error { get; set; }
+        public RpcResponseErrorN? Error { get; set; }
 
-        public Newtonsoft.Json.Linq.JToken Result { get; set; }
+        public Newtonsoft.Json.Linq.JToken? Result { get; set; }
 
-        public string RawResponse { get; set; }
+        public string? RawResponse { get; set; }
 
     }
 
@@ -49,8 +49,8 @@ namespace Neo.Json.Benchmarks
     {
         public int Code { get; set; }
 
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
-        public Newtonsoft.Json.Linq.JToken Data { get; set; }
+        public Newtonsoft.Json.Linq.JToken? Data { get; set; }
     }
 }
