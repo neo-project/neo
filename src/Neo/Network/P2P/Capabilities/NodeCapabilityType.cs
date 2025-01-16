@@ -31,6 +31,11 @@ namespace Neo.Network.P2P.Capabilities
         [Obsolete]
         WsServer = 0x02,
 
+        /// <summary>
+        /// Disable p2p compression
+        /// </summary>
+        DisableCompression = 0x03,
+
         #endregion
 
         #region Data availability

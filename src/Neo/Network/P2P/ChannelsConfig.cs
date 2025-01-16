@@ -24,6 +24,11 @@ namespace Neo.Network.P2P
         public IPEndPoint Tcp { get; set; }
 
         /// <summary>
+        /// Enable compression.
+        /// </summary>
+        public bool EnableCompression { get; set; } = Peer.DefaultEnableCompression;
+
+        /// <summary>
         /// Minimum desired connections.
         /// </summary>
         public int MinDesiredConnections { get; set; } = Peer.DefaultMinDesiredConnections;
