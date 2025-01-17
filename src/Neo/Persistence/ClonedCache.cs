@@ -59,7 +59,10 @@ namespace Neo.Persistence
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            _innerCache.GetAndChange(key)?.FromReplica(value);
+            var entry = _innerCache.GetAndChange(key)
+                ?? throw new KeyNotFoundException();
+
+            entry.FromReplica(value);
         }
     }
 }
