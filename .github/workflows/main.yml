@@ -70,7 +70,7 @@ jobs:
         brew install leveldb
         brew install gperftools
         dotnet build
-        dotnet test --blame-hang --blame-crash --no-build
+        dotnet test --no-build
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
