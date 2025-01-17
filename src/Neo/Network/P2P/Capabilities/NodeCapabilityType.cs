@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NodeCapabilityType.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -30,6 +30,11 @@ namespace Neo.Network.P2P.Capabilities
         /// </summary>
         [Obsolete]
         WsServer = 0x02,
+
+        /// <summary>
+        /// Disable p2p compression
+        /// </summary>
+        DisableCompression = 0x03,
 
         #endregion
 
