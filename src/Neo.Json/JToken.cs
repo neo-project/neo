@@ -11,7 +11,6 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Text.Unicode;
 using static Neo.Json.Utility;
 
@@ -26,7 +25,7 @@ namespace Neo.Json
 
         static JToken()
         {
-            DefaultEncoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin);
+            DefaultEncoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.CjkUnifiedIdeographs);
         }
 
         /// <summary>
@@ -273,7 +272,7 @@ namespace Neo.Json
         /// <returns>The encoded JSON token.</returns>
         public string ToString(bool indented)
         {
-            return Regex.Unescape(StrictUTF8.GetString(ToByteArray(indented)));
+            return StrictUTF8.GetString(ToByteArray(indented));
         }
 
         internal abstract void Write(Utf8JsonWriter writer);
