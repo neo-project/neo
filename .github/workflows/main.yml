@@ -76,7 +76,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         dotnet build
-        dotnet test --blame-hang --blame-crash --no-build
+        dotnet test --no-build
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'

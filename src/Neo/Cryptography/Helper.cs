@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -51,8 +51,12 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] RIPEMD160(this ReadOnlySpan<byte> value)
         {
-            byte[] source = value.ToArray();
-            return source.RIPEMD160();
+            using var ripemd160 = new RIPEMD160Managed();
+
+            var output = new byte[ripemd160.HashSize / 8];
+            if (!ripemd160.TryComputeHash(value, output.AsSpan(), out _))
+                throw new CryptographicException();
+            return output;
         }
 
         /// <summary>
