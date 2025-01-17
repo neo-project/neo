@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// FullNodeCapability.cs file belongs to the neo project and is free
+// DisableCompressionCapability.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,41 +10,35 @@
 // modifications are permitted.
 
 using Neo.IO;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Capabilities
 {
     /// <summary>
-    /// Indicates that a node has complete current state.
+    /// This capability disable the compression p2p mechanism.
     /// </summary>
-    public class FullNodeCapability : NodeCapability
+    public class DisableCompressionCapability : NodeCapability
     {
-        /// <summary>
-        /// Indicates the current block height of the node.
-        /// </summary>
-        public uint StartHeight;
-
         public override int Size =>
             base.Size +    // Type
-            sizeof(uint);  // Start Height
+            1;  // Zero (empty VarBytes or String)
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FullNodeCapability"/> class.
+        /// Initializes a new instance of the <see cref="DisableCompressionCapability"/> class.
         /// </summary>
-        /// <param name="startHeight">The current block height of the node.</param>
-        public FullNodeCapability(uint startHeight = 0) : base(NodeCapabilityType.FullNode)
-        {
-            StartHeight = startHeight;
-        }
+        public DisableCompressionCapability() : base(NodeCapabilityType.DisableCompression) { }
 
         protected override void DeserializeWithoutType(ref MemoryReader reader)
         {
-            StartHeight = reader.ReadUInt32();
+            var zero = reader.ReadByte(); // Zero-length byte array or string (see UnknownCapability).
+            if (zero != 0)
+                throw new FormatException("DisableCompression has some data");
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.Write(StartHeight);
+            writer.Write((byte)0);
         }
     }
 }
