@@ -183,10 +183,11 @@ namespace Neo.UnitTests.IO.Caching
             items.Count().Should().Be(4);
 
             // null and empty with the backwards direction -> miserably fails.
-            Action action = () => myDataCache.Find(null, SeekDirection.Backward);
-            action.Should().Throw<ArgumentException>();
-            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
-            action.Should().Throw<ArgumentException>();
+            // Action action = () => myDataCache.Find(null, SeekDirection.Backward);
+            // action.Should().Throw<ArgumentException>();
+
+            // action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            // action.Should().Throw<ArgumentException>();
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
             key1.Should().Be(items.ElementAt(0).Key);
@@ -404,5 +405,47 @@ namespace Neo.UnitTests.IO.Caching
             items.Current.Key.Should().Be(key4);
             items.MoveNext().Should().Be(false);
         }
+
+        [TestMethod]
+        public void TestFindEmptyPrefix()
+        {
+            using var store = new MemoryStore();
+            using var dataCache = new SnapshotCache(store);
+
+            var k1 = StorageKey.CreateSearchPrefix(-1, []);
+            var k2 = StorageKey.CreateSearchPrefix(-1, [0x01]);
+            var k3 = StorageKey.CreateSearchPrefix(-1, [0xff, 0x02]);
+
+            dataCache.Add(k1, value1);
+            dataCache.Add(k2, value2);
+            dataCache.Add(k3, value3);
+
+            var items = dataCache.Find().ToArray();
+            items.Length.Should().Be(3);
+            items[0].Key.ToArray().Should().BeEquivalentTo(k1.ToArray());
+            items[1].Key.ToArray().Should().BeEquivalentTo(k2.ToArray());
+            items[2].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
+
+            items = dataCache.Find([0xff, 0xff, 0xff, 0xff, 0xff]).ToArray();
+            items.Length.Should().Be(1);
+            items[0].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
+
+            items = dataCache.Find(null, SeekDirection.Backward).ToArray();
+            items.Length.Should().Be(3);
+            items[0].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
+            items[1].Key.ToArray().Should().BeEquivalentTo(k2.ToArray());
+            items[2].Key.ToArray().Should().BeEquivalentTo(k1.ToArray());
+
+            items = dataCache.Find([0xff, 0xff, 0xff, 0xff, 0xff], SeekDirection.Backward).ToArray();
+            items.Length.Should().Be(1);
+            items[0].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
+        
+            items = dataCache.Find([0xff], SeekDirection.Backward).ToArray();
+            items.Length.Should().Be(3);
+            items[0].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
+            items[1].Key.ToArray().Should().BeEquivalentTo(k2.ToArray());
+            items[2].Key.ToArray().Should().BeEquivalentTo(k1.ToArray());
+        }
     }
 }
+

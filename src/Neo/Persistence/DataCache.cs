@@ -202,50 +202,52 @@ namespace Neo.Persistence
         /// <summary>
         /// Finds the entries starting with the specified prefix.
         /// </summary>
-        /// <param name="key_prefix">The prefix of the key.</param>
+        /// <param name="keyPrefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            var seek_prefix = key_prefix;
+            var seekPrefix = keyPrefix;
             if (direction == SeekDirection.Backward)
             {
-                if (key_prefix == null)
+                seekPrefix = null;
+                if (keyPrefix != null && keyPrefix.Length > 0)
                 {
-                    // Backwards seek for null prefix is not supported for now.
-                    throw new ArgumentNullException(nameof(key_prefix));
-                }
-                if (key_prefix.Length == 0)
-                {
-                    // Backwards seek for zero prefix is not supported for now.
-                    throw new ArgumentOutOfRangeException(nameof(key_prefix));
-                }
-                seek_prefix = null;
-                for (var i = key_prefix.Length - 1; i >= 0; i--)
-                {
-                    if (key_prefix[i] < 0xff)
+                    for (var i = keyPrefix.Length - 1; i >= 0; i--)
                     {
-                        seek_prefix = key_prefix.Take(i + 1).ToArray();
-                        // The next key after the key_prefix.
-                        seek_prefix[i]++;
-                        break;
+                        if (keyPrefix[i] < 0xff)
+                        {
+                            seekPrefix = keyPrefix.Take(i + 1).ToArray();
+                            seekPrefix[i]++; // The next key after the key_prefix.
+                            break;
+                        }
                     }
                 }
-                if (seek_prefix == null)
-                {
-                    throw new ArgumentException($"{nameof(key_prefix)} with all bytes being 0xff is not supported now");
-                }
             }
-            return FindInternal(key_prefix, seek_prefix, direction);
+
+            return FindInternal(keyPrefix, seekPrefix, direction);
         }
 
-        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? key_prefix, byte[]? seek_prefix, SeekDirection direction)
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction)
         {
-            foreach (var (key, value) in Seek(seek_prefix, direction))
-                if (key_prefix == null || key.ToArray().AsSpan().StartsWith(key_prefix))
+
+            var prefixIsEmpty = keyPrefix == null || keyPrefix.Length == 0;
+
+            // If all bytes are 0xff, the seekPrefix will be null.
+            // It means FindInternal is seeking the last key.
+            // If the last key starts with n * 0xff:
+            //   1. If n >= keyPrefix.Length, key.StartsWith(keyPrefix) will be true.
+            //   2. If n < keyPrefix.Length, key.StartsWith(keyPrefix) will be false.
+            // If the last key doesnot start with 0xff:
+            //   1. key.StartsWith(keyPrefix) will be false.
+            var seekIsEmpty = seekPrefix == null || seekPrefix.Length == 0;
+            foreach (var (key, value) in Seek(seekPrefix, direction))
+            {
+                if (prefixIsEmpty || key.ToArray().AsSpan().StartsWith(keyPrefix))
                     yield return (key, value);
-                else if (direction == SeekDirection.Forward || (seek_prefix == null || !key.ToArray().SequenceEqual(seek_prefix)))
+                else if (direction == SeekDirection.Forward || (seekIsEmpty || !key.ToArray().SequenceEqual(seekPrefix)))
                     yield break;
+            }
         }
 
         /// <summary>
@@ -261,10 +263,12 @@ namespace Neo.Persistence
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
             foreach (var (key, value) in Seek(start, direction))
+            {
                 if (comparer.Compare(key.ToArray(), end) < 0)
                     yield return (key, value);
                 else
                     yield break;
+            }
         }
 
         /// <summary>
@@ -415,31 +419,24 @@ namespace Neo.Persistence
         {
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
-            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             lock (_dictionary)
             {
                 cached = _dictionary
                     .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
-                    .Select(p =>
-                    (
-                        KeyBytes: p.Key.ToArray(),
-                        p.Key,
-                        p.Value.Item
-                    ))
+                    .Select(p => (KeyBytes: p.Key.ToArray(), p.Key, p.Value.Item))
                     .OrderBy(p => p.KeyBytes, comparer)
                     .ToArray();
                 cachedKeySet = new HashSet<StorageKey>(_dictionary.Keys);
             }
+
             var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))
-                .Select(p =>
-                (
-                    KeyBytes: p.Key.ToArray(),
-                    p.Key,
-                    p.Value
-                ));
+                .Select(p => (KeyBytes: p.Key.ToArray(), p.Key, p.Value));
+
             using var e1 = cached.GetEnumerator();
             using var e2 = uncached.GetEnumerator();
+
             (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
             bool c1 = e1.MoveNext();
             bool c2 = e2.MoveNext();
