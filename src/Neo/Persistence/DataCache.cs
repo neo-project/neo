@@ -210,19 +210,35 @@ namespace Neo.Persistence
             var seekPrefix = keyPrefix;
             if (direction == SeekDirection.Backward)
             {
-                seekPrefix = null;
-                if (keyPrefix != null && keyPrefix.Length > 0)
+                if (keyPrefix == null)
                 {
-                    for (var i = keyPrefix.Length - 1; i >= 0; i--)
+                    // Backwards seek for null prefix is not supported for now.
+                    throw new ArgumentNullException(nameof(keyPrefix));
+                }
+                if (keyPrefix.Length == 0)
+                {
+                    // Backwards seek for zero prefix is not supported for now.
+                    throw new ArgumentOutOfRangeException(nameof(keyPrefix));
+                }
+
+                seekPrefix = null;
+                for (var i = keyPrefix.Length - 1; i >= 0; i--)
+                {
+                    if (keyPrefix[i] < 0xff)
                     {
-                        if (keyPrefix[i] < 0xff)
-                        {
-                            seekPrefix = keyPrefix.Take(i + 1).ToArray();
-                            seekPrefix[i]++; // The next key after the key_prefix.
-                            break;
-                        }
+                        seekPrefix = keyPrefix.Take(i + 1).ToArray();
+                        seekPrefix[i]++; // The next key after the key_prefix.
+                        break;
                     }
                 }
+
+                if (seekPrefix == null)
+                {
+                    // This case is rare
+                    seekPrefix = new byte[ApplicationEngine.MaxStorageKeySize + 1];
+                    Array.Fill(seekPrefix, (byte)0xff);
+                }
+
             }
 
             return FindInternal(keyPrefix, seekPrefix, direction);
@@ -230,22 +246,12 @@ namespace Neo.Persistence
 
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? keyPrefix, byte[]? seekPrefix, SeekDirection direction)
         {
-
             var prefixIsEmpty = keyPrefix == null || keyPrefix.Length == 0;
-
-            // If all bytes are 0xff, the seekPrefix will be null.
-            // It means FindInternal is seeking the last key.
-            // If the last key starts with n * 0xff:
-            //   1. If n >= keyPrefix.Length, key.StartsWith(keyPrefix) will be true.
-            //   2. If n < keyPrefix.Length, key.StartsWith(keyPrefix) will be false.
-            // If the last key doesnot start with 0xff:
-            //   1. key.StartsWith(keyPrefix) will be false.
-            var seekIsEmpty = seekPrefix == null || seekPrefix.Length == 0;
             foreach (var (key, value) in Seek(seekPrefix, direction))
             {
                 if (prefixIsEmpty || key.ToArray().AsSpan().StartsWith(keyPrefix))
                     yield return (key, value);
-                else if (direction == SeekDirection.Forward || (seekIsEmpty || !key.ToArray().SequenceEqual(seekPrefix)))
+                else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.ToArray().SequenceEqual(seekPrefix)))
                     yield break;
             }
         }

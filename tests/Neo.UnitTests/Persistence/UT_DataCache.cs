@@ -182,12 +182,12 @@ namespace Neo.UnitTests.IO.Caching
             items = myDataCache.Find(new byte[] { });
             items.Count().Should().Be(4);
 
-            // null and empty with the backwards direction start from the last key
-            items = myDataCache.Find(null, SeekDirection.Backward);
-            // no exception, and results check will be added later.
+            // null and empty with the backwards direction -> miserably fails.
+            Action action = () => myDataCache.Find(null, SeekDirection.Backward);
+            action.Should().Throw<ArgumentException>();
 
-            items = myDataCache.Find(new byte[] { }, SeekDirection.Backward);
-            // no exception, and results check will be added later.
+            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            action.Should().Throw<ArgumentException>();
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
             key1.Should().Be(items.ElementAt(0).Key);
@@ -430,11 +430,12 @@ namespace Neo.UnitTests.IO.Caching
             items.Length.Should().Be(1);
             items[0].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
 
-            items = dataCache.Find(null, SeekDirection.Backward).ToArray();
-            items.Length.Should().Be(3);
-            items[0].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
-            items[1].Key.ToArray().Should().BeEquivalentTo(k2.ToArray());
-            items[2].Key.ToArray().Should().BeEquivalentTo(k1.ToArray());
+            // null and empty are not supported for backwards direction now.
+            Action action = () => myDataCache.Find(null, SeekDirection.Backward);
+            action.Should().Throw<ArgumentException>();
+
+            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            action.Should().Throw<ArgumentException>();
 
             items = dataCache.Find([0xff, 0xff, 0xff, 0xff, 0xff], SeekDirection.Backward).ToArray();
             items.Length.Should().Be(1);
