@@ -304,6 +304,40 @@ namespace Neo.Plugins.Storage.Tests
             }
         }
 
+        [TestMethod]
+        public void TestLevelDbSeek()
+        {
+            using var store = levelDbStore.GetStore(path_leveldb);
+            TestSeek(store);
+        }
+
+        [TestMethod]
+        public void TestRocksDbSeek()
+        {
+            using var store = rocksDBStore.GetStore(path_rocksdb);
+            TestSeek(store);
+        }
+
+        private void TestSeek(IStore store)
+        {
+            store.Put(new byte[] { 0xff, 0x01 }, new byte[] { 0x00 });
+            store.Put(new byte[] { 0xff, 0x02 }, new byte[] { 0x01 });
+
+            var entries = store.Seek(null, SeekDirection.Forward).ToArray();
+            Assert.AreEqual(2, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0xff, 0x01 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[0].Value);
+            CollectionAssert.AreEqual(new byte[] { 0xff, 0x02 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[1].Value);
+
+            entries = store.Seek(null, SeekDirection.Backward).ToArray();
+            Assert.AreEqual(2, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0xff, 0x02 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
+            CollectionAssert.AreEqual(new byte[] { 0xff, 0x01 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[1].Value);
+        }
+
         /// <summary>
         /// Test Put
         /// </summary>

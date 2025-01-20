@@ -73,7 +73,17 @@ namespace Neo.UnitTests.Persistence
             store.Put([0x00, 0x00, 0x04], [0x04]);
 
             var entries = store.Seek(Array.Empty<byte>(), SeekDirection.Backward).ToArray();
-            Assert.AreEqual(entries.Length, 0);
+            Assert.AreEqual(entries.Length, 5);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x04 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x04 }, entries[0].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x03 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x03 }, entries[1].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x02 }, entries[2].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x02 }, entries[2].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[3].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[3].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[4].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[4].Value);
         }
 
         [TestMethod]

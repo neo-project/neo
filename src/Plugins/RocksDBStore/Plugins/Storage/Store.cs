@@ -43,11 +43,20 @@ namespace Neo.Plugins.Storage
 
             using var it = db.NewIterator();
             if (direction == SeekDirection.Forward)
+            {
                 for (it.Seek(keyOrPrefix); it.Valid(); it.Next())
                     yield return (it.Key(), it.Value());
+            }
             else
-                for (it.SeekForPrev(keyOrPrefix); it.Valid(); it.Prev())
+            {
+                if (keyOrPrefix is null || keyOrPrefix.Length == 0)
+                    it.SeekToLast(); // keyPrefix is null or empty, seek to the last key
+                else
+                    it.SeekForPrev(keyOrPrefix);
+
+                for (; it.Valid(); it.Prev())
                     yield return (it.Key(), it.Value());
+            }
         }
 
         public bool Contains(byte[] key)

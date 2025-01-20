@@ -23,17 +23,25 @@ namespace Neo.IO.Storage.LevelDB
             using Iterator it = db.CreateIterator(options);
             if (direction == SeekDirection.Forward)
             {
+                if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();
                 for (it.Seek(keyOrPrefix); it.Valid(); it.Next())
                     yield return new(it.Key(), it.Value());
             }
             else
             {
                 // SeekForPrev
-                it.Seek(keyOrPrefix);
-                if (!it.Valid())
-                    it.SeekToLast();
-                else if (it.Key().AsSpan().SequenceCompareTo(keyOrPrefix) > 0)
-                    it.Prev();
+                if (keyOrPrefix is null || keyOrPrefix.Length == 0)
+                {
+                    it.SeekToLast(); // keyPrefix is null or empty, seek to the last key
+                }
+                else
+                {
+                    it.Seek(keyOrPrefix);
+                    if (!it.Valid())
+                        it.SeekToLast();
+                    else if (it.Key().AsSpan().SequenceCompareTo(keyOrPrefix) > 0)
+                        it.Prev();
+                }
 
                 for (; it.Valid(); it.Prev())
                     yield return new(it.Key(), it.Value());
