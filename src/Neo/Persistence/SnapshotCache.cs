@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // SnapshotCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,6 +8,8 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+#nullable enable
 
 using Neo.Extensions;
 using Neo.SmartContract;
@@ -23,7 +25,7 @@ namespace Neo.Persistence
     public class SnapshotCache : DataCache, IDisposable
     {
         private readonly IReadOnlyStore _store;
-        private readonly ISnapshot _snapshot;
+        private readonly ISnapshot? _snapshot;
 
         public override SerializedCache SerializedCache => _store.SerializedCache;
 
@@ -82,7 +84,7 @@ namespace Neo.Persistence
         }
 
         /// <inheritdoc/>
-        protected override StorageItem TryGetInternal(StorageKey key)
+        protected override StorageItem? TryGetInternal(StorageKey key)
         {
             return _store.TryGet(key.ToArray(), out var value) ? new(value) : null;
         }

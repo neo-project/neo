@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MemorySnapshot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,10 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Neo.Persistence
@@ -21,7 +24,7 @@ namespace Neo.Persistence
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
         private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
-        private readonly ConcurrentDictionary<byte[], byte[]> _writeBatch;
+        private readonly ConcurrentDictionary<byte[], byte[]?> _writeBatch;
 
         public SerializedCache SerializedCache { get; }
 
@@ -30,7 +33,7 @@ namespace Neo.Persistence
             _innerData = innerData;
             SerializedCache = serializedCache;
             _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            _writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+            _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()
@@ -57,9 +60,9 @@ namespace Neo.Persistence
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
             if (keyOrPrefix?.Length > 0)
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
@@ -67,13 +70,13 @@ namespace Neo.Persistence
             return records.Select(p => (p.Key[..], p.Value[..]));
         }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            _immutableData.TryGetValue(key, out byte[] value);
+            _immutableData.TryGetValue(key, out var value);
             return value?[..];
         }
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             return _immutableData.TryGetValue(key, out value);
         }

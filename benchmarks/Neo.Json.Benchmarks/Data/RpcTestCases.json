@@ -1,0 +1,4034 @@
+[
+  {
+    "Name": "sendrawtransactionasyncerror",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "sendrawtransaction",
+      "params": [ "ANIHn05ujtUAAAAAACYcEwAAAAAAQkEAAAEKo4e1Ppa3mJpjFDGgVt0fQKBC9gEAXQMAyBeoBAAAAAwUzViuz9M1vh6z0xHh3IAJY9/XLZ8MFAqjh7U+lreYmmMUMaBW3R9AoEL2E8AMCHRyYW5zZmVyDBSlB7dGdv/td+dUuG7NmQnwus08ukFifVtSOAFCDEDh8zgTrGUXyzVX60wBCMyajNRfzFRiEPAe8CgGQ10bA2C3fnVz68Gw+Amgn5gmvuNfYKgWQ/W68Km1bYUPlnEYKQwhA86j4vgfGvk1ItKe3k8kofC+3q1ykzkdM4gPVHXZeHjJC0GVRA14" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "error": {
+        "code": -500,
+        "message": "InsufficientFunds",
+        "data": "   at Neo.Plugins.RpcServer.GetRelayResult(RelayResultReason reason, UInt256 hash)\r\n   at Neo.Network.RPC.Models.RpcServer.SendRawTransaction(JArray _params)\r\n   at Neo.Network.RPC.Models.RpcServer.ProcessRequest(HttpContext context, JObject request)"
+      }
+    }
+  },
+  {
+    "Name": "getbestblockhashasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getbestblockhash",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "0x530de76326a8662d1b730ba4fbdf011051eabd142015587e846da42376adf35f"
+    }
+  },
+  {
+    "Name": "getblockhexasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblock",
+      "params": [ 0 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "0000000000000000000000000000000000000000000000000000000000000000000000002bbb6298fc7039330cdfd2e4dfbe976ee72c4cba6c16d68f0b49ab1bca685b7388ea19ef55010000000000009903b0c3d292988febe5f306a02f654ea2eb16290100011102001dac2b7c000000000000000000ca61e52e881d41374e640f819cd118cc153b21a7000000000000000000000000000000000000000000000541123e7fe801000111"
+    }
+  },
+  {
+    "Name": "getblockhexasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblock",
+      "params": [ "0xe191fe1aea732c3e23f20af8a95e09f95891176f8064a2fce8571d51f80619a8" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "0000000000000000000000000000000000000000000000000000000000000000000000002bbb6298fc7039330cdfd2e4dfbe976ee72c4cba6c16d68f0b49ab1bca685b7388ea19ef55010000000000009903b0c3d292988febe5f306a02f654ea2eb16290100011102001dac2b7c000000000000000000ca61e52e881d41374e640f819cd118cc153b21a7000000000000000000000000000000000000000000000541123e7fe801000111"
+    }
+  },
+  {
+    "Name": "getblockasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblock",
+      "params": [ 7, true ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0x6d1556889c92249da88d2fb7729ae82fb2cc1b45dcd9030a40208b72a1d3cb83",
+        "size": 470,
+        "version": 0,
+        "previousblockhash": "0xaae8867e9086afaf06fd02cc538e88a69b801abd6f9d3ae39ae630e29d5b39e2",
+        "merkleroot": "0xe95761f21c733ad53066786af24ee5d613b32bd5aae538df2d611492ec0cae82",
+        "time": 1594867377561,
+        "nonce": "FFFFFFFFFFFFFFFF",
+        "index": 7,
+        "primary": 1,
+        "nextconsensus": "NikvsLcNP1jWhrFPrfS3n4spEASgdNYTG2",
+        "witnesses": [
+          {
+            "invocation": "DEBs6hZDHUtL7KOJuF1m8/vITM8VeduwegKhBdbqcLKdBzXA1uZZiBl8jM/rhjXBaIGQSFIQuq8Er1Nb5y5/DWUx",
+            "verification": "EQwhAqnqaELMDLOw8jF7B8hQ3j0eKyQ6mO0tVqP/TKZqrzMLEQtBE43vrw=="
+          }
+        ],
+        "tx": [
+          {
+            "hash": "0x83d44d71d59f854bc29f4e3932bf68703545807d05fb5429504d70cfc8d05071",
+            "size": 248,
+            "version": 0,
+            "nonce": 631973574,
+            "sender": "NikvsLcNP1jWhrFPrfS3n4spEASgdNYTG2",
+            "sysfee": "9007990",
+            "netfee": "1248450",
+            "validuntilblock": 2102405,
+            "signers": [
+              {
+                "account": "0xe19de267a37a71734478f512b3e92c79fc3695fa",
+                "scopes": "CalledByEntry"
+              }
+            ],
+            "attributes": [],
+            "script": "AccyDBQcA1dGS3d\u002Bz2tfOsOJOs4fixYh9gwU\u002BpU2/Hks6bMS9XhEc3F6o2fineETwAwIdHJhbnNmZXIMFCUFnstIeNOodfkcUc7e0zDUV1/eQWJ9W1I4",
+            "witnesses": [
+              {
+                "invocation": "DEDZxkskUb1aH1I4EX5ja02xrYX4fCubAmQzBuPpfY7pDEb1n4Dzx\u002BUB\u002BqSdC/CGskGf5BuzJ0MWJJipsHuivKmU",
+                "verification": "EQwhAqnqaELMDLOw8jF7B8hQ3j0eKyQ6mO0tVqP/TKZqrzMLEQtBE43vrw=="
+              }
+            ]
+          }
+        ],
+        "confirmations": 695,
+        "nextblockhash": "0xc4b986813396932a47d6823a9987ccee0148c6fca0150102f4b24ce05cfc9c6f"
+      }
+    }
+  },
+  {
+    "Name": "getblockasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblock",
+      "params": [ "0xb9579b028e4cf31a0c3bd9582f9f7fbd40b0e0495604406b8f530c7ebce5bcc8", true ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0x6d1556889c92249da88d2fb7729ae82fb2cc1b45dcd9030a40208b72a1d3cb83",
+        "size": 470,
+        "version": 0,
+        "previousblockhash": "0xaae8867e9086afaf06fd02cc538e88a69b801abd6f9d3ae39ae630e29d5b39e2",
+        "merkleroot": "0xe95761f21c733ad53066786af24ee5d613b32bd5aae538df2d611492ec0cae82",
+        "time": 1594867377561,
+        "nonce": "FFFFFFFFFFFFFFFF",
+        "index": 7,
+        "primary": 1,
+        "nextconsensus": "NikvsLcNP1jWhrFPrfS3n4spEASgdNYTG2",
+        "witnesses": [
+          {
+            "invocation": "DEBs6hZDHUtL7KOJuF1m8/vITM8VeduwegKhBdbqcLKdBzXA1uZZiBl8jM/rhjXBaIGQSFIQuq8Er1Nb5y5/DWUx",
+            "verification": "EQwhAqnqaELMDLOw8jF7B8hQ3j0eKyQ6mO0tVqP/TKZqrzMLEQtBE43vrw=="
+          }
+        ],
+        "tx": [
+          {
+            "hash": "0x83d44d71d59f854bc29f4e3932bf68703545807d05fb5429504d70cfc8d05071",
+            "size": 248,
+            "version": 0,
+            "nonce": 631973574,
+            "sender": "NikvsLcNP1jWhrFPrfS3n4spEASgdNYTG2",
+            "sysfee": "9007990",
+            "netfee": "1248450",
+            "validuntilblock": 2102405,
+            "signers": [
+              {
+                "account": "0xe19de267a37a71734478f512b3e92c79fc3695fa",
+                "scopes": "CalledByEntry"
+              }
+            ],
+            "attributes": [],
+            "script": "AccyDBQcA1dGS3d\u002Bz2tfOsOJOs4fixYh9gwU\u002BpU2/Hks6bMS9XhEc3F6o2fineETwAwIdHJhbnNmZXIMFCUFnstIeNOodfkcUc7e0zDUV1/eQWJ9W1I4",
+            "witnesses": [
+              {
+                "invocation": "DEDZxkskUb1aH1I4EX5ja02xrYX4fCubAmQzBuPpfY7pDEb1n4Dzx\u002BUB\u002BqSdC/CGskGf5BuzJ0MWJJipsHuivKmU",
+                "verification": "EQwhAqnqaELMDLOw8jF7B8hQ3j0eKyQ6mO0tVqP/TKZqrzMLEQtBE43vrw=="
+              }
+            ]
+          }
+        ],
+        "confirmations": 695,
+        "nextblockhash": "0xc4b986813396932a47d6823a9987ccee0148c6fca0150102f4b24ce05cfc9c6f"
+      }
+    }
+  },
+  {
+    "Name": "getblockheadercountasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblockheadercount",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": 3825
+    }
+  },
+  {
+    "Name": "getblockcountasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblockcount",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": 2691
+    }
+  },
+  {
+    "Name": "getblockhashasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblockhash",
+      "params": [ 0 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "0xe191fe1aea732c3e23f20af8a95e09f95891176f8064a2fce8571d51f80619a8"
+    }
+  },
+  {
+    "Name": "getblockheaderhexasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblockheader",
+      "params": [ 0 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "0000000000000000000000000000000000000000000000000000000000000000000000002bbb6298fc7039330cdfd2e4dfbe976ee72c4cba6c16d68f0b49ab1bca685b7388ea19ef55010000000000009903b0c3d292988febe5f306a02f654ea2eb16290100011100"
+    }
+  },
+  {
+    "Name": "getblockheaderhexasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblockheader",
+      "params": [ "0xe191fe1aea732c3e23f20af8a95e09f95891176f8064a2fce8571d51f80619a8" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "0000000000000000000000000000000000000000000000000000000000000000000000002bbb6298fc7039330cdfd2e4dfbe976ee72c4cba6c16d68f0b49ab1bca685b7388ea19ef55010000000000009903b0c3d292988febe5f306a02f654ea2eb16290100011100"
+    }
+  },
+  {
+    "Name": "getblockheaderasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblockheader",
+      "params": [ 0, true ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0xbbf7e191d4947f8a4dc33477902dacd0b047e371a81c18a6df62fe0d541725f5",
+        "size": 113,
+        "version": 0,
+        "previousblockhash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "merkleroot": "0x735b68ca1bab490b8fd6166cba4c2ce76e97bedfe4d2df0c333970fc9862bb2b",
+        "time": 1468595301000,
+        "nonce": "FFFFFFFFFFFFFFFF",
+        "index": 0,
+        "primary": 1,
+        "nextconsensus": "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW",
+        "witnesses": [
+          {
+            "invocation": "",
+            "verification": "EQ=="
+          }
+        ],
+        "confirmations": 2700,
+        "nextblockhash": "0x423173109798b038019b35129417b55cc4b5976ac79978dfab8ea2512d155f69"
+      }
+    }
+  },
+  {
+    "Name": "getblockheaderasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblockheader",
+      "params": [ "0x656bcb02e4fe8a19dbb15149073a5ae0bd8adc2da8504b67b112b44f68b4c9d7", true ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0xbbf7e191d4947f8a4dc33477902dacd0b047e371a81c18a6df62fe0d541725f5",
+        "size": 113,
+        "version": 0,
+        "previousblockhash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "merkleroot": "0x735b68ca1bab490b8fd6166cba4c2ce76e97bedfe4d2df0c333970fc9862bb2b",
+        "time": 1468595301000,
+        "nonce": "FFFFFFFFFFFFFFFF",
+        "index": 0,
+        "primary": 1,
+        "nextconsensus": "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW",
+        "witnesses": [
+          {
+            "invocation": "",
+            "verification": "EQ=="
+          }
+        ],
+        "confirmations": 2700,
+        "nextblockhash": "0x423173109798b038019b35129417b55cc4b5976ac79978dfab8ea2512d155f69"
+      }
+    }
+  },
+  {
+    "Name": "getblocksysfeeasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getblocksysfee",
+      "params": [ 100 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "300000000"
+    }
+  },
+  {
+    "Name": "getcommitteeasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getcommittee",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        "02ced432397ddc44edba031c0bc3b933f28fdd9677792d7b20e6c036ddaaacf1e2"
+      ]
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getcontractstate",
+      "params": [ "gastoken" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -6,
+        "updatecounter": 0,
+        "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 2663858513
+        },
+        "manifest": {
+          "name": "GasToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 28,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getcontractstate",
+      "params": [ -6 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -6,
+        "updatecounter": 0,
+        "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 2663858513
+        },
+        "manifest": {
+          "name": "GasToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 28,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getcontractstate",
+      "params": [ "0xd2a4cff31913016155e38e474a2c06d08be276cf" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -6,
+        "updatecounter": 0,
+        "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 2663858513
+        },
+        "manifest": {
+          "name": "GasToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 28,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getcontractstate",
+      "params": [ "neotoken" ]
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -5,
+        "updatecounter": 1,
+        "hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 1325686241
+        },
+        "manifest": {
+          "name": "NeoToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "getAccountState",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Array",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "getAllCandidates",
+                "parameters": [],
+                "returntype": "InteropInterface",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "getCandidateVote",
+                "parameters": [
+                  {
+                    "name": "pubKey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 28,
+                "safe": true
+              },
+              {
+                "name": "getCandidates",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 35,
+                "safe": true
+              },
+              {
+                "name": "getCommittee",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 42,
+                "safe": true
+              },
+              {
+                "name": "getCommitteeAddress",
+                "parameters": [],
+                "returntype": "Hash160",
+                "offset": 49,
+                "safe": true
+              },
+              {
+                "name": "getGasPerBlock",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 56,
+                "safe": true
+              },
+              {
+                "name": "getNextBlockValidators",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 63,
+                "safe": true
+              },
+              {
+                "name": "getRegisterPrice",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 70,
+                "safe": true
+              },
+              {
+                "name": "registerCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 77,
+                "safe": false
+              },
+              {
+                "name": "setGasPerBlock",
+                "parameters": [
+                  {
+                    "name": "gasPerBlock",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 84,
+                "safe": false
+              },
+              {
+                "name": "setRegisterPrice",
+                "parameters": [
+                  {
+                    "name": "registerPrice",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 91,
+                "safe": false
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 98,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 105,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 112,
+                "safe": false
+              },
+              {
+                "name": "unclaimedGas",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "end",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 119,
+                "safe": true
+              },
+              {
+                "name": "unregisterCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 126,
+                "safe": false
+              },
+              {
+                "name": "vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "voteTo",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 133,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CandidateStateChanged",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "registered",
+                    "type": "Boolean"
+                  },
+                  {
+                    "name": "votes",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "Vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "from",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "to",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CommitteeChanged",
+                "parameters": [
+                  {
+                    "name": "old",
+                    "type": "Array"
+                  },
+                  {
+                    "name": "new",
+                    "type": "Array"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getcontractstate",
+      "params": [ -5 ]
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -5,
+        "updatecounter": 1,
+        "hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 1325686241
+        },
+        "manifest": {
+          "name": "NeoToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "getAccountState",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Array",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "getAllCandidates",
+                "parameters": [],
+                "returntype": "InteropInterface",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "getCandidateVote",
+                "parameters": [
+                  {
+                    "name": "pubKey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 28,
+                "safe": true
+              },
+              {
+                "name": "getCandidates",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 35,
+                "safe": true
+              },
+              {
+                "name": "getCommittee",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 42,
+                "safe": true
+              },
+              {
+                "name": "getCommitteeAddress",
+                "parameters": [],
+                "returntype": "Hash160",
+                "offset": 49,
+                "safe": true
+              },
+              {
+                "name": "getGasPerBlock",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 56,
+                "safe": true
+              },
+              {
+                "name": "getNextBlockValidators",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 63,
+                "safe": true
+              },
+              {
+                "name": "getRegisterPrice",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 70,
+                "safe": true
+              },
+              {
+                "name": "registerCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 77,
+                "safe": false
+              },
+              {
+                "name": "setGasPerBlock",
+                "parameters": [
+                  {
+                    "name": "gasPerBlock",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 84,
+                "safe": false
+              },
+              {
+                "name": "setRegisterPrice",
+                "parameters": [
+                  {
+                    "name": "registerPrice",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 91,
+                "safe": false
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 98,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 105,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 112,
+                "safe": false
+              },
+              {
+                "name": "unclaimedGas",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "end",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 119,
+                "safe": true
+              },
+              {
+                "name": "unregisterCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 126,
+                "safe": false
+              },
+              {
+                "name": "vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "voteTo",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 133,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CandidateStateChanged",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "registered",
+                    "type": "Boolean"
+                  },
+                  {
+                    "name": "votes",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "Vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "from",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "to",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CommitteeChanged",
+                "parameters": [
+                  {
+                    "name": "old",
+                    "type": "Array"
+                  },
+                  {
+                    "name": "new",
+                    "type": "Array"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getcontractstateasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getcontractstate",
+      "params": [ "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5" ]
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "id": -5,
+        "updatecounter": 1,
+        "hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
+        "nef": {
+          "magic": 860243278,
+          "compiler": "neo-core-v3.0",
+          "source": "",
+          "tokens": [],
+          "script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+          "checksum": 1325686241
+        },
+        "manifest": {
+          "name": "NeoToken",
+          "groups": [],
+          "features": {},
+          "supportedstandards": [
+            "NEP-17"
+          ],
+          "abi": {
+            "methods": [
+              {
+                "name": "balanceOf",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 0,
+                "safe": true
+              },
+              {
+                "name": "decimals",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 7,
+                "safe": true
+              },
+              {
+                "name": "getAccountState",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  }
+                ],
+                "returntype": "Array",
+                "offset": 14,
+                "safe": true
+              },
+              {
+                "name": "getAllCandidates",
+                "parameters": [],
+                "returntype": "InteropInterface",
+                "offset": 21,
+                "safe": true
+              },
+              {
+                "name": "getCandidateVote",
+                "parameters": [
+                  {
+                    "name": "pubKey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 28,
+                "safe": true
+              },
+              {
+                "name": "getCandidates",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 35,
+                "safe": true
+              },
+              {
+                "name": "getCommittee",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 42,
+                "safe": true
+              },
+              {
+                "name": "getCommitteeAddress",
+                "parameters": [],
+                "returntype": "Hash160",
+                "offset": 49,
+                "safe": true
+              },
+              {
+                "name": "getGasPerBlock",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 56,
+                "safe": true
+              },
+              {
+                "name": "getNextBlockValidators",
+                "parameters": [],
+                "returntype": "Array",
+                "offset": 63,
+                "safe": true
+              },
+              {
+                "name": "getRegisterPrice",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 70,
+                "safe": true
+              },
+              {
+                "name": "registerCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 77,
+                "safe": false
+              },
+              {
+                "name": "setGasPerBlock",
+                "parameters": [
+                  {
+                    "name": "gasPerBlock",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 84,
+                "safe": false
+              },
+              {
+                "name": "setRegisterPrice",
+                "parameters": [
+                  {
+                    "name": "registerPrice",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Void",
+                "offset": 91,
+                "safe": false
+              },
+              {
+                "name": "symbol",
+                "parameters": [],
+                "returntype": "String",
+                "offset": 98,
+                "safe": true
+              },
+              {
+                "name": "totalSupply",
+                "parameters": [],
+                "returntype": "Integer",
+                "offset": 105,
+                "safe": true
+              },
+              {
+                "name": "transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  },
+                  {
+                    "name": "data",
+                    "type": "Any"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 112,
+                "safe": false
+              },
+              {
+                "name": "unclaimedGas",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "end",
+                    "type": "Integer"
+                  }
+                ],
+                "returntype": "Integer",
+                "offset": 119,
+                "safe": true
+              },
+              {
+                "name": "unregisterCandidate",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 126,
+                "safe": false
+              },
+              {
+                "name": "vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "voteTo",
+                    "type": "PublicKey"
+                  }
+                ],
+                "returntype": "Boolean",
+                "offset": 133,
+                "safe": false
+              }
+            ],
+            "events": [
+              {
+                "name": "Transfer",
+                "parameters": [
+                  {
+                    "name": "from",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "to",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CandidateStateChanged",
+                "parameters": [
+                  {
+                    "name": "pubkey",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "registered",
+                    "type": "Boolean"
+                  },
+                  {
+                    "name": "votes",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "Vote",
+                "parameters": [
+                  {
+                    "name": "account",
+                    "type": "Hash160"
+                  },
+                  {
+                    "name": "from",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "to",
+                    "type": "PublicKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "Integer"
+                  }
+                ]
+              },
+              {
+                "name": "CommitteeChanged",
+                "parameters": [
+                  {
+                    "name": "old",
+                    "type": "Array"
+                  },
+                  {
+                    "name": "new",
+                    "type": "Array"
+                  }
+                ]
+              }
+            ]
+          },
+          "permissions": [
+            {
+              "contract": "*",
+              "methods": "*"
+            }
+          ],
+          "trusts": [],
+          "extra": null
+        }
+      }
+    }
+  },
+  {
+    "Name": "getnativecontractsasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "getnativecontracts",
+      "params": []
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "id": -1,
+          "updatecounter": 0,
+          "hash": "0xa501d7d7d10983673b61b7a2d3a813b36f9f0e43",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "D0Ea93tn",
+            "checksum": 3516775561
+          },
+          "manifest": {
+            "name": "ContractManagement",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [],
+            "abi": {
+              "methods": [
+                {
+                  "name": "deploy",
+                  "parameters": [
+                    {
+                      "name": "nefFile",
+                      "type": "ByteArray"
+                    },
+                    {
+                      "name": "manifest",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "deploy",
+                  "parameters": [
+                    {
+                      "name": "nefFile",
+                      "type": "ByteArray"
+                    },
+                    {
+                      "name": "manifest",
+                      "type": "ByteArray"
+                    },
+                    {
+                      "name": "data",
+                      "type": "Any"
+                    }
+                  ],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "destroy",
+                  "parameters": [],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "getContract",
+                  "parameters": [
+                    {
+                      "name": "hash",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getMinimumDeploymentFee",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "setMinimumDeploymentFee",
+                  "parameters": [
+                    {
+                      "name": "value",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "update",
+                  "parameters": [
+                    {
+                      "name": "nefFile",
+                      "type": "ByteArray"
+                    },
+                    {
+                      "name": "manifest",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "update",
+                  "parameters": [
+                    {
+                      "name": "nefFile",
+                      "type": "ByteArray"
+                    },
+                    {
+                      "name": "manifest",
+                      "type": "ByteArray"
+                    },
+                    {
+                      "name": "data",
+                      "type": "Any"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                }
+              ],
+              "events": [
+                {
+                  "name": "Deploy",
+                  "parameters": [
+                    {
+                      "name": "Hash",
+                      "type": "Hash160"
+                    }
+                  ]
+                },
+                {
+                  "name": "Update",
+                  "parameters": [
+                    {
+                      "name": "Hash",
+                      "type": "Hash160"
+                    }
+                  ]
+                },
+                {
+                  "name": "Destroy",
+                  "parameters": [
+                    {
+                      "name": "Hash",
+                      "type": "Hash160"
+                    }
+                  ]
+                }
+              ]
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        },
+        {
+          "id": -2,
+          "updatecounter": 1,
+          "hash": "0x971d69c6dd10ce88e7dfffec1dc603c6125a8764",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "AP5BGvd7Zw==",
+            "checksum": 3395482975
+          },
+          "manifest": {
+            "name": "LedgerContract",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [],
+            "abi": {
+              "methods": [
+                {
+                  "name": "currentHash",
+                  "parameters": [],
+                  "returntype": "Hash256",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "currentIndex",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getBlock",
+                  "parameters": [
+                    {
+                      "name": "indexOrHash",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getTransaction",
+                  "parameters": [
+                    {
+                      "name": "hash",
+                      "type": "Hash256"
+                    }
+                  ],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getTransactionFromBlock",
+                  "parameters": [
+                    {
+                      "name": "blockIndexOrHash",
+                      "type": "ByteArray"
+                    },
+                    {
+                      "name": "txIndex",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getTransactionHeight",
+                  "parameters": [
+                    {
+                      "name": "hash",
+                      "type": "Hash256"
+                    }
+                  ],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                }
+              ],
+              "events": []
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        },
+        {
+          "id": -3,
+          "updatecounter": 0,
+          "hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "AP1BGvd7Zw==",
+            "checksum": 3921333105
+          },
+          "manifest": {
+            "name": "NeoToken",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [
+              "NEP-17"
+            ],
+            "abi": {
+              "methods": [
+                {
+                  "name": "balanceOf",
+                  "parameters": [
+                    {
+                      "name": "account",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "decimals",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getCandidates",
+                  "parameters": [],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getCommittee",
+                  "parameters": [],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getGasPerBlock",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getNextBlockValidators",
+                  "parameters": [],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "registerCandidate",
+                  "parameters": [
+                    {
+                      "name": "pubkey",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setGasPerBlock",
+                  "parameters": [
+                    {
+                      "name": "gasPerBlock",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "symbol",
+                  "parameters": [],
+                  "returntype": "String",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "totalSupply",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "transfer",
+                  "parameters": [
+                    {
+                      "name": "from",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "to",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "amount",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "data",
+                      "type": "Any"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "unclaimedGas",
+                  "parameters": [
+                    {
+                      "name": "account",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "end",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "unregisterCandidate",
+                  "parameters": [
+                    {
+                      "name": "pubkey",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "vote",
+                  "parameters": [
+                    {
+                      "name": "account",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "voteTo",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                }
+              ],
+              "events": [
+                {
+                  "name": "Transfer",
+                  "parameters": [
+                    {
+                      "name": "from",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "to",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "amount",
+                      "type": "Integer"
+                    }
+                  ]
+                }
+              ]
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        },
+        {
+          "id": -4,
+          "updatecounter": 0,
+          "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "APxBGvd7Zw==",
+            "checksum": 3155977747
+          },
+          "manifest": {
+            "name": "GasToken",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [
+              "NEP-17"
+            ],
+            "abi": {
+              "methods": [
+                {
+                  "name": "balanceOf",
+                  "parameters": [
+                    {
+                      "name": "account",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "decimals",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "symbol",
+                  "parameters": [],
+                  "returntype": "String",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "totalSupply",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "transfer",
+                  "parameters": [
+                    {
+                      "name": "from",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "to",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "amount",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "data",
+                      "type": "Any"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                }
+              ],
+              "events": [
+                {
+                  "name": "Transfer",
+                  "parameters": [
+                    {
+                      "name": "from",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "to",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "amount",
+                      "type": "Integer"
+                    }
+                  ]
+                }
+              ]
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        },
+        {
+          "id": -5,
+          "updatecounter": 0,
+          "hash": "0x79bcd398505eb779df6e67e4be6c14cded08e2f2",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "APtBGvd7Zw==",
+            "checksum": 1136340263
+          },
+          "manifest": {
+            "name": "PolicyContract",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [],
+            "abi": {
+              "methods": [
+                {
+                  "name": "blockAccount",
+                  "parameters": [
+                    {
+                      "name": "account",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "getExecFeeFactor",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getFeePerByte",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getMaxBlockSize",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getMaxBlockSystemFee",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getMaxTransactionsPerBlock",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getStoragePrice",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "isBlocked",
+                  "parameters": [
+                    {
+                      "name": "account",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "setExecFeeFactor",
+                  "parameters": [
+                    {
+                      "name": "value",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setFeePerByte",
+                  "parameters": [
+                    {
+                      "name": "value",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setMaxBlockSize",
+                  "parameters": [
+                    {
+                      "name": "value",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setMaxBlockSystemFee",
+                  "parameters": [
+                    {
+                      "name": "value",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setMaxTransactionsPerBlock",
+                  "parameters": [
+                    {
+                      "name": "value",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setStoragePrice",
+                  "parameters": [
+                    {
+                      "name": "value",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "unblockAccount",
+                  "parameters": [
+                    {
+                      "name": "account",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                }
+              ],
+              "events": []
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        },
+        {
+          "id": -6,
+          "updatecounter": 0,
+          "hash": "0x597b1471bbce497b7809e2c8f10db67050008b02",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "APpBGvd7Zw==",
+            "checksum": 3289425910
+          },
+          "manifest": {
+            "name": "RoleManagement",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [],
+            "abi": {
+              "methods": [
+                {
+                  "name": "designateAsRole",
+                  "parameters": [
+                    {
+                      "name": "role",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "nodes",
+                      "type": "Array"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "getDesignatedByRole",
+                  "parameters": [
+                    {
+                      "name": "role",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "index",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Array",
+                  "offset": 0,
+                  "safe": true
+                }
+              ],
+              "events": []
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        },
+        {
+          "id": -7,
+          "updatecounter": 0,
+          "hash": "0x8dc0e742cbdfdeda51ff8a8b78d46829144c80ee",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "APlBGvd7Zw==",
+            "checksum": 3902663397
+          },
+          "manifest": {
+            "name": "OracleContract",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [],
+            "abi": {
+              "methods": [
+                {
+                  "name": "finish",
+                  "parameters": [],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "request",
+                  "parameters": [
+                    {
+                      "name": "url",
+                      "type": "String"
+                    },
+                    {
+                      "name": "filter",
+                      "type": "String"
+                    },
+                    {
+                      "name": "callback",
+                      "type": "String"
+                    },
+                    {
+                      "name": "userData",
+                      "type": "Any"
+                    },
+                    {
+                      "name": "gasForResponse",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "verify",
+                  "parameters": [],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": true
+                }
+              ],
+              "events": [
+                {
+                  "name": "OracleRequest",
+                  "parameters": [
+                    {
+                      "name": "Id",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "RequestContract",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "Url",
+                      "type": "String"
+                    },
+                    {
+                      "name": "Filter",
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "OracleResponse",
+                  "parameters": [
+                    {
+                      "name": "Id",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "OriginalTx",
+                      "type": "Hash256"
+                    }
+                  ]
+                }
+              ]
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        },
+        {
+          "id": -8,
+          "updatecounter": 0,
+          "hash": "0xa2b524b68dfe43a9d56af84f443c6b9843b8028c",
+          "nef": {
+            "magic": 860243278,
+            "compiler": "neo-core-v3.0",
+            "source": "",
+            "tokens": [],
+            "script": "APhBGvd7Zw==",
+            "checksum": 3740064217
+          },
+          "manifest": {
+            "name": "NameService",
+            "groups": [],
+            "features": {},
+            "supportedstandards": [],
+            "abi": {
+              "methods": [
+                {
+                  "name": "addRoot",
+                  "parameters": [
+                    {
+                      "name": "root",
+                      "type": "String"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "balanceOf",
+                  "parameters": [
+                    {
+                      "name": "owner",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "decimals",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "deleteRecord",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    },
+                    {
+                      "name": "type",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "getPrice",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "getRecord",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    },
+                    {
+                      "name": "type",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "String",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "isAvailable",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "ownerOf",
+                  "parameters": [
+                    {
+                      "name": "tokenId",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Hash160",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "properties",
+                  "parameters": [
+                    {
+                      "name": "tokenId",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Map",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "register",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    },
+                    {
+                      "name": "owner",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "renew",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    }
+                  ],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "resolve",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    },
+                    {
+                      "name": "type",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "String",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "setAdmin",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    },
+                    {
+                      "name": "admin",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setPrice",
+                  "parameters": [
+                    {
+                      "name": "price",
+                      "type": "Integer"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "setRecord",
+                  "parameters": [
+                    {
+                      "name": "name",
+                      "type": "String"
+                    },
+                    {
+                      "name": "type",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "data",
+                      "type": "String"
+                    }
+                  ],
+                  "returntype": "Void",
+                  "offset": 0,
+                  "safe": false
+                },
+                {
+                  "name": "symbol",
+                  "parameters": [],
+                  "returntype": "String",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "tokensOf",
+                  "parameters": [
+                    {
+                      "name": "owner",
+                      "type": "Hash160"
+                    }
+                  ],
+                  "returntype": "Any",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "totalSupply",
+                  "parameters": [],
+                  "returntype": "Integer",
+                  "offset": 0,
+                  "safe": true
+                },
+                {
+                  "name": "transfer",
+                  "parameters": [
+                    {
+                      "name": "to",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "tokenId",
+                      "type": "ByteArray"
+                    }
+                  ],
+                  "returntype": "Boolean",
+                  "offset": 0,
+                  "safe": false
+                }
+              ],
+              "events": [
+                {
+                  "name": "Transfer",
+                  "parameters": [
+                    {
+                      "name": "from",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "to",
+                      "type": "Hash160"
+                    },
+                    {
+                      "name": "amount",
+                      "type": "Integer"
+                    },
+                    {
+                      "name": "tokenId",
+                      "type": "ByteArray"
+                    }
+                  ]
+                }
+              ]
+            },
+            "permissions": [
+              {
+                "contract": "*",
+                "methods": "*"
+              }
+            ],
+            "trusts": [],
+            "extra": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "Name": "getrawmempoolasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getrawmempool",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": [ "0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e", "0xb488ad25eb474f89d5ca3f985cc047ca96bc7373a6d3da8c0f192722896c1cd7" ]
+    }
+  },
+  {
+    "Name": "getrawmempoolbothasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getrawmempool",
+      "params": [ true ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "height": 2846,
+        "verified": [ "0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e" ],
+        "unverified": [ "0xb488ad25eb474f89d5ca3f985cc047ca96bc7373a6d3da8c0f192722896c1cd7" ]
+      }
+    }
+  },
+  {
+    "Name": "getrawtransactionhexasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getrawtransaction",
+      "params": [ "0x0cfd49c48306f9027dc71585589b6456bcc53567c359fb7858eabca482186b78" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "004cdec1396925aa554712439a9c613ba114efa3fac23ddbca00e1f50500000000466a130000000000311d2000005d030010a5d4e80000000c149903b0c3d292988febe5f306a02f654ea2eb16290c146925aa554712439a9c613ba114efa3fac23ddbca13c00c087472616e736665720c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b523901420c401f85b40d7fa12164aa1d4d18b06ca470f2c89572dc5b901ab1667faebb587cf536454b98a09018adac72376c5e7c5d164535155b763564347aa47b69aa01b3cc290c2103aa052fbcb8e5b33a4eefd662536f8684641f04109f1d5e69cdda6f084890286a0b410a906ad4"
+    }
+  },
+  {
+    "Name": "getrawtransactionasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getrawtransaction",
+      "params": [ "0xc97cc05c790a844f05f582d80952c4ced3894cbe6d96a74f3e5589d741372dd4", true ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0x99eaba3e230702d428ce6bfb4a2dceba6d4cd441f9ca1b7bfe2a418926ae40ab",
+        "size": 252,
+        "version": 0,
+        "nonce": 969006668,
+        "sender": "NikvsLcNP1jWhrFPrfS3n4spEASgdNYTG2",
+        "sysfee": "100000000",
+        "netfee": "1272390",
+        "validuntilblock": 2104625,
+        "signers": [
+          {
+            "account": "0xe19de267a37a71734478f512b3e92c79fc3695fa",
+            "scopes": "CalledByEntry"
+          }
+        ],
+        "attributes": [],
+        "script": "AwAQpdToAAAADBSZA7DD0pKYj\u002Bvl8wagL2VOousWKQwUaSWqVUcSQ5qcYTuhFO\u002Bj\u002BsI928oTwAwIdHJhbnNmZXIMFDt9NxHG8Mz5sdypA9G/odiW8SOMQWJ9W1I5",
+        "witnesses": [
+          {
+            "invocation": "DEAfhbQNf6EhZKodTRiwbKRw8siVctxbkBqxZn\u002Buu1h89TZFS5igkBitrHI3bF58XRZFNRVbdjVkNHqke2mqAbPM",
+            "verification": "DCEDqgUvvLjlszpO79ZiU2\u002BGhGQfBBCfHV5pzdpvCEiQKGoLQQqQatQ="
+          }
+        ],
+        "blockhash": "0xc1ed259e394c9cd93c1e0eb1e0f144c0d10da64861a24c0084f0d98270b698f1",
+        "confirmations": 643,
+        "blocktime": 1579417249620,
+        "vmstate": "HALT"
+      }
+    }
+  },
+  {
+    "Name": "getstorageasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getstorage",
+      "params": [ "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "146925aa554712439a9c613ba114efa3fac23ddbca" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "410121064c5d11a2a700"
+    }
+  },
+  {
+    "Name": "getstorageasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getstorage",
+      "params": [ -2, "146925aa554712439a9c613ba114efa3fac23ddbca" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "410121064c5d11a2a700"
+    }
+  },
+  {
+    "Name": "gettransactionheightasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "gettransactionheight",
+      "params": [ "0x0cfd49c48306f9027dc71585589b6456bcc53567c359fb7858eabca482186b78" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": 2226
+    }
+  },
+  {
+    "Name": "getnextblockvalidatorsasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getnextblockvalidators",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "publickey": "03aa052fbcb8e5b33a4eefd662536f8684641f04109f1d5e69cdda6f084890286a",
+          "votes": "0"
+        }
+      ]
+    }
+  },
+
+
+  {
+    "Name": "getconnectioncountasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getconnectioncount",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": 0
+    }
+  },
+  {
+    "Name": "getpeersasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getpeers",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "unconnected": [
+          {
+            "address": "::ffff:70.73.16.236",
+            "port": 10333
+          }
+        ],
+        "bad": [],
+        "connected": [
+          {
+            "address": "::ffff:139.219.106.33",
+            "port": 10333
+          },
+          {
+            "address": "::ffff:47.88.53.224",
+            "port": 10333
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Name": "getversionasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getversion",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "network": 0,
+        "tcpport": 20333,
+        "nonce": 592651621,
+        "useragent": "/Neo:3.0.0-rc1/",
+        "protocol": {
+          "network": 0,
+          "validatorscount": 0,
+          "msperblock": 15000,
+          "maxvaliduntilblockincrement": 1,
+          "maxtraceableblocks": 1,
+          "addressversion": 0,
+          "maxtransactionsperblock": 0,
+          "memorypoolmaxtransactions": 0,
+          "initialgasdistribution": 0,
+          "hardforks": [
+            {
+              "name": "Aspidochelone",
+              "blockheight": 0
+            }
+          ],
+          "standbycommittee": [
+            "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c",
+            "02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093",
+            "03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a",
+            "02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554",
+            "024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d",
+            "02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e",
+            "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70",
+            "023a36c72844610b4d34d1968662424011bf783ca9d984efa19a20babf5582f3fe",
+            "03708b860c1de5d87f5b151a12c2a99feebd2e8b315ee8e7cf8aa19692a9e18379",
+            "03c6aa6e12638b36e88adc1ccdceac4db9929575c3e03576c617c49cce7114a050",
+            "03204223f8c86b8cd5c89ef12e4f0dbb314172e9241e30c9ef2293790793537cf0",
+            "02a62c915cf19c7f19a50ec217e79fac2439bbaad658493de0c7d8ffa92ab0aa62",
+            "03409f31f0d66bdc2f70a9730b66fe186658f84a8018204db01c106edc36553cd0",
+            "0288342b141c30dc8ffcde0204929bb46aed5756b41ef4a56778d15ada8f0c6654",
+            "020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639",
+            "0222038884bbd1d8ff109ed3bdef3542e768eef76c1247aea8bc8171f532928c30",
+            "03d281b42002647f0113f36c7b8efb30db66078dfaaa9ab3ff76d043a98d512fde",
+            "02504acbc1f4b3bdad1d86d6e1a08603771db135a73e61c9d565ae06a1938cd2ad",
+            "0226933336f1b75baa42d42b71d9091508b638046d19abd67f4e119bf64a7cfb4d",
+            "03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc",
+            "02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a"
+          ],
+          "seedlist": [
+            "seed1.neo.org:10333",
+            "seed2.neo.org:10333",
+            "seed3.neo.org:10333",
+            "seed4.neo.org:10333",
+            "seed5.neo.org:10333"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "Name": "sendrawtransactionasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "sendrawtransaction",
+      "params": [ "ANIHn05ujtUAAAAAACYcEwAAAAAAQkEAAAEKo4e1Ppa3mJpjFDGgVt0fQKBC9gEAXQMAyBeoBAAAAAwUzViuz9M1vh6z0xHh3IAJY9/XLZ8MFAqjh7U+lreYmmMUMaBW3R9AoEL2E8AMCHRyYW5zZmVyDBSlB7dGdv/td+dUuG7NmQnwus08ukFifVtSOAFCDEDh8zgTrGUXyzVX60wBCMyajNRfzFRiEPAe8CgGQ10bA2C3fnVz68Gw+Amgn5gmvuNfYKgWQ/W68Km1bYUPlnEYKQwhA86j4vgfGvk1ItKe3k8kofC+3q1ykzkdM4gPVHXZeHjJC0GVRA14" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0x4d47255ff5564aaa73855068c3574f8f28e2bb18c7fb7256e58ae51fab44c9bc"
+      }
+    }
+  },
+  {
+    "Name": "submitblockasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "submitblock",
+      "params": [ "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI+JfEVZZd6cjX2qJADFSuzRR40IzeV3K1zS9Q2wqetqI6hnvVQEAAAAAAAD6lrDvowCyjK9dBALCmE1fvMuahQEAARECAB2sK3wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHKYeUuiB1BN05kD4Gc0RjMFTshpwAABUESPn/oAQABEQ==" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0xa11c9d14748f967178fe22fdcfb829354ae6ccb86824675e147cb128f16d8171"
+      }
+    }
+  },
+
+
+  {
+    "Name": "invokefunctionasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "invokefunction",
+      "params": [
+        "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+        "balanceOf",
+        [
+          {
+            "type": "Hash160",
+            "value": "91b83e96f2a7c4fdf0c1688441ec61986c7cae26"
+          }
+        ]
+      ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "script": "0c1426ae7c6c9861ec418468c1f0fdc4a7f2963eb89111c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+        "state": "HALT",
+        "gasconsumed": "2007570",
+        "stack": [
+          {
+            "type": "Integer",
+            "value": "0"
+          }
+        ],
+        "tx": "00d1eb88136925aa554712439a9c613ba114efa3fac23ddbca00e1f50500000000269f1200000000004520200000003e0c1426ae7c6c9861ec418468c1f0fdc4a7f2963eb89111c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b5201420c40794c91299bba340ea2505c777d15ca898f75bcce686461066a2b8018cc1de114a122dcdbc77b447ac7db5fb1584f1533b164fbc8f30ddf5bd6acf016a125e983290c2103aa052fbcb8e5b33a4eefd662536f8684641f04109f1d5e69cdda6f084890286a0b410a906ad4"
+      }
+    }
+  },
+  {
+    "Name": "invokescriptasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "invokescript",
+      "params": [ "EMMMBG5hbWUMFDt9NxHG8Mz5sdypA9G/odiW8SOMQWJ9W1IQwwwGc3ltYm9sDBQ7fTcRxvDM+bHcqQPRv6HYlvEjjEFifVtSEMMMCGRlY2ltYWxzDBQ7fTcRxvDM+bHcqQPRv6HYlvEjjEFifVtSEMMMC3RvdGFsU3VwcGx5DBQ7fTcRxvDM+bHcqQPRv6HYlvEjjEFifVtS" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "script": "EMMMBG5hbWUMFDt9NxHG8Mz5sdypA9G/odiW8SOMQWJ9W1IQwwwGc3ltYm9sDBQ7fTcRxvDM+bHcqQPRv6HYlvEjjEFifVtSEMMMCGRlY2ltYWxzDBQ7fTcRxvDM+bHcqQPRv6HYlvEjjEFifVtSEMMMC3RvdGFsU3VwcGx5DBQ7fTcRxvDM+bHcqQPRv6HYlvEjjEFifVtS",
+        "state": "HALT",
+        "gasconsumed": "5061560",
+        "stack": [
+          {
+            "type": "Array",
+            "value": [
+              {
+                "type": "ByteString",
+                "value": "dGVzdA=="
+              },
+              {
+                "type": "InteropInterface"
+              },
+              {
+                "type": "Integer",
+                "value": "1"
+              },
+              {
+                "type": "Buffer",
+                "value": "CAwiNQw="
+              },
+              {
+                "type": "Array",
+                "value": [
+                  {
+                    "type": "ByteString",
+                    "value": "YmI="
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "Y2Mw"
+                  }
+                ]
+              },
+              {
+                "type": "Map",
+                "value": [
+                  {
+                    "key": {
+                      "type": "Integer",
+                      "value": "2"
+                    },
+                    "value": {
+                      "type": "Integer",
+                      "value": "12"
+                    }
+                  },
+                  {
+                    "key": {
+                      "type": "Integer",
+                      "value": "0"
+                    },
+                    "value": {
+                      "type": "Integer",
+                      "value": "24"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "tx": "00769d16556925aa554712439a9c613ba114efa3fac23ddbca00e1f505000000009e021400000000005620200000009910c30c046e616d650c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b5210c30c0673796d626f6c0c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b5210c30c08646563696d616c730c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b5210c30c0b746f74616c537570706c790c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b5201420c40c848d0fcbf5e6a820508242ea8b7ccbeed3caefeed5db570537279c2154f7cfd8b0d8f477f37f4e6ca912935b732684d57c455dff7aa525ad4ab000931f22208290c2103aa052fbcb8e5b33a4eefd662536f8684641f04109f1d5e69cdda6f084890286a0b410a906ad4"
+      }
+    }
+  },
+
+  {
+    "Name": "getunclaimedgasasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getunclaimedgas",
+      "params": [ "NPvKVTGZapmFWABLsyvfreuqn73jCjJtN1" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "unclaimed": "735870007400",
+        "address": "NPvKVTGZapmFWABLsyvfreuqn73jCjJtN1"
+      }
+    }
+  },
+
+  {
+    "Name": "listpluginsasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "listplugins",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "name": "ApplicationLogs",
+          "version": "3.0.0.0",
+          "interfaces": [
+            "IPersistencePlugin"
+          ]
+        },
+        {
+          "name": "LevelDBStore",
+          "version": "3.0.0.0",
+          "interfaces": [
+            "IStoragePlugin"
+          ]
+        },
+        {
+          "name": "RpcNep17Tracker",
+          "version": "3.0.0.0",
+          "interfaces": [
+            "IPersistencePlugin"
+          ]
+        },
+        {
+          "name": "RpcServer",
+          "version": "3.0.0.0",
+          "interfaces": []
+        }
+      ]
+    }
+  },
+  {
+    "Name": "validateaddressasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "validateaddress",
+      "params": [ "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "address": "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW",
+        "isvalid": true
+      }
+    }
+  },
+
+
+  {
+    "Name": "closewalletasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "closewallet",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": true
+    }
+  },
+  {
+    "Name": "dumpprivkeyasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "dumpprivkey",
+      "params": [ "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "KyoYyZpoccbR6KZ25eLzhMTUxREwCpJzDsnuodGTKXSG8fDW9t7x"
+    }
+  },
+  {
+    "Name": "invokescriptasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "invokescript",
+      "params": [
+        "EMAfDAhkZWNpbWFscwwU++3+LtIiZZK2SMTal7nJzV3BpqZBYn1bUg=="
+      ]
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "script": "HxDDDAhkZWNpbWFscwwU++3+LtIiZZK2SMTal7nJzV3BpqZB7vQM2w==",
+        "state": "HALT",
+        "gasconsumed": "999180",
+        "exception": null,
+        "stack": [
+          {
+            "type": "Integer",
+            "value": "8"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Name": "invokescriptasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "invokescript",
+      "params": [
+        "wh8MCGRlY2ltYWxzDBTPduKL0AYsSkeO41VhARMZ88+k0kFifVtS"
+      ]
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "script": "EBEfDAhkZWNpbWFscwwU++3+LtIiZZK2SMTal7nJzV3BpqZBYn1bUg==",
+        "state": "HALT",
+        "gasconsumed": "999180",
+        "exception": null,
+        "stack": [
+          {
+            "type": "Integer",
+            "value": "8"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Name": "getnewaddressasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getnewaddress",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "NXpCs9kcDkPvfyAobNYmFg8yfRZaDopDbf"
+    }
+  },
+  {
+    "Name": "getwalletbalanceasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getwalletbalance",
+      "params": [ "0xd2a4cff31913016155e38e474a2c06d08be276cf" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "balance": "3001101329992600"
+      }
+    }
+  },
+  {
+    "Name": "getwalletunclaimedgasasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getwalletunclaimedgas",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": "735870007400"
+    }
+  },
+  {
+    "Name": "importprivkeyasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "importprivkey",
+      "params": [ "KyoYyZpoccbR6KZ25eLzhMTUxREwCpJzDsnuodGTKXSG8fDW9t7x" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
+        "haskey": true,
+        "label": null,
+        "watchonly": false
+      }
+    }
+  },
+  {
+    "Name": "listaddressasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "listaddress",
+      "params": [],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
+          "haskey": true,
+          "label": null,
+          "watchonly": false
+        },
+        {
+          "address": "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW",
+          "haskey": true,
+          "label": null,
+          "watchonly": false
+        }
+      ]
+    }
+  },
+  {
+    "Name": "openwalletasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "openwallet",
+      "params": [ "D:\\temp\\3.json", "1111" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": true
+    }
+  },
+  {
+    "Name": "sendfromasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "sendfrom",
+      "params": [ "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW", "100.123" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0x035facc3be1fc57da1690e3d2f8214f449d368437d8557ffabb2d408caf9ad76",
+        "size": 272,
+        "version": 0,
+        "nonce": 1553700339,
+        "sender": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
+        "sysfee": "100000000",
+        "netfee": "1272390",
+        "validuntilblock": 2105487,
+        "attributes": [],
+        "cosigners": [
+          {
+            "account": "0xcadb3dc2faa3ef14a13b619c9a43124755aa2569",
+            "scopes": "CalledByEntry"
+          }
+        ],
+        "script": "A+CSx1QCAAAADBSZA7DD0pKYj+vl8wagL2VOousWKQwUaSWqVUcSQ5qcYTuhFO+j+sI928oTwAwIdHJhbnNmZXIMFDt9NxHG8Mz5sdypA9G/odiW8SOMQWJ9W1I5",
+        "witnesses": [
+          {
+            "invocation": "DEDOA/QF5jYT2TCl9T94fFwAncuBhVhciISaq4fZ3WqGarEoT/0iDo3RIwGjfRW0mm/SV3nAVGEQeZInLqKQ98HX",
+            "verification": "DCEDqgUvvLjlszpO79ZiU2+GhGQfBBCfHV5pzdpvCEiQKGoLQQqQatQ="
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Name": "sendmanyasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "sendmany",
+      "params": [
+        "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
+        [
+          {
+            "asset": "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+            "value": "10",
+            "address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"
+          },
+          {
+            "asset": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "value": "1.2345",
+            "address": "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW"
+          }
+        ]
+      ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0x542e64a9048bbe1ee565b840c41ccf9b5a1ef11f52e5a6858a523938a20c53ec",
+        "size": 483,
+        "version": 0,
+        "nonce": 34429660,
+        "sender": "NUMK37TV9yYKbJr1Gufh74nZiM623eBLqX",
+        "sysfee": "100000000",
+        "netfee": "2483780",
+        "validuntilblock": 2105494,
+        "attributes": [],
+        "cosigners": [
+          {
+            "account": "0x36d6200fb4c9737c7b552d2b5530ab43605c5869",
+            "scopes": "CalledByEntry"
+          },
+          {
+            "account": "0x9a55ca1006e2c359bbc8b9b0de6458abdff98b5c",
+            "scopes": "CalledByEntry"
+          }
+        ],
+        "script": "GgwUaSWqVUcSQ5qcYTuhFO+j+sI928oMFGlYXGBDqzBVKy1Ve3xzybQPINY2E8AMCHRyYW5zZmVyDBSJdyDYzXb08Aq/o3wO3YicII/em0FifVtSOQKQslsHDBSZA7DD0pKYj+vl8wagL2VOousWKQwUXIv536tYZN6wuci7WcPiBhDKVZoTwAwIdHJhbnNmZXIMFDt9NxHG8Mz5sdypA9G/odiW8SOMQWJ9W1I5",
+        "witnesses": [
+          {
+            "invocation": "DECOdTEWg1WkuHN0GNV67kwxeuKADyC6TO59vTaU5dK6K1BGt8+EM6L3TdMga4qB2J+Meez8eYwZkSSRubkuvfr9",
+            "verification": "DCECeiS9CyBqFJwNKzonOs/yzajOraFep4IqFJVxBe6TesULQQqQatQ="
+          },
+          {
+            "invocation": "DEB1Laj6lvjoBJLTgE/RdvbJiXOmaKp6eNWDJt+p8kxnW6jbeKoaBRZWfUflqrKV7mZEE2JHA5MxrL5TkRIvsL5K",
+            "verification": "DCECkXL4gxd936eGEDt3KWfIuAsBsQcfyyBUcS8ggF6lZnwLQQqQatQ="
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Name": "sendtoaddressasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "sendtoaddress",
+      "params": [ "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", "100.123" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "hash": "0xee5fc3f57d9f9bc9695c88ecc504444aab622b1680b1cb0848d5b6e39e7fd118",
+        "size": 381,
+        "version": 0,
+        "nonce": 330056065,
+        "sender": "NUMK37TV9yYKbJr1Gufh74nZiM623eBLqX",
+        "sysfee": "100000000",
+        "netfee": "2381780",
+        "validuntilblock": 2105500,
+        "attributes": [],
+        "cosigners": [
+          {
+            "account": "0xcadb3dc2faa3ef14a13b619c9a43124755aa2569",
+            "scopes": "CalledByEntry"
+          }
+        ],
+        "script": "A+CSx1QCAAAADBRpJapVRxJDmpxhO6EU76P6wj3bygwUaSWqVUcSQ5qcYTuhFO+j+sI928oTwAwIdHJhbnNmZXIMFDt9NxHG8Mz5sdypA9G/odiW8SOMQWJ9W1I5",
+        "witnesses": [
+          {
+            "invocation": "DECruSKmQKs0Y2cxplKROjPx8HKiyiYrrPn7zaV9zwHPumLzFc8DvgIo2JxmTnJsORyygN/su8mTmSLLb3PesBvY",
+            "verification": "DCECkXL4gxd936eGEDt3KWfIuAsBsQcfyyBUcS8ggF6lZnwLQQqQatQ="
+          },
+          {
+            "invocation": "DECS5npCs5PwsPUAQ01KyHyCev27dt3kDdT1Vi0K8PwnEoSlxYTOGGQCAwaiNEXSyBdBmT6unhZydmFnkezD7qzW",
+            "verification": "DCEDqgUvvLjlszpO79ZiU2+GhGQfBBCfHV5pzdpvCEiQKGoLQQqQatQ="
+          }
+        ]
+      }
+    }
+  },
+
+
+  {
+    "Name": "getapplicationlogasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getapplicationlog",
+      "params": [ "0x6ea186fe714b8168ede3b78461db8945c06d867da649852352dbe7cbf1ba3724" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "blockhash": "0x6ea186fe714b8168ede3b78461db8945c06d867da649852352dbe7cbf1ba3724",
+        "executions": [
+          {
+            "trigger": "OnPersist",
+            "vmstate": "HALT",
+            "gasconsumed": "2031260",
+            "exception": null,
+            "stack": [],
+            "notifications": [
+              {
+                "contract": "0x668e0c1f9d7b70a99dd9e06eadd4c784d641afbc",
+                "eventname": "Transfer",
+                "state": {
+                  "type": "Array",
+                  "value": [
+                    {
+                      "type": "ByteString",
+                      "value": "CqOHtT6Wt5iaYxQxoFbdH0CgQvY="
+                    },
+                    {
+                      "type": "Any"
+                    },
+                    {
+                      "type": "Integer",
+                      "value": "18083410"
+                    }
+                  ]
+                }
+              },
+              {
+                "contract": "0x668e0c1f9d7b70a99dd9e06eadd4c784d641afbc",
+                "eventname": "Transfer",
+                "state": {
+                  "type": "Array",
+                  "value": [
+                    {
+                      "type": "Any"
+                    },
+                    {
+                      "type": "ByteString",
+                      "value": "z6LDQN4w1uEMToIZiPSxToNRPog="
+                    },
+                    {
+                      "type": "Integer",
+                      "value": "1252390"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "trigger": "PostPersist",
+            "vmstate": "HALT",
+            "gasconsumed": "2031260",
+            "exception": null,
+            "stack": [],
+            "notifications": [
+              {
+                "contract": "0x668e0c1f9d7b70a99dd9e06eadd4c784d641afbc",
+                "eventname": "Transfer",
+                "state": {
+                  "type": "Array",
+                  "value": [
+                    {
+                      "type": "Any"
+                    },
+                    {
+                      "type": "ByteString",
+                      "value": "z6LDQN4w1uEMToIZiPSxToNRPog="
+                    },
+                    {
+                      "type": "Integer",
+                      "value": "50000000"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Name": "getapplicationlogasync_triggertype",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getapplicationlog",
+      "params": [ "0x6ea186fe714b8168ede3b78461db8945c06d867da649852352dbe7cbf1ba3724", "OnPersist" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "blockhash": "0x6ea186fe714b8168ede3b78461db8945c06d867da649852352dbe7cbf1ba3724",
+        "executions": [
+          {
+            "trigger": "OnPersist",
+            "vmstate": "HALT",
+            "gasconsumed": "2031260",
+            "exception": null,
+            "stack": [],
+            "notifications": [
+              {
+                "contract": "0x668e0c1f9d7b70a99dd9e06eadd4c784d641afbc",
+                "eventname": "Transfer",
+                "state": {
+                  "type": "Array",
+                  "value": [
+                    {
+                      "type": "ByteString",
+                      "value": "CqOHtT6Wt5iaYxQxoFbdH0CgQvY="
+                    },
+                    {
+                      "type": "Any"
+                    },
+                    {
+                      "type": "Integer",
+                      "value": "18083410"
+                    }
+                  ]
+                }
+              },
+              {
+                "contract": "0x668e0c1f9d7b70a99dd9e06eadd4c784d641afbc",
+                "eventname": "Transfer",
+                "state": {
+                  "type": "Array",
+                  "value": [
+                    {
+                      "type": "Any"
+                    },
+                    {
+                      "type": "ByteString",
+                      "value": "z6LDQN4w1uEMToIZiPSxToNRPog="
+                    },
+                    {
+                      "type": "Integer",
+                      "value": "1252390"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Name": "getnep17transfersasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getnep17transfers",
+      "params": [ "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", 0, 1868595301000 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "sent": [
+          {
+            "timestamp": 1579250114541,
+            "assethash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "transferaddress": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
+            "amount": "1000000000",
+            "blockindex": 603,
+            "transfernotifyindex": 0,
+            "txhash": "0x5e177b8d1dc33e9103c0cfd42f6dbf4efbe43029e2d6a18ea5ba0cb8437056b3"
+          },
+          {
+            "timestamp": 1579406581635,
+            "assethash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "transferaddress": "NUMK37TV9yYKbJr1Gufh74nZiM623eBLqX",
+            "amount": "1000000000",
+            "blockindex": 1525,
+            "transfernotifyindex": 0,
+            "txhash": "0xc9c618b48972b240e0058d97b8d79b807ad51015418c84012765298526aeb77d"
+          }
+        ],
+        "received": [
+          {
+            "timestamp": 1579250114541,
+            "assethash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "transferaddress": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
+            "amount": "1000000000",
+            "blockindex": 603,
+            "transfernotifyindex": 0,
+            "txhash": "0x5e177b8d1dc33e9103c0cfd42f6dbf4efbe43029e2d6a18ea5ba0cb8437056b3"
+          }
+        ],
+        "address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"
+      }
+    }
+  },
+  {
+    "Name": "getnep17transfersasync_with_null_transferaddress",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getnep17transfers",
+      "params": [ "Ncb7jVsYWBt1q5T5k3ZTP8bn5eK4DuanLd", 0, 1868595301000 ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "sent": [
+          {
+            "timestamp": 1579250114541,
+            "assethash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "transferaddress": null,
+            "amount": "1000000000",
+            "blockindex": 603,
+            "transfernotifyindex": 0,
+            "txhash": "0x5e177b8d1dc33e9103c0cfd42f6dbf4efbe43029e2d6a18ea5ba0cb8437056b3"
+          },
+          {
+            "timestamp": 1579406581635,
+            "assethash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "transferaddress": "Ncb7jVsYWBt1q5T5k3ZTP8bn5eK4DuanLd",
+            "amount": "1000000000",
+            "blockindex": 1525,
+            "transfernotifyindex": 0,
+            "txhash": "0xc9c618b48972b240e0058d97b8d79b807ad51015418c84012765298526aeb77d"
+          }
+        ],
+        "received": [
+          {
+            "timestamp": 1579250114541,
+            "assethash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "transferaddress": null,
+            "amount": "1000000000",
+            "blockindex": 603,
+            "transfernotifyindex": 0,
+            "txhash": "0x5e177b8d1dc33e9103c0cfd42f6dbf4efbe43029e2d6a18ea5ba0cb8437056b3"
+          }
+        ],
+        "address": "Ncb7jVsYWBt1q5T5k3ZTP8bn5eK4DuanLd"
+      }
+    }
+  },
+  {
+    "Name": "getnep17balancesasync",
+    "Request": {
+      "jsonrpc": "2.0",
+      "method": "getnep17balances",
+      "params": [ "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ" ],
+      "id": 1
+    },
+    "Response": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "balance": [
+          {
+            "assethash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
+            "amount": "719978585420",
+            "lastupdatedblock": 3101
+          },
+          {
+            "assethash": "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+            "amount": "89999810",
+            "lastupdatedblock": 3096
+          }
+        ],
+        "address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"
+      }
+    }
+  }
+]

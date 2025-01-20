@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MemoryStore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,9 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -62,14 +65,14 @@ namespace Neo.Persistence
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            if (!_innerData.TryGetValue(key, out byte[] value)) return null;
+            if (!_innerData.TryGetValue(key, out var value)) return null;
             return value[..];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[] value)
         {
             return _innerData.TryGetValue(key, out value);
         }
