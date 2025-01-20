@@ -57,10 +57,12 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _votersCount;
         private readonly StorageKey _registerPrice;
 
-        private class LastGasPerBlock
+        private class LastGasPerBlock : IStorageCacheEntry
         {
             public BigInteger GasPerBlock = 0;
             public long Index = 0;
+
+            public StorageItem GetStorageItem() => new(GasPerBlock);
         }
 
         [ContractEvent(1, name: "CandidateStateChanged",
@@ -197,7 +199,7 @@ namespace Neo.SmartContract.Native
                 var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
                 engine.SnapshotCache.Add(_votersCount, new StorageItem(System.Array.Empty<byte>()));
-                engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor), new LastGasPerBlock()
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new LastGasPerBlock()
                 {
                     GasPerBlock = 5 * GAS.Factor,
                     Index = 0
