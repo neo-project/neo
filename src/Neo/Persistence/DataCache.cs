@@ -131,14 +131,14 @@ namespace Neo.Persistence
         /// <summary>
         /// Adds a new entry to the cache.
         /// </summary>
-        /// <param name="serializedChanges">Serialization changes</param>
+        /// <param name="value">The data of the entry.</param>
         /// <exception cref="ArgumentException">The entry has already been cached.</exception>
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
-        public void AddToCache<T>(T? serializedChanges = default)
+        public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry
         {
             lock (_dictionary)
             {
-                _serializedCacheChanges[typeof(T)] = serializedChanges;
+                _serializedCacheChanges[typeof(T)] = value;
             }
         }
 
@@ -146,14 +146,14 @@ namespace Neo.Persistence
         /// Adds a new entry to the cache.
         /// </summary>
         /// <param name="type">Cache type</param>
-        /// <param name="serializedChanges">Serialization changes</param>
+        /// <param name="value">The data of the entry.</param>
         /// <exception cref="ArgumentException">The entry has already been cached.</exception>
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
-        internal void AddToCache(Type type, object? serializedChanges)
+        internal void AddToCache(Type type, object? value)
         {
             lock (_dictionary)
             {
-                _serializedCacheChanges[type] = serializedChanges;
+                _serializedCacheChanges[type] = value;
             }
         }
 
