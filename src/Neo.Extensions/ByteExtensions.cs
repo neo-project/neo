@@ -54,12 +54,12 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToHexString(this byte[]? value)
         {
-#if NET9_0_OR_GREATER
-            return Convert.ToHexStringLower(value);
-#else
             if (value is null)
                 throw new ArgumentNullException(nameof(value));
 
+#if NET9_0_OR_GREATER
+            return Convert.ToHexStringLower(value);
+#else
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {
                 for (var i = 0; i < bytes.Length; i++)

@@ -45,6 +45,11 @@ namespace Neo.Extensions.Tests.Collections
             var zeroChunks = zero.Chunk(0).GetEnumerator();
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => zeroChunks.MoveNext());
 
+            // Null source
+            IReadOnlyCollection<int>? nullSource = null;
+            var nullChunks = nullSource.Chunk(3).GetEnumerator();
+            Assert.IsFalse(emptyChunks.MoveNext());
+
             // HashSet
             var hashSet = new HashSet<int> { 1, 2, 3, 4 };
             chunks = hashSet.Chunk(3).GetEnumerator();
