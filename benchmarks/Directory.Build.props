@@ -5,7 +5,6 @@
     <LangVersion>latest</LangVersion>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <IsPackable>false</IsPackable>
-    <WarningLevel>0</WarningLevel>
   </PropertyGroup>
   
 </Project>
