@@ -429,11 +429,10 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <param name="serializedCache">Serialized cache</param>
-        /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
-        /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
-        public StorageItem? GetAndChange<T>(StorageKey key, T serializedCache, Func<StorageItem>? factory = null)
+        /// <returns>The cached data.</returns>
+        public StorageItem? GetAndChange<T>(StorageKey key, T serializedCache) where T : IStorageCacheEntry
         {
-            var ret = GetAndChange(key, factory);
+            var ret = GetAndChange(key, serializedCache.GetStorageItem);
             _serializedCacheChanges[typeof(T)] = serializedCache;
             return ret;
         }

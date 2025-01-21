@@ -284,7 +284,7 @@ namespace Neo.SmartContract.Native
 
             uint index = engine.PersistingBlock.Index + 1;
             var entry = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index),
-                new LastGasPerBlock() { GasPerBlock = gasPerBlock, Index = index }, () => new StorageItem(gasPerBlock));
+                new LastGasPerBlock() { GasPerBlock = gasPerBlock, Index = index });
             entry.Set(gasPerBlock);
         }
 
