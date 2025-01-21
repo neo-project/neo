@@ -136,10 +136,7 @@ namespace Neo.Persistence
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
         public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry
         {
-            lock (_dictionary)
-            {
-                _serializedCacheChanges[typeof(T)] = value;
-            }
+            _serializedCacheChanges[typeof(T)] = value;
         }
 
         /// <summary>
@@ -151,10 +148,7 @@ namespace Neo.Persistence
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
         internal void AddToCache(Type type, object? value)
         {
-            lock (_dictionary)
-            {
-                _serializedCacheChanges[type] = value;
-            }
+            _serializedCacheChanges[type] = value;
         }
 
         /// <summary>
