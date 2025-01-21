@@ -107,9 +107,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentNullException(nameof(snapshot));
 
             var key = CreateStorageKey(Prefix_BlockHash).AddBigEndian(index);
-            if (snapshot.TryGet(key, out var item))
-                return new UInt256(item.Value.Span);
-            return null;
+            return snapshot.TryGet(key, out var item) ? new UInt256(item.Value.Span) : null;
         }
 
         /// <summary>
