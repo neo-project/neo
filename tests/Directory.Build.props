@@ -6,10 +6,12 @@
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <WarningLevel>0</WarningLevel>
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutput>TestResults/</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>3</WarningLevel>
+    <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,4 +25,5 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
 </Project>

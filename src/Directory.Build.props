@@ -17,6 +17,9 @@
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <VersionPrefix>3.7.5</VersionPrefix>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>3</WarningLevel>
+    <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,4 +30,5 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" Visible="false" />
   </ItemGroup>
+
 </Project>
