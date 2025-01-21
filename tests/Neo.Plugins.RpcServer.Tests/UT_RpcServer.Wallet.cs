@@ -403,7 +403,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(deployResp["state"], nameof(VM.VMState.HALT));
             UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
             SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
-            Transaction tx = new Transaction
+            var tx = new Transaction
             {
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,

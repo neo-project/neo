@@ -50,7 +50,6 @@ namespace Neo.Plugins.OracleService.Tests
         public static UInt160 InitializeContract()
         {
             /*
-             
             //Oracle Contract Source Code
             using System.Numerics;
             using Neo.SmartContract.Framework;
@@ -93,7 +92,7 @@ namespace Neo.Plugins.OracleService.Tests
                 script = sb.ToArray();
             }
             SnapshotCache snapshot = s_theNeoSystem.GetSnapshotCache();
-            Transaction tx = new Transaction
+            var tx = new Transaction
             {
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + s_theNeoSystem.Settings.MaxValidUntilBlockIncrement,
