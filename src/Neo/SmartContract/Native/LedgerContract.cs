@@ -310,7 +310,7 @@ namespace Neo.SmartContract.Native
             return GetTransactionState(snapshot, hash)?.Transaction;
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = nameof(GetTransaction))]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransaction")]
         private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
