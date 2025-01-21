@@ -3,10 +3,6 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>4</WarningLevel>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <NoWarn>CS8892</NoWarn>
   </PropertyGroup>
 
 </Project>

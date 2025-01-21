@@ -5,6 +5,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsTestProject>false</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.Json\Neo.Json.csproj" />
-    <ProjectReference Include="..\..\tests\Neo.Network.RPC.Tests\Neo.Network.RPC.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
