@@ -9,8 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.SmartContract;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Persistence
 {
@@ -41,6 +44,20 @@ namespace Neo.Persistence
         /// <param name="key">The key to get.</param>
         /// <param name="item">The entry if found, null otherwise.</param>
         /// <returns>True if the entry exists, false otherwise.</returns>
-        bool TryGet(StorageKey key, out StorageItem item);
+        bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item);
+
+        /// <summary>
+        /// Seeks to the entry with the specified key.
+        /// </summary>
+        /// <param name="keyOrPrefix">
+        /// The keyPrefix to be sought.
+        /// If keyPrefix is null or empty, it will seek to the first key.
+        /// </param>
+        /// <param name="direction">The direction of seek.</param>
+        /// <returns>
+        /// An enumerator containing all the entries after keyOrPrefix(Forward) or before keyOrPrefix(Backward).
+        /// </returns>
+        IEnumerable<(StorageKey Key, StorageItem Value)> Seek(
+            byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward);
     }
 }

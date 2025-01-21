@@ -9,22 +9,32 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.SmartContract;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// A read-only view of a store.
+    /// No cache and lock in this implementation,
+    /// so it is faster in some cases(For example, no repeated reads of the same key).
+    /// </summary>
     public class ReadOnlyStoreView : IReadOnlyStoreView
     {
-        private readonly IReadOnlyStore store;
+        private readonly IReadOnlyStore _store;
 
         public ReadOnlyStoreView(IReadOnlyStore store)
         {
-            this.store = store;
+            _store = store;
         }
 
         /// <inheritdoc/>
-        public bool Contains(StorageKey key) => store.Contains(key.ToArray());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(StorageKey key) => _store.Contains(key.ToArray());
 
         /// <inheritdoc/>
         public StorageItem this[StorageKey key]
@@ -38,11 +48,19 @@ namespace Neo.Persistence
         }
 
         /// <inheritdoc/>
-        public bool TryGet(StorageKey key, out StorageItem item)
+        public bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item)
         {
-            var ok = store.TryGet(key.ToArray(), out byte[] value);
+            var ok = _store.TryGet(key.ToArray(), out var value);
             item = ok ? new StorageItem(value) : null;
             return ok;
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(
+            byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        {
+            foreach (var (key, value) in _store.Seek(keyOrPrefix, direction))
+                yield return (new(key), new(value));
         }
     }
 }
