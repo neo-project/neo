@@ -24,7 +24,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="keyOrPrefix">The key(i.e. start key) or prefix to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
-        /// <returns>An enumerator containing all the entries after seeking.</returns>
+        /// <returns>An enumerator containing all the entries after (Forward) or before(Backward) seeking.</returns>
         IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction);
 
         /// <summary>
