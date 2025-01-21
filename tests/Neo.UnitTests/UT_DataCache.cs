@@ -59,7 +59,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestCachedFind_Last()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
@@ -92,7 +91,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestCachedFind_Empty()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
