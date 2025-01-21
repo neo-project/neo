@@ -83,14 +83,14 @@ namespace Neo.CLI
         {
             RegisterCommandHandler<string, UInt160>(false, str => StringToAddress(str, NeoSystem.Settings.AddressVersion));
             RegisterCommandHandler<string, UInt256>(false, UInt256.Parse);
-            RegisterCommandHandler<string[], UInt256[]>(str => str.Select(u => UInt256.Parse(u.Trim())).ToArray());
-            RegisterCommandHandler<string[], UInt160[]>(arr => arr.Select(str => StringToAddress(str, NeoSystem.Settings.AddressVersion)).ToArray());
-            RegisterCommandHandler<string, ECPoint>(str => ECPoint.Parse(str.Trim(), ECCurve.Secp256r1));
-            RegisterCommandHandler<string[], ECPoint[]>(str => str.Select(u => ECPoint.Parse(u.Trim(), ECCurve.Secp256r1)).ToArray());
-            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str)!);
-            RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str)!);
-            RegisterCommandHandler<string, decimal>(str => decimal.Parse(str, CultureInfo.InvariantCulture));
-            RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj);
+            RegisterCommandHandler<string[], UInt256[]>(str => str!.Select(u => UInt256.Parse(u.Trim())).ToArray());
+            RegisterCommandHandler<string[], UInt160[]>(arr => arr!.Select(str => StringToAddress(str, NeoSystem.Settings.AddressVersion)).ToArray());
+            RegisterCommandHandler<string, ECPoint>(str => ECPoint.Parse(str!.Trim(), ECCurve.Secp256r1));
+            RegisterCommandHandler<string[], ECPoint[]>(str => str!.Select(u => ECPoint.Parse(u.Trim(), ECCurve.Secp256r1)).ToArray());
+            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str!)!);
+            RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str!)!);
+            RegisterCommandHandler<string, decimal>(str => decimal.Parse(str!, CultureInfo.InvariantCulture));
+            RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj!);
 
             RegisterCommand(this);
 
@@ -107,7 +107,7 @@ namespace Neo.CLI
 
             if (input.IndexOf('.') > 0 && input.LastIndexOf('.') < input.Length)
             {
-                return ResolveNeoNameServiceAddress(input);
+                return ResolveNeoNameServiceAddress(input) ?? UInt160.Zero;
             }
 
             // Try to parse as UInt160
@@ -697,7 +697,7 @@ namespace Neo.CLI
             return exception.Message;
         }
 
-        public UInt160 ResolveNeoNameServiceAddress(string domain)
+        public UInt160? ResolveNeoNameServiceAddress(string domain)
         {
             if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
                 throw new Exception("Neo Name Service (NNS): is disabled on this network.");
@@ -717,7 +717,7 @@ namespace Neo.CLI
                         if (UInt160.TryParse(addressData, out var address))
                             return address;
                         else
-                            return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                            return addressData?.ToScriptHash(NeoSystem.Settings.AddressVersion);
                     }
                     catch { }
                 }

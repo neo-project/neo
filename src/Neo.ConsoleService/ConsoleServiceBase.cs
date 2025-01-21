@@ -377,7 +377,7 @@ namespace Neo.ConsoleService
         /// <typeparam name="T">Base type</typeparam>
         /// <typeparam name="TRet">Return type</typeparam>
         /// <param name="handler">Handler</param>
-        public void RegisterCommandHandler<T, TRet>(Func<T, object> handler)
+        public void RegisterCommandHandler<T, TRet>(Func<T?, object> handler)
         {
             _handlers[typeof(TRet)] = (args, consumeAll) =>
             {

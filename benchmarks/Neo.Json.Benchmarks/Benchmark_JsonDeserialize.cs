@@ -45,28 +45,29 @@ namespace Neo.Json.Benchmarks
         [Benchmark]
         public List<RpcTestCase> NeoJson_Deserialize()
         {
+            // Parses into JArray
+            if (JToken.Parse(_jsonString) is not JArray neoJsonObject)
+                return [];
+
             var result = new List<RpcTestCase>();
 
-            // Parses into JArray
-            var neoJsonObject = Neo.Json.JArray.Parse(_jsonString);
-
-            foreach (var item in neoJsonObject as JArray)
+            foreach (var item in neoJsonObject)
             {
                 var testCase = new RpcTestCase
                 {
-                    Name = item["Name"]?.GetString(),
+                    Name = item?["Name"]?.GetString(),
                     Request = new RpcRequest
                     {
-                        JsonRpc = item["Request"]?["jsonrpc"]?.GetString(),
-                        Method = item["Request"]?["method"]?.GetString(),
-                        Params = ConvertToJTokenArray(item["Request"]?["params"]),
-                        Id = (int)item["Request"]?["id"].GetNumber()
+                        JsonRpc = item?["Request"]?["jsonrpc"]?.GetString(),
+                        Method = item?["Request"]?["method"]?.GetString(),
+                        Params = ConvertToJTokenArray(item?["Request"]?["params"]),
+                        Id = item?["Request"]?["id"]?.GetNumber()
                     },
                     Response = new RpcResponse
                     {
-                        JsonRpc = item["Response"]?["jsonrpc"].GetString(),
-                        Id = (int)item["Response"]?["id"]?.GetNumber(),
-                        Result = item["Response"]?["result"]
+                        JsonRpc = item?["Response"]?["jsonrpc"]?.GetString(),
+                        Id = item?["Response"]?["id"]?.GetNumber(),
+                        Result = item?["Response"]?["result"]
                     }
                 };
                 result.Add(testCase);
@@ -77,11 +78,11 @@ namespace Neo.Json.Benchmarks
         /// <summary>
         /// Recursively parsing params and stack arrays
         /// </summary>
-        private List<object> ParseParams(Neo.Json.JToken token)
+        private List<object?> ParseParams(JToken? token)
         {
-            var result = new List<object>();
+            var result = new List<object?>();
 
-            if (token is Neo.Json.JArray array)
+            if (token is JArray array)
             {
                 // Parsing JArray correctly with foreach
                 foreach (var item in array)
@@ -89,7 +90,7 @@ namespace Neo.Json.Benchmarks
                     result.Add(ParseParams(item));
                 }
             }
-            else if (token is Neo.Json.JObject obj)
+            else if (token is JObject obj)
             {
                 // Properties traversal with Neo.Json.JObject
                 var dict = new Dictionary<string, object?>();
@@ -102,7 +103,7 @@ namespace Neo.Json.Benchmarks
             else
             {
                 // If it's a normal value, it's straightforward to add
-                result.Add(token.GetString());
+                result.Add(token?.GetString());
             }
 
             return result;
@@ -111,11 +112,11 @@ namespace Neo.Json.Benchmarks
         /// <summary>
         /// Parses any type of JSON into a JToken[] (for nested structures)
         /// </summary>
-        private Neo.Json.JToken[] ConvertToJTokenArray(Neo.Json.JToken token)
+        private JToken[] ConvertToJTokenArray(JToken? token)
         {
-            var result = new List<Neo.Json.JToken>();
+            var result = new List<JToken>();
 
-            if (token is Neo.Json.JArray array)
+            if (token is JArray array)
             {
                 // If it's a JArray, parse it one by one and add it to the result
                 foreach (var item in array)
@@ -123,23 +124,21 @@ namespace Neo.Json.Benchmarks
                     result.AddRange(ConvertToJTokenArray(item));
                 }
             }
-            else if (token is Neo.Json.JObject obj)
+            else if (token is JObject obj)
             {
                 // Convert JObject to JToken (Dictionary type)
-                var newObj = new Neo.Json.JObject();
+                var newObj = new JObject();
                 foreach (var property in obj.Properties)
-                {
-                    newObj[property.Key] = new Neo.Json.JString(property.Value?.GetString());
-                }
+                    newObj[property.Key] = property.Value as JString;
                 result.Add(newObj);
             }
-            else
+            else if (token is not null)
             {
                 // Add the base type JToken directly
                 result.Add(token);
             }
 
-            return result.ToArray();  // Converting a List to an Array of JTokens
+            return [.. result];  // Converting a List to an Array of JTokens
         }
     }
 }

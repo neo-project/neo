@@ -3,14 +3,13 @@
 
   <PropertyGroup>
     <LangVersion>12.0</LangVersion>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutput>TestResults/</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>3</WarningLevel>
+    <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
 

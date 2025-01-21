@@ -9,13 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.Network.P2P.Payloads.Conditions;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -156,7 +153,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestCalculateNetworkFee()
         {
-            var snapshot = _neoSystem.GetSnapshot();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             var txBase64 = Convert.ToBase64String(tx.ToArray());
             var paramsArray = new JArray(txBase64);
@@ -340,6 +337,7 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        [Obsolete]
         public void TestCancelTransaction()
         {
             TestUtilOpenWallet();
@@ -393,19 +391,6 @@ namespace Neo.Plugins.RpcServer.Tests
             var invalidParamsArray = new JArray("invalid_script_hash");
             exception = Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify(invalidParamsArray), "Should throw RpcException for invalid script hash");
             Assert.AreEqual(exception.HResult, RpcError.InvalidParams.Code);
-
-            // deploy a contract with `Verify` method; 
-            string _contractSourceCode = """
-using Neo;using Neo.SmartContract.Framework;using Neo.SmartContract.Framework.Services;
-namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
-        const byte PREFIX_OWNER = 0x20;
-        public static void _deploy(object data, bool update) {
-            if (update) return;
-            Storage.Put(Storage.CurrentContext, new byte[] { PREFIX_OWNER },
-                ((Transaction)Runtime.ScriptContainer).Sender);}
-        public static bool Verify() => Runtime.CheckWitness((UInt160)Storage.Get(Storage.CurrentContext, new byte[] { PREFIX_OWNER }));
-        public static bool Verify(byte prefix) => Runtime.CheckWitness((UInt160)Storage.Get(Storage.CurrentContext, new byte[] { prefix }));}}
-""";
             string base64NefFile = "TkVGM05lby5Db21waWxlci5DU2hhcnAgMy43LjQrNjAzNGExODIxY2E3MDk0NjBlYzMxMzZjNzBjMmRjYzNiZWEuLi4AAAAAAGNXAAJ5JgQiGEEtUQgwE84MASDbMEGb9mfOQeY/GIRADAEg2zBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEBXAAERiEoQeNBBm/ZnzkGSXegxStgkCUrKABQoAzpB\u002BCfsjEDo2WhC";
             string manifest = """{"name":"ContractWithVerify","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"_deploy","parameters":[{"name":"data","type":"Any"},{"name":"update","type":"Boolean"}],"returntype":"Void","offset":0,"safe":false},{"name":"verify","parameters":[],"returntype":"Boolean","offset":31,"safe":false},{"name":"verify","parameters":[{"name":"prefix","type":"Integer"}],"returntype":"Boolean","offset":63,"safe":false}],"events":[]},"permissions":[],"trusts":[],"extra":{"nef":{"optimization":"All"}}}""";
             JObject deployResp = (JObject)_rpcServer.InvokeFunction(new JArray([ContractManagement.ContractManagement.Hash.ToString(),
@@ -418,7 +403,7 @@ namespace ContractWithVerify{public class ContractWithVerify:SmartContract {
             Assert.AreEqual(deployResp["state"], nameof(VM.VMState.HALT));
             UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
             SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
-            Transaction? tx = new Transaction
+            Transaction tx = new Transaction
             {
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted. 
 
-using Neo.Extensions;
 using System;
 using System.Collections.Generic;
 
@@ -45,11 +44,6 @@ namespace Neo.Extensions.Tests.Collections
             var zero = new List<int> { 1, 2, 3 };
             var zeroChunks = zero.Chunk(0).GetEnumerator();
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => zeroChunks.MoveNext());
-
-            // Null source
-            IReadOnlyCollection<int>? nullSource = null;
-            var nullChunks = nullSource.Chunk(3).GetEnumerator();
-            Assert.IsFalse(emptyChunks.MoveNext());
 
             // HashSet
             var hashSet = new HashSet<int> { 1, 2, 3, 4 };

@@ -9,11 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable CS1718 // Comparison made to same variable
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using System;
-using System.Security.Cryptography;
 
 namespace Neo.UnitTests.IO
 {
@@ -104,6 +105,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestOperatorLarger()
         {
+
             Assert.AreEqual(false, UInt160.Zero > UInt160.Zero);
             Assert.IsFalse(UInt160.Zero > "0x0000000000000000000000000000000000000000");
         }
@@ -143,3 +145,5 @@ namespace Neo.UnitTests.IO
         }
     }
 }
+
+#pragma warning restore CS1718 // Comparison made to same variable

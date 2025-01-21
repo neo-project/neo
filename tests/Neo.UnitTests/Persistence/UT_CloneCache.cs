@@ -12,7 +12,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -157,7 +156,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestCacheOverrideIssue2572()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var storages = snapshotCache.CreateSnapshot();
+            var storages = snapshotCache.CloneCache();
 
             storages.Add
                 (

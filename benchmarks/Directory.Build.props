@@ -2,10 +2,9 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>3</WarningLevel>
+    <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
     <NoWarn>CS8892</NoWarn>
   </PropertyGroup>
