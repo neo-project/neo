@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private long GetMinimumDeploymentFee(DataCache snapshot)
+        private long GetMinimumDeploymentFee(IReadOnlyStoreView snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
