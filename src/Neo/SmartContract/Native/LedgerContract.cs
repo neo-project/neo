@@ -200,7 +200,7 @@ namespace Neo.SmartContract.Native
             foreach (var signer in signers)
             {
                 key = CreateStorageKey(Prefix_Transaction).Add(hash).Add(signer);
-                var state = snapshot.TryGet(key, out var txState) ? txState.GetInteroperable<TransactionState>() : null;
+                var state = snapshot.TryGet(key, out var tx) ? tx.GetInteroperable<TransactionState>() : null;
                 if (state is not null && IsTraceableBlock(snapshot, state.BlockIndex, maxTraceableBlocks))
                     return true;
             }
@@ -307,9 +307,8 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentNullException(nameof(snapshot));
 
             var key = CreateStorageKey(Prefix_Transaction).Add(hash);
-            if (snapshot.TryGet(key, out var item))
-                return item.GetInteroperable<TransactionState>();
-            return null;
+            var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
+            return state?.Transaction is null ? null : state;
         }
 
         /// <summary>
