@@ -152,9 +152,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ContractState GetContractById(IReadOnlyStoreView snapshot, int id)
         {
-            if (snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id), out var item))
-                return GetContract(snapshot, new UInt160(item.Value.Span));
-            return null;
+            var key = CreateStorageKey(Prefix_ContractHash).AddBigEndian(id);
+            return snapshot.TryGet(key, out var item) ? GetContract(snapshot, new UInt160(item.Value.Span)) : null;
         }
 
         /// <summary>
