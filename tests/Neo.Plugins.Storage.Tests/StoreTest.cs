@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StoreTest.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -301,6 +301,20 @@ namespace Neo.Plugins.Storage.Tests
                 CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[1].Value);
+
+                // Seek null
+                entries = store.Seek(null, SeekDirection.Forward).ToArray();
+                Assert.AreEqual(3, entries.Length);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[0].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[2].Key);
+
+                // Seek empty
+                entries = store.Seek([], SeekDirection.Forward).ToArray();
+                Assert.AreEqual(3, entries.Length);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[0].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[2].Key);
             }
         }
 
