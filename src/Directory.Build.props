@@ -30,5 +30,4 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" Visible="false" />
   </ItemGroup>
-
 </Project>
