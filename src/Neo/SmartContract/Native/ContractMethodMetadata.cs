@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
             if (parameterInfos.Length > 0)
             {
                 NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
-                NeedSnapshot = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(DataCache));
+                NeedSnapshot = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(IReadOnlyStoreView));
             }
             if (NeedApplicationEngine || NeedSnapshot)
                 Parameters = parameterInfos.Skip(1).Select(p => new InteropParameterDescriptor(p)).ToArray();
