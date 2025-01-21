@@ -132,12 +132,11 @@ namespace Neo
         /// <returns>Full path of the file if found, null otherwise.</returns>
         public static string FindFile(string fileName, string path)
         {
-
             // Check if the given path is relative
             if (!Path.IsPathRooted(path))
             {
                 // Combine with the executable directory if relative
-                var executablePath = AppDomain.CurrentDomain.BaseDirectory;
+                var executablePath = AppContext.BaseDirectory;
                 path = Path.Combine(executablePath, path);
             }
 
