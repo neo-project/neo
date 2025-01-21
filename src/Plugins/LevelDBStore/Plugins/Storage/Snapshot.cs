@@ -19,6 +19,7 @@ namespace Neo.Plugins.Storage
 {
     /// <summary>
     /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
+    /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
     internal class Snapshot : ISnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
@@ -26,7 +27,12 @@ namespace Neo.Plugins.Storage
         private readonly LSnapshot _snapshot;
         private readonly ReadOptions _readOptions;
         private readonly WriteBatch _batch;
+
+#if NET9_0_OR_GREATER
+        private readonly System.Threading.Lock _lock = new();
+#else
         private readonly object _lock = new();
+#endif
 
         public Snapshot(DB db)
         {
@@ -36,16 +42,25 @@ namespace Neo.Plugins.Storage
             _batch = new WriteBatch();
         }
 
+        /// <inheritdoc/>
         public void Commit()
         {
             lock (_lock)
                 _db.Write(WriteOptions.Default, _batch);
         }
 
+        /// <inheritdoc/>
         public void Delete(byte[] key)
         {
             lock (_lock)
                 _batch.Delete(key);
+        }
+
+        /// <inheritdoc/>
+        public void Put(byte[] key, byte[] value)
+        {
+            lock (_lock)
+                _batch.Put(key, value);
         }
 
         public void Dispose()
@@ -58,12 +73,6 @@ namespace Neo.Plugins.Storage
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             return _db.Seek(_readOptions, keyOrPrefix, direction);
-        }
-
-        public void Put(byte[] key, byte[] value)
-        {
-            lock (_lock)
-                _batch.Put(key, value);
         }
 
         public bool Contains(byte[] key)
