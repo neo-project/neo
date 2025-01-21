@@ -105,7 +105,6 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestOperatorLarger()
         {
-
             Assert.AreEqual(false, UInt160.Zero > UInt160.Zero);
             Assert.IsFalse(UInt160.Zero > "0x0000000000000000000000000000000000000000");
         }

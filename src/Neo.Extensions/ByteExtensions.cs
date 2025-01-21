@@ -52,7 +52,7 @@ namespace Neo.Extensions
         /// <returns>The converted hex <see cref="string"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string ToHexString(this byte[] value)
+        public static string ToHexString(this byte[]? value)
         {
 #if NET9_0_OR_GREATER
             return Convert.ToHexStringLower(value);
@@ -80,7 +80,7 @@ namespace Neo.Extensions
         /// <returns>The converted hex <see cref="string"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string ToHexString(this byte[] value, bool reverse = false)
+        public static string ToHexString(this byte[]? value, bool reverse = false)
         {
             if (!reverse)
                 return ToHexString(value);

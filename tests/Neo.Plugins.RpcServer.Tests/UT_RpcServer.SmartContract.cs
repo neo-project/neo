@@ -174,7 +174,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 }]), validatorSigner, true));
             Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
             SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
-            Transaction tx = new Transaction
+            var tx = new Transaction
             {
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,

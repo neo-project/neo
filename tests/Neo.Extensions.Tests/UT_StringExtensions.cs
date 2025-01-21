@@ -22,7 +22,7 @@ namespace Neo.Extensions.Tests
         public void TestHexToBytes()
         {
             string? nullStr = null;
-            _ = nullStr!.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
+            _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
             string emptyStr = "";
             emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
             string str1 = "hab";

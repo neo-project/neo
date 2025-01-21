@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 
@@ -20,7 +22,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestNotNull_Or()
         {
-            ContractState contracts = null;
+            ContractState? contracts = null;
             Assert.ThrowsException<RpcException>(() => contracts.NotNull_Or(RpcError.UnknownContract).ToJson());
         }
     }
