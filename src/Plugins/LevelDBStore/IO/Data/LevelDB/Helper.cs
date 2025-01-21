@@ -26,7 +26,7 @@ namespace Neo.IO.Storage.LevelDB
             if (direction == SeekDirection.Forward)
             {
                 for (it.Seek(keyOrPrefix); it.Valid(); it.Next())
-                    yield return new(it.Key(), it.Value());
+                    yield return new(it.Key()!, it.Value()!);
             }
             else
             {
@@ -38,7 +38,7 @@ namespace Neo.IO.Storage.LevelDB
                     it.Prev();
 
                 for (; it.Valid(); it.Prev())
-                    yield return new(it.Key(), it.Value());
+                    yield return new(it.Key()!, it.Value()!);
             }
         }
 
