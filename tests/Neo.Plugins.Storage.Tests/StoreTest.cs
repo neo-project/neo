@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
@@ -41,7 +43,6 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestMemory()
         {
             using var store = new MemoryStore();
@@ -59,7 +60,6 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestLevelDb()
         {
             TestPersistenceDelete(levelDbStore.GetStore(path_leveldb));
@@ -90,7 +90,6 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestLevelDbSnapshot()
         {
             using var store = levelDbStore.GetStore(path_leveldb);
@@ -128,7 +127,6 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestLevelDbMultiSnapshot()
         {
             using var store = levelDbStore.GetStore(path_leveldb);
@@ -153,7 +151,6 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestRocksDb()
         {
             TestPersistenceDelete(rocksDBStore.GetStore(path_rocksdb));
@@ -170,7 +167,6 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestRocksDbSnapshot()
         {
             using var store = rocksDBStore.GetStore(path_leveldb);
@@ -212,7 +208,6 @@ namespace Neo.Plugins.Storage.Tests
         }
 
         [TestMethod]
-        [System.Obsolete]
         public void TestRocksDbMultiSnapshot()
         {
             using var store = rocksDBStore.GetStore(path_leveldb);
@@ -238,7 +233,6 @@ namespace Neo.Plugins.Storage.Tests
         /// Test Put/Delete/TryGet/Seek
         /// </summary>
         /// <param name="store">Store</param>
-        [System.Obsolete]
         private void TestStorage(IStore store)
         {
             using (store)
@@ -355,16 +349,17 @@ namespace Neo.Plugins.Storage.Tests
         /// </summary>
         /// <param name="store">Store</param>
         /// <param name="shouldExist">Should exist</param>
-        [System.Obsolete]
         private void TestPersistenceRead(IStore store, bool shouldExist)
         {
             using (store)
             {
-                var ret = store.TryGet(new byte[] { 0x01, 0x02, 0x03 });
 
+                var ret = store.TryGet(new byte[] { 0x01, 0x02, 0x03 });
                 if (shouldExist) CollectionAssert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, ret);
                 else Assert.IsNull(ret);
             }
         }
     }
 }
+
+#pragma warning restore CS0618 // Type or member is obsolete
