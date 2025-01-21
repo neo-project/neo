@@ -304,13 +304,7 @@ namespace Neo.SmartContract.Native
             }
 
             var last = GetSortedGasRecords(snapshot, end).First();
-
-            if (cached == null)
-            {
-                // Not cached
-                snapshot.AddToCache(new LastGasPerBlock() { Index = last.Index, GasPerBlock = last.GasPerBlock });
-            }
-
+            snapshot.AddToCache(new LastGasPerBlock() { Index = last.Index, GasPerBlock = last.GasPerBlock });
             return last.GasPerBlock;
         }
 
