@@ -20,6 +20,9 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
+    /// </summary>
     internal class MemorySnapshot : ISnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
@@ -47,9 +50,7 @@ namespace Neo.Persistence
             _writeBatch[key] = null;
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
 
         public void Put(byte[] key, byte[] value)
         {
