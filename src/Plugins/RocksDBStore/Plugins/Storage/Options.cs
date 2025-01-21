@@ -16,8 +16,8 @@ namespace Neo.Plugins.Storage
     public static class Options
     {
         public static readonly DbOptions Default = CreateDbOptions();
-        public static readonly ReadOptions ReadDefault = new ();
-        public static readonly WriteOptions WriteDefault = new ();
+        public static readonly ReadOptions ReadDefault = new();
+        public static readonly WriteOptions WriteDefault = new();
         public static readonly WriteOptions WriteDefaultSync = new WriteOptions().SetSync(true);
 
         public static DbOptions CreateDbOptions()
