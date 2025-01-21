@@ -83,14 +83,14 @@ namespace Neo.CLI
         {
             RegisterCommandHandler<string, UInt160>(false, str => StringToAddress(str, NeoSystem.Settings.AddressVersion));
             RegisterCommandHandler<string, UInt256>(false, UInt256.Parse);
-            RegisterCommandHandler<string[], UInt256[]>(str => str!.Select(u => UInt256.Parse(u.Trim())).ToArray());
-            RegisterCommandHandler<string[], UInt160[]>(arr => arr!.Select(str => StringToAddress(str, NeoSystem.Settings.AddressVersion)).ToArray());
-            RegisterCommandHandler<string, ECPoint>(str => ECPoint.Parse(str!.Trim(), ECCurve.Secp256r1));
-            RegisterCommandHandler<string[], ECPoint[]>(str => str!.Select(u => ECPoint.Parse(u.Trim(), ECCurve.Secp256r1)).ToArray());
-            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str!)!);
-            RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str!)!);
-            RegisterCommandHandler<string, decimal>(str => decimal.Parse(str!, CultureInfo.InvariantCulture));
-            RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj!);
+            RegisterCommandHandler<string[], UInt256[]>(str => str.Select(u => UInt256.Parse(u.Trim())).ToArray());
+            RegisterCommandHandler<string[], UInt160[]>(arr => arr.Select(str => StringToAddress(str, NeoSystem.Settings.AddressVersion)).ToArray());
+            RegisterCommandHandler<string, ECPoint>(str => ECPoint.Parse(str.Trim(), ECCurve.Secp256r1));
+            RegisterCommandHandler<string[], ECPoint[]>(str => str.Select(u => ECPoint.Parse(u.Trim(), ECCurve.Secp256r1)).ToArray());
+            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str)!);
+            RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str)!);
+            RegisterCommandHandler<string, decimal>(str => decimal.Parse(str, CultureInfo.InvariantCulture));
+            RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj);
 
             RegisterCommand(this);
 
