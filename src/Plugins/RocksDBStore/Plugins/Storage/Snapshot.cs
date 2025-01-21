@@ -13,48 +13,49 @@ using Neo.Persistence;
 using RocksDbSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Plugins.Storage
 {
     internal class Snapshot : ISnapshot
     {
-        private readonly RocksDb db;
-        private readonly RocksDbSharp.Snapshot snapshot;
-        private readonly WriteBatch batch;
-        private readonly ReadOptions options;
+        private readonly RocksDb _db;
+        private readonly RocksDbSharp.Snapshot _snapshot;
+        private readonly WriteBatch _batch;
+        private readonly ReadOptions _options;
 
         public Snapshot(RocksDb db)
         {
-            this.db = db;
-            snapshot = db.CreateSnapshot();
-            batch = new WriteBatch();
+            _db = db;
+            _snapshot = db.CreateSnapshot();
+            _batch = new WriteBatch();
 
-            options = new ReadOptions();
-            options.SetFillCache(false);
-            options.SetSnapshot(snapshot);
+            _options = new ReadOptions();
+            _options.SetFillCache(false);
+            _options.SetSnapshot(_snapshot);
         }
 
         public void Commit()
         {
-            db.Write(batch, Options.WriteDefault);
+            _db.Write(_batch, Options.WriteDefault);
         }
 
         public void Delete(byte[] key)
         {
-            batch.Delete(key);
+            _batch.Delete(key);
         }
 
         public void Put(byte[] key, byte[] value)
         {
-            batch.Put(key, value);
+            _batch.Put(key, value);
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction)
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction)
         {
-            if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();
+            keyOrPrefix ??= [];
 
-            using var it = db.NewIterator(readOptions: options);
+            using var it = _db.NewIterator(readOptions: _options);
 
             if (direction == SeekDirection.Forward)
                 for (it.Seek(keyOrPrefix); it.Valid(); it.Next())
@@ -66,24 +67,24 @@ namespace Neo.Plugins.Storage
 
         public bool Contains(byte[] key)
         {
-            return db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: options) >= 0;
+            return _db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: _options) >= 0;
         }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            return db.Get(key, readOptions: options);
+            return _db.Get(key, readOptions: _options);
         }
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
-            value = db.Get(key, readOptions: options);
+            value = _db.Get(key, readOptions: _options);
             return value != null;
         }
 
         public void Dispose()
         {
-            snapshot.Dispose();
-            batch.Dispose();
+            _snapshot.Dispose();
+            _batch.Dispose();
         }
     }
 }
