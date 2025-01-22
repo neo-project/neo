@@ -55,7 +55,7 @@ namespace Neo.Extensions
         /// <returns>An enumerable of arrays, each containing a chunk of the source collection.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the source collection is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the chunk size is less than or equal to 0.</exception>
-        public static IEnumerable<T[]> Chunk<T>(this IReadOnlyCollection<T> source, int chunkSize)
+        public static IEnumerable<T[]> Chunk<T>(this IReadOnlyCollection<T>? source, int chunkSize)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
