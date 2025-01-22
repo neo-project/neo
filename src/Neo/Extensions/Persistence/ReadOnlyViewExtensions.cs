@@ -23,19 +23,6 @@ namespace Neo.Extensions
     public static class ReadOnlyViewExtensions
     {
         /// <summary>
-        /// Gets the 0xff bytes of the specified length.
-        /// </summary>
-        /// <param name="length">The length of the bytes.</param>
-        /// <returns>The 0xff bytes.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static byte[] Get0xffBytes(int length)
-        {
-            var bytes = new byte[length];
-            Array.Fill(bytes, (byte)0xff);
-            return bytes;
-        }
-
-        /// <summary>
         /// Scans the entries starting with the specified prefix.
         /// <para>
         /// If <paramref name="direction"/> is <see cref="SeekDirection.Forward"/>,
@@ -48,7 +35,7 @@ namespace Neo.Extensions
         /// <para>
         /// If want to scan all entries with <see cref="SeekDirection.Backward"/>,
         /// set <paramref name="keyPrefix"/> to be N * 0xff, where N is the max length of the key.
-        /// See <see cref="Get0xffBytes"/>.
+        /// See <see cref="ArrayExtensions.Repeat"/>.
         /// </para>
         /// </summary>
         /// <param name="view">The view to scan.</param>
@@ -160,7 +147,7 @@ namespace Neo.Extensions
             if (seekPrefix == null)
             {
                 if (maxSizeWhenAll0xff > 0)
-                    seekPrefix = Get0xffBytes(maxSizeWhenAll0xff);
+                    seekPrefix = ((byte)0xff).Repeat(maxSizeWhenAll0xff);
                 else
                     throw new ArgumentException($"{nameof(keyPrefix)} with all bytes being 0xff is not supported now");
             }
