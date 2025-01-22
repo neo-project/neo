@@ -13,6 +13,7 @@
 
 using Neo.Extensions;
 using Neo.SmartContract;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -195,7 +196,7 @@ namespace Neo.Persistence
                 }
                 foreach (var serialized in _serializedCacheChanges)
                 {
-                    SetCacheInternal(serialized.Key, serialized.Value);
+                    SerializedCache.Set(serialized.Key, serialized.Value);
                 }
                 _serializedCacheChanges.Clear();
                 _changeSet.Clear();
@@ -257,16 +258,6 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         protected abstract void DeleteInternal(StorageKey key);
-
-        /// <summary>
-        /// Set cache internal
-        /// </summary>
-        /// <param name="type">Type</param>
-        /// <param name="value">Value</param>
-        protected void SetCacheInternal(Type type, object? value)
-        {
-            SerializedCache.Set(type, value);
-        }
 
         /// <summary>
         /// Finds the entries starting with the specified prefix.
