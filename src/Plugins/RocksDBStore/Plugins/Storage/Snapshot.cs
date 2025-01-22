@@ -21,35 +21,44 @@ namespace Neo.Plugins.Storage
     /// </summary>
     internal class Snapshot : ISnapshot
     {
-        private readonly RocksDb db;
-        private readonly RocksDbSharp.Snapshot snapshot;
-        private readonly WriteBatch batch;
-        private readonly ReadOptions options;
+        private readonly RocksDb _db;
+        private readonly RocksDbSharp.Snapshot _snapshot;
+        private readonly WriteBatch _batch;
+        private readonly ReadOptions _options;
+
+#if NET9_0_OR_GREATER
+        private readonly System.Threading.Lock _lock = new();
+#else
+        private readonly object _lock = new();
+#endif
 
         public Snapshot(RocksDb db)
         {
-            this.db = db;
-            snapshot = db.CreateSnapshot();
-            batch = new WriteBatch();
+            _db = db;
+            _snapshot = db.CreateSnapshot();
+            _batch = new WriteBatch();
 
-            options = new ReadOptions();
-            options.SetFillCache(false);
-            options.SetSnapshot(snapshot);
+            _options = new ReadOptions();
+            _options.SetFillCache(false);
+            _options.SetSnapshot(_snapshot);
         }
 
         public void Commit()
         {
-            db.Write(batch, Options.WriteDefault);
+            lock (_lock)
+                _db.Write(_batch, Options.WriteDefault);
         }
 
         public void Delete(byte[] key)
         {
-            batch.Delete(key);
+            lock (_lock)
+                _batch.Delete(key);
         }
 
         public void Put(byte[] key, byte[] value)
         {
-            batch.Put(key, value);
+            lock (_lock)
+                _batch.Put(key, value);
         }
 
         /// <inheritdoc/>
@@ -57,7 +66,7 @@ namespace Neo.Plugins.Storage
         {
             if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();
 
-            using var it = db.NewIterator(readOptions: options);
+            using var it = _db.NewIterator(readOptions: _options);
 
             if (direction == SeekDirection.Forward)
                 for (it.Seek(keyOrPrefix); it.Valid(); it.Next())
@@ -69,24 +78,24 @@ namespace Neo.Plugins.Storage
 
         public bool Contains(byte[] key)
         {
-            return db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: options) >= 0;
+            return _db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: _options) >= 0;
         }
 
         public byte[] TryGet(byte[] key)
         {
-            return db.Get(key, readOptions: options);
+            return _db.Get(key, readOptions: _options);
         }
 
         public bool TryGet(byte[] key, out byte[] value)
         {
-            value = db.Get(key, readOptions: options);
+            value = _db.Get(key, readOptions: _options);
             return value != null;
         }
 
         public void Dispose()
         {
-            snapshot.Dispose();
-            batch.Dispose();
+            _snapshot.Dispose();
+            _batch.Dispose();
         }
     }
 }
