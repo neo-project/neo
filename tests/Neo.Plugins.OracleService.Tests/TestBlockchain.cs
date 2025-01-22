@@ -17,7 +17,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using Neo.VM.Types;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
@@ -50,23 +49,40 @@ namespace Neo.Plugins.OracleService.Tests
 
         public static UInt160 InitializeContract()
         {
-            string _oracleContractSrc = """
-using System.Numerics;using Neo.SmartContract.Framework;using Neo.SmartContract.Framework.Native;using Neo.SmartContract.Framework.Services;
-namespace oracle_demo{public class OracleDemo:SmartContract{
-const byte PREFIX_COUNT = 0xcc;
-const byte PREFIX_DATA = 0xdd;
-public static string GetRequstData() => Storage.Get(Storage.CurrentContext, new byte[] { PREFIX_DATA });
-public static BigInteger GetRequstCount() => (BigInteger)Storage.Get(Storage.CurrentContext, new byte[] { PREFIX_COUNT });
-public static void CreateRequest(string url, string filter, string callback, byte[] userData, long gasForResponse) => Oracle.Request(url, filter, callback, userData, gasForResponse);
-public static void Callback(string url, byte[] userData, int code, byte[] result)
-{
-    ExecutionEngine.Assert(Runtime.CallingScriptHash == Oracle.Hash, "Unauthorized!");
-    StorageContext currentContext = Storage.CurrentContext;
-    Storage.Put(currentContext, new byte[] { PREFIX_DATA }, (ByteString)result);
-    Storage.Put(currentContext, new byte[] { PREFIX_COUNT },
-        (BigInteger)Storage.Get(currentContext, new byte[] { PREFIX_DATA }) + 1);
-}}}
-""";
+            /*
+            //Oracle Contract Source Code
+            using System.Numerics;
+            using Neo.SmartContract.Framework;
+            using Neo.SmartContract.Framework.Native;
+            using Neo.SmartContract.Framework.Services;
+
+            namespace oracle_demo
+            {
+                public class OracleDemo : SmartContract
+                {
+                    const byte PREFIX_COUNT = 0xcc;
+                    const byte PREFIX_DATA = 0xdd;
+
+                    public static string GetRequstData() =>
+                        Storage.Get(Storage.CurrentContext, new byte[] { PREFIX_DATA });
+
+                    public static BigInteger GetRequstCount() =>
+                        (BigInteger)Storage.Get(Storage.CurrentContext, new byte[] { PREFIX_COUNT });
+
+                    public static void CreateRequest(string url, string filter, string callback, byte[] userData, long gasForResponse) =>
+                        Oracle.Request(url, filter, callback, userData, gasForResponse);
+
+                    public static void Callback(string url, byte[] userData, int code, byte[] result)
+                    {
+                        ExecutionEngine.Assert(Runtime.CallingScriptHash == Oracle.Hash, "Unauthorized!");
+                        StorageContext currentContext = Storage.CurrentContext;
+                        Storage.Put(currentContext, new byte[] { PREFIX_DATA }, (ByteString)result);
+                        Storage.Put(currentContext, new byte[] { PREFIX_COUNT },
+                            (BigInteger)Storage.Get(currentContext, new byte[] { PREFIX_DATA }) + 1);
+                    }
+                }
+            }
+            */
             string base64NefFile = "TkVGM05lby5Db21waWxlci5DU2hhcnAgMy43LjQrNjAzNGExODIxY2E3MDk0NjBlYzMxMzZjNzBjMmRjYzNiZWEuLi4AAAFYhxcRfgqoEHKvq3HS3Yn+fEuS/gdyZXF1ZXN0BQAADwAAmAwB3dswQZv2Z85Bkl3oMUAMAczbMEGb9mfOQZJd6DFK2CYERRDbIUBXAAV8e3p5eDcAAEBXAQRBOVNuPAwUWIcXEX4KqBByr6tx0t2J/nxLkv6XDA1VbmF1dGhvcml6ZWQh4UGb9mfOcHvbKAwB3dswaEHmPxiEDAHd2zBoQZJd6DFK2CYERRDbIRGeDAHM2zBoQeY/GIRAnIyFhg==";
             string manifest = """{"name":"OracleDemo","groups":[],"features":{},"supportedstandards":[],"abi":{"methods":[{"name":"getRequstData","parameters":[],"returntype":"String","offset":0,"safe":false},{"name":"getRequstCount","parameters":[],"returntype":"Integer","offset":16,"safe":false},{"name":"createRequest","parameters":[{"name":"url","type":"String"},{"name":"filter","type":"String"},{"name":"callback","type":"String"},{"name":"userData","type":"ByteArray"},{"name":"gasForResponse","type":"Integer"}],"returntype":"Void","offset":40,"safe":false},{"name":"callback","parameters":[{"name":"url","type":"String"},{"name":"userData","type":"ByteArray"},{"name":"code","type":"Integer"},{"name":"result","type":"ByteArray"}],"returntype":"Void","offset":52,"safe":false}],"events":[]},"permissions":[{"contract":"0xfe924b7cfe89ddd271abaf7210a80a7e11178758","methods":["request"]}],"trusts":[],"extra":{"nef":{"optimization":"All"}}}""";
             byte[] script;
@@ -76,7 +92,7 @@ public static void Callback(string url, byte[] userData, int code, byte[] result
                 script = sb.ToArray();
             }
             SnapshotCache snapshot = s_theNeoSystem.GetSnapshotCache();
-            Transaction? tx = new Transaction
+            var tx = new Transaction
             {
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + s_theNeoSystem.Settings.MaxValidUntilBlockIncrement,
@@ -100,7 +116,7 @@ public static void Callback(string url, byte[] userData, int code, byte[] result
         internal static SnapshotCache GetTestSnapshotCache()
         {
             ResetStore();
-            return s_theNeoSystem.GetSnapshot();
+            return s_theNeoSystem.GetSnapshotCache();
         }
     }
 }

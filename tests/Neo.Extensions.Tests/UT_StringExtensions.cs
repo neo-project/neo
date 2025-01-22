@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_StringExtensdions.cs file belongs to the neo project and is free
+// UT_StringExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -12,9 +12,6 @@
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.Extensions.Tests
 {
@@ -24,7 +21,7 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestHexToBytes()
         {
-            string nullStr = null;
+            string? nullStr = null;
             _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
             string emptyStr = "";
             emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
