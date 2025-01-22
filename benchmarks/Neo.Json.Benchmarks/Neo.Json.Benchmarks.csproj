@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.Json\Neo.Json.csproj" />
-    <ProjectReference Include="..\..\tests\Neo.Network.RPC.Tests\Neo.Network.RPC.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>

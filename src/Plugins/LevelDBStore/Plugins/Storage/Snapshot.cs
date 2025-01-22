@@ -13,6 +13,7 @@ using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
@@ -73,7 +74,7 @@ namespace Neo.Plugins.Storage
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             return _db.Seek(_readOptions, keyOrPrefix, direction);
         }
@@ -83,12 +84,12 @@ namespace Neo.Plugins.Storage
             return _db.Contains(_readOptions, key);
         }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
             return _db.Get(_readOptions, key);
         }
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             value = _db.Get(_readOptions, key);
             return value != null;
@@ -98,7 +99,7 @@ namespace Neo.Plugins.Storage
         {
             using var iterator = _db.CreateIterator(_readOptions);
             for (iterator.SeekToFirst(); iterator.Valid(); iterator.Next())
-                yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key()!, iterator.Value()!);
         }
 
         IEnumerator IEnumerable.GetEnumerator() =>

@@ -91,8 +91,8 @@ namespace Neo.Cryptography.MPTTrie.Tests
             b.Children[10] = e3;
             b.Children[16] = v2;
             b.Children[15] = Node.NewHash(e4.Hash);
-            this.root = r;
-            this.mptdb = new MemoryStore();
+            root = r;
+            mptdb = new MemoryStore();
             PutToStore(mptdb, r);
             PutToStore(mptdb, b);
             PutToStore(mptdb, e1);

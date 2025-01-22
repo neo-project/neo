@@ -34,9 +34,7 @@ namespace Neo.Persistence
             _innerData.TryRemove(key, out _);
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ISnapshot GetSnapshot()
@@ -51,13 +49,14 @@ namespace Neo.Persistence
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            if (direction == SeekDirection.Backward && keyOrPrefix?.Length == 0) yield break;
+            keyOrPrefix ??= [];
+            if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
 
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _innerData;
-            if (keyOrPrefix?.Length > 0)
+            if (keyOrPrefix.Length > 0)
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
             foreach (var pair in records)
@@ -72,7 +71,7 @@ namespace Neo.Persistence
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             return _innerData.TryGetValue(key, out value);
         }
