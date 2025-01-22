@@ -48,16 +48,17 @@ namespace Neo.Persistence
 
         /// <summary>
         /// Seeks to the entry with the specified key.
+        /// <para>
+        /// If keyPrefix is null or empty, it will seek to the first key(even if the direction is backward).
+        /// So if seek to the last, keyPrefix should be N * 0xff, and N is the max length of the key.
+        /// </para>
         /// </summary>
-        /// <param name="keyOrPrefix">
-        /// The keyPrefix to be sought.
-        /// If keyPrefix is null or empty, it will seek to the first key.
-        /// </param>
+        /// <param name="keyPrefix">The keyPrefix to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
         /// <returns>
-        /// An enumerator containing all the entries after keyOrPrefix(Forward) or before keyOrPrefix(Backward).
+        /// An enumerator containing all the entries after keyPrefix(Forward) or before keyPrefix(Backward).
         /// </returns>
         IEnumerable<(StorageKey Key, StorageItem Value)> Seek(
-            byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward);
+            byte[]? keyPrefix = null, SeekDirection direction = SeekDirection.Forward);
     }
 }
