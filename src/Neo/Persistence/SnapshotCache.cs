@@ -27,21 +27,14 @@ namespace Neo.Persistence
         private readonly IReadOnlyStore _store;
         private readonly ISnapshot? _snapshot;
 
-        public override SerializedCache SerializedCache => _store.SerializedCache;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnapshotCache"/> class.
         /// </summary>
         /// <param name="store">An <see cref="IReadOnlyStore"/> to create a readonly cache; or an <see cref="ISnapshot"/> to create a snapshot cache.</param>
-        public SnapshotCache(IReadOnlyStore store)
+        public SnapshotCache(IReadOnlyStore store) : base(store.SerializedCache)
         {
             _store = store;
             _snapshot = store as ISnapshot;
-        }
-
-        protected override void SetCacheInternal(Type type, object? value)
-        {
-            _store.SerializedCache.Set(type, value);
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)

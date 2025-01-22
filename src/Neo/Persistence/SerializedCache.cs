@@ -14,6 +14,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Persistence
 {
@@ -41,6 +42,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <typeparam name="T">Type</typeparam>
         /// <param name="value">Value</param>
+        [MethodImplAttribute(MethodImplOptions.AggressiveInlining)]
         public void Set<T>(T? value)
         {
             Set(typeof(T), value);

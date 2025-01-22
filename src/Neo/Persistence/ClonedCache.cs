@@ -12,7 +12,6 @@
 #nullable enable
 
 using Neo.SmartContract;
-using System;
 using System.Collections.Generic;
 
 namespace Neo.Persistence
@@ -21,16 +20,9 @@ namespace Neo.Persistence
     {
         private readonly DataCache _innerCache;
 
-        public override SerializedCache SerializedCache => _innerCache.SerializedCache;
-
-        public ClonedCache(DataCache innerCache)
+        public ClonedCache(DataCache innerCache) : base(innerCache.SerializedCache)
         {
             _innerCache = innerCache;
-        }
-
-        protected override void SetCacheInternal(Type type, object? value)
-        {
-            _innerCache.AddToCache(type, value);
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)

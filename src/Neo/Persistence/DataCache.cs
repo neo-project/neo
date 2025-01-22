@@ -54,7 +54,16 @@ namespace Neo.Persistence
         /// <summary>
         /// Serialized cache
         /// </summary>
-        public abstract SerializedCache SerializedCache { get; }
+        public SerializedCache SerializedCache { get; }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="serializedCache">Serialized cache</param>
+        protected DataCache(SerializedCache serializedCache)
+        {
+            SerializedCache = serializedCache;
+        }
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -186,7 +195,7 @@ namespace Neo.Persistence
                 }
                 foreach (var serialized in _serializedCacheChanges)
                 {
-                    SetCacheInternal(serialized.Key, serialized);
+                    SetCacheInternal(serialized.Key, serialized.Value);
                 }
                 _serializedCacheChanges.Clear();
                 _changeSet.Clear();
@@ -254,7 +263,10 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="type">Type</param>
         /// <param name="value">Value</param>
-        protected abstract void SetCacheInternal(Type type, object? value);
+        protected void SetCacheInternal(Type type, object? value)
+        {
+            SerializedCache.Set(type, value);
+        }
 
         /// <summary>
         /// Finds the entries starting with the specified prefix.
