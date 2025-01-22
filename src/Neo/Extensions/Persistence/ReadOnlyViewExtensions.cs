@@ -28,7 +28,7 @@ namespace Neo.Extensions
         /// <param name="length">The length of the bytes.</param>
         /// <returns>The 0xff bytes.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] Get0xffBytes(int length)
+        internal static byte[] Get0xffBytes(int length)
         {
             var bytes = new byte[length];
             Array.Fill(bytes, (byte)0xff);
