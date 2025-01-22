@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
@@ -351,11 +353,13 @@ namespace Neo.Plugins.Storage.Tests
         {
             using (store)
             {
-                var ret = store.TryGet(new byte[] { 0x01, 0x02, 0x03 });
 
+                var ret = store.TryGet(new byte[] { 0x01, 0x02, 0x03 });
                 if (shouldExist) CollectionAssert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, ret);
                 else Assert.IsNull(ret);
             }
         }
     }
 }
+
+#pragma warning restore CS0618 // Type or member is obsolete

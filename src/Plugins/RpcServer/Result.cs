@@ -9,7 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System;
+
 namespace Neo.Plugins.RpcServer
 {
     public static class Result
@@ -23,13 +26,12 @@ namespace Neo.Plugins.RpcServer
         /// <typeparam name="T">The return type</typeparam>
         /// <returns>The execution result</returns>
         /// <exception cref="RpcException">The Rpc exception</exception>
-        public static T Ok_Or<T>(Func<T> function, RpcError err, bool withData = false)
+        public static T Ok_Or<T>(Func<T?> function, RpcError err, bool withData = false)
         {
             try
             {
                 var result = function();
-                if (result == null) throw new RpcException(err);
-                return result;
+                return result == null ? throw new RpcException(err) : result;
             }
             catch (Exception ex)
             {
@@ -47,7 +49,7 @@ namespace Neo.Plugins.RpcServer
         /// <typeparam name="T">The return type</typeparam>
         /// <returns>The execution result</returns>
         /// <exception cref="RpcException">The Rpc exception</exception>
-        public static T NotNull_Or<T>(this T result, RpcError err)
+        public static T NotNull_Or<T>(this T? result, RpcError err)
         {
             if (result == null) throw new RpcException(err);
             return result;
@@ -108,7 +110,7 @@ namespace Neo.Plugins.RpcServer
         /// <typeparam name="T">The execution result type</typeparam>
         /// <returns>The execution result</returns>
         /// <exception cref="RpcException">the rpc exception</exception>
-        public static void Null_Or<T>(this T result, RpcError err)
+        public static void Null_Or<T>(this T? result, RpcError err)
         {
             if (result != null) throw new RpcException(err);
         }
