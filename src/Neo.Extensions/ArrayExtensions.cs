@@ -16,6 +16,13 @@ namespace Neo.Extensions
 {
     public static class ArrayExtensions
     {
+        /// <summary>
+        /// Creates an array of the specified length, filled with the specified value.
+        /// </summary>
+        /// <typeparam name="T">The type of the array elements.</typeparam>
+        /// <param name="value">The value to fill the array with.</param>
+        /// <param name="count">The number of elements in the array.</param>
+        /// <returns>An array of the specified length, filled with the specified value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T[] Repeat<T>(this T value, int count)
         {
