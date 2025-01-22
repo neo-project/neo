@@ -129,9 +129,14 @@ namespace Neo.Extensions
             if (seekPrefix == null)
             {
                 if (maxSizeWhenAll0xff > 0)
+                {
                     seekPrefix = new byte[maxSizeWhenAll0xff];
+                    Array.Fill(seekPrefix, (byte)0xff);
+                }
                 else
+                {
                     throw new ArgumentException($"{nameof(keyPrefix)} with all bytes being 0xff is not supported now");
+                }
             }
             return seekPrefix;
         }

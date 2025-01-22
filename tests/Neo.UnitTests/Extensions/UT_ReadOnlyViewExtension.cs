@@ -69,6 +69,14 @@ namespace Neo.UnitTests.Extensions
             items[1].Value.ToArray().Should().BeEquivalentTo([7, 8, 9]);
             items[2].Key.ToArray().Should().BeEquivalentTo(key2);
             items[2].Value.ToArray().Should().BeEquivalentTo([4, 5, 6]);
+
+            // ScanPrefix with all 0xff and bacword is ok.
+            var key5 = StorageKey.CreateSearchPrefix(-1, [5]);
+            store.Put(key5, [0xf1]);
+            items = view.ScanPrefix([0xff], SeekDirection.Backward).ToArray();
+            Assert.AreEqual(1, items.Length);
+            items[0].Key.ToArray().Should().BeEquivalentTo(key5);
+            items[0].Value.ToArray().Should().BeEquivalentTo([0xf1]);
         }
 
         [TestMethod]
