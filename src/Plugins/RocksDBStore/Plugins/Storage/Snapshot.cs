@@ -13,6 +13,7 @@ using Neo.Persistence;
 using RocksDbSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Plugins.Storage
 {
@@ -62,9 +63,9 @@ namespace Neo.Plugins.Storage
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction)
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction)
         {
-            if (keyOrPrefix == null) keyOrPrefix = Array.Empty<byte>();
+            keyOrPrefix ??= [];
 
             using var it = _db.NewIterator(readOptions: _options);
 
@@ -81,12 +82,12 @@ namespace Neo.Plugins.Storage
             return _db.Get(key, Array.Empty<byte>(), 0, 0, readOptions: _options) >= 0;
         }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
             return _db.Get(key, readOptions: _options);
         }
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             value = _db.Get(key, readOptions: _options);
             return value != null;

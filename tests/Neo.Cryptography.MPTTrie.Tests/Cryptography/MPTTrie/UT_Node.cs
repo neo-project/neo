@@ -129,8 +129,10 @@ namespace Neo.Cryptography.MPTTrie.Tests
         public void TestBranchSerializeAsChild()
         {
             var n = Node.NewBranch();
-            var data = new List<byte>();
-            data.Add(0x00);
+            var data = new List<byte>
+            {
+                0x00
+            };
             for (int i = 0; i < Node.BranchChildCount; i++)
             {
                 data.Add(0x04);

@@ -45,7 +45,7 @@ namespace Neo.UnitTests
         {
             if (reset)
                 ResetStore();
-            return TheNeoSystem.GetSnapshot();
+            return TheNeoSystem.GetSnapshotCache();
         }
     }
 }
