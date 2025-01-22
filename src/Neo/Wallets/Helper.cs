@@ -9,9 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -63,7 +64,7 @@ namespace Neo.Wallets
         /// <returns>The converted script hash.</returns>
         public static UInt160 ToScriptHash(this string address, byte version)
         {
-            byte[] data = address.Base58CheckDecode();
+            var data = address.Base58CheckDecode();
             if (data.Length != 21)
                 throw new FormatException();
             if (data[0] != version)
@@ -74,10 +75,26 @@ namespace Neo.Wallets
         internal static byte[] XOR(byte[] x, byte[] y)
         {
             if (x.Length != y.Length) throw new ArgumentException();
-            byte[] r = new byte[x.Length];
-            for (int i = 0; i < r.Length; i++)
+            var r = new byte[x.Length];
+            for (var i = 0; i < r.Length; i++)
                 r[i] = (byte)(x[i] ^ y[i]);
             return r;
+        }
+
+        /// <summary>
+        /// Calculates the network fee for the specified transaction.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        /// </summary>
+        /// <param name="tx">The transaction to calculate.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="settings">Thr protocol settings to use.</param>
+        /// <param name="wallet">User wallet.</param>
+        /// <param name="maxExecutionCost">The maximum cost that can be spent when a contract is executed.</param>
+        /// <returns>The network fee of the transaction.</returns>
+        public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings, Wallet? wallet = null, long maxExecutionCost = ApplicationEngine.TestModeGas)
+        {
+            Func<UInt160, byte[]?>? accountScript = wallet != null ? (scriptHash) => wallet.GetAccount(scriptHash)?.Contract?.Script : null;
+            return CalculateNetworkFee(tx, snapshot, settings, accountScript, maxExecutionCost);
         }
 
         /// <summary>
@@ -90,24 +107,24 @@ namespace Neo.Wallets
         /// <param name="accountScript">Function to retrive the script's account from a hash.</param>
         /// <param name="maxExecutionCost">The maximum cost that can be spent when a contract is executed.</param>
         /// <returns>The network fee of the transaction.</returns>
-        public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings, Func<UInt160, byte[]> accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
+        public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings, Func<UInt160, byte[]?>? accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
         {
-            UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+            var hashes = tx.GetScriptHashesForVerifying(snapshot);
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + UnsafeData.GetVarSize(hashes.Length), index = -1;
-            uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            var exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
-            foreach (UInt160 hash in hashes)
+            foreach (var hash in hashes)
             {
                 index++;
-                byte[] witnessScript = accountScript(hash);
-                byte[] invocationScript = null;
+                var witnessScript = accountScript != null ? accountScript(hash) : null;
+                byte[]? invocationScript = null;
 
                 if (tx.Witnesses != null && witnessScript is null)
                 {
                     // Try to find the script in the witnesses
-                    Witness witness = tx.Witnesses[index];
+                    var witness = tx.Witnesses[index];
                     witnessScript = witness?.VerificationScript.ToArray();
 
                     if (witnessScript is null || witnessScript.Length == 0)
@@ -193,14 +210,14 @@ namespace Neo.Wallets
                     }
                     else if (IsMultiSigContract(witnessScript, out int m, out int n))
                     {
-                        int size_inv = 66 * m;
+                        var size_inv = 66 * m;
                         size += UnsafeData.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
                         networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                     }
                 }
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            foreach (TransactionAttribute attr in tx.Attributes)
+            foreach (var attr in tx.Attributes)
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }
