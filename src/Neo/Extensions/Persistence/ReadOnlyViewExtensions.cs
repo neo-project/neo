@@ -61,7 +61,7 @@ namespace Neo.Extensions
             foreach (var (key, value) in view.Seek(seekPrefix, direction))
             {
                 if (keyPrefix == null || key.ToArray().AsSpan().StartsWith(keyPrefix))
-                    yield return (key, value);
+                    yield return new(key, value);
                 else if (direction == SeekDirection.Forward || (seekPrefix == null || !key.ToArray().SequenceEqual(seekPrefix)))
                     yield break;
             }
