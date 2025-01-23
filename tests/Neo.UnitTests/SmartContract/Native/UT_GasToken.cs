@@ -15,24 +15,14 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native;
-using Neo.UnitTests.Extensions;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
-using System;
-using System;
 using System.Linq;
-using System.Linq;
-using System.Numerics;
-using System.Numerics;
 using System.Numerics;
 using System.Threading.Tasks;
 using VMTypes = Neo.VM.Types;
@@ -209,9 +199,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             // Check that block's Primary balance is 0.
-            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
             var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-            NativeContract.GAS.BalanceOf(engine.Snapshot, primary).Should().Be(0);
+            NativeContract.GAS.BalanceOf(engine.SnapshotCache, primary).Should().Be(0);
 
             // Execute OnPersist script.
             engine.LoadScript(script.ToArray());
@@ -221,7 +211,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // will be minted to Notary nodes as a reward once Notary contract is implemented.
             Assert.AreEqual(2 + 1, engine.Notifications.Count()); // burn tx1 and tx2 network fee + mint primary reward
             Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, engine.Notifications[2].State[2]);
-            NativeContract.GAS.BalanceOf(engine.Snapshot, primary).Should().Be(netFee1 + netFee2 - expectedNotaryReward);
+            NativeContract.GAS.BalanceOf(engine.SnapshotCache, primary).Should().Be(netFee1 + netFee2 - expectedNotaryReward);
         }
     }
 }
