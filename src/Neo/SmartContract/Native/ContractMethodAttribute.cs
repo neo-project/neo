@@ -15,7 +15,8 @@ using System.Diagnostics;
 namespace Neo.SmartContract.Native
 {
     [DebuggerDisplay("{Name}")]
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false)]
+    // We allow multiple attributes because the fees or requiredCallFlags may change between hard forks.
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = true)]
     internal class ContractMethodAttribute : Attribute, IHardforkActivable
     {
         public string Name { get; init; }
