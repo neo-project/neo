@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -94,22 +94,28 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public void TestTransactionAttribute()
         {
-            var attribute = new Conflicts();
-            attribute.Hash = UInt256.Zero;
+            var attribute = new Conflicts
+            {
+                Hash = UInt256.Zero
+            };
             var json = attribute.ToJson();
             var result = Utility.TransactionAttributeFromJson(json).ToJson();
             result.ToString().Should().Be(json.ToString());
 
-            var attribute2 = new OracleResponse();
-            attribute2.Id = 1234;
-            attribute2.Code = 0;
-            attribute2.Result = new ReadOnlyMemory<byte> { };
+            var attribute2 = new OracleResponse
+            {
+                Id = 1234,
+                Code = 0,
+                Result = new ReadOnlyMemory<byte> { }
+            };
             json = attribute2.ToJson();
             result = Utility.TransactionAttributeFromJson(json).ToJson();
             result.ToString().Should().Be(json.ToString());
 
-            var attribute3 = new NotValidBefore();
-            attribute3.Height = 10000;
+            var attribute3 = new NotValidBefore
+            {
+                Height = 10000
+            };
             json = attribute3.ToJson();
             result = Utility.TransactionAttributeFromJson(json).ToJson();
             result.ToString().Should().Be(json.ToString());
@@ -123,9 +129,11 @@ namespace Neo.Network.RPC.Tests
         [TestMethod]
         public void TestWitnessRule()
         {
-            var rule = new WitnessRule();
-            rule.Action = WitnessRuleAction.Allow;
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByEntryCondition();
+            var rule = new WitnessRule
+            {
+                Action = WitnessRuleAction.Allow,
+                Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByEntryCondition()
+            };
             var json = rule.ToJson();
             var result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             result.ToString().Should().Be(json.ToString());

@@ -18,13 +18,15 @@ namespace Neo.IO.Storage.LevelDB
 {
     public static class Helper
     {
-        public static IEnumerable<(byte[], byte[])> Seek(this DB db, ReadOptions options, byte[] keyOrPrefix, SeekDirection direction)
+        public static IEnumerable<(byte[], byte[])> Seek(this DB db, ReadOptions options, byte[]? keyOrPrefix, SeekDirection direction)
         {
-            using Iterator it = db.CreateIterator(options);
+            keyOrPrefix ??= [];
+
+            using var it = db.CreateIterator(options);
             if (direction == SeekDirection.Forward)
             {
                 for (it.Seek(keyOrPrefix); it.Valid(); it.Next())
-                    yield return new(it.Key(), it.Value());
+                    yield return new(it.Key()!, it.Value()!);
             }
             else
             {
@@ -36,14 +38,14 @@ namespace Neo.IO.Storage.LevelDB
                     it.Prev();
 
                 for (; it.Valid(); it.Prev())
-                    yield return new(it.Key(), it.Value());
+                    yield return new(it.Key()!, it.Value()!);
             }
         }
 
-        internal static byte[] ToByteArray(this IntPtr data, UIntPtr length)
+        internal static byte[]? ToByteArray(this IntPtr data, UIntPtr length)
         {
             if (data == IntPtr.Zero) return null;
-            byte[] buffer = new byte[(int)length];
+            var buffer = new byte[(int)length];
             Marshal.Copy(data, buffer, 0, (int)length);
             return buffer;
         }
