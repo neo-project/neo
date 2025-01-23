@@ -45,7 +45,7 @@ namespace Neo.UnitTests.Persistence
             _memoryStore = new MemoryStore();
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
             _snapshotCache = new SnapshotCache(_snapshot);
-            _dataCache = _snapshotCache.CreateSnapshot();
+            _dataCache = _snapshotCache.CloneCache();
         }
 
         [TestCleanup]
@@ -57,6 +57,7 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        [System.Obsolete]
         public void SingleSnapshotCacheTest()
         {
             var key1 = new KeyBuilder(0, 1);
