@@ -136,7 +136,7 @@ namespace Neo.UnitTests.Persistence
 
             var entries = storeView.Seek([], SeekDirection.Backward).ToArray();
             // Memory store has different seek behavior than the snapshot
-            Assert.AreEqual(entries.Length, 37);
+            Assert.AreEqual(entries.Length, 38);
         }
     }
 }
