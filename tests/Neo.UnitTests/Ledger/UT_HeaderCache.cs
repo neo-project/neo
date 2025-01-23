@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_HeaderCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -24,8 +24,10 @@ namespace Neo.UnitTests.Ledger
         public void TestHeaderCache()
         {
             var cache = new HeaderCache();
-            var header = new Header();
-            header.Index = 1;
+            var header = new Header
+            {
+                Index = 1
+            };
             cache.Add(header);
 
             var got = cache[1];
