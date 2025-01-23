@@ -426,12 +426,11 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <param name="serializedCache">Serialized cache</param>
-        /// <returns>The cached data.</returns>
-        public StorageItem? GetAndChange<T>(StorageKey key, T serializedCache) where T : IStorageCacheEntry
+        public void GetAndChange<T>(StorageKey key, T serializedCache) where T : IStorageCacheEntry
         {
             var ret = GetAndChange(key, serializedCache.GetStorageItem);
+            ret!.FromReplica(serializedCache.GetStorageItem());
             _serializedCacheChanges[typeof(T)] = serializedCache;
-            return ret;
         }
 
         /// <summary>
