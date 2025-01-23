@@ -27,6 +27,12 @@ namespace Neo.Plugins.Storage
         private readonly WriteBatch _batch;
         private readonly ReadOptions _options;
 
+#if NET9_0_OR_GREATER
+        private readonly System.Threading.Lock _lock = new();
+#else
+        private readonly object _lock = new();
+#endif
+
         public Snapshot(RocksDb db)
         {
             _db = db;
@@ -40,17 +46,20 @@ namespace Neo.Plugins.Storage
 
         public void Commit()
         {
-            _db.Write(_batch, Options.WriteDefault);
+            lock (_lock)
+                _db.Write(_batch, Options.WriteDefault);
         }
 
         public void Delete(byte[] key)
         {
-            _batch.Delete(key);
+            lock (_lock)
+                _batch.Delete(key);
         }
 
         public void Put(byte[] key, byte[] value)
         {
-            _batch.Put(key, value);
+            lock (_lock)
+                _batch.Put(key, value);
         }
 
         /// <inheritdoc/>
