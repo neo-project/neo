@@ -134,7 +134,7 @@ namespace Neo.Persistence
             lock (_dictionary)
             {
                 Add(key, value.GetStorageItem());
-                _serializedCacheChanges[typeof(T)] = value;
+                AddToCache(value);
             }
         }
 

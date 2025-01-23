@@ -196,10 +196,11 @@ namespace Neo.SmartContract.Native
         {
             if (hardfork == ActiveIn)
             {
+                var initIndex = engine.PersistingBlock?.Index ?? 0u;
                 var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
                 engine.SnapshotCache.Add(_votersCount, new StorageItem(System.Array.Empty<byte>()));
-                engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new LastGasPerBlock(5 * GAS.Factor, 0));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(initIndex), new LastGasPerBlock(5 * GAS.Factor, initIndex));
                 engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
             }
