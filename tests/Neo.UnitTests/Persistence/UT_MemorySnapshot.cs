@@ -95,7 +95,8 @@ namespace Neo.UnitTests.Persistence
             var snapshot2 = _memoryStore.GetSnapshot();
             CollectionAssert.AreEqual(value1, _memoryStore.TryGet(key1));
             Assert.IsNull(_snapshot.TryGet(key1));
-            CollectionAssert.AreEqual(value1, snapshot2.TryGet(key1));
+            Assert.IsTrue(snapshot2.TryGet(key1, out var result));
+            CollectionAssert.AreEqual(value1, result);
 
             Assert.IsFalse(_snapshot.TryGet(key1, out var value2));
 
@@ -124,7 +125,8 @@ namespace Neo.UnitTests.Persistence
             snapshot2.Put(key1, value1);
             snapshot2.Commit();
             Assert.IsNull(_snapshot.TryGet(key1));
-            CollectionAssert.AreEqual(value1, snapshot2.TryGet(key1));
+            Assert.IsTrue(snapshot2.TryGet(key1, out result));
+            CollectionAssert.AreEqual(value1, result);
         }
     }
 }

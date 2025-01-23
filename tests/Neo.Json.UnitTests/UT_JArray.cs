@@ -294,8 +294,10 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAddNullValues()
         {
-            var jArray = new JArray();
-            jArray.Add(null);
+            var jArray = new JArray
+            {
+                null
+            };
             jArray.Count.Should().Be(1);
             jArray[0].Should().BeNull();
         }
