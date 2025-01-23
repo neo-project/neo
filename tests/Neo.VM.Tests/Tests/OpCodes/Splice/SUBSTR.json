@@ -473,6 +473,50 @@
           }
         }
       ]
+    },
+    {
+      "name": "Count Exceed Range Test",
+      "script": [
+        "PUSHDATA1",
+        "0x0a",
+        "0x00010203040506070809",
+        "PUSH2",
+        "PUSHINT32",
+        "0x7FFFFFFF",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Index Exceed Range Test",
+      "script": [
+        "PUSHDATA1",
+        "0x0a",
+        "0x00010203040506070809",
+        "PUSHINT32",
+        "0x7FFFFFFF",
+        "PUSH2",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
     }
   ]
 }
