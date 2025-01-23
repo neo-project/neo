@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NodeController.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,6 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Plugins.RestServer.Extensions;
 using Neo.Plugins.RestServer.Models.Error;
