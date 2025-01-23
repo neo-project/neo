@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_CryptoLib.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -494,7 +494,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Version = 0,
                 Witnesses = []
             };
-            var tx_signature = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), privkey, ECCurve.Secp256k1, Hasher.Keccak256);
+            var tx_signature = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), privkey, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
 
             // inv is a builder of witness invocation script corresponding to the public key.
             using ScriptBuilder inv = new();
@@ -737,7 +737,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 if (i == 1) // Skip one key since we need only 3 signatures.
                     continue;
-                var sig = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), keys[i].Item1, ECCurve.Secp256k1, Hasher.Keccak256);
+                var sig = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), keys[i].Item1, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
                 inv.EmitPush(sig);
             }
 
@@ -868,23 +868,23 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
 
             // secp256r1 + SHA256
-            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.SHA256);
+            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, HashAlgorithm.SHA256);
             Crypto.VerifySignature(message, signature, pubR1).Should().BeTrue(); // SHA256 hash is used by default.
             CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1SHA256).Should().Be(true);
 
             // secp256r1 + Keccak256
-            signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.Keccak256);
-            Crypto.VerifySignature(message, signature, pubR1, Hasher.Keccak256).Should().BeTrue();
+            signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, HashAlgorithm.Keccak256);
+            Crypto.VerifySignature(message, signature, pubR1, HashAlgorithm.Keccak256).Should().BeTrue();
             CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1Keccak256).Should().Be(true);
 
             // secp256k1 + SHA256
-            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.SHA256);
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, HashAlgorithm.SHA256);
             Crypto.VerifySignature(message, signature, pubK1).Should().BeTrue(); // SHA256 hash is used by default.
             CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1SHA256).Should().Be(true);
 
             // secp256k1 + Keccak256
-            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.Keccak256);
-            Crypto.VerifySignature(message, signature, pubK1, Hasher.Keccak256).Should().BeTrue();
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
+            Crypto.VerifySignature(message, signature, pubK1, HashAlgorithm.Keccak256).Should().BeTrue();
             CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1Keccak256).Should().Be(true);
         }
 

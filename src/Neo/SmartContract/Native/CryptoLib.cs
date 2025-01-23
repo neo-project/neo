@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // CryptoLib.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -21,12 +21,12 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed partial class CryptoLib : NativeContract
     {
-        private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, Hasher Hasher)> s_curves = new()
+        private static readonly Dictionary<NamedCurveHash, (ECCurve Curve, HashAlgorithm HashAlgorithm)> s_curves = new()
         {
-            [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, Hasher.SHA256),
-            [NamedCurveHash.secp256r1SHA256] = (ECCurve.Secp256r1, Hasher.SHA256),
-            [NamedCurveHash.secp256k1Keccak256] = (ECCurve.Secp256k1, Hasher.Keccak256),
-            [NamedCurveHash.secp256r1Keccak256] = (ECCurve.Secp256r1, Hasher.Keccak256),
+            [NamedCurveHash.secp256k1SHA256] = (ECCurve.Secp256k1, HashAlgorithm.SHA256),
+            [NamedCurveHash.secp256r1SHA256] = (ECCurve.Secp256r1, HashAlgorithm.SHA256),
+            [NamedCurveHash.secp256k1Keccak256] = (ECCurve.Secp256k1, HashAlgorithm.Keccak256),
+            [NamedCurveHash.secp256r1Keccak256] = (ECCurve.Secp256r1, HashAlgorithm.Keccak256),
         };
 
         internal CryptoLib() : base() { }
@@ -91,7 +91,7 @@ namespace Neo.SmartContract.Native
             try
             {
                 var ch = s_curves[curveHash];
-                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.Hasher);
+                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
             }
             catch (ArgumentException)
             {

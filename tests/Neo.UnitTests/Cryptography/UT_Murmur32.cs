@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Murmur32.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using System.Buffers.Binary;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -30,6 +31,20 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] array = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
             array.Murmur32(10u).Should().Be(378574820u);
+        }
+
+        [TestMethod]
+        public void TestTryComputeHash()
+        {
+            var murmur3 = new Murmur32(10u);
+            var buffer = new byte[murmur3.HashSize / 8];
+            var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
+
+            var ok = murmur3.TryComputeHash(data, buffer, out _);
+            ok.Should().BeTrue();
+
+            var hash = BinaryPrimitives.ReadUInt32LittleEndian(buffer);
+            hash.Should().Be(378574820u);
         }
     }
 }

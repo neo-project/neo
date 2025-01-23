@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ByteExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,7 +8,6 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
-
 
 using FluentAssertions;
 using System;
@@ -24,8 +23,8 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestToHexString()
         {
-            byte[] nullStr = null;
-            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
+            byte[]? nullStr = null;
+            Assert.ThrowsException<ArgumentNullException>(nullStr.ToHexString);
             Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(false));
             Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(true));
 

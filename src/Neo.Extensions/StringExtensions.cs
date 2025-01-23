@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StringExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,9 @@
 // modifications are permitted.
 
 using System;
+#if !NET9_0_OR_GREATER
 using System.Globalization;
+#endif
 using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
@@ -18,7 +20,7 @@ namespace Neo.Extensions
     public static class StringExtensions
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] HexToBytes(this string value) => HexToBytes(value.AsSpan());
+        public static byte[] HexToBytes(this string? value) => HexToBytes(value.AsSpan());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] HexToBytesReversed(this ReadOnlySpan<char> value)
