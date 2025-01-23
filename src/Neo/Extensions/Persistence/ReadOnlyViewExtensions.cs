@@ -100,7 +100,7 @@ namespace Neo.Extensions
             foreach (var (key, value) in view.Seek(inclusiveStartKey, direction))
             {
                 if (comparer.Compare(key.ToArray(), exclusiveEndKey) < 0)
-                    yield return (key, value);
+                    yield return new(key, value);
                 else
                     yield break;
             }
