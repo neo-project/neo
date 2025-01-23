@@ -177,9 +177,7 @@ namespace Neo.Plugins.RpcServer
             var tx = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid tx: {_params[0]}")); ;
 
             JObject account = new();
-            var networkfee = Wallets.Helper.CalculateNetworkFee(
-                tx.AsSerializable<Transaction>(), system.StoreView, system.Settings,
-                wallet is not null ? a => wallet.GetAccount(a).Contract.Script : _ => null);
+            var networkfee = Wallets.Helper.CalculateNetworkFee(tx.AsSerializable<Transaction>(), system.StoreView, system.Settings, wallet);
             account["networkfee"] = networkfee.ToString();
             return account;
         }

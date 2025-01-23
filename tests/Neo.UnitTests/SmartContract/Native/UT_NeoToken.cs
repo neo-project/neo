@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NeoToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -22,8 +22,11 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Principal;
+using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -53,6 +56,48 @@ namespace Neo.UnitTests.SmartContract.Native
 
         [TestMethod]
         public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshotCache).Should().Be(0);
+
+        [TestMethod]
+        public void Test_HF_EchidnaStates()
+        {
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 10");
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            var settings = ProtocolSettings.Load(stream);
+
+            var clonedCache = _snapshotCache.CloneCache();
+            var persistingBlock = new Block { Header = new Header() };
+
+            foreach (var method in new string[] { "vote", "registerCandidate", "unregisterCandidate" })
+            {
+                // Test WITHOUT HF_Echidna
+
+                persistingBlock.Header.Index = 9;
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                    new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
+
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States);
+                }
+
+                // Test WITH HF_Echidna
+
+                persistingBlock.Header.Index = 10;
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                     new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
+
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+                }
+            }
+        }
 
         [TestMethod]
         public void Check_Vote()
@@ -263,6 +308,40 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
             Assert.AreEqual(2, members.Count());
+        }
+
+        [TestMethod]
+        public void Check_RegisterValidatorViaNEP27()
+        {
+            var clonedCache = _snapshotCache.CloneCache();
+            var point = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
+            var pointData = point.EncodePoint(true);
+
+            // Send some NEO, shouldn't be accepted
+            var ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, true, pointData, 1000_0000_0000);
+            ret.State.Should().BeFalse();
+
+            // Send improper amount of GAS, shouldn't be accepted.
+            ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, false, pointData, 1000_0000_0001);
+            ret.State.Should().BeFalse();
+
+            // Broken witness.
+            var badPoint = ECPoint.Parse("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", ECCurve.Secp256r1);
+            ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, false, badPoint.EncodePoint(true), 1000_0000_0000);
+            ret.State.Should().BeFalse();
+
+            // Successful case.
+            ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, false, pointData, 1000_0000_0000);
+            ret.State.Should().BeTrue();
+            ret.Result.Should().BeTrue();
+
+            // Check GetRegisteredValidators
+            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
+            Assert.AreEqual(1, members.Count());
+            Assert.AreEqual(point, members.First().PublicKey);
+
+            // No GAS should be left on the NEO account.
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(clonedCache, NativeContract.NEO.Hash));
         }
 
         [TestMethod]
@@ -1047,6 +1126,36 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 return (false, false);
             }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (true, result.GetBoolean());
+        }
+
+        internal static (bool State, bool Result) Check_RegisterValidatorViaNEP27(DataCache clonedCache, ECPoint pubkey, Block persistingBlock, bool passNEO, byte[] data, BigInteger amount)
+        {
+            var keyScriptHash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            var contractID = passNEO ? NativeContract.NEO.Id : NativeContract.GAS.Id;
+            var storageKey = new KeyBuilder(contractID, 20).Add(keyScriptHash); // 20 is Prefix_Account
+
+            if (passNEO)
+                clonedCache.Add(storageKey, new StorageItem(new NeoAccountState { Balance = amount }));
+            else
+                clonedCache.Add(storageKey, new StorageItem(new AccountState { Balance = amount }));
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(keyScriptHash), clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1_0000_0000);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(passNEO ? NativeContract.NEO.Hash : NativeContract.GAS.Hash, "transfer", keyScriptHash, NativeContract.NEO.Hash, amount, data);
+            engine.LoadScript(script.ToArray());
+
+            var execRes = engine.Execute();
+            clonedCache.Delete(storageKey); // Clean up for subsequent invocations.
+
+            if (execRes == VMState.FAULT)
+                return (false, false);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Boolean));

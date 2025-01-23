@@ -5,6 +5,7 @@
     <PackageId>Neo.Plugins.Storage.RocksDBStore</PackageId>
     <RootNamespace>Neo.Plugins.Storage</RootNamespace>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
