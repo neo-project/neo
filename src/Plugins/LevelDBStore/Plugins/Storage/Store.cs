@@ -13,6 +13,7 @@ using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Plugins.Storage
 {
@@ -58,17 +59,17 @@ namespace Neo.Plugins.Storage
         public bool Contains(byte[] key) =>
             _db.Contains(ReadOptions.Default, key);
 
-        public byte[] TryGet(byte[] key) =>
+        public byte[]? TryGet(byte[] key) =>
             _db.Get(ReadOptions.Default, key);
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             value = _db.Get(ReadOptions.Default, key);
             return value != null;
         }
 
         /// <inheritdoc/>
-        public IEnumerable<(byte[], byte[])> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward) =>
+        public IEnumerable<(byte[], byte[])> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward) =>
             _db.Seek(ReadOptions.Default, keyOrPrefix, direction);
 
         public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator() =>

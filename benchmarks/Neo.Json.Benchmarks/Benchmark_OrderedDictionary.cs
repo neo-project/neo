@@ -18,18 +18,12 @@ namespace Neo.Json.Benchmarks
     [MarkdownExporter]
     public class Benchmark_OrderedDictionary
     {
-        private OrderedDictionary<string, uint> _od;
-
-        [GlobalSetup]
-        public void Setup()
-        {
-            _od = new OrderedDictionary<string, uint>
+        private readonly OrderedDictionary<string, uint> _od = new()
             {
                 { "a", 1 },
                 { "b", 2 },
                 { "c", 3 }
             };
-        }
 
         [Benchmark]
         public void TestClear()

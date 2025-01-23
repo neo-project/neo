@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
 namespace Neo.Extensions.Tests
@@ -22,7 +21,7 @@ namespace Neo.Extensions.Tests
         public void TestCompare()
         {
             ByteArrayComparer comparer = ByteArrayComparer.Default;
-            byte[] x = null, y = null;
+            byte[]? x = null, y = null;
             comparer.Compare(x, y).Should().Be(0);
 
             x = new byte[] { 1, 2, 3, 4, 5 };

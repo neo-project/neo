@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Caching;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,7 +27,7 @@ namespace Neo.Extensions.Tests.Collections
                 3
             };
 
-            var b = new Dictionary<int, object>
+            var b = new Dictionary<int, object?>
             {
                 [2] = null
             };

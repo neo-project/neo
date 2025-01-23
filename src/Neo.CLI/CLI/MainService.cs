@@ -107,7 +107,7 @@ namespace Neo.CLI
 
             if (input.IndexOf('.') > 0 && input.LastIndexOf('.') < input.Length)
             {
-                return ResolveNeoNameServiceAddress(input);
+                return ResolveNeoNameServiceAddress(input) ?? UInt160.Zero;
             }
 
             // Try to parse as UInt160
@@ -697,7 +697,7 @@ namespace Neo.CLI
             return exception.Message;
         }
 
-        public UInt160 ResolveNeoNameServiceAddress(string domain)
+        public UInt160? ResolveNeoNameServiceAddress(string domain)
         {
             if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
                 throw new Exception("Neo Name Service (NNS): is disabled on this network.");
@@ -717,7 +717,7 @@ namespace Neo.CLI
                         if (UInt160.TryParse(addressData, out var address))
                             return address;
                         else
-                            return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                            return addressData?.ToScriptHash(NeoSystem.Settings.AddressVersion);
                     }
                     catch { }
                 }
