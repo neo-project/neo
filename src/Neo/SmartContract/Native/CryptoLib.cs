@@ -11,6 +11,8 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
 using System;
 using System.Collections.Generic;
 
@@ -111,6 +113,35 @@ namespace Neo.SmartContract.Native
                 return Crypto.VerifySignature(message, signature, pubkey, s_curves[curve].Curve);
             }
             catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Verifies that a digital signature is appropriate for the provided key and message using the Ed25519 algorithm.
+        /// </summary>
+        /// <param name="message">The signed message.</param>
+        /// <param name="publicKey">The Ed25519 public key to be used.</param>
+        /// <param name="signature">The signature to be verified.</param>
+        /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15)]
+        public static bool VerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
+        {
+            if (signature.Length != Ed25519.SignatureSize)
+                return false;
+
+            if (publicKey.Length != Ed25519.PublicKeySize)
+                return false;
+
+            try
+            {
+                var verifier = new Ed25519Signer();
+                verifier.Init(false, new Ed25519PublicKeyParameters(publicKey, 0));
+                verifier.BlockUpdate(message, 0, message.Length);
+                return verifier.VerifySignature(signature);
+            }
+            catch (Exception)
             {
                 return false;
             }
