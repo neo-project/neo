@@ -324,7 +324,7 @@ namespace Neo.Ledger
                         pooled = new HashSet<UInt256>();
                     }
                     pooled.Add(tx.Hash);
-                    _conflicts.AddOrSet(attr.Hash, pooled);
+                    _conflicts[attr.Hash] = pooled;
                 }
 
                 if (Count > Capacity)
@@ -581,10 +581,10 @@ namespace Neo.Ledger
                             {
                                 if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                                 {
-                                    pooled = new HashSet<UInt256>();
+                                    pooled = [];
                                 }
                                 pooled.Add(item.Tx.Hash);
-                                _conflicts.AddOrSet(attr.Hash, pooled);
+                                _conflicts[attr.Hash] = pooled;
                             }
                             VerificationContext.AddTransaction(item.Tx);
                             foreach (var conflict in conflictsToBeRemoved)
