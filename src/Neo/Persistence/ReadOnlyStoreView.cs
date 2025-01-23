@@ -60,7 +60,7 @@ namespace Neo.Persistence
             byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
             foreach (var (key, value) in _store.Seek(keyOrPrefix, direction))
-                yield return (new(key), new(value));
+                yield return new(new(key), new(value));
         }
     }
 }
