@@ -267,7 +267,7 @@ namespace Neo.Cryptography
         {
             if (signature.Length != 65 && signature.Length != 64)
                 throw new ArgumentException("Signature must be 65 or 64 bytes", nameof(signature));
-            if (hash is not { Length: 32 })
+            if (hash.Length != 32)
                 throw new ArgumentException("Message hash must be 32 bytes", nameof(hash));
 
             try
