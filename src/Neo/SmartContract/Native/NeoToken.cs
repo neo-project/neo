@@ -16,6 +16,7 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -105,6 +106,18 @@ namespace Neo.SmartContract.Native
             var list = engine.CurrentContext.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
+        }
+
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        {
+            if (hfChecker(Hardfork.HF_Echidna, blockHeight))
+            {
+                manifest.SupportedStandards = new[] { "NEP-17", "NEP-27" };
+            }
+            else
+            {
+                manifest.SupportedStandards = new[] { "NEP-17" };
+            }
         }
 
         private GasDistribution DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
@@ -332,13 +345,42 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
+        {
+            if (engine.CallingScriptHash != GAS.Hash)
+                throw new InvalidOperationException("only GAS is accepted");
+
+            if ((long)amount != GetRegisterPrice(engine.SnapshotCache))
+                throw new ArgumentException("incorrect GAS amount for registration");
+
+            var pubkey = ECPoint.DecodePoint(data.GetSpan(), ECCurve.Secp256r1);
+
+            if (!RegisterInternal(engine, pubkey))
+                throw new InvalidOperationException("failed to register candidate");
+
+            await GAS.Burn(engine, Hash, amount);
+        }
+
+        [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
-            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+            // This check can be removed post-Echidna if compatible,
+            // RegisterInternal does this anyway.
+            var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache);
+            if (!engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Echidna, index) &&
+                !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
+            return RegisterInternal(engine, pubkey);
+        }
+
+        private bool RegisterInternal(ApplicationEngine engine, ECPoint pubkey)
+        {
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                return false;
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             StorageItem item = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
@@ -349,7 +391,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -366,7 +409,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
