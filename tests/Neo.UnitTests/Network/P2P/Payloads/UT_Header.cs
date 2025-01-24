@@ -15,7 +15,6 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.SmartContract;
 using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -53,7 +52,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TrimTest()
         {
             UInt256 val256 = UInt256.Zero;
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache().CreateSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache().CloneCache();
             TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
 

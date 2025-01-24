@@ -24,8 +24,10 @@ namespace Neo.UnitTests.Ledger
         public void TestHeaderCache()
         {
             var cache = new HeaderCache();
-            var header = new Header();
-            header.Index = 1;
+            var header = new Header
+            {
+                Index = 1
+            };
             cache.Add(header);
 
             var got = cache[1];
