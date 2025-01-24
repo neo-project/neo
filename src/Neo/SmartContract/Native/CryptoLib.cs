@@ -33,16 +33,6 @@ namespace Neo.SmartContract.Native
 
         internal CryptoLib() : base() { }
 
-        private static byte[] GetMessageHash(byte[] message, HashAlgorithm hashAlgorithm)
-        {
-            return hashAlgorithm switch
-            {
-                HashAlgorithm.SHA256 => message.Sha256(),
-                HashAlgorithm.Keccak256 => message.Keccak256(),
-                _ => null
-            };
-        }
-
         /// <summary>
         /// Recovers the public key from a secp256k1 signature in a single byte array format.
         /// </summary>
@@ -59,7 +49,7 @@ namespace Neo.SmartContract.Native
 
             try
             {
-                var messageHash = GetMessageHash(message, hashAlgorithm);
+                var messageHash = Crypto.GetMessageHash(message, hashAlgorithm);
                 if (messageHash == null) return null;
 
                 var point = Crypto.ECRecover(signature, messageHash);

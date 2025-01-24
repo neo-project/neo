@@ -229,6 +229,22 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Get hash from message.
+        /// </summary>
+        /// <param name="message">Original message</param>
+        /// <param name="hashAlgorithm">The hash algorithm to be used hash the message, the default is SHA256.</param>
+        /// <returns>Hashed message</returns>
+        public static byte[] GetMessageHash(byte[] message, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        {
+            return hashAlgorithm switch
+            {
+                HashAlgorithm.SHA256 => message.Sha256(),
+                HashAlgorithm.Keccak256 => message.Keccak256(),
+                _ => throw new InvalidOperationException("HashAlgorithm is invalid.")
+            };
+        }
+
+        /// <summary>
         /// Recovers the public key from a signature and message hash.
         /// </summary>
         /// <param name="signature">Signature, either 65 bytes (r[32] || s[32] || v[1]) or
