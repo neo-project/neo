@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ByteExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -50,9 +50,13 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="value">The byte array to convert.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string ToHexString(this byte[] value)
+        public static string ToHexString(this byte[]? value)
         {
+            if (value is null)
+                throw new ArgumentNullException(nameof(value));
+
 #if NET9_0_OR_GREATER
             return Convert.ToHexStringLower(value);
 #else
@@ -74,11 +78,15 @@ namespace Neo.Extensions
         /// <param name="value">The byte array to convert.</param>
         /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
         /// <returns>The converted hex <see cref="string"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string ToHexString(this byte[] value, bool reverse = false)
+        public static string ToHexString(this byte[]? value, bool reverse = false)
         {
             if (!reverse)
                 return ToHexString(value);
+
+            if (value is null)
+                throw new ArgumentNullException(nameof(value));
 
             return string.Create(value.Length * 2, value, (span, bytes) =>
             {

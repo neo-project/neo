@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,7 +13,6 @@ using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -108,7 +107,7 @@ namespace Neo.CLI
 
             if (input.IndexOf('.') > 0 && input.LastIndexOf('.') < input.Length)
             {
-                return ResolveNeoNameServiceAddress(input);
+                return ResolveNeoNameServiceAddress(input) ?? UInt160.Zero;
             }
 
             // Try to parse as UInt160
@@ -373,6 +372,7 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
+            Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
@@ -521,13 +521,13 @@ namespace Neo.CLI
                 if (writeStart)
                 {
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start += BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
                 }
                 else
                 {
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start = BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(0, SeekOrigin.Begin);
                 }
@@ -697,7 +697,7 @@ namespace Neo.CLI
             return exception.Message;
         }
 
-        public UInt160 ResolveNeoNameServiceAddress(string domain)
+        public UInt160? ResolveNeoNameServiceAddress(string domain)
         {
             if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
                 throw new Exception("Neo Name Service (NNS): is disabled on this network.");
@@ -717,7 +717,7 @@ namespace Neo.CLI
                         if (UInt160.TryParse(addressData, out var address))
                             return address;
                         else
-                            return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                            return addressData?.ToScriptHash(NeoSystem.Settings.AddressVersion);
                     }
                     catch { }
                 }

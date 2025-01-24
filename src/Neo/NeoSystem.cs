@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NeoSystem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -221,7 +221,7 @@ namespace Neo
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
-            inbox.Receive(TimeSpan.FromMinutes(5));
+            inbox.Receive(TimeSpan.FromSeconds(30));
         }
 
         /// <summary>

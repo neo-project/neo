@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ImportPrivateKeyDialog.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System;
+using System.ComponentModel;
 using System.Windows.Forms;
 
 namespace Neo.GUI
@@ -21,6 +22,7 @@ namespace Neo.GUI
             InitializeComponent();
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string[] WifStrings
         {
             get

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RemoteNode.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,6 +13,7 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
@@ -208,9 +209,14 @@ namespace Neo.Network.P2P
                 new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
             };
 
+            if (!localNode.EnableCompression)
+            {
+                capabilities.Add(new DisableCompressionCapability());
+            }
+
             if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, [.. capabilities])));
         }
 
         protected override void PostStop()
@@ -228,7 +234,9 @@ namespace Neo.Network.P2P
         private void SendMessage(Message message)
         {
             ack = false;
-            SendData(ByteString.FromBytes(message.ToArray()));
+            // Here it is possible that we dont have the Version message yet,
+            // so we need to send the message uncompressed
+            SendData(ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false)));
             sentCommands[(byte)message.Command] = true;
         }
 

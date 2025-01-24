@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RemoteNode.ProtocolHandler.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -278,7 +278,7 @@ namespace Neo.Network.P2P
 
             if (notFound.Count > 0)
             {
-                foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound.ToArray()))
+                foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound))
                     EnqueueMessage(Message.Create(MessageCommand.NotFound, entry));
             }
         }

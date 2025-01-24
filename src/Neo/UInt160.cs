@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UInt160.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,7 +12,6 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -102,6 +101,18 @@ namespace Neo
         }
 
         /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value in little-endian.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value in little-endian.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            if (BitConverter.IsLittleEndian)
+                return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+            return this.ToArray().AsSpan(); // Keep the same output as Serialize when BigEndian
+        }
+
+        /// <summary>
         /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
         /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
@@ -133,26 +144,16 @@ namespace Neo
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string str, out UInt160 result)
         {
-            var startIndex = 0;
-
             result = null;
+            var data = str.AsSpan(); // AsSpan is null safe
+            if (data.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+                data = data[2..];
 
-            if (string.IsNullOrWhiteSpace(str)) return false;
-
-            if (str.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                startIndex = 2;
-
-            if ((str.Length - startIndex) != Length * 2) return false;
+            if (data.Length != Length * 2) return false;
 
             try
             {
-                var data = new byte[Length];
-                for (var i = 0; i < Length; i++)
-                {
-                    if (!byte.TryParse(str.AsSpan(i * 2 + startIndex, 2), NumberStyles.HexNumber, null, out data[Length - i - 1]))
-                        return false;
-                }
-                result = new(data);
+                result = new UInt160(data.HexToBytesReversed());
                 return true;
             }
             catch

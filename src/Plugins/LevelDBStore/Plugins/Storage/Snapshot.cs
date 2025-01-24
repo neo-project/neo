@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Snapshot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,67 +9,97 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Data.LevelDB;
+using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
+using System.Collections;
 using System.Collections.Generic;
-using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
+using System.Diagnostics.CodeAnalysis;
+using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
 {
-    internal class Snapshot : ISnapshot
+    /// <summary>
+    /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
+    /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
+    /// </summary>
+    internal class Snapshot : ISnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        private readonly DB db;
-        private readonly LSnapshot snapshot;
-        private readonly ReadOptions options;
-        private readonly WriteBatch batch;
+        private readonly DB _db;
+        private readonly LSnapshot _snapshot;
+        private readonly ReadOptions _readOptions;
+        private readonly WriteBatch _batch;
+
+#if NET9_0_OR_GREATER
+        private readonly System.Threading.Lock _lock = new();
+#else
+        private readonly object _lock = new();
+#endif
 
         public Snapshot(DB db)
         {
-            this.db = db;
-            snapshot = db.GetSnapshot();
-            options = new ReadOptions { FillCache = false, Snapshot = snapshot };
-            batch = new WriteBatch();
+            _db = db;
+            _snapshot = db.CreateSnapshot();
+            _readOptions = new ReadOptions { FillCache = false, Snapshot = _snapshot };
+            _batch = new WriteBatch();
         }
 
+        /// <inheritdoc/>
         public void Commit()
         {
-            db.Write(WriteOptions.Default, batch);
+            lock (_lock)
+                _db.Write(WriteOptions.Default, _batch);
         }
 
+        /// <inheritdoc/>
         public void Delete(byte[] key)
         {
-            batch.Delete(key);
+            lock (_lock)
+                _batch.Delete(key);
+        }
+
+        /// <inheritdoc/>
+        public void Put(byte[] key, byte[] value)
+        {
+            lock (_lock)
+                _batch.Put(key, value);
         }
 
         public void Dispose()
         {
-            snapshot.Dispose();
+            _snapshot.Dispose();
+            _readOptions.Dispose();
         }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] prefix, SeekDirection direction = SeekDirection.Forward)
+        /// <inheritdoc/>
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            return db.Seek(options, prefix, direction, (k, v) => (k, v));
-        }
-
-        public void Put(byte[] key, byte[] value)
-        {
-            batch.Put(key, value);
+            return _db.Seek(_readOptions, keyOrPrefix, direction);
         }
 
         public bool Contains(byte[] key)
         {
-            return db.Contains(options, key);
+            return _db.Contains(_readOptions, key);
         }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            return db.Get(options, key);
+            return _db.Get(_readOptions, key);
         }
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
-            value = db.Get(options, key);
+            value = _db.Get(_readOptions, key);
             return value != null;
         }
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        {
+            using var iterator = _db.CreateIterator(_readOptions);
+            for (iterator.SeekToFirst(); iterator.Valid(); iterator.Next())
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key()!, iterator.Value()!);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -60,7 +60,7 @@ namespace Neo.VM
 
         public static BigInteger Sqrt(this BigInteger value)
         {
-            if (value < 0) throw new InvalidOperationException("value can not be negative");
+            if (value < 0) throw new InvalidOperationException($"value {value} can not be negative for {nameof(Types.Integer)}.{nameof(Sqrt)}.");
             if (value.IsZero) return BigInteger.Zero;
             if (value < 4) return BigInteger.One;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Program.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -59,7 +59,6 @@ else
     }
 
     var methods = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-
     foreach (var method in methods)
     {
         if (method.DeclaringType == benchmarkType && !method.GetCustomAttributes<GlobalSetupAttribute>().Any())

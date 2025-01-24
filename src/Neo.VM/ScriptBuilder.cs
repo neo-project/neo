@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ScriptBuilder.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -126,8 +126,6 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(ReadOnlySpan<byte> data)
         {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data));
             if (data.Length < 0x100)
             {
                 Emit(OpCode.PUSHDATA1);

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_MemoryClonedCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -45,7 +45,7 @@ namespace Neo.UnitTests.Persistence
             _memoryStore = new MemoryStore();
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
             _snapshotCache = new SnapshotCache(_snapshot);
-            _dataCache = _snapshotCache.CreateSnapshot();
+            _dataCache = _snapshotCache.CloneCache();
         }
 
         [TestCleanup]
@@ -57,6 +57,7 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        [System.Obsolete]
         public void SingleSnapshotCacheTest()
         {
             var key1 = new KeyBuilder(0, 1);

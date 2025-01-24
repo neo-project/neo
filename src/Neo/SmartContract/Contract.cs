@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Contract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -82,7 +82,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Creates a multi-sig contract.
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="publicKeys">The public keys of the contract.</param>
         /// <returns>The created contract.</returns>
         public static Contract CreateMultiSigContract(int m, IReadOnlyCollection<ECPoint> publicKeys)
@@ -97,13 +97,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// Creates the script of multi-sig contract.
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="publicKeys">The public keys of the contract.</param>
         /// <returns>The created script.</returns>
         public static byte[] CreateMultiSigRedeemScript(int m, IReadOnlyCollection<ECPoint> publicKeys)
         {
             if (!(1 <= m && m <= publicKeys.Count && publicKeys.Count <= 1024))
-                throw new ArgumentException();
+                throw new ArgumentException($"Invalid multisig parameters: m={m}, publicKeys.Count={publicKeys.Count}");
             using ScriptBuilder sb = new();
             sb.EmitPush(m);
             foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))

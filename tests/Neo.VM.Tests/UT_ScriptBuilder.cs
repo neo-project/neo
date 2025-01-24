@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ScriptBuilder.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -39,6 +39,21 @@ namespace Neo.Test
             {
                 script.Emit(OpCode.NOP, new byte[] { 0x66 });
                 CollectionAssert.AreEqual(new byte[] { 0x21, 0x66 }, script.ToArray());
+            }
+        }
+
+        [TestMethod]
+        public void TestNullAndEmpty()
+        {
+            using (ScriptBuilder script = new())
+            {
+                ReadOnlySpan<byte> span = null;
+                script.EmitPush(span);
+
+                span = [];
+                script.EmitPush(span);
+
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0, (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
         }
 
@@ -233,7 +248,8 @@ namespace Neo.Test
         {
             using (ScriptBuilder script = new())
             {
-                Assert.ThrowsException<ArgumentNullException>(() => script.EmitPush((byte[])null));
+                script.EmitPush((byte[])null);
+                CollectionAssert.AreEqual(new byte[] { (byte)OpCode.PUSHDATA1, 0 }, script.ToArray());
             }
 
             using (ScriptBuilder script = new())

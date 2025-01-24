@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -54,7 +54,7 @@ namespace Neo.Test
             var random = new Random();
 
             // Big Number (net standard didn't work)
-            VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680);
+            Assert.ThrowsException<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
 
             // Trivial cases
             //                     sign bit|shortest two's complement

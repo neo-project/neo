@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // InteropInterface.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -53,7 +53,7 @@ namespace Neo.VM.Types
         public override T GetInterface<T>()
         {
             if (_object is T t) return t;
-            throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
+            throw new InvalidCastException($"This {nameof(InteropInterface)} can't be casted to type {typeof(T)}.");
         }
 
         internal object GetInterface()

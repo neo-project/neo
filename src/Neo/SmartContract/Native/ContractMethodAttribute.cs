@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractMethodAttribute.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,7 +15,8 @@ using System.Diagnostics;
 namespace Neo.SmartContract.Native
 {
     [DebuggerDisplay("{Name}")]
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false)]
+    // We allow multiple attributes because the fees or requiredCallFlags may change between hard forks.
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = true)]
     internal class ContractMethodAttribute : Attribute, IHardforkActivable
     {
         public string Name { get; init; }

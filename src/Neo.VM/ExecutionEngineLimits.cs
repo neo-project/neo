@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExecutionEngineLimits.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -68,7 +68,7 @@ namespace Neo.VM
         {
             if (size < 0 || size > MaxItemSize)
             {
-                throw new InvalidOperationException($"MaxItemSize exceed: {size}");
+                throw new InvalidOperationException($"MaxItemSize exceed: {size}/{MaxItemSize}");
             }
         }
 
@@ -81,7 +81,7 @@ namespace Neo.VM
         {
             if (shift > MaxShift || shift < 0)
             {
-                throw new InvalidOperationException($"Invalid shift value: {shift}");
+                throw new InvalidOperationException($"Invalid shift value: {shift}/{MaxShift}");
             }
         }
     }

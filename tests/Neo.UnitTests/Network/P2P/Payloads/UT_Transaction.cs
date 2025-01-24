@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Transaction.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -825,7 +825,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 "010000"); // empty witnesses
 
             // try to deserialize
-            var tx2 = sTx.AsSerializable<Transaction>();
+            Transaction tx2 = sTx.AsSerializable<Transaction>();
 
             tx2.Version.Should().Be(0x00);
             tx2.Nonce.Should().Be(0x01020304);
@@ -887,7 +887,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
             Assert.ThrowsException<FormatException>(() =>
-                tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx)
+                tx2 = sTx.AsSerializable<Transaction>()
             );
             Assert.IsNull(tx2);
         }

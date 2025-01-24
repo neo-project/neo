@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractManagement.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,7 @@
 
 #pragma warning disable IDE0051
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;

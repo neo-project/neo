@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Extensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -28,7 +28,7 @@ namespace Neo.Plugins
 
         public static string ToBase64(this ReadOnlySpan<byte> item)
         {
-            return item == null ? String.Empty : Convert.ToBase64String(item);
+            return item.IsEmpty ? String.Empty : Convert.ToBase64String(item);
         }
 
         public static int GetVarSize(this ByteString item)

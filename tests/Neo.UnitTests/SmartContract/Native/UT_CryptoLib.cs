@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_CryptoLib.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -26,6 +26,7 @@ using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -494,7 +495,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Version = 0,
                 Witnesses = []
             };
-            var tx_signature = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), privkey, ECCurve.Secp256k1, Hasher.Keccak256);
+            var tx_signature = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), privkey, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
 
             // inv is a builder of witness invocation script corresponding to the public key.
             using ScriptBuilder inv = new();
@@ -737,7 +738,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 if (i == 1) // Skip one key since we need only 3 signatures.
                     continue;
-                var sig = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), keys[i].Item1, ECCurve.Secp256k1, Hasher.Keccak256);
+                var sig = Crypto.Sign(tx.GetSignData(TestBlockchain.TheNeoSystem.Settings.Network), keys[i].Item1, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
                 inv.EmitPush(sig);
             }
 
@@ -868,23 +869,23 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
 
             // secp256r1 + SHA256
-            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.SHA256);
+            byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, HashAlgorithm.SHA256);
             Crypto.VerifySignature(message, signature, pubR1).Should().BeTrue(); // SHA256 hash is used by default.
             CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1SHA256).Should().Be(true);
 
             // secp256r1 + Keccak256
-            signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, Hasher.Keccak256);
-            Crypto.VerifySignature(message, signature, pubR1, Hasher.Keccak256).Should().BeTrue();
+            signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, HashAlgorithm.Keccak256);
+            Crypto.VerifySignature(message, signature, pubR1, HashAlgorithm.Keccak256).Should().BeTrue();
             CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1Keccak256).Should().Be(true);
 
             // secp256k1 + SHA256
-            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.SHA256);
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, HashAlgorithm.SHA256);
             Crypto.VerifySignature(message, signature, pubK1).Should().BeTrue(); // SHA256 hash is used by default.
             CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1SHA256).Should().Be(true);
 
             // secp256k1 + Keccak256
-            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, Hasher.Keccak256);
-            Crypto.VerifySignature(message, signature, pubK1, Hasher.Keccak256).Should().BeTrue();
+            signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
+            Crypto.VerifySignature(message, signature, pubK1, HashAlgorithm.Keccak256).Should().BeTrue();
             CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1Keccak256).Should().Be(true);
         }
 
@@ -901,6 +902,60 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.Emit(OpCode.PACK);
                 script.EmitPush(CallFlags.All);
                 script.EmitPush("verifyWithECDsa");
+                script.EmitPush(NativeContract.CryptoLib.Hash);
+                script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                return engine.ResultStack.Pop().GetBoolean();
+            }
+        }
+
+        [TestMethod]
+        public void TestVerifyWithEd25519()
+        {
+            byte[] privateKey = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60".HexToBytes();
+            byte[] publicKey = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a".HexToBytes();
+            byte[] message = Array.Empty<byte>();
+            byte[] signature = ("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155" +
+                                "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b").HexToBytes();
+
+            // Verify using Ed25519 directly
+            Ed25519.Verify(publicKey, message, signature).Should().BeTrue();
+
+            // Verify using CryptoLib.VerifyWithEd25519
+            CallVerifyWithEd25519(message, publicKey, signature).Should().BeTrue();
+
+            // Test with a different message
+            byte[] differentMessage = Encoding.UTF8.GetBytes("Different message");
+            CallVerifyWithEd25519(differentMessage, publicKey, signature).Should().BeFalse();
+
+            // Test with an invalid signature
+            byte[] invalidSignature = new byte[signature.Length];
+            Array.Copy(signature, invalidSignature, signature.Length);
+            invalidSignature[0] ^= 0x01; // Flip one bit
+            CallVerifyWithEd25519(message, publicKey, invalidSignature).Should().BeFalse();
+
+            // Test with an invalid public key
+            byte[] invalidPublicKey = new byte[publicKey.Length];
+            Array.Copy(publicKey, invalidPublicKey, publicKey.Length);
+            invalidPublicKey[0] ^= 0x01; // Flip one bit
+            CallVerifyWithEd25519(message, invalidPublicKey, signature).Should().BeFalse();
+        }
+
+        private bool CallVerifyWithEd25519(byte[] message, byte[] publicKey, byte[] signature)
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using (ScriptBuilder script = new())
+            {
+                script.EmitPush(signature);
+                script.EmitPush(publicKey);
+                script.EmitPush(message);
+                script.EmitPush(3);
+                script.Emit(OpCode.PACK);
+                script.EmitPush(CallFlags.All);
+                script.EmitPush("verifyWithEd25519");
                 script.EmitPush(NativeContract.CryptoLib.Hash);
                 script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 

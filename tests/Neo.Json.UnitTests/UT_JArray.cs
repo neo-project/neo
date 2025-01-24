@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_JArray.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -294,8 +294,10 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAddNullValues()
         {
-            var jArray = new JArray();
-            jArray.Add(null);
+            var jArray = new JArray
+            {
+                null
+            };
             jArray.Count.Should().Be(1);
             jArray[0].Should().BeNull();
         }

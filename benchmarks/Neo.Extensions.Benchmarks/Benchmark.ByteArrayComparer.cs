@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Benchmark.ByteArrayComparer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,14 +16,13 @@ namespace Neo.Extensions
     public class Benchmark_ByteArrayComparer
     {
         private ByteArrayComparer comparer = ByteArrayComparer.Default;
-        private ByteArrayComparerV0 _oldComparer = ByteArrayComparerV0.Default;
+
         private byte[]? x, y;
 
         [GlobalSetup]
         public void Setup()
         {
             comparer = ByteArrayComparer.Default;
-            _oldComparer = ByteArrayComparerV0.Default;
         }
 
         [GlobalSetup(Target = nameof(NewCompare_50Bytes))]
@@ -43,23 +42,6 @@ namespace Neo.Extensions
             comparer.Compare(x, y);
         }
 
-        [GlobalSetup(Target = nameof(OldCompare_50Bytes))]
-        public void SetupOld50Bytes()
-        {
-            _oldComparer = ByteArrayComparerV0.Default;
-
-            x = new byte[50]; // 50 bytes
-            y = new byte[50]; // 50 bytes
-            Array.Fill(x, (byte)0xCC);
-            Array.Copy(x, y, x.Length);
-        }
-
-        [Benchmark]
-        public void OldCompare_50Bytes()
-        {
-            _oldComparer.Compare(x, y);
-        }
-
         [GlobalSetup(Target = nameof(NewCompare_500Bytes))]
         public void SetupNew500Bytes()
         {
@@ -75,23 +57,6 @@ namespace Neo.Extensions
         public void NewCompare_500Bytes()
         {
             comparer.Compare(x, y);
-        }
-
-        [GlobalSetup(Target = nameof(OldCompare_500Bytes))]
-        public void SetupOld500Bytes()
-        {
-            _oldComparer = ByteArrayComparerV0.Default;
-
-            x = new byte[500]; // 500 bytes
-            y = new byte[500]; // 500 bytes
-            Array.Fill(x, (byte)0xCC);
-            Array.Copy(x, y, x.Length);
-        }
-
-        [Benchmark]
-        public void OldCompare_500Bytes()
-        {
-            _oldComparer.Compare(x, y);
         }
 
         [GlobalSetup(Target = nameof(NewCompare_5000Bytes))]
@@ -111,23 +76,6 @@ namespace Neo.Extensions
             comparer.Compare(x, y);
         }
 
-        [GlobalSetup(Target = nameof(OldCompare_5000Bytes))]
-        public void SetupOld5000Bytes()
-        {
-            _oldComparer = ByteArrayComparerV0.Default;
-
-            x = new byte[5000]; // 5000 bytes
-            y = new byte[5000]; // 5000 bytes
-            Array.Fill(x, (byte)0xCC);
-            Array.Copy(x, y, x.Length);
-        }
-
-        [Benchmark]
-        public void OldCompare_5000Bytes()
-        {
-            _oldComparer.Compare(x, y);
-        }
-
         [GlobalSetup(Target = nameof(NewCompare_50000Bytes))]
         public void SetupNew50000Bytes()
         {
@@ -143,23 +91,6 @@ namespace Neo.Extensions
         public void NewCompare_50000Bytes()
         {
             comparer.Compare(x, y);
-        }
-
-        [GlobalSetup(Target = nameof(OldCompare_50000Bytes))]
-        public void SetupOld50000Bytes()
-        {
-            _oldComparer = ByteArrayComparerV0.Default;
-
-            x = new byte[50000]; // 50000 bytes
-            y = new byte[50000]; // 50000 bytes
-            Array.Fill(x, (byte)0xCC);
-            Array.Copy(x, y, x.Length);
-        }
-
-        [Benchmark]
-        public void OldCompare_50000Bytes()
-        {
-            _oldComparer.Compare(x, y);
         }
     }
 }

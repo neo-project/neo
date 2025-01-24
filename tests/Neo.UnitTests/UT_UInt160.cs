@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_UInt160.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,10 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable CS1718 // Comparison made to same variable
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using System;
-using System.Security.Cryptography;
 
 namespace Neo.UnitTests.IO
 {
@@ -97,6 +99,7 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual("0x1230000000000000000000000000000000000000", temp.ToString());
             Assert.AreEqual(false, UInt160.TryParse("000000000000000000000000000000000000000", out _));
             Assert.AreEqual(false, UInt160.TryParse("0xKK00000000000000000000000000000000000000", out _));
+            Assert.AreEqual(false, UInt160.TryParse(" 1 2 3 45 000000000000000000000000000000", out _));
         }
 
         [TestMethod]
@@ -126,5 +129,20 @@ namespace Neo.UnitTests.IO
             Assert.AreEqual(true, UInt160.Zero <= UInt160.Zero);
             Assert.IsTrue(UInt160.Zero >= "0x0000000000000000000000000000000000000000");
         }
+
+        [TestMethod]
+        public void TestSpanAndSerialize()
+        {
+            // random data
+            var random = new Random();
+            var data = new byte[UInt160.Length];
+            random.NextBytes(data);
+
+            var value = new UInt160(data);
+            var span = value.GetSpan();
+            Assert.IsTrue(span.SequenceEqual(value.ToArray()));
+        }
     }
 }
+
+#pragma warning restore CS1718 // Comparison made to same variable

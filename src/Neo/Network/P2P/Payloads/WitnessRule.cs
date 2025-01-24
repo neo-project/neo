@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // WitnessRule.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -63,7 +64,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Action = (WitnessRuleAction)reader.ReadByte();
             if (Action != WitnessRuleAction.Allow && Action != WitnessRuleAction.Deny)
-                throw new FormatException();
+                throw new FormatException($"Invalid action: {Action}.");
             Condition = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
         }
 
@@ -81,9 +82,8 @@ namespace Neo.Network.P2P.Payloads
         public static WitnessRule FromJson(JObject json)
         {
             WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"].GetString());
-
             if (action != WitnessRuleAction.Allow && action != WitnessRuleAction.Deny)
-                throw new FormatException();
+                throw new FormatException($"Invalid action: {action}.");
 
             return new()
             {

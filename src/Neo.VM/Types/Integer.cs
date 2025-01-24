@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Integer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -50,7 +50,7 @@ namespace Neo.VM.Types
             else
             {
                 Size = value.GetByteCount();
-                if (Size > MaxSize) throw new ArgumentException($"MaxSize exceed: {Size}");
+                if (Size > MaxSize) throw new ArgumentException($"Can not create {nameof(Types.Integer)}, MaxSize of {nameof(Types.Integer)} is exceeded: {Size}/{MaxSize}.");
             }
             this.value = value;
         }
@@ -62,6 +62,7 @@ namespace Neo.VM.Types
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool GetBoolean()
         {
             return !value.IsZero;
@@ -72,6 +73,7 @@ namespace Neo.VM.Types
             return HashCode.Combine(value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override BigInteger GetInteger()
         {
             return value;

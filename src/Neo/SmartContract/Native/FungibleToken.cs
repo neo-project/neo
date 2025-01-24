@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // FungibleToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The prefix for storing account states.
         /// </summary>
-        protected const byte Prefix_Account = 20;
+        protected internal const byte Prefix_Account = 20;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
             Factor = BigInteger.Pow(10, Decimals);
         }
 
-        protected override void OnManifestCompose(ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
             manifest.SupportedStandards = new[] { "NEP-17" };
         }

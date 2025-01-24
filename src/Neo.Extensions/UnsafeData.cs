@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UnsafeData.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -18,14 +18,16 @@ namespace Neo.Extensions
         /// </summary>
         /// <param name="value">The length of the data.</param>
         /// <returns>The size of variable-length of the data.</returns>
-        public static int GetVarSize(int value)
+        public static byte GetVarSize(long value)
         {
             if (value < 0xFD)
                 return sizeof(byte);
-            else if (value <= 0xFFFF)
+            else if (value <= ushort.MaxValue)
                 return sizeof(byte) + sizeof(ushort);
-            else
+            else if (value <= uint.MaxValue)
                 return sizeof(byte) + sizeof(uint);
+            else
+                return sizeof(byte) + sizeof(ulong);
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusContext.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -170,8 +171,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public bool Load()
         {
-            byte[] data = store?.TryGet(ConsensusStateKey);
-            if (data is null || data.Length == 0) return false;
+            if (store is null || !store.TryGet(ConsensusStateKey, out var data) || data.Length == 0)
+                return false;
+
             MemoryReader reader = new(data);
             try
             {
