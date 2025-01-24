@@ -83,10 +83,7 @@ namespace Neo.Cryptography
                 var privateKey = new BigInteger(1, priKey);
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, ecCurve.BouncyCastleDomainParams);
                 signer.Init(true, priKeyParameters);
-                var messageHash =
-                    hashAlgorithm == HashAlgorithm.SHA256 ? message.Sha256() :
-                    hashAlgorithm == HashAlgorithm.Keccak256 ? message.Keccak256() :
-                    throw new NotSupportedException(nameof(hashAlgorithm));
+                var messageHash = GetMessageHash(message);
                 var signature = signer.GenerateSignature(messageHash);
 
                 var signatureBytes = new byte[64];
@@ -153,11 +150,7 @@ namespace Neo.Cryptography
                 var sig = signature.ToArray();
                 var r = new BigInteger(1, sig, 0, 32);
                 var s = new BigInteger(1, sig, 32, 32);
-
-                var messageHash =
-                    hashAlgorithm == HashAlgorithm.SHA256 ? message.Sha256() :
-                    hashAlgorithm == HashAlgorithm.Keccak256 ? message.Keccak256() :
-                    throw new NotSupportedException(nameof(hashAlgorithm));
+                var messageHash = GetMessageHash(message);
 
                 return signer.VerifySignature(messageHash, r, s);
             }
@@ -240,7 +233,23 @@ namespace Neo.Cryptography
             {
                 HashAlgorithm.SHA256 => message.Sha256(),
                 HashAlgorithm.Keccak256 => message.Keccak256(),
-                _ => throw new InvalidOperationException("HashAlgorithm is invalid.")
+                _ => throw new NotSupportedException(nameof(hashAlgorithm))
+            };
+        }
+
+        /// <summary>
+        /// Get hash from message.
+        /// </summary>
+        /// <param name="message">Original message</param>
+        /// <param name="hashAlgorithm">The hash algorithm to be used hash the message, the default is SHA256.</param>
+        /// <returns>Hashed message</returns>
+        public static byte[] GetMessageHash(ReadOnlySpan<byte> message, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        {
+            return hashAlgorithm switch
+            {
+                HashAlgorithm.SHA256 => message.Sha256(),
+                HashAlgorithm.Keccak256 => message.Keccak256(),
+                _ => throw new NotSupportedException(nameof(hashAlgorithm))
             };
         }
 
