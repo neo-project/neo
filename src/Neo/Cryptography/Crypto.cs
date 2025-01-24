@@ -233,6 +233,7 @@ namespace Neo.Cryptography
             {
                 HashAlgorithm.SHA256 => message.Sha256(),
                 HashAlgorithm.Keccak256 => message.Keccak256(),
+                HashAlgorithm.None => message,
                 _ => throw new NotSupportedException(nameof(hashAlgorithm))
             };
         }
@@ -249,6 +250,7 @@ namespace Neo.Cryptography
             {
                 HashAlgorithm.SHA256 => message.Sha256(),
                 HashAlgorithm.Keccak256 => message.Keccak256(),
+                HashAlgorithm.None => message.ToArray(),
                 _ => throw new NotSupportedException(nameof(hashAlgorithm))
             };
         }
