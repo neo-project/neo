@@ -125,7 +125,7 @@ namespace Neo.Extensions
         /// <exception cref="ArgumentException">
         /// Thrown when <paramref name="keyPrefix"/> is all 0xff and <paramref name="maxSizeWhenAll0xff"/> is less than or equal to 0.
         /// </exception>
-        internal static byte[] GetSeekPrefix(this byte[]? keyPrefix, int maxSizeWhenAll0xff = 4096 /* make it long enough */)
+        internal static byte[] GetSeekPrefix(this byte[]? keyPrefix, ushort maxSizeWhenAll0xff = 4096 /* make it long enough */)
         {
             if (keyPrefix == null) // Backwards seek for null prefix is not supported for now.
                 throw new ArgumentNullException(nameof(keyPrefix));
