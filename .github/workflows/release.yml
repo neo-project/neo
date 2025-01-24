@@ -61,6 +61,13 @@ jobs:
         -p:DebugType=embedded \
         -p:ServerGarbageCollection=true
 
+    # Copy 'libleveldb' library file
+    - name: Native Content (neo-cli)
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: |
+        mv -vp ./runtimes/${{ matrix.runtime }}/native/* .
+        rm -v -R runtimes
+
     # Build the LevelDBStore plugin
     - name: .NET Build (LevelDBStore)
       run: |
