@@ -236,9 +236,7 @@ namespace Neo.Network.P2P
             ack = false;
             // Here it is possible that we dont have the Version message yet,
             // so we need to send the message uncompressed
-            SendData(message.Command == MessageCommand.Version
-                ? ByteString.FromBytes(message.ToArray())
-                : ByteString.FromBytes(message.ToArray(Version.AllowCompression)));
+            SendData(ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false)));
             sentCommands[(byte)message.Command] = true;
         }
 
