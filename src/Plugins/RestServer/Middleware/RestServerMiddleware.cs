@@ -29,12 +29,12 @@ namespace Neo.Plugins.RestServer.Middleware
             var request = context.Request;
             var response = context.Response;
 
-            SetServerInfomationHeader(response);
+            SetServerInformationHeader(response);
 
             await _next(context);
         }
 
-        public static void SetServerInfomationHeader(HttpResponse response)
+        public static void SetServerInformationHeader(HttpResponse response)
         {
             var neoCliAsm = Assembly.GetEntryAssembly()?.GetName();
             var restServerAsm = Assembly.GetExecutingAssembly().GetName();

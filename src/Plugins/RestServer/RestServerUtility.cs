@@ -29,7 +29,7 @@ namespace Neo.Plugins.RestServer
 {
     public static partial class RestServerUtility
     {
-        private readonly static Script EmptyScript = System.Array.Empty<byte>();
+        private readonly static Script s_emptyScript = System.Array.Empty<byte>();
 
         public static UInt160 ConvertToScriptHash(string address, ProtocolSettings settings)
         {
@@ -125,7 +125,7 @@ namespace Neo.Plugins.RestServer
                             s = new InteropInterface(Convert.FromBase64String(value.ToObject<string>() ?? throw new ArgumentNullException()));
                             break;
                         case StackItemType.Pointer:
-                            s = new Pointer(EmptyScript, value.ToObject<int>());
+                            s = new Pointer(s_emptyScript, value.ToObject<int>());
                             break;
                         default:
                             break;

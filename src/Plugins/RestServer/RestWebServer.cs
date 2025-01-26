@@ -395,7 +395,7 @@ namespace Neo.Plugins.RestServer
                                 Name = exception.GetType().Name,
                                 Message = exception.InnerException?.Message ?? exception.Message,
                             };
-                            RestServerMiddleware.SetServerInfomationHeader(context.Response);
+                            RestServerMiddleware.SetServerInformationHeader(context.Response);
                             context.Response.StatusCode = 400;
                             await context.Response.WriteAsJsonAsync(response);
                         }));

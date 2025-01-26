@@ -12,7 +12,6 @@
 #pragma warning disable IDE0051
 
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
@@ -28,10 +27,10 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class LedgerContract : NativeContract
     {
-        private const byte Prefix_BlockHash = 9;
-        private const byte Prefix_CurrentBlock = 12;
-        private const byte Prefix_Block = 5;
-        private const byte Prefix_Transaction = 11;
+        internal const byte Prefix_BlockHash = 9;
+        internal const byte Prefix_CurrentBlock = 12;
+        internal const byte Prefix_Block = 5;
+        internal const byte Prefix_Transaction = 11;
 
         private readonly StorageKey _currentBlock;
 

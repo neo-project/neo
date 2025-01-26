@@ -11,6 +11,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Neo.Extensions;
 using Neo.Plugins.RestServer.Exceptions;
 using Neo.Plugins.RestServer.Extensions;
 using Neo.Plugins.RestServer.Helpers;
@@ -103,8 +104,8 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
             if (contract == null)
                 throw new ContractNotFoundException(scriptHash);
-            var contractStorage = contract.GetStorage(_neoSystem.StoreView);
-            return Ok(contractStorage.Select(s => new KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>(s.key.Key, s.value.Value)));
+            var contractStorage = contract.FindStorage(_neoSystem.StoreView);
+            return Ok(contractStorage.Select(s => new KeyValuePair<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>>(s.Key.Key, s.Value.Value)));
         }
 
         /// <summary>

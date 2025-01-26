@@ -43,7 +43,7 @@ namespace Neo.Plugins.RestServer
             _settings = RestServerSettings.Current;
         }
 
-        protected override void OnSystemLoaded(NeoSystem system)
+        protected internal override void OnSystemLoaded(NeoSystem system)
         {
             if (_settings is null)
             {
