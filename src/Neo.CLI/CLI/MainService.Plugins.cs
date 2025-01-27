@@ -28,6 +28,9 @@ namespace Neo.CLI
 {
     partial class MainService
     {
+        // Plugins that are experimental and should be used with caution.
+        private static readonly HashSet<string> s_expPlugins = ["RestServer"];
+
         /// <summary>
         /// Process "install" command
         /// </summary>
@@ -36,17 +39,55 @@ namespace Neo.CLI
         [ConsoleCommand("install", Category = "Plugin Commands")]
         private void OnInstallCommand(string pluginName, string? downloadUrl = null)
         {
+            if (pluginName is null) return;
+
             if (PluginExists(pluginName))
             {
-                ConsoleHelper.Warning($"Plugin already exist.");
+                ConsoleHelper.Warning("Plugin already exist.");
                 return;
             }
 
-            var result = InstallPluginAsync(pluginName, downloadUrl).GetAwaiter().GetResult();
+            if (s_expPlugins.Contains(pluginName))
+            {
+                ConsoleHelper.Warning("Plugin is experimental, install with `install exp [plugin]`.");
+                return;
+            }
+
+            var result = InstallPluginAsync(pluginName!, downloadUrl).GetAwaiter().GetResult();
             if (result)
             {
                 var asmName = Assembly.GetExecutingAssembly().GetName().Name;
                 ConsoleHelper.Info("", $"Install successful, please restart \"{asmName}\".");
+            }
+        }
+
+        /// <summary>
+        /// Process "install" command
+        /// </summary>
+        /// <param name="pluginName">Plugin name</param>
+        /// <param name="downloadUrl">Custom plugins download url, this is optional.</param>
+        [ConsoleCommand("install exp", Category = "Plugin Commands", Description = "Install experimental plugin, use with caution.")]
+        private void OnInstallExpCommand(string pluginName, string? downloadUrl = null)
+        {
+            if (pluginName is null) return;
+
+            if (PluginExists(pluginName))
+            {
+                ConsoleHelper.Warning("Plugin already exist.");
+                return;
+            }
+
+            if (!s_expPlugins.Contains(pluginName))
+            {
+                ConsoleHelper.Warning("Plugin is not experimental.");
+                return;
+            }
+
+            var result = InstallPluginAsync(pluginName!, downloadUrl).GetAwaiter().GetResult();
+            if (result)
+            {
+                var asmName = Assembly.GetExecutingAssembly().GetName().Name;
+                ConsoleHelper.Info("", $"Install experimental plugin successful, please restart \"{asmName}\".");
             }
         }
 
@@ -247,13 +288,14 @@ namespace Neo.CLI
                     .OrderBy(u => u.name)
                     .ForEach((f) =>
                     {
+                        var exp = s_expPlugins.Contains(f.name) ? "EXP" : "";
                         if (f.installedPlugin != null)
                         {
                             var tabs = f.name.Length < maxLength ? "\t" : string.Empty;
-                            ConsoleHelper.Info("", $"[Installed]\t {f.name,6}{tabs}", "  @", $"{f.installedPlugin.Version.ToString(3)}  {f.installedPlugin.Description}");
+                            ConsoleHelper.Info("", $"[Installed]\t {f.name,6}{tabs}", "  @", $"{f.installedPlugin.Version.ToString(3)}  {f.installedPlugin.Description} {exp}");
                         }
                         else
-                            ConsoleHelper.Info($"[Not Installed]\t {f.name}");
+                            ConsoleHelper.Info($"[Not Installed]\t {f.name} {exp}");
                     });
             }
             catch (Exception ex)
