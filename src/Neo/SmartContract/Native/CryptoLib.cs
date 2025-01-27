@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 13)]
         public static byte[] Murmur32(byte[] data, uint seed)
         {
-            using Murmur32 murmur = new(seed);
+            Murmur32 murmur = new(seed);
             return murmur.ComputeHash(data);
         }
 
