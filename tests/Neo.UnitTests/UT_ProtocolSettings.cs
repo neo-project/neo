@@ -199,7 +199,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestMaxTransactionsPerBlock()
         {
-            TestProtocolSettings.Default.MaxTransactionsPerBlock.Should().BePositive().And.BeLessOrEqualTo(50000); // Assuming 50000 as a reasonable upper limit
+            TestProtocolSettings.Default.MaxTransactionsPerBlock.Should().BePositive().And.BeLessThanOrEqualTo(50000); // Assuming 50000 as a reasonable upper limit
         }
 
         [TestMethod]
