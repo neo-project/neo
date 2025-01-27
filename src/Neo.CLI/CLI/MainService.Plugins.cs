@@ -62,7 +62,7 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Process "install" command
+        /// Process "install exp" command
         /// </summary>
         /// <param name="pluginName">Plugin name</param>
         /// <param name="downloadUrl">Custom plugins download url, this is optional.</param>
