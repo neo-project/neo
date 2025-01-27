@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
+using System.Reflection;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -153,6 +153,90 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(1, state.Manifest.Abi.Events.Where(e => e.Name == "Transfer").Count());
             }
         }
+
+        [TestMethod]
+        public void TestNativeContractId()
+        {
+            // native contract id is implicitly defined in NativeContract.cs(the defined order)
+            Assert.AreEqual(NativeContract.ContractManagement.Id, -1);
+            Assert.AreEqual(NativeContract.StdLib.Id, -2);
+            Assert.AreEqual(NativeContract.CryptoLib.Id, -3);
+            Assert.AreEqual(NativeContract.Ledger.Id, -4);
+            Assert.AreEqual(NativeContract.NEO.Id, -5);
+            Assert.AreEqual(NativeContract.GAS.Id, -6);
+            Assert.AreEqual(NativeContract.Policy.Id, -7);
+            Assert.AreEqual(NativeContract.RoleManagement.Id, -8);
+            Assert.AreEqual(NativeContract.Oracle.Id, -9);
+        }
+
+
+        class TestSpecialParameter
+        {
+            [ContractMethod]
+            public void TestReadOnlyStoreView(UInt160 address, IReadOnlyStoreView view) { }
+
+            [ContractMethod]
+            public void TestDataCache(UInt160 address, DataCache cache) { }
+
+            [ContractMethod]
+            public void TestApplicationEngine(ApplicationEngine engine, IReadOnlyStoreView view) { }
+
+            [ContractMethod]
+            public void TestSnapshot(DataCache cache, ApplicationEngine engine) { }
+        }
+
+        [TestMethod]
+        public void TestContractMethodWithSpecialParameter()
+        {
+            // If a contract method has ApplicationEngine, IReadOnlyStoreView or DataCache as a parameter,
+            // it should be the first parameter.
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+            foreach (var contract in NativeContract.Contracts)
+            {
+                foreach (var member in typeof(Contract).GetMembers(flags))
+                {
+                    if (member.GetCustomAttributes<ContractMethodAttribute>().Any())
+                        CheckSpecialParameter(member);
+                }
+            }
+
+            var test = new TestSpecialParameter();
+            foreach (var method in typeof(TestSpecialParameter).GetMethods(flags))
+            {
+                if (method.GetCustomAttributes<ContractMethodAttribute>().Any())
+                {
+                    // should be failed
+                    var action = () => CheckSpecialParameter(method);
+                    action.Should().Throw<AssertFailedException>();
+                }
+            }
+        }
+
+        private void CheckSpecialParameter(MemberInfo member)
+        {
+            var handler = member switch
+            {
+                MethodInfo m => m,
+                PropertyInfo p => p.GetMethod,
+                _ => null,
+            };
+            Assert.IsNotNull(handler, $"handler is null, {member.Name}");
+
+            var parameters = handler.GetParameters();
+            foreach (var param in parameters)
+            {
+                // ApplicationEngine or it's subclass
+                // Implementations of IReadOnlyStoreView
+                // DataCache or it's subclass
+                if (typeof(ApplicationEngine).IsAssignableFrom(param.ParameterType) ||
+                    typeof(IReadOnlyStoreView).IsAssignableFrom(param.ParameterType) ||
+                    typeof(DataCache).IsAssignableFrom(param.ParameterType))
+                {
+                    Assert.AreEqual(0, param.Position);
+                }
+            }
+        }
+
 
         [TestMethod]
         public void TestGenesisNativeState()
