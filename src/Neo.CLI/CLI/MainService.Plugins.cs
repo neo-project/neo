@@ -47,7 +47,7 @@ namespace Neo.CLI
                 return;
             }
 
-            if (s_expPlugins.Contains(pluginName))
+            if (s_expPlugins.Contains(pluginName, StringComparer.InvariantCultureIgnoreCase))
             {
                 ConsoleHelper.Warning("Plugin is experimental, install with `install exp [plugin]`.");
                 return;
@@ -77,7 +77,7 @@ namespace Neo.CLI
                 return;
             }
 
-            if (!s_expPlugins.Contains(pluginName))
+            if (!s_expPlugins.Contains(pluginName, StringComparer.InvariantCultureIgnoreCase))
             {
                 ConsoleHelper.Warning("Plugin is not experimental.");
                 return;
@@ -288,7 +288,7 @@ namespace Neo.CLI
                     .OrderBy(u => u.name)
                     .ForEach((f) =>
                     {
-                        var exp = s_expPlugins.Contains(f.name) ? "EXP" : "";
+                        var exp = s_expPlugins.Contains(f.name, StringComparer.InvariantCultureIgnoreCase) ? "EXP" : "";
                         if (f.installedPlugin != null)
                         {
                             var tabs = f.name.Length < maxLength ? "\t" : string.Empty;
