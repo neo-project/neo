@@ -23,7 +23,6 @@ namespace Neo.Plugins.RestServer.Models.Node
         /// Version
         /// </summary>
         /// <example>3.5.0</example>
-
         public string Version { get; set; } = string.Empty;
 
         /// <summary>
