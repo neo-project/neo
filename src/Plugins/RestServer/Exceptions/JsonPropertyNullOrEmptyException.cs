@@ -16,7 +16,6 @@ namespace Neo.Plugins.RestServer.Exceptions
     internal class JsonPropertyNullOrEmptyException : Exception
     {
         public JsonPropertyNullOrEmptyException() : base() { }
-
         public JsonPropertyNullOrEmptyException(string paramName) : base($"Value cannot be null or empty. (Parameter '{paramName}')") { }
     }
 }
