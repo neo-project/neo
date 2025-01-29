@@ -20,7 +20,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// Used to build storage keys for native contracts.
     /// </summary>
-    public class KeyBuilder
+    public class KeyBuilder : IKeySerializable
     {
         private readonly MemoryStream stream;
 

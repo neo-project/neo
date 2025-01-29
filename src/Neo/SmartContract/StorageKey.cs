@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Extensions;
+using Neo.IO;
 using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
@@ -19,7 +20,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// Represents the keys in contract storage.
     /// </summary>
-    public sealed record StorageKey
+    public sealed record StorageKey : IKeySerializable
     {
         /// <summary>
         /// The id of the contract.
