@@ -20,7 +20,6 @@ namespace Neo.UnitTests.Collections.Caching
     [TestClass]
     public class UT_StoreCache
     {
-
         [TestMethod]
         public void TestAddAndGetSync()
         {
