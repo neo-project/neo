@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Running;
-using Neo.Benchmark.Collections.Caching;
+using Neo.Benchmark.IO.Caching;
 
 // BenchmarkRunner.Run<Benchmarks_PoCs>();
 //BenchmarkRunner.Run<Benchmarks_UInt160>();
@@ -18,4 +18,4 @@ using Neo.Benchmark.Collections.Caching;
 //BenchmarkRunner.Run<Benchmarks_StorageKey>();
 //BenchmarkRunner.Run<Bechmarks_ReadOnlyStoreView>();
 //BenchmarkRunner.Run<Bechmarks_LevelDB>();
-BenchmarkRunner.Run<Benchmarks_StoreCache>();
+BenchmarkRunner.Run<Benchmarks_StorageCache>();

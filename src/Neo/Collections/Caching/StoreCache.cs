@@ -25,7 +25,7 @@ namespace Neo.Collections.Caching
         where TKey : class, IKeySerializable
         where TValue : class, ISerializable, new()
     {
-        private static readonly ConcurrentDictionary<TKey, WeakReference<TValue>> s_memoryCache = new(Math.Min(Environment.ProcessorCount, 16), 0, KeyValueSerializableEqualityComparer<TKey>.Default);
+        private static readonly ConcurrentDictionary<TKey, WeakReference<TValue>> s_memoryCache = new(Math.Min(Environment.ProcessorCount, 16), 0, KeyValueSerializableEqualityComparer<TKey>.Instance);
 
         private readonly IStore _store = store ?? throw new ArgumentNullException(nameof(store));
 

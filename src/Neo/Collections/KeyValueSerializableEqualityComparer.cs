@@ -11,15 +11,16 @@
 
 using Neo.IO;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.Extensions
 {
-    internal class KeyValueSerializableEqualityComparer<TKey> : IEqualityComparer<TKey>
-        where TKey : IKeySerializable
+    internal class KeyValueSerializableEqualityComparer<TKey> : IEqualityComparer<TKey>, IEqualityComparer
+        where TKey : class, IKeySerializable
     {
-        public static readonly KeyValueSerializableEqualityComparer<TKey> Default = new();
+        public static readonly KeyValueSerializableEqualityComparer<TKey> Instance = new();
 
         public bool Equals(TKey x, TKey y)
         {
@@ -29,11 +30,19 @@ namespace Neo.Extensions
             return x.ToArray().AsSpan().SequenceEqual(y.ToArray().AsSpan());
         }
 
+        public new bool Equals(object x, object y)
+        {
+            return Equals(x as TKey, y as TKey);
+        }
+
         public int GetHashCode(TKey obj)
         {
-            if (obj is null)
-                throw new ArgumentNullException(nameof(obj));
-            return obj.GetHashCode();
+            return obj is null ? 0 : obj.GetHashCode();
+        }
+
+        public int GetHashCode(object obj)
+        {
+            return obj is TKey t ? GetHashCode(t) : 0;
         }
     }
 }
