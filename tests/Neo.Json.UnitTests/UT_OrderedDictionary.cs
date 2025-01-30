@@ -28,6 +28,7 @@ namespace Neo.Json.UnitTests
                 { "c", 3 }
             };
         }
+
         [TestMethod]
         public void TestClear()
         {
