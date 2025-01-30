@@ -10,101 +10,99 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Order;
 using Neo.Collections.Caching;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Perfolizer.Mathematics.OutlierDetection;
 using System.Diagnostics;
 
 namespace Neo.Benchmark.Collections.Caching
 {
-    [MemoryDiagnoser]  // Enabling Memory Diagnostics
-    [CsvMeasurementsExporter]  // Export results in CSV format
-    [MarkdownExporter]  // Exporting results in Markdown format
+    // Result Exporters
+    [MarkdownExporter]                                                  // Exporting results in Markdown format
+    // Result Output
+    [MinColumn, MaxColumn, MeanColumn, MedianColumn]                    // Include these columns
+    [Orderer(SummaryOrderPolicy.Declared, MethodOrderPolicy.Declared)]  // Keep in current order as declared in class
+    // Job Configurations
+    [SimpleJob(RuntimeMoniker.Net90)]
+    [Outliers(OutlierMode.DontRemove)]
+    [GcServer(true)]                                                    // GC server is enabled for GitHub builds in `neo` repo
+    [GcConcurrent(true)]                                                // GC runs on it own thread
+    [GcForce(false)]                                                    // DO NOT force full collection of data for each benchmark
     public class Benchmarks_StoreCache
     {
-        private static readonly MemoryStore s_memoryStore = new();
-        private static readonly StoreCache<StorageKey, StorageItem> s_storeCache = new(s_memoryStore);
-        private static readonly DataCache s_dataCache = new SnapshotCache(s_memoryStore);
+        private readonly MemoryStore _memoryStore = new();
+        private readonly StoreCache<StorageKey, StorageItem> _storeCache;
+        private readonly DataCache _dataCache;
 
-        private static byte[] s_data = [];
-        private static StorageKey s_key;
-        private static StorageItem s_value;
+        private readonly StorageKey _key;
+        private readonly StorageItem _value;
 
-        [GlobalSetup]
-        public void Setup()
+        public Benchmarks_StoreCache()
         {
-            if (s_data.Length == 0)
-            {
-                s_data = new byte[4096];
-                Random.Shared.NextBytes(s_data);
-                s_key = new StorageKey(s_data);
-                s_value = new StorageItem(s_data);
-            }
+            _storeCache = new(_memoryStore);
+            _dataCache = new SnapshotCache(_memoryStore);
+
+            var data = new byte[1024];
+            new Random(0xdead).NextBytes(data);
+
+            _memoryStore.Put(data, data);
+            _key = new(data);
+            _value = new(data);
         }
 
         [Benchmark]
-        public void TestStoreCacheAddAndUpdate()
+        public void TestStoreCacheAdd()
         {
-            s_storeCache.Add(s_key, s_value);
-            s_storeCache[s_key] = new(s_data);
+            _storeCache.Add(_key, _value);
+        }
+
+        [Benchmark]
+        public void TestDataCacheAdd()
+        {
+            Debug.Assert(_dataCache.GetOrAdd(_key, () => _value) != null);
+        }
+
+        [Benchmark]
+        public void TestStoreCacheUpdate()
+        {
+            Debug.Assert(_storeCache.Update(_key, _value));
+        }
+
+        [Benchmark]
+        public void TestDataCacheUpdate()
+        {
+            Debug.Assert(_dataCache.GetAndChange(_key, () => _value) != null);
         }
 
         [Benchmark]
         public void TestStoreCacheRemove()
         {
-            s_storeCache.Add(s_key, s_value);
-            Debug.Assert(s_storeCache.Remove(s_key, out _));
+            _storeCache.Remove(_key);
         }
-
-        [Benchmark]
-        public void TestStoreCacheGetAlreadyCachedData()
-        {
-            s_storeCache.Add(s_key, s_value);
-            Debug.Assert(s_storeCache.TryGetValue(s_key, out _));
-            Debug.Assert(s_storeCache.ContainsKey(s_key));
-            _ = s_storeCache[s_key];
-        }
-
-        [Benchmark]
-        public void TestStoreCacheGetNonCachedData()
-        {
-            s_memoryStore.Put(s_key.ToArray(), s_key.ToArray());
-            Debug.Assert(s_storeCache.TryGetValue(s_key, out _));
-            Debug.Assert(s_storeCache.ContainsKey(s_key));
-            _ = s_storeCache[s_key];
-        }
-
-        [Benchmark]
-        public void TestDataCacheAddAndUpdate()
-        {
-            _ = s_dataCache.GetOrAdd(s_key, () => s_value);
-            _ = s_dataCache.GetAndChange(s_key, () => new(s_data));
-        }
-
 
         [Benchmark]
         public void TestDataCacheRemove()
         {
-            _ = s_dataCache.GetOrAdd(s_key, () => s_value);
-            s_dataCache.Delete(s_key);
+            _dataCache.Delete(_key);
         }
 
         [Benchmark]
-        public void TestDataCacheGetAlreadyCachedData()
+        public void TestStoreCacheGet()
         {
-            _ = s_dataCache.GetOrAdd(s_key, () => s_value);
-            _ = s_dataCache.GetAndChange(s_key);
-            Debug.Assert(s_dataCache.Contains(s_key));
-            _ = s_dataCache[s_key];
+            Debug.Assert(_storeCache.TryGetValue(_key, out _));
+            Debug.Assert(_storeCache.ContainsKey(_key));
+            Debug.Assert(_storeCache[_key] != null);
         }
 
         [Benchmark]
-        public void TestDataCacheGetNonCachedData()
+        public void TestDataCacheGet()
         {
-            s_memoryStore.Put(s_key.ToArray(), s_key.ToArray());
-            _ = s_dataCache.GetAndChange(s_key);
-            Debug.Assert(s_dataCache.Contains(s_key));
-            _ = s_dataCache[s_key];
+            Debug.Assert(_dataCache.GetAndChange(_key) != null);
+            Debug.Assert(_dataCache.Contains(_key));
+            Debug.Assert(_dataCache[_key] != null);
         }
     }
 }

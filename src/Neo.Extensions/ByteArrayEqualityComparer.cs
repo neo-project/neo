@@ -21,7 +21,7 @@ namespace Neo.Extensions
         public bool Equals(byte[]? x, byte[]? y)
         {
             if (ReferenceEquals(x, y)) return true;
-            if (x is null || y is null || x.Length != y.Length) return false;
+            if (x is null || y is null) return false;
 
             return x.AsSpan().SequenceEqual(y.AsSpan());
         }

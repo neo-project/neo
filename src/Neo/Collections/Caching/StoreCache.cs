@@ -41,7 +41,8 @@ namespace Neo.Collections.Caching
             }
             set
             {
-                TryAddSync(key, value);
+                if (TryUpdateSync(key, value) == false)
+                    AddSync(key, value);
             }
         }
 
@@ -57,7 +58,8 @@ namespace Neo.Collections.Caching
             }
             set
             {
-                TryAddSync(key as TKey, value as TValue);
+                if (TryUpdateSync(key as TKey, value as TValue) == false)
+                    AddSync(key as TKey, value as TValue);
             }
         }
 
@@ -71,7 +73,7 @@ namespace Neo.Collections.Caching
         public bool IsFixedSize => false;
 
         /// <inheritdoc />
-        public bool IsSynchronized => false;
+        public bool IsSynchronized => true;
 
         /// <inheritdoc />
         public object SyncRoot => throw new NotSupportedException();
@@ -97,20 +99,20 @@ namespace Neo.Collections.Caching
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
-            TryAddSync(key, value);
+            AddSync(key, value);
         }
 
         /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            TryAddSync(item.Key, item.Value);
+            AddSync(item.Key, item.Value);
         }
 
         /// <inheritdoc />
         public void Add(object key, object value)
         {
             if (key is TKey tKey && value is TValue tValue)
-                TryAddSync(tKey, tValue);
+                AddSync(tKey, tValue);
         }
 
         /// <inheritdoc />
@@ -122,6 +124,7 @@ namespace Neo.Collections.Caching
         /// <inheritdoc />
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
+            // Doesn't have to be in both
             return s_memoryCache.ContainsKey(item.Key) || _store.Contains(item.Key.ToArray());
         }
 
@@ -129,13 +132,16 @@ namespace Neo.Collections.Caching
         public bool Contains(object key)
         {
             if (key is TKey tKey)
+                // Doesn't have to be in both
                 return s_memoryCache.ContainsKey(tKey) || _store.Contains(tKey.ToArray()); ;
+
             return false;
         }
 
         /// <inheritdoc />
         public bool ContainsKey(TKey key)
         {
+            // Doesn't have to be in both
             return s_memoryCache.ContainsKey(key) || _store.Contains(key.ToArray());
         }
 
@@ -154,26 +160,42 @@ namespace Neo.Collections.Caching
         /// <inheritdoc />
         public bool Remove(TKey key)
         {
-            return TryRemoveSync(key, out _);
+            return TryRemoveSync(key);
         }
 
         /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            return TryRemoveSync(item.Key, out _);
+            return TryRemoveSync(item.Key);
         }
 
         /// <inheritdoc />
         public void Remove(object key)
         {
             if (key is TKey tKey)
-                TryRemoveSync(tKey, out _);
+                TryRemoveSync(tKey);
         }
 
         /// <inheritdoc />
         public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue value)
         {
             return TryGetSync(key, out value);
+        }
+
+        public bool Update(TKey key, TValue value)
+        {
+            return TryUpdateSync(key, value);
+        }
+
+        public bool Update(KeyValuePair<TKey, TValue> item)
+        {
+            return TryUpdateSync(item.Key, item.Value);
+        }
+
+        public void Update(object key, object value)
+        {
+            if (key is TKey tKey && value is TValue tValue)
+                TryUpdateSync(tKey, tValue);
         }
 
         /// <inheritdoc />
@@ -202,28 +224,15 @@ namespace Neo.Collections.Caching
             throw new NullReferenceException();
         }
 
-        private bool TryRemoveSync(TKey key, [NotNullWhen(true)] out TValue value)
+        private bool TryRemoveSync(TKey key)
         {
-            if (s_memoryCache.TryRemove(key, out var valueRef))
+            if (s_memoryCache.TryRemove(key, out _))
             {
                 _store.Delete(key.ToArray());
-
-                return valueRef.TryGetTarget(out value);
+                return true;
             }
-            else
-            {
-                if (_store.TryGet(key.ToArray(), out var rawValue))
-                {
-                    value = rawValue.AsSerializable<TValue>();
 
-                    _store.Delete(key.ToArray());
-
-                    return true;
-                }
-
-                value = default;
-                return false;
-            }
+            return false;
         }
 
         private bool TryGetSync(TKey key, [NotNullWhen(true)] out TValue value)
@@ -257,42 +266,41 @@ namespace Neo.Collections.Caching
             return false;
         }
 
-        private bool TryAddSync(TKey key, TValue value)
+        private void AddSync(TKey key, TValue value)
+        {
+            if (s_memoryCache.ContainsKey(key))
+                return;
+
+            if (s_memoryCache.TryAdd(key, new(value, false)))
+                // NOTE:
+                //      This method of sync can change the
+                //      "value" serializable type. If two
+                //      caching classes use the same key
+                //      but different ISerializable classes
+                _store.Put(key.ToArray(), value.ToArray());
+        }
+
+        private bool TryUpdateSync(TKey key, TValue value)
         {
             if (s_memoryCache.TryGetValue(key, out var valueRef))
             {
-                if (valueRef.TryGetTarget(out var oldValue) && ReferenceEquals(value, oldValue) == false)
-                {
-                    // Update target for cache
+                if (valueRef.TryGetTarget(out var oldValue) == false)
                     valueRef.SetTarget(value);
-
-                    // Save to store
-                    //
-                    // NOTE:
-                    //      This method of sync can change the
-                    //      "value" serializable type. If two
-                    //      caching classes use the same key
-                    //      but different ISerializable classes
-                    _store.Put(key.ToArray(), value.ToArray());
+                else
+                {
+                    // `value` isn't the same instance
+                    if (ReferenceEquals(value, oldValue) == false)
+                        valueRef.SetTarget(value);
                 }
+
+                // NOTE:
+                //      This method of sync can change the
+                //      "value" serializable type. If two
+                //      caching classes use the same key
+                //      but different ISerializable classes
+                _store.Put(key.ToArray(), value.ToArray());
 
                 return true;
-            }
-            else
-            {
-                if (s_memoryCache.TryAdd(key, new(value, false)))
-                {
-                    // Save to store
-                    //
-                    // NOTE:
-                    //      This method of sync can change the
-                    //      "value" serializable type. If two
-                    //      caching classes use the same key
-                    //      but different ISerializable classes
-                    _store.Put(key.ToArray(), value.ToArray());
-
-                    return true;
-                }
             }
 
             return false;

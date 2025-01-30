@@ -12,6 +12,7 @@
 #nullable enable
 
 using Neo.Extensions;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -33,7 +34,10 @@ namespace Neo.Persistence
             _innerData.TryRemove(key, out _);
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ISnapshot GetSnapshot()
@@ -44,7 +48,7 @@ namespace Neo.Persistence
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Put(byte[] key, byte[] value)
         {
-            _innerData[key[..]] = value[..];
+            _innerData[key] = value;
         }
 
         /// <inheritdoc/>
@@ -59,14 +63,14 @@ namespace Neo.Persistence
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
             foreach (var pair in records)
-                yield return (pair.Key[..], pair.Value[..]);
+                yield return (pair.Key, pair.Value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[]? TryGet(byte[] key)
         {
             if (!_innerData.TryGetValue(key, out var value)) return null;
-            return value[..];
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
