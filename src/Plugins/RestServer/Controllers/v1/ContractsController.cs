@@ -121,10 +121,10 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "hash")]
             UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
-            if (contracts == null)
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
+            if (contract == null)
                 throw new ContractNotFoundException(scriptHash);
-            return Ok(contracts);
+            return Ok(contract);
         }
 
         /// <summary>
@@ -140,10 +140,10 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "hash")]
             UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
-            if (contracts == null)
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
+            if (contract == null)
                 throw new ContractNotFoundException(scriptHash);
-            return Ok(contracts.Manifest.Abi);
+            return Ok(contract.Manifest.Abi);
         }
 
         /// <summary>
@@ -159,10 +159,10 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "hash")]
             UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
-            if (contracts == null)
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
+            if (contract == null)
                 throw new ContractNotFoundException(scriptHash);
-            return Ok(contracts.Manifest);
+            return Ok(contract.Manifest);
         }
 
         /// <summary>
@@ -178,10 +178,10 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromRoute(Name = "hash")]
             UInt160 scriptHash)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
-            if (contracts == null)
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
+            if (contract == null)
                 throw new ContractNotFoundException(scriptHash);
-            return Ok(contracts.Nef);
+            return Ok(contract.Nef);
         }
 
         /// <summary>
@@ -203,14 +203,14 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             [FromBody]
             InvokeParams invokeParameters)
         {
-            var contracts = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
-            if (contracts == null)
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
+            if (contract == null)
                 throw new ContractNotFoundException(scriptHash);
             if (string.IsNullOrEmpty(method))
                 throw new QueryParameterNotFoundException(nameof(method));
             try
             {
-                var engine = ScriptHelper.InvokeMethod(_neoSystem.Settings, _neoSystem.StoreView, contracts.Hash, method, invokeParameters.ContractParameters, invokeParameters.Signers, out var script);
+                var engine = ScriptHelper.InvokeMethod(_neoSystem.Settings, _neoSystem.StoreView, contract.Hash, method, invokeParameters.ContractParameters, invokeParameters.Signers, out var script);
                 return Ok(engine.ToModel());
             }
             catch (Exception ex)
