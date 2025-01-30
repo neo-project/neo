@@ -85,9 +85,6 @@ namespace Neo.UnitTests.IO
             Assert.ThrowsException<FormatException>(action1);
             UInt160 result1 = UInt160.Parse("0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result1);
-
-            ushort b = 10;
-            var a = -b;
         }
 
         [TestMethod]
