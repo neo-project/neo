@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -335,6 +334,7 @@ namespace Neo.UnitTests.VMT
             sb.EmitPush(new ContractParameter(ContractParameterType.String));
             byte[] tempArray = new byte[2];
             tempArray[0] = (byte)OpCode.PUSHDATA1;
+            tempArray[1] = 0x00;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -447,7 +447,7 @@ namespace Neo.UnitTests.VMT
 
             ScriptBuilder sb = new ScriptBuilder();
             Action action = () => sb.EmitPush(new object());
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => action());
         }
 
 
@@ -723,7 +723,7 @@ namespace Neo.UnitTests.VMT
             // check cyclic reference
             map[2] = item;
             var action = () => item.ToJson();
-            action.Should().Throw<System.InvalidOperationException>();
+            Assert.ThrowsException<System.InvalidOperationException>(() => action());
         }
     }
 }

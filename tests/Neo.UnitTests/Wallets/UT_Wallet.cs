@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
@@ -130,15 +129,21 @@ namespace Neo.UnitTests.Wallets
         public void TestContains()
         {
             MyWallet wallet = new();
-            Action action = () => wallet.Contains(UInt160.Zero);
-            action.Should().NotThrow();
+            try
+            {
+                wallet.Contains(UInt160.Zero);
+            }
+            catch (Exception)
+            {
+                Assert.Fail();
+            }
         }
 
         [TestMethod]
         public void TestCreateAccount1()
         {
             MyWallet wallet = new();
-            wallet.CreateAccount(new byte[32]).Should().NotBeNull();
+            Assert.IsNotNull(wallet.CreateAccount(new byte[32]));
         }
 
         [TestMethod]
@@ -147,11 +152,11 @@ namespace Neo.UnitTests.Wallets
             MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, UT_Crypto.GenerateCertainKey(32).PrivateKey);
-            account.Should().NotBeNull();
+            Assert.IsNotNull(account);
 
             wallet = new();
             account = wallet.CreateAccount(contract, (byte[])(null));
-            account.Should().NotBeNull();
+            Assert.IsNotNull(account);
         }
 
         [TestMethod]
@@ -159,28 +164,28 @@ namespace Neo.UnitTests.Wallets
         {
             MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
-            wallet.CreateAccount(contract, glkey).Should().NotBeNull();
+            Assert.IsNotNull(wallet.CreateAccount(contract, glkey));
         }
 
         [TestMethod]
         public void TestCreateAccount4()
         {
             MyWallet wallet = new();
-            wallet.CreateAccount(UInt160.Zero).Should().NotBeNull();
+            Assert.IsNotNull(wallet.CreateAccount(UInt160.Zero));
         }
 
         [TestMethod]
         public void TestGetName()
         {
             MyWallet wallet = new();
-            wallet.Name.Should().Be("MyWallet");
+            Assert.AreEqual("MyWallet", wallet.Name);
         }
 
         [TestMethod]
         public void TestGetVersion()
         {
             MyWallet wallet = new();
-            wallet.Version.Should().Be(Version.Parse("0.0.1"));
+            Assert.AreEqual(Version.Parse("0.0.1"), wallet.Version);
         }
 
         [TestMethod]
@@ -189,23 +194,36 @@ namespace Neo.UnitTests.Wallets
             MyWallet wallet = new();
             wallet.CreateAccount(UInt160.Parse("0x7efe7ee0d3e349e085388c351955e5172605de66"));
             WalletAccount account = wallet.GetAccount(ECCurve.Secp256r1.G);
-            account.ScriptHash.Should().Be(UInt160.Parse("0x7efe7ee0d3e349e085388c351955e5172605de66"));
+            Assert.AreEqual(UInt160.Parse("0x7efe7ee0d3e349e085388c351955e5172605de66"), account.ScriptHash);
         }
 
         [TestMethod]
         public void TestGetAccount2()
         {
             MyWallet wallet = new();
-            Action action = () => wallet.GetAccount(UInt160.Zero);
-            action.Should().NotThrow();
+
+            try
+            {
+                wallet.GetAccount(UInt160.Zero);
+            }
+            catch (Exception)
+            {
+                Assert.Fail();
+            }
         }
 
         [TestMethod]
         public void TestGetAccounts()
         {
             MyWallet wallet = new();
-            Action action = () => wallet.GetAccounts();
-            action.Should().NotThrow();
+            try
+            {
+                wallet.GetAccounts();
+            }
+            catch (Exception)
+            {
+                Assert.Fail();
+            }
         }
 
         [TestMethod]
@@ -222,7 +240,7 @@ namespace Neo.UnitTests.Wallets
             var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
-            wallet.GetAvailable(snapshotCache, NativeContract.GAS.Hash).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
+            Assert.AreEqual(new BigDecimal(new BigInteger(1000000000000M), 8), wallet.GetAvailable(snapshotCache, NativeContract.GAS.Hash));
 
             entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
@@ -242,8 +260,8 @@ namespace Neo.UnitTests.Wallets
             var entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
-            wallet.GetBalance(snapshotCache, UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(BigInteger.Zero, 0));
-            wallet.GetBalance(snapshotCache, NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
+            Assert.AreEqual(new BigDecimal(BigInteger.Zero, 0), wallet.GetBalance(snapshotCache, UInt160.Zero, new UInt160[] { account.ScriptHash }));
+            Assert.AreEqual(new BigDecimal(new BigInteger(1000000000000M), 8), wallet.GetBalance(snapshotCache, NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }));
 
             entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
@@ -253,38 +271,38 @@ namespace Neo.UnitTests.Wallets
         public void TestGetPrivateKeyFromNEP2()
         {
             Action action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
             action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
-            Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1).Should().BeEquivalentTo(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
+            CollectionAssert.AreEqual(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 }, Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1));
         }
 
         [TestMethod]
         public void TestGetPrivateKeyFromWIF()
         {
             Action action = () => Wallet.GetPrivateKeyFromWIF(null);
-            action.Should().Throw<ArgumentNullException>();
+            Assert.ThrowsException<ArgumentNullException>(action);
 
             action = () => Wallet.GetPrivateKeyFromWIF("3vQB7B6MrGQZaxCuFg4oh");
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
-            Wallet.GetPrivateKeyFromWIF("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU").Should().BeEquivalentTo(new byte[] { 199, 19, 77, 111, 216, 231, 61, 129, 158, 130, 117, 92, 100, 201, 55, 136, 216, 219, 9, 97, 146, 158, 2, 90, 83, 54, 60, 76, 192, 42, 105, 98 });
+            CollectionAssert.AreEqual(new byte[] { 199, 19, 77, 111, 216, 231, 61, 129, 158, 130, 117, 92, 100, 201, 55, 136, 216, 219, 9, 97, 146, 158, 2, 90, 83, 54, 60, 76, 192, 42, 105, 98 }, Wallet.GetPrivateKeyFromWIF("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU"));
         }
 
         [TestMethod]
         public void TestImport1()
         {
             MyWallet wallet = new();
-            wallet.Import("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU").Should().NotBeNull();
+            Assert.IsNotNull(wallet.Import("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU"));
         }
 
         [TestMethod]
         public void TestImport2()
         {
             MyWallet wallet = new();
-            wallet.Import(nep2Key, "pwd", 2, 1, 1).Should().NotBeNull();
+            Assert.IsNotNull(wallet.Import(nep2Key, "pwd", 2, 1, 1));
         }
 
         [TestMethod]
@@ -306,7 +324,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             }, UInt160.Zero);
-            action.Should().Throw<InvalidOperationException>();
+            Assert.ThrowsException<InvalidOperationException>(action);
 
             action = () => wallet.MakeTransaction(snapshotCache, new TransferOutput[]
             {
@@ -318,7 +336,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             }, account.ScriptHash);
-            action.Should().Throw<InvalidOperationException>();
+            Assert.ThrowsException<InvalidOperationException>(action);
 
             action = () => wallet.MakeTransaction(snapshotCache, new TransferOutput[]
             {
@@ -330,7 +348,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             }, account.ScriptHash);
-            action.Should().Throw<InvalidOperationException>();
+            Assert.ThrowsException<InvalidOperationException>(action);
 
             // Fake balance
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
@@ -350,7 +368,7 @@ namespace Neo.UnitTests.Wallets
                      Value = new BigDecimal(BigInteger.One,8)
                 }
             });
-            tx.Should().NotBeNull();
+            Assert.IsNotNull(tx);
 
             tx = wallet.MakeTransaction(snapshotCache, new TransferOutput[]
             {
@@ -362,7 +380,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             });
-            tx.Should().NotBeNull();
+            Assert.IsNotNull(tx);
 
             entry1 = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry2 = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
@@ -376,7 +394,7 @@ namespace Neo.UnitTests.Wallets
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             MyWallet wallet = new();
             Action action = () => wallet.MakeTransaction(snapshotCache, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>());
-            action.Should().Throw<InvalidOperationException>();
+            Assert.ThrowsException<InvalidOperationException>(action);
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
@@ -393,10 +411,10 @@ namespace Neo.UnitTests.Wallets
                 Scopes = WitnessScope.CalledByEntry
             }}, Array.Empty<TransactionAttribute>());
 
-            tx.Should().NotBeNull();
+            Assert.IsNotNull(tx);
 
             tx = wallet.MakeTransaction(snapshotCache, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>());
-            tx.Should().NotBeNull();
+            Assert.IsNotNull(tx);
 
             entry = snapshotCache.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
@@ -406,8 +424,14 @@ namespace Neo.UnitTests.Wallets
         public void TestVerifyPassword()
         {
             MyWallet wallet = new();
-            Action action = () => wallet.VerifyPassword("Test");
-            action.Should().NotThrow();
+            try
+            {
+                wallet.VerifyPassword(null);
+            }
+            catch (Exception)
+            {
+                Assert.Fail();
+            }
         }
     }
 }

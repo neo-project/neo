@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
@@ -31,9 +30,9 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item);
 
             // Assert
-            collection.Count.Should().Be(1);
-            collection.Contains(1).Should().BeTrue();
-            collection.First.Should().Be(item);
+            Assert.AreEqual(1, collection.Count);
+            Assert.IsTrue(collection.Contains(1));
+            Assert.AreEqual(item, collection.First);
         }
 
         [TestMethod]
@@ -48,8 +47,7 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item1);
 
             // Assert
-            var act = (() => collection.Add(item2));
-            act.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => collection.Add(item2));
         }
 
         [TestMethod]
@@ -64,8 +62,8 @@ namespace Neo.UnitTests.IO.Caching
             collection.Remove(1);
 
             // Assert
-            collection.Count.Should().Be(0);
-            collection.Contains(1).Should().BeFalse();
+            Assert.AreEqual(0, collection.Count);
+            Assert.IsFalse(collection.Contains(1));
         }
 
         [TestMethod]
@@ -82,9 +80,9 @@ namespace Neo.UnitTests.IO.Caching
             collection.RemoveFirst();
 
             // Assert
-            collection.Count.Should().Be(1);
-            collection.Contains(1).Should().BeFalse();
-            collection.Contains(2).Should().BeTrue();
+            Assert.AreEqual(1, collection.Count);
+            Assert.IsFalse(collection.Contains(1));
+            Assert.IsTrue(collection.Contains(2));
         }
 
         public class TestItem : IStructuralEquatable, IStructuralComparable, IComparable

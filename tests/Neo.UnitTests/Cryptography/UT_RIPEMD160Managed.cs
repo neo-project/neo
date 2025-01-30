@@ -9,10 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
+using System.Text;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -24,7 +24,7 @@ namespace Neo.UnitTests.Cryptography
         {
             using var ripemd160 = new RIPEMD160Managed();
             var hash = ripemd160.ComputeHash("hello world"u8.ToArray());
-            hash.ToHexString().Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+            Assert.AreEqual("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f", hash.ToHexString());
         }
 
         [TestMethod]
@@ -33,8 +33,8 @@ namespace Neo.UnitTests.Cryptography
             using var ripemd160 = new RIPEMD160Managed();
             var buffer = new byte[ripemd160.HashSize / 8];
             var ok = ripemd160.TryComputeHash("hello world"u8.ToArray(), buffer, out _);
-            ok.Should().BeTrue();
-            buffer.ToHexString().Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+            Assert.IsTrue(ok);
+            Assert.AreEqual("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f", buffer.ToHexString());
         }
     }
 }

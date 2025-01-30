@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
@@ -27,8 +26,15 @@ namespace Neo.UnitTests.SmartContract.Iterators
         {
             StorageIterator storageIterator = new(new List<(StorageKey, StorageItem)>().GetEnumerator(), 0, FindOptions.None);
             Assert.IsNotNull(storageIterator);
-            Action action = () => storageIterator.Dispose();
-            action.Should().NotThrow<Exception>();
+            try
+            {
+                storageIterator.Dispose();
+            }
+            catch
+            {
+                Assert.Fail();
+            }
+
         }
 
         [TestMethod]

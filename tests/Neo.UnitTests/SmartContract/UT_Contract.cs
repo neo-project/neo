@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
@@ -112,7 +111,7 @@ namespace Neo.UnitTests.SmartContract
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => action());
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
@@ -182,7 +181,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.FeeConsumed.Should().Be(fee);
+                Assert.AreEqual(fee, engine.FeeConsumed);
             }
         }
 
@@ -212,7 +211,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.FeeConsumed.Should().Be(fee);
+                Assert.AreEqual(fee, engine.FeeConsumed);
             }
         }
     }

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -243,7 +242,7 @@ namespace Neo.UnitTests.IO
                     stream.Seek(0, SeekOrigin.Begin);
                     BinaryReader reader = new(stream);
                     Action action = () => reader.ReadVarInt(0xFFFFFFFF);
-                    action.Should().Throw<FormatException>();
+                    Assert.ThrowsException<FormatException>(action);
                 }
             }
         }
@@ -308,21 +307,21 @@ namespace Neo.UnitTests.IO
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteFixedString(null, 0);
-                    action.Should().Throw<ArgumentNullException>();
+                    Assert.ThrowsException<ArgumentNullException>(action);
                 }
                 else if (i == 1)
                 {
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteFixedString("AA", Encoding.UTF8.GetBytes("AA").Length - 1);
-                    action.Should().Throw<ArgumentException>();
+                    Assert.ThrowsException<ArgumentException>(action);
                 }
                 else if (i == 2)
                 {
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteFixedString("拉拉", Encoding.UTF8.GetBytes("拉拉").Length - 1);
-                    action.Should().Throw<ArgumentException>();
+                    Assert.ThrowsException<ArgumentException>(action);
                 }
                 else if (i == 3)
                 {
@@ -361,7 +360,7 @@ namespace Neo.UnitTests.IO
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteVarInt(-1);
-                    action.Should().Throw<ArgumentOutOfRangeException>();
+                    Assert.ThrowsException<ArgumentOutOfRangeException>(action);
                 }
                 else if (i == 1)
                 {

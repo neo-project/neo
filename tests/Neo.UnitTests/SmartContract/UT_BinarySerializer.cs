@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.VM;
@@ -47,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
 
             StackItem stackItem4 = new InteropInterface(new object());
             Action action4 = () => BinarySerializer.Serialize(stackItem4, ExecutionEngineLimits.Default);
-            action4.Should().Throw<NotSupportedException>();
+            Assert.ThrowsException<NotSupportedException>(action4);
 
             List<StackItem> list6 = new List<StackItem> { 1 };
             StackItem stackItem62 = new VM.Types.Array(list6);
@@ -75,12 +74,12 @@ namespace Neo.UnitTests.SmartContract
             Map stackItem91 = new Map();
             stackItem91[1] = stackItem91;
             Action action9 = () => BinarySerializer.Serialize(stackItem91, ExecutionEngineLimits.Default);
-            action9.Should().Throw<NotSupportedException>();
+            Assert.ThrowsException<NotSupportedException>(action9);
 
             VM.Types.Array stackItem10 = new VM.Types.Array();
             stackItem10.Add(stackItem10);
             Action action10 = () => BinarySerializer.Serialize(stackItem10, ExecutionEngineLimits.Default);
-            action10.Should().Throw<NotSupportedException>();
+            Assert.ThrowsException<NotSupportedException>(action10);
         }
 
         [TestMethod]
@@ -104,7 +103,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] byteArray4 = BinarySerializer.Serialize(1, ExecutionEngineLimits.Default);
             byteArray4[0] = 0x40;
             Action action4 = () => BinarySerializer.Deserialize(byteArray4, ExecutionEngineLimits.Default);
-            action4.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action4);
 
             List<StackItem> list5 = new List<StackItem> { 1 };
             StackItem stackItem52 = new VM.Types.Array(list5);
