@@ -426,7 +426,7 @@ namespace Neo.UnitTests.Wallets
             MyWallet wallet = new();
             try
             {
-                wallet.VerifyPassword(null);
+                wallet.VerifyPassword("Test");
             }
             catch (Exception)
             {
