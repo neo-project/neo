@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -50,7 +50,7 @@ namespace Neo.SmartContract
         /// Calculates the verification fee for a multi-signature address.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
@@ -131,7 +131,7 @@ namespace Neo.SmartContract
         /// Determines whether the specified contract is a multi-signature contract.
         /// </summary>
         /// <param name="script">The script of the contract.</param>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n)
@@ -143,7 +143,7 @@ namespace Neo.SmartContract
         /// Determines whether the specified contract is a multi-signature contract.
         /// </summary>
         /// <param name="script">The script of the contract.</param>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)

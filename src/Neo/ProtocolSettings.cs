@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ProtocolSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -125,6 +125,41 @@ namespace Neo
         public static ProtocolSettings Custom { get; set; }
 
         /// <summary>
+        /// Searches for a file in the given path. If not found, checks in the executable directory.
+        /// </summary>
+        /// <param name="fileName">The name of the file to search for.</param>
+        /// <param name="path">The primary path to search in.</param>
+        /// <returns>Full path of the file if found, null otherwise.</returns>
+        public static string FindFile(string fileName, string path)
+        {
+            // Check if the given path is relative
+            if (!Path.IsPathRooted(path))
+            {
+                // Combine with the executable directory if relative
+                var executablePath = AppContext.BaseDirectory;
+                path = Path.Combine(executablePath, path);
+            }
+
+            // Check if file exists in the specified (resolved) path
+            var fullPath = Path.Combine(path, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // Check if file exists in the executable directory
+            var executableDir = AppContext.BaseDirectory;
+            fullPath = Path.Combine(executableDir, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // File not found in either location
+            return null;
+        }
+
+        /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> from the specified stream.
         /// </summary>
         /// <param name="stream">The stream of the settings.</param>
@@ -143,7 +178,9 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(string path)
         {
-            if (!File.Exists(path))
+            path = FindFile(path, Environment.CurrentDirectory);
+
+            if (path is null)
             {
                 return Default;
             }

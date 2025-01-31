@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RIPEMD160Managed.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,7 +12,6 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
@@ -20,14 +19,15 @@ namespace Neo.Cryptography
     /// Computes the ripemd160 hash for the input data.
     /// </summary>
     [ComVisible(true)]
-    public class RIPEMD160Managed : HashAlgorithm
+    public class RIPEMD160Managed : System.Security.Cryptography.HashAlgorithm
     {
         private readonly byte[] _buffer;
         private long _count; // Number of bytes in the hashed message
         private readonly uint[] _stateMD160;
         private readonly uint[] _blockDWords;
 
-        public override int HashSize => 160;
+        public const int HashSizeInBits = 160;
+        public override int HashSize => HashSizeInBits;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RIPEMD160Managed"/> class.
@@ -38,6 +38,7 @@ namespace Neo.Cryptography
             _blockDWords = new uint[16];
             _buffer = new byte[64];
 
+            HashSizeValue = HashSizeInBits;
             InitializeState();
         }
 

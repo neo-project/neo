@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Message.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -47,27 +47,25 @@ namespace Neo.Network.P2P
         /// </summary>
         public ISerializable Payload;
 
-        private ReadOnlyMemory<byte> _payload_compressed;
+        private ReadOnlyMemory<byte>
+            _payload_raw,
+            _payload_compressed;
+
+        /// <summary>
+        /// True if the message is compressed
+        /// </summary>
+        public bool IsCompressed => Flags.HasFlag(MessageFlags.Compressed);
 
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
 
         /// <summary>
-        /// Creates a new instance of the <see cref="Message"/> class.
+        /// True if the message should be compressed
         /// </summary>
-        /// <param name="command">The command of the message.</param>
-        /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
-        /// <returns></returns>
-        public static Message Create(MessageCommand command, ISerializable payload = null)
+        /// <param name="command">Command</param>
+        /// <returns>True if allow the compression</returns>
+        private static bool ShallICompress(MessageCommand command)
         {
-            Message message = new()
-            {
-                Flags = MessageFlags.None,
-                Command = command,
-                Payload = payload,
-                _payload_compressed = payload?.ToArray() ?? Array.Empty<byte>()
-            };
-
-            bool tryCompression =
+            return
                 command == MessageCommand.Block ||
                 command == MessageCommand.Extensible ||
                 command == MessageCommand.Transaction ||
@@ -76,6 +74,27 @@ namespace Neo.Network.P2P
                 command == MessageCommand.MerkleBlock ||
                 command == MessageCommand.FilterLoad ||
                 command == MessageCommand.FilterAdd;
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="Message"/> class.
+        /// </summary>
+        /// <param name="command">The command of the message.</param>
+        /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
+        /// <returns><see cref="Message"/></returns>
+        public static Message Create(MessageCommand command, ISerializable payload = null)
+        {
+            var tryCompression = ShallICompress(command);
+
+            Message message = new()
+            {
+                Flags = MessageFlags.None,
+                Command = command,
+                Payload = payload,
+                _payload_raw = payload?.ToArray() ?? Array.Empty<byte>()
+            };
+
+            message._payload_compressed = message._payload_raw;
 
             // Try compression
             if (tryCompression && message._payload_compressed.Length > CompressionMinSize)
@@ -94,7 +113,7 @@ namespace Neo.Network.P2P
         private void DecompressPayload()
         {
             if (_payload_compressed.Length == 0) return;
-            ReadOnlyMemory<byte> decompressed = Flags.HasFlag(MessageFlags.Compressed)
+            var decompressed = Flags.HasFlag(MessageFlags.Compressed)
                 ? _payload_compressed.Span.DecompressLz4(PayloadMaxSize)
                 : _payload_compressed;
             Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);
@@ -113,6 +132,28 @@ namespace Neo.Network.P2P
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
             writer.WriteVarBytes(_payload_compressed.Span);
+        }
+
+        public byte[] ToArray(bool enablecompression)
+        {
+            if (enablecompression || !IsCompressed)
+            {
+                return this.ToArray();
+            }
+            else
+            {
+                // Avoid compression
+
+                using MemoryStream ms = new();
+                using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+
+                writer.Write((byte)(Flags & ~MessageFlags.Compressed));
+                writer.Write((byte)Command);
+                writer.WriteVarBytes(_payload_raw.Span);
+
+                writer.Flush();
+                return ms.ToArray();
+            }
         }
 
         internal static int TryDeserialize(ByteString data, out Message msg)

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NativeContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -259,7 +259,7 @@ namespace Neo.SmartContract.Native
                 Extra = null
             };
 
-            OnManifestCompose(manifest);
+            OnManifestCompose(hfChecker, blockHeight, manifest);
 
             // Return ContractState
             return new ContractState
@@ -271,7 +271,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        protected virtual void OnManifestCompose(ContractManifest manifest) { }
+        protected virtual void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest) { }
 
         /// <summary>
         /// It is the initialize block

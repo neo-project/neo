@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Cache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -60,7 +60,8 @@ namespace Neo.Cryptography.MPTTrie
             {
                 return t.Node?.Clone();
             }
-            var n = store.TryGet(Key(hash))?.AsSerializable<Node>();
+
+            var n = store.TryGet(Key(hash), out var data) ? data.AsSerializable<Node>() : null;
             cache.Add(hash, new Trackable
             {
                 Node = n,

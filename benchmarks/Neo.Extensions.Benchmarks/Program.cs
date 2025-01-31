@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Program.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,3 +13,4 @@ using BenchmarkDotNet.Running;
 using Neo.Extensions;
 
 BenchmarkRunner.Run(typeof(Benchmark_ByteArrayComparer));
+BenchmarkRunner.Run(typeof(Benchmark_StringExtensions));
