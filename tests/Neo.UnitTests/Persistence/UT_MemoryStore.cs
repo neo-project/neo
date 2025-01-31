@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -133,10 +132,6 @@ namespace Neo.UnitTests.Persistence
             storeView.Add(new KeyBuilder(1, 0x000002), new StorageItem([0x02]));
             storeView.Add(new KeyBuilder(1, 0x000003), new StorageItem([0x03]));
             storeView.Add(new KeyBuilder(1, 0x000004), new StorageItem([0x04]));
-
-            var entries = storeView.Seek([], SeekDirection.Backward).ToArray();
-            // Memory store has different seek behavior than the snapshot
-            Assert.AreEqual(entries.Length, 37);
         }
     }
 }

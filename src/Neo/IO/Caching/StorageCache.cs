@@ -119,7 +119,9 @@ namespace Neo.IO.Caching
             if (_cacheEntries.TryRemove(key, out var entry))
             {
                 entry.SetExpired(CacheEvictionReason.Removed);
-                _store.Delete(key.ToArray());
+
+                if (_store.Contains(entry.Key.ToArray()))
+                    _store.Delete(key.ToArray());
             }
 
             StartScanForExpiredItemsIfNeeded(UtcNow);

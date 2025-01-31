@@ -10,37 +10,41 @@
 // modifications are permitted.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {
-    public class ByteArrayComparer : IComparer<byte[]>
+    public class ByteArrayComparer : IComparer<byte[]>, IComparer
     {
         public static readonly ByteArrayComparer Default = new(1);
         public static readonly ByteArrayComparer Reverse = new(-1);
 
-        private readonly int _direction;
+        private readonly sbyte _direction;
 
         private ByteArrayComparer(int direction)
         {
-            _direction = direction;
+            _direction = unchecked((sbyte)direction);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(byte[]? x, byte[]? y)
         {
-            if (x == y) return 0;
+            if (ReferenceEquals(x, y)) return 0;
 
-            if (x is null) // y must not be null
-                return -y!.Length * _direction;
-
-            if (y is null) // x must not be null
-                return x.Length * _direction;
+            x ??= [];
+            y ??= [];
 
             if (_direction < 0)
                 return y.AsSpan().SequenceCompareTo(x.AsSpan());
             return x.AsSpan().SequenceCompareTo(y.AsSpan());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int Compare(object? x, object? y)
+        {
+            return Compare(x as byte[], y as byte[]);
         }
     }
 }

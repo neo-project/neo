@@ -9,12 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Extensions
 {
-    public class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
+    public class ByteArrayEqualityComparer : IEqualityComparer<byte[]>, IEqualityComparer
     {
         public static readonly ByteArrayEqualityComparer Default = new();
 
@@ -22,13 +23,21 @@ namespace Neo.Extensions
         {
             if (ReferenceEquals(x, y)) return true;
             if (x is null || y is null) return false;
+            if (x.Length != y.Length) return false;
 
-            return x.AsSpan().SequenceEqual(y.AsSpan());
+            return GetHashCode(x) == GetHashCode(y);
         }
 
-        public int GetHashCode(byte[] obj)
+        public new bool Equals(object? x, object? y)
         {
-            return obj.XxHash3_32();
+            if (ReferenceEquals(x, y)) return true;
+            return Equals(x as byte[], y as byte[]);
         }
+
+        public int GetHashCode([DisallowNull] byte[] obj) =>
+            obj.XxHash3_32();
+
+        public int GetHashCode([DisallowNull] object obj) =>
+            obj is byte[] b ? GetHashCode(b) : 0;
     }
 }

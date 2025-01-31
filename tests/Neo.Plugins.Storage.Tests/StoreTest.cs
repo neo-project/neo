@@ -317,6 +317,26 @@ namespace Neo.Plugins.Storage.Tests
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[0].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[2].Key);
+
+                // Seek null
+                entries = store.Seek(null, SeekDirection.Backward).ToArray();
+                Assert.AreEqual(0, entries.Length);
+
+                // Seek empty
+                entries = store.Seek([], SeekDirection.Backward).ToArray();
+                Assert.AreEqual(0, entries.Length);
+
+                // Test Snapshot
+                using (var snapshot = store.GetSnapshot())
+                {
+                    // Seek null
+                    entries = snapshot.Seek(null, SeekDirection.Backward).ToArray();
+                    Assert.AreEqual(0, entries.Length);
+
+                    // Seek empty
+                    entries = snapshot.Seek([], SeekDirection.Backward).ToArray();
+                    Assert.AreEqual(0, entries.Length);
+                }
             }
         }
 

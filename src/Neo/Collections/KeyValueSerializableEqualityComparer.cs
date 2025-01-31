@@ -10,10 +10,9 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Extensions
 {
@@ -25,9 +24,10 @@ namespace Neo.Extensions
         public bool Equals(TKey x, TKey y)
         {
             if (ReferenceEquals(x, y)) return true;
-            if (x is null || y is null) return false;
 
-            return x.ToArray().AsSpan().SequenceEqual(y.ToArray().AsSpan());
+            var equalityComparer = ByteArrayEqualityComparer.Default;
+
+            return equalityComparer.Equals(x.ToArray(), x.ToArray());
         }
 
         public new bool Equals(object x, object y)
@@ -35,12 +35,12 @@ namespace Neo.Extensions
             return Equals(x as TKey, y as TKey);
         }
 
-        public int GetHashCode(TKey obj)
+        public int GetHashCode([DisallowNull] TKey obj)
         {
             return obj is null ? 0 : obj.GetHashCode();
         }
 
-        public int GetHashCode(object obj)
+        public int GetHashCode([DisallowNull] object obj)
         {
             return obj is TKey t ? GetHashCode(t) : 0;
         }
