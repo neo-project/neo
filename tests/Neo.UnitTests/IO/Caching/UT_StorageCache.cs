@@ -78,7 +78,7 @@ namespace Neo.UnitTests.IO.Caching
 
             Assert.IsTrue(actualCacheAddValueRet);
             Assert.IsNotNull(actualCacheAddValue);
-            // NOTE: that when you remove from cache. `StorageCache` class has to get fetch from
+            // NOTE: that when you remove from cache. `StorageCache` class has to fetch from
             // `IStore`. Making the instance of `TValue` different.
             CollectionAssert.AreEqual(expectedAddValue.ToArray(), actualCacheAddValue.ToArray());
         }
