@@ -149,7 +149,7 @@ namespace Neo.Extensions
                 if (maxSizeWhenAll0xff > 0)
                     seekPrefix = ((byte)0xff).Repeat(maxSizeWhenAll0xff);
                 else
-                    throw new ArgumentException($"{nameof(keyPrefix)} with all bytes being 0xff is not supported now");
+                    throw new NotSupportedException("Array filled with max value (0xFF)", new ArgumentException(nameof(keyPrefix)));
             }
             return seekPrefix;
         }
