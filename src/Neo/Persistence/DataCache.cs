@@ -273,7 +273,7 @@ namespace Neo.Persistence
         /// <param name="key">The key of the entry.</param>
         /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
         /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
-        public StorageItem? GetAndChange(StorageKey key, Func<StorageItem>? factory = null)
+        public StorageItem? GetAndChange(StorageKey key, [NotNullIfNotNull(nameof(factory))] Func<StorageItem>? factory = null)
         {
             lock (_dictionary)
             {
