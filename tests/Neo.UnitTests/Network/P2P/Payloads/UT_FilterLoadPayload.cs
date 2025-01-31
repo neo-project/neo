@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -25,10 +24,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var test = new FilterLoadPayload() { Filter = Array.Empty<byte>(), K = 1, Tweak = uint.MaxValue };
-            test.Size.Should().Be(6);
+            Assert.AreEqual(6, test.Size);
 
             test = FilterLoadPayload.Create(new Neo.Cryptography.BloomFilter(8, 10, 123456));
-            test.Size.Should().Be(7);
+            Assert.AreEqual(7, test.Size);
         }
 
         [TestMethod]

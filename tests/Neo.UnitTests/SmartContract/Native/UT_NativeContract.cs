@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
@@ -207,7 +206,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 {
                     // should be failed
                     var action = () => CheckSpecialParameter(method);
-                    action.Should().Throw<AssertFailedException>();
+                    Assert.ThrowsException<AssertFailedException>(() => action());
                 }
             }
         }
@@ -272,10 +271,9 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "getContract", address);
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
-
+            Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
 
             var cs = new ContractState();
             ((IInteroperable)cs).FromStackItem(result);

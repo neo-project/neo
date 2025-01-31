@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -33,7 +32,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Data = new byte[] { 1, 2, 3 },
                 Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = Array.Empty<byte>() }
             };
-            test.Size.Should().Be(42);
+            Assert.AreEqual(42, test.Size);
         }
 
         [TestMethod]

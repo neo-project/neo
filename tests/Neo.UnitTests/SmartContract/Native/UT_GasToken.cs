@@ -9,10 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -39,13 +37,13 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name.Should().Be(nameof(GasToken));
+        public void Check_Name() => Assert.AreEqual(nameof(GasToken), NativeContract.GAS.Name);
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshotCache).Should().Be("GAS");
+        public void Check_Symbol() => Assert.AreEqual("GAS", NativeContract.GAS.Symbol(_snapshotCache));
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshotCache).Should().Be(8);
+        public void Check_Decimals() => Assert.AreEqual(8, NativeContract.GAS.Decimals(_snapshotCache));
 
         [TestMethod]
         public async Task Check_BalanceOfTransferAndBurn()
@@ -55,7 +53,7 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(5200000050000000); // 3000000000000000 + 50000000 (neo holder reward)
+            Assert.AreEqual(5200000050000000, supply); // 3000000000000000 + 50000000 (neo holder reward)
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
@@ -63,45 +61,45 @@ namespace Neo.UnitTests.SmartContract.Native
             // Check unclaim
 
             var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
-            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
-            unclaim.State.Should().BeTrue();
+            Assert.AreEqual(new BigInteger(0.5 * 1000 * 100000000L), unclaim.Value);
+            Assert.IsTrue(unclaim.State);
 
             // Transfer
 
-            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
             Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
             Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
-            NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000);
-            NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
+            Assert.AreEqual(100000000, NativeContract.NEO.BalanceOf(snapshot, from));
+            Assert.AreEqual(0, NativeContract.NEO.BalanceOf(snapshot, to));
 
-            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(52000500_00000000);
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(0);
+            Assert.AreEqual(52000500_00000000, NativeContract.GAS.BalanceOf(snapshot, from));
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(snapshot, to));
 
             // Check unclaim
 
             unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
-            unclaim.Value.Should().Be(new BigInteger(0));
-            unclaim.State.Should().BeTrue();
+            Assert.AreEqual(new BigInteger(0), unclaim.Value);
+            Assert.IsTrue(unclaim.State);
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(5200050050000000);
+            Assert.AreEqual(5200050050000000, supply);
 
-            snapshot.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
+            Assert.AreEqual(keyCount + 3, snapshot.GetChangeSet().Count()); // Gas
 
             // Transfer
 
             keyCount = snapshot.GetChangeSet().Count();
 
-            NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, false, persistingBlock).Should().BeFalse(); // Not signed
-            NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000001, true, persistingBlock).Should().BeFalse(); // More than balance
-            NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, true, persistingBlock).Should().BeTrue(); // All balance
+            Assert.IsFalse(NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, false, persistingBlock)); // Not signed
+            Assert.IsFalse(NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000001, true, persistingBlock)); // More than balance
+            Assert.IsTrue(NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, true, persistingBlock)); // All balance
 
             // Balance of
 
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(52000500_00000000);
-            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(0);
+            Assert.AreEqual(52000500_00000000, NativeContract.GAS.BalanceOf(snapshot, to));
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(snapshot, from));
 
-            snapshot.GetChangeSet().Count().Should().Be(keyCount + 1); // All
+            Assert.AreEqual(keyCount + 1, snapshot.GetChangeSet().Count()); // All
 
             // Burn
 
@@ -120,14 +118,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
-            NativeContract.GAS.BalanceOf(engine.SnapshotCache, to).Should().Be(5200049999999999);
+            Assert.AreEqual(5200049999999999, NativeContract.GAS.BalanceOf(engine.SnapshotCache, to));
 
-            engine.SnapshotCache.GetChangeSet().Count().Should().Be(2);
+            Assert.AreEqual(2, engine.SnapshotCache.GetChangeSet().Count());
 
             // Burn all
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(5200049999999999));
 
-            (keyCount - 2).Should().Be(engine.SnapshotCache.GetChangeSet().Count());
+            Assert.AreEqual(keyCount - 2, engine.SnapshotCache.GetChangeSet().Count());
 
             // Bad inputs
 

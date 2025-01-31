@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -38,7 +37,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                ApplicationEngine.System_Runtime_CheckWitness.FixedPrice.Should().Be(0_00001024L);
+                Assert.AreEqual(0_00001024L, ApplicationEngine.System_Runtime_CheckWitness.FixedPrice);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -46,7 +45,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                ApplicationEngine.System_Storage_GetContext.FixedPrice.Should().Be(0_00000016L);
+                Assert.AreEqual(0_00000016L, ApplicationEngine.System_Storage_GetContext.FixedPrice);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -54,7 +53,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                ApplicationEngine.System_Storage_Get.FixedPrice.Should().Be(32768L);
+                Assert.AreEqual(32768L, ApplicationEngine.System_Storage_Get.FixedPrice);
             }
         }
 
@@ -86,7 +85,7 @@ namespace Neo.UnitTests.SmartContract
             debugger.StepInto();
             var setupPrice = ae.FeeConsumed;
             debugger.Execute();
-            (ae.FeeConsumed - setupPrice).Should().Be(ae.StoragePrice * value.Length + (1 << 15) * 30);
+            Assert.AreEqual(ae.StoragePrice * value.Length + (1 << 15) * 30, ae.FeeConsumed - setupPrice);
         }
 
         /// <summary>
@@ -117,7 +116,7 @@ namespace Neo.UnitTests.SmartContract
             debugger.StepInto();
             var setupPrice = applicationEngine.FeeConsumed;
             debugger.Execute();
-            (applicationEngine.FeeConsumed - setupPrice).Should().Be(1 * applicationEngine.StoragePrice + (1 << 15) * 30);
+            Assert.AreEqual(1 * applicationEngine.StoragePrice + (1 << 15) * 30, applicationEngine.FeeConsumed - setupPrice);
         }
 
         /// <summary>
@@ -151,7 +150,7 @@ namespace Neo.UnitTests.SmartContract
             var setupPrice = ae.FeeConsumed;
             debugger.StepInto();
             debugger.StepInto();
-            (ae.FeeConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ae.StoragePrice + (1 << 15) * 30);
+            Assert.AreEqual((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ae.StoragePrice + (1 << 15) * 30, ae.FeeConsumed - setupPrice);
         }
 
         /// <summary>
@@ -188,7 +187,7 @@ namespace Neo.UnitTests.SmartContract
             debugger.StepInto(); //syscall Storage.GetContext
             var setupPrice = ae.FeeConsumed;
             debugger.StepInto(); //syscall Storage.Put
-            (ae.FeeConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ae.StoragePrice + (1 << 15) * 30); // = PUT basic fee
+            Assert.AreEqual((sItem.Value.Length / 4 + 1) * ae.StoragePrice + (1 << 15) * 30, ae.FeeConsumed - setupPrice); // = PUT basic fee
         }
 
         private static byte[] CreateMultiplePutScript(byte[] key, byte[] value, int times = 2)

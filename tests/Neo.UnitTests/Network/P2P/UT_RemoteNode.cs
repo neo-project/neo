@@ -11,7 +11,6 @@
 
 using Akka.IO;
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -88,7 +87,7 @@ namespace Neo.UnitTests.Network.P2P
             var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
 
             //Verack
-            verackMessage.Data.Count.Should().Be(3);
+            Assert.AreEqual(3, verackMessage.Data.Count);
         }
     }
 }

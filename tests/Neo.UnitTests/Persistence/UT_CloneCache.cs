@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Persistence;
@@ -48,14 +47,14 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCloneCache()
         {
-            clonedCache.Should().NotBeNull();
+            Assert.IsNotNull(clonedCache);
         }
 
         [TestMethod]
         public void TestAddInternal()
         {
             clonedCache.Add(key1, value1);
-            clonedCache[key1].Should().Be(value1);
+            Assert.AreEqual(value1, clonedCache[key1]);
 
             clonedCache.Commit();
             Assert.IsTrue(myDataCache[key1].Value.Span.SequenceEqual(value1.Value.Span));
@@ -68,8 +67,8 @@ namespace Neo.UnitTests.IO.Caching
             clonedCache.Delete(key1);   //  trackable.State = TrackState.Deleted
             clonedCache.Commit();
 
-            clonedCache.TryGet(key1).Should().BeNull();
-            myDataCache.TryGet(key1).Should().BeNull();
+            Assert.IsNull(clonedCache.TryGet(key1));
+            Assert.IsNull(myDataCache.TryGet(key1));
         }
 
         [TestMethod]
@@ -80,22 +79,22 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
 
             var items = clonedCache.Find(key1.ToArray());
-            items.ElementAt(0).Key.Should().Be(key1);
-            items.ElementAt(0).Value.Should().Be(value1);
-            items.Count().Should().Be(1);
+            Assert.AreEqual(key1, items.ElementAt(0).Key);
+            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            Assert.AreEqual(1, items.Count());
 
             items = clonedCache.Find(key2.ToArray());
-            items.ElementAt(0).Key.Should().Be(key2);
-            value2.EqualsTo(items.ElementAt(0).Value).Should().BeTrue();
-            items.Count().Should().Be(1);
+            Assert.AreEqual(key2, items.ElementAt(0).Key);
+            Assert.IsTrue(value2.EqualsTo(items.ElementAt(0).Value));
+            Assert.AreEqual(1, items.Count());
 
             items = clonedCache.Find(key3.ToArray());
-            items.ElementAt(0).Key.Should().Be(key3);
-            value3.EqualsTo(items.ElementAt(0).Value).Should().BeTrue();
-            items.Count().Should().Be(1);
+            Assert.AreEqual(key3, items.ElementAt(0).Key);
+            Assert.IsTrue(value3.EqualsTo(items.ElementAt(0).Value));
+            Assert.AreEqual(1, items.Count());
 
             items = clonedCache.Find(key4.ToArray());
-            items.Count().Should().Be(0);
+            Assert.AreEqual(0, items.Count());
         }
 
         [TestMethod]
@@ -105,15 +104,15 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key2, value2);
             store.Put(key3.ToArray(), value3.ToArray());
 
-            value1.EqualsTo(clonedCache[key1]).Should().BeTrue();
-            value2.EqualsTo(clonedCache[key2]).Should().BeTrue();
-            value3.EqualsTo(clonedCache[key3]).Should().BeTrue();
+            Assert.IsTrue(value1.EqualsTo(clonedCache[key1]));
+            Assert.IsTrue(value2.EqualsTo(clonedCache[key2]));
+            Assert.IsTrue(value3.EqualsTo(clonedCache[key3]));
 
             Action action = () =>
             {
                 var item = clonedCache[key4];
             };
-            action.Should().Throw<KeyNotFoundException>();
+            Assert.ThrowsException<KeyNotFoundException>(action);
         }
 
         [TestMethod]
@@ -123,10 +122,10 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key2, value2);
             store.Put(key3.ToArray(), value3.ToArray());
 
-            value1.EqualsTo(clonedCache.TryGet(key1)).Should().BeTrue();
-            value2.EqualsTo(clonedCache.TryGet(key2)).Should().BeTrue();
-            value3.EqualsTo(clonedCache.TryGet(key3)).Should().BeTrue();
-            clonedCache.TryGet(key4).Should().BeNull();
+            Assert.IsTrue(value1.EqualsTo(clonedCache.TryGet(key1)));
+            Assert.IsTrue(value2.EqualsTo(clonedCache.TryGet(key2)));
+            Assert.IsTrue(value3.EqualsTo(clonedCache.TryGet(key3)));
+            Assert.IsNull(clonedCache.TryGet(key4));
         }
 
         [TestMethod]
@@ -146,10 +145,10 @@ namespace Neo.UnitTests.IO.Caching
             StorageItem value_new_2 = new(Encoding.UTF8.GetBytes("value_new_2"));
             StorageItem value_new_3 = new(Encoding.UTF8.GetBytes("value_new_3"));
 
-            value_new_1.EqualsTo(clonedCache[key1]).Should().BeTrue();
-            value_new_2.EqualsTo(clonedCache[key2]).Should().BeTrue();
-            value_new_3.EqualsTo(clonedCache[key3]).Should().BeTrue();
-            value_new_2.EqualsTo(clonedCache[key2]).Should().BeTrue();
+            Assert.IsTrue(value_new_1.EqualsTo(clonedCache[key1]));
+            Assert.IsTrue(value_new_2.EqualsTo(clonedCache[key2]));
+            Assert.IsTrue(value_new_3.EqualsTo(clonedCache[key3]));
+            Assert.IsTrue(value_new_2.EqualsTo(clonedCache[key2]));
         }
 
         [TestMethod]
