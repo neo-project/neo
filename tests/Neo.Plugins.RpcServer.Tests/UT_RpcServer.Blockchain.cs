@@ -161,25 +161,13 @@ namespace Neo.Plugins.RpcServer.Tests
 
             snapshot.DeleteContract(contractState.Hash);
             snapshot.Commit();
-            try
-            {
-                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.UnknownContract.Message, ex.Message);
-            }
+            var ex1 = Assert.ThrowsException<RpcException>(() =>
+                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash)));
+            Assert.AreEqual(RpcError.UnknownContract.Message, ex1.Message);
 
-            try
-            {
-                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id));
-                Assert.Fail("Expected RpcException was not thrown.");
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(RpcError.UnknownContract.Message, ex.Message);
-            }
+            var ex2 = Assert.ThrowsException<RpcException>(() =>
+                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id)));
+            Assert.AreEqual(RpcError.UnknownContract.Message, ex2.Message);
         }
 
         [TestMethod]
