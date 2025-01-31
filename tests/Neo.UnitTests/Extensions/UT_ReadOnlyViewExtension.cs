@@ -112,7 +112,7 @@ namespace Neo.UnitTests.Extensions
             action.Should().Throw<ArgumentException>();
 
             action = () => dataCache.Find([0xff], SeekDirection.Backward).ToArray();
-            action.Should().Throw<ArgumentException>();
+            action.Should().Throw<NotSupportedException>();
         }
     }
 }
