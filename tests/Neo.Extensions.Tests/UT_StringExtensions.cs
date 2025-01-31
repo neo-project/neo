@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using System;
 using System.Collections.Generic;
 
@@ -22,22 +21,22 @@ namespace Neo.Extensions.Tests
         public void TestHexToBytes()
         {
             string? nullStr = null;
-            _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
+            Assert.AreEqual(Array.Empty<byte>().ToHexString(), nullStr.HexToBytes().ToHexString());
             string emptyStr = "";
-            emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
+            Assert.AreEqual(Array.Empty<byte>().ToHexString(), emptyStr.HexToBytes().ToHexString());
             string str1 = "hab";
             Action action = () => str1.HexToBytes();
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
             string str2 = "0102";
             byte[] bytes = str2.HexToBytes();
-            bytes.ToHexString().Should().Be(new byte[] { 0x01, 0x02 }.ToHexString());
+            Assert.AreEqual(new byte[] { 0x01, 0x02 }.ToHexString(), bytes.ToHexString());
 
             string str3 = "0A0b0C";
             bytes = str3.AsSpan().HexToBytes();
-            bytes.ToHexString().Should().Be(new byte[] { 0x0A, 0x0B, 0x0C }.ToHexString());
+            Assert.AreEqual(new byte[] { 0x0A, 0x0B, 0x0C }.ToHexString(), bytes.ToHexString());
 
             bytes = str3.AsSpan().HexToBytesReversed();
-            bytes.ToHexString().Should().Be(new byte[] { 0x0C, 0x0B, 0x0A }.ToHexString());
+            Assert.AreEqual(new byte[] { 0x0C, 0x0B, 0x0A }.ToHexString(), bytes.ToHexString());
         }
 
         [TestMethod]

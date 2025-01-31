@@ -9,5 +9,4 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-global using FluentAssertions;
 global using Microsoft.VisualStudio.TestTools.UnitTesting;

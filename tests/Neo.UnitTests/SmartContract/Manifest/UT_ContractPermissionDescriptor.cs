@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
@@ -59,7 +58,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             {
                 var json = JObject.Parse(System.IO.File.ReadAllText(item)) as JObject;
                 var manifest = ContractManifest.FromJson(json);
-                manifest.ToJson().ToString().Should().Be(json.ToString());
+                Assert.AreEqual(manifest.ToJson().ToString(), json.ToString());
             }
         }
 
