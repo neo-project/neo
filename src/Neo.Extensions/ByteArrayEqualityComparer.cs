@@ -10,13 +10,15 @@
 // modifications are permitted.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Extensions
 {
-    public class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
+    public class ByteArrayEqualityComparer : IEqualityComparer<byte[]>, IEqualityComparer
     {
-        public static readonly ByteArrayEqualityComparer Default = new();
+        public static readonly ByteArrayEqualityComparer Instance = new();
 
         public bool Equals(byte[]? x, byte[]? y)
         {
@@ -26,9 +28,16 @@ namespace Neo.Extensions
             return x.AsSpan().SequenceEqual(y.AsSpan());
         }
 
-        public int GetHashCode(byte[] obj)
+        public new bool Equals(object? x, object? y)
         {
-            return obj.XxHash3_32();
+            if (ReferenceEquals(x, y)) return true;     // Check is `null` or same object instance
+            return Equals(x as byte[], y as byte[]);    // if x or y isn't byte array they will be `null`
         }
+
+        public int GetHashCode([DisallowNull] byte[] obj) =>
+            obj.XxHash3_32();
+
+        public int GetHashCode([DisallowNull] object obj) =>
+            obj is byte[] b ? GetHashCode(b) : 0;
     }
 }

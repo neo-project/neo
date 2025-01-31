@@ -24,7 +24,7 @@ namespace Neo.Extensions.Tests
         {
             var a = new byte[] { 1, 2, 3, 4, 1, 2, 3, 4, 5 };
             var b = new byte[] { 1, 2, 3, 4, 1, 2, 3, 4, 5 };
-            var check = ByteArrayEqualityComparer.Default;
+            var check = ByteArrayEqualityComparer.Instance;
 
             Assert.IsTrue(check.Equals(a, a));
             Assert.IsTrue(check.Equals(a, b));
@@ -47,7 +47,7 @@ namespace Neo.Extensions.Tests
         {
             var a = new byte[] { 1, 2, 3, 4, 1, 2, 3, 4, 5 };
             var b = new byte[] { 1, 2, 3, 4, 1, 2, 3, 4, 5 };
-            var check = ByteArrayEqualityComparer.Default;
+            var check = ByteArrayEqualityComparer.Instance;
 
             Assert.AreEqual(check.GetHashCode(a), check.GetHashCode(b));
             Assert.AreNotEqual(check.GetHashCode(a), check.GetHashCode(b.Take(8).ToArray()));

@@ -25,7 +25,7 @@ namespace Neo.Persistence
     /// </summary>
     public class MemoryStore : IStore
     {
-        private readonly ConcurrentDictionary<byte[], byte[]> _innerData = new(ByteArrayEqualityComparer.Default);
+        private readonly ConcurrentDictionary<byte[], byte[]> _innerData = new(ByteArrayEqualityComparer.Instance);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Delete(byte[] key)
@@ -44,29 +44,33 @@ namespace Neo.Persistence
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Put(byte[] key, byte[] value)
         {
-            _innerData[key[..]] = value[..];
+            _innerData[key] = value;
         }
 
         /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             keyOrPrefix ??= [];
-            if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
 
+            if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _innerData;
+
             if (keyOrPrefix.Length > 0)
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+
             records = records.OrderBy(p => p.Key, comparer);
+
             foreach (var pair in records)
-                yield return (pair.Key[..], pair.Value[..]);
+                yield return new(pair.Key, pair.Value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[]? TryGet(byte[] key)
         {
             if (!_innerData.TryGetValue(key, out var value)) return null;
-            return value[..];
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

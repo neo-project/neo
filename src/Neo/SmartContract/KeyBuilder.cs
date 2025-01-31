@@ -20,9 +20,9 @@ namespace Neo.SmartContract
     /// <summary>
     /// Used to build storage keys for native contracts.
     /// </summary>
-    public class KeyBuilder
+    public class KeyBuilder : IDisposable
     {
-        private readonly MemoryStream stream;
+        private readonly MemoryStream _stream;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyBuilder"/> class.
@@ -35,9 +35,15 @@ namespace Neo.SmartContract
             Span<byte> data = stackalloc byte[sizeof(int)];
             BinaryPrimitives.WriteInt32LittleEndian(data, id);
 
-            stream = new(keySizeHint);
-            stream.Write(data);
-            stream.WriteByte(prefix);
+            _stream = new(keySizeHint);
+            _stream.Write(data);
+            _stream.WriteByte(prefix);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _stream.Dispose();
         }
 
         /// <summary>
@@ -48,7 +54,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(byte key)
         {
-            stream.WriteByte(key);
+            _stream.WriteByte(key);
             return this;
         }
 
@@ -60,7 +66,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(ReadOnlySpan<byte> key)
         {
-            stream.Write(key);
+            _stream.Write(key);
             return this;
         }
 
@@ -95,7 +101,7 @@ namespace Neo.SmartContract
         /// <returns>A reference to this instance after the add operation has completed.</returns>
         public KeyBuilder Add(ISerializable key)
         {
-            using (BinaryWriter writer = new(stream, Utility.StrictUTF8, true))
+            using (BinaryWriter writer = new(_stream, Utility.StrictUTF8, true))
             {
                 key.Serialize(writer);
                 writer.Flush();
@@ -165,17 +171,14 @@ namespace Neo.SmartContract
         /// <returns>The storage key.</returns>
         public byte[] ToArray()
         {
-            using (stream)
-            {
-                return stream.ToArray();
-            }
+            return _stream.ToArray();
         }
 
         public static implicit operator StorageKey(KeyBuilder builder)
         {
-            using (builder.stream)
+            using (builder._stream)
             {
-                return new StorageKey(builder.stream.ToArray());
+                return new StorageKey(builder._stream.ToArray());
             }
         }
     }
