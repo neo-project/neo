@@ -70,5 +70,15 @@ namespace Neo.Extensions
         {
             return UnsafeData.GetVarSize(value.Length) + value.Length;
         }
+
+        /// <summary>
+        /// Gets the size of the specified array encoded in variable-length encoding.
+        /// </summary>
+        /// <param name="value">The specified array.</param>
+        /// <returns>The size of the array.</returns>
+        public static int GetVarSize(this Memory<byte> value)
+        {
+            return UnsafeData.GetVarSize(value.Length) + value.Length;
+        }
     }
 }
