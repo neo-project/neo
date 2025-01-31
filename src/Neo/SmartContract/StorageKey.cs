@@ -44,9 +44,9 @@ namespace Neo.SmartContract
         /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
         internal StorageKey(byte[] cache)
         {
-            _cache = cache[..].AsMemory(); // allocate new byte array with new memory space
+            _cache = cache.AsMemory().ToArray();    // allocate new buffer
             Id = BinaryPrimitives.ReadInt32LittleEndian(_cache.Span);
-            Key = _cache[sizeof(int)..]; // move pointer
+            Key = _cache[sizeof(int)..].ToArray();  // allocate new buffer. NOTE: DONT USE POINTERS HERE
         }
 
         /// <summary>
@@ -83,11 +83,11 @@ namespace Neo.SmartContract
         {
             if (_cache is { IsEmpty: true })
             {
-                _cache = new byte[sizeof(int) + Key.Length]; // allocate new byte array in memory space
+                _cache = new byte[sizeof(int) + Key.Length];    // allocate new buffer
                 BinaryPrimitives.WriteInt32LittleEndian(_cache.Span, Id);
                 Key.CopyTo(_cache[sizeof(int)..]);
             }
-            return _cache.ToArray(); // allocate new array
+            return _cache.ToArray();                            // allocate new buffer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

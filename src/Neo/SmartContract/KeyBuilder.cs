@@ -20,9 +20,10 @@ namespace Neo.SmartContract
     /// <summary>
     /// Used to build storage keys for native contracts.
     /// </summary>
-    public class KeyBuilder : IDisposable
+    public class KeyBuilder
     {
-        private readonly MemoryStream _stream;
+        private readonly Memory<byte> _cachedData;
+        private int _keyLen = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyBuilder"/> class.
@@ -32,18 +33,11 @@ namespace Neo.SmartContract
         /// <param name="keySizeHint">The hint of the storage key size(including the id and prefix).</param>
         public KeyBuilder(int id, byte prefix, int keySizeHint = ApplicationEngine.MaxStorageKeySize)
         {
-            Span<byte> data = stackalloc byte[sizeof(int)];
-            BinaryPrimitives.WriteInt32LittleEndian(data, id);
+            _cachedData = new byte[keySizeHint];
+            BinaryPrimitives.WriteInt32LittleEndian(_cachedData.Span, id);
 
-            _stream = new(keySizeHint);
-            _stream.Write(data);
-            _stream.WriteByte(prefix);
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            _stream.Dispose();
+            _keyLen = sizeof(int);
+            _cachedData.Span[_keyLen++] = prefix;
         }
 
         /// <summary>
@@ -54,7 +48,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(byte key)
         {
-            _stream.WriteByte(key);
+            _cachedData.Span[_keyLen++] = key;
             return this;
         }
 
@@ -66,7 +60,8 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(ReadOnlySpan<byte> key)
         {
-            _stream.Write(key);
+            key.CopyTo(_cachedData.Span[_keyLen..]);
+            _keyLen += key.Length;
             return this;
         }
 
@@ -101,11 +96,17 @@ namespace Neo.SmartContract
         /// <returns>A reference to this instance after the add operation has completed.</returns>
         public KeyBuilder Add(ISerializable key)
         {
-            using (BinaryWriter writer = new(_stream, Utility.StrictUTF8, true))
-            {
-                key.Serialize(writer);
-                writer.Flush();
-            }
+            using var stream = new MemoryStream();
+            using BinaryWriter writer = new(stream, Utility.StrictUTF8, true);
+
+            key.Serialize(writer);
+            writer.Flush();
+
+            var raw = stream.ToArray();
+
+            raw.CopyTo(_cachedData[_keyLen..]);
+            _keyLen += raw.Length;
+
             return this;
         }
 
@@ -171,15 +172,12 @@ namespace Neo.SmartContract
         /// <returns>The storage key.</returns>
         public byte[] ToArray()
         {
-            return _stream.ToArray();
+            return _cachedData[.._keyLen].ToArray();
         }
 
         public static implicit operator StorageKey(KeyBuilder builder)
         {
-            using (builder._stream)
-            {
-                return new StorageKey(builder._stream.ToArray());
-            }
+            return new StorageKey(builder._cachedData[..builder._keyLen].ToArray());
         }
     }
 }
