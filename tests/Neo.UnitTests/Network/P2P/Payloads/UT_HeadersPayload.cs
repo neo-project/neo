@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -27,9 +26,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupHeaderWithValues(null, header, UInt256.Zero, out _, out _, out _, out _, out _, out _);
 
             var test = HeadersPayload.Create();
-            test.Size.Should().Be(1);
+            Assert.AreEqual(1, test.Size);
             test = HeadersPayload.Create(header);
-            test.Size.Should().Be(1 + header.Size);
+            Assert.AreEqual(1 + header.Size, test.Size);
         }
 
         [TestMethod]

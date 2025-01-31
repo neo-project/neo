@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
@@ -80,30 +79,30 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCount()
         {
-            cache.Count.Should().Be(0);
+            Assert.AreEqual(0, cache.Count);
 
             cache.Add("hello");
             cache.Add("world");
-            cache.Count.Should().Be(2);
+            Assert.AreEqual(2, cache.Count);
 
             cache.Remove("hello");
-            cache.Count.Should().Be(1);
+            Assert.AreEqual(1, cache.Count);
         }
 
         [TestMethod]
         public void TestIsReadOnly()
         {
-            cache.IsReadOnly.Should().BeFalse();
+            Assert.IsFalse(cache.IsReadOnly);
         }
 
         [TestMethod]
         public void TestAddAndAddInternal()
         {
             cache.Add("hello");
-            cache.Contains("hello").Should().BeTrue();
-            cache.Contains("world").Should().BeFalse();
+            Assert.IsTrue(cache.Contains("hello"));
+            Assert.IsFalse(cache.Contains("world"));
             cache.Add("hello");
-            cache.Count.Should().Be(1);
+            Assert.AreEqual(1, cache.Count);
         }
 
         [TestMethod]
@@ -111,10 +110,10 @@ namespace Neo.UnitTests.IO.Caching
         {
             string[] range = { "hello", "world" };
             cache.AddRange(range);
-            cache.Count.Should().Be(2);
-            cache.Contains("hello").Should().BeTrue();
-            cache.Contains("world").Should().BeTrue();
-            cache.Contains("non exist string").Should().BeFalse();
+            Assert.AreEqual(2, cache.Count);
+            Assert.IsTrue(cache.Contains("hello"));
+            Assert.IsTrue(cache.Contains("world"));
+            Assert.IsFalse(cache.Contains("non exist string"));
         }
 
         [TestMethod]
@@ -122,25 +121,25 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-            cache.Count.Should().Be(2);
+            Assert.AreEqual(2, cache.Count);
             cache.Clear();
-            cache.Count.Should().Be(0);
+            Assert.AreEqual(0, cache.Count);
         }
 
         [TestMethod]
         public void TestContainsKey()
         {
             cache.Add("hello");
-            cache.Contains("hello").Should().BeTrue();
-            cache.Contains("world").Should().BeFalse();
+            Assert.IsTrue(cache.Contains("hello"));
+            Assert.IsFalse(cache.Contains("world"));
         }
 
         [TestMethod]
         public void TestContainsValue()
         {
             cache.Add("hello");
-            cache.Contains("hello".GetHashCode()).Should().BeTrue();
-            cache.Contains("world".GetHashCode()).Should().BeFalse();
+            Assert.IsTrue(cache.Contains("hello".GetHashCode()));
+            Assert.IsFalse(cache.Contains("world".GetHashCode()));
         }
 
         [TestMethod]
@@ -151,26 +150,26 @@ namespace Neo.UnitTests.IO.Caching
             string[] temp = new string[2];
 
             Action action = () => cache.CopyTo(null, 1);
-            action.Should().Throw<ArgumentNullException>();
+            Assert.ThrowsException<ArgumentNullException>(() => action());
 
             action = () => cache.CopyTo(temp, -1);
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => action());
 
             action = () => cache.CopyTo(temp, 1);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => action());
 
             cache.CopyTo(temp, 0);
-            temp[0].Should().Be("hello");
-            temp[1].Should().Be("world");
+            Assert.AreEqual("hello", temp[0]);
+            Assert.AreEqual("world", temp[1]);
         }
 
         [TestMethod]
         public void TestRemoveKey()
         {
             cache.Add("hello");
-            cache.Remove("hello".GetHashCode()).Should().BeTrue();
-            cache.Remove("world".GetHashCode()).Should().BeFalse();
-            cache.Contains("hello").Should().BeFalse();
+            Assert.IsTrue(cache.Remove("hello".GetHashCode()));
+            Assert.IsFalse(cache.Remove("world".GetHashCode()));
+            Assert.IsFalse(cache.Contains("hello"));
         }
 
         [TestMethod]
@@ -182,30 +181,29 @@ namespace Neo.UnitTests.IO.Caching
                 entry
             };
 
-            entry.IsDisposed.Should().BeFalse();
-            dcache.Remove(entry.Key).Should().BeTrue();
-            dcache.Remove(entry.Key).Should().BeFalse();
-            entry.IsDisposed.Should().BeTrue();
+            Assert.IsFalse(entry.IsDisposed);
+            Assert.IsTrue(dcache.Remove(entry.Key));
+            Assert.IsFalse(dcache.Remove(entry.Key));
+            Assert.IsTrue(entry.IsDisposed);
         }
 
         [TestMethod]
         public void TestRemoveValue()
         {
             cache.Add("hello");
-            cache.Remove("hello").Should().BeTrue();
-            cache.Remove("world").Should().BeFalse();
-            cache.Contains("hello").Should().BeFalse();
+            Assert.IsTrue(cache.Remove("hello"));
+            Assert.IsFalse(cache.Remove("world"));
+            Assert.IsFalse(cache.Contains("hello"));
         }
 
         [TestMethod]
         public void TestTryGet()
         {
             cache.Add("hello");
-            cache.TryGet("hello".GetHashCode(), out string output).Should().BeTrue();
-            output.Should().Be("hello");
-            cache.TryGet("world".GetHashCode(), out string output2).Should().BeFalse();
-            output2.Should().NotBe("world");
-            output2.Should().BeNull();
+            Assert.IsTrue(cache.TryGet("hello".GetHashCode(), out string output));
+            Assert.AreEqual("hello", output);
+            Assert.IsFalse(cache.TryGet("world".GetHashCode(), out string output2));
+            Assert.IsNull(output2);
         }
 
         [TestMethod]
@@ -213,14 +211,14 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-            cache["hello".GetHashCode()].Should().Be("hello");
-            cache["world".GetHashCode()].Should().Be("world");
+            Assert.AreEqual("hello", cache["hello".GetHashCode()]);
+            Assert.AreEqual("world", cache["world".GetHashCode()]);
 
             Action action = () =>
             {
                 string temp = cache["non exist string".GetHashCode()];
             };
-            action.Should().Throw<KeyNotFoundException>();
+            Assert.ThrowsException<KeyNotFoundException>(() => action());
         }
 
         [TestMethod]
@@ -231,12 +229,12 @@ namespace Neo.UnitTests.IO.Caching
             int i = 0;
             foreach (string item in cache)
             {
-                if (i == 0) item.Should().Be("hello");
-                if (i == 1) item.Should().Be("world");
+                if (i == 0) Assert.AreEqual("hello", item);
+                if (i == 1) Assert.AreEqual("world", item);
                 i++;
             }
-            i.Should().Be(2);
-            cache.MyGetEnumerator().Should().NotBeNull();
+            Assert.AreEqual(2, i);
+            Assert.IsNotNull(cache.MyGetEnumerator());
         }
 
         [TestMethod]
@@ -247,9 +245,9 @@ namespace Neo.UnitTests.IO.Caching
             {
                 cache.Add(i.ToString());
             }
-            cache.Add(i.ToString());    // The first one will be deleted 
-            cache.Count.Should().Be(max_capacity);
-            cache.Contains((max_capacity + 1).ToString()).Should().BeTrue();
+            cache.Add(i.ToString());    // The first one will be deleted
+            Assert.AreEqual(max_capacity, cache.Count);
+            Assert.IsTrue(cache.Contains((max_capacity + 1).ToString()));
         }
 
         [TestMethod]
@@ -263,7 +261,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 int count = cache.Count;
             };
-            action.Should().Throw<ObjectDisposedException>();
+            Assert.ThrowsException<ObjectDisposedException>(() => action());
         }
     }
 }

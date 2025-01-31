@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -25,7 +24,7 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
         public void Size_Get()
         {
             var test = new ArchivalNodeCapability();
-            test.Size.Should().Be(2);
+            Assert.AreEqual(2, test.Size);
         }
 
         [TestMethod]

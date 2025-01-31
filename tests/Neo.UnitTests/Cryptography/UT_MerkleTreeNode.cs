@@ -37,26 +37,26 @@ namespace Neo.UnitTests.Cryptography
             var hash = new UInt256(Crypto.Hash256(byteArray));
             node.Hash = hash;
 
-            node.Hash.Should().Be(hash);
-            node.Parent.Should().BeNull();
-            node.LeftChild.Should().BeNull();
-            node.RightChild.Should().BeNull();
+            Assert.AreEqual(hash, node.Hash);
+            Assert.IsNull(node.Parent);
+            Assert.IsNull(node.LeftChild);
+            Assert.IsNull(node.RightChild);
         }
 
         [TestMethod]
         public void TestGetIsLeaf()
         {
-            node.IsLeaf.Should().BeTrue();
+            Assert.IsTrue(node.IsLeaf);
 
             MerkleTreeNode child = new MerkleTreeNode();
             node.LeftChild = child;
-            node.IsLeaf.Should().BeFalse();
+            Assert.IsFalse(node.IsLeaf);
         }
 
         [TestMethod]
         public void TestGetIsRoot()
         {
-            node.IsRoot.Should().BeTrue();
+            Assert.IsTrue(node.IsRoot);
         }
     }
 }

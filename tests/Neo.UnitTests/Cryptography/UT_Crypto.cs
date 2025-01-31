@@ -9,10 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.IO;
 using Neo.Wallets;
 using System;
 using System.Security.Cryptography;
@@ -23,6 +24,9 @@ namespace Neo.UnitTests.Cryptography
     public class UT_Crypto
     {
         private KeyPair key = null;
+        private readonly byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
+        private readonly byte[] wrongKey = new byte[33];
+        private readonly byte[] wrongKey2 = new byte[36];
 
         public static KeyPair GenerateKey(int privateKeyLength)
         {
@@ -53,22 +57,17 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestVerifySignature()
         {
-            byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
             byte[] signature = Crypto.Sign(message, key.PrivateKey);
-            Crypto.VerifySignature(message, signature, key.PublicKey).Should().BeTrue();
+            Assert.IsTrue(Crypto.VerifySignature(message, signature, key.PublicKey));
 
-            byte[] wrongKey = new byte[33];
             wrongKey[0] = 0x02;
-            Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
+            Assert.IsFalse(Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1));
 
             wrongKey[0] = 0x03;
             for (int i = 1; i < 33; i++) wrongKey[i] = byte.MaxValue;
-            Action action = () => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1));
 
-            wrongKey = new byte[36];
-            action = () => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(() => Crypto.VerifySignature(message, signature, wrongKey2, Neo.Cryptography.ECC.ECCurve.Secp256r1));
         }
 
         [TestMethod]
@@ -79,21 +78,18 @@ namespace Neo.UnitTests.Cryptography
             var signature = Crypto.Sign(message, privkey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
 
             byte[] pubKey = "04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108".HexToBytes();
-            Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1)
-                .Should().BeTrue();
+            Assert.IsTrue(Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1));
 
             message = System.Text.Encoding.Default.GetBytes("world");
             signature = Crypto.Sign(message, privkey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
 
-            Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1)
-                .Should().BeTrue();
+            Assert.IsTrue(Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1));
 
             message = System.Text.Encoding.Default.GetBytes("中文");
             signature = "b8cba1ff42304d74d083e87706058f59cdd4f755b995926d2cd80a734c5a3c37e4583bfd4339ac762c1c91eee3782660a6baf62cd29e407eccd3da3e9de55a02".HexToBytes();
             pubKey = "03661b86d54eb3a8e7ea2399e0db36ab65753f95fff661da53ae0121278b881ad0".HexToBytes();
 
-            Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1)
-                .Should().BeTrue();
+            Assert.IsTrue(Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1));
         }
     }
 }

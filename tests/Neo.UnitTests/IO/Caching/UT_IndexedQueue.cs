@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
@@ -24,19 +23,19 @@ namespace Neo.UnitTests.IO.Caching
         public void TestDefault()
         {
             var queue = new IndexedQueue<int>(10);
-            queue.Count.Should().Be(0);
+            Assert.AreEqual(0, queue.Count);
 
             queue = new IndexedQueue<int>();
-            queue.Count.Should().Be(0);
+            Assert.AreEqual(0, queue.Count);
             queue.TrimExcess();
-            queue.Count.Should().Be(0);
+            Assert.AreEqual(0, queue.Count);
 
             queue = new IndexedQueue<int>(Array.Empty<int>());
-            queue.Count.Should().Be(0);
-            queue.TryPeek(out var a).Should().BeFalse();
-            a.Should().Be(0);
-            queue.TryDequeue(out a).Should().BeFalse();
-            a.Should().Be(0);
+            Assert.AreEqual(0, queue.Count);
+            Assert.IsFalse(queue.TryPeek(out var a));
+            Assert.AreEqual(0, a);
+            Assert.IsFalse(queue.TryDequeue(out a));
+            Assert.AreEqual(0, a);
 
             Assert.ThrowsException<InvalidOperationException>(() => queue.Peek());
             Assert.ThrowsException<InvalidOperationException>(() => queue.Dequeue());
@@ -51,27 +50,27 @@ namespace Neo.UnitTests.IO.Caching
         public void TestQueue()
         {
             var queue = new IndexedQueue<int>(new int[] { 1, 2, 3 });
-            queue.Count.Should().Be(3);
+            Assert.AreEqual(3, queue.Count);
 
             queue.Enqueue(4);
-            queue.Count.Should().Be(4);
-            queue.Peek().Should().Be(1);
-            queue.TryPeek(out var a).Should().BeTrue();
-            a.Should().Be(1);
+            Assert.AreEqual(4, queue.Count);
+            Assert.AreEqual(1, queue.Peek());
+            Assert.IsTrue(queue.TryPeek(out var a));
+            Assert.AreEqual(1, a);
 
-            queue[0].Should().Be(1);
-            queue[1].Should().Be(2);
-            queue[2].Should().Be(3);
-            queue.Dequeue().Should().Be(1);
-            queue.Dequeue().Should().Be(2);
-            queue.Dequeue().Should().Be(3);
+            Assert.AreEqual(1, queue[0]);
+            Assert.AreEqual(2, queue[1]);
+            Assert.AreEqual(3, queue[2]);
+            Assert.AreEqual(1, queue.Dequeue());
+            Assert.AreEqual(2, queue.Dequeue());
+            Assert.AreEqual(3, queue.Dequeue());
             queue[0] = 5;
-            queue.TryDequeue(out a).Should().BeTrue();
-            a.Should().Be(5);
+            Assert.IsTrue(queue.TryDequeue(out a));
+            Assert.AreEqual(5, a);
 
             queue.Enqueue(4);
             queue.Clear();
-            queue.Count.Should().Be(0);
+            Assert.AreEqual(0, queue.Count);
         }
 
         [TestMethod]
@@ -80,7 +79,7 @@ namespace Neo.UnitTests.IO.Caching
             int[] arr = new int[3] { 1, 2, 3 };
             var queue = new IndexedQueue<int>(arr);
 
-            arr.SequenceEqual(queue).Should().BeTrue();
+            Assert.IsTrue(arr.SequenceEqual(queue));
         }
 
         [TestMethod]
@@ -95,15 +94,15 @@ namespace Neo.UnitTests.IO.Caching
 
             queue.CopyTo(arr, 0);
 
-            arr[0].Should().Be(1);
-            arr[1].Should().Be(2);
-            arr[2].Should().Be(3);
+            Assert.AreEqual(1, arr[0]);
+            Assert.AreEqual(2, arr[1]);
+            Assert.AreEqual(3, arr[2]);
 
             arr = queue.ToArray();
 
-            arr[0].Should().Be(1);
-            arr[1].Should().Be(2);
-            arr[2].Should().Be(3);
+            Assert.AreEqual(1, arr[0]);
+            Assert.AreEqual(2, arr[1]);
+            Assert.AreEqual(3, arr[2]);
         }
     }
 }
