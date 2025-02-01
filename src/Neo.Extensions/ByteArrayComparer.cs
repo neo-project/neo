@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {
+    /// <inheritdoc />
     public class ByteArrayComparer : IComparer<byte[]>, IComparer
     {
         public static readonly ByteArrayComparer Default = new(1);
@@ -28,6 +29,7 @@ namespace Neo.Extensions
             _direction = direction;
         }
 
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(byte[]? x, byte[]? y)
         {
@@ -41,9 +43,18 @@ namespace Neo.Extensions
             return x.AsSpan().SequenceCompareTo(y.AsSpan());
         }
 
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(object? x, object? y)
         {
+            if (ReferenceEquals(x, y)) return 0;
+
+            if (x is not null and not byte[])
+                throw new ArgumentException($"Unable to cast '{x.GetType().FullName}' to '{typeof(byte[]).FullName}'.");
+
+            if (y is not null and not byte[])
+                throw new ArgumentException($"Unable to cast '{y.GetType().FullName}' to '{typeof(byte[]).FullName}'.");
+
             return Compare(x as byte[], y as byte[]);
         }
     }
