@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NeoSystem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Neo.UnitTests
@@ -26,12 +25,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetBlockchain() => neoSystem.Blockchain.Should().NotBeNull();
+        public void TestGetBlockchain() => Assert.IsNotNull(neoSystem.Blockchain);
 
         [TestMethod]
-        public void TestGetLocalNode() => neoSystem.LocalNode.Should().NotBeNull();
+        public void TestGetLocalNode() => Assert.IsNotNull(neoSystem.LocalNode);
 
         [TestMethod]
-        public void TestGetTaskManager() => neoSystem.TaskManager.Should().NotBeNull();
+        public void TestGetTaskManager() => Assert.IsNotNull(neoSystem.TaskManager);
     }
 }

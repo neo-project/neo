@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_AddrPayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -27,10 +26,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var test = new AddrPayload() { AddressList = new NetworkAddressWithTime[0] };
-            test.Size.Should().Be(1);
+            Assert.AreEqual(1, test.Size);
 
             test = AddrPayload.Create(new NetworkAddressWithTime[] { new NetworkAddressWithTime() { Address = IPAddress.Any, Capabilities = new Neo.Network.P2P.Capabilities.NodeCapability[0], Timestamp = 1 } });
-            test.Size.Should().Be(22);
+            Assert.AreEqual(22, test.Size);
         }
 
         [TestMethod]

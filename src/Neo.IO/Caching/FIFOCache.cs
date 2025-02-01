@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // FIFOCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    internal abstract class FIFOCache<TKey, TValue>
+    public abstract class FIFOCache<TKey, TValue>
         (int max_capacity, IEqualityComparer<TKey>? comparer = null) : Cache<TKey, TValue>(max_capacity, comparer)
         where TKey : notnull
     {

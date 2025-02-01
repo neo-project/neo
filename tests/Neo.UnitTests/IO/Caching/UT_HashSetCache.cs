@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_HashSetCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
@@ -30,17 +29,17 @@ namespace Neo.UnitTests.IO.Caching
                 Assert.IsTrue(bucket.Add(i));
                 Assert.IsFalse(bucket.Add(i));
             }
-            bucket.Count.Should().Be(100);
+            Assert.AreEqual(100, bucket.Count);
 
             int sum = 0;
             foreach (var ele in bucket)
             {
                 sum += ele;
             }
-            sum.Should().Be(5050);
+            Assert.AreEqual(5050, sum);
 
             bucket.Add(101);
-            bucket.Count.Should().Be(91);
+            Assert.AreEqual(91, bucket.Count);
 
             var items = new int[10];
             var value = 11;
@@ -50,20 +49,20 @@ namespace Neo.UnitTests.IO.Caching
                 value += 2;
             }
             bucket.ExceptWith(items);
-            bucket.Count.Should().Be(81);
+            Assert.AreEqual(81, bucket.Count);
 
-            bucket.Contains(13).Should().BeFalse();
-            bucket.Contains(50).Should().BeTrue();
+            Assert.IsFalse(bucket.Contains(13));
+            Assert.IsTrue(bucket.Contains(50));
         }
 
         [TestMethod]
         public void TestConstructor()
         {
             Action action1 = () => new HashSetCache<UInt256>(-1);
-            action1.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => action1());
 
             Action action2 = () => new HashSetCache<UInt256>(1, -1);
-            action2.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => action2());
         }
 
         [TestMethod]
@@ -110,7 +109,7 @@ namespace Neo.UnitTests.IO.Caching
                 b
             };
             IEnumerable ie = set;
-            ie.GetEnumerator().Should().NotBeNull();
+            Assert.IsNotNull(ie.GetEnumerator());
         }
 
         [TestMethod]

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_FullNodeCapability.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -24,10 +23,10 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
         public void Size_Get()
         {
             var test = new FullNodeCapability() { StartHeight = 1 };
-            test.Size.Should().Be(5);
+            Assert.AreEqual(5, test.Size);
 
             test = new FullNodeCapability(2);
-            test.Size.Should().Be(5);
+            Assert.AreEqual(5, test.Size);
         }
 
         [TestMethod]

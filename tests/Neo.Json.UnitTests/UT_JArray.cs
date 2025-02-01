@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_JArray.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections;
 
 namespace Neo.Json.UnitTests
@@ -61,18 +62,18 @@ namespace Neo.Json.UnitTests
             };
             var jAlice = jArray[0];
             var jBob = jArray[1];
-            jAlice["name"].ToString().Should().Be(alice["name"].ToString());
-            jAlice["age"].ToString().Should().Be(alice["age"].ToString());
-            jAlice["score"].ToString().Should().Be(alice["score"].ToString());
-            jAlice["gender"].ToString().Should().Be(alice["gender"].ToString());
-            jAlice["isMarried"].ToString().Should().Be(alice["isMarried"].ToString());
-            jAlice["pet"].ToString().Should().Be(alice["pet"].ToString());
-            jBob["name"].ToString().Should().Be(bob["name"].ToString());
-            jBob["age"].ToString().Should().Be(bob["age"].ToString());
-            jBob["score"].ToString().Should().Be(bob["score"].ToString());
-            jBob["gender"].ToString().Should().Be(bob["gender"].ToString());
-            jBob["isMarried"].ToString().Should().Be(bob["isMarried"].ToString());
-            jBob["pet"].ToString().Should().Be(bob["pet"].ToString());
+            Assert.AreEqual(alice["name"].ToString(), jAlice["name"].ToString());
+            Assert.AreEqual(alice["age"].ToString(), jAlice["age"].ToString());
+            Assert.AreEqual(alice["score"].ToString(), jAlice["score"].ToString());
+            Assert.AreEqual(alice["gender"].ToString(), jAlice["gender"].ToString());
+            Assert.AreEqual(alice["isMarried"].ToString(), jAlice["isMarried"].ToString());
+            Assert.AreEqual(alice["pet"].ToString(), jAlice["pet"].ToString());
+            Assert.AreEqual(bob["name"].ToString(), jBob["name"].ToString());
+            Assert.AreEqual(bob["age"].ToString(), jBob["age"].ToString());
+            Assert.AreEqual(bob["score"].ToString(), jBob["score"].ToString());
+            Assert.AreEqual(bob["gender"].ToString(), jBob["gender"].ToString());
+            Assert.AreEqual(bob["isMarried"].ToString(), jBob["isMarried"].ToString());
+            Assert.AreEqual(bob["pet"].ToString(), jBob["pet"].ToString());
         }
 
         [TestMethod]
@@ -86,7 +87,7 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual(jArray[0], bob);
 
             Action action = () => jArray[1] = alice;
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
@@ -97,16 +98,16 @@ namespace Neo.Json.UnitTests
                 alice
             };
             var jAlice = jArray[0];
-            jAlice["name"].ToString().Should().Be(alice["name"].ToString());
-            jAlice["age"].ToString().Should().Be(alice["age"].ToString());
-            jAlice["score"].ToString().Should().Be(alice["score"].ToString());
-            jAlice["gender"].ToString().Should().Be(alice["gender"].ToString());
-            jAlice["isMarried"].ToString().Should().Be(alice["isMarried"].ToString());
-            jAlice["pet"].ToString().Should().Be(alice["pet"].ToString());
+            Assert.AreEqual(alice["name"].ToString(), jAlice["name"].ToString());
+            Assert.AreEqual(alice["age"].ToString(), jAlice["age"].ToString());
+            Assert.AreEqual(alice["score"].ToString(), jAlice["score"].ToString());
+            Assert.AreEqual(alice["gender"].ToString(), jAlice["gender"].ToString());
+            Assert.AreEqual(alice["isMarried"].ToString(), jAlice["isMarried"].ToString());
+            Assert.AreEqual(alice["pet"].ToString(), jAlice["pet"].ToString());
 
             jArray.Clear();
             Action action = () => jArray[0].ToString();
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
@@ -116,8 +117,8 @@ namespace Neo.Json.UnitTests
             {
                 alice
             };
-            jArray.Contains(alice).Should().BeTrue();
-            jArray.Contains(bob).Should().BeFalse();
+            Assert.IsTrue(jArray.Contains(alice));
+            Assert.IsFalse(jArray.Contains(bob));
         }
 
         [TestMethod]
@@ -140,8 +141,8 @@ namespace Neo.Json.UnitTests
             jArray.CopyTo(jObjects2, 2);
             var jAlice2 = jObjects2[2];
             var jBob2 = jObjects2[3];
-            jObjects2[0].Should().BeNull();
-            jObjects2[1].Should().BeNull();
+            Assert.IsNull(jObjects2[0]);
+            Assert.IsNull(jObjects2[1]);
             Assert.AreEqual(alice, jAlice2);
             Assert.AreEqual(bob, jBob2);
         }
@@ -158,37 +159,37 @@ namespace Neo.Json.UnitTests
             };
 
             jArray.Insert(1, bob);
-            jArray.Count().Should().Be(5);
-            jArray[0].Should().Be(alice);
-            jArray[1].Should().Be(bob);
-            jArray[2].Should().Be(alice);
+            Assert.AreEqual(5, jArray.Count());
+            Assert.AreEqual(alice, jArray[0]);
+            Assert.AreEqual(bob, jArray[1]);
+            Assert.AreEqual(alice, jArray[2]);
 
             jArray.Insert(5, bob);
-            jArray.Count().Should().Be(6);
-            jArray[5].Should().Be(bob);
+            Assert.AreEqual(6, jArray.Count());
+            Assert.AreEqual(bob, jArray[5]);
         }
 
         [TestMethod]
         public void TestIndexOf()
         {
             var jArray = new JArray();
-            jArray.IndexOf(alice).Should().Be(-1);
+            Assert.AreEqual(-1, jArray.IndexOf(alice));
 
             jArray.Add(alice);
             jArray.Add(alice);
             jArray.Add(alice);
             jArray.Add(alice);
-            jArray.IndexOf(alice).Should().Be(0);
+            Assert.AreEqual(0, jArray.IndexOf(alice));
 
             jArray.Insert(1, bob);
-            jArray.IndexOf(bob).Should().Be(1);
+            Assert.AreEqual(1, jArray.IndexOf(bob));
         }
 
         [TestMethod]
         public void TestIsReadOnly()
         {
             var jArray = new JArray();
-            jArray.IsReadOnly.Should().BeFalse();
+            Assert.IsFalse(jArray.IsReadOnly);
         }
 
         [TestMethod]
@@ -198,15 +199,15 @@ namespace Neo.Json.UnitTests
             {
                 alice
             };
-            jArray.Count().Should().Be(1);
+            Assert.AreEqual(1, jArray.Count());
             jArray.Remove(alice);
-            jArray.Count().Should().Be(0);
+            Assert.AreEqual(0, jArray.Count());
 
             jArray.Add(alice);
             jArray.Add(alice);
-            jArray.Count().Should().Be(2);
+            Assert.AreEqual(2, jArray.Count());
             jArray.Remove(alice);
-            jArray.Count().Should().Be(1);
+            Assert.AreEqual(1, jArray.Count());
         }
 
         [TestMethod]
@@ -219,8 +220,8 @@ namespace Neo.Json.UnitTests
                 alice
             };
             jArray.RemoveAt(1);
-            jArray.Count().Should().Be(2);
-            jArray.Contains(bob).Should().BeFalse();
+            Assert.AreEqual(2, jArray.Count());
+            Assert.IsFalse(jArray.Contains(bob));
         }
 
         [TestMethod]
@@ -236,8 +237,8 @@ namespace Neo.Json.UnitTests
             int i = 0;
             foreach (var item in jArray)
             {
-                if (i % 2 == 0) item.Should().Be(alice);
-                if (i % 2 != 0) item.Should().Be(bob);
+                if (i % 2 == 0) Assert.AreEqual(alice, item);
+                if (i % 2 != 0) Assert.AreEqual(bob, item);
                 i++;
             }
             Assert.IsNotNull(((IEnumerable)jArray).GetEnumerator());
@@ -259,7 +260,7 @@ namespace Neo.Json.UnitTests
         public void TestCount()
         {
             var jArray = new JArray { alice, bob };
-            jArray.Count.Should().Be(2);
+            Assert.AreEqual(2, jArray.Count);
         }
 
         [TestMethod]
@@ -267,7 +268,7 @@ namespace Neo.Json.UnitTests
         {
             var jArray = new JArray { alice };
             Action action = () => { var item = jArray[1]; };
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
@@ -286,18 +287,20 @@ namespace Neo.Json.UnitTests
             JToken[] jTokens = { alice, bob };
             JArray jArray = jTokens;
 
-            jArray.Count.Should().Be(2);
-            jArray[0].Should().Be(alice);
-            jArray[1].Should().Be(bob);
+            Assert.AreEqual(2, jArray.Count);
+            Assert.AreEqual(alice, jArray[0]);
+            Assert.AreEqual(bob, jArray[1]);
         }
 
         [TestMethod]
         public void TestAddNullValues()
         {
-            var jArray = new JArray();
-            jArray.Add(null);
-            jArray.Count.Should().Be(1);
-            jArray[0].Should().BeNull();
+            var jArray = new JArray
+            {
+                null
+            };
+            Assert.AreEqual(1, jArray.Count);
+            Assert.IsNull(jArray[0]);
         }
 
         [TestMethod]
@@ -306,24 +309,24 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray { alice, bob };
             var clone = (JArray)jArray.Clone();
 
-            clone.Should().NotBeSameAs(jArray);
-            clone.Count.Should().Be(jArray.Count);
+            Assert.AreNotSame(jArray, clone);
+            Assert.AreEqual(jArray.Count, clone.Count);
 
             for (int i = 0; i < jArray.Count; i++)
             {
-                clone[i]?.AsString().Should().Be(jArray[i]?.AsString());
+                Assert.AreEqual(jArray[i]?.AsString(), clone[i]?.AsString());
             }
 
             var a = jArray.AsString();
             var b = jArray.Clone().AsString();
-            a.Should().Be(b);
+            Assert.AreEqual(a, b);
         }
 
         [TestMethod]
         public void TestReadOnlyBehavior()
         {
             var jArray = new JArray();
-            jArray.IsReadOnly.Should().BeFalse();
+            Assert.IsFalse(jArray.IsReadOnly);
         }
 
         [TestMethod]
@@ -331,8 +334,8 @@ namespace Neo.Json.UnitTests
         {
             var jArray = new JArray { null };
 
-            jArray.Count.Should().Be(1);
-            jArray[0].Should().BeNull();
+            Assert.AreEqual(1, jArray.Count);
+            Assert.IsNull(jArray[0]);
         }
 
         [TestMethod]
@@ -341,8 +344,8 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray { alice };
             jArray[0] = null;
 
-            jArray.Count.Should().Be(1);
-            jArray[0].Should().BeNull();
+            Assert.AreEqual(1, jArray.Count);
+            Assert.IsNull(jArray[0]);
         }
 
         [TestMethod]
@@ -351,9 +354,9 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray { alice };
             jArray.Insert(0, null);
 
-            jArray.Count.Should().Be(2);
-            jArray[0].Should().BeNull();
-            jArray[1].Should().Be(alice);
+            Assert.AreEqual(2, jArray.Count);
+            Assert.IsNull(jArray[0]);
+            Assert.AreEqual(alice, jArray[1]);
         }
 
         [TestMethod]
@@ -362,24 +365,24 @@ namespace Neo.Json.UnitTests
             var jArray = new JArray { null, alice };
             jArray.Remove(null);
 
-            jArray.Count.Should().Be(1);
-            jArray[0].Should().Be(alice);
+            Assert.AreEqual(1, jArray.Count);
+            Assert.AreEqual(alice, jArray[0]);
         }
 
         [TestMethod]
         public void TestContainsNull()
         {
             var jArray = new JArray { null, alice };
-            jArray.Contains(null).Should().BeTrue();
-            jArray.Contains(bob).Should().BeFalse();
+            Assert.IsTrue(jArray.Contains(null));
+            Assert.IsFalse(jArray.Contains(bob));
         }
 
         [TestMethod]
         public void TestIndexOfNull()
         {
             var jArray = new JArray { null, alice };
-            jArray.IndexOf(null).Should().Be(0);
-            jArray.IndexOf(alice).Should().Be(1);
+            Assert.AreEqual(0, jArray.IndexOf(null));
+            Assert.AreEqual(1, jArray.IndexOf(alice));
         }
 
         [TestMethod]
@@ -389,8 +392,8 @@ namespace Neo.Json.UnitTests
             JObject[] jObjects = new JObject[2];
             jArray.CopyTo(jObjects, 0);
 
-            jObjects[0].Should().BeNull();
-            jObjects[1].Should().Be(alice);
+            Assert.IsNull(jObjects[0]);
+            Assert.AreEqual(alice, jObjects[1]);
         }
 
         [TestMethod]
@@ -400,8 +403,8 @@ namespace Neo.Json.UnitTests
             var jsonString = jArray.ToString();
             var asString = jArray.AsString();
             // JSON string should properly represent the null value
-            jsonString.Should().Be("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
-            asString.Should().Be("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]");
+            Assert.AreEqual("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]", jsonString);
+            Assert.AreEqual("[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]", asString);
         }
 
         [TestMethod]
@@ -410,12 +413,12 @@ namespace Neo.Json.UnitTests
             var jsonString = "[null,{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}]";
             var jArray = (JArray)JArray.Parse(jsonString);
 
-            jArray.Count.Should().Be(3);
-            jArray[0].Should().BeNull();
+            Assert.AreEqual(3, jArray.Count);
+            Assert.IsNull(jArray[0]);
 
             // Checking the second and third elements
-            jArray[1]["name"].AsString().Should().Be("alice");
-            jArray[2]["name"].AsString().Should().Be("bob");
+            Assert.AreEqual("alice", jArray[1]["name"].AsString());
+            Assert.AreEqual("bob", jArray[2]["name"].AsString());
         }
     }
 }

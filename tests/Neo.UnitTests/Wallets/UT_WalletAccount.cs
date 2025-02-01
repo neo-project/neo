@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_WalletAccount.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.Wallets;
@@ -44,16 +43,16 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAddress()
         {
             MyWalletAccount walletAccount = new MyWalletAccount(UInt160.Zero);
-            walletAccount.Address.Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
+            Assert.AreEqual("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf", walletAccount.Address);
         }
 
         [TestMethod]
         public void TestGetWatchOnly()
         {
             MyWalletAccount walletAccount = new MyWalletAccount(UInt160.Zero);
-            walletAccount.WatchOnly.Should().BeTrue();
+            Assert.IsTrue(walletAccount.WatchOnly);
             walletAccount.Contract = new Contract();
-            walletAccount.WatchOnly.Should().BeFalse();
+            Assert.IsFalse(walletAccount.WatchOnly);
         }
     }
 }

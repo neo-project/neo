@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_RemoteNodeMailbox.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,6 @@
 
 using Akka.IO;
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;
@@ -49,45 +48,45 @@ namespace Neo.UnitTests.Network.P2P
             ISerializable s = null;
 
             //handshaking
-            uut.IsHighPriority(Message.Create(MessageCommand.Version, s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create(MessageCommand.Verack, s)).Should().Be(true);
+            Assert.IsTrue(uut.IsHighPriority(Message.Create(MessageCommand.Version, s)));
+            Assert.IsTrue(uut.IsHighPriority(Message.Create(MessageCommand.Verack, s)));
 
             //connectivity
-            uut.IsHighPriority(Message.Create(MessageCommand.GetAddr, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Addr, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Ping, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Pong, s)).Should().Be(false);
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.GetAddr, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Addr, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Ping, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Pong, s)));
 
             //synchronization
-            uut.IsHighPriority(Message.Create(MessageCommand.GetHeaders, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Headers, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.GetBlocks, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Mempool, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Inv, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.GetData, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.NotFound, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Transaction, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Block, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Extensible, s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create(MessageCommand.Reject, s)).Should().Be(false);
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.GetHeaders, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Headers, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.GetBlocks, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Mempool, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Inv, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.GetData, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.NotFound, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Transaction, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Block, s)));
+            Assert.IsTrue(uut.IsHighPriority(Message.Create(MessageCommand.Extensible, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.Reject, s)));
 
             //SPV protocol
-            uut.IsHighPriority(Message.Create(MessageCommand.FilterLoad, s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create(MessageCommand.FilterAdd, s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create(MessageCommand.FilterClear, s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create(MessageCommand.MerkleBlock, s)).Should().Be(false);
+            Assert.IsTrue(uut.IsHighPriority(Message.Create(MessageCommand.FilterLoad, s)));
+            Assert.IsTrue(uut.IsHighPriority(Message.Create(MessageCommand.FilterAdd, s)));
+            Assert.IsTrue(uut.IsHighPriority(Message.Create(MessageCommand.FilterClear, s)));
+            Assert.IsFalse(uut.IsHighPriority(Message.Create(MessageCommand.MerkleBlock, s)));
 
             //others
-            uut.IsHighPriority(Message.Create(MessageCommand.Alert, s)).Should().Be(true);
+            Assert.IsTrue(uut.IsHighPriority(Message.Create(MessageCommand.Alert, s)));
 
             // high priority commands
-            uut.IsHighPriority(new Tcp.ConnectionClosed()).Should().Be(true);
-            uut.IsHighPriority(new Connection.Close()).Should().Be(true);
-            uut.IsHighPriority(new Connection.Ack()).Should().Be(true);
+            Assert.IsTrue(uut.IsHighPriority(new Tcp.ConnectionClosed()));
+            Assert.IsTrue(uut.IsHighPriority(new Connection.Close()));
+            Assert.IsTrue(uut.IsHighPriority(new Connection.Ack()));
 
             // any random object should not have priority
             object obj = null;
-            uut.IsHighPriority(obj).Should().Be(false);
+            Assert.IsFalse(uut.IsHighPriority(obj));
         }
 
         public void ProtocolHandlerMailbox_Test_ShallDrop()
@@ -100,101 +99,101 @@ namespace Neo.UnitTests.Network.P2P
 
             // any random object (non Message) should be dropped
             object obj = null;
-            uut.ShallDrop(obj, emptyQueue).Should().Be(true);
+            Assert.IsTrue(uut.ShallDrop(obj, emptyQueue));
 
             //handshaking
             // Version (no drop)
             msg = Message.Create(MessageCommand.Version, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // Verack (no drop)
             msg = Message.Create(MessageCommand.Verack, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
 
             //connectivity
             // GetAddr (drop)
             msg = Message.Create(MessageCommand.GetAddr, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsTrue(uut.ShallDrop(msg, new object[] { msg }));
             // Addr (no drop)
             msg = Message.Create(MessageCommand.Addr, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // Ping (no drop)
             msg = Message.Create(MessageCommand.Ping, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // Pong (no drop)
             msg = Message.Create(MessageCommand.Pong, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
 
             //synchronization
             // GetHeaders (drop)
             msg = Message.Create(MessageCommand.GetHeaders, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsTrue(uut.ShallDrop(msg, new object[] { msg }));
             // Headers (no drop)
             msg = Message.Create(MessageCommand.Headers, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // GetBlocks (drop)
             msg = Message.Create(MessageCommand.GetBlocks, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsTrue(uut.ShallDrop(msg, new object[] { msg }));
             // Mempool (drop)
             msg = Message.Create(MessageCommand.Mempool, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsTrue(uut.ShallDrop(msg, new object[] { msg }));
             // Inv (no drop)
             msg = Message.Create(MessageCommand.Inv, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // NotFound (no drop)
             msg = Message.Create(MessageCommand.NotFound, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // Transaction (no drop)
             msg = Message.Create(MessageCommand.Transaction, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // Block (no drop)
             msg = Message.Create(MessageCommand.Block, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // Consensus (no drop)
             msg = Message.Create(MessageCommand.Extensible, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // Reject (no drop)
             msg = Message.Create(MessageCommand.Reject, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
 
             //SPV protocol
             // FilterLoad (no drop)
             msg = Message.Create(MessageCommand.FilterLoad, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // FilterAdd (no drop)
             msg = Message.Create(MessageCommand.FilterAdd, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // FilterClear (no drop)
             msg = Message.Create(MessageCommand.FilterClear, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
             // MerkleBlock (no drop)
             msg = Message.Create(MessageCommand.MerkleBlock, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
 
             //others
             // Alert (no drop)
             msg = Message.Create(MessageCommand.Alert, s);
-            uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
+            Assert.IsFalse(uut.ShallDrop(msg, emptyQueue));
+            Assert.IsFalse(uut.ShallDrop(msg, new object[] { msg }));
         }
     }
 }

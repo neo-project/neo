@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ContractPermissionDescriptor.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
@@ -59,7 +58,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             {
                 var json = JObject.Parse(System.IO.File.ReadAllText(item)) as JObject;
                 var manifest = ContractManifest.FromJson(json);
-                manifest.ToJson().ToString().Should().Be(json.ToString());
+                Assert.AreEqual(manifest.ToJson().ToString(), json.ToString());
             }
         }
 

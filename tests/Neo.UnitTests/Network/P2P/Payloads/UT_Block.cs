@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Block.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -44,7 +43,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Transactions_Get()
         {
-            uut.Transactions.Should().BeNull();
+            Assert.IsNull(uut.Transactions);
         }
 
         [TestMethod]
@@ -53,13 +52,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(null, uut, val256, out var merkRootVal, out _, out var timestampVal, out var nonceVal, out var indexVal, out var scriptVal, out _, 0);
 
-            uut.Header.Should().NotBeNull();
-            uut.Header.PrevHash.Should().Be(val256);
-            uut.Header.MerkleRoot.Should().Be(merkRootVal);
-            uut.Header.Timestamp.Should().Be(timestampVal);
-            uut.Header.Index.Should().Be(indexVal);
-            uut.Header.Nonce.Should().Be(nonceVal);
-            uut.Header.Witness.Should().Be(scriptVal);
+            Assert.IsNotNull(uut.Header);
+            Assert.AreEqual(val256, uut.Header.PrevHash);
+            Assert.AreEqual(merkRootVal, uut.Header.MerkleRoot);
+            Assert.AreEqual(timestampVal, uut.Header.Timestamp);
+            Assert.AreEqual(indexVal, uut.Header.Index);
+            Assert.AreEqual(nonceVal, uut.Header.Nonce);
+            Assert.AreEqual(scriptVal, uut.Header.Witness);
         }
 
         [TestMethod]
@@ -69,7 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupBlockWithValues(null, uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
             // header 4 + 32 + 32 + 8 + 4 + 1 + 20 + 4
             // tx 1
-            uut.Size.Should().Be(114); // 106 + nonce
+            Assert.AreEqual(114, uut.Size); // 106 + nonce
         }
 
         [TestMethod]
@@ -83,7 +82,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction(UInt160.Zero)
             };
 
-            uut.Size.Should().Be(167); // 159 + nonce
+            Assert.AreEqual(167, uut.Size); // 159 + nonce
         }
 
         [TestMethod]
@@ -99,7 +98,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction(UInt160.Zero)
             };
 
-            uut.Size.Should().Be(273); // 265 + nonce
+            Assert.AreEqual(273, uut.Size); // 265 + nonce
         }
 
         [TestMethod]
@@ -109,7 +108,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupBlockWithValues(null, uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 1);
 
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
-            uut.ToArray().ToHexString().Should().Be(hex);
+            Assert.AreEqual(hex, uut.ToArray().ToHexString());
         }
 
         [TestMethod]
@@ -129,35 +128,35 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
         private void AssertStandardBlockTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, ulong nonceVal, uint indexVal, Witness scriptVal, Transaction[] transactionsVal, bool testTransactions = true)
         {
-            uut.PrevHash.Should().Be(val256);
-            uut.MerkleRoot.Should().Be(merkRoot);
-            uut.Timestamp.Should().Be(timestampVal);
-            uut.Index.Should().Be(indexVal);
-            uut.Nonce.Should().Be(nonceVal);
-            uut.NextConsensus.Should().Be(val160);
-            uut.Witness.InvocationScript.Length.Should().Be(0);
-            uut.Witness.Size.Should().Be(scriptVal.Size);
-            uut.Witness.VerificationScript.Span[0].Should().Be(scriptVal.VerificationScript.Span[0]);
+            Assert.AreEqual(val256, uut.PrevHash);
+            Assert.AreEqual(merkRoot, uut.MerkleRoot);
+            Assert.AreEqual(timestampVal, uut.Timestamp);
+            Assert.AreEqual(indexVal, uut.Index);
+            Assert.AreEqual(nonceVal, uut.Nonce);
+            Assert.AreEqual(val160, uut.NextConsensus);
+            Assert.AreEqual(0, uut.Witness.InvocationScript.Length);
+            Assert.AreEqual(scriptVal.Size, uut.Witness.Size);
+            Assert.AreEqual(scriptVal.VerificationScript.Span[0], uut.Witness.VerificationScript.Span[0]);
             if (testTransactions)
             {
-                uut.Transactions.Length.Should().Be(1);
-                uut.Transactions[0].Should().Be(transactionsVal[0]);
+                Assert.AreEqual(1, uut.Transactions.Length);
+                Assert.AreEqual(transactionsVal[0], uut.Transactions[0]);
             }
         }
 
         [TestMethod]
         public void Equals_SameObj()
         {
-            uut.Equals(uut).Should().BeTrue();
+            Assert.IsTrue(uut.Equals(uut));
             var obj = uut as object;
-            uut.Equals(obj).Should().BeTrue();
+            Assert.IsTrue(uut.Equals(obj));
         }
 
         [TestMethod]
         public void TestGetHashCode()
         {
             var snapshot = GetEngine(true, true).SnapshotCache;
-            NativeContract.Ledger.GetBlock(snapshot, 0).GetHashCode().Should().Be(-626492395);
+            Assert.AreEqual(-626492395, NativeContract.Ledger.GetBlock(snapshot, 0).GetHashCode());
         }
 
         [TestMethod]
@@ -169,13 +168,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupBlockWithValues(null, newBlock, val256, out _, out _, out _, out ulong _, out uint _, out _, out _, 1);
             TestUtils.SetupBlockWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _, out _, 0);
 
-            uut.Equals(newBlock).Should().BeFalse();
+            Assert.IsFalse(uut.Equals(newBlock));
         }
 
         [TestMethod]
         public void Equals_Null()
         {
-            uut.Equals(null).Should().BeFalse();
+            Assert.IsFalse(uut.Equals(null));
         }
 
         [TestMethod]
@@ -186,7 +185,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupBlockWithValues(null, newBlock, prevHash, out _, out _, out _, out _, out _, out _, out _, 1);
             TestUtils.SetupBlockWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _, out _, 1);
 
-            uut.Equals(newBlock).Should().BeTrue();
+            Assert.IsTrue(uut.Equals(newBlock));
         }
 
         [TestMethod]
@@ -196,28 +195,28 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupBlockWithValues(null, uut, val256, out _, out _, out var timeVal, out var indexVal, out var nonceVal, out _, out _, 1);
 
             JObject jObj = uut.ToJson(TestProtocolSettings.Default);
-            jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x942065e93848732c2e7844061fa92d20c5d9dc0bc71d420a1ea71b3431fc21b4");
-            jObj["size"].AsNumber().Should().Be(167); // 159 + nonce
-            jObj["version"].AsNumber().Should().Be(0);
-            jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
-            jObj["merkleroot"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
-            jObj["time"].AsNumber().Should().Be(timeVal);
-            jObj["nonce"].AsString().Should().Be(nonceVal.ToString("X16"));
-            jObj["index"].AsNumber().Should().Be(indexVal);
-            jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
+            Assert.IsNotNull(jObj);
+            Assert.AreEqual("0x942065e93848732c2e7844061fa92d20c5d9dc0bc71d420a1ea71b3431fc21b4", jObj["hash"].AsString());
+            Assert.AreEqual(167, jObj["size"].AsNumber()); // 159 + nonce
+            Assert.AreEqual(0, jObj["version"].AsNumber());
+            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000", jObj["previousblockhash"].AsString());
+            Assert.AreEqual("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c", jObj["merkleroot"].AsString());
+            Assert.AreEqual(timeVal, jObj["time"].AsNumber());
+            Assert.AreEqual(nonceVal.ToString("X16"), jObj["nonce"].AsString());
+            Assert.AreEqual(indexVal, jObj["index"].AsNumber());
+            Assert.AreEqual("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf", jObj["nextconsensus"].AsString());
 
             JObject scObj = (JObject)jObj["witnesses"][0];
-            scObj["invocation"].AsString().Should().Be("");
-            scObj["verification"].AsString().Should().Be("EQ==");
+            Assert.AreEqual("", scObj["invocation"].AsString());
+            Assert.AreEqual("EQ==", scObj["verification"].AsString());
 
-            jObj["tx"].Should().NotBeNull();
+            Assert.IsNotNull(jObj["tx"]);
             JObject txObj = (JObject)jObj["tx"][0];
-            txObj["hash"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
-            txObj["size"].AsNumber().Should().Be(53);
-            txObj["version"].AsNumber().Should().Be(0);
-            ((JArray)txObj["attributes"]).Count.Should().Be(0);
-            txObj["netfee"].AsString().Should().Be("0");
+            Assert.AreEqual("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c", txObj["hash"].AsString());
+            Assert.AreEqual(53, txObj["size"].AsNumber());
+            Assert.AreEqual(0, txObj["version"].AsNumber());
+            Assert.AreEqual(0, ((JArray)txObj["attributes"]).Count);
+            Assert.AreEqual("0", txObj["netfee"].AsString());
         }
     }
 }

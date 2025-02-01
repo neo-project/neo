@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_RpcServer.Node.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -31,7 +30,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetConnectionCount()
         {
             var result = _rpcServer.GetConnectionCount();
-            result.GetType().Should().Be(typeof(JNumber));
+            Assert.IsInstanceOfType(result, typeof(JNumber));
         }
 
         [TestMethod]
@@ -48,10 +47,10 @@ namespace Neo.Plugins.RpcServer.Tests
             var result = rpcServer.GetPeers();
             Assert.IsInstanceOfType(result, typeof(JObject));
             var json = (JObject)result;
-            json.ContainsProperty("unconnected").Should().BeTrue();
-            (json["unconnected"] as JArray).Count.Should().Be(3);
-            json.ContainsProperty("bad").Should().BeTrue();
-            json.ContainsProperty("connected").Should().BeTrue();
+            Assert.IsTrue(json.ContainsProperty("unconnected"));
+            Assert.AreEqual(3, (json["unconnected"] as JArray).Count);
+            Assert.IsTrue(json.ContainsProperty("bad"));
+            Assert.IsTrue(json.ContainsProperty("connected"));
         }
 
         [TestMethod]

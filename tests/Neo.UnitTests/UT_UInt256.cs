@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_UInt256.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,6 @@
 
 #pragma warning disable CS1718
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -105,11 +104,11 @@ namespace Neo.UnitTests.IO
         public void TestParse()
         {
             Action action = () => UInt256.Parse(null);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(() => action());
             UInt256 result = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000");
             Assert.AreEqual(UInt256.Zero, result);
             Action action1 = () => UInt256.Parse("000000000000000000000000000000000000000000000000000000000000000");
-            action1.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(() => action1());
             UInt256 result1 = UInt256.Parse("0000000000000000000000000000000000000000000000000000000000000000");
             Assert.AreEqual(UInt256.Zero, result1);
         }

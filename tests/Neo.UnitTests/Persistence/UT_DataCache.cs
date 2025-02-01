@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_DataCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -52,11 +51,11 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key1, value1);
             myDataCache.Add(key2, value2);
 
-            myDataCache[key1].EqualsTo(value1).Should().BeTrue();
+            Assert.IsTrue(myDataCache[key1].EqualsTo(value1));
 
             // case 2 read from inner
             store.Put(key3.ToArray(), value3.ToArray());
-            myDataCache[key3].EqualsTo(value3).Should().BeTrue();
+            Assert.IsTrue(myDataCache[key3].EqualsTo(value3));
         }
 
         [TestMethod]
@@ -66,7 +65,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 var item = myDataCache[key1];
             };
-            action.Should().Throw<KeyNotFoundException>();
+            Assert.ThrowsException<KeyNotFoundException>(action);
         }
 
         [TestMethod]
@@ -79,17 +78,17 @@ namespace Neo.UnitTests.IO.Caching
             {
                 var item = myDataCache[key1];
             };
-            action.Should().Throw<KeyNotFoundException>();
+            Assert.ThrowsException<KeyNotFoundException>(action);
         }
 
         [TestMethod]
         public void TestAdd()
         {
             myDataCache.Add(key1, value1);
-            myDataCache[key1].Should().Be(value1);
+            Assert.AreEqual(value1, myDataCache[key1]);
 
             Action action = () => myDataCache.Add(key1, value1);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(action);
 
             store.Put(key2.ToArray(), value2.ToArray());
             myDataCache.Delete(key2);
@@ -98,7 +97,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
 
             action = () => myDataCache.Add(key2, value2);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(action);
         }
 
         [TestMethod]
@@ -127,20 +126,20 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Commit();
             Assert.AreEqual(0, myDataCache.GetChangeSet().Count());
 
-            store.TryGet(key1.ToArray()).SequenceEqual(value1.ToArray()).Should().BeTrue();
-            store.TryGet(key2.ToArray()).Should().BeNull();
-            store.TryGet(key3.ToArray()).SequenceEqual(value4.ToArray()).Should().BeTrue();
+            Assert.IsTrue(store.TryGet(key1.ToArray()).SequenceEqual(value1.ToArray()));
+            Assert.IsNull(store.TryGet(key2.ToArray()));
+            Assert.IsTrue(store.TryGet(key3.ToArray()).SequenceEqual(value4.ToArray()));
 
-            myDataCache.TryGet(key1).Value.ToArray().SequenceEqual(value1.ToArray()).Should().BeTrue();
+            Assert.IsTrue(myDataCache.TryGet(key1).Value.ToArray().SequenceEqual(value1.ToArray()));
             // Though value is deleted from the store, the value can still be gotten from the snapshot cache.
-            myDataCache.TryGet(key2).Value.ToArray().SequenceEqual(value2.ToArray()).Should().BeTrue();
-            myDataCache.TryGet(key3).Value.ToArray().SequenceEqual(value4.ToArray()).Should().BeTrue();
+            Assert.IsTrue(myDataCache.TryGet(key2).Value.ToArray().SequenceEqual(value2.ToArray()));
+            Assert.IsTrue(myDataCache.TryGet(key3).Value.ToArray().SequenceEqual(value4.ToArray()));
         }
 
         [TestMethod]
         public void TestCreateSnapshot()
         {
-            myDataCache.CloneCache().Should().NotBeNull();
+            Assert.IsNotNull(myDataCache.CloneCache());
         }
 
         [TestMethod]
@@ -154,11 +153,11 @@ namespace Neo.UnitTests.IO.Caching
 
             myDataCache.Add(key1, value1);
             myDataCache.Delete(key1);
-            store.TryGet(key1.ToArray()).Should().BeNull();
+            Assert.IsNull(store.TryGet(key1.ToArray()));
 
             myDataCache.Delete(key2);
             myDataCache.Commit();
-            store.TryGet(key2.ToArray()).Should().BeNull();
+            Assert.IsNull(store.TryGet(key2.ToArray()));
         }
 
         [TestMethod]
@@ -172,52 +171,52 @@ namespace Neo.UnitTests.IO.Caching
 
             var k1 = key1.ToArray();
             var items = myDataCache.Find(k1);
-            key1.Should().Be(items.ElementAt(0).Key);
-            value1.Should().Be(items.ElementAt(0).Value);
-            items.Count().Should().Be(1);
+            Assert.AreEqual(key1, items.ElementAt(0).Key);
+            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            Assert.AreEqual(1, items.Count());
 
             // null and empty with the forward direction -> finds everything.
             items = myDataCache.Find(null);
-            items.Count().Should().Be(4);
+            Assert.AreEqual(4, items.Count());
             items = myDataCache.Find(new byte[] { });
-            items.Count().Should().Be(4);
+            Assert.AreEqual(4, items.Count());
 
             // null and empty with the backwards direction -> miserably fails.
             Action action = () => myDataCache.Find(null, SeekDirection.Backward);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentNullException>(action);
             action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
-            key1.Should().Be(items.ElementAt(0).Key);
-            value1.Should().Be(items.ElementAt(0).Value);
-            items.Count().Should().Be(1);
+            Assert.AreEqual(key1, items.ElementAt(0).Key);
+            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            Assert.AreEqual(1, items.Count());
 
             var prefix = k1.Take(k1.Count() - 1).ToArray(); // Just the "key" part to match everything.
             items = myDataCache.Find(prefix);
-            items.Count().Should().Be(4);
-            key1.Should().Be(items.ElementAt(0).Key);
-            value1.Should().Be(items.ElementAt(0).Value);
-            key2.Should().Be(items.ElementAt(1).Key);
-            value2.Should().Be(items.ElementAt(1).Value);
-            key3.Should().Be(items.ElementAt(2).Key);
-            value3.EqualsTo(items.ElementAt(2).Value).Should().BeTrue();
-            key4.Should().Be(items.ElementAt(3).Key);
-            value4.EqualsTo(items.ElementAt(3).Value).Should().BeTrue();
+            Assert.AreEqual(4, items.Count());
+            Assert.AreEqual(key1, items.ElementAt(0).Key);
+            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            Assert.AreEqual(key2, items.ElementAt(1).Key);
+            Assert.AreEqual(value2, items.ElementAt(1).Value);
+            Assert.AreEqual(key3, items.ElementAt(2).Key);
+            Assert.IsTrue(items.ElementAt(2).Value.EqualsTo(value3));
+            Assert.AreEqual(key4, items.ElementAt(3).Key);
+            Assert.IsTrue(items.ElementAt(3).Value.EqualsTo(value4));
 
             items = myDataCache.Find(prefix, SeekDirection.Backward);
-            items.Count().Should().Be(4);
-            key4.Should().Be(items.ElementAt(0).Key);
-            value4.EqualsTo(items.ElementAt(0).Value).Should().BeTrue();
-            key3.Should().Be(items.ElementAt(1).Key);
-            value3.EqualsTo(items.ElementAt(1).Value).Should().BeTrue();
-            key2.Should().Be(items.ElementAt(2).Key);
-            value2.Should().Be(items.ElementAt(2).Value);
-            key1.Should().Be(items.ElementAt(3).Key);
-            value1.Should().Be(items.ElementAt(3).Value);
+            Assert.AreEqual(4, items.Count());
+            Assert.AreEqual(key4, items.ElementAt(0).Key);
+            Assert.IsTrue(items.ElementAt(0).Value.EqualsTo(value4));
+            Assert.AreEqual(key3, items.ElementAt(1).Key);
+            Assert.IsTrue(items.ElementAt(1).Value.EqualsTo(value3));
+            Assert.AreEqual(key2, items.ElementAt(2).Key);
+            Assert.AreEqual(value2, items.ElementAt(2).Value);
+            Assert.AreEqual(key1, items.ElementAt(3).Key);
+            Assert.AreEqual(value1, items.ElementAt(3).Value);
 
             items = myDataCache.Find(key5.ToArray());
-            items.Count().Should().Be(0);
+            Assert.AreEqual(0, items.Count());
         }
 
         [TestMethod]
@@ -230,14 +229,14 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key4.ToArray(), value4.ToArray());
 
             var items = myDataCache.Seek(key3.ToArray(), SeekDirection.Backward).ToArray();
-            key3.Should().Be(items[0].Key);
-            value3.EqualsTo(items[0].Value).Should().BeTrue();
-            key2.Should().Be(items[1].Key);
-            value2.EqualsTo(items[1].Value).Should().BeTrue();
-            items.Length.Should().Be(3);
+            Assert.AreEqual(key3, items[0].Key);
+            Assert.IsTrue(items[0].Value.EqualsTo(value3));
+            Assert.AreEqual(key2, items[1].Key);
+            Assert.IsTrue(items[1].Value.EqualsTo(value2));
+            Assert.AreEqual(3, items.Length);
 
             items = myDataCache.Seek(key5.ToArray(), SeekDirection.Forward).ToArray();
-            items.Length.Should().Be(0);
+            Assert.AreEqual(0, items.Length);
         }
 
         [TestMethod]
@@ -252,11 +251,11 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key2, value2);
 
             var items = myDataCache.FindRange(key3.ToArray(), key5.ToArray()).ToArray();
-            key3.Should().Be(items[0].Key);
-            value3.EqualsTo(items[0].Value).Should().BeTrue();
-            key4.Should().Be(items[1].Key);
-            value4.EqualsTo(items[1].Value).Should().BeTrue();
-            items.Length.Should().Be(2);
+            Assert.AreEqual(key3, items[0].Key);
+            Assert.IsTrue(items[0].Value.EqualsTo(value3));
+            Assert.AreEqual(key4, items[1].Key);
+            Assert.IsTrue(items[1].Value.EqualsTo(value4));
+            Assert.AreEqual(2, items.Length);
 
             // case 2 Need to sort the cache of myDataCache
 
@@ -269,11 +268,11 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key2, value2);
 
             items = myDataCache.FindRange(key3.ToArray(), key5.ToArray()).ToArray();
-            key3.Should().Be(items[0].Key);
-            value3.EqualsTo(items[0].Value).Should().BeTrue();
-            key4.Should().Be(items[1].Key);
-            value4.EqualsTo(items[1].Value).Should().BeTrue();
-            items.Length.Should().Be(2);
+            Assert.AreEqual(key3, items[0].Key);
+            Assert.IsTrue(items[0].Value.EqualsTo(value3));
+            Assert.AreEqual(key4, items[1].Key);
+            Assert.IsTrue(items[1].Value.EqualsTo(value4));
+            Assert.AreEqual(2, items.Length);
 
             // case 3 FindRange by Backward
 
@@ -287,11 +286,11 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key2, value2);
 
             items = myDataCache.FindRange(key5.ToArray(), key3.ToArray(), SeekDirection.Backward).ToArray();
-            key5.Should().Be(items[0].Key);
-            value5.EqualsTo(items[0].Value).Should().BeTrue();
-            key4.Should().Be(items[1].Key);
-            value4.EqualsTo(items[1].Value).Should().BeTrue();
-            items.Length.Should().Be(2);
+            Assert.AreEqual(key5, items[0].Key);
+            Assert.IsTrue(items[0].Value.EqualsTo(value5));
+            Assert.AreEqual(key4, items[1].Key);
+            Assert.IsTrue(items[1].Value.EqualsTo(value4));
+            Assert.AreEqual(2, items.Length);
         }
 
         [TestMethod]
@@ -316,10 +315,10 @@ namespace Neo.UnitTests.IO.Caching
                 i++;
                 StorageKey key = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key" + i) };
                 StorageItem value = new(Encoding.UTF8.GetBytes("value" + i));
-                key.Should().Be(item.Key);
-                value.EqualsTo(item.Item).Should().BeTrue();
+                Assert.AreEqual(key, item.Key);
+                Assert.IsTrue(value.EqualsTo(item.Item));
             }
-            i.Should().Be(4);
+            Assert.AreEqual(4, i);
         }
 
         [TestMethod]
@@ -337,10 +336,10 @@ namespace Neo.UnitTests.IO.Caching
             StorageItem value_bk_3 = new(Encoding.UTF8.GetBytes("value_bk_3"));
             StorageItem value_bk_4 = new(Encoding.UTF8.GetBytes("value_bk_4"));
 
-            myDataCache.GetAndChange(key1, () => value_bk_1).EqualsTo(value1).Should().BeTrue();
-            myDataCache.GetAndChange(key2, () => value_bk_2).EqualsTo(value2).Should().BeTrue();
-            myDataCache.GetAndChange(key3, () => value_bk_3).EqualsTo(value_bk_3).Should().BeTrue();
-            myDataCache.GetAndChange(key4, () => value_bk_4).EqualsTo(value_bk_4).Should().BeTrue();
+            Assert.IsTrue(myDataCache.GetAndChange(key1, () => value_bk_1).EqualsTo(value1));
+            Assert.IsTrue(myDataCache.GetAndChange(key2, () => value_bk_2).EqualsTo(value2));
+            Assert.IsTrue(myDataCache.GetAndChange(key3, () => value_bk_3).EqualsTo(value_bk_3));
+            Assert.IsTrue(myDataCache.GetAndChange(key4, () => value_bk_4).EqualsTo(value_bk_4));
         }
 
         [TestMethod]
@@ -358,10 +357,10 @@ namespace Neo.UnitTests.IO.Caching
             StorageItem value_bk_3 = new(Encoding.UTF8.GetBytes("value_bk_3"));
             StorageItem value_bk_4 = new(Encoding.UTF8.GetBytes("value_bk_4"));
 
-            myDataCache.GetOrAdd(key1, () => value_bk_1).EqualsTo(value1).Should().BeTrue();
-            myDataCache.GetOrAdd(key2, () => value_bk_2).EqualsTo(value2).Should().BeTrue();
-            myDataCache.GetOrAdd(key3, () => value_bk_3).EqualsTo(value_bk_3).Should().BeTrue();
-            myDataCache.GetOrAdd(key4, () => value_bk_4).EqualsTo(value_bk_4).Should().BeTrue();
+            Assert.IsTrue(myDataCache.GetOrAdd(key1, () => value_bk_1).EqualsTo(value1));
+            Assert.IsTrue(myDataCache.GetOrAdd(key2, () => value_bk_2).EqualsTo(value2));
+            Assert.IsTrue(myDataCache.GetOrAdd(key3, () => value_bk_3).EqualsTo(value_bk_3));
+            Assert.IsTrue(myDataCache.GetOrAdd(key4, () => value_bk_4).EqualsTo(value_bk_4));
         }
 
         [TestMethod]
@@ -374,9 +373,9 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Delete(key3);
             Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
 
-            myDataCache.TryGet(key1).EqualsTo(value1).Should().BeTrue();
-            myDataCache.TryGet(key2).EqualsTo(value2).Should().BeTrue();
-            myDataCache.TryGet(key3).Should().BeNull();
+            Assert.IsTrue(myDataCache.TryGet(key1).EqualsTo(value1));
+            Assert.IsTrue(myDataCache.TryGet(key2).EqualsTo(value2));
+            Assert.IsNull(myDataCache.TryGet(key3));
         }
 
         [TestMethod]
@@ -391,18 +390,18 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key4.ToArray(), value3.ToArray());
 
             var items = myDataCache.Find().GetEnumerator();
-            items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(key1);
+            items.MoveNext();
+            Assert.AreEqual(key1, items.Current.Key);
 
             myDataCache.TryGet(key3); // GETLINE
 
-            items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(key2);
-            items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(key3);
-            items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(key4);
-            items.MoveNext().Should().Be(false);
+            items.MoveNext();
+            Assert.AreEqual(key2, items.Current.Key);
+            items.MoveNext();
+            Assert.AreEqual(key3, items.Current.Key);
+            items.MoveNext();
+            Assert.AreEqual(key4, items.Current.Key);
+            Assert.IsFalse(items.MoveNext());
         }
     }
 }

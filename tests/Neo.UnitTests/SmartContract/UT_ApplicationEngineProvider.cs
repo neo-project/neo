@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ApplicationEngineProvider.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -21,9 +20,12 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_ApplicationEngineProvider
     {
+        private DataCache _snapshotCache;
+
         [TestInitialize]
-        public void TestInitialize()
+        public void TestSetup()
         {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
             ApplicationEngine.Provider = null;
         }
 
@@ -37,16 +39,18 @@ namespace Neo.UnitTests.SmartContract
         public void TestSetAppEngineProvider()
         {
             ApplicationEngine.Provider = new TestProvider();
+            var snapshot = _snapshotCache.CloneCache();
 
-            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
-            (appEngine is TestEngine).Should().BeTrue();
+            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
+            Assert.IsTrue(appEngine is TestEngine);
         }
 
         [TestMethod]
         public void TestDefaultAppEngineProvider()
         {
-            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
-            (appEngine is ApplicationEngine).Should().BeTrue();
+            var snapshot = _snapshotCache.CloneCache();
+            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
+            Assert.IsTrue(appEngine is ApplicationEngine);
         }
 
         class TestProvider : IApplicationEngineProvider

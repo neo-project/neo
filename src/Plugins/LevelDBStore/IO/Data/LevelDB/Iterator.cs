@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Iterator.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -36,7 +36,7 @@ namespace Neo.IO.Storage.LevelDB
         /// Return the key for the current entry.
         /// REQUIRES: Valid()
         /// </summary>
-        public byte[] Key()
+        public byte[]? Key()
         {
             var key = Native.leveldb_iter_key(Handle, out var length);
             CheckError();
@@ -89,7 +89,7 @@ namespace Neo.IO.Storage.LevelDB
             return Native.leveldb_iter_valid(Handle);
         }
 
-        public byte[] Value()
+        public byte[]? Value()
         {
             var value = Native.leveldb_iter_value(Handle, out var length);
             CheckError();

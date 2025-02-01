@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_BloomFilter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using System;
@@ -27,9 +26,9 @@ namespace Neo.UnitTests.Cryptography
             byte[] elements = { 0, 1, 2, 3, 4 };
             BloomFilter filter = new BloomFilter(m, n, nTweak);
             filter.Add(elements);
-            filter.Check(elements).Should().BeTrue();
+            Assert.IsTrue(filter.Check(elements));
             byte[] anotherElements = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            filter.Check(anotherElements).Should().BeFalse();
+            Assert.IsFalse(filter.Check(anotherElements));
         }
 
         [TestMethod]
@@ -38,32 +37,32 @@ namespace Neo.UnitTests.Cryptography
             int m = -7, n = 10;
             uint nTweak = 123456;
             Action action = () => new BloomFilter(m, n, nTweak);
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
             action = () => new BloomFilter(m, n, nTweak, new byte[] { 0, 1, 2, 3, 4 });
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
 
             m = 7;
             n = -10;
             action = () => new BloomFilter(m, n, nTweak);
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
 
             n = 10;
             BloomFilter filter = new BloomFilter(m, n, nTweak);
-            filter.M.Should().Be(m);
-            filter.K.Should().Be(n);
-            filter.Tweak.Should().Be(nTweak);
+            Assert.AreEqual(m, filter.M);
+            Assert.AreEqual(n, filter.K);
+            Assert.AreEqual(nTweak, filter.Tweak);
 
             byte[] shorterElements = { 0, 1, 2, 3, 4 };
             filter = new BloomFilter(m, n, nTweak, shorterElements);
-            filter.M.Should().Be(m);
-            filter.K.Should().Be(n);
-            filter.Tweak.Should().Be(nTweak);
+            Assert.AreEqual(m, filter.M);
+            Assert.AreEqual(n, filter.K);
+            Assert.AreEqual(nTweak, filter.Tweak);
 
             byte[] longerElements = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             filter = new BloomFilter(m, n, nTweak, longerElements);
-            filter.M.Should().Be(m);
-            filter.K.Should().Be(n);
-            filter.Tweak.Should().Be(nTweak);
+            Assert.AreEqual(m, filter.M);
+            Assert.AreEqual(n, filter.K);
+            Assert.AreEqual(nTweak, filter.Tweak);
         }
 
         [TestMethod]
@@ -76,7 +75,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] result = new byte[m];
             filter.GetBits(result);
             foreach (byte value in result)
-                value.Should().Be(0);
+                Assert.AreEqual(0, value);
         }
 
         [TestMethod]
@@ -84,10 +83,10 @@ namespace Neo.UnitTests.Cryptography
         {
             uint nTweak = 123456;
             Action action = () => new BloomFilter(0, 3, nTweak);
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
 
             action = () => new BloomFilter(3, 0, nTweak);
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
         }
     }
 }

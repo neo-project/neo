@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_TaskSession.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -14,7 +14,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System;
-using Xunit.Sdk;
 
 namespace Neo.UnitTests.Network.P2P
 {

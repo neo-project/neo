@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_InteropService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,6 @@
 
 using Akka.TestKit.Xunit2;
 using Akka.Util.Internal;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
@@ -19,6 +18,7 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -35,6 +35,14 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_InteropService : TestKit
     {
+        private DataCache _snapshotCache;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        }
+
         [TestMethod]
         public void Runtime_GetNotifications_Test()
         {
@@ -272,7 +280,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestExecutionEngine_GetScriptContainer()
         {
-            GetEngine(true).GetScriptContainer().Should().BeOfType<VM.Types.Array>();
+            Assert.IsInstanceOfType(GetEngine(true).GetScriptContainer(), typeof(VM.Types.Array));
         }
 
         [TestMethod]
@@ -281,7 +289,7 @@ namespace Neo.UnitTests.SmartContract
             // Test without
 
             var engine = GetEngine(true);
-            engine.CallingScriptHash.Should().BeNull();
+            Assert.IsNull(engine.CallingScriptHash);
 
             // Test real
 
@@ -300,19 +308,19 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
-            engine.ResultStack.Pop().GetSpan().ToHexString().Should().Be(scriptB.ToArray().ToScriptHash().ToArray().ToHexString());
+            Assert.AreEqual(scriptB.ToArray().ToScriptHash().ToArray().ToHexString(), engine.ResultStack.Pop().GetSpan().ToHexString());
         }
 
         [TestMethod]
         public void TestContract_GetCallFlags()
         {
-            GetEngine().GetCallFlags().Should().Be(CallFlags.All);
+            Assert.AreEqual(CallFlags.All, GetEngine().GetCallFlags());
         }
 
         [TestMethod]
         public void TestRuntime_Platform()
         {
-            ApplicationEngine.GetPlatform().Should().Be("NEO");
+            Assert.AreEqual("NEO", ApplicationEngine.GetPlatform());
         }
 
         [TestMethod]
@@ -327,14 +335,14 @@ namespace Neo.UnitTests.SmartContract
             ((Transaction)engine.ScriptContainer).Signers[0].Account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             ((Transaction)engine.ScriptContainer).Signers[0].Scopes = WitnessScope.CalledByEntry;
 
-            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeTrue();
-            engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeTrue();
+            Assert.IsTrue(engine.CheckWitness(pubkey.EncodePoint(true)));
+            Assert.IsTrue(engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()));
 
             ((Transaction)engine.ScriptContainer).Signers = System.Array.Empty<Signer>();
-            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
+            Assert.IsFalse(engine.CheckWitness(pubkey.EncodePoint(true)));
 
             Action action = () => engine.CheckWitness(System.Array.Empty<byte>());
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(action);
         }
 
         [TestMethod]
@@ -347,7 +355,7 @@ namespace Neo.UnitTests.SmartContract
 
             var engine = GetEngine();
 
-            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
+            Assert.IsFalse(engine.CheckWitness(pubkey.EncodePoint(true)));
         }
 
         [TestMethod]
@@ -357,7 +365,7 @@ namespace Neo.UnitTests.SmartContract
             var message = "hello";
             ApplicationEngine.Log += LogEvent;
             engine.RuntimeLog(Encoding.UTF8.GetBytes(message));
-            ((Transaction)engine.ScriptContainer).Script.Span.ToHexString().Should().Be(new byte[] { 0x01, 0x02, 0x03 }.ToHexString());
+            Assert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }.ToHexString(), ((Transaction)engine.ScriptContainer).Script.Span.ToHexString());
             ApplicationEngine.Log -= LogEvent;
         }
 
@@ -365,8 +373,8 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_GetTime()
         {
             Block block = new() { Header = new Header() };
-            var engine = GetEngine(true, true, hasBlock: true);
-            engine.GetTime().Should().Be(block.Timestamp);
+            var engine = GetEngine(true, hasBlock: true);
+            Assert.AreEqual(block.Timestamp, engine.GetTime());
         }
 
         [TestMethod]
@@ -391,29 +399,29 @@ namespace Neo.UnitTests.SmartContract
 
             // Null
 
-            using var engineA = GetEngine(hasSnapshot: true, addScript: false, hasContainer: false);
+            using var engineA = GetEngine(addScript: false, hasContainer: false);
 
             engineA.LoadScript(script.ToArray());
             engineA.Execute();
             Assert.AreEqual(engineA.State, VMState.HALT);
 
             var result = engineA.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Null));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Null));
 
             // Not null
 
-            using var engineB = GetEngine(hasSnapshot: true, addScript: false, hasContainer: true);
+            using var engineB = GetEngine(addScript: false, hasContainer: true);
 
             engineB.LoadScript(script.ToArray());
             engineB.Execute();
             Assert.AreEqual(engineB.State, VMState.HALT);
 
             result = engineB.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
-            (result as VM.Types.Array).Count.Should().Be(1);
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
+            Assert.AreEqual(1, (result as VM.Types.Array).Count);
             result = (result as VM.Types.Array)[0];
-            result.Should().BeOfType(typeof(VM.Types.Array));
-            (result as VM.Types.Array).Count.Should().Be(5);
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
+            Assert.AreEqual(5, (result as VM.Types.Array).Count);
             result = (result as VM.Types.Array)[0]; // Address
             Assert.AreEqual(UInt160.Zero, new UInt160(result.GetSpan()));
         }
@@ -429,7 +437,7 @@ namespace Neo.UnitTests.SmartContract
             KeyPair keyPair = new(privateKey);
             var pubkey = keyPair.PublicKey;
             var signature = Crypto.Sign(message, privateKey);
-            engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
+            Assert.IsTrue(engine.CheckSig(pubkey.EncodePoint(false), signature));
 
             var wrongkey = pubkey.EncodePoint(false);
             wrongkey[0] = 5;
@@ -440,7 +448,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestBlockchain_GetHeight()
         {
             var engine = GetEngine(true, true);
-            NativeContract.Ledger.CurrentIndex(engine.SnapshotCache).Should().Be(0);
+            Assert.AreEqual((uint)0, NativeContract.Ledger.CurrentIndex(engine.SnapshotCache));
         }
 
         [TestMethod]
@@ -448,14 +456,14 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
 
-            NativeContract.Ledger.GetBlock(engine.SnapshotCache, UInt256.Zero).Should().BeNull();
+            Assert.IsNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, UInt256.Zero));
 
             var data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            NativeContract.Ledger.GetBlock(engine.SnapshotCache, new UInt256(data1)).Should().BeNull();
-            NativeContract.Ledger.GetBlock(engine.SnapshotCache, TestBlockchain.TheNeoSystem.GenesisBlock.Hash).Should().NotBeNull();
+            Assert.IsNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, new UInt256(data1)));
+            Assert.IsNotNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, TestBlockchain.TheNeoSystem.GenesisBlock.Hash));
         }
 
         [TestMethod]
@@ -466,13 +474,13 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            NativeContract.Ledger.GetTransaction(engine.SnapshotCache, new UInt256(data1)).Should().BeNull();
+            Assert.IsNull(NativeContract.Ledger.GetTransaction(engine.SnapshotCache, new UInt256(data1)));
         }
 
         [TestMethod]
         public void TestBlockchain_GetTransactionHeight()
         {
-            var engine = GetEngine(hasSnapshot: true, addScript: false);
+            var engine = GetEngine(addScript: false);
             var state = new TransactionState()
             {
                 BlockIndex = 0,
@@ -487,8 +495,8 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(engine.State, VMState.HALT);
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
-            result.GetInteger().Should().Be(0);
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
+            Assert.AreEqual(0, result.GetInteger());
         }
 
         [TestMethod]
@@ -499,14 +507,13 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
-            NativeContract.ContractManagement.GetContract(engine.SnapshotCache, new UInt160(data1)).Should().BeNull();
+            Assert.IsNull(NativeContract.ContractManagement.GetContract(engine.SnapshotCache, new UInt160(data1)));
 
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var state = TestUtils.GetContract();
-            snapshotCache.AddContract(state.Hash, state);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+            engine.SnapshotCache.AddContract(state.Hash, state);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, engine.SnapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
-            NativeContract.ContractManagement.GetContract(engine.SnapshotCache, state.Hash).Hash.Should().Be(state.Hash);
+            Assert.AreEqual(state.Hash, NativeContract.ContractManagement.GetContract(engine.SnapshotCache, state.Hash).Hash);
         }
 
         [TestMethod]
@@ -514,16 +521,16 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
             var contract = NativeContract.ContractManagement.GetContractById(engine.SnapshotCache, -1);
-            contract.Id.Should().Be(-1);
-            contract.Manifest.Name.Should().Be(nameof(ContractManagement));
+            Assert.AreEqual(-1, contract.Id);
+            Assert.AreEqual(nameof(ContractManagement), contract.Manifest.Name);
         }
 
         [TestMethod]
         public void TestBlockchain_HasMethod()
         {
             var engine = GetEngine(true, true);
-            NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, NativeContract.NEO.Hash, "symbol", 0).Should().Be(true);
-            NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, NativeContract.NEO.Hash, "transfer", 4).Should().Be(true);
+            Assert.IsTrue(NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, NativeContract.NEO.Hash, "symbol", 0));
+            Assert.IsTrue(NativeContract.ContractManagement.HasMethod(engine.SnapshotCache, NativeContract.NEO.Hash, "transfer", 4));
         }
 
         [TestMethod]
@@ -531,17 +538,16 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
             var list = NativeContract.ContractManagement.ListContracts(engine.SnapshotCache);
-            list.ForEach(p => p.Id.Should().BeLessThan(0));
+            list.ForEach(p => Assert.IsTrue(p.Id < 0));
 
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var state = TestUtils.GetContract();
-            snapshotCache.AddContract(state.Hash, state);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+            engine.SnapshotCache.AddContract(state.Hash, state);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, engine.SnapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
-            NativeContract.ContractManagement.GetContract(engine.SnapshotCache, state.Hash).Hash.Should().Be(state.Hash);
+            Assert.AreEqual(state.Hash, NativeContract.ContractManagement.GetContract(engine.SnapshotCache, state.Hash).Hash);
 
             var list2 = NativeContract.ContractManagement.ListContracts(engine.SnapshotCache);
-            list2.Count().Should().Be(list.Count() + 1);
+            Assert.AreEqual(list.Count(), list2.Count());
         }
 
         [TestMethod]
@@ -551,7 +557,7 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             engine.SnapshotCache.AddContract(state.Hash, state);
             engine.LoadScript(state.Script);
-            engine.GetStorageContext().IsReadOnly.Should().BeFalse();
+            Assert.IsFalse(engine.GetStorageContext().IsReadOnly);
         }
 
         [TestMethod]
@@ -561,7 +567,7 @@ namespace Neo.UnitTests.SmartContract
             var state = TestUtils.GetContract();
             engine.SnapshotCache.AddContract(state.Hash, state);
             engine.LoadScript(state.Script);
-            engine.GetReadOnlyContext().IsReadOnly.Should().BeTrue();
+            Assert.IsTrue(engine.GetReadOnlyContext().IsReadOnly);
         }
 
         [TestMethod]
@@ -585,11 +591,11 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.Get(new StorageContext
+            Assert.AreEqual(storageItem.Value.Span.ToHexString(), engine.Get(new StorageContext
             {
                 Id = state.Id,
                 IsReadOnly = false
-            }, new byte[] { 0x01 }).Value.Span.ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
+            }, new byte[] { 0x01 }).Value.Span.ToHexString());
         }
 
         [TestMethod]
@@ -655,7 +661,6 @@ namespace Neo.UnitTests.SmartContract
         public void TestStorage_Delete()
         {
             var engine = GetEngine(false, true);
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var state = TestUtils.GetContract();
             var storageKey = new StorageKey
             {
@@ -666,9 +671,9 @@ namespace Neo.UnitTests.SmartContract
             {
                 Value = new byte[] { 0x01, 0x02, 0x03, 0x04 }
             };
-            snapshotCache.AddContract(state.Hash, state);
-            snapshotCache.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+            engine.SnapshotCache.AddContract(state.Hash, state);
+            engine.SnapshotCache.Add(storageKey, storageItem);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, engine.SnapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
             var key = new byte[] { 0x01 };
             var storageContext = new StorageContext
@@ -692,7 +697,7 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 IsReadOnly = false
             };
-            ApplicationEngine.AsReadOnly(storageContext).IsReadOnly.Should().BeTrue();
+            Assert.IsTrue(ApplicationEngine.AsReadOnly(storageContext).IsReadOnly);
         }
 
         [TestMethod]
@@ -708,8 +713,8 @@ namespace Neo.UnitTests.SmartContract
             engine.SnapshotCache.AddContract(state.Hash, state);
 
             engine.CallContract(state.Hash, method, CallFlags.All, args);
-            engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
-            engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
+            Assert.AreEqual(args[0], engine.CurrentContext.EvaluationStack.Pop());
+            Assert.AreEqual(args[1], engine.CurrentContext.EvaluationStack.Pop());
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
             engine.SnapshotCache.DeleteContract(state.Hash);
@@ -745,20 +750,20 @@ namespace Neo.UnitTests.SmartContract
             snapshotCache.AddContract(scriptHash, state);
             snapshotCache.Add(storageKey, storageItem);
             snapshotCache.DestroyContract(scriptHash);
-            snapshotCache.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
+            Assert.IsFalse(snapshotCache.Find(BitConverter.GetBytes(0x43000000)).Any());
 
             //storages are removed
             state = TestUtils.GetContract();
             snapshotCache.AddContract(scriptHash, state);
             snapshotCache.DestroyContract(scriptHash);
-            snapshotCache.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
+            Assert.IsFalse(snapshotCache.Find(BitConverter.GetBytes(0x43000000)).Any());
         }
 
         [TestMethod]
         public void TestContract_CreateStandardAccount()
         {
             var pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
-            GetEngine().CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("c44ea575c5f79638f0e73f39d7bd4b3337c81691");
+            Assert.AreEqual("c44ea575c5f79638f0e73f39d7bd4b3337c81691", GetEngine().CreateStandardAccount(pubkey).ToArray().ToHexString());
         }
 
         public static void LogEvent(object sender, LogEventArgs args)
@@ -767,12 +772,12 @@ namespace Neo.UnitTests.SmartContract
             tx.Script = new byte[] { 0x01, 0x02, 0x03 };
         }
 
-        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
+        private ApplicationEngine GetEngine(bool hasContainer = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
         {
+            var snapshot = _snapshotCache.CloneCache();
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
-            var snapshotCache = hasSnapshot ? TestBlockchain.GetTestSnapshotCache() : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
@@ -790,11 +795,11 @@ namespace Neo.UnitTests.SmartContract
             var signatureK1 = Crypto.Sign(hexMessage, privateKey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
 
             var result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
-            result.Should().BeTrue();
+            Assert.IsTrue(result);
             result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
-            result.Should().BeTrue();
+            Assert.IsTrue(result);
             result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[0], NamedCurveHash.secp256k1SHA256);
-            result.Should().BeFalse();
+            Assert.IsFalse(result);
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
         }
 
@@ -804,7 +809,7 @@ namespace Neo.UnitTests.SmartContract
             var input = "Hello, world!"u8.ToArray();
             var actualHash = CryptoLib.Sha256(input);
             var expectedHash = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3";
-            actualHash.ToHexString().Should().Be(expectedHash);
+            Assert.AreEqual(expectedHash, actualHash.ToHexString());
         }
 
         [TestMethod]
@@ -813,7 +818,7 @@ namespace Neo.UnitTests.SmartContract
             var input = "Hello, world!"u8.ToArray();
             var actualHash = CryptoLib.RIPEMD160(input);
             var expectedHash = "58262d1fbdbe4530d8865d3518c6d6e41002610f";
-            actualHash.ToHexString().Should().Be(expectedHash);
+            Assert.AreEqual(expectedHash, actualHash.ToHexString());
         }
 
         [TestMethod]
@@ -822,7 +827,7 @@ namespace Neo.UnitTests.SmartContract
             var input = "Hello, world!"u8.ToArray();
             var actualHash = CryptoLib.Murmur32(input, 0);
             var expectedHash = "433e36c0";
-            actualHash.ToHexString().Should().Be(expectedHash);
+            Assert.AreEqual(expectedHash, actualHash.ToHexString());
         }
 
         [TestMethod]
@@ -832,10 +837,10 @@ namespace Neo.UnitTests.SmartContract
             var hash = LedgerContract.Ledger.GetBlockHash(snapshotCache, 0);
             var hash2 = LedgerContract.Ledger.GetBlock(snapshotCache, 0).Hash;
             var hash3 = LedgerContract.Ledger.GetHeader(snapshotCache, 0).Hash;
-            hash.ToString().Should().Be(hash2.ToString());
-            hash.ToString().Should().Be(hash3.ToString());
-            hash.ToString().Should().Be("0x1f4d1defa46faa5e7b9b8d3f79a06bec777d7c26c4aa5f6f5899a291daa87c15");
-            LedgerContract.Ledger.ContainsBlock(snapshotCache, hash).Should().BeTrue();
+            Assert.AreEqual(hash.ToString(), hash2.ToString());
+            Assert.AreEqual(hash.ToString(), hash3.ToString());
+            Assert.AreEqual("0x1f4d1defa46faa5e7b9b8d3f79a06bec777d7c26c4aa5f6f5899a291daa87c15", hash.ToString());
+            Assert.IsTrue(LedgerContract.Ledger.ContainsBlock(snapshotCache, hash));
         }
 
         [TestMethod]
@@ -843,25 +848,26 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshotCache = GetEngine(true, true).SnapshotCache;
             var vote = LedgerContract.NEO.GetCandidateVote(snapshotCache, new ECPoint());
-            vote.Should().Be(-1);
+            Assert.AreEqual(-1, vote);
         }
 
         [TestMethod]
         public void TestContractPermissionDescriptorEquals()
         {
             var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
-            descriptor1.Equals(null).Should().BeFalse();
-            descriptor1.Equals(null as object).Should().BeFalse();
+            Assert.IsFalse(descriptor1.Equals(null));
+            Assert.IsFalse(descriptor1.Equals(null as object));
             var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
             var descriptor3 = ContractPermissionDescriptor.Create(hash: null);
-            descriptor1.Equals(descriptor3).Should().BeTrue();
-            descriptor1.Equals(descriptor3 as object).Should().BeTrue();
+            Assert.IsTrue(descriptor1.Equals(descriptor3));
+            Assert.IsTrue(descriptor1.Equals(descriptor3 as object));
             var descriptor4 = ContractPermissionDescriptor.Create(group: null);
             var descriptor5 = ContractPermissionDescriptor.Create(group: new ECPoint());
-            descriptor1.Equals(descriptor4).Should().BeTrue();
-            descriptor2.Equals(descriptor3).Should().BeFalse();
-            descriptor5.Equals(descriptor3).Should().BeFalse();
-            descriptor5.Equals(descriptor5).Should().BeTrue();
+            Assert.IsTrue(descriptor1.Equals(descriptor4));
+            Assert.IsTrue(descriptor1.Equals(descriptor4 as object));
+            Assert.IsFalse(descriptor2.Equals(descriptor3));
+            Assert.IsFalse(descriptor5.Equals(descriptor3));
+            Assert.IsTrue(descriptor5.Equals(descriptor5));
         }
     }
 }

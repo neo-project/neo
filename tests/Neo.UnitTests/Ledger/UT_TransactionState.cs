@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_TransactionState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -59,9 +58,9 @@ namespace Neo.UnitTests.Ledger
             TransactionState dest = new();
             ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
-            dest.BlockIndex.Should().Be(origin.BlockIndex);
-            dest.Transaction.Hash.Should().Be(origin.Transaction.Hash);
-            dest.Transaction.Should().NotBeNull();
+            Assert.AreEqual(origin.BlockIndex, dest.BlockIndex);
+            Assert.AreEqual(origin.Transaction.Hash, dest.Transaction.Hash);
+            Assert.IsNotNull(dest.Transaction);
         }
 
         [TestMethod]
@@ -73,9 +72,8 @@ namespace Neo.UnitTests.Ledger
             TransactionState dest = new();
             ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
-            dest.BlockIndex.Should().Be(originTrimmed.BlockIndex);
-            dest.Transaction.Should().Be(null);
-            dest.Transaction.Should().BeNull();
+            Assert.AreEqual(originTrimmed.BlockIndex, dest.BlockIndex);
+            Assert.IsNull(dest.Transaction);
         }
     }
 }

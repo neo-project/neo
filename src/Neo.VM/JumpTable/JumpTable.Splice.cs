@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // JumpTable.Splice.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -101,7 +101,7 @@ namespace Neo.VM
             if (index < 0)
                 throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
             var x = engine.Pop().GetSpan();
-            if (index + count > x.Length)
+            if (checked(index + count) > x.Length)
                 throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
             Types.Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);

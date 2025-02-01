@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -17,7 +17,6 @@ using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using System;
-using System.Buffers.Binary;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -51,8 +50,12 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] RIPEMD160(this ReadOnlySpan<byte> value)
         {
-            byte[] source = value.ToArray();
-            return source.RIPEMD160();
+            using var ripemd160 = new RIPEMD160Managed();
+
+            var output = new byte[ripemd160.HashSize / 8];
+            if (!ripemd160.TryComputeHash(value, output.AsSpan(), out _))
+                throw new CryptographicException();
+            return output;
         }
 
         /// <summary>
@@ -63,8 +66,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static uint Murmur32(this byte[] value, uint seed)
         {
-            using Murmur32 murmur = new(seed);
-            return BinaryPrimitives.ReadUInt32LittleEndian(murmur.ComputeHash(value));
+            return Neo.Cryptography.Murmur32.HashToUInt32(value, seed);
         }
 
         /// <summary>
@@ -75,10 +77,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static uint Murmur32(this ReadOnlySpan<byte> value, uint seed)
         {
-            Span<byte> buffer = stackalloc byte[sizeof(uint)];
-            using Murmur32 murmur = new(seed);
-            murmur.TryComputeHash(value, buffer, out _);
-            return BinaryPrimitives.ReadUInt32LittleEndian(buffer);
+            return Neo.Cryptography.Murmur32.HashToUInt32(value, seed);
         }
 
         /// <summary>
@@ -112,10 +111,15 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value)
         {
+#if !NET5_0_OR_GREATER
             using var sha256 = SHA256.Create();
             return sha256.ComputeHash(value);
+#else
+            return SHA256.HashData(value);
+#endif
         }
 
         /// <summary>
@@ -125,10 +129,15 @@ namespace Neo.Cryptography
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
+#if !NET5_0_OR_GREATER
             using var sha256 = SHA256.Create();
             return sha256.ComputeHash(value, offset, count);
+#else
+            return SHA256.HashData(value.AsSpan(offset, count));
+#endif
         }
 
         /// <summary>
@@ -136,11 +145,16 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
         /// <returns>The computed hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Sha256(this ReadOnlySpan<byte> value)
         {
             byte[] buffer = new byte[32];
+#if !NET5_0_OR_GREATER
             using var sha256 = SHA256.Create();
             sha256.TryComputeHash(value, buffer, out _);
+#else
+            SHA256.HashData(value, buffer);
+#endif
             return buffer;
         }
 

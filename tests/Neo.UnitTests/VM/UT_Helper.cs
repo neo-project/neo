@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -31,6 +31,14 @@ namespace Neo.UnitTests.VMT
     [TestClass]
     public class UT_Helper
     {
+        private DataCache _snapshotCache;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        }
+
         [TestMethod]
         public void TestEmit()
         {
@@ -85,11 +93,12 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitArray()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var expected = new BigInteger[] { 1, 2, 3 };
             var sb = new ScriptBuilder();
             sb.CreateArray(expected);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
@@ -99,7 +108,7 @@ namespace Neo.UnitTests.VMT
             sb = new ScriptBuilder();
             sb.CreateArray(expected);
 
-            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
 
@@ -109,11 +118,12 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitStruct()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var expected = new BigInteger[] { 1, 2, 3 };
             var sb = new ScriptBuilder();
             sb.CreateStruct(expected);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
@@ -123,7 +133,7 @@ namespace Neo.UnitTests.VMT
             sb = new ScriptBuilder();
             sb.CreateStruct(expected);
 
-            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
 
@@ -133,11 +143,12 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitMap()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var expected = new Dictionary<BigInteger, BigInteger>() { { 1, 2 }, { 3, 4 } };
             var sb = new ScriptBuilder();
             sb.CreateMap(expected);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
@@ -323,6 +334,7 @@ namespace Neo.UnitTests.VMT
             sb.EmitPush(new ContractParameter(ContractParameterType.String));
             byte[] tempArray = new byte[2];
             tempArray[0] = (byte)OpCode.PUSHDATA1;
+            tempArray[1] = 0x00;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -435,7 +447,7 @@ namespace Neo.UnitTests.VMT
 
             ScriptBuilder sb = new ScriptBuilder();
             Action action = () => sb.EmitPush(new object());
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => action());
         }
 
 
@@ -711,7 +723,7 @@ namespace Neo.UnitTests.VMT
             // check cyclic reference
             map[2] = item;
             var action = () => item.ToJson();
-            action.Should().Throw<System.InvalidOperationException>();
+            Assert.ThrowsException<System.InvalidOperationException>(() => action());
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractMethodMetadata.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -40,7 +40,8 @@ namespace Neo.SmartContract.Native
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
-            Name = attribute.Name ?? member.Name.ToLower()[0] + member.Name[1..];
+            Name = attribute.Name ?? member.Name;
+            Name = Name.ToLowerInvariant()[0] + Name[1..];
             Handler = member switch
             {
                 MethodInfo m => m,

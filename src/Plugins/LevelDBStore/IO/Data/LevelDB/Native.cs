@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Native.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -24,14 +24,17 @@ namespace Neo.IO.Storage.LevelDB
     public static class Native
     {
         #region Logger
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_logger_create(nint /* Action<string> */ logger);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_logger_destroy(nint /* logger*/ option);
+
         #endregion
 
         #region DB
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_open(nint /* Options*/ options, string name, out nint error);
 
@@ -77,19 +80,20 @@ namespace Neo.IO.Storage.LevelDB
         public static extern void leveldb_free(nint /* void */ ptr);
 
         #endregion
-
-
         #endregion
 
         #region Env
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_create_default_env();
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_env_destroy(nint /*Env*/ cache);
+
         #endregion
 
         #region Iterator
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_iter_destroy(nint /*Iterator*/ iterator);
 
@@ -120,9 +124,11 @@ namespace Neo.IO.Storage.LevelDB
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_iter_get_error(nint /*Iterator*/ iterator, out nint error);
+
         #endregion
 
         #region Options
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_options_create();
 
@@ -170,9 +176,11 @@ namespace Neo.IO.Storage.LevelDB
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_filterpolicy_create_bloom(int bits_per_key);
+
         #endregion
 
         #region ReadOptions
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_readoptions_create();
 
@@ -187,9 +195,11 @@ namespace Neo.IO.Storage.LevelDB
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_readoptions_set_snapshot(nint /*ReadOptions*/ options, nint /*SnapShot*/ snapshot);
+
         #endregion
 
         #region WriteBatch
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_writebatch_create();
 
@@ -207,9 +217,11 @@ namespace Neo.IO.Storage.LevelDB
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_writebatch_iterate(nint /* WriteBatch */ batch, object state, Action<object, byte[], int, byte[], int> put, Action<object, byte[], int> deleted);
+
         #endregion
 
         #region WriteOptions
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_writeoptions_create();
 
@@ -218,14 +230,17 @@ namespace Neo.IO.Storage.LevelDB
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_writeoptions_set_sync(nint /*WriteOptions*/ options, [MarshalAs(UnmanagedType.U1)] bool o);
+
         #endregion
 
         #region Cache
+
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern nint leveldb_cache_create_lru(int capacity);
 
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void leveldb_cache_destroy(nint /*Cache*/ cache);
+
         #endregion
 
         #region Comparator
@@ -255,9 +270,9 @@ namespace Neo.IO.Storage.LevelDB
         {
             if (error != nint.Zero)
             {
-                string message = Marshal.PtrToStringAnsi(error);
+                var message = Marshal.PtrToStringAnsi(error);
                 Native.leveldb_free(error);
-                throw new LevelDBException(message);
+                throw new LevelDBException(message ?? string.Empty);
             }
         }
     }

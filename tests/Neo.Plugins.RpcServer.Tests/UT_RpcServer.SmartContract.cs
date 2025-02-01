@@ -1,6 +1,6 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_RpcServer.Wallet.cs file belongs to the neo project and is free
+// UT_RpcServer.SmartContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,13 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -23,10 +19,8 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
-using Neo.UnitTests.Extensions;
 using Neo.Wallets;
 using System;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -64,7 +58,6 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestInvokeFunction()
         {
             _rpcServer.wallet = _wallet;
-
             JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "totalSupply", new JArray([]), validatorSigner, true));
             Assert.AreEqual(resp.Count, 8);
             Assert.AreEqual(resp["script"], NeoTotalSupplyScript);
@@ -118,6 +111,29 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestInvokeFunctionInvalid()
+        {
+            _rpcServer.wallet = _wallet;
+
+            HttpContext context = new DefaultHttpContext();
+
+            var json = new JObject();
+            json["id"] = 1;
+            json["jsonrpc"] = "2.0";
+            json["method"] = "invokefunction";
+            json["params"] = new JArray("0", "totalSupply", new JArray([]), validatorSigner, true);
+
+            var resp = _rpcServer.ProcessRequestAsync(context, json).GetAwaiter().GetResult();
+
+            Console.WriteLine(resp);
+            Assert.AreEqual(resp.Count, 3);
+            Assert.IsNotNull(resp["error"]);
+            Assert.AreEqual(resp["error"]["code"], -32602);
+
+            _rpcServer.wallet = null;
+        }
+
+        [TestMethod]
         public void TestInvokeScript()
         {
             JObject resp = (JObject)_rpcServer.InvokeScript(new JArray(NeoTotalSupplyScript, validatorSigner, true));
@@ -158,7 +174,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 }]), validatorSigner, true));
             Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
             SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
-            Transaction? tx = new Transaction
+            var tx = new Transaction
             {
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,

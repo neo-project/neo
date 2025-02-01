@@ -1,6 +1,6 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_StringExtensdions.cs file belongs to the neo project and is free
+// UT_StringExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,12 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.Extensions.Tests
 {
@@ -24,16 +20,23 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestHexToBytes()
         {
-            string nullStr = null;
-            _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
+            string? nullStr = null;
+            Assert.AreEqual(Array.Empty<byte>().ToHexString(), nullStr.HexToBytes().ToHexString());
             string emptyStr = "";
-            emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
+            Assert.AreEqual(Array.Empty<byte>().ToHexString(), emptyStr.HexToBytes().ToHexString());
             string str1 = "hab";
             Action action = () => str1.HexToBytes();
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
             string str2 = "0102";
             byte[] bytes = str2.HexToBytes();
-            bytes.ToHexString().Should().Be(new byte[] { 0x01, 0x02 }.ToHexString());
+            Assert.AreEqual(new byte[] { 0x01, 0x02 }.ToHexString(), bytes.ToHexString());
+
+            string str3 = "0A0b0C";
+            bytes = str3.AsSpan().HexToBytes();
+            Assert.AreEqual(new byte[] { 0x0A, 0x0B, 0x0C }.ToHexString(), bytes.ToHexString());
+
+            bytes = str3.AsSpan().HexToBytesReversed();
+            Assert.AreEqual(new byte[] { 0x0C, 0x0B, 0x0A }.ToHexString(), bytes.ToHexString());
         }
 
         [TestMethod]

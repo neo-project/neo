@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Header.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,13 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.SmartContract;
 using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -38,7 +36,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
             // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
-            uut.Size.Should().Be(113); // 105 + nonce
+            Assert.AreEqual(113, uut.Size); // 105 + nonce
         }
 
         [TestMethod]
@@ -46,14 +44,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
-            uut.GetHashCode().Should().Be(uut.Hash.GetHashCode());
+            Assert.AreEqual(uut.Hash.GetHashCode(), uut.GetHashCode());
         }
 
         [TestMethod]
         public void TrimTest()
         {
             UInt256 val256 = UInt256.Zero;
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache().CreateSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache().CloneCache();
             TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
 
@@ -73,15 +71,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var trim = NativeContract.Ledger.GetTrimmedBlock(snapshotCache, uut.Hash);
             var header = trim.Header;
 
-            header.Version.Should().Be(uut.Version);
-            header.PrevHash.Should().Be(uut.PrevHash);
-            header.MerkleRoot.Should().Be(uut.MerkleRoot);
-            header.Timestamp.Should().Be(uut.Timestamp);
-            header.Index.Should().Be(uut.Index);
-            header.NextConsensus.Should().Be(uut.NextConsensus);
-            header.Witness.InvocationScript.Span.SequenceEqual(uut.Witness.InvocationScript.Span).Should().BeTrue();
-            header.Witness.VerificationScript.Span.SequenceEqual(uut.Witness.VerificationScript.Span).Should().BeTrue();
-            trim.Hashes.Length.Should().Be(0);
+            Assert.AreEqual(uut.Version, header.Version);
+            Assert.AreEqual(uut.PrevHash, header.PrevHash);
+            Assert.AreEqual(uut.MerkleRoot, header.MerkleRoot);
+            Assert.AreEqual(uut.Timestamp, header.Timestamp);
+            Assert.AreEqual(uut.Index, header.Index);
+            Assert.AreEqual(uut.NextConsensus, header.NextConsensus);
+            CollectionAssert.AreEqual(uut.Witness.InvocationScript.ToArray(), header.Witness.InvocationScript.ToArray());
+            CollectionAssert.AreEqual(uut.Witness.VerificationScript.ToArray(), header.Witness.VerificationScript.ToArray());
+            Assert.AreEqual(0, trim.Hashes.Length);
         }
 
         [TestMethod]
@@ -102,28 +100,28 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
         private void AssertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, ulong nonceVal, uint indexVal, Witness scriptVal)
         {
-            uut.PrevHash.Should().Be(val256);
-            uut.MerkleRoot.Should().Be(merkRoot);
-            uut.Timestamp.Should().Be(timestampVal);
-            uut.Index.Should().Be(indexVal);
-            uut.Nonce.Should().Be(nonceVal);
-            uut.NextConsensus.Should().Be(val160);
-            uut.Witness.InvocationScript.Length.Should().Be(0);
-            uut.Witness.Size.Should().Be(scriptVal.Size);
-            uut.Witness.VerificationScript.Span[0].Should().Be(scriptVal.VerificationScript.Span[0]);
+            Assert.AreEqual(val256, uut.PrevHash);
+            Assert.AreEqual(merkRoot, uut.MerkleRoot);
+            Assert.AreEqual(timestampVal, uut.Timestamp);
+            Assert.AreEqual(indexVal, uut.Index);
+            Assert.AreEqual(nonceVal, uut.Nonce);
+            Assert.AreEqual(val160, uut.NextConsensus);
+            Assert.AreEqual(0, uut.Witness.InvocationScript.Length);
+            Assert.AreEqual(scriptVal.Size, uut.Witness.Size);
+            Assert.AreEqual(scriptVal.VerificationScript.Span[0], uut.Witness.VerificationScript.Span[0]);
         }
 
         [TestMethod]
         public void Equals_Null()
         {
-            uut.Equals(null).Should().BeFalse();
+            Assert.IsFalse(uut.Equals(null));
         }
 
 
         [TestMethod]
         public void Equals_SameHeader()
         {
-            uut.Equals(uut).Should().BeTrue();
+            Assert.IsTrue(uut.Equals(uut));
         }
 
         [TestMethod]
@@ -134,13 +132,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupHeaderWithValues(null, newHeader, prevHash, out _, out _, out _, out _, out _, out _);
             TestUtils.SetupHeaderWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _);
 
-            uut.Equals(newHeader).Should().BeTrue();
+            Assert.IsTrue(uut.Equals(newHeader));
         }
 
         [TestMethod]
         public void Equals_SameObject()
         {
-            uut.Equals((object)uut).Should().BeTrue();
+            Assert.IsTrue(uut.Equals((object)uut));
         }
 
         [TestMethod]
@@ -150,7 +148,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
 
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111";
-            uut.ToArray().ToHexString().Should().Be(hex);
+            Assert.AreEqual(hex, uut.ToArray().ToHexString());
         }
     }
 }

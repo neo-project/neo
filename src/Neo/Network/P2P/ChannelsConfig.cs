@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ChannelsConfig.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -22,6 +22,11 @@ namespace Neo.Network.P2P
         /// Tcp configuration.
         /// </summary>
         public IPEndPoint Tcp { get; set; }
+
+        /// <summary>
+        /// Enable compression.
+        /// </summary>
+        public bool EnableCompression { get; set; } = Peer.DefaultEnableCompression;
 
         /// <summary>
         /// Minimum desired connections.

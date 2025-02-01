@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_IpAddressExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using System.Net;
 
@@ -22,10 +22,10 @@ namespace Neo.Extensions.Tests.Net
         public void TestUnmapForIPAddress()
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
-            addr.UnMap().Should().Be(addr);
+            Assert.AreEqual(addr, addr.UnMap());
 
             var addr2 = addr.MapToIPv6();
-            addr2.UnMap().Should().Be(addr);
+            Assert.AreEqual(addr, addr2.UnMap());
         }
 
         [TestMethod]
@@ -33,11 +33,11 @@ namespace Neo.Extensions.Tests.Net
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
             var endPoint = new IPEndPoint(addr, 8888);
-            endPoint.UnMap().Should().Be(endPoint);
+            Assert.AreEqual(endPoint, endPoint.UnMap());
 
             var addr2 = addr.MapToIPv6();
             var endPoint2 = new IPEndPoint(addr2, 8888);
-            endPoint2.UnMap().Should().Be(endPoint);
+            Assert.AreEqual(endPoint, endPoint2.UnMap());
         }
     }
 }

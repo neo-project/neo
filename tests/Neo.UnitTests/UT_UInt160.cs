@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_UInt160.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
+#pragma warning disable CS1718 // Comparison made to same variable
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using System;
-using System.Security.Cryptography;
 
 namespace Neo.UnitTests.IO
 {
@@ -78,11 +78,11 @@ namespace Neo.UnitTests.IO
         public void TestParse()
         {
             Action action = () => UInt160.Parse(null);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
             UInt160 result = UInt160.Parse("0x0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result);
             Action action1 = () => UInt160.Parse("000000000000000000000000000000000000000");
-            action1.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action1);
             UInt160 result1 = UInt160.Parse("0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result1);
         }
@@ -143,3 +143,5 @@ namespace Neo.UnitTests.IO
         }
     }
 }
+
+#pragma warning restore CS1718 // Comparison made to same variable

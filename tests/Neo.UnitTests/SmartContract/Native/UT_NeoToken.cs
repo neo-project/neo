@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NeoToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -22,8 +21,11 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Principal;
+using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -46,13 +48,55 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.NEO.Name.Should().Be(nameof(NeoToken));
+        public void Check_Name() => Assert.AreEqual(nameof(NeoToken), NativeContract.NEO.Name);
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.NEO.Symbol(_snapshotCache).Should().Be("NEO");
+        public void Check_Symbol() => Assert.AreEqual("NEO", NativeContract.NEO.Symbol(_snapshotCache));
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshotCache).Should().Be(0);
+        public void Check_Decimals() => Assert.AreEqual(0, NativeContract.NEO.Decimals(_snapshotCache));
+
+        [TestMethod]
+        public void Test_HF_EchidnaStates()
+        {
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 10");
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            var settings = ProtocolSettings.Load(stream);
+
+            var clonedCache = _snapshotCache.CloneCache();
+            var persistingBlock = new Block { Header = new Header() };
+
+            foreach (var method in new string[] { "vote", "registerCandidate", "unregisterCandidate" })
+            {
+                // Test WITHOUT HF_Echidna
+
+                persistingBlock.Header.Index = 9;
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                    new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
+
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States);
+                }
+
+                // Test WITH HF_Echidna
+
+                persistingBlock.Header.Index = 10;
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application,
+                     new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, persistingBlock, settings: settings))
+                {
+                    var methods = NativeContract.NEO.GetContractMethods(engine);
+                    var entries = methods.Values.Where(u => u.Name == method).ToArray();
+
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
+                }
+            }
+        }
 
         [TestMethod]
         public void Check_Vote()
@@ -68,20 +112,20 @@ namespace Neo.UnitTests.SmartContract.Native
             // No signature
 
             var ret = Check_Vote(clonedCache, from, null, false, persistingBlock);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeTrue();
+            Assert.IsFalse(ret.Result);
+            Assert.IsTrue(ret.State);
 
             // Wrong address
 
             ret = Check_Vote(clonedCache, new byte[19], null, false, persistingBlock);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeFalse();
+            Assert.IsFalse(ret.Result);
+            Assert.IsFalse(ret.State);
 
             // Wrong ec
 
             ret = Check_Vote(clonedCache, from, new byte[19], true, persistingBlock);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeFalse();
+            Assert.IsFalse(ret.Result);
+            Assert.IsFalse(ret.State);
 
             // no registered
 
@@ -90,26 +134,26 @@ namespace Neo.UnitTests.SmartContract.Native
             fakeAddr[5] = 0xFF;
 
             ret = Check_Vote(clonedCache, fakeAddr, null, true, persistingBlock);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeTrue();
+            Assert.IsFalse(ret.Result);
+            Assert.IsTrue(ret.State);
 
             // no registered
 
             var accountState = clonedCache.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo = null;
             ret = Check_Vote(clonedCache, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
-            ret.Result.Should().BeFalse();
-            ret.State.Should().BeTrue();
-            accountState.VoteTo.Should().BeNull();
+            Assert.IsFalse(ret.Result);
+            Assert.IsTrue(ret.State);
+            Assert.IsNull(accountState.VoteTo);
 
             // normal case
 
             clonedCache.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
             ret = Check_Vote(clonedCache, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             accountState = clonedCache.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
-            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+            Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
         }
 
         [TestMethod]
@@ -126,23 +170,23 @@ namespace Neo.UnitTests.SmartContract.Native
             accountState.Balance = 100;
             clonedCache.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
             var ret = Check_Vote(clonedCache, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             accountState = clonedCache.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
-            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+            Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
 
             //two account vote for the same account
             var stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
-            stateValidator.Votes.Should().Be(100);
+            Assert.AreEqual(100, stateValidator.Votes);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
             var secondAccount = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
-            secondAccount.Balance.Should().Be(200);
+            Assert.AreEqual(200, secondAccount.Balance);
             ret = Check_Vote(clonedCache, G_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
-            stateValidator.Votes.Should().Be(300);
+            Assert.AreEqual(300, stateValidator.Votes);
         }
 
         [TestMethod]
@@ -160,24 +204,24 @@ namespace Neo.UnitTests.SmartContract.Native
             accountState.Balance = 100;
             clonedCache.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
             var ret = Check_Vote(clonedCache, from_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
-            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+            Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
 
             //from change vote to itself
             var G_stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
-            G_stateValidator.Votes.Should().Be(100);
+            Assert.AreEqual(100, G_stateValidator.Votes);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
             clonedCache.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState() { Registered = true }));
             ret = Check_Vote(clonedCache, from_Account, from, true, persistingBlock);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             G_stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
-            G_stateValidator.Votes.Should().Be(0);
+            Assert.AreEqual(0, G_stateValidator.Votes);
             var from_stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, from)).GetInteroperable<CandidateState>();
-            from_stateValidator.Votes.Should().Be(100);
+            Assert.AreEqual(100, from_stateValidator.Votes);
         }
 
         [TestMethod]
@@ -195,26 +239,26 @@ namespace Neo.UnitTests.SmartContract.Native
             clonedCache.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
             clonedCache.Add(CreateStorageKey(23, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new BigInteger(100500)));
             var ret = Check_Vote(clonedCache, from_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
-            accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
-            accountState.LastGasPerVote.Should().Be(100500);
+            Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
+            Assert.AreEqual(100500, accountState.LastGasPerVote);
 
             //from vote to null account G votes becomes 0
             var G_stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
-            G_stateValidator.Votes.Should().Be(100);
+            Assert.AreEqual(100, G_stateValidator.Votes);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
             clonedCache.Add(CreateStorageKey(33, from), new StorageItem(new CandidateState() { Registered = true }));
             ret = Check_Vote(clonedCache, from_Account, null, true, persistingBlock);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             G_stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
-            G_stateValidator.Votes.Should().Be(0);
+            Assert.AreEqual(0, G_stateValidator.Votes);
             accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
-            accountState.VoteTo.Should().Be(null);
-            accountState.LastGasPerVote.Should().Be(0);
+            Assert.IsNull(accountState.VoteTo);
+            Assert.AreEqual(0, accountState.LastGasPerVote);
         }
 
         [TestMethod]
@@ -229,12 +273,12 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
             var unclaim = Check_UnclaimedGas(clonedCache, from, persistingBlock);
-            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
-            unclaim.State.Should().BeTrue();
+            Assert.AreEqual(new BigInteger(0.5 * 1000 * 100000000L), unclaim.Value);
+            Assert.IsTrue(unclaim.State);
 
             unclaim = Check_UnclaimedGas(clonedCache, new byte[19], persistingBlock);
-            unclaim.Value.Should().Be(BigInteger.Zero);
-            unclaim.State.Should().BeFalse();
+            Assert.AreEqual(BigInteger.Zero, unclaim.Value);
+            Assert.IsFalse(unclaim.State);
         }
 
         [TestMethod]
@@ -246,23 +290,57 @@ namespace Neo.UnitTests.SmartContract.Native
             var point = TestProtocolSettings.Default.StandbyValidators[0].EncodePoint(true).Clone() as byte[];
 
             var ret = Check_RegisterValidator(clonedCache, point, _persistingBlock); // Exists
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
 
-            clonedCache.GetChangeSet().Count().Should().Be(++keyCount); // No changes
+            Assert.AreEqual(++keyCount, clonedCache.GetChangeSet().Count()); // No changes
 
             point[20]++; // fake point
             ret = Check_RegisterValidator(clonedCache, point, _persistingBlock); // New
 
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
 
-            clonedCache.GetChangeSet().Count().Should().Be(keyCount + 1); // New validator
+            Assert.AreEqual(keyCount + 1, clonedCache.GetChangeSet().Count()); // New validator
 
             // Check GetRegisteredValidators
 
             var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
             Assert.AreEqual(2, members.Count());
+        }
+
+        [TestMethod]
+        public void Check_RegisterValidatorViaNEP27()
+        {
+            var clonedCache = _snapshotCache.CloneCache();
+            var point = ECPoint.Parse("021821807f923a3da004fb73871509d7635bcc05f41edef2a3ca5c941d8bbc1231", ECCurve.Secp256r1);
+            var pointData = point.EncodePoint(true);
+
+            // Send some NEO, shouldn't be accepted
+            var ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, true, pointData, 1000_0000_0000);
+            Assert.IsFalse(ret.State);
+
+            // Send improper amount of GAS, shouldn't be accepted.
+            ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, false, pointData, 1000_0000_0001);
+            Assert.IsFalse(ret.State);
+
+            // Broken witness.
+            var badPoint = ECPoint.Parse("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", ECCurve.Secp256r1);
+            ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, false, badPoint.EncodePoint(true), 1000_0000_0000);
+            Assert.IsFalse(ret.State);
+
+            // Successful case.
+            ret = Check_RegisterValidatorViaNEP27(clonedCache, point, _persistingBlock, false, pointData, 1000_0000_0000);
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
+
+            // Check GetRegisteredValidators
+            var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
+            Assert.AreEqual(1, members.Count());
+            Assert.AreEqual(point, members.First().PublicKey);
+
+            // No GAS should be left on the NEO account.
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(clonedCache, NativeContract.NEO.Hash));
         }
 
         [TestMethod]
@@ -275,55 +353,57 @@ namespace Neo.UnitTests.SmartContract.Native
 
             //without register
             var ret = Check_UnregisterCandidate(clonedCache, point, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
-            clonedCache.GetChangeSet().Count().Should().Be(keyCount);
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
+
+            Assert.AreEqual(keyCount, clonedCache.GetChangeSet().Count());
 
             //register and then unregister
             ret = Check_RegisterValidator(clonedCache, point, _persistingBlock);
             StorageItem item = clonedCache.GetAndChange(CreateStorageKey(33, point));
-            item.Size.Should().Be(7);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            Assert.AreEqual(7, item.Size);
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
 
             var members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
             Assert.AreEqual(1, members.Count());
-            clonedCache.GetChangeSet().Count().Should().Be(keyCount + 1);
+            Assert.AreEqual(keyCount + 1, clonedCache.GetChangeSet().Count());
             StorageKey key = CreateStorageKey(33, point);
-            clonedCache.TryGet(key).Should().NotBeNull();
+            Assert.IsNotNull(clonedCache.TryGet(key));
 
             ret = Check_UnregisterCandidate(clonedCache, point, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
-            clonedCache.GetChangeSet().Count().Should().Be(keyCount);
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
+
+            Assert.AreEqual(keyCount, clonedCache.GetChangeSet().Count());
 
             members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
             Assert.AreEqual(0, members.Count());
-            clonedCache.TryGet(key).Should().BeNull();
+            Assert.IsNull(clonedCache.TryGet(key));
 
             //register with votes, then unregister
             ret = Check_RegisterValidator(clonedCache, point, _persistingBlock);
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.State);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState()));
             var accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
             Check_Vote(clonedCache, G_Account, TestProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
             ret = Check_UnregisterCandidate(clonedCache, point, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
-            clonedCache.TryGet(key).Should().NotBeNull();
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
+            Assert.IsNotNull(clonedCache.TryGet(key));
             StorageItem pointItem = clonedCache.TryGet(key);
             CandidateState pointState = pointItem.GetInteroperable<CandidateState>();
-            pointState.Registered.Should().BeFalse();
-            pointState.Votes.Should().Be(100);
+            Assert.IsFalse(pointState.Registered);
+            Assert.AreEqual(100, pointState.Votes);
 
             //vote fail
             ret = Check_Vote(clonedCache, G_Account, TestProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            Assert.IsTrue(ret.State);
+            Assert.IsFalse(ret.Result);
             accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
-            accountState.VoteTo.Should().Be(TestProtocolSettings.Default.StandbyValidators[0]);
+            Assert.AreEqual(TestProtocolSettings.Default.StandbyValidators[0], accountState.VoteTo);
         }
 
         [TestMethod]
@@ -340,18 +420,19 @@ namespace Neo.UnitTests.SmartContract.Native
             var accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 20000000;
             var ret = Check_RegisterValidator(clonedCache, ECCurve.Secp256r1.G.ToArray(), persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
             ret = Check_Vote(clonedCache, G_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
+
 
             var committeemembers = NativeContract.NEO.GetCommittee(clonedCache);
             var defaultCommittee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
-            committeemembers.GetType().Should().Be(typeof(ECPoint[]));
+            Assert.AreEqual(committeemembers.GetType(), typeof(ECPoint[]));
             for (int i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount; i++)
             {
-                committeemembers[i].Should().Be(defaultCommittee[i]);
+                Assert.AreEqual(committeemembers[i], defaultCommittee[i]);
             }
 
             //register more candidates, committee member change
@@ -370,20 +451,20 @@ namespace Neo.UnitTests.SmartContract.Native
             for (int i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
                 ret = Check_RegisterValidator(clonedCache, TestProtocolSettings.Default.StandbyCommittee[i].ToArray(), persistingBlock);
-                ret.State.Should().BeTrue();
-                ret.Result.Should().BeTrue();
+                Assert.IsTrue(ret.State);
+                Assert.IsTrue(ret.Result);
             }
 
-            Check_OnPersist(clonedCache, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(Check_OnPersist(clonedCache, persistingBlock));
 
             committeemembers = NativeContract.NEO.GetCommittee(clonedCache);
-            committeemembers.Length.Should().Be(TestProtocolSettings.Default.CommitteeMembersCount);
-            committeemembers.Contains(ECCurve.Secp256r1.G).Should().BeTrue();
+            Assert.AreEqual(committeemembers.Length, TestProtocolSettings.Default.CommitteeMembersCount);
+            Assert.IsTrue(committeemembers.Contains(ECCurve.Secp256r1.G));
             for (int i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
-                committeemembers.Contains(TestProtocolSettings.Default.StandbyCommittee[i]).Should().BeTrue();
+                Assert.IsTrue(committeemembers.Contains(TestProtocolSettings.Default.StandbyCommittee[i]));
             }
-            committeemembers.Contains(TestProtocolSettings.Default.StandbyCommittee[TestProtocolSettings.Default.CommitteeMembersCount - 1]).Should().BeFalse();
+            Assert.IsFalse(committeemembers.Contains(TestProtocolSettings.Default.StandbyCommittee[TestProtocolSettings.Default.CommitteeMembersCount - 1]));
         }
 
         [TestMethod]
@@ -402,37 +483,37 @@ namespace Neo.UnitTests.SmartContract.Native
             // Check unclaim
 
             var unclaim = Check_UnclaimedGas(clonedCache, from, persistingBlock);
-            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
-            unclaim.State.Should().BeTrue();
+            Assert.AreEqual(new BigInteger(0.5 * 1000 * 100000000L), unclaim.Value);
+            Assert.IsTrue(unclaim.State);
 
             // Transfer
 
-            NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.One, false, persistingBlock).Should().BeFalse(); // Not signed
-            NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.One, true, persistingBlock).Should().BeTrue();
-            NativeContract.NEO.BalanceOf(clonedCache, from).Should().Be(99999999);
-            NativeContract.NEO.BalanceOf(clonedCache, to).Should().Be(1);
+            Assert.IsFalse(NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.One, false, persistingBlock)); // Not signed
+            Assert.IsTrue(NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.One, true, persistingBlock));
+            Assert.AreEqual(99999999, NativeContract.NEO.BalanceOf(clonedCache, from));
+            Assert.AreEqual(1, NativeContract.NEO.BalanceOf(clonedCache, to));
 
             var (from_balance, _, _) = GetAccountState(clonedCache, new UInt160(from));
             var (to_balance, _, _) = GetAccountState(clonedCache, new UInt160(to));
 
-            from_balance.Should().Be(99999999);
-            to_balance.Should().Be(1);
+            Assert.AreEqual(99999999, from_balance);
+            Assert.AreEqual(1, to_balance);
 
             // Check unclaim
 
             unclaim = Check_UnclaimedGas(clonedCache, from, persistingBlock);
-            unclaim.Value.Should().Be(new BigInteger(0));
-            unclaim.State.Should().BeTrue();
+            Assert.AreEqual(BigInteger.Zero, unclaim.Value);
+            Assert.IsTrue(unclaim.State);
 
-            clonedCache.GetChangeSet().Count().Should().Be(keyCount + 4); // Gas + new balance
+            Assert.AreEqual(keyCount + 4, clonedCache.GetChangeSet().Count()); // Gas + new balance
 
             // Return balance
 
             keyCount = clonedCache.GetChangeSet().Count();
 
-            NativeContract.NEO.Transfer(clonedCache, to, from, BigInteger.One, true, persistingBlock).Should().BeTrue();
-            NativeContract.NEO.BalanceOf(clonedCache, to).Should().Be(0);
-            clonedCache.GetChangeSet().Count().Should().Be(keyCount - 1);  // Remove neo balance from address two
+            Assert.IsTrue(NativeContract.NEO.Transfer(clonedCache, to, from, BigInteger.One, true, persistingBlock));
+            Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, to));
+            Assert.AreEqual(keyCount - 1, clonedCache.GetChangeSet().Count());  // Remove neo balance from address two
 
             // Bad inputs
 
@@ -442,7 +523,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // More than balance
 
-            NativeContract.NEO.Transfer(clonedCache, to, from, new BigInteger(2), true, persistingBlock).Should().BeFalse();
+            Assert.IsFalse(NativeContract.NEO.Transfer(clonedCache, to, from, new BigInteger(2), true, persistingBlock));
         }
 
         [TestMethod]
@@ -451,11 +532,11 @@ namespace Neo.UnitTests.SmartContract.Native
             var clonedCache = _snapshotCache.CloneCache();
             byte[] account = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
-            NativeContract.NEO.BalanceOf(clonedCache, account).Should().Be(100_000_000);
+            Assert.AreEqual(100_000_000, NativeContract.NEO.BalanceOf(clonedCache, account));
 
             account[5]++; // Without existing balance
 
-            NativeContract.NEO.BalanceOf(clonedCache, account).Should().Be(0);
+            Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, account));
         }
 
         [TestMethod]
@@ -474,13 +555,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = Array.Empty<Transaction>()
             };
-
-            Check_PostPersist(clonedCache, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
             var committee = TestProtocolSettings.Default.StandbyCommittee;
-            NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(50000000);
-            NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(50000000);
-            NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[2]).ScriptHash.ToArray()).Should().Be(0);
+            Assert.AreEqual(50000000, NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[0]).ScriptHash));
+            Assert.AreEqual(50000000, NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[1]).ScriptHash));
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[2]).ScriptHash));
         }
 
         [TestMethod]
@@ -507,8 +587,12 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Balance = -100
             }));
-            Action action = () => NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10).Should().Be(new BigInteger(0));
-            action.Should().Throw<ArgumentOutOfRangeException>();
+            try
+            {
+                NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10);
+                Assert.Fail("Should have thrown ArgumentOutOfRangeException");
+            }
+            catch (ArgumentOutOfRangeException) { }
             clonedCache.Delete(key);
 
             // Fault range: start >= end
@@ -518,7 +602,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 BalanceHeight = 100
             }));
-            action = () => NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            try
+            {
+                NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10);
+                Assert.Fail("Should have thrown ArgumentOutOfRangeException");
+            }
+            catch (ArgumentOutOfRangeException) { }
             clonedCache.Delete(key);
 
             // Fault range: start >= end
@@ -528,7 +617,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 BalanceHeight = 100
             }));
-            action = () => NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            try
+            {
+                NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10);
+                Assert.Fail("Should have thrown ArgumentOutOfRangeException");
+            }
+            catch (ArgumentOutOfRangeException) { }
             clonedCache.Delete(key);
 
             // Normal 1) votee is non exist
@@ -542,7 +636,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var item = clonedCache.GetAndChange(storageKey).GetInteroperable<HashIndexState>();
             item.Index = 99;
 
-            NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
+            Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100));
             clonedCache.Delete(key);
 
             // Normal 2) votee is not committee
@@ -552,7 +646,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 VoteTo = ECCurve.Secp256r1.G
             }));
-            NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
+            Assert.AreEqual(new BigInteger(0.5 * 100 * 100), NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100));
             clonedCache.Delete(key);
 
             // Normal 3) votee is committee
@@ -563,7 +657,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 VoteTo = TestProtocolSettings.Default.StandbyCommittee[0]
             }));
             clonedCache.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
-            NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100).Should().Be(new BigInteger(50 * 100));
+            Assert.AreEqual(new BigInteger(50 * 100), NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 100));
             clonedCache.Delete(key);
         }
 
@@ -572,14 +666,14 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var result = (VM.Types.Array)NativeContract.NEO.Call(snapshotCache, "getNextBlockValidators");
-            result.Count.Should().Be(7);
-            result[0].GetSpan().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
-            result[1].GetSpan().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
-            result[2].GetSpan().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
-            result[3].GetSpan().ToHexString().Should().Be("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c");
-            result[4].GetSpan().ToHexString().Should().Be("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a");
-            result[5].GetSpan().ToHexString().Should().Be("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554");
-            result[6].GetSpan().ToHexString().Should().Be("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093");
+            Assert.AreEqual(7, result.Count);
+            Assert.AreEqual("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", result[0].GetSpan().ToHexString());
+            Assert.AreEqual("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", result[1].GetSpan().ToHexString());
+            Assert.AreEqual("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", result[2].GetSpan().ToHexString());
+            Assert.AreEqual("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", result[3].GetSpan().ToHexString());
+            Assert.AreEqual("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a", result[4].GetSpan().ToHexString());
+            Assert.AreEqual("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554", result[5].GetSpan().ToHexString());
+            Assert.AreEqual("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093", result[6].GetSpan().ToHexString());
         }
 
         [TestMethod]
@@ -587,14 +681,14 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var clonedCache = _snapshotCache.CloneCache();
             var result = NativeContract.NEO.GetNextBlockValidators(clonedCache, 7);
-            result.Length.Should().Be(7);
-            result[0].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
-            result[1].ToArray().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
-            result[2].ToArray().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
-            result[3].ToArray().ToHexString().Should().Be("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c");
-            result[4].ToArray().ToHexString().Should().Be("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a");
-            result[5].ToArray().ToHexString().Should().Be("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554");
-            result[6].ToArray().ToHexString().Should().Be("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093");
+            Assert.AreEqual(7, result.Length);
+            Assert.AreEqual("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", result[0].ToArray().ToHexString());
+            Assert.AreEqual("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", result[1].ToArray().ToHexString());
+            Assert.AreEqual("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", result[2].ToArray().ToHexString());
+            Assert.AreEqual("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", result[3].ToArray().ToHexString());
+            Assert.AreEqual("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a", result[4].ToArray().ToHexString());
+            Assert.AreEqual("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554", result[5].ToArray().ToHexString());
+            Assert.AreEqual("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093", result[6].ToArray().ToHexString());
         }
 
         [TestMethod]
@@ -602,7 +696,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var array = (VM.Types.Array)NativeContract.NEO.Call(snapshotCache, "getCandidates");
-            array.Count.Should().Be(0);
+            Assert.AreEqual(0, array.Count);
         }
 
         [TestMethod]
@@ -610,11 +704,11 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var clonedCache = _snapshotCache.CloneCache();
             var result = NativeContract.NEO.GetCandidatesInternal(clonedCache);
-            result.Count().Should().Be(0);
+            Assert.AreEqual(0, result.Count());
 
             StorageKey key = NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G);
             clonedCache.Add(key, new StorageItem(new CandidateState() { Registered = true }));
-            NativeContract.NEO.GetCandidatesInternal(clonedCache).Count().Should().Be(1);
+            Assert.AreEqual(1, NativeContract.NEO.GetCandidatesInternal(clonedCache).Count());
         }
 
         [TestMethod]
@@ -633,7 +727,7 @@ namespace Neo.UnitTests.SmartContract.Native
             cloneCache.Add(storageKey, new StorageItem(new CandidateState { Registered = true, Votes = BigInteger.One }));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            cloneCache.Find(storageKey.ToArray()).ToArray().Length.Should().Be(1);
+            Assert.AreEqual(1, cloneCache.Find(storageKey.ToArray()).ToArray().Length);
 
             // Pre-persist
             var persistingBlock = new Block
@@ -648,7 +742,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = Array.Empty<Transaction>()
             };
-            Check_OnPersist(cloneCache, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(Check_OnPersist(cloneCache, persistingBlock));
 
             // Clear votes
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 33).Add(committee[0]);
@@ -656,17 +750,17 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Unregister candidate, remove
             var ret = Check_UnregisterCandidate(cloneCache, point, persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
+            Assert.IsTrue(ret.State);
+            Assert.IsTrue(ret.Result);
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            cloneCache.Find(storageKey.ToArray()).ToArray().Length.Should().Be(0);
+            Assert.AreEqual(0, cloneCache.Find(storageKey.ToArray()).ToArray().Length);
 
             // Post-persist
-            Check_PostPersist(cloneCache, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(Check_PostPersist(cloneCache, persistingBlock));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            cloneCache.Find(storageKey.ToArray()).ToArray().Length.Should().Be(1);
+            Assert.AreEqual(1, cloneCache.Find(storageKey.ToArray()).ToArray().Length);
         }
 
         [TestMethod]
@@ -674,28 +768,28 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var clonedCache = TestBlockchain.GetTestSnapshotCache();
             var result = (VM.Types.Array)NativeContract.NEO.Call(clonedCache, "getCommittee");
-            result.Count.Should().Be(21);
-            result[0].GetSpan().ToHexString().Should().Be("020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639");
-            result[1].GetSpan().ToHexString().Should().Be("03204223f8c86b8cd5c89ef12e4f0dbb314172e9241e30c9ef2293790793537cf0");
-            result[2].GetSpan().ToHexString().Should().Be("0222038884bbd1d8ff109ed3bdef3542e768eef76c1247aea8bc8171f532928c30");
-            result[3].GetSpan().ToHexString().Should().Be("0226933336f1b75baa42d42b71d9091508b638046d19abd67f4e119bf64a7cfb4d");
-            result[4].GetSpan().ToHexString().Should().Be("023a36c72844610b4d34d1968662424011bf783ca9d984efa19a20babf5582f3fe");
-            result[5].GetSpan().ToHexString().Should().Be("03409f31f0d66bdc2f70a9730b66fe186658f84a8018204db01c106edc36553cd0");
-            result[6].GetSpan().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
-            result[7].GetSpan().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
-            result[8].GetSpan().ToHexString().Should().Be("02504acbc1f4b3bdad1d86d6e1a08603771db135a73e61c9d565ae06a1938cd2ad");
-            result[9].GetSpan().ToHexString().Should().Be("03708b860c1de5d87f5b151a12c2a99feebd2e8b315ee8e7cf8aa19692a9e18379");
-            result[10].GetSpan().ToHexString().Should().Be("0288342b141c30dc8ffcde0204929bb46aed5756b41ef4a56778d15ada8f0c6654");
-            result[11].GetSpan().ToHexString().Should().Be("02a62c915cf19c7f19a50ec217e79fac2439bbaad658493de0c7d8ffa92ab0aa62");
-            result[12].GetSpan().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
-            result[13].GetSpan().ToHexString().Should().Be("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c");
-            result[14].GetSpan().ToHexString().Should().Be("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a");
-            result[15].GetSpan().ToHexString().Should().Be("03c6aa6e12638b36e88adc1ccdceac4db9929575c3e03576c617c49cce7114a050");
-            result[16].GetSpan().ToHexString().Should().Be("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554");
-            result[17].GetSpan().ToHexString().Should().Be("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a");
-            result[18].GetSpan().ToHexString().Should().Be("03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc");
-            result[19].GetSpan().ToHexString().Should().Be("03d281b42002647f0113f36c7b8efb30db66078dfaaa9ab3ff76d043a98d512fde");
-            result[20].GetSpan().ToHexString().Should().Be("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093");
+            Assert.AreEqual(21, result.Count);
+            Assert.AreEqual("020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639", result[0].GetSpan().ToHexString());
+            Assert.AreEqual("03204223f8c86b8cd5c89ef12e4f0dbb314172e9241e30c9ef2293790793537cf0", result[1].GetSpan().ToHexString());
+            Assert.AreEqual("0222038884bbd1d8ff109ed3bdef3542e768eef76c1247aea8bc8171f532928c30", result[2].GetSpan().ToHexString());
+            Assert.AreEqual("0226933336f1b75baa42d42b71d9091508b638046d19abd67f4e119bf64a7cfb4d", result[3].GetSpan().ToHexString());
+            Assert.AreEqual("023a36c72844610b4d34d1968662424011bf783ca9d984efa19a20babf5582f3fe", result[4].GetSpan().ToHexString());
+            Assert.AreEqual("03409f31f0d66bdc2f70a9730b66fe186658f84a8018204db01c106edc36553cd0", result[5].GetSpan().ToHexString());
+            Assert.AreEqual("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", result[6].GetSpan().ToHexString());
+            Assert.AreEqual("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", result[7].GetSpan().ToHexString());
+            Assert.AreEqual("02504acbc1f4b3bdad1d86d6e1a08603771db135a73e61c9d565ae06a1938cd2ad", result[8].GetSpan().ToHexString());
+            Assert.AreEqual("03708b860c1de5d87f5b151a12c2a99feebd2e8b315ee8e7cf8aa19692a9e18379", result[9].GetSpan().ToHexString());
+            Assert.AreEqual("0288342b141c30dc8ffcde0204929bb46aed5756b41ef4a56778d15ada8f0c6654", result[10].GetSpan().ToHexString());
+            Assert.AreEqual("02a62c915cf19c7f19a50ec217e79fac2439bbaad658493de0c7d8ffa92ab0aa62", result[11].GetSpan().ToHexString());
+            Assert.AreEqual("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", result[12].GetSpan().ToHexString());
+            Assert.AreEqual("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", result[13].GetSpan().ToHexString());
+            Assert.AreEqual("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a", result[14].GetSpan().ToHexString());
+            Assert.AreEqual("03c6aa6e12638b36e88adc1ccdceac4db9929575c3e03576c617c49cce7114a050", result[15].GetSpan().ToHexString());
+            Assert.AreEqual("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554", result[16].GetSpan().ToHexString());
+            Assert.AreEqual("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a", result[17].GetSpan().ToHexString());
+            Assert.AreEqual("03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc", result[18].GetSpan().ToHexString());
+            Assert.AreEqual("03d281b42002647f0113f36c7b8efb30db66078dfaaa9ab3ff76d043a98d512fde", result[19].GetSpan().ToHexString());
+            Assert.AreEqual("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093", result[20].GetSpan().ToHexString());
         }
 
         [TestMethod]
@@ -703,36 +797,36 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var clonedCache = _snapshotCache.CloneCache();
             var result = NativeContract.NEO.ComputeNextBlockValidators(clonedCache, TestProtocolSettings.Default);
-            result[0].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
-            result[1].ToArray().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
-            result[2].ToArray().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
-            result[3].ToArray().ToHexString().Should().Be("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c");
-            result[4].ToArray().ToHexString().Should().Be("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a");
-            result[5].ToArray().ToHexString().Should().Be("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554");
-            result[6].ToArray().ToHexString().Should().Be("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093");
+            Assert.AreEqual("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", result[0].ToArray().ToHexString());
+            Assert.AreEqual("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", result[1].ToArray().ToHexString());
+            Assert.AreEqual("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", result[2].ToArray().ToHexString());
+            Assert.AreEqual("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", result[3].ToArray().ToHexString());
+            Assert.AreEqual("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a", result[4].ToArray().ToHexString());
+            Assert.AreEqual("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554", result[5].ToArray().ToHexString());
+            Assert.AreEqual("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093", result[6].ToArray().ToHexString());
         }
 
         [TestMethod]
         public void TestOnBalanceChanging()
         {
             var ret = Transfer4TesingOnBalanceChanging(new BigInteger(0), false);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
 
             ret = Transfer4TesingOnBalanceChanging(new BigInteger(1), false);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
 
             ret = Transfer4TesingOnBalanceChanging(new BigInteger(1), true);
-            ret.Result.Should().BeTrue();
-            ret.State.Should().BeTrue();
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
         }
 
         [TestMethod]
         public void TestTotalSupply()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            NativeContract.NEO.TotalSupply(clonedCache).Should().Be(new BigInteger(100000000));
+            Assert.AreEqual(new BigInteger(100000000), NativeContract.NEO.TotalSupply(clonedCache));
         }
 
         [TestMethod]
@@ -743,19 +837,19 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = new Block { Header = new Header() };
 
             (BigInteger, bool) result = Check_GetGasPerBlock(clonedCache, persistingBlock);
-            result.Item2.Should().BeTrue();
-            result.Item1.Should().Be(5 * NativeContract.GAS.Factor); // Test should occur with all hardfork enable TODO
+            Assert.IsTrue(result.Item2);
+            Assert.AreEqual(5 * NativeContract.GAS.Factor, result.Item1); // Test should occur with all hardfork enable TODO
 
             persistingBlock = new Block { Header = new Header { Index = 10 } };
             (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(clonedCache, 10 * NativeContract.GAS.Factor, persistingBlock);
-            result1.Item2.Should().BeTrue();
-            result1.Item1.GetBoolean().Should().BeTrue();
+            Assert.IsTrue(result1.Item2);
+            Assert.IsTrue(result1.Item1.GetBoolean());
 
             var height = clonedCache[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
             height.Index = persistingBlock.Index + 1;
             result = Check_GetGasPerBlock(clonedCache, persistingBlock);
-            result.Item2.Should().BeTrue();
-            result.Item1.Should().Be(10 * NativeContract.GAS.Factor);
+            Assert.IsTrue(result.Item2);
+            Assert.AreEqual(10 * NativeContract.GAS.Factor, result.Item1);
 
             // Check calculate bonus
             StorageItem storage = clonedCache.GetOrAdd(CreateStorageKey(20, UInt160.Zero.ToArray()), () => new StorageItem(new NeoAccountState()));
@@ -763,7 +857,7 @@ namespace Neo.UnitTests.SmartContract.Native
             state.Balance = 1000;
             state.BalanceHeight = 0;
             height.Index = persistingBlock.Index + 1;
-            NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, persistingBlock.Index + 2).Should().Be(6500);
+            Assert.AreEqual(6500, NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, persistingBlock.Index + 2));
         }
 
         [TestMethod]
@@ -803,17 +897,17 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = Array.Empty<Transaction>()
             };
-            Check_PostPersist(clonedCache, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
             var committee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
             var accountA = committee[0];
             var accountB = committee[TestProtocolSettings.Default.CommitteeMembersCount - 1];
-            NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(accountA).ScriptHash).Should().Be(0);
+            Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(accountA).ScriptHash));
 
             StorageItem storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountA));
-            ((BigInteger)storageItem).Should().Be(30000000000);
+            Assert.AreEqual(30000000000, (BigInteger)storageItem);
 
-            clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)).Should().BeNull();
+            Assert.IsNull(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)));
 
             // Next block
 
@@ -829,12 +923,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = Array.Empty<Transaction>()
             };
-            Check_PostPersist(clonedCache, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
-            NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[1]).ScriptHash).Should().Be(0);
+            Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[1]).ScriptHash));
 
             storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[1]));
-            ((BigInteger)storageItem).Should().Be(30000000000);
+            Assert.AreEqual(30000000000, (BigInteger)storageItem);
 
             // Next block
 
@@ -850,13 +944,13 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = Array.Empty<Transaction>()
             };
-            Check_PostPersist(clonedCache, persistingBlock).Should().BeTrue();
+            Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
             accountA = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray()[2];
-            NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[2]).ScriptHash).Should().Be(0);
+            Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[2]).ScriptHash));
 
             storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[2]));
-            ((BigInteger)storageItem).Should().Be(30000000000 * 2);
+            Assert.AreEqual(30000000000 * 2, (BigInteger)storageItem);
 
             // Claim GAS
 
@@ -868,20 +962,20 @@ namespace Neo.UnitTests.SmartContract.Native
                 VoteTo = committee[2],
                 LastGasPerVote = 30000000000,
             }));
-            NativeContract.NEO.BalanceOf(clonedCache, account).Should().Be(1999800);
+            Assert.AreEqual(1999800, NativeContract.NEO.BalanceOf(clonedCache, account));
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             clonedCache.GetAndChange(storageKey).GetInteroperable<HashIndexState>().Index = 29 + 2;
             BigInteger value = NativeContract.NEO.UnclaimedGas(clonedCache, account, 29 + 3);
-            value.Should().Be(1999800 * 30000000000 / 100000000L + (1999800L * 10 * 5 * 29 / 100));
+            Assert.AreEqual(1999800 * 30000000000 / 100000000L + (1999800L * 10 * 5 * 29 / 100), value);
         }
 
         [TestMethod]
         public void TestUnclaimedGas()
         {
             var clonedCache = _snapshotCache.CloneCache();
-            NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10));
             clonedCache.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
-            NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10).Should().Be(new BigInteger(0));
+            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(clonedCache, UInt160.Zero, 10));
         }
 
         [TestMethod]
@@ -893,20 +987,20 @@ namespace Neo.UnitTests.SmartContract.Native
             StorageKey keyValidator = CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray());
             _persistingBlock.Header.Index = 1;
             var ret = Check_Vote(clonedCache, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), false, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            Assert.IsFalse(ret.Result);
+            Assert.IsTrue(ret.State);
 
             ret = Check_Vote(clonedCache, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            Assert.IsFalse(ret.Result);
+            Assert.IsTrue(ret.State);
 
             clonedCache.Add(keyAccount, new StorageItem(new NeoAccountState()));
             ret = Check_Vote(clonedCache, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeFalse();
+            Assert.IsFalse(ret.Result);
+            Assert.IsTrue(ret.State);
 
             var (_, _, vote_to_null) = GetAccountState(clonedCache, account);
-            vote_to_null.Should().BeNull();
+            Assert.IsNull(vote_to_null);
 
             clonedCache.Delete(keyAccount);
             clonedCache.GetAndChange(keyAccount, () => new StorageItem(new NeoAccountState
@@ -916,18 +1010,18 @@ namespace Neo.UnitTests.SmartContract.Native
             }));
             clonedCache.Add(keyValidator, new StorageItem(new CandidateState() { Registered = true }));
             ret = Check_Vote(clonedCache, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true, _persistingBlock);
-            ret.State.Should().BeTrue();
-            ret.Result.Should().BeTrue();
-
+            Assert.IsTrue(ret.Result);
+            Assert.IsTrue(ret.State);
             var (_, _, voteto) = GetAccountState(clonedCache, account);
-            voteto.ToHexString().Should().Be(ECCurve.Secp256r1.G.ToArray().ToHexString());
+            Assert.AreEqual(ECCurve.Secp256r1.G.ToArray().ToHexString(), voteto.ToHexString());
         }
 
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
         {
             var clonedCache = _snapshotCache.CloneCache();
             _persistingBlock.Header.Index = 1;
-            var engine = ApplicationEngine.Create(TriggerType.Application, TestBlockchain.TheNeoSystem.GenesisBlock, clonedCache, _persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), clonedCache, _persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             ScriptBuilder sb = new();
             var tmp = engine.ScriptContainer.GetScriptHashesForVerifying(engine.SnapshotCache);
             UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.SnapshotCache)[0];
@@ -953,7 +1047,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var state = engine.Execute();
             Console.WriteLine($"{state} {engine.FaultException}");
             var result = engine.ResultStack.Peek();
-            result.GetType().Should().Be(typeof(VM.Types.Boolean));
+            Assert.AreEqual(typeof(VM.Types.Boolean), result.GetType());
             return (true, result.GetBoolean());
         }
 
@@ -991,7 +1085,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
 
             return (((VM.Types.Integer)result).GetInteger(), true);
         }
@@ -999,16 +1093,15 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(DataCache clonedCache, BigInteger gasPerBlock, Block persistingBlock)
         {
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(clonedCache);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NEO.Hash, "setGasPerBlock", gasPerBlock);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
-            {
                 return (false, false);
-            }
 
             return (true, true);
         }
@@ -1029,7 +1122,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
 
             return (true, result.GetBoolean());
         }
@@ -1049,7 +1142,37 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+
+            return (true, result.GetBoolean());
+        }
+
+        internal static (bool State, bool Result) Check_RegisterValidatorViaNEP27(DataCache clonedCache, ECPoint pubkey, Block persistingBlock, bool passNEO, byte[] data, BigInteger amount)
+        {
+            var keyScriptHash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            var contractID = passNEO ? NativeContract.NEO.Id : NativeContract.GAS.Id;
+            var storageKey = new KeyBuilder(contractID, 20).Add(keyScriptHash); // 20 is Prefix_Account
+
+            if (passNEO)
+                clonedCache.Add(storageKey, new StorageItem(new NeoAccountState { Balance = amount }));
+            else
+                clonedCache.Add(storageKey, new StorageItem(new AccountState { Balance = amount }));
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(keyScriptHash), clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1_0000_0000);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(passNEO ? NativeContract.NEO.Hash : NativeContract.GAS.Hash, "transfer", keyScriptHash, NativeContract.NEO.Hash, amount, data);
+            engine.LoadScript(script.ToArray());
+
+            var execRes = engine.Execute();
+            clonedCache.Delete(storageKey); // Clean up for subsequent invocations.
+
+            if (execRes == VMState.FAULT)
+                return (false, false);
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
 
             return (true, result.GetBoolean());
         }
@@ -1062,10 +1185,10 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.NEO.Hash, "getCommittee");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
 
             return (result as VM.Types.Array).Select(u => ECPoint.DecodePoint(u.GetSpan(), ECCurve.Secp256r1)).ToArray();
         }
@@ -1085,7 +1208,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
 
             return (result.GetInteger(), true);
         }
@@ -1093,23 +1216,23 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static void CheckValidator(ECPoint eCPoint, DataCache.Trackable trackable)
         {
             BigInteger st = trackable.Item;
-            st.Should().Be(0);
+            Assert.AreEqual(0, st);
 
-            trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)));
+            CollectionAssert.AreEqual(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)).ToArray(), trackable.Key.Key.ToArray());
         }
 
         internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
             var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
 
-            st.Count.Should().Be(3);
-            st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }); // Balance
+            Assert.AreEqual(3, st.Count);
+            CollectionAssert.AreEqual(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
 
-            st[0].GetInteger().Should().Be(balance); // Balance
-            st[1].GetInteger().Should().Be(height);  // BalanceHeight
-            ECPoint.DecodePoint(st[2].GetSpan(), ECCurve.Secp256r1).Should().BeEquivalentTo(voteTo);  // Votes
+            Assert.AreEqual(balance, st[0].GetInteger()); // Balance
+            Assert.AreEqual(height, st[1].GetInteger());  // BalanceHeight
+            Assert.AreEqual(voteTo, ECPoint.DecodePoint(st[2].GetSpan(), ECCurve.Secp256r1));  // Votes
 
-            trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
+            CollectionAssert.AreEqual(new byte[] { 20 }.Concat(account).ToArray(), trackable.Key.Key.ToArray());
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
@@ -1139,7 +1262,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
 
             return (true, result.GetBoolean());
         }
@@ -1152,10 +1275,10 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.NEO.Hash, "getAccountState", account);
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Struct));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Struct));
 
             VM.Types.Struct state = (result as VM.Types.Struct);
             var balance = state[0].GetInteger();
