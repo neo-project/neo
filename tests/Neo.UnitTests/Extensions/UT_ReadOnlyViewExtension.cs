@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Persistence;
@@ -40,43 +39,43 @@ namespace Neo.UnitTests.Extensions
             var view = new ReadOnlyStoreView(store);
             var items = view.ScanPrefix(StorageKey.CreateSearchPrefix(1, [])).ToArray();
             Assert.AreEqual(2, items.Length);
-            items[0].Key.ToArray().Should().BeEquivalentTo(key1);
-            items[0].Value.ToArray().Should().BeEquivalentTo([1, 2, 3]);
-            items[1].Key.ToArray().Should().BeEquivalentTo(key2);
-            items[1].Value.ToArray().Should().BeEquivalentTo([4, 5, 6]);
+            Assert.IsTrue(items[0].Key.ToArray().SequenceEqual(key1.ToArray()));
+            Assert.IsTrue(items[0].Value.ToArray().SequenceEqual(new byte[] { 1, 2, 3 }));
+            Assert.IsTrue(items[1].Key.ToArray().SequenceEqual(key2.ToArray()));
+            Assert.IsTrue(items[1].Value.ToArray().SequenceEqual(new byte[] { 4, 5, 6 }));
 
             items = view.ScanPrefix(StorageKey.CreateSearchPrefix(1, []), SeekDirection.Backward).ToArray();
             Assert.AreEqual(2, items.Length);
-            items[0].Key.ToArray().Should().BeEquivalentTo(key2);
-            items[0].Value.ToArray().Should().BeEquivalentTo([4, 5, 6]);
-            items[1].Key.ToArray().Should().BeEquivalentTo(key1);
-            items[1].Value.ToArray().Should().BeEquivalentTo([1, 2, 3]);
+            Assert.IsTrue(items[0].Key.ToArray().SequenceEqual(key2.ToArray()));
+            Assert.IsTrue(items[0].Value.ToArray().SequenceEqual(new byte[] { 4, 5, 6 }));
+            Assert.IsTrue(items[1].Key.ToArray().SequenceEqual(key1.ToArray()));
+            Assert.IsTrue(items[1].Value.ToArray().SequenceEqual(new byte[] { 1, 2, 3 }));
 
             items = view.ScanRange(key1, key4).ToArray();
             Assert.AreEqual(3, items.Length);
-            items[0].Key.ToArray().Should().BeEquivalentTo(key1);
-            items[0].Value.ToArray().Should().BeEquivalentTo([1, 2, 3]);
-            items[1].Key.ToArray().Should().BeEquivalentTo(key2);
-            items[1].Value.ToArray().Should().BeEquivalentTo([4, 5, 6]);
-            items[2].Key.ToArray().Should().BeEquivalentTo(key3);
-            items[2].Value.ToArray().Should().BeEquivalentTo([7, 8, 9]);
+            Assert.IsTrue(items[0].Key.ToArray().SequenceEqual(key1.ToArray()));
+            Assert.IsTrue(items[0].Value.ToArray().SequenceEqual(new byte[] { 1, 2, 3 }));
+            Assert.IsTrue(items[1].Key.ToArray().SequenceEqual(key2.ToArray()));
+            Assert.IsTrue(items[1].Value.ToArray().SequenceEqual(new byte[] { 4, 5, 6 }));
+            Assert.IsTrue(items[2].Key.ToArray().SequenceEqual(key3.ToArray()));
+            Assert.IsTrue(items[2].Value.ToArray().SequenceEqual(new byte[] { 7, 8, 9 }));
 
             items = view.ScanRange(key4, key1, SeekDirection.Backward).ToArray();
             Assert.AreEqual(3, items.Length);
-            items[0].Key.ToArray().Should().BeEquivalentTo(key4);
-            items[0].Value.ToArray().Should().BeEquivalentTo([10, 11, 12]);
-            items[1].Key.ToArray().Should().BeEquivalentTo(key3);
-            items[1].Value.ToArray().Should().BeEquivalentTo([7, 8, 9]);
-            items[2].Key.ToArray().Should().BeEquivalentTo(key2);
-            items[2].Value.ToArray().Should().BeEquivalentTo([4, 5, 6]);
+            Assert.IsTrue(items[0].Key.ToArray().SequenceEqual(key4.ToArray()));
+            Assert.IsTrue(items[0].Value.ToArray().SequenceEqual(new byte[] { 10, 11, 12 }));
+            Assert.IsTrue(items[1].Key.ToArray().SequenceEqual(key3.ToArray()));
+            Assert.IsTrue(items[1].Value.ToArray().SequenceEqual(new byte[] { 7, 8, 9 }));
+            Assert.IsTrue(items[2].Key.ToArray().SequenceEqual(key2.ToArray()));
+            Assert.IsTrue(items[2].Value.ToArray().SequenceEqual(new byte[] { 4, 5, 6 }));
 
             // ScanPrefix with all 0xff and bacword is ok.
             var key5 = StorageKey.CreateSearchPrefix(-1, [5]);
             store.Put(key5, [0xf1]);
             items = view.ScanPrefix([0xff], SeekDirection.Backward).ToArray();
             Assert.AreEqual(1, items.Length);
-            items[0].Key.ToArray().Should().BeEquivalentTo(key5);
-            items[0].Value.ToArray().Should().BeEquivalentTo([0xf1]);
+            Assert.IsTrue(items[0].Key.ToArray().SequenceEqual(key5.ToArray()));
+            Assert.IsTrue(items[0].Value.ToArray().SequenceEqual(new byte[] { 0xf1 }));
         }
 
         [TestMethod]
@@ -94,25 +93,20 @@ namespace Neo.UnitTests.Extensions
             dataCache.Add(k3, new StorageItem([7, 8, 9]));
 
             var items = dataCache.Find().ToArray();
-            items.Length.Should().Be(3);
-            items[0].Key.ToArray().Should().BeEquivalentTo(k1.ToArray());
-            items[1].Key.ToArray().Should().BeEquivalentTo(k2.ToArray());
-            items[2].Key.ToArray().Should().BeEquivalentTo(k3.ToArray());
-
-            items = dataCache.Find([0xff, 0xff, 0xff, 0xff, 0xff]).ToArray();
-            // all 0xff prefix with backward is not supported for old code
-            Action action = () => dataCache.Find(null, SeekDirection.Backward);
-            action.Should().Throw<ArgumentException>();
+            Assert.AreEqual(3, items.Length);
+            Assert.IsTrue(items[0].Key.ToArray().SequenceEqual(k1.ToArray()));
+            Assert.IsTrue(items[1].Key.ToArray().SequenceEqual(k2.ToArray()));
+            Assert.IsTrue(items[2].Key.ToArray().SequenceEqual(k3.ToArray()));
 
             // null and empty are not supported for backwards direction now.
-            action = () => dataCache.Find(null, SeekDirection.Backward);
-            action.Should().Throw<ArgumentException>();
+            Action action = () => dataCache.Find(null, SeekDirection.Backward);
+            Assert.ThrowsException<ArgumentNullException>(action);
 
             action = () => dataCache.Find(new byte[] { }, SeekDirection.Backward);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
 
             action = () => dataCache.Find([0xff], SeekDirection.Backward).ToArray();
-            action.Should().Throw<NotSupportedException>();
+            Assert.ThrowsException<NotSupportedException>(action);
         }
     }
 }

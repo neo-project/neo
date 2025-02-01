@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
-using Neo.Extensions;
+using System;
+using System.Linq;
 
 namespace Neo.Extensions.Tests
 {
@@ -21,10 +21,10 @@ namespace Neo.Extensions.Tests
         public void TestRepeat()
         {
             var items = ((byte)0xff).Repeat(10);
-            items.Should().Equal([(byte)0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+            Assert.IsTrue(items.SequenceEqual(new byte[] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }));
 
             items = ((byte)0xff).Repeat(0);
-            items.Should().Equal([]);
+            Assert.IsTrue(items.SequenceEqual(new byte[] { }));
         }
     }
 }
