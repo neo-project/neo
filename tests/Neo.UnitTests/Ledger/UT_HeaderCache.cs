@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -31,42 +30,42 @@ namespace Neo.UnitTests.Ledger
             cache.Add(header);
 
             var got = cache[1];
-            got.Should().NotBeNull();
-            got.Index.Should().Be(1);
+            Assert.IsNotNull(got);
+            Assert.AreEqual((uint)1, got.Index);
 
             var count = cache.Count;
-            count.Should().Be(1);
+            Assert.AreEqual(1, count);
 
             var full = cache.Full;
-            full.Should().BeFalse();
+            Assert.IsFalse(full);
 
             var last = cache.Last;
-            last.Should().NotBeNull();
-            last.Index.Should().Be(1);
+            Assert.IsNotNull(last);
+            Assert.AreEqual((uint)1, last.Index);
 
             got = cache[2];
-            got.Should().BeNull();
+            Assert.IsNull(got);
 
             // enumerate
             var enumerator = cache.GetEnumerator();
-            enumerator.MoveNext().Should().BeTrue();
-            enumerator.Current.Index.Should().Be(1);
-            enumerator.MoveNext().Should().BeFalse();
+            Assert.IsTrue(enumerator.MoveNext());
+            Assert.AreEqual((uint)1, enumerator.Current.Index);
+            Assert.IsFalse(enumerator.MoveNext());
 
             var removed = cache.TryRemoveFirst(out header);
-            removed.Should().BeTrue();
+            Assert.IsTrue(removed);
 
             count = cache.Count;
-            count.Should().Be(0);
+            Assert.AreEqual(0, count);
 
             full = cache.Full;
-            full.Should().BeFalse();
+            Assert.IsFalse(full);
 
             last = cache.Last;
-            last.Should().BeNull();
+            Assert.IsNull(last);
 
             got = cache[1];
-            got.Should().BeNull();
+            Assert.IsNull(got);
         }
     }
 }

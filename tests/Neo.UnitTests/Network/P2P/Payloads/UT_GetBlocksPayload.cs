@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -25,10 +24,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var test = new GetBlocksPayload() { Count = 5, HashStart = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01") };
-            test.Size.Should().Be(34);
+            Assert.AreEqual(34, test.Size);
 
             test = new GetBlocksPayload() { Count = 1, HashStart = UInt256.Zero };
-            test.Size.Should().Be(34);
+            Assert.AreEqual(34, test.Size);
         }
 
         [TestMethod]

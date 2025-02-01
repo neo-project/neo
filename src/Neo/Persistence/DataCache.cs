@@ -268,12 +268,21 @@ namespace Neo.Persistence
         protected abstract StorageItem GetInternal(StorageKey key);
 
         /// <summary>
-        /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
+        /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>.
+        /// If the entry is not in the cache, it will be automatically loaded from the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
-        /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
-        /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
-        public StorageItem? GetAndChange(StorageKey key, [NotNullIfNotNull(nameof(factory))] Func<StorageItem>? factory = null)
+        /// <param name="factory">
+        /// A delegate used to create the entry if it doesn't exist.
+        /// If the entry already exists, the factory will not be used.
+        /// </param>
+        /// <returns>
+        /// The cached data, or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.
+        /// </returns>
+#if NET5_0_OR_GREATER
+        [return: NotNullIfNotNull(nameof(factory))]
+#endif
+        public StorageItem? GetAndChange(StorageKey key, Func<StorageItem>? factory = null)
         {
             lock (_dictionary)
             {
@@ -319,10 +328,15 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage. If the entry doesn't exist, the factory will be used to create a new one.
+        /// Reads a specified entry from the cache.
+        /// If the entry is not in the cache, it will be automatically loaded from the underlying storage.
+        /// If the entry doesn't exist, the factory will be used to create a new one.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
-        /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
+        /// <param name="factory">
+        /// A delegate used to create the entry if it doesn't exist.
+        /// If the entry already exists, the factory will not be used.
+        /// </param>
         /// <returns>The cached data.</returns>
         public StorageItem GetOrAdd(StorageKey key, Func<StorageItem> factory)
         {

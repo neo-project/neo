@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -25,12 +24,12 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
         public void Size_Get()
         {
             var test = new ServerCapability(NodeCapabilityType.TcpServer) { Port = 1 };
-            test.Size.Should().Be(3);
+            Assert.AreEqual(3, test.Size);
 
 #pragma warning disable CS0612 // Type or member is obsolete
             test = new ServerCapability(NodeCapabilityType.WsServer) { Port = 2 };
 #pragma warning restore CS0612 // Type or member is obsolete
-            test.Size.Should().Be(3);
+            Assert.AreEqual(3, test.Size);
         }
 
         [TestMethod]
