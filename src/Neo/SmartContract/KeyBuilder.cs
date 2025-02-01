@@ -96,13 +96,7 @@ namespace Neo.SmartContract
         /// <returns>A reference to this instance after the add operation has completed.</returns>
         public KeyBuilder Add(ISerializable key)
         {
-            using var stream = new MemoryStream();
-            using BinaryWriter writer = new(stream, Utility.StrictUTF8, true);
-
-            key.Serialize(writer);
-            writer.Flush();
-
-            var raw = stream.ToArray();
+            var raw = key.ToArray();
 
             raw.CopyTo(_cachedData[_keyLen..]);
             _keyLen += raw.Length;
