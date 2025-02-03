@@ -33,7 +33,7 @@ namespace Neo.Extensions.Tests
 
             y = x;
             x = null;
-            Assert.IsTrue(comparer.Compare(x, y) > 0);
+            Assert.IsTrue(comparer.Compare(x, y) < 0);
 
             x = new byte[] { 1 };
             y = Array.Empty<byte>();

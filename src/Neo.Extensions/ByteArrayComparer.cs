@@ -33,7 +33,7 @@ namespace Neo.Extensions
             if (ReferenceEquals(x, y)) return 0;
 
             if (x is null) // y must not be null
-                return y!.Length * _direction;
+                return -y!.Length * _direction;
 
             if (y is null) // x must not be null
                 return x.Length * _direction;
