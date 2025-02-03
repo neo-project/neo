@@ -32,7 +32,6 @@ namespace Neo.Persistence
             /// <summary>
             /// The data of the cached entry.
             /// </summary>
-            [AllowNull]
             public StorageItem Value { [return: MaybeNull] get; [param: AllowNull] internal set; } = value;
 
             /// <summary>
