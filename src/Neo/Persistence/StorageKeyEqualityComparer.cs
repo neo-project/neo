@@ -24,8 +24,8 @@ namespace Neo.Persistence
         public static readonly StorageKeyEqualityComparer Instance = new();
 
         /// <inheritdoc />
-        public bool Equals(StorageKey x, StorageKey y) =>
-            ByteArrayEqualityComparer.Default.Equals(x?.ToArray(), x?.ToArray());
+        public bool Equals([AllowNull] StorageKey x, [AllowNull] StorageKey y) =>
+            ReferenceEquals(x, y) || ByteArrayEqualityComparer.Default.Equals(x?.ToArray(), x?.ToArray());
 
         /// <inheritdoc />
         public int GetHashCode([DisallowNull] StorageKey obj) =>
