@@ -65,7 +65,7 @@ namespace Neo.Persistence
 
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
-            if (keyOrPrefix?.Length > 0)
+            if (keyOrPrefix.Length > 0)
                 records = records
                     .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
