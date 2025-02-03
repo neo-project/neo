@@ -259,10 +259,16 @@ namespace Neo.Persistence
             [AllowNull] byte[] keyOrPrefix = null,
             SeekDirection seekDirection = SeekDirection.Forward)
         {
+            var comparer = seekDirection == SeekDirection.Forward ?
+                ByteArrayComparer.Default :
+                ByteArrayComparer.Reverse;
+
             foreach (var (key, value) in Seek(keyOrPrefix, seekDirection))
             {
                 if (keyOrPrefix is null || key.ToArray().AsSpan().StartsWith(keyOrPrefix))
                     yield return new(key, value);
+                else if (seekDirection == SeekDirection.Forward || (keyOrPrefix == null || !key.ToArray().SequenceEqual(keyOrPrefix)))
+                    yield break;
             }
         }
 
