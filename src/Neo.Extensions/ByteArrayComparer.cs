@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 namespace Neo.Extensions
 {
     /// <summary>
-    /// Defines a method that a type implements to compare two <see cref="byte"/>[].
+    /// Defines methods to support the comparison of two <see cref="byte"/>[].
     /// </summary>
     public class ByteArrayComparer : IComparer<byte[]>
     {
