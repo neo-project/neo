@@ -46,7 +46,7 @@ namespace Neo.Plugins.Trackers
             _neoSystem = neoSystem;
         }
 
-        public abstract void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
+        public abstract void OnPersist(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
 
         public void ResetBatch()
         {

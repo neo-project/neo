@@ -29,7 +29,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Ledger
 {
-    public delegate void CommittingHandler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
+    public delegate void CommittingHandler(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
     public delegate void CommittedHandler(NeoSystem system, Block block);
 
     /// <summary>
@@ -202,7 +202,7 @@ namespace Neo.Ledger
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
             system.MemPool.InvalidateAllTransactions();
 
-            DataCache snapshot = system.StoreView;
+            StorageCache snapshot = system.StoreView;
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
@@ -246,7 +246,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            DataCache snapshot = system.StoreView;
+            StorageCache snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
@@ -316,7 +316,7 @@ namespace Neo.Ledger
         {
             if (!system.HeaderCache.Full)
             {
-                DataCache snapshot = system.StoreView;
+                StorageCache snapshot = system.StoreView;
                 uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
                 foreach (Header header in headers)
                 {
@@ -332,7 +332,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            DataCache snapshot = system.StoreView;
+            StorageCache snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
@@ -437,7 +437,7 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
-                DataCache clonedSnapshot = snapshot.CloneCache();
+                StorageCache clonedSnapshot = snapshot.CloneCache();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
@@ -483,7 +483,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        internal static void InvokeCommitting(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             InvokeHandlers(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
         }
@@ -553,7 +553,7 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(ProtocolSettings settings, DataCache snapshot)
+        private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(ProtocolSettings settings, StorageCache snapshot)
         {
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();

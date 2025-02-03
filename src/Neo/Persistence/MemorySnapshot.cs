@@ -12,6 +12,7 @@
 #nullable enable
 
 using Neo.Extensions;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -63,7 +64,10 @@ namespace Neo.Persistence
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
             if (keyOrPrefix?.Length > 0)
-                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+                records = records
+                    .Where(p =>
+                        p.Key.AsSpan().StartsWith(keyOrPrefix) ||
+                        comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
             return records.Select(p => (p.Key[..], p.Value[..]));
         }

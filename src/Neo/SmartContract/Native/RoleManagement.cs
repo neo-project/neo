@@ -46,7 +46,7 @@ namespace Neo.SmartContract.Native
         /// <param name="index">The index of the block to be queried.</param>
         /// <returns>The public keys of the nodes.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ECPoint[] GetDesignatedByRole(DataCache snapshot, Role role, uint index)
+        public ECPoint[] GetDesignatedByRole(StorageCache snapshot, Role role, uint index)
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));

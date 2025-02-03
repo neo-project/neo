@@ -41,7 +41,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="snapshot">The snapshot to be used.</param>
         /// <returns>The script hashes that should be verified.</returns>
-        UInt160[] GetScriptHashesForVerifying(DataCache snapshot);
+        UInt160[] GetScriptHashesForVerifying(StorageCache snapshot);
 
         /// <summary>
         /// Serializes the part of the <see cref="IVerifiable"/> object other than <see cref="Witnesses"/>.

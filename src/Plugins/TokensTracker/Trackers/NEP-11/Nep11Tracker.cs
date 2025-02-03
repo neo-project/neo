@@ -49,7 +49,7 @@ namespace Neo.Plugins.Trackers.NEP_11
         {
         }
 
-        public override void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        public override void OnPersist(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             _currentBlock = block;
             _currentHeight = block.Index;
@@ -112,7 +112,7 @@ namespace Neo.Plugins.Trackers.NEP_11
             }
         }
 
-        private void SaveDivisibleNFTBalance(TransferRecord record, DataCache snapshot)
+        private void SaveDivisibleNFTBalance(TransferRecord record, StorageCache snapshot)
         {
             using ScriptBuilder sb = new();
             sb.EmitDynamicCall(record.asset, "balanceOf", record.from, record.tokenId);

@@ -16,18 +16,18 @@ using Neo.SmartContract;
 namespace Neo.UnitTests.Persistence
 {
     /// <summary>
-    /// When adding data to `datacache` <see cref="DataCache"/>,
+    /// When adding data to `datacache` <see cref="StorageCache"/>,
     /// it gets passed to `snapshotcache` <see cref="SnapshotCache"/> during commit.
     /// If `snapshotcache` <see cref="SnapshotCache"/>commits, the data is then passed
     /// to the underlying store <see cref="IStore"/>.
     /// However, because snapshots <see cref="ISnapshot"/> are immutable, the new data
     /// cannot be retrieved from the snapshot <see cref="ISnapshot"/>.
     ///
-    /// When deleting data from `datacache` <see cref="DataCache"/>,
+    /// When deleting data from `datacache` <see cref="StorageCache"/>,
     /// it won't exist in `datacache` upon commit, and therefore will be removed from `snapshotcache` <see cref="SnapshotCache"/>.
     /// Upon `snapshotcache` <see cref="SnapshotCache"/>commit, the data is deleted from the store <see cref="IStore"/>.
     /// However, since the snapshot <see cref="ISnapshot"/> remains unchanged, the data still exists in the snapshot.
-    /// If you attempt to read this data from `datacache` <see cref="DataCache"/> or `snapshotcache` <see cref="SnapshotCache"/>,
+    /// If you attempt to read this data from `datacache` <see cref="StorageCache"/> or `snapshotcache` <see cref="SnapshotCache"/>,
     /// which do not have the data, they will retrieve it from the snapshot instead of the store.
     /// Thus, they can still access data that has been deleted.
     /// </summary>
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Persistence
         private MemoryStore _memoryStore;
         private MemorySnapshot _snapshot;
         private SnapshotCache _snapshotCache;
-        private DataCache _dataCache;
+        private StorageCache _dataCache;
 
         [TestInitialize]
         public void Setup()

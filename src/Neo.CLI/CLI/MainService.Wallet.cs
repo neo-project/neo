@@ -720,7 +720,7 @@ namespace Neo.CLI
             }
         }
 
-        private void SignAndSendTx(DataCache snapshot, Transaction tx)
+        private void SignAndSendTx(StorageCache snapshot, Transaction tx)
         {
             if (NoWallet()) return;
 

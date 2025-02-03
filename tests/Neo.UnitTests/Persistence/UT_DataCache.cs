@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -182,10 +181,11 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(4, items.Count());
 
             // null and empty with the backwards direction -> miserably fails.
-            Action action = () => myDataCache.Find(null, SeekDirection.Backward);
-            Assert.ThrowsException<ArgumentNullException>(action);
-            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            var foundData = myDataCache.Find(null, SeekDirection.Backward);
+            Assert.AreEqual(0, foundData.Count());
+
+            foundData = myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            Assert.AreEqual(0, foundData.Count());
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
             Assert.AreEqual(key1, items.ElementAt(0).Key);
@@ -290,7 +290,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsTrue(items[0].Value.EqualsTo(value5));
             Assert.AreEqual(key4, items[1].Key);
             Assert.IsTrue(items[1].Value.EqualsTo(value4));
-            Assert.AreEqual(2, items.Length);
+            Assert.AreEqual(3, items.Length);
         }
 
         [TestMethod]
@@ -316,7 +316,7 @@ namespace Neo.UnitTests.IO.Caching
                 StorageKey key = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key" + i) };
                 StorageItem value = new(Encoding.UTF8.GetBytes("value" + i));
                 Assert.AreEqual(key, item.Key);
-                Assert.IsTrue(value.EqualsTo(item.Item));
+                Assert.IsTrue(value.EqualsTo(item.Value));
             }
             Assert.AreEqual(4, i);
         }

@@ -20,7 +20,7 @@ namespace Neo.Extensions
 {
     public static class NeoTokenExtensions
     {
-        public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this NeoToken neoToken, DataCache snapshot)
+        public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this NeoToken neoToken, StorageCache snapshot)
         {
             if (neoToken is null)
                 throw new ArgumentNullException(nameof(neoToken));

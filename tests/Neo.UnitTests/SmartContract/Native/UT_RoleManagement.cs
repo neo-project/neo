@@ -29,7 +29,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_RoleManagement
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

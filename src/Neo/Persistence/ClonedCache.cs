@@ -16,11 +16,11 @@ using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
-    class ClonedCache : DataCache
+    class ClonedCache : StorageCache
     {
-        private readonly DataCache _innerCache;
+        private readonly StorageCache _innerCache;
 
-        public ClonedCache(DataCache innerCache)
+        public ClonedCache(StorageCache innerCache)
         {
             _innerCache = innerCache;
         }
@@ -46,9 +46,9 @@ namespace Neo.Persistence
             return _innerCache[key].Clone();
         }
 
-        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPreifx, SeekDirection direction)
+        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[]? keyOrPrefix, SeekDirection direction)
         {
-            foreach (var (key, value) in _innerCache.Seek(keyOrPreifx, direction))
+            foreach (var (key, value) in _innerCache.Seek(keyOrPrefix, direction))
                 yield return (key, value.Clone());
         }
 

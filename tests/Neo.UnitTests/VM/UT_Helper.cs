@@ -31,7 +31,7 @@ namespace Neo.UnitTests.VMT
     [TestClass]
     public class UT_Helper
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

@@ -20,7 +20,7 @@ namespace Neo.UnitTests.SmartContract
 {
     public partial class UT_ApplicationEngine
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

@@ -21,7 +21,7 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_NotifyEventArgs
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

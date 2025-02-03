@@ -190,7 +190,7 @@ namespace Neo.Network.P2P
         {
             // The default value of payload.Count is -1
             int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
-            DataCache snapshot = system.StoreView;
+            StorageCache snapshot = system.StoreView;
             UInt256 hash = payload.HashStart;
             TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
@@ -291,7 +291,7 @@ namespace Neo.Network.P2P
         /// <param name="payload">A GetBlockByIndexPayload including start block index and number of blocks' headers requested.</param>
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
-            DataCache snapshot = system.StoreView;
+            StorageCache snapshot = system.StoreView;
             if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
             List<Header> headers = new();
             uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
@@ -341,13 +341,13 @@ namespace Neo.Network.P2P
             {
                 case InventoryType.Block:
                     {
-                        DataCache snapshot = system.StoreView;
+                        StorageCache snapshot = system.StoreView;
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
                     }
                     break;
                 case InventoryType.TX:
                     {
-                        DataCache snapshot = system.StoreView;
+                        StorageCache snapshot = system.StoreView;
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
                     }
                     break;

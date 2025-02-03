@@ -189,7 +189,7 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(StorageCache snapshot)
         {
             if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
@@ -237,7 +237,7 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        internal bool Verify(ProtocolSettings settings, DataCache snapshot)
+        internal bool Verify(ProtocolSettings settings, StorageCache snapshot)
         {
             if (primaryIndex >= settings.ValidatorsCount)
                 return false;
@@ -250,7 +250,7 @@ namespace Neo.Network.P2P.Payloads
             return true;
         }
 
-        internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
+        internal bool Verify(ProtocolSettings settings, StorageCache snapshot, HeaderCache headerCache)
         {
             Header prev = headerCache.Last;
             if (prev is null) return Verify(settings, snapshot);

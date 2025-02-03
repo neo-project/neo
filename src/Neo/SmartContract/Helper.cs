@@ -291,7 +291,7 @@ namespace Neo.SmartContract
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="datoshi">The maximum GAS that can be used, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
         /// <returns><see langword="true"/> if the <see cref="IVerifiable"/> is verified as valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long datoshi)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, StorageCache snapshot, long datoshi)
         {
             if (datoshi < 0) return false;
             if (datoshi > MaxVerificationGas) datoshi = MaxVerificationGas;
@@ -315,7 +315,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long datoshi, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, StorageCache snapshot, UInt160 hash, Witness witness, long datoshi, out long fee)
         {
             fee = 0;
             Script invocationScript;

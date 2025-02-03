@@ -22,7 +22,7 @@ namespace Neo.Persistence
     /// <summary>
     /// Represents a cache for the snapshot or database of the NEO blockchain.
     /// </summary>
-    public class SnapshotCache : DataCache, IDisposable
+    public class SnapshotCache : StorageCache, IDisposable
     {
         private readonly IReadOnlyStore _store;
         private readonly ISnapshot? _snapshot;
@@ -71,7 +71,7 @@ namespace Neo.Persistence
             throw new KeyNotFoundException();
         }
 
-        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
+        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[]? keyOrPrefix, SeekDirection direction)
         {
             return _store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }

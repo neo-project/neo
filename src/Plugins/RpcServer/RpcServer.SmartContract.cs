@@ -11,7 +11,6 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -144,7 +143,7 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static JArray ToJson(IEnumerable<DataCache.Trackable> changes)
+        private static JArray ToJson(IEnumerable<StorageCache.CacheEntry> changes)
         {
             JArray array = new();
             foreach (var entry in changes)
@@ -153,7 +152,7 @@ namespace Neo.Plugins.RpcServer
                 {
                     ["state"] = entry.State.ToString(),
                     ["key"] = Convert.ToBase64String(entry.Key.ToArray()),
-                    ["value"] = Convert.ToBase64String(entry.Item.Value.ToArray())
+                    ["value"] = Convert.ToBase64String(entry.Value.Value.ToArray())
                 });
             }
             return array;

@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -124,7 +123,7 @@ namespace Neo.Plugins.StateService.Storage
             return true;
         }
 
-        public void UpdateLocalStateRootSnapshot(uint height, List<DataCache.Trackable> change_set)
+        public void UpdateLocalStateRootSnapshot(uint height, List<StorageCache.CacheEntry> change_set)
         {
             _state_snapshot = Singleton.GetSnapshot();
             foreach (var item in change_set)
@@ -132,10 +131,10 @@ namespace Neo.Plugins.StateService.Storage
                 switch (item.State)
                 {
                     case TrackState.Added:
-                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Item.ToArray());
+                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Value.ToArray());
                         break;
                     case TrackState.Changed:
-                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Item.ToArray());
+                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Value.ToArray());
                         break;
                     case TrackState.Deleted:
                         _state_snapshot.Trie.Delete(item.Key.ToArray());

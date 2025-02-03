@@ -86,13 +86,13 @@ namespace Neo.Plugins.StorageDumper
                 $"{path}");
         }
 
-        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             InitFileWriter(system.Settings.Network, snapshot);
             OnPersistStorage(system.Settings.Network, snapshot);
         }
 
-        private void OnPersistStorage(uint network, DataCache snapshot)
+        private void OnPersistStorage(uint network, StorageCache snapshot)
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (blockIndex >= Settings.Default!.HeightToBegin)
@@ -109,12 +109,12 @@ namespace Neo.Plugins.StorageDumper
                         case TrackState.Added:
                             state["state"] = "Added";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
+                            state["value"] = Convert.ToBase64String(trackable.Value.ToArray());
                             break;
                         case TrackState.Changed:
                             state["state"] = "Changed";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
+                            state["value"] = Convert.ToBase64String(trackable.Value.ToArray());
                             break;
                         case TrackState.Deleted:
                             state["state"] = "Deleted";
@@ -138,7 +138,7 @@ namespace Neo.Plugins.StorageDumper
             OnCommitStorage(system.Settings.Network, system.StoreView);
         }
 
-        void OnCommitStorage(uint network, DataCache snapshot)
+        void OnCommitStorage(uint network, StorageCache snapshot)
         {
             if (_currentBlock != null && _writer != null)
             {
@@ -147,7 +147,7 @@ namespace Neo.Plugins.StorageDumper
             }
         }
 
-        private void InitFileWriter(uint network, DataCache snapshot)
+        private void InitFileWriter(uint network, StorageCache snapshot)
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (_writer == null

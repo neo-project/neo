@@ -29,7 +29,7 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_Syscalls : TestKit
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

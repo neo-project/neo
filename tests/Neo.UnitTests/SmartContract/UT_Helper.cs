@@ -28,7 +28,7 @@ namespace Neo.UnitTests.SmartContract
     public class UT_Helper
     {
         private KeyPair _key;
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

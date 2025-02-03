@@ -107,7 +107,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The total supply of the token.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public virtual BigInteger TotalSupply(DataCache snapshot)
+        public virtual BigInteger TotalSupply(StorageCache snapshot)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
@@ -121,7 +121,7 @@ namespace Neo.SmartContract.Native
         /// <param name="account">The owner of the account.</param>
         /// <returns>The balance of the account. Or 0 if the account doesn't exist.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
+        public virtual BigInteger BalanceOf(StorageCache snapshot, UInt160 account)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;

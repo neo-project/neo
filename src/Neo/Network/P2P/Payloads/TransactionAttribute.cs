@@ -94,8 +94,8 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="snapshot">The snapshot used to verify the attribute.</param>
         /// <param name="tx">The <see cref="Transaction"/> that contains the attribute.</param>
         /// <returns><see langword="true"/> if the verification passes; otherwise, <see langword="false"/>.</returns>
-        public virtual bool Verify(DataCache snapshot, Transaction tx) => true;
+        public virtual bool Verify(StorageCache snapshot, Transaction tx) => true;
 
-        public virtual long CalculateNetworkFee(DataCache snapshot, Transaction tx) => NativeContract.Policy.GetAttributeFee(snapshot, (byte)Type);
+        public virtual long CalculateNetworkFee(StorageCache snapshot, Transaction tx) => NativeContract.Policy.GetAttributeFee(snapshot, (byte)Type);
     }
 }

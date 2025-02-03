@@ -265,7 +265,7 @@ namespace Neo.Wallets
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="asset_id">The id of the asset.</param>
         /// <returns>The available balance for the specified asset.</returns>
-        public BigDecimal GetAvailable(DataCache snapshot, UInt160 asset_id)
+        public BigDecimal GetAvailable(StorageCache snapshot, UInt160 asset_id)
         {
             UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
             return GetBalance(snapshot, asset_id, accounts);
@@ -278,7 +278,7 @@ namespace Neo.Wallets
         /// <param name="asset_id">The id of the asset.</param>
         /// <param name="accounts">The accounts to be counted.</param>
         /// <returns>The balance for the specified asset.</returns>
-        public BigDecimal GetBalance(DataCache snapshot, UInt160 asset_id, params UInt160[] accounts)
+        public BigDecimal GetBalance(StorageCache snapshot, UInt160 asset_id, params UInt160[] accounts)
         {
             byte[] script;
             using (ScriptBuilder sb = new())
@@ -467,7 +467,7 @@ namespace Neo.Wallets
         /// <param name="cosigners">The cosigners to be added to the transaction.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
         /// <returns>The created transaction.</returns>
-        public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, Block persistingBlock = null)
+        public Transaction MakeTransaction(StorageCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, Block persistingBlock = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -544,7 +544,7 @@ namespace Neo.Wallets
         /// <param name="maxGas">The maximum gas that can be spent to execute the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
         /// <returns>The created transaction.</returns>
-        public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
+        public Transaction MakeTransaction(StorageCache snapshot, ReadOnlyMemory<byte> script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -559,7 +559,7 @@ namespace Neo.Wallets
             return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas, persistingBlock: persistingBlock);
         }
 
-        private Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
+        private Transaction MakeTransaction(StorageCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
             Random rand = new();
             foreach (var (account, value) in balances_gas)

@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NativeContract
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
         /// <summary>
         /// _nativeStates contains a mapping from native contract name to expected native contract state
         /// constructed with all hardforks enabled and marshalled in JSON.
@@ -175,13 +175,13 @@ namespace Neo.UnitTests.SmartContract.Native
             public void TestReadOnlyStoreView(UInt160 address, IReadOnlyStoreView view) { }
 
             [ContractMethod]
-            public void TestDataCache(UInt160 address, DataCache cache) { }
+            public void TestDataCache(UInt160 address, StorageCache cache) { }
 
             [ContractMethod]
             public void TestApplicationEngine(ApplicationEngine engine, IReadOnlyStoreView view) { }
 
             [ContractMethod]
-            public void TestSnapshot(DataCache cache, ApplicationEngine engine) { }
+            public void TestSnapshot(StorageCache cache, ApplicationEngine engine) { }
         }
 
         [TestMethod]
@@ -229,7 +229,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 // DataCache or it's subclass
                 if (typeof(ApplicationEngine).IsAssignableFrom(param.ParameterType) ||
                     typeof(IReadOnlyStoreView).IsAssignableFrom(param.ParameterType) ||
-                    typeof(DataCache).IsAssignableFrom(param.ParameterType))
+                    typeof(StorageCache).IsAssignableFrom(param.ParameterType))
                 {
                     Assert.AreEqual(0, param.Position);
                 }
@@ -263,7 +263,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
-        internal static ContractState Call_GetContract(DataCache snapshot, UInt160 address, Block persistingBlock)
+        internal static ContractState Call_GetContract(StorageCache snapshot, UInt160 address, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 

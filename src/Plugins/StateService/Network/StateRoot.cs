@@ -99,12 +99,12 @@ namespace Neo.Plugins.StateService.Network
             writer.Write(RootHash);
         }
 
-        public bool Verify(ProtocolSettings settings, DataCache snapshot)
+        public bool Verify(ProtocolSettings settings, StorageCache snapshot)
         {
             return this.VerifyWitnesses(settings, snapshot, 2_00000000L);
         }
 
-        public UInt160[] GetScriptHashesForVerifying(DataCache snapshot)
+        public UInt160[] GetScriptHashesForVerifying(StorageCache snapshot)
         {
             ECPoint[] validators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.StateValidator, Index);
             if (validators.Length < 1) throw new InvalidOperationException("No script hash for state root verifying");

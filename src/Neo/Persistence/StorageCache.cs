@@ -20,17 +20,14 @@ namespace Neo.Persistence
 {
     public abstract partial class StorageCache : IReadOnlyStoreView
     {
-
-#if NET9_0_OR_GREATER
-        private readonly System.Threading.Lock _lockObj = new();
-#else
-        private readonly object _lockObj = new();
-#endif
-
         private readonly Dictionary<StorageKey, CacheEntry> _cachedItems = new(StorageKeyEqualityComparer.Instance);
+        private readonly HashSet<StorageKey> _changeSet = [];
+
+        private readonly object _lockObj = new();
 
         #region IReadOnlyStoreView
 
+        /// <inheritdoc />
         public StorageItem this[[DisallowNull] StorageKey key]
         {
             [return: MaybeNull]
@@ -51,7 +48,7 @@ namespace Neo.Persistence
                             throw new KeyNotFoundException();
                         else
                         {
-                            cachedEntry = new(key, null, TrackState.None);
+                            cachedEntry = new(key, storeEntry, TrackState.None);
                             _cachedItems.Add(key, cachedEntry);
                         }
                     }
@@ -61,14 +58,30 @@ namespace Neo.Persistence
             }
         }
 
-        public bool Contains(StorageKey key)
+        /// <inheritdoc />
+        public bool TryGet([DisallowNull] StorageKey key, [NotNullWhen(true)] out StorageItem value)
         {
-            throw new NotImplementedException();
-        }
+            value = null;
 
-        public bool TryGet(StorageKey key, out StorageItem item)
-        {
-            throw new NotImplementedException();
+            lock (_lockObj)
+            {
+                if (_cachedItems.TryGetValue(key, out var cacheEntry))
+                {
+                    if (cacheEntry.State == TrackState.Deleted || cacheEntry.State == TrackState.NotFound)
+                        return false;
+                    value = cacheEntry.Value;
+                    return true;
+                }
+
+                var storeEntry = TryGetInternal(key);
+
+                if (storeEntry is null) return false;
+
+                value = storeEntry;
+                _cachedItems.Add(key, new(key, storeEntry, TrackState.None));
+
+                return true;
+            }
         }
 
         #endregion
@@ -104,9 +117,10 @@ namespace Neo.Persistence
                     {
                         TrackState.Deleted => TrackState.Changed,
                         TrackState.NotFound => TrackState.Added,
-                        _ => throw new ArgumentException($"The entry currently has state {cachedItem.State}.", nameof(key)),
+                        _ => throw new ArgumentException($"The entry currently has a state of {cachedItem.State}.", nameof(key)),
                     };
                 }
+                _changeSet.Add(key);
             }
         }
 
@@ -114,7 +128,7 @@ namespace Neo.Persistence
         {
             lock (_lockObj)
             {
-                foreach (var key in _cachedItems.Keys)
+                foreach (var key in _changeSet)
                 {
                     var cachedEntry = _cachedItems[key];
 
@@ -136,23 +150,42 @@ namespace Neo.Persistence
                             break;
                     }
                 }
+
+                _changeSet.Clear();
             }
         }
 
-        // TODO: add `ClonedCache` class
+        [Obsolete("CreateSnapshot is deprecated, please use CloneCache instead.")]
+        public StorageCache CreateSnapshot() =>
+            new ClonedCache(this);
+
         public StorageCache CloneCache() =>
-            this;
+            new ClonedCache(this);
 
         public void Delete([DisallowNull] StorageKey key)
         {
             lock (_lockObj)
             {
                 if (_cachedItems.TryGetValue(key, out var cachedEntry))
-                    cachedEntry.State = TrackState.Deleted;
+                {
+                    if (cachedEntry.State == TrackState.Added)
+                    {
+                        cachedEntry.State = TrackState.NotFound;
+                        _changeSet.Remove(key);
+                    }
+                    else if (cachedEntry.State != TrackState.NotFound)
+                    {
+                        cachedEntry.State = TrackState.Deleted;
+                        _changeSet.Add(key);
+                    }
+                }
                 else
                 {
-                    if (ContainsInternal(key) == false) return;
-                    _cachedItems.Add(key, new(key, null, TrackState.Deleted));
+                    var storeEntry = TryGetInternal(key);
+
+                    if (storeEntry is null) return;
+                    _cachedItems.Add(key, new(key, storeEntry, TrackState.Deleted));
+                    _changeSet.Add(key);
                 }
             }
         }
@@ -161,9 +194,7 @@ namespace Neo.Persistence
             [AllowNull] byte[] keyOrPrefix = null,
             SeekDirection seekDirection = SeekDirection.Forward)
         {
-            keyOrPrefix ??= [];
-
-            if (seekDirection == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
+            if (seekDirection == SeekDirection.Backward && (keyOrPrefix is null || keyOrPrefix.Length == 0)) yield break;
 
             var comparer = seekDirection == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<StorageKey, CacheEntry>> validCacheItems;
@@ -174,14 +205,16 @@ namespace Neo.Persistence
                     .Where(w =>
                         w.Value.State != TrackState.Deleted &&
                         w.Value.State != TrackState.NotFound);
-            }
 
-            if (keyOrPrefix.Length > 0)
+                if (keyOrPrefix?.Length > 0)
+                    validCacheItems = validCacheItems
+                        .Where(w =>
+                            w.Key.ToArray().AsSpan().StartsWith(keyOrPrefix) ||
+                            comparer.Compare(w.Key.ToArray(), keyOrPrefix) >= 0);
+
                 validCacheItems = validCacheItems
-                    .Where(w => comparer.Compare(w.Key.ToArray(), keyOrPrefix) >= 0);
-
-            validCacheItems = validCacheItems
-                .OrderBy(o => o.Key.ToArray(), comparer);
+                    .OrderBy(o => o.Key.ToArray(), comparer);
+            }
 
             using var cacheIter = validCacheItems
                 .Select(s => (s.Key, s.Value.Value))
@@ -220,6 +253,145 @@ namespace Neo.Persistence
                 while (tailIter.MoveNext())
                     yield return tailIter.Current;
             }
+        }
+
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(
+            [AllowNull] byte[] keyOrPrefix = null,
+            SeekDirection seekDirection = SeekDirection.Forward)
+        {
+            foreach (var (key, value) in Seek(keyOrPrefix, seekDirection))
+            {
+                if (keyOrPrefix is null || key.ToArray().AsSpan().StartsWith(keyOrPrefix))
+                    yield return new(key, value);
+            }
+        }
+
+        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(
+            [DisallowNull] byte[] startKeyOrPrefix,
+            [DisallowNull] byte[] lastKeyOrPrefix,
+            SeekDirection seekDirection = SeekDirection.Forward)
+        {
+            var comparer = seekDirection == SeekDirection.Forward ?
+                ByteArrayComparer.Default :
+                ByteArrayComparer.Reverse;
+
+            foreach (var (key, value) in Seek(startKeyOrPrefix, seekDirection))
+            {
+                if (comparer.Compare(key.ToArray(), lastKeyOrPrefix) <= 0)
+                    yield return new(key, value);
+                else
+                    yield break;
+            }
+        }
+
+        public IEnumerable<CacheEntry> GetChangeSet()
+        {
+            lock (_lockObj)
+            {
+                foreach (var key in _changeSet)
+                    yield return _cachedItems[key];
+            }
+        }
+
+        public bool Contains([DisallowNull] StorageKey key)
+        {
+            lock (_lockObj)
+            {
+                if (_cachedItems.TryGetValue(key, out var cacheEntry))
+                    return cacheEntry.State != TrackState.Deleted && cacheEntry.State != TrackState.NotFound;
+                return ContainsInternal(key);
+            }
+        }
+
+        public StorageItem GetAndChange([DisallowNull] StorageKey key, [AllowNull] Func<StorageItem> getNewValue = null)
+        {
+            lock (_lockObj)
+            {
+                if (_cachedItems.TryGetValue(key, out var cacheEntry))
+                {
+                    if (cacheEntry.State == TrackState.Deleted || cacheEntry.State == TrackState.NotFound)
+                    {
+                        if (getNewValue is null) return null;
+                        cacheEntry.Value = getNewValue();
+
+                        if (cacheEntry.State == TrackState.Deleted)
+                            cacheEntry.State = TrackState.Changed;
+                        else
+                        {
+                            cacheEntry.State = TrackState.Added;
+                            _changeSet.Add(key);
+                        }
+                    }
+                    else if (cacheEntry.State == TrackState.None)
+                    {
+                        cacheEntry.State = TrackState.Changed;
+                        _changeSet.Add(key);
+                    }
+                }
+                else
+                {
+                    var storeEntry = TryGetInternal(key);
+
+                    if (storeEntry is not null)
+                        cacheEntry = new(key, storeEntry, TrackState.Changed);
+                    else
+                    {
+                        if (getNewValue is null) return null;
+                        cacheEntry = new(key, getNewValue(), TrackState.Added);
+                    }
+                    _cachedItems.Add(key, cacheEntry);
+                    _changeSet.Add(key);
+                }
+                return cacheEntry.Value;
+            }
+        }
+
+        [return: MaybeNull]
+        public StorageItem GetOrAdd([DisallowNull] StorageKey key, [AllowNull] Func<StorageItem> addNewValue = null)
+        {
+            lock (_lockObj)
+            {
+                if (_cachedItems.TryGetValue(key, out var cacheEntry))
+                {
+                    if (cacheEntry.State == TrackState.Deleted || cacheEntry.State == TrackState.NotFound)
+                    {
+                        if (addNewValue is null)
+                            return cacheEntry.Value;
+                        else
+                            cacheEntry.Value = addNewValue();
+
+                        if (cacheEntry.State == TrackState.Deleted)
+                            cacheEntry.State = TrackState.Changed;
+                        else
+                        {
+                            cacheEntry.State = TrackState.Added;
+                            _changeSet.Add(key);
+                        }
+                    }
+                }
+                else
+                {
+                    var storeEntry = TryGetInternal(key);
+
+                    if (storeEntry is null)
+                    {
+                        cacheEntry = new(key, addNewValue(), TrackState.Added);
+                        _changeSet.Add(key);
+                    }
+                    else
+                        cacheEntry = new(key, storeEntry, TrackState.None);
+                    _cachedItems.Add(key, cacheEntry);
+                }
+
+                return cacheEntry.Value;
+            }
+        }
+
+        [return: MaybeNull]
+        public StorageItem TryGet([DisallowNull] StorageKey key)
+        {
+            TryGet(key, out var value);
+            return value;
         }
     }
 }

@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -24,7 +23,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Security.Principal;
 using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 
@@ -33,7 +31,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NeoToken
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
         private Block _persistingBlock;
 
         [TestInitialize]
@@ -1051,7 +1049,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (true, result.GetBoolean());
         }
 
-        internal static bool Check_OnPersist(DataCache clonedCache, Block persistingBlock)
+        internal static bool Check_OnPersist(StorageCache clonedCache, Block persistingBlock)
         {
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
@@ -1061,7 +1059,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return engine.Execute() == VMState.HALT;
         }
 
-        internal static bool Check_PostPersist(DataCache clonedCache, Block persistingBlock)
+        internal static bool Check_PostPersist(StorageCache clonedCache, Block persistingBlock)
         {
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
@@ -1071,7 +1069,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return engine.Execute() == VMState.HALT;
         }
 
-        internal static (BigInteger Value, bool State) Check_GetGasPerBlock(DataCache clonedCache, Block persistingBlock)
+        internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StorageCache clonedCache, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
@@ -1090,7 +1088,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (((VM.Types.Integer)result).GetInteger(), true);
         }
 
-        internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(DataCache clonedCache, BigInteger gasPerBlock, Block persistingBlock)
+        internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(StorageCache clonedCache, BigInteger gasPerBlock, Block persistingBlock)
         {
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(clonedCache);
             using var engine = ApplicationEngine.Create(TriggerType.Application,
@@ -1106,7 +1104,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (true, true);
         }
 
-        internal static (bool State, bool Result) Check_Vote(DataCache clonedCache, byte[] account, byte[] pubkey, bool signAccount, Block persistingBlock)
+        internal static (bool State, bool Result) Check_Vote(StorageCache clonedCache, byte[] account, byte[] pubkey, bool signAccount, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
@@ -1127,7 +1125,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (true, result.GetBoolean());
         }
 
-        internal static (bool State, bool Result) Check_RegisterValidator(DataCache clonedCache, byte[] pubkey, Block persistingBlock)
+        internal static (bool State, bool Result) Check_RegisterValidator(StorageCache clonedCache, byte[] pubkey, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
@@ -1147,7 +1145,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (true, result.GetBoolean());
         }
 
-        internal static (bool State, bool Result) Check_RegisterValidatorViaNEP27(DataCache clonedCache, ECPoint pubkey, Block persistingBlock, bool passNEO, byte[] data, BigInteger amount)
+        internal static (bool State, bool Result) Check_RegisterValidatorViaNEP27(StorageCache clonedCache, ECPoint pubkey, Block persistingBlock, bool passNEO, byte[] data, BigInteger amount)
         {
             var keyScriptHash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             var contractID = passNEO ? NativeContract.NEO.Id : NativeContract.GAS.Id;
@@ -1177,7 +1175,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (true, result.GetBoolean());
         }
 
-        internal static ECPoint[] Check_GetCommittee(DataCache clonedCache, Block persistingBlock)
+        internal static ECPoint[] Check_GetCommittee(StorageCache clonedCache, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
@@ -1193,7 +1191,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (result as VM.Types.Array).Select(u => ECPoint.DecodePoint(u.GetSpan(), ECCurve.Secp256r1)).ToArray();
         }
 
-        internal static (BigInteger Value, bool State) Check_UnclaimedGas(DataCache clonedCache, byte[] address, Block persistingBlock)
+        internal static (BigInteger Value, bool State) Check_UnclaimedGas(StorageCache clonedCache, byte[] address, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
@@ -1213,17 +1211,17 @@ namespace Neo.UnitTests.SmartContract.Native
             return (result.GetInteger(), true);
         }
 
-        internal static void CheckValidator(ECPoint eCPoint, DataCache.Trackable trackable)
+        internal static void CheckValidator(ECPoint eCPoint, StorageCache.CacheEntry trackable)
         {
-            BigInteger st = trackable.Item;
+            BigInteger st = trackable.Value;
             Assert.AreEqual(0, st);
 
             CollectionAssert.AreEqual(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)).ToArray(), trackable.Key.Key.ToArray());
         }
 
-        internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
+        internal static void CheckBalance(byte[] account, StorageCache.CacheEntry trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
-            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
+            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Value.Value, ExecutionEngineLimits.Default);
 
             Assert.AreEqual(3, st.Count);
             CollectionAssert.AreEqual(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
@@ -1247,7 +1245,7 @@ namespace Neo.UnitTests.SmartContract.Native
             };
         }
 
-        internal static (bool State, bool Result) Check_UnregisterCandidate(DataCache clonedCache, byte[] pubkey, Block persistingBlock)
+        internal static (bool State, bool Result) Check_UnregisterCandidate(StorageCache clonedCache, byte[] pubkey, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), clonedCache, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
@@ -1267,7 +1265,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (true, result.GetBoolean());
         }
 
-        internal static (BigInteger balance, BigInteger height, byte[] voteto) GetAccountState(DataCache clonedCache, UInt160 account)
+        internal static (BigInteger balance, BigInteger height, byte[] voteto) GetAccountState(StorageCache clonedCache, UInt160 account)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, settings: TestBlockchain.TheNeoSystem.Settings);
 

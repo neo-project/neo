@@ -20,7 +20,7 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_ApplicationEngineProvider
     {
-        private DataCache _snapshotCache;
+        private StorageCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()
@@ -55,7 +55,7 @@ namespace Neo.UnitTests.SmartContract
 
         class TestProvider : IApplicationEngineProvider
         {
-            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
+            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, StorageCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
             {
                 return new TestEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
             }
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.SmartContract
 
         class TestEngine : ApplicationEngine
         {
-            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
+            public TestEngine(TriggerType trigger, IVerifiable container, StorageCache snapshotCache, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
                 : base(trigger, container, snapshotCache, persistingBlock, settings, gas, diagnostic, jumpTable)
             {
             }
