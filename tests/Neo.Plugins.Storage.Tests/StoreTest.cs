@@ -389,8 +389,6 @@ namespace Neo.Plugins.Storage.Tests
                     CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
                     CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[2].Key);
                 }
-
-
             }
         }
 
