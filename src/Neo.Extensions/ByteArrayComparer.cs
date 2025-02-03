@@ -30,7 +30,7 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(byte[]? x, byte[]? y)
         {
-            if (x == y) return 0;
+            if (ReferenceEquals(x, y)) return 0;
 
             if (x is null) // y must not be null
                 return -y!.Length * _direction;
@@ -38,9 +38,8 @@ namespace Neo.Extensions
             if (y is null) // x must not be null
                 return x.Length * _direction;
 
-            if (_direction < 0)
-                return y.AsSpan().SequenceCompareTo(x.AsSpan());
-            return x.AsSpan().SequenceCompareTo(y.AsSpan());
+
+            return x.AsSpan().SequenceCompareTo(y.AsSpan()) * _direction;
         }
     }
 }
