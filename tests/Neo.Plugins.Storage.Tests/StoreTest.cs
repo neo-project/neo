@@ -333,7 +333,7 @@ namespace Neo.Plugins.Storage.Tests
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[2].Key);
 
                 // Test Snapshot
-                // Note: These test were added before of MemorySnapshot
+                // Note: These tests were added because of `MemorySnapshot`
                 using (var snapshot = store.GetSnapshot())
                 {
                     // Seek null
