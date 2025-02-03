@@ -202,7 +202,7 @@ namespace Neo.Ledger
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
             system.MemPool.InvalidateAllTransactions();
 
-            StorageCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
@@ -246,7 +246,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            StorageCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
@@ -437,7 +437,7 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
-                StorageCache clonedSnapshot = snapshot.CloneCache();
+                var clonedSnapshot = snapshot.CloneCache();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
