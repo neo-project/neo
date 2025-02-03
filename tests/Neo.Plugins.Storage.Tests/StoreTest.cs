@@ -317,6 +317,48 @@ namespace Neo.Plugins.Storage.Tests
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[0].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[2].Key);
+
+                using (var snapshot = store.GetSnapshot())
+                {
+                    // Seek null
+                    entries = snapshot.Seek(null, SeekDirection.Backward).ToArray();
+                    Assert.AreEqual(0, entries.Length);
+
+                    // Seek empty
+                    entries = snapshot.Seek([], SeekDirection.Backward).ToArray();
+                    Assert.AreEqual(0, entries.Length);
+
+                    // Seek Backward
+
+                    entries = snapshot.Seek(new byte[] { 0x00, 0x00, 0x02 }, SeekDirection.Backward).ToArray();
+                    Assert.AreEqual(2, entries.Length);
+                    CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
+                    CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
+                    CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
+                    CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[1].Value);
+
+                    // Seek Backward
+                    snapshot.Delete(new byte[] { 0x00, 0x00, 0x00 });
+                    snapshot.Delete(new byte[] { 0x00, 0x00, 0x01 });
+                    snapshot.Delete(new byte[] { 0x00, 0x00, 0x02 });
+                    snapshot.Delete(new byte[] { 0x00, 0x00, 0x03 });
+                    snapshot.Delete(new byte[] { 0x00, 0x00, 0x04 });
+                    snapshot.Put(new byte[] { 0x00, 0x00, 0x00 }, new byte[] { 0x00 });
+                    snapshot.Put(new byte[] { 0x00, 0x00, 0x01 }, new byte[] { 0x01 });
+                    snapshot.Put(new byte[] { 0x00, 0x01, 0x02 }, new byte[] { 0x02 });
+
+                    snapshot.Commit();
+                }
+
+                using (var snapshot = store.GetSnapshot())
+                {
+                    entries = snapshot.Seek(new byte[] { 0x00, 0x00, 0x03 }, SeekDirection.Backward).ToArray();
+                    Assert.AreEqual(2, entries.Length);
+                    CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
+                    CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
+                    CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
+                    CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[1].Value);
+                }
             }
         }
 
