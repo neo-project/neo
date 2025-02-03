@@ -208,9 +208,7 @@ namespace Neo.Persistence
 
                 if (keyOrPrefix?.Length > 0)
                     validCacheItems = validCacheItems
-                        .Where(w =>
-                            w.Key.ToArray().AsSpan().StartsWith(keyOrPrefix) ||
-                            comparer.Compare(w.Key.ToArray(), keyOrPrefix) >= 0);
+                        .Where(w => comparer.Compare(w.Key.ToArray(), keyOrPrefix) >= 0);
 
                 validCacheItems = validCacheItems
                     .OrderBy(o => o.Key.ToArray(), comparer);
@@ -234,12 +232,12 @@ namespace Neo.Persistence
 
                 if (compare <= 0)
                 {
-                    yield return new(cachedKey, cachedEntry);
+                    yield return new(cachedKey.ToArray(), cachedEntry.Clone());
                     cachedIterMoved = cacheIter.MoveNext();
                 }
                 else
                 {
-                    yield return new(storeKey, storeEntry);
+                    yield return new(storeKey.ToArray(), storeEntry.Clone());
                     storeIterMoved = storeIter.MoveNext();
                 }
             }
@@ -251,7 +249,10 @@ namespace Neo.Persistence
                 yield return tailIter.Current;
 
                 while (tailIter.MoveNext())
-                    yield return tailIter.Current;
+                {
+                    var (key, value) = tailIter.Current;
+                    yield return new(key.ToArray(), value.Clone());
+                }
             }
         }
 
@@ -259,17 +260,19 @@ namespace Neo.Persistence
             [AllowNull] byte[] keyOrPrefix = null,
             SeekDirection seekDirection = SeekDirection.Forward)
         {
-            var comparer = seekDirection == SeekDirection.Forward ?
-                ByteArrayComparer.Default :
-                ByteArrayComparer.Reverse;
+            if (seekDirection == SeekDirection.Backward && (keyOrPrefix is null || keyOrPrefix.Length == 0)) yield break;
 
-            foreach (var (key, value) in Seek(keyOrPrefix, seekDirection))
-            {
-                if (keyOrPrefix is null || key.ToArray().AsSpan().StartsWith(keyOrPrefix))
-                    yield return new(key, value);
-                else if (seekDirection == SeekDirection.Forward || (keyOrPrefix == null || !key.ToArray().SequenceEqual(keyOrPrefix)))
-                    yield break;
-            }
+            var lastKey = new byte[ApplicationEngine.MaxStorageKeySize];
+            Array.Fill<byte>(lastKey, 0xff);
+
+            keyOrPrefix?.CopyTo(lastKey, 0);
+
+            var results = seekDirection == SeekDirection.Backward ?
+                FindRange(lastKey, keyOrPrefix, seekDirection) :
+                FindRange(keyOrPrefix, lastKey, seekDirection);
+
+            foreach (var (key, value) in results)
+                yield return new(key, value);
         }
 
         public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(
