@@ -316,7 +316,7 @@ namespace Neo.Ledger
         {
             if (!system.HeaderCache.Full)
             {
-                StorageCache snapshot = system.StoreView;
+                var snapshot = system.StoreView;
                 uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
                 foreach (Header header in headers)
                 {
@@ -332,7 +332,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            StorageCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
