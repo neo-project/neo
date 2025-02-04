@@ -7,7 +7,7 @@ on:
 
 env:
   DOTNET_VERSION: 9.0.x
-  COVERLET_EXCLUDE_COVERAGE: /p:Exclude=\"[Neo.UnitTests]*\"
+  COVERLET_EXCLUDE_COVERAGE: -p:Exclude="[Neo.UnitTests]*"
 
 jobs:
 
