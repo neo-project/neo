@@ -15,6 +15,9 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {
+    /// <summary>
+    /// Defines methods to support the comparison of two <see cref="byte"/>[].
+    /// </summary>
     public class ByteArrayComparer : IComparer<byte[]>
     {
         public static readonly ByteArrayComparer Default = new(1);
@@ -27,6 +30,7 @@ namespace Neo.Extensions
             _direction = direction;
         }
 
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(byte[]? x, byte[]? y)
         {
@@ -38,8 +42,10 @@ namespace Neo.Extensions
             if (y is null) // x must not be null
                 return x.Length * _direction;
 
-
-            return x.AsSpan().SequenceCompareTo(y.AsSpan()) * _direction;
+            // Note: if "SequenceCompareTo" is "int.MinValue * -1", it
+            // will overflow "int.MaxValue". Seeing how "int.MinValue * -1"
+            // value would be "int.MaxValue + 1"
+            return unchecked(x.AsSpan().SequenceCompareTo(y.AsSpan()) * _direction);
         }
     }
 }
