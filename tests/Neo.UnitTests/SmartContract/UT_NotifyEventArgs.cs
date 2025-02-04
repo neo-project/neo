@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -36,7 +35,7 @@ namespace Neo.UnitTests.SmartContract
             IVerifiable container = new TestVerifiable();
             UInt160 script_hash = new byte[] { 0x00 }.ToScriptHash();
             NotifyEventArgs args = new NotifyEventArgs(container, script_hash, "Test", null);
-            args.ScriptContainer.Should().Be(container);
+            Assert.AreEqual(container, args.ScriptContainer);
         }
 
         [TestMethod]

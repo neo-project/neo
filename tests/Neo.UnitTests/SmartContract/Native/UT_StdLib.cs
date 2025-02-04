@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.SmartContract;
@@ -56,8 +55,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsException<System.FormatException>(() => StdLib.Atoi("g", 16));
             Assert.ThrowsException<System.ArgumentOutOfRangeException>(() => StdLib.Atoi("a", 11));
 
-            StdLib.Atoi(StdLib.Itoa(BigInteger.One, 10)).Should().Be(BigInteger.One);
-            StdLib.Atoi(StdLib.Itoa(BigInteger.MinusOne, 10)).Should().Be(BigInteger.MinusOne);
+            Assert.AreEqual(BigInteger.One, StdLib.Atoi(StdLib.Itoa(BigInteger.One, 10)));
+            Assert.AreEqual(BigInteger.MinusOne, StdLib.Atoi(StdLib.Itoa(BigInteger.MinusOne, 10)));
         }
 
         [TestMethod]

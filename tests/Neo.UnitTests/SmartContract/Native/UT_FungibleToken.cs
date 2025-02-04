@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
 
@@ -23,7 +22,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestTotalSupply()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            NativeContract.GAS.TotalSupply(snapshotCache).Should().Be(5200000050000000);
+            Assert.AreEqual(5200000050000000, NativeContract.GAS.TotalSupply(snapshotCache));
         }
     }
 }
