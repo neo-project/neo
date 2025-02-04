@@ -150,8 +150,11 @@ namespace Neo.Cryptography
                 var sig = signature.ToArray();
                 var r = new BigInteger(1, sig, 0, 32);
                 var s = new BigInteger(1, sig, 32, 32);
-                var messageHash = GetMessageHash(message, hashAlgorithm);
 
+                if (hashAlgorithm != HashAlgorithm.SHA256 && hashAlgorithm != HashAlgorithm.Keccak256)
+                    throw new NotSupportedException(nameof(hashAlgorithm));
+
+                var messageHash = GetMessageHash(message, hashAlgorithm);
                 return signer.VerifySignature(messageHash, r, s);
             }
 
