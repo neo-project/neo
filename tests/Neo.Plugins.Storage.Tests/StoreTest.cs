@@ -12,8 +12,10 @@
 #pragma warning disable CS0618 // Type or member is obsolete
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO.Storage.LevelDB;
 using Neo.Persistence;
+using Neo.SmartContract;
 using System.IO;
 using System.Linq;
 
@@ -229,12 +231,44 @@ namespace Neo.Plugins.Storage.Tests
             snapshot2.Dispose();
         }
 
+        private void TestSeek(IStore store)
+        {
+            using var snapshot = store.GetSnapshot();
+            using var storeView = new SnapshotCache(snapshot);
+            var key = new KeyBuilder(1, 1);
+            var item = new StorageItem([1, 2, 3]);
+            storeView.Delete(key);
+            Assert.IsNull(storeView.TryGet(key));
+            storeView.Add(key, item);
+            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, storeView.TryGet(key).ToArray());
+
+            var key2 = new KeyBuilder(1, 2);
+            var item2 = new StorageItem([4, 5, 6]);
+            storeView.Add(key2, item2);
+            CollectionAssert.AreEqual(key2.ToArray(), storeView.Seek(key2.ToArray(), SeekDirection.Backward).Select(u => u.Key).First().ToArray());
+            CollectionAssert.AreEqual(key.ToArray(), storeView.Seek(key.ToArray(), SeekDirection.Backward).Select(u => u.Key).First().ToArray());
+
+            storeView.Delete(key);
+            storeView.Delete(key2);
+
+            storeView.Add(new KeyBuilder(1, 0x000000), new StorageItem([0x00]));
+            storeView.Add(new KeyBuilder(1, 0x000001), new StorageItem([0x01]));
+            storeView.Add(new KeyBuilder(1, 0x000002), new StorageItem([0x02]));
+            storeView.Add(new KeyBuilder(1, 0x000003), new StorageItem([0x03]));
+            storeView.Add(new KeyBuilder(1, 0x000004), new StorageItem([0x04]));
+
+            var entries = storeView.Seek([], SeekDirection.Backward).ToArray();
+            Assert.AreEqual(0, entries.Length);
+        }
+
         /// <summary>
         /// Test Put/Delete/TryGet/Seek
         /// </summary>
         /// <param name="store">Store</param>
         private void TestStorage(IStore store)
         {
+            TestSeek(store);
+
             using (store)
             {
                 var key1 = new byte[] { 0x01, 0x02 };
