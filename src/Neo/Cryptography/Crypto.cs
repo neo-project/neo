@@ -83,7 +83,7 @@ namespace Neo.Cryptography
                 var privateKey = new BigInteger(1, priKey);
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, ecCurve.BouncyCastleDomainParams);
                 signer.Init(true, priKeyParameters);
-                var messageHash = GetMessageHash(message);
+                var messageHash = GetMessageHash(message, hashAlgorithm);
                 var signature = signer.GenerateSignature(messageHash);
 
                 var signatureBytes = new byte[64];
