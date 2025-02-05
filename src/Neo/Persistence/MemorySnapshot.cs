@@ -47,7 +47,7 @@ namespace Neo.Persistence
 
         public void Delete(byte[] key)
         {
-            _writeBatch[key[..]] = null;
+            _writeBatch[key] = null;
         }
 
         public void Dispose() { }
