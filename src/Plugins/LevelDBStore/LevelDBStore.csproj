@@ -2,11 +2,8 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <PackageId>Neo.Plugins.Storage.LevelDBStore</PackageId>
-    <RootNamespace>Neo.Plugins.Storage</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
 </Project>

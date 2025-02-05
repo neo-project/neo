@@ -262,3 +262,6 @@ launchSettings.json
 
 # Benchmarks
 **/BenchmarkDotNet.Artifacts/
+
+# local Development NuGet Packages
+/pkgs

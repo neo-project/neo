@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <PackageId>Neo.Network.RPC.RpcClient</PackageId>
-    <RootNamespace>Neo.Network.RPC</RootNamespace>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

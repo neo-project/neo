@@ -1,0 +1,34 @@
+<Project>
+  <!-- Tasks Configuration-->
+  <PropertyGroup>
+    <NeoBuildTasksAssemblyName>$(MSBuildThisFileName)</NeoBuildTasksAssemblyName>
+    <NeoBuildTasksAssemblyDirectory>$(MSBuildThisFileDirectory)..\tasks\net472</NeoBuildTasksAssemblyDirectory>
+    <NeoBuildTasksAssemblyFile>$(NeoBuildTasksAssemblyPath)\$(NeoBuildTasksAssemblyName).dll</NeoBuildTasksAssemblyFile>
+  </PropertyGroup>
+
+  <!-- Tasks -->
+  <UsingTask TaskName="$(NeoBuildTasksAssemblyName).NeoWallet" AssemblyFile="$(NeoBuildTasksAssemblyFile)"/>
+
+  <PropertyGroup>
+    <!-- Project Configuration -->
+    <NeoBuildProjectDirectory Condition="'$(NeoBuildProjectDirectory)' == ''">$(MSBuildProjectDirectory)</NeoBuildProjectDirectory>
+
+    <!-- Build Configuration -->
+    <NeoBuildVersion Condition="'$(NeoBuildVersion)' == ''">3.8.0</NeoBuildVersion>
+    <NeoBuildIsWindows>$([System.OperatingSystem]::IsWindows())</NeoBuildIsWindows>
+
+    <!-- Runtime Tool Configuration -->
+    <NeoBuildToolSource Condition="'$(NeoBuildToolSource)' == ''"></NeoBuildToolSource>
+    <NeoBuildToolPackageName Condition="'$(NeoBuildToolPackageName)' == ''">Neo.Cmd</NeoBuildToolPackageName>
+
+    <!-- Protocol Settings -->
+    <NeoProtocolAddressVersion Condition="'$(NeoProtocolAddressVersion)' == ''">53</NeoProtocolAddressVersion>
+    
+    <!-- Wallet Configuration -->
+    <NeoWalletPassword Condition="'$(NeoWalletPassword)' == ''">Neo123abc</NeoWalletPassword>
+    <NeoWalletName Condition="'$(NeoWalletName)' == ''">default</NeoWalletName>
+    <NeoWalletFileName Condition="'$(NeoWalletFileName)' == ''">DevWallet</NeoWalletFileName>
+    <NeoWalletFileFullPath Condition="'$(NeoWalletFileFullPath)' == ''">$(NeoBuildProjectDirectory)$(NeoWalletFileName).json</NeoWalletFileFullPath>
+  </PropertyGroup>
+
+</Project>

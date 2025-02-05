@@ -2,9 +2,26 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-
+  
+  <PropertyGroup>
+    <!-- Package Configuration -->
+    <PackageId>Neo.Plugins.$(MSBuildProjectName)</PackageId>
+    <PackageOutputPath>../../../pkgs/</PackageOutputPath>
+    <!-- Assembly Configuration -->
+    <RootNamespace>$(PackageId)</RootNamespace>
+    <!-- Build Configuration -->
+    <OutputPath>../../../bin/$(PackageId)</OutputPath>
+  </PropertyGroup>
+  
   <ItemGroup>
     <ProjectReference Include="../../Neo/Neo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="../../.neo/neo.png" />
+    <None Remove="../../.neo/README.md" />
+    <None Include="../../../.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="../../../.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
 </Project>

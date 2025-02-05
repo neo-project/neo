@@ -1,0 +1,15 @@
+<Project>
+
+  <Target Name="NeoBuildUpdateToolSetEvent" BeforeTargets="CoreCompile">
+    <Exec Condition="'$(NeoBuildToolSource)' != ''" Command="dotnet tool update $(NeoBuildToolPackageName) --source &quot;$(NeoBuildToolSource)&quot; --tool-path &quot;$(NeoBuildToolPath)&quot; --version $(NeoBuildVersion)" />
+    <Exec Condition="'$(NeoBuildToolSource)' == ''" Command="dotnet tool update $(NeoBuildToolPackageName) --tool-path &quot;$(NeoBuildToolPath)&quot; --version $(NeoBuildVersion)" />
+  </Target>
+  
+  <Target Name="Build" DependsOnTargets="NeoBuildUpdateToolSetEvent">
+    <NeoWallet Password="$(NeoWalletPassword)" ProtocolAddressVersion="$(NeoProtocolAddressVersion)" Files="hello" />
+  </Target>
+
+  <Target Name="AfterClean">
+    <Delete Files="$(NeoWalletFile)" />
+  </Target>
+</Project>
