@@ -44,7 +44,7 @@ namespace Neo.Persistence
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Put(byte[] key, byte[] value)
         {
-            _innerData[key] = value;
+            _innerData[key[..]] = value[..];
         }
 
         /// <inheritdoc/>
@@ -63,7 +63,7 @@ namespace Neo.Persistence
             records = records.OrderBy(p => p.Key, comparer);
 
             foreach (var pair in records)
-                yield return new(pair.Key, pair.Value);
+                yield return new(pair.Key[..], pair.Value[..]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
