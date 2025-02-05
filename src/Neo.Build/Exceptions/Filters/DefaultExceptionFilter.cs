@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Exceptions.Interfaces;
 using Neo.Build.Extensions;
 using System;
 using System.CommandLine.Invocation;
@@ -19,15 +20,20 @@ namespace Neo.Build.Exceptions.Filters
     {
         internal static void Handler(Exception exception, InvocationContext context)
         {
-#if DEBUG
             if (exception is not OperationCanceledException)
             {
                 context.Console.WriteLine(string.Empty);
-                context.Console.ErrorMessage(exception);
-            }
-#endif
 
-            context.ExitCode = exception.HResult;
+                if (exception.InnerException is INeoBuildException nbe)
+                {
+                    context.Console.Error.Write(nbe.Message + Environment.NewLine);
+                    context.ExitCode = nbe.HResult;
+                    return;
+                }
+
+                context.Console.ErrorMessage(exception);
+                context.ExitCode = exception.HResult;
+            }
         }
     }
 }

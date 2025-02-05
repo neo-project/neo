@@ -13,6 +13,8 @@ namespace Neo.Build.Exceptions.Interfaces
 {
     internal interface INeoBuildException
     {
+        public int HResult { get; }
         public string ErrorCode { get; }
+        public string Message { get; }
     }
 }

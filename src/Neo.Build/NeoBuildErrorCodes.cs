@@ -16,6 +16,6 @@ namespace Neo.Build
         private const string ErrorCodePrefix = "NB";
 
         public static string MakeErrorCode(int errorCode) =>
-            $"{ErrorCodePrefix}{errorCode:04}";
+            $"{ErrorCodePrefix}{errorCode:d04}";
     }
 }

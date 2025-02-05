@@ -13,7 +13,7 @@ using System.IO;
 
 namespace Neo.Build.Exceptions.Interfaces
 {
-    internal interface IFileNotFoundException
+    internal interface IFileNotFoundException : INeoBuildException
     {
         public FileInfo FileInfo { get; }
     }

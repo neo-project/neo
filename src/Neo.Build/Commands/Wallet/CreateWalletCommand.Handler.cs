@@ -42,7 +42,6 @@ namespace Neo.Build.Commands.Wallet
             {
                 var isTextFile = context.Console.IsOutputRedirected;
 
-
                 return Task.FromResult(0);
             }
         }
