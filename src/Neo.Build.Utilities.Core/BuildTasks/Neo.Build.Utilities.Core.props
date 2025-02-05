@@ -15,7 +15,6 @@
 
     <!-- Build Configuration -->
     <NeoBuildVersion Condition="'$(NeoBuildVersion)' == ''">3.8.0</NeoBuildVersion>
-    <NeoBuildIsWindows>$([System.OperatingSystem]::IsWindows())</NeoBuildIsWindows>
 
     <!-- Runtime Tool Configuration -->
     <NeoBuildToolSource Condition="'$(NeoBuildToolSource)' == ''"></NeoBuildToolSource>
