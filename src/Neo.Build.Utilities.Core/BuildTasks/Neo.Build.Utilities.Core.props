@@ -18,7 +18,7 @@
 
     <!-- Runtime Tool Configuration -->
     <NeoBuildToolSource Condition="'$(NeoBuildToolSource)' == ''"></NeoBuildToolSource>
-    <NeoBuildToolPackageName Condition="'$(NeoBuildToolPackageName)' == ''">Neo.Cmd</NeoBuildToolPackageName>
+    <NeoBuildToolPackageName Condition="'$(NeoBuildToolPackageName)' == ''">Neo.Build</NeoBuildToolPackageName>
 
     <!-- Protocol Settings -->
     <NeoProtocolAddressVersion Condition="'$(NeoProtocolAddressVersion)' == ''">53</NeoProtocolAddressVersion>
