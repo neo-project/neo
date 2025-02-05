@@ -58,8 +58,8 @@ namespace Neo.Persistence
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _innerData;
 
             if (keyOrPrefix.Length > 0)
-                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
-
+                records = records
+                    .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
 
             foreach (var pair in records)

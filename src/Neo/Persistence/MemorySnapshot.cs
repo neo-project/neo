@@ -61,19 +61,17 @@ namespace Neo.Persistence
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             keyOrPrefix ??= [];
-
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
+
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
 
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
-
             if (keyOrPrefix.Length > 0)
-                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
-
+                records = records
+                    .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
-
             foreach (var pair in records)
-                yield return new(pair.Key, pair.Value);
+                yield return (pair.Key[..], pair.Value[..]);
         }
 
         public byte[]? TryGet(byte[] key)

@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract;
-using System;
 using System.Linq;
 using System.Text;
 
@@ -50,15 +49,15 @@ namespace Neo.UnitTests.Persistence
             using var store = new MemoryStore();
 
             store.Delete([1]);
-            Assert.AreEqual(null, store.TryGet([1]));
+            Assert.IsNull(store.TryGet([1]));
             Assert.IsFalse(store.TryGet([1], out var got));
-            Assert.AreEqual(null, got);
+            Assert.IsNull(got);
 
             store.Put([1], [1, 2, 3]);
             CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, store.TryGet([1]));
 
             store.Put([2], [4, 5, 6]);
-            CollectionAssert.AreEqual(new byte[] { 1 }, store.Seek(Array.Empty<byte>()).Select(u => u.Key).First());
+            CollectionAssert.AreEqual(new byte[] { 1 }, store.Seek([]).Select(u => u.Key).First());
             CollectionAssert.AreEqual(new byte[] { 2 }, store.Seek([2], SeekDirection.Backward).Select(u => u.Key).First());
             CollectionAssert.AreEqual(new byte[] { 1 }, store.Seek([1], SeekDirection.Backward).Select(u => u.Key).First());
 
@@ -71,8 +70,8 @@ namespace Neo.UnitTests.Persistence
             store.Put([0x00, 0x00, 0x03], [0x03]);
             store.Put([0x00, 0x00, 0x04], [0x04]);
 
-            var entries = store.Seek(Array.Empty<byte>(), SeekDirection.Backward).ToArray();
-            Assert.AreEqual(entries.Length, 0);
+            var entries = store.Seek([], SeekDirection.Backward).ToArray();
+            Assert.AreEqual(0, entries.Length);
         }
 
         [TestMethod]
@@ -93,7 +92,7 @@ namespace Neo.UnitTests.Persistence
             // But the value will not be written to the underlying store even its committed.
             Assert.IsNull(_memoryStore.TryGet(key.ToArray()));
             Assert.IsFalse(_memoryStore.TryGet(key.ToArray(), out var got));
-            Assert.AreEqual(null, got);
+            Assert.IsNull(got);
         }
 
         [TestMethod]
@@ -114,7 +113,7 @@ namespace Neo.UnitTests.Persistence
             var key = new KeyBuilder(1, 1);
             var item = new StorageItem([1, 2, 3]);
             storeView.Delete(key);
-            Assert.AreEqual(null, storeView.TryGet(key));
+            Assert.IsNull(storeView.TryGet(key));
             storeView.Add(key, item);
             CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, storeView.TryGet(key).ToArray());
 
@@ -132,6 +131,10 @@ namespace Neo.UnitTests.Persistence
             storeView.Add(new KeyBuilder(1, 0x000002), new StorageItem([0x02]));
             storeView.Add(new KeyBuilder(1, 0x000003), new StorageItem([0x03]));
             storeView.Add(new KeyBuilder(1, 0x000004), new StorageItem([0x04]));
+
+            var entries = storeView.Seek([], SeekDirection.Backward).ToArray();
+            Assert.AreEqual(0, entries.Length);
+            Assert.AreEqual(entries.Length, 37);
         }
     }
 }
