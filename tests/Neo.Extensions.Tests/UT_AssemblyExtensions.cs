@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 
@@ -27,7 +27,7 @@ namespace Neo.Extensions.Tests
                 .Where(u => u.FullName == "Anonymously Hosted DynamicMethods Assembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
                 .FirstOrDefault();
             string version = asm?.GetVersion() ?? "";
-            version.Should().Be("0.0.0");
+            Assert.AreEqual("0.0.0", version);
         }
     }
 }

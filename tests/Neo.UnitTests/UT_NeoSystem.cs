@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Neo.UnitTests
@@ -26,12 +25,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetBlockchain() => neoSystem.Blockchain.Should().NotBeNull();
+        public void TestGetBlockchain() => Assert.IsNotNull(neoSystem.Blockchain);
 
         [TestMethod]
-        public void TestGetLocalNode() => neoSystem.LocalNode.Should().NotBeNull();
+        public void TestGetLocalNode() => Assert.IsNotNull(neoSystem.LocalNode);
 
         [TestMethod]
-        public void TestGetTaskManager() => neoSystem.TaskManager.Should().NotBeNull();
+        public void TestGetTaskManager() => Assert.IsNotNull(neoSystem.TaskManager);
     }
 }

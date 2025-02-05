@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using System;
 
 namespace Neo.Extensions.Tests
@@ -22,11 +21,11 @@ namespace Neo.Extensions.Tests
         {
             Random ran = new();
             Action action1 = () => ran.NextBigInteger(-1);
-            action1.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(action1);
 
-            ran.NextBigInteger(0).Should().Be(0);
-            ran.NextBigInteger(8).Should().NotBeNull();
-            ran.NextBigInteger(9).Should().NotBeNull();
+            Assert.AreEqual(0, ran.NextBigInteger(0));
+            Assert.IsNotNull(ran.NextBigInteger(8));
+            Assert.IsNotNull(ran.NextBigInteger(9));
         }
     }
 }

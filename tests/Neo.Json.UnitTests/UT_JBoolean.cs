@@ -29,22 +29,22 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAsNumber()
         {
-            jFalse.AsNumber().Should().Be(0);
-            jTrue.AsNumber().Should().Be(1);
+            Assert.AreEqual(0, jFalse.AsNumber());
+            Assert.AreEqual(1, jTrue.AsNumber());
         }
 
         [TestMethod]
         public void TestDefaultConstructor()
         {
             var defaultJBoolean = new JBoolean();
-            defaultJBoolean.AsNumber().Should().Be(0);
+            Assert.AreEqual(0, defaultJBoolean.AsNumber());
         }
 
         [TestMethod]
         public void TestExplicitFalse()
         {
             var explicitFalse = new JBoolean(false);
-            explicitFalse.AsNumber().Should().Be(0);
+            Assert.AreEqual(0, explicitFalse.AsNumber());
         }
 
         [TestMethod]

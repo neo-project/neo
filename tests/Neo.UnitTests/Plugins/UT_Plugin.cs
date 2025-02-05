@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Plugins;
@@ -72,22 +71,28 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
             var file = pp.ConfigFile;
-            file.EndsWith("config.json").Should().BeTrue();
+            Assert.IsTrue(file.EndsWith("config.json"));
         }
 
         [TestMethod]
         public void TestGetName()
         {
             var pp = new TestPlugin();
-            pp.Name.Should().Be("TestPlugin");
+            Assert.AreEqual("TestPlugin", pp.Name);
         }
 
         [TestMethod]
         public void TestGetVersion()
         {
             var pp = new TestPlugin();
-            Action action = () => pp.Version.ToString();
-            action.Should().NotThrow();
+            try
+            {
+                _ = pp.Version.ToString();
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Should not throw but threw {ex}");
+            }
         }
 
         [TestMethod]
@@ -96,10 +101,10 @@ namespace Neo.UnitTests.Plugins
             lock (s_locker)
             {
                 Plugin.Plugins.Clear();
-                Plugin.SendMessage("hey1").Should().BeFalse();
+                Assert.IsFalse(Plugin.SendMessage("hey1"));
 
                 var lp = new TestPlugin();
-                Plugin.SendMessage("hey2").Should().BeTrue();
+                Assert.IsTrue(Plugin.SendMessage("hey2"));
             }
         }
 
@@ -107,7 +112,7 @@ namespace Neo.UnitTests.Plugins
         public void TestGetConfiguration()
         {
             var pp = new TestPlugin();
-            pp.TestGetConfiguration().Key.Should().Be("PluginConfiguration");
+            Assert.AreEqual("PluginConfiguration", pp.TestGetConfiguration().Key);
         }
 
         [TestMethod]
