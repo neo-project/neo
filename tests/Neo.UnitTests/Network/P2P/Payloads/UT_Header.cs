@@ -21,19 +21,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Header
     {
-        Header uut;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            uut = new Header();
-        }
+        private static readonly string s_headerHex =
+            "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a9" +
+            "8f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662493ed0e58f0100000000000000000000000000" +
+            "0000000000000000000000000000000000000000000001000111";
 
         [TestMethod]
         public void Size_Get()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
+            var uut = TestUtils.MakeHeader(null, val256);
             // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
             Assert.AreEqual(113, uut.Size); // 105 + nonce
@@ -43,7 +40,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void GetHashCodeTest()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
+            var uut = TestUtils.MakeHeader(null, val256);
             Assert.AreEqual(uut.Hash.GetHashCode(), uut.GetHashCode());
         }
 
@@ -52,8 +49,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             var snapshotCache = TestBlockchain.GetTestSnapshotCache().CloneCache();
-            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
-            uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
+            var uut = TestUtils.MakeHeader(null, val256);
+            uut.Witness = new Witness()
+            {
+                InvocationScript = Array.Empty<byte>(),
+                VerificationScript = Array.Empty<byte>()
+            };
 
             TestUtils.BlocksAdd(snapshotCache, uut.Hash, new TrimmedBlock()
             {
@@ -85,35 +86,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Deserialize()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(null, new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal);
-
-            uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
-
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111";
-
-            MemoryReader reader = new(hex.HexToBytes());
+            var uut = TestUtils.MakeHeader(null, UInt256.Zero);
+            MemoryReader reader = new(s_headerHex.HexToBytes());
             uut.Deserialize(ref reader);
-
-            AssertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, nonceVal, indexVal, scriptVal);
-        }
-
-        private void AssertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, ulong nonceVal, uint indexVal, Witness scriptVal)
-        {
-            Assert.AreEqual(val256, uut.PrevHash);
-            Assert.AreEqual(merkRoot, uut.MerkleRoot);
-            Assert.AreEqual(timestampVal, uut.Timestamp);
-            Assert.AreEqual(indexVal, uut.Index);
-            Assert.AreEqual(nonceVal, uut.Nonce);
-            Assert.AreEqual(val160, uut.NextConsensus);
-            Assert.AreEqual(0, uut.Witness.InvocationScript.Length);
-            Assert.AreEqual(scriptVal.Size, uut.Witness.Size);
-            Assert.AreEqual(scriptVal.VerificationScript.Span[0], uut.Witness.VerificationScript.Span[0]);
         }
 
         [TestMethod]
         public void Equals_Null()
         {
+            var uut = new Header();
             Assert.IsFalse(uut.Equals(null));
         }
 
@@ -121,34 +102,32 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameHeader()
         {
+            var uut = new Header();
             Assert.IsTrue(uut.Equals(uut));
         }
 
         [TestMethod]
         public void Equals_SameHash()
         {
-            Header newHeader = new();
             UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
-            TestUtils.SetupHeaderWithValues(null, newHeader, prevHash, out _, out _, out _, out _, out _, out _);
-            TestUtils.SetupHeaderWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _);
+            var uut = TestUtils.MakeHeader(null, prevHash);
+            var header = TestUtils.MakeHeader(null, prevHash);
 
-            Assert.IsTrue(uut.Equals(newHeader));
+            Assert.IsTrue(uut.Equals(header));
         }
 
         [TestMethod]
         public void Equals_SameObject()
         {
+            var uut = new Header();
             Assert.IsTrue(uut.Equals((object)uut));
         }
 
         [TestMethod]
         public void Serialize()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(null, uut, val256, out _, out _, out _, out _, out _, out _);
-
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111";
-            Assert.AreEqual(hex, uut.ToArray().ToHexString());
+            var uut = TestUtils.MakeHeader(null, UInt256.Zero);
+            Assert.AreEqual(s_headerHex, uut.ToArray().ToHexString());
         }
 
         [TestMethod]

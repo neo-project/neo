@@ -23,49 +23,43 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Block
     {
-        Block uut;
-        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
+        private static readonly string s_blockHex =
+                "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d326" +
+                "79baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9493ed0e58f01000000000000000000" +
+                "00000000000000000000000000000000000000000000000000000100011101000000000000000000000" +
+                "0000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
+
+        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false,
+            bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
         {
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var snapshotCache = hasSnapshot ? TestBlockchain.GetTestSnapshotCache() : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
+            var engine = ApplicationEngine.Create(TriggerType.Application,
+                tx, snapshotCache, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
-        }
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            uut = new Block();
         }
 
         [TestMethod]
         public void Transactions_Get()
         {
+            var uut = new Block();
             Assert.IsNull(uut.Transactions);
         }
 
         [TestMethod]
         public void Header_Get()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(null, uut, val256, out var merkRootVal, out _, out var timestampVal, out var nonceVal, out var indexVal, out var scriptVal, out _, 0);
-
+            var uut = TestUtils.MakeBlock(null, UInt256.Zero, 0);
             Assert.IsNotNull(uut.Header);
-            Assert.AreEqual(val256, uut.Header.PrevHash);
-            Assert.AreEqual(merkRootVal, uut.Header.MerkleRoot);
-            Assert.AreEqual(timestampVal, uut.Header.Timestamp);
-            Assert.AreEqual(indexVal, uut.Header.Index);
-            Assert.AreEqual(nonceVal, uut.Header.Nonce);
-            Assert.AreEqual(scriptVal, uut.Header.Witness);
+            Assert.AreEqual(UInt256.Zero, uut.Header.PrevHash);
         }
 
         [TestMethod]
         public void Size_Get()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(null, uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
+            var uut = TestUtils.MakeBlock(null, UInt256.Zero, 0);
             // header 4 + 32 + 32 + 8 + 4 + 1 + 20 + 4
             // tx 1
             Assert.AreEqual(114, uut.Size); // 106 + nonce
@@ -74,9 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get_1_Transaction()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(null, uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
-
+            var uut = TestUtils.MakeBlock(null, UInt256.Zero, 1);
             uut.Transactions = new[]
             {
                 TestUtils.GetTransaction(UInt160.Zero)
@@ -88,9 +80,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get_3_Transaction()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(null, uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
-
+            var uut = TestUtils.MakeBlock(null, UInt256.Zero, 3);
             uut.Transactions = new[]
             {
                 TestUtils.GetTransaction(UInt160.Zero),
@@ -104,50 +94,27 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(null, uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 1);
-
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
-            Assert.AreEqual(hex, uut.ToArray().ToHexString());
+            var uut = TestUtils.MakeBlock(null, UInt256.Zero, 1);
+            Assert.AreEqual(s_blockHex, uut.ToArray().ToHexString());
         }
 
         [TestMethod]
         public void Deserialize()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(null, new Block(), val256, out _, out var val160, out var timestampVal, out var indexVal, out var nonceVal, out var scriptVal, out var transactionsVal, 1);
-
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
-
-            MemoryReader reader = new(hex.HexToBytes());
+            var uut = TestUtils.MakeBlock(null, UInt256.Zero, 1);
+            MemoryReader reader = new(s_blockHex.HexToBytes());
             uut.Deserialize(ref reader);
             UInt256 merkRoot = uut.MerkleRoot;
 
-            AssertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, nonceVal, scriptVal, transactionsVal);
-        }
-
-        private void AssertStandardBlockTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, ulong nonceVal, uint indexVal, Witness scriptVal, Transaction[] transactionsVal, bool testTransactions = true)
-        {
-            Assert.AreEqual(val256, uut.PrevHash);
             Assert.AreEqual(merkRoot, uut.MerkleRoot);
-            Assert.AreEqual(timestampVal, uut.Timestamp);
-            Assert.AreEqual(indexVal, uut.Index);
-            Assert.AreEqual(nonceVal, uut.Nonce);
-            Assert.AreEqual(val160, uut.NextConsensus);
-            Assert.AreEqual(0, uut.Witness.InvocationScript.Length);
-            Assert.AreEqual(scriptVal.Size, uut.Witness.Size);
-            Assert.AreEqual(scriptVal.VerificationScript.Span[0], uut.Witness.VerificationScript.Span[0]);
-            if (testTransactions)
-            {
-                Assert.AreEqual(1, uut.Transactions.Length);
-                Assert.AreEqual(transactionsVal[0], uut.Transactions[0]);
-            }
         }
 
         [TestMethod]
         public void Equals_SameObj()
         {
+            var uut = new Block();
             Assert.IsTrue(uut.Equals(uut));
+
             var obj = uut as object;
             Assert.IsTrue(uut.Equals(obj));
         }
@@ -162,37 +129,33 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_DiffObj()
         {
-            Block newBlock = new();
-            UInt256 val256 = UInt256.Zero;
             UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
-            TestUtils.SetupBlockWithValues(null, newBlock, val256, out _, out _, out _, out ulong _, out uint _, out _, out _, 1);
-            TestUtils.SetupBlockWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _, out _, 0);
+            var block = TestUtils.MakeBlock(null, UInt256.Zero, 1);
+            var uut = TestUtils.MakeBlock(null, prevHash, 0);
 
-            Assert.IsFalse(uut.Equals(newBlock));
+            Assert.IsFalse(uut.Equals(block));
         }
 
         [TestMethod]
         public void Equals_Null()
         {
+            var uut = new Block();
             Assert.IsFalse(uut.Equals(null));
         }
 
         [TestMethod]
         public void Equals_SameHash()
         {
-            Block newBlock = new();
             UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
-            TestUtils.SetupBlockWithValues(null, newBlock, prevHash, out _, out _, out _, out _, out _, out _, out _, 1);
-            TestUtils.SetupBlockWithValues(null, uut, prevHash, out _, out _, out _, out _, out _, out _, out _, 1);
-
-            Assert.IsTrue(uut.Equals(newBlock));
+            var block = TestUtils.MakeBlock(null, prevHash, 1);
+            var uut = TestUtils.MakeBlock(null, prevHash, 1);
+            Assert.IsTrue(uut.Equals(block));
         }
 
         [TestMethod]
         public void ToJson()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(null, uut, val256, out _, out _, out var timeVal, out var indexVal, out var nonceVal, out _, out _, 1);
+            var uut = TestUtils.MakeBlock(null, UInt256.Zero, 1);
 
             JObject jObj = uut.ToJson(TestProtocolSettings.Default);
             Assert.IsNotNull(jObj);
@@ -201,9 +164,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(0, jObj["version"].AsNumber());
             Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000", jObj["previousblockhash"].AsString());
             Assert.AreEqual("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c", jObj["merkleroot"].AsString());
-            Assert.AreEqual(timeVal, jObj["time"].AsNumber());
-            Assert.AreEqual(nonceVal.ToString("X16"), jObj["nonce"].AsString());
-            Assert.AreEqual(indexVal, jObj["index"].AsNumber());
+            Assert.AreEqual(uut.Header.Timestamp, jObj["time"].AsNumber());
+            Assert.AreEqual(uut.Header.Nonce.ToString("X16"), jObj["nonce"].AsString());
+            Assert.AreEqual(uut.Header.Index, jObj["index"].AsNumber());
             Assert.AreEqual("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf", jObj["nextconsensus"].AsString());
 
             JObject scObj = (JObject)jObj["witnesses"][0];
