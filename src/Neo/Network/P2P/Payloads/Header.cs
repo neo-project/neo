@@ -131,7 +131,7 @@ namespace Neo.Network.P2P.Payloads
             UInt256.Length +    // PrevHash
             UInt256.Length +    // MerkleRoot
             sizeof(ulong) +     // Timestamp
-            sizeof(ulong) +      // Nonce
+            sizeof(ulong) +     // Nonce
             sizeof(uint) +      // Index
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
@@ -145,7 +145,10 @@ namespace Neo.Network.P2P.Payloads
             }
             set
             {
-                if (value.Length != 1) throw new ArgumentException(null, nameof(value));
+                if (value is null)
+                    throw new ArgumentNullException(nameof(IVerifiable.Witnesses));
+                if (value.Length != 1)
+                    throw new ArgumentException($"Expected 1 witness, got {value.Length}.", nameof(IVerifiable.Witnesses));
                 Witness = value[0];
             }
         }
