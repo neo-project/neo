@@ -5,7 +5,6 @@
     <RootNamespace>Neo.Wallets.SQLite</RootNamespace>
     <PackageId>Neo.Wallets.SQLite</PackageId>
     <ImplicitUsings>enable</ImplicitUsings>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,7 +5,6 @@
     <PackageId>Neo.Cryptography.MPT</PackageId>
     <RootNamespace>Neo.Cryptography</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
 </Project>

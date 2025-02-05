@@ -2,10 +2,8 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <PackageId>Neo.Plugins.StorageDumper</PackageId>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
