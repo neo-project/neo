@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native
 
         protected override bool StateIsClean(ApplicationEngine engine, NeoAccountState state)
         {
-            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
             {
                 if (state.VoteTo != null) return false;
             }
