@@ -134,7 +134,6 @@ namespace Neo.UnitTests.Persistence
 
             var entries = storeView.Seek([], SeekDirection.Backward).ToArray();
             Assert.AreEqual(0, entries.Length);
-            Assert.AreEqual(entries.Length, 37);
         }
     }
 }
