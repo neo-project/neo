@@ -68,10 +68,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Witness()
         {
             IVerifiable item = new ExtensiblePayload();
-            Action action = () => item.Witnesses = null;
-            Assert.ThrowsException<ArgumentNullException>(action);
+            Action actual = () => item.Witnesses = null;
+            Assert.ThrowsException<ArgumentNullException>(actual);
 
-            item.Witnesses = [new Witness()];
+            item.Witnesses = [new()];
             Assert.AreEqual(1, item.Witnesses.Length);
         }
     }

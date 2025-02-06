@@ -222,11 +222,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Witness()
         {
-            IVerifiable item = new Block { Header = new() };
+            IVerifiable item = new Block() { Header = new(), };
             Assert.AreEqual(1, item.Witnesses.Length);
 
-            Action action = () => item.Witnesses = null;
-            Assert.ThrowsException<NotSupportedException>(action);
+            Action actual = () => item.Witnesses = null;
+            Assert.ThrowsException<NotSupportedException>(actual);
         }
     }
 }
