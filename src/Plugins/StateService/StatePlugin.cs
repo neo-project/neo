@@ -328,7 +328,7 @@ namespace Neo.Plugins.StateService
                     jarr.Add(j);
                 }
                 i++;
-            };
+            }
             if (0 < jarr.Count)
             {
                 json["firstProof"] = GetProof(trie, contract.Id, Convert.FromBase64String(jarr.First()["key"].AsString()));
