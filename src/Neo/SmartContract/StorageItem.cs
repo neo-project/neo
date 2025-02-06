@@ -35,7 +35,7 @@ namespace Neo.SmartContract
         {
             get
             {
-                return _value.IsEmpty == false ? _value : _value = _cache switch
+                return !_value.IsEmpty ? _value : _value = _cache switch
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
                     IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default),
