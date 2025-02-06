@@ -135,10 +135,10 @@ namespace Neo.Plugins.StorageDumper
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            OnCommitStorage(system.Settings.Network, system.StoreView);
+            OnCommitStorage(system.Settings.Network);
         }
 
-        void OnCommitStorage(uint network, DataCache snapshot)
+        void OnCommitStorage(uint network)
         {
             if (_currentBlock != null && _writer != null)
             {
@@ -147,7 +147,7 @@ namespace Neo.Plugins.StorageDumper
             }
         }
 
-        private void InitFileWriter(uint network, DataCache snapshot)
+        private void InitFileWriter(uint network, IReadOnlyStoreView snapshot)
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (_writer == null
