@@ -13,10 +13,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -217,6 +217,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(0, txObj["version"].AsNumber());
             Assert.AreEqual(0, ((JArray)txObj["attributes"]).Count);
             Assert.AreEqual("0", txObj["netfee"].AsString());
+        }
+
+        [TestMethod]
+        public void Witness()
+        {
+            IVerifiable item = new Block() { Header = new(), };
+            Assert.AreEqual(1, item.Witnesses.Length);
+
+            Action actual = () => item.Witnesses = null;
+            Assert.ThrowsException<NotSupportedException>(actual);
         }
     }
 }

@@ -150,5 +150,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662493ed0e58f01000000000000000000000000000000000000000000000000000000000000000000000001000111";
             Assert.AreEqual(hex, uut.ToArray().ToHexString());
         }
+
+        [TestMethod]
+        public void Witness()
+        {
+            IVerifiable item = new Header();
+            Action actual = () => item.Witnesses = null;
+            Assert.ThrowsException<ArgumentNullException>(actual);
+
+            item.Witnesses = [new()];
+            Assert.AreEqual(1, item.Witnesses.Length);
+        }
     }
 }
