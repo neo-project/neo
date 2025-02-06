@@ -40,12 +40,6 @@ namespace Neo.Persistence
             }
         }
 
-        public T? GetFromCache<T>() where T : IStorageCacheEntry
-        {
-            return _store.SerializedCache.Get<T>();
-        }
-
-
         /// <inheritdoc/>
         public bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item)
         {
