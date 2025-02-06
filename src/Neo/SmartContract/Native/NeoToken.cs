@@ -120,11 +120,11 @@ namespace Neo.SmartContract.Native
         {
             if (hfChecker(Hardfork.HF_Echidna, blockHeight))
             {
-                manifest.SupportedStandards = ["NEP-17", "NEP-27"];
+                manifest.SupportedStandards = new[] { "NEP-17", "NEP-27" };
             }
             else
             {
-                manifest.SupportedStandards = ["NEP-17"];
+                manifest.SupportedStandards = new[] { "NEP-17" };
             }
         }
 
