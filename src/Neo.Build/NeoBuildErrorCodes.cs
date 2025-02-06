@@ -9,6 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Exceptions.Interfaces;
+using System;
+using System.Diagnostics.CodeAnalysis;
+
 namespace Neo.Build
 {
     internal static partial class NeoBuildErrorCodes
@@ -17,5 +21,16 @@ namespace Neo.Build
 
         public static string MakeErrorCode(int errorCode) =>
             $"{ErrorCodePrefix}{errorCode:d04}";
+
+        public static string FormatErrorMessage(
+            INeoBuildException exception,
+            [DisallowNull] string message) =>
+            $"{exception.ErrorCode}: {message}";
+
+        public static string FormatErrorMessage(
+            INeoBuildException exception,
+            [DisallowNull] string message,
+            [DisallowNull] Exception innerException) =>
+            $"{FormatErrorMessage(exception, message)} {innerException.Message}";
     }
 }

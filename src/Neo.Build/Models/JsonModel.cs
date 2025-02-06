@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Build.Exceptions;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json;
 
@@ -21,15 +22,17 @@ namespace Neo.Build.Models
 
         public abstract override string? ToString();
 
-        public abstract string ToJson();
+        public abstract string ToJson(JsonSerializerOptions? options);
 
-        public static T? FromJson<T>(string jsonString, JsonSerializerOptions? options = default)
+        public static T? FromJson<T>(
+            [DisallowNull][StringSyntax(StringSyntaxAttribute.Json)] string jsonString,
+            JsonSerializerOptions? options = default)
             where T : notnull, JsonModel =>
             JsonSerializer.Deserialize<T>(
                 jsonString,
                 options ?? NeoBuildDefaults.JsonDefaultSerializerOptions);
 
-        public static T? FromJson<T>(FileInfo file, JsonSerializerOptions? options = default)
+        public static T? FromJson<T>([DisallowNull] FileInfo file, JsonSerializerOptions? options = default)
             where T : notnull, JsonModel
         {
             if (file.Exists == false)

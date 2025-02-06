@@ -13,12 +13,28 @@ namespace Neo.Build
 {
     internal static partial class NeoBuildErrorCodes
     {
+        /// <summary>
+        /// All error codes within the build process
+        /// related to miss caught exceptions.
+        /// </summary>
         public sealed class General
         {
-            private const int Base = 1000;
+            internal const int Base = 1000;
 
+            private General() { }
+
+            // Unknown Exception
+            public static int InternalCrash => Base;
+
+            // File Exceptions
             public static int FileNotFound => Base + 1;
             public static int FileAccessDenied => Base + 2;
+
+            // Format Exceptions
+            public static int InvalidFormat => Base + 10;
+            public static int InvalidInputFormat => Base + 11;
+            public static int InvalidJsonFormat => Base + 12;
+            public static int InvalidFileFormat => Base + 13;
         }
     }
 }

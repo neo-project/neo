@@ -11,28 +11,36 @@
 
 using Neo.Build.Exceptions.Interfaces;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Build.Exceptions
 {
     /// <inheritdoc />
-    internal abstract class NeoBuildException() : Exception(), INeoBuildException
+    internal class NeoBuildException() : Exception(), INeoBuildException
     {
         /// <summary>
         /// Used for exit code and making property <see cref="ErrorCode" />.
         /// </summary>
-        public abstract new int HResult { get; }
+        public virtual new int HResult =>
+            NeoBuildErrorCodes.General.InternalCrash;
 
         /// <summary>
         /// Used for standardizing build errors.
         /// </summary>
-        public abstract new string Message { get; }
+        public virtual new string Message =>
+            InnerException is null ?
+                NeoBuildErrorCodes.FormatErrorMessage(this, base.Message) :
+                NeoBuildErrorCodes.FormatErrorMessage(this, base.Message, InnerException);
 
         /// <summary>
         /// Message returned to the client when a build fails.
         /// </summary>
-        public virtual string ErrorCode => NeoBuildErrorCodes.MakeErrorCode(HResult);
+        public virtual string ErrorCode =>
+            NeoBuildErrorCodes.MakeErrorCode(HResult);
 
         /// <inheritdoc />
-        public abstract override string ToString();
+        [return: NotNull]
+        public virtual new string ToString() =>
+            Message;
     }
 }

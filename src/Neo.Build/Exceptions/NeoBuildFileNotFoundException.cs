@@ -22,13 +22,12 @@ namespace Neo.Build.Exceptions
         FileInfo fileInfo) : NeoBuildException(), IFileNotFoundException
     {
         /// <inheritdoc />
-        public override int HResult => NeoBuildErrorCodes.General.FileNotFound;
+        public override int HResult =>
+            NeoBuildErrorCodes.General.FileNotFound;
 
         /// <inheritdoc />
-        public override string ErrorCode => NeoBuildErrorCodes.MakeErrorCode(HResult);
-
-        /// <inheritdoc />
-        public override string Message => $"{ErrorCode}: File '{FileInfo}' was not found.";
+        public override string Message =>
+            NeoBuildErrorCodes.FormatErrorMessage(this, $"File '{FileInfo}' was not found.");
 
         /// <inheritdoc />
         public FileInfo FileInfo => fileInfo;

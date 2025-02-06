@@ -13,13 +13,16 @@ namespace Neo.Build
 {
     internal static partial class NeoBuildErrorCodes
     {
+        /// <summary>
+        /// All error codes caused by wallet related processing.
+        /// </summary>
         public sealed class Wallet
         {
-            private const int Base = 2000;
-
-            public static int FileNotFound => Base + 1;
+            private const int Base = General.Base * 2;
 
             private Wallet() { }
+
+            public static int FileNotFound => Base + 1;
         }
     }
 }
