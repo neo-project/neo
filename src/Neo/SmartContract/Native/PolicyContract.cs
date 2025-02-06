@@ -94,7 +94,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The network fee per transaction byte.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public long GetFeePerByte(IReadOnlyStore snapshot)
+        public long GetFeePerByte(IReadOnlyStoreView snapshot)
         {
             return (long)(BigInteger)snapshot[_feePerByte];
         }
@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The execution fee factor.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetExecFeeFactor(IReadOnlyStore snapshot)
+        public uint GetExecFeeFactor(IReadOnlyStoreView snapshot)
         {
             return (uint)(BigInteger)snapshot[_execFeeFactor];
         }
@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The storage price.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetStoragePrice(IReadOnlyStore snapshot)
+        public uint GetStoragePrice(IReadOnlyStoreView snapshot)
         {
             return (uint)(BigInteger)snapshot[_storagePrice];
         }
@@ -128,7 +128,7 @@ namespace Neo.SmartContract.Native
         /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
+        public uint GetAttributeFee(IReadOnlyStoreView snapshot, byte attributeType)
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
 
@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native
         /// <param name="account">The account to be checked.</param>
         /// <returns><see langword="true"/> if the account is blocked; otherwise, <see langword="false"/>.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsBlocked(IReadOnlyStore snapshot, UInt160 account)
+        public bool IsBlocked(IReadOnlyStoreView snapshot, UInt160 account)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
