@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -47,21 +46,6 @@ namespace Neo.Extensions
             // will overflow "int.MaxValue". Seeing how "int.MinValue * -1"
             // value would be "int.MaxValue + 1"
             return unchecked(x.AsSpan().SequenceCompareTo(y.AsSpan()) * _direction);
-        }
-
-        /// <inheritdoc />
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Compare(object? x, object? y)
-        {
-            if (ReferenceEquals(x, y)) return 0;
-
-            if (x is not null and not byte[])
-                throw new ArgumentException($"Unable to cast '{x.GetType().FullName}' to '{typeof(byte[]).FullName}'.");
-
-            if (y is not null and not byte[])
-                throw new ArgumentException($"Unable to cast '{y.GetType().FullName}' to '{typeof(byte[]).FullName}'.");
-
-            return Compare(x as byte[], y as byte[]);
         }
     }
 }
