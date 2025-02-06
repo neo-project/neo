@@ -13,7 +13,6 @@
 
 using Neo.Extensions;
 using Neo.SmartContract;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -448,7 +447,8 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
+        /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>.
+        /// If the entry is not in the cache, it will be automatically loaded from the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <param name="serializedCache">Serialized cache</param>
@@ -460,7 +460,9 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage. If the entry doesn't exist, the factory will be used to create a new one.
+        /// Reads a specified entry from the cache.
+        /// If the entry is not in the cache, it will be automatically loaded from the underlying storage.
+        /// If the entry doesn't exist, the factory will be used to create a new one.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <param name="factory">
