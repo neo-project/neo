@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Native
             {
                 if (state.VoteTo != null) return false;
             }
-            return state.Balance == 0;
+            return base.StateIsClean(engine, state);
         }
 
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)

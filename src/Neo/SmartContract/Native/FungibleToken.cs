@@ -174,7 +174,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        protected virtual bool StateIsClean(ApplicationEngine engine, TState state_from) => state_from.Balance == 0;
+        protected virtual bool StateIsClean(ApplicationEngine engine, TState state) => state.Balance == 0;
 
         internal virtual void OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
         {
