@@ -49,7 +49,7 @@ namespace Neo.Persistence
 
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
         private readonly HashSet<StorageKey> _changeSet = [];
-        private readonly Dictionary<Type, IStorageCacheEntry?> _serializedCacheChanges = [];
+        private readonly SerializedCache _serializedCacheChanges = new();
 
         /// <summary>
         /// Serialized cache
@@ -158,7 +158,7 @@ namespace Neo.Persistence
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void AddToCache(Type type, IStorageCacheEntry? value)
         {
-            _serializedCacheChanges[type] = value;
+            _serializedCacheChanges.Set(type, value);
             SerializedCache.Remove(type);
         }
 
@@ -169,9 +169,11 @@ namespace Neo.Persistence
         /// <returns>Entry</returns>
         public T? GetFromCache<T>() where T : IStorageCacheEntry
         {
-            if (_serializedCacheChanges.TryGetValue(typeof(T), out var value))
+            var value = _serializedCacheChanges.Get<T>();
+
+            if (value != null)
             {
-                return (T?)value;
+                return value;
             }
 
             return SerializedCache.Get<T>();
@@ -210,10 +212,7 @@ namespace Neo.Persistence
                             break;
                     }
                 }
-                foreach (var serialized in _serializedCacheChanges)
-                {
-                    SerializedCache.Set(serialized.Key, serialized.Value);
-                }
+                SerializedCache.CopyFrom(_serializedCacheChanges);
                 _serializedCacheChanges.Clear();
                 _changeSet.Clear();
             }

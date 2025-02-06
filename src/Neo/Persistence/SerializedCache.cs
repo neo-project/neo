@@ -12,7 +12,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -20,7 +19,7 @@ namespace Neo.Persistence
 {
     public class SerializedCache
     {
-        private readonly ConcurrentDictionary<Type, object> _cache = new();
+        private readonly Dictionary<Type, IStorageCacheEntry> _cache = [];
 
         /// <summary>
         /// Get cached entry
@@ -43,7 +42,7 @@ namespace Neo.Persistence
         /// <typeparam name="T">Type</typeparam>
         /// <param name="value">Value</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Set<T>(T? value)
+        public void Set<T>(T? value) where T : IStorageCacheEntry
         {
             Set(typeof(T), value);
         }
@@ -53,7 +52,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="type">Type</param>
         /// <param name="value">Value</param>
-        public void Set(Type type, object? value)
+        public void Set(Type type, IStorageCacheEntry? value)
         {
             if (value == null)
             {
@@ -61,7 +60,10 @@ namespace Neo.Persistence
             }
             else
             {
-                _cache[type] = value;
+                lock (_cache)
+                {
+                    _cache[type] = value;
+                }
             }
         }
 
@@ -72,7 +74,34 @@ namespace Neo.Persistence
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Remove(Type type)
         {
-            _cache.Remove(type, out _);
+            lock (_cache)
+            {
+                _cache.Remove(type, out _);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clear()
+        {
+            lock (_cache)
+            {
+                _cache.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Copy from
+        /// </summary>
+        /// <param name="value">Value</param>
+        public void CopyFrom(SerializedCache value)
+        {
+            lock (_cache) lock (value._cache)
+                {
+                    foreach (var serialized in value._cache)
+                    {
+                        _cache[serialized.Key] = serialized.Value;
+                    }
+                }
         }
     }
 }
