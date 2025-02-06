@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
-            manifest.SupportedStandards = new[] { "NEP-17" };
+            manifest.SupportedStandards = ["NEP-17"];
         }
 
         internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
@@ -158,10 +158,11 @@ namespace Neo.SmartContract.Native
                 else
                 {
                     OnBalanceChanging(engine, from, state_from, -amount);
-                    if (state_from.Balance == amount)
+
+                    state_from.Balance -= amount;
+                    if (StateIsClean(engine, state_from))
                         engine.SnapshotCache.Delete(key_from);
-                    else
-                        state_from.Balance -= amount;
+
                     StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
                     StorageItem storage_to = engine.SnapshotCache.GetAndChange(key_to, () => new StorageItem(new TState()));
                     TState state_to = storage_to.GetInteroperable<TState>();
@@ -172,6 +173,8 @@ namespace Neo.SmartContract.Native
             await PostTransferAsync(engine, from, to, amount, data, true);
             return true;
         }
+
+        protected virtual bool StateIsClean(ApplicationEngine engine, TState state_from) => state_from.Balance == 0;
 
         internal virtual void OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
         {

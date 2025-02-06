@@ -13,7 +13,6 @@
 
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
@@ -81,6 +80,15 @@ namespace Neo.SmartContract.Native
         public override BigInteger TotalSupply(IReadOnlyStoreView snapshot)
         {
             return TotalAmount;
+        }
+
+        protected override bool StateIsClean(ApplicationEngine engine, NeoAccountState state)
+        {
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+            {
+                if (state.VoteTo != null) return false;
+            }
+            return state.Balance == 0;
         }
 
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
