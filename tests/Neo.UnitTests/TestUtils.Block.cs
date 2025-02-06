@@ -59,10 +59,10 @@ namespace Neo.UnitTests
         {
             var block = new Block();
             var header = MakeHeader(snapshot, prevHash);
-            Transaction[] transactions = new Transaction[numberOfTransactions];
+            var transactions = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)
             {
-                for (int i = 0; i < numberOfTransactions; i++)
+                for (var i = 0; i < numberOfTransactions; i++)
                 {
                     transactions[i] = GetTransaction(UInt160.Zero);
                 }
@@ -83,7 +83,7 @@ namespace Neo.UnitTests
                 transactions.Add(CreateValidTx(snapshot, wallet, account));
             }
 
-            return CreateBlockWithValidTransactions(snapshot, account, transactions.ToArray());
+            return CreateBlockWithValidTransactions(snapshot, account, [.. transactions]);
         }
 
         public static Block CreateBlockWithValidTransactions(DataCache snapshot,
@@ -101,7 +101,7 @@ namespace Neo.UnitTests
             var contract = Contract.CreateMultiSigContract(1, TestProtocolSettings.SoleNode.StandbyCommittee);
             var sc = new ContractParametersContext(snapshot, header, TestProtocolSettings.SoleNode.Network);
             var signature = header.Sign(account.GetKey(), TestProtocolSettings.SoleNode.Network);
-            sc.AddSignature(contract, TestProtocolSettings.SoleNode.StandbyCommittee[0], signature.ToArray());
+            sc.AddSignature(contract, TestProtocolSettings.SoleNode.StandbyCommittee[0], [.. signature]);
             block.Header.Witness = sc.GetWitnesses()[0];
 
             return block;
@@ -184,11 +184,11 @@ namespace Neo.UnitTests
             };
 
             // Serialize the valid block
-            byte[] validBlockBytes = validBlock.ToArray();
+            var validBlockBytes = validBlock.ToArray();
 
             // Corrupt the serialized data
             // For example, we can truncate the data by removing the last few bytes
-            byte[] invalidBlockBytes = new byte[validBlockBytes.Length - 5];
+            var invalidBlockBytes = new byte[validBlockBytes.Length - 5];
             Array.Copy(validBlockBytes, invalidBlockBytes, invalidBlockBytes.Length);
 
             // Convert the corrupted data to a Base64 string

@@ -29,7 +29,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            UInt256 val256 = UInt256.Zero;
+            var val256 = UInt256.Zero;
             var uut = TestUtils.MakeHeader(null, val256);
             // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
@@ -39,7 +39,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void GetHashCodeTest()
         {
-            UInt256 val256 = UInt256.Zero;
+            var val256 = UInt256.Zero;
             var uut = TestUtils.MakeHeader(null, val256);
             Assert.AreEqual(uut.Hash.GetHashCode(), uut.GetHashCode());
         }
@@ -47,7 +47,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void TrimTest()
         {
-            UInt256 val256 = UInt256.Zero;
+            var val256 = UInt256.Zero;
             var snapshotCache = TestBlockchain.GetTestSnapshotCache().CloneCache();
             var uut = TestUtils.MakeHeader(null, val256);
             uut.Witness = new Witness()
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameHash()
         {
-            UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
+            var prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
             var uut = TestUtils.MakeHeader(null, prevHash);
             var header = TestUtils.MakeHeader(null, prevHash);
 
@@ -134,8 +134,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Witness()
         {
             IVerifiable item = new Header();
-            Action actual = () => item.Witnesses = null;
-            Assert.ThrowsException<ArgumentNullException>(actual);
+            void Actual() => item.Witnesses = null;
+            Assert.ThrowsException<ArgumentNullException>(Actual);
 
             item.Witnesses = [new()];
             Assert.AreEqual(1, item.Witnesses.Length);

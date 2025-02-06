@@ -22,7 +22,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var header = TestUtils.MakeHeader(null, UInt256.Zero);
-
             var test = HeadersPayload.Create();
             Assert.AreEqual(1, test.Size);
             test = HeadersPayload.Create(header);

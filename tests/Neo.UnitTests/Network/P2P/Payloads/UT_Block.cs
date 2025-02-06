@@ -69,10 +69,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get_1_Transaction()
         {
             var uut = TestUtils.MakeBlock(null, UInt256.Zero, 1);
-            uut.Transactions = new[]
-            {
+            uut.Transactions =
+            [
                 TestUtils.GetTransaction(UInt160.Zero)
-            };
+            ];
 
             Assert.AreEqual(167, uut.Size); // 159 + nonce
         }
@@ -81,12 +81,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get_3_Transaction()
         {
             var uut = TestUtils.MakeBlock(null, UInt256.Zero, 3);
-            uut.Transactions = new[]
-            {
+            uut.Transactions =
+            [
                 TestUtils.GetTransaction(UInt160.Zero),
                 TestUtils.GetTransaction(UInt160.Zero),
                 TestUtils.GetTransaction(UInt160.Zero)
-            };
+            ];
 
             Assert.AreEqual(273, uut.Size); // 265 + nonce
         }
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var uut = TestUtils.MakeBlock(null, UInt256.Zero, 1);
             MemoryReader reader = new(s_blockHex.HexToBytes());
             uut.Deserialize(ref reader);
-            UInt256 merkRoot = uut.MerkleRoot;
+            var merkRoot = uut.MerkleRoot;
 
             Assert.AreEqual(merkRoot, uut.MerkleRoot);
         }
@@ -129,7 +129,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_DiffObj()
         {
-            UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
+            var prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
             var block = TestUtils.MakeBlock(null, UInt256.Zero, 1);
             var uut = TestUtils.MakeBlock(null, prevHash, 0);
 
@@ -146,7 +146,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameHash()
         {
-            UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
+            var prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
             var block = TestUtils.MakeBlock(null, prevHash, 1);
             var uut = TestUtils.MakeBlock(null, prevHash, 1);
             Assert.IsTrue(uut.Equals(block));
@@ -156,8 +156,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             var uut = TestUtils.MakeBlock(null, UInt256.Zero, 1);
-
-            JObject jObj = uut.ToJson(TestProtocolSettings.Default);
+            var jObj = uut.ToJson(TestProtocolSettings.Default);
             Assert.IsNotNull(jObj);
             Assert.AreEqual("0x942065e93848732c2e7844061fa92d20c5d9dc0bc71d420a1ea71b3431fc21b4", jObj["hash"].AsString());
             Assert.AreEqual(167, jObj["size"].AsNumber()); // 159 + nonce
@@ -169,12 +168,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(uut.Header.Index, jObj["index"].AsNumber());
             Assert.AreEqual("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf", jObj["nextconsensus"].AsString());
 
-            JObject scObj = (JObject)jObj["witnesses"][0];
+            var scObj = (JObject)jObj["witnesses"][0];
             Assert.AreEqual("", scObj["invocation"].AsString());
             Assert.AreEqual("EQ==", scObj["verification"].AsString());
 
             Assert.IsNotNull(jObj["tx"]);
-            JObject txObj = (JObject)jObj["tx"][0];
+            var txObj = (JObject)jObj["tx"][0];
             Assert.AreEqual("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c", txObj["hash"].AsString());
             Assert.AreEqual(53, txObj["size"].AsNumber());
             Assert.AreEqual(0, txObj["version"].AsNumber());
@@ -187,9 +186,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             IVerifiable item = new Block() { Header = new(), };
             Assert.AreEqual(1, item.Witnesses.Length);
-
-            Action actual = () => item.Witnesses = null;
-            Assert.ThrowsException<NotSupportedException>(actual);
+            void Actual() => item.Witnesses = null;
+            Assert.ThrowsException<NotSupportedException>(Actual);
         }
     }
 }
