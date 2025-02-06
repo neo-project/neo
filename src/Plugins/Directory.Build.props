@@ -5,6 +5,7 @@
 
   <PropertyGroup>
     <PackageId>Neo.Plugins.$(MSBuildProjectName)</PackageId>
+    <RootNamespace>$(PackageId)<RootNamespace>
     <PackageOutputPath>../../../pkgs/</PackageOutputPath>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
