@@ -163,10 +163,10 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Get from cache
+        /// Tries to get the entry from cache.
         /// </summary>
         /// <typeparam name="T">Cache type</typeparam>
-        /// <returns>Entry</returns>
+        /// <returns>The entry if found, null otherwise.</returns>
         public T? GetFromCache<T>() where T : IStorageCacheEntry
         {
             var value = _serializedCacheChanges.Get<T>();

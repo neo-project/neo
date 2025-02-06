@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The network fee per transaction byte.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public long GetFeePerByte(IReadOnlyStoreView snapshot)
+        public long GetFeePerByte(DataCache snapshot)
         {
             var cached = snapshot.GetFromCache<LastFeePerByte>();
             if (cached != null)
@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The execution fee factor.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetExecFeeFactor(IReadOnlyStoreView snapshot)
+        public uint GetExecFeeFactor(DataCache snapshot)
         {
             var cached = snapshot.GetFromCache<LastExecFee>();
             if (cached != null)
@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The storage price.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetStoragePrice(IReadOnlyStoreView snapshot)
+        public uint GetStoragePrice(DataCache snapshot)
         {
             var cached = snapshot.GetFromCache<LastStorageFee>();
             if (cached != null)

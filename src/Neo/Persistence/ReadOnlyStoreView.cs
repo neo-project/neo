@@ -9,22 +9,25 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.SmartContract;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Persistence
 {
     public class ReadOnlyStoreView : IReadOnlyStoreView
     {
-        private readonly IReadOnlyStore store;
+        private readonly IReadOnlyStore _store;
 
         public ReadOnlyStoreView(IReadOnlyStore store)
         {
-            this.store = store;
+            _store = store;
         }
 
         /// <inheritdoc/>
-        public bool Contains(StorageKey key) => store.Contains(key.ToArray());
+        public bool Contains(StorageKey key) => _store.Contains(key.ToArray());
 
         /// <inheritdoc/>
         public StorageItem this[StorageKey key]
@@ -37,12 +40,23 @@ namespace Neo.Persistence
             }
         }
 
-        /// <inheritdoc/>
-        public bool TryGet(StorageKey key, out StorageItem item)
+        public T? GetFromCache<T>() where T : IStorageCacheEntry
         {
-            var ok = store.TryGet(key.ToArray(), out byte[] value);
-            item = ok ? new StorageItem(value) : null;
-            return ok;
+            return _store.SerializedCache.Get<T>();
+        }
+
+
+        /// <inheritdoc/>
+        public bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item)
+        {
+            if (_store.TryGet(key.ToArray(), out var value))
+            {
+                item = new StorageItem(value);
+                return true;
+            }
+
+            item = null;
+            return false;
         }
     }
 }
