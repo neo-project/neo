@@ -76,7 +76,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +          // ValidBlockEnd
             UInt160.Length +        // Sender
             Data.GetVarSize() +     // Data
-            1 + Witness.Size;       // Witness
+            (Witness is null ? 1 : 1 + Witness.Size); // Witness, cannot be null for invalid payload
 
         Witness[] IVerifiable.Witnesses
         {
