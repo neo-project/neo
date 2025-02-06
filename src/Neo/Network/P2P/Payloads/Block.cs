@@ -84,8 +84,14 @@ namespace Neo.Network.P2P.Payloads
         public Witness Witness => Header.Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
+
         public int Size => Header.Size + Transactions.GetVarSize();
-        Witness[] IVerifiable.Witnesses { get => ((IVerifiable)Header).Witnesses; set => throw new NotSupportedException(); }
+
+        Witness[] IVerifiable.Witnesses
+        {
+            get => ((IVerifiable)Header).Witnesses;
+            set => throw new NotSupportedException();
+        }
 
         public void Deserialize(ref MemoryReader reader)
         {
