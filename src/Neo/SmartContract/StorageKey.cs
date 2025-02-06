@@ -55,6 +55,12 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="StorageKey"/> class.
+        /// </summary>
+        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
+        internal StorageKey(ReadOnlySpan<byte> cache) : this(cache.ToArray()) { }
+
+        /// <summary>
         /// Creates a search prefix for a contract.
         /// </summary>
         /// <param name="id">The id of the contract.</param>
