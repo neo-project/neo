@@ -42,7 +42,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <typeparam name="T">Type</typeparam>
         /// <param name="value">Value</param>
-        [MethodImplAttribute(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set<T>(T? value)
         {
             Set(typeof(T), value);
@@ -55,8 +55,24 @@ namespace Neo.Persistence
         /// <param name="value">Value</param>
         public void Set(Type type, object? value)
         {
-            if (value == null) _cache.Remove(type, out _);
-            else _cache[type] = value;
+            if (value == null)
+            {
+                Remove(type);
+            }
+            else
+            {
+                _cache[type] = value;
+            }
+        }
+
+        /// <summary>
+        /// Remove entry
+        /// </summary>
+        /// <param name="type">Type</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Remove(Type type)
+        {
+            _cache.Remove(type, out _);
         }
     }
 }

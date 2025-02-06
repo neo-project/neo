@@ -305,7 +305,7 @@ namespace Neo.SmartContract.Native
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
             var end = Ledger.CurrentIndex(snapshot) + 1;
-            var cached = snapshot.SerializedCache.Get<LastGasPerBlock>();
+            var cached = snapshot.GetFromCache<LastGasPerBlock>();
             if (cached != null && cached.Index < end)
             {
                 return cached.GasPerBlock;
@@ -337,10 +337,10 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[_registerPrice];
         }
 
-        private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
+        internal IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
         {
-            byte[] key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray();
-            byte[] boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
+            var key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray();
+            var boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.Span[^sizeof(uint)..]), (BigInteger)u.Value));
         }

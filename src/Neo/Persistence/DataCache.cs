@@ -48,9 +48,9 @@ namespace Neo.Persistence
             public TrackState State { get; set; } = state;
         }
 
-        private readonly Dictionary<StorageKey, Trackable> _dictionary = new();
-        private readonly HashSet<StorageKey> _changeSet = new();
-        private readonly Dictionary<Type, object?> _serializedCacheChanges = new();
+        private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
+        private readonly HashSet<StorageKey> _changeSet = [];
+        private readonly Dictionary<Type, IStorageCacheEntry?> _serializedCacheChanges = [];
 
         /// <summary>
         /// Serialized cache
@@ -146,7 +146,7 @@ namespace Neo.Persistence
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
         public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry
         {
-            _serializedCacheChanges[typeof(T)] = value;
+            AddToCache(typeof(T), value);
         }
 
         /// <summary>
@@ -156,9 +156,26 @@ namespace Neo.Persistence
         /// <param name="value">The data of the entry.</param>
         /// <exception cref="ArgumentException">The entry has already been cached.</exception>
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
-        internal void AddToCache(Type type, object? value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void AddToCache(Type type, IStorageCacheEntry? value)
         {
             _serializedCacheChanges[type] = value;
+            SerializedCache.Remove(type);
+        }
+
+        /// <summary>
+        /// Get from cache
+        /// </summary>
+        /// <typeparam name="T">Cache type</typeparam>
+        /// <returns>Entry</returns>
+        public T? GetFromCache<T>() where T : IStorageCacheEntry
+        {
+            if (_serializedCacheChanges.TryGetValue(typeof(T), out var value))
+            {
+                return (T?)value;
+            }
+
+            return SerializedCache.Get<T>();
         }
 
         /// <summary>
@@ -430,7 +447,7 @@ namespace Neo.Persistence
         {
             var ret = GetAndChange(key, serializedCache.GetStorageItem);
             ret!.FromReplica(serializedCache.GetStorageItem());
-            _serializedCacheChanges[typeof(T)] = serializedCache;
+            AddToCache(serializedCache);
         }
 
         /// <summary>
