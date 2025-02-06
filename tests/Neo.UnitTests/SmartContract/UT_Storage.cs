@@ -29,9 +29,11 @@ namespace Neo.UnitTests.SmartContract
             StorageKey keyB = new ReadOnlyMemory<byte>(keyData);
             StorageKey keyC = new ReadOnlySpan<byte>(keyData);
 
+            Assert.AreEqual(0, keyA.Id);
             Assert.AreEqual(keyA.Id, keyB.Id);
             Assert.AreEqual(keyB.Id, keyC.Id);
 
+            CollectionAssert.AreEqual(new byte[] { 0x12 }, keyA.Key.Span.ToArray());
             CollectionAssert.AreEqual(keyA.Key.Span.ToArray(), keyB.Key.Span.ToArray());
             CollectionAssert.AreEqual(keyB.Key.Span.ToArray(), keyC.Key.Span.ToArray());
         }
