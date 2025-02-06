@@ -70,7 +70,7 @@ namespace Neo.Persistence
         public byte[]? TryGet(byte[] key)
         {
             if (!_innerData.TryGetValue(key, out var value)) return null;
-            return value;
+            return value[..];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
