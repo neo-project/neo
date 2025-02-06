@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.SmartContract;
 using System.Diagnostics.CodeAnalysis;
 
@@ -21,7 +23,7 @@ namespace Neo.Persistence
         /// </summary>
         public class CacheEntry(
             [DisallowNull] StorageKey key,
-            [AllowNull] StorageItem value,
+            [AllowNull] StorageItem? value,
             [DisallowNull] TrackState state)
         {
             /// <summary>
@@ -32,7 +34,7 @@ namespace Neo.Persistence
             /// <summary>
             /// The data of the cached entry.
             /// </summary>
-            public StorageItem Value { [return: MaybeNull] get; [param: AllowNull] internal set; } = value;
+            public StorageItem? Value { [return: MaybeNull] get; [param: AllowNull] internal set; } = value;
 
             /// <summary>
             /// The state of the cached entry.
