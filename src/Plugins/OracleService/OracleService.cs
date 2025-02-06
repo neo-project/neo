@@ -171,7 +171,7 @@ namespace Neo.Plugins.OracleService
             ConsoleHelper.Info($"Oracle status: ", $"{status}");
         }
 
-        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
 
@@ -274,7 +274,7 @@ namespace Neo.Plugins.OracleService
             await Task.WhenAll(tasks);
         }
 
-        private async Task ProcessRequestAsync(StorageCache snapshot, OracleRequest req)
+        private async Task ProcessRequestAsync(DataCache snapshot, OracleRequest req)
         {
             Log($"[{req.OriginalTxid}] Process oracle request start:<{req.Url}>");
 
@@ -347,7 +347,7 @@ namespace Neo.Plugins.OracleService
         }
 
 
-        private void SyncPendingQueue(StorageCache snapshot)
+        private void SyncPendingQueue(DataCache snapshot)
         {
             var offChainRequests = NativeContract.Oracle.GetRequests(snapshot).ToDictionary(r => r.Item1, r => r.Item2);
             var onChainRequests = pendingQueue.Keys.Except(offChainRequests.Keys);
@@ -377,7 +377,7 @@ namespace Neo.Plugins.OracleService
             }
         }
 
-        public static Transaction CreateResponseTx(StorageCache snapshot, OracleRequest request, OracleResponse response, ECPoint[] oracleNodes, ProtocolSettings settings, bool useCurrentHeight = false)
+        public static Transaction CreateResponseTx(DataCache snapshot, OracleRequest request, OracleResponse response, ECPoint[] oracleNodes, ProtocolSettings settings, bool useCurrentHeight = false)
         {
             var requestTx = NativeContract.Ledger.GetTransactionState(snapshot, request.OriginalTxid);
             var n = oracleNodes.Length;
@@ -470,7 +470,7 @@ namespace Neo.Plugins.OracleService
             return tx;
         }
 
-        private void AddResponseTxSign(StorageCache snapshot, ulong requestId, ECPoint oraclePub, byte[] sign, Transaction responseTx = null, Transaction backupTx = null, byte[] backupSign = null)
+        private void AddResponseTxSign(DataCache snapshot, ulong requestId, ECPoint oraclePub, byte[] sign, Transaction responseTx = null, Transaction backupTx = null, byte[] backupSign = null)
         {
             var task = pendingQueue.GetOrAdd(requestId, _ => new OracleTask
             {
@@ -524,7 +524,7 @@ namespace Neo.Plugins.OracleService
             return afterObjects.ToByteArray(false);
         }
 
-        private bool CheckTxSign(StorageCache snapshot, Transaction tx, ConcurrentDictionary<ECPoint, byte[]> OracleSigns)
+        private bool CheckTxSign(DataCache snapshot, Transaction tx, ConcurrentDictionary<ECPoint, byte[]> OracleSigns)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
             if (tx.ValidUntilBlock <= height)
@@ -553,7 +553,7 @@ namespace Neo.Plugins.OracleService
             return false;
         }
 
-        private static bool CheckOracleAvailable(StorageCache snapshot, out ECPoint[] oracles)
+        private static bool CheckOracleAvailable(DataCache snapshot, out ECPoint[] oracles)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
             oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);

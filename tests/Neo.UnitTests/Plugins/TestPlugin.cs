@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Plugins
             Blockchain.Committed += OnCommitted;
         }
 
-        private static void OnCommitting(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        private static void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             throw new NotImplementedException("Test exception from OnCommitting");
         }
@@ -82,7 +82,7 @@ namespace Neo.UnitTests.Plugins
 
         protected override bool OnMessage(object message) => true;
 
-        private void OnCommitting(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             throw new NotImplementedException();
         }

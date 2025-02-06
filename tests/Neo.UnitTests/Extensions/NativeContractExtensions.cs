@@ -33,7 +33,7 @@ namespace Neo.UnitTests.Extensions
         /// <param name="datoshi">The gas fee to spend for deploying the contract in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static ContractState DeployContract(this StorageCache snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long datoshi = 200_00000000)
+        public static ContractState DeployContract(this DataCache snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long datoshi = 200_00000000)
         {
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Extensions
             return ret;
         }
 
-        public static void UpdateContract(this StorageCache snapshot, UInt160 callingScriptHash, byte[] nefFile, byte[] manifest)
+        public static void UpdateContract(this DataCache snapshot, UInt160 callingScriptHash, byte[] nefFile, byte[] manifest)
         {
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "update", nefFile, manifest, null);
@@ -77,7 +77,7 @@ namespace Neo.UnitTests.Extensions
             }
         }
 
-        public static void DestroyContract(this StorageCache snapshot, UInt160 callingScriptHash)
+        public static void DestroyContract(this DataCache snapshot, UInt160 callingScriptHash)
         {
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "destroy");
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.Extensions
             }
         }
 
-        public static void AddContract(this StorageCache snapshot, UInt160 hash, ContractState state)
+        public static void AddContract(this DataCache snapshot, UInt160 hash, ContractState state)
         {
             //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
@@ -110,7 +110,7 @@ namespace Neo.UnitTests.Extensions
             if (!snapshot.Contains(key2)) snapshot.Add(key2, new StorageItem(hash.ToArray()));
         }
 
-        public static void DeleteContract(this StorageCache snapshot, UInt160 hash)
+        public static void DeleteContract(this DataCache snapshot, UInt160 hash)
         {
             //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
@@ -124,12 +124,12 @@ namespace Neo.UnitTests.Extensions
             }
         }
 
-        public static StackItem Call(this NativeContract contract, StorageCache snapshot, string method, params ContractParameter[] args)
+        public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, params ContractParameter[] args)
         {
             return Call(contract, snapshot, null, null, method, args);
         }
 
-        public static StackItem Call(this NativeContract contract, StorageCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
+        public static StackItem Call(this NativeContract contract, DataCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();

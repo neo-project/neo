@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_InteropService : TestKit
     {
-        private StorageCache _snapshotCache;
+        private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

@@ -100,7 +100,7 @@ namespace Neo.UnitTests
             };
         }
 
-        public static void StorageItemAdd(StorageCache snapshot, int id, byte[] keyValue, byte[] value)
+        public static void StorageItemAdd(DataCache snapshot, int id, byte[] keyValue, byte[] value)
         {
             snapshot.Add(new StorageKey
             {
@@ -109,7 +109,7 @@ namespace Neo.UnitTests
             }, new StorageItem(value));
         }
 
-        public static void FillMemoryPool(StorageCache snapshot, NeoSystem system, NEP6Wallet wallet, WalletAccount account)
+        public static void FillMemoryPool(DataCache snapshot, NeoSystem system, NEP6Wallet wallet, WalletAccount account)
         {
             for (int i = 0; i < system.Settings.MemoryPoolMaxTransactions; i++)
             {

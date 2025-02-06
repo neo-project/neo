@@ -29,7 +29,7 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Ledger
 {
-    public delegate void CommittingHandler(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
+    public delegate void CommittingHandler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
     public delegate void CommittedHandler(NeoSystem system, Block block);
 
     /// <summary>
@@ -483,7 +483,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void InvokeCommitting(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        internal static void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             InvokeHandlers(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
         }
@@ -553,7 +553,7 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(ProtocolSettings settings, StorageCache snapshot)
+        private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(ProtocolSettings settings, DataCache snapshot)
         {
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();

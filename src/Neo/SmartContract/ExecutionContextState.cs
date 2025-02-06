@@ -46,9 +46,9 @@ namespace Neo.SmartContract
         public CallFlags CallFlags { get; set; } = CallFlags.All;
 
         [Obsolete("Use SnapshotCache instead")]
-        public StorageCache Snapshot => SnapshotCache;
+        public DataCache Snapshot => SnapshotCache;
 
-        public StorageCache SnapshotCache { get; set; }
+        public DataCache SnapshotCache { get; set; }
 
         public int NotificationCount { get; set; }
 

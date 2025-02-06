@@ -75,12 +75,12 @@ namespace Neo.SmartContract
         /// The snapshot used to read data.
         /// </summary>
         [Obsolete("Use SnapshotCache instead")]
-        public StorageCache Snapshot => SnapshotCache;
+        public DataCache Snapshot => SnapshotCache;
 
         /// <summary>
         /// The snapshotcache <see cref="SnapshotCache"/> used to read data.
         /// </summary>
-        public readonly StorageCache SnapshotCache;
+        public readonly DataCache SnapshotCache;
 
         // /// <summary>
         // /// The snapshot used to read data.
@@ -119,7 +119,7 @@ namespace Neo.SmartContract
         /// <param name="snapshotCache">The snapshot used to read data.</param>
         /// <param name="verifiable">The <see cref="IVerifiable"/> to add witnesses.</param>
         /// <param name="network">The magic number of the network.</param>
-        public ContractParametersContext(StorageCache snapshotCache, IVerifiable verifiable, uint network)
+        public ContractParametersContext(DataCache snapshotCache, IVerifiable verifiable, uint network)
         {
             Verifiable = verifiable;
             SnapshotCache = snapshotCache;
@@ -236,7 +236,7 @@ namespace Neo.SmartContract
         /// <param name="json">The context represented by a JSON object.</param>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The converted context.</returns>
-        public static ContractParametersContext FromJson(JObject json, StorageCache snapshot)
+        public static ContractParametersContext FromJson(JObject json, DataCache snapshot)
         {
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
@@ -337,7 +337,7 @@ namespace Neo.SmartContract
         /// <param name="value">The JSON <see cref="string"/>.</param>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The parsed context.</returns>
-        public static ContractParametersContext Parse(string value, StorageCache snapshot)
+        public static ContractParametersContext Parse(string value, DataCache snapshot)
         {
             return FromJson((JObject)JToken.Parse(value), snapshot);
         }

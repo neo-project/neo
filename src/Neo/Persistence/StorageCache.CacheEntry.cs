@@ -14,7 +14,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Persistence
 {
-    public partial class StorageCache
+    public partial class DataCache
     {
         /// <summary>
         /// Represents state of an entry in the cache.

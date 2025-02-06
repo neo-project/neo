@@ -294,7 +294,7 @@ namespace Neo.Ledger
             return item.CompareTo(tx) <= 0;
         }
 
-        internal VerifyResult TryAdd(Transaction tx, StorageCache snapshot)
+        internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
             var poolItem = new PoolItem(tx);
 
@@ -478,7 +478,7 @@ namespace Neo.Ledger
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
-        internal void UpdatePoolForBlockPersisted(Block block, StorageCache snapshot)
+        internal void UpdatePoolForBlockPersisted(Block block, DataCache snapshot)
         {
             var conflictingItems = new List<Transaction>();
             _txRwLock.EnterWriteLock();
@@ -558,7 +558,7 @@ namespace Neo.Ledger
         }
 
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
-            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, StorageCache snapshot)
+            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, DataCache snapshot)
         {
             DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new(count);
@@ -653,7 +653,7 @@ namespace Neo.Ledger
         /// <param name="maxToVerify">Max transactions to reverify, the value passed can be >=1</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
-        internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, StorageCache snapshot)
+        internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, DataCache snapshot)
         {
             if (_system.HeaderCache.Count > 0)
                 return false;

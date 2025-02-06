@@ -39,7 +39,7 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public UInt160[] GetScriptHashesForVerifying(StorageCache snapshot)
+        public UInt160[] GetScriptHashesForVerifying(DataCache snapshot)
         {
             throw new NotImplementedException();
         }

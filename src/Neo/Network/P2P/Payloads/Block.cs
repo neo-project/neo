@@ -116,7 +116,7 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StorageCache snapshot) => ((IVerifiable)Header).GetScriptHashesForVerifying(snapshot);
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot) => ((IVerifiable)Header).GetScriptHashesForVerifying(snapshot);
 
         public void Serialize(BinaryWriter writer)
         {
@@ -139,12 +139,12 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        internal bool Verify(ProtocolSettings settings, StorageCache snapshot)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
             return Header.Verify(settings, snapshot);
         }
 
-        internal bool Verify(ProtocolSettings settings, StorageCache snapshot, HeaderCache headerCache)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
             return Header.Verify(settings, snapshot, headerCache);
         }

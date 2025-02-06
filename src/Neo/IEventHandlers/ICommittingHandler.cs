@@ -26,6 +26,6 @@ namespace Neo.IEventHandlers
         /// <param name="block">The block that is being committed.</param>
         /// <param name="snapshot">The current data snapshot.</param>
         /// <param name="applicationExecutedList">A list of executed applications associated with the block.</param>
-        void Blockchain_Committing_Handler(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
+        void Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
     }
 }

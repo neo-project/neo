@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_JsonSerializer
     {
-        private StorageCache _snapshotCache;
+        private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

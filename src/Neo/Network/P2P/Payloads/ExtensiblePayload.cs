@@ -111,7 +111,7 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarMemory();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StorageCache snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             return new[] { Sender }; // This address should be checked by consumer
         }
@@ -131,7 +131,7 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data.Span);
         }
 
-        internal bool Verify(ProtocolSettings settings, StorageCache snapshot, ISet<UInt160> extensibleWitnessWhiteList)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot, ISet<UInt160> extensibleWitnessWhiteList)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (height < ValidBlockStart || height >= ValidBlockEnd) return false;

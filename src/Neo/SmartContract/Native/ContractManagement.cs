@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
         [ContractEvent(2, name: "Destroy", "Hash", ContractParameterType.Hash160)]
         internal ContractManagement() : base() { }
 
-        private int GetNextAvailableId(StorageCache snapshot)
+        private int GetNextAvailableId(DataCache snapshot)
         {
             StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
             int value = (int)(BigInteger)item;
@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private long GetMinimumDeploymentFee(StorageCache snapshot)
+        private long GetMinimumDeploymentFee(DataCache snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
@@ -137,7 +137,7 @@ namespace Neo.SmartContract.Native
         /// <param name="hash">The hash of the deployed contract.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContract(StorageCache snapshot, UInt160 hash)
+        public ContractState GetContract(DataCache snapshot, UInt160 hash)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>(false);
         }
@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Native
         /// <param name="id">Contract ID.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContractById(StorageCache snapshot, int id)
+        public ContractState GetContractById(DataCache snapshot, int id)
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
             if (item is null) return null;
@@ -163,7 +163,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>Iterator with hashes of all deployed contracts.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetContractHashes(StorageCache snapshot)
+        private IIterator GetContractHashes(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
             byte[] prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
@@ -184,7 +184,7 @@ namespace Neo.SmartContract.Native
         /// <param name="pcount">The number of parameters</param>
         /// <returns>True if the method exists.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool HasMethod(StorageCache snapshot, UInt160 hash, string method, int pcount)
+        public bool HasMethod(DataCache snapshot, UInt160 hash, string method, int pcount)
         {
             var contract = GetContract(snapshot, hash);
             if (contract is null) return false;
@@ -197,7 +197,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The deployed contracts.</returns>
-        public IEnumerable<ContractState> ListContracts(StorageCache snapshot)
+        public IEnumerable<ContractState> ListContracts(DataCache snapshot)
         {
             byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));

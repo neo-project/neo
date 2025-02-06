@@ -44,7 +44,7 @@ namespace Neo.Plugins.Trackers.NEP_17
         {
         }
 
-        public override void OnPersist(NeoSystem system, Block block, StorageCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        public override void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             _currentBlock = block;
             _currentHeight = block.Index;
@@ -111,7 +111,7 @@ namespace Neo.Plugins.Trackers.NEP_17
         }
 
 
-        private void SaveNep17Balance(BalanceChangeRecord balanceChanged, StorageCache snapshot)
+        private void SaveNep17Balance(BalanceChangeRecord balanceChanged, DataCache snapshot)
         {
             var key = new Nep17BalanceKey(balanceChanged.User, balanceChanged.Asset);
             using ScriptBuilder sb = new();

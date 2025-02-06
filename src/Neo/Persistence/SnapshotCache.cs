@@ -22,7 +22,7 @@ namespace Neo.Persistence
     /// <summary>
     /// Represents a cache for the snapshot or database of the NEO blockchain.
     /// </summary>
-    public class SnapshotCache : StorageCache, IDisposable
+    public class SnapshotCache : DataCache, IDisposable
     {
         private readonly IReadOnlyStore _store;
         private readonly ISnapshot? _snapshot;

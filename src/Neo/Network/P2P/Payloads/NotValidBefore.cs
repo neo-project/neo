@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public override bool Verify(StorageCache snapshot, Transaction tx)
+        public override bool Verify(DataCache snapshot, Transaction tx)
         {
             var block_height = NativeContract.Ledger.CurrentIndex(snapshot);
             return block_height >= Height;

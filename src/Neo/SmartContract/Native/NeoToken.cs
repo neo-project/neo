@@ -77,7 +77,7 @@ namespace Neo.SmartContract.Native
             _registerPrice = CreateStorageKey(Prefix_RegisterPrice);
         }
 
-        public override BigInteger TotalSupply(StorageCache snapshot)
+        public override BigInteger TotalSupply(DataCache snapshot)
         {
             return TotalAmount;
         }
@@ -141,7 +141,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        private BigInteger CalculateBonus(StorageCache snapshot, NeoAccountState state, uint end)
+        private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
             if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance));
@@ -160,7 +160,7 @@ namespace Neo.SmartContract.Native
             return neoHolderReward + voteReward;
         }
 
-        private BigInteger CalculateNeoHolderReward(StorageCache snapshot, BigInteger value, uint start, uint end)
+        private BigInteger CalculateNeoHolderReward(DataCache snapshot, BigInteger value, uint start, uint end)
         {
             // In the unit of datoshi, 1 GAS = 10^8 datoshi
             BigInteger sum = 0;
@@ -180,7 +180,7 @@ namespace Neo.SmartContract.Native
             return value * sum * NeoHolderRewardRatio / 100 / TotalAmount;
         }
 
-        private void CheckCandidate(StorageCache snapshot, ECPoint pubkey, CandidateState candidate)
+        private void CheckCandidate(DataCache snapshot, ECPoint pubkey, CandidateState candidate)
         {
             if (!candidate.Registered && candidate.Votes.IsZero)
             {
@@ -294,7 +294,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The amount of GAS generated.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetGasPerBlock(StorageCache snapshot)
+        public BigInteger GetGasPerBlock(DataCache snapshot)
         {
             return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
@@ -314,13 +314,13 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The amount of the fees.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public long GetRegisterPrice(StorageCache snapshot)
+        public long GetRegisterPrice(DataCache snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[_registerPrice];
         }
 
-        private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(StorageCache snapshot, uint end)
+        private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
         {
             byte[] key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray();
             byte[] boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
@@ -336,7 +336,7 @@ namespace Neo.SmartContract.Native
         /// <param name="end">The block index used when calculating GAS.</param>
         /// <returns>The amount of unclaimed GAS.</returns>
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger UnclaimedGas(StorageCache snapshot, UInt160 account, uint end)
+        public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
@@ -470,7 +470,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(StorageCache snapshot)
+        internal (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
             return GetCandidatesInternal(snapshot)
                 .Select(p => (p.PublicKey, p.State.Votes))
@@ -484,7 +484,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetAllCandidates(StorageCache snapshot)
+        private IIterator GetAllCandidates(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
             var enumerator = GetCandidatesInternal(snapshot)
@@ -493,7 +493,7 @@ namespace Neo.SmartContract.Native
             return new StorageIterator(enumerator, 1, options);
         }
 
-        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(StorageCache snapshot)
+        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Find(prefix_key)
@@ -509,7 +509,7 @@ namespace Neo.SmartContract.Native
         /// <param name="pubKey">Specific public key</param>
         /// <returns>Votes or -1 if it was not found.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetCandidateVote(StorageCache snapshot, ECPoint pubKey)
+        public BigInteger GetCandidateVote(DataCache snapshot, ECPoint pubKey)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubKey));
             CandidateState state = storage?.GetInteroperable<CandidateState>();
@@ -522,7 +522,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The public keys of the members.</returns>
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        public ECPoint[] GetCommittee(StorageCache snapshot)
+        public ECPoint[] GetCommittee(DataCache snapshot)
         {
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
@@ -534,7 +534,7 @@ namespace Neo.SmartContract.Native
         /// <param name="account">account</param>
         /// <returns>The state of the account.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public NeoAccountState GetAccountState(StorageCache snapshot, UInt160 account)
+        public NeoAccountState GetAccountState(DataCache snapshot, UInt160 account)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
         }
@@ -545,13 +545,13 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The address of the committee.</returns>
         [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        public UInt160 GetCommitteeAddress(StorageCache snapshot)
+        public UInt160 GetCommitteeAddress(DataCache snapshot)
         {
             ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private CachedCommittee GetCommitteeFromCache(StorageCache snapshot)
+        private CachedCommittee GetCommitteeFromCache(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
         }
@@ -562,12 +562,12 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used during computing.</param>
         /// <returns>The public keys of the validators.</returns>
-        public ECPoint[] ComputeNextBlockValidators(StorageCache snapshot, ProtocolSettings settings)
+        public ECPoint[] ComputeNextBlockValidators(DataCache snapshot, ProtocolSettings settings)
         {
             return ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(StorageCache snapshot, ProtocolSettings settings)
+        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot[_votersCount];
             decimal voterTurnout = votersCount / (decimal)TotalAmount;
@@ -594,7 +594,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="validatorsCount">The number of validators in the system.</param>
         /// <returns>The public keys of the validators.</returns>
-        public ECPoint[] GetNextBlockValidators(StorageCache snapshot, int validatorsCount)
+        public ECPoint[] GetNextBlockValidators(DataCache snapshot, int validatorsCount)
         {
             return GetCommitteeFromCache(snapshot)
                 .Take(validatorsCount)

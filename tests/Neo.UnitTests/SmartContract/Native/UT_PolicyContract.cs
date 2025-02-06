@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_PolicyContract
     {
-        private StorageCache _snapshotCache;
+        private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()

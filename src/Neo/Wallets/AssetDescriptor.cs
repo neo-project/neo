@@ -49,7 +49,7 @@ namespace Neo.Wallets
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="asset_id">The id of the asset.</param>
-        public AssetDescriptor(StorageCache snapshot, ProtocolSettings settings, UInt160 asset_id)
+        public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 asset_id)
         {
             var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
             if (contract is null) throw new ArgumentException(null, nameof(asset_id));

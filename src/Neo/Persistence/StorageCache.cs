@@ -18,7 +18,7 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
-    public abstract partial class StorageCache : IReadOnlyStoreView
+    public abstract partial class DataCache : IReadOnlyStoreView
     {
         private readonly Dictionary<StorageKey, CacheEntry> _cachedItems = new(StorageKeyEqualityComparer.Instance);
         private readonly HashSet<StorageKey> _changeSet = [];
@@ -156,10 +156,10 @@ namespace Neo.Persistence
         }
 
         [Obsolete("CreateSnapshot is deprecated, please use CloneCache instead.")]
-        public StorageCache CreateSnapshot() =>
+        public DataCache CreateSnapshot() =>
             new ClonedCache(this);
 
-        public StorageCache CloneCache() =>
+        public DataCache CloneCache() =>
             new ClonedCache(this);
 
         public void Delete([DisallowNull] StorageKey key)

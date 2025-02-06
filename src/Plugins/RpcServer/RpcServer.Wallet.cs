@@ -538,7 +538,7 @@ namespace Neo.Plugins.RpcServer
         /// <param name="snapshot">The data snapshot.</param>
         /// <param name="tx">The transaction to sign and relay.</param>
         /// <returns>A JSON object containing the transaction details.</returns>
-        private JObject SignAndRelay(StorageCache snapshot, Transaction tx)
+        private JObject SignAndRelay(DataCache snapshot, Transaction tx)
         {
             ContractParametersContext context = new(snapshot, tx, settings.Network);
             wallet.Sign(context);

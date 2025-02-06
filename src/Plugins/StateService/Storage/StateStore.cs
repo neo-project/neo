@@ -123,7 +123,7 @@ namespace Neo.Plugins.StateService.Storage
             return true;
         }
 
-        public void UpdateLocalStateRootSnapshot(uint height, List<StorageCache.CacheEntry> change_set)
+        public void UpdateLocalStateRootSnapshot(uint height, List<DataCache.CacheEntry> change_set)
         {
             _state_snapshot = Singleton.GetSnapshot();
             foreach (var item in change_set)

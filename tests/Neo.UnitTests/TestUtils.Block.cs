@@ -45,7 +45,7 @@ namespace Neo.UnitTests
         /// <param name="indexVal">Index</param>
         /// <param name="nonceVal">Nonce</param>
         /// <param name="scriptVal">Witness</param>
-        public static void SetupHeaderWithValues(StorageCache snapshot, Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal)
+        public static void SetupHeaderWithValues(DataCache snapshot, Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal)
         {
             header.PrevHash = val256;
             header.MerkleRoot = merkRootVal = UInt256.Parse("0x6226416a0e5aca42b5566f5a19ab467692688ba9d47986f6981a7f747bba2772");
@@ -63,7 +63,7 @@ namespace Neo.UnitTests
             };
         }
 
-        public static void SetupBlockWithValues(StorageCache snapshot, Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
+        public static void SetupBlockWithValues(DataCache snapshot, Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
             Header header = new Header();
             SetupHeaderWithValues(snapshot, header, val256, out merkRootVal, out val160, out timestampVal, out nonceVal, out indexVal, out scriptVal);
@@ -83,7 +83,7 @@ namespace Neo.UnitTests
             header.MerkleRoot = merkRootVal = MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray());
         }
 
-        public static Block CreateBlockWithValidTransactions(StorageCache snapshot, NEP6Wallet wallet, WalletAccount account, int numberOfTransactions)
+        public static Block CreateBlockWithValidTransactions(DataCache snapshot, NEP6Wallet wallet, WalletAccount account, int numberOfTransactions)
         {
             var transactions = new List<Transaction>();
             for (var i = 0; i < numberOfTransactions; i++)
@@ -94,7 +94,7 @@ namespace Neo.UnitTests
             return CreateBlockWithValidTransactions(snapshot, account, transactions.ToArray());
         }
 
-        public static Block CreateBlockWithValidTransactions(StorageCache snapshot, WalletAccount account, Transaction[] transactions)
+        public static Block CreateBlockWithValidTransactions(DataCache snapshot, WalletAccount account, Transaction[] transactions)
         {
             var block = new Block();
             var header = new Header();
@@ -114,13 +114,13 @@ namespace Neo.UnitTests
             return block;
         }
 
-        public static void BlocksDelete(StorageCache snapshot, UInt256 hash)
+        public static void BlocksDelete(DataCache snapshot, UInt256 hash)
         {
             snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, hash));
             snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_Block, hash));
         }
 
-        public static void TransactionAdd(StorageCache snapshot, params TransactionState[] txs)
+        public static void TransactionAdd(DataCache snapshot, params TransactionState[] txs)
         {
             foreach (var tx in txs)
             {
@@ -128,7 +128,7 @@ namespace Neo.UnitTests
             }
         }
 
-        public static void BlocksAdd(StorageCache snapshot, UInt256 hash, TrimmedBlock block)
+        public static void BlocksAdd(DataCache snapshot, UInt256 hash, TrimmedBlock block)
         {
             snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, block.Index), new StorageItem(hash.ToArray()));
             snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Block, hash), new StorageItem(block.ToArray()));
@@ -138,7 +138,7 @@ namespace Neo.UnitTests
             state.Index = block.Index;
         }
 
-        public static void BlocksAdd(StorageCache snapshot, UInt256 hash, Block block)
+        public static void BlocksAdd(DataCache snapshot, UInt256 hash, Block block)
         {
 
             block.Transactions.ForEach(tx =>

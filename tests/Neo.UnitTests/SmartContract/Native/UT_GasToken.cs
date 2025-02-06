@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_GasToken
     {
-        private StorageCache _snapshotCache;
+        private DataCache _snapshotCache;
         private Block _persistingBlock;
 
         [TestInitialize]

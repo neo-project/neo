@@ -143,7 +143,7 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static JArray ToJson(IEnumerable<StorageCache.CacheEntry> changes)
+        private static JArray ToJson(IEnumerable<DataCache.CacheEntry> changes)
         {
             JArray array = new();
             foreach (var entry in changes)

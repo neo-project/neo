@@ -30,12 +30,12 @@ namespace Neo.UnitTests
 {
     public partial class TestUtils
     {
-        public static Transaction CreateValidTx(StorageCache snapshot, NEP6Wallet wallet, WalletAccount account)
+        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, WalletAccount account)
         {
             return CreateValidTx(snapshot, wallet, account.ScriptHash, (uint)new Random().Next());
         }
 
-        public static Transaction CreateValidTx(StorageCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
+        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
         {
             var tx = wallet.MakeTransaction(snapshot, [
                     new TransferOutput
@@ -59,7 +59,7 @@ namespace Neo.UnitTests
             return tx;
         }
 
-        public static Transaction CreateValidTx(StorageCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce, UInt256[] conflicts)
+        public static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce, UInt256[] conflicts)
         {
             var tx = wallet.MakeTransaction(snapshot, [
                     new TransferOutput
@@ -130,7 +130,7 @@ namespace Neo.UnitTests
             };
         }
 
-        public static Transaction CreateInvalidTransaction(StorageCache snapshot, NEP6Wallet wallet, WalletAccount account, InvalidTransactionType type, UInt256 conflict = null)
+        public static Transaction CreateInvalidTransaction(DataCache snapshot, NEP6Wallet wallet, WalletAccount account, InvalidTransactionType type, UInt256 conflict = null)
         {
             var rand = new Random();
             var sender = account.ScriptHash;
@@ -211,7 +211,7 @@ namespace Neo.UnitTests
             protected override void SerializeWithoutType(BinaryWriter writer) { }
         }
 
-        public static void AddTransactionToBlockchain(StorageCache snapshot, Transaction tx)
+        public static void AddTransactionToBlockchain(DataCache snapshot, Transaction tx)
         {
             var block = new Block
             {

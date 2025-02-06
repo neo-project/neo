@@ -42,7 +42,7 @@ namespace Neo.Plugins.RpcServer.Tests
             TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        internal static StorageCache GetTestSnapshot()
+        internal static DataCache GetTestSnapshot()
         {
             return TheNeoSystem.GetSnapshotCache().CloneCache();
         }
