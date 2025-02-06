@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
+using Akka.Dispatch.SysMsg;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
@@ -116,7 +116,14 @@ namespace Neo.Network.RPC.Tests
             //dummy url for test
             var client = new RpcClient(new Uri("http://www.xxx.yyy"));
             Action action = () => client.Dispose();
-            action.Should().NotThrow<Exception>();
+            try
+            {
+                action();
+            }
+            catch
+            {
+                Assert.Fail("Dispose should not throw exception");
+            }
         }
 
         [TestMethod]

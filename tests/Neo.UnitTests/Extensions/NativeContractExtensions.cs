@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;

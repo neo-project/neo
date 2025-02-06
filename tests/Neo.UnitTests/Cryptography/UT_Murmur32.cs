@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using System.Buffers.Binary;
@@ -22,14 +21,14 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestGetHashSize()
         {
-            Murmur32.HashSizeInBits.Should().Be(32);
+            Assert.AreEqual(32, Murmur32.HashSizeInBits);
         }
 
         [TestMethod]
         public void TestHashToUInt32()
         {
             byte[] array = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
-            array.Murmur32(10u).Should().Be(378574820u);
+            Assert.AreEqual(378574820u, array.Murmur32(10u));
         }
 
         [TestMethod]
@@ -39,7 +38,7 @@ namespace Neo.UnitTests.Cryptography
             var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
             var buffer = murmur3.ComputeHash(data);
             var hash = BinaryPrimitives.ReadUInt32LittleEndian(buffer);
-            hash.Should().Be(378574820u);
+            Assert.AreEqual(378574820u, hash);
         }
 
         [TestMethod]
@@ -47,7 +46,7 @@ namespace Neo.UnitTests.Cryptography
         {
             var murmur3 = new Murmur32(10u);
             var hash = murmur3.ComputeHashUInt32("hello worldhello world"u8.ToArray());
-            hash.Should().Be(60539726u);
+            Assert.AreEqual(60539726u, hash);
         }
     }
 }

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
@@ -39,9 +38,9 @@ namespace Neo.UnitTests.SmartContract
             var keyPair = new KeyPair(privateKey);
             var pubkey = keyPair.PublicKey;
             var signature = Crypto.Sign(message, privateKey);
-            engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
+            Assert.IsTrue(engine.CheckSig(pubkey.EncodePoint(false), signature));
             Action action = () => engine.CheckSig(new byte[70], signature);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
         }
 
         [TestMethod]
@@ -73,7 +72,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisig(pubkeys, signatures).Should().BeTrue();
+            Assert.IsTrue(engine.CheckMultisig(pubkeys, signatures));
 
             pubkeys = new byte[0][];
             Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisig(pubkeys, signatures));
@@ -96,7 +95,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 new byte[64]
             };
-            engine.CheckMultisig(pubkeys, signatures).Should().BeFalse();
+            Assert.IsFalse(engine.CheckMultisig(pubkeys, signatures));
 
             pubkeys = new[]
             {
@@ -149,7 +148,7 @@ namespace Neo.UnitTests.SmartContract
 
             manifest = TestUtils.CreateDefaultManifest();
             var ret = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false));
-            ret.Hash.ToString().Should().Be("0x7b37d4bd3d87f53825c3554bd1a617318235a685");
+            Assert.AreEqual("0x7b37d4bd3d87f53825c3554bd1a617318235a685", ret.Hash.ToString());
             Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
 
             var state = TestUtils.GetContract();
@@ -200,14 +199,14 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshotCache.AddContract(state.Hash, state);
             snapshotCache.Add(storageKey, storageItem);
-            state.UpdateCounter.Should().Be(0);
+            Assert.AreEqual(0, state.UpdateCounter);
             snapshotCache.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
             var ret = NativeContract.ContractManagement.GetContract(snapshotCache, state.Hash);
-            snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
-            ret.UpdateCounter.Should().Be(1);
-            ret.Id.Should().Be(state.Id);
-            ret.Manifest.ToJson().ToString().Should().Be(manifest.ToJson().ToString());
-            ret.Script.Span.ToHexString().Should().Be(nef.Script.Span.ToHexString().ToString());
+            Assert.AreEqual(1, snapshotCache.Find(BitConverter.GetBytes(state.Id)).ToList().Count());
+            Assert.AreEqual(1, ret.UpdateCounter);
+            Assert.AreEqual(state.Id, ret.Id);
+            Assert.AreEqual(manifest.ToJson().ToString(), ret.Manifest.ToJson().ToString());
+            Assert.AreEqual(nef.Script.Span.ToHexString().ToString(), ret.Script.Span.ToHexString());
         }
 
         [TestMethod]
@@ -268,7 +267,7 @@ namespace Neo.UnitTests.SmartContract
             }, new byte[] { 0x01 }, FindOptions.ValuesOnly);
             iterator.Next();
             var ele = iterator.Value(null);
-            ele.GetSpan().ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
+            Assert.AreEqual(storageItem.Value.Span.ToHexString(), ele.GetSpan().ToHexString());
         }
     }
 }

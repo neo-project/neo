@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.Wallets;
@@ -44,16 +43,16 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAddress()
         {
             MyWalletAccount walletAccount = new MyWalletAccount(UInt160.Zero);
-            walletAccount.Address.Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
+            Assert.AreEqual("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf", walletAccount.Address);
         }
 
         [TestMethod]
         public void TestGetWatchOnly()
         {
             MyWalletAccount walletAccount = new MyWalletAccount(UInt160.Zero);
-            walletAccount.WatchOnly.Should().BeTrue();
+            Assert.IsTrue(walletAccount.WatchOnly);
             walletAccount.Contract = new Contract();
-            walletAccount.WatchOnly.Should().BeFalse();
+            Assert.IsFalse(walletAccount.WatchOnly);
         }
     }
 }
