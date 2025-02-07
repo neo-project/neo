@@ -2,7 +2,7 @@
   <!-- Tasks Configuration-->
   <PropertyGroup>
     <NeoBuildTasksAssemblyName>$(MSBuildThisFileName)</NeoBuildTasksAssemblyName>
-    <NeoBuildTasksAssemblyDirectory>$(MSBuildThisFileDirectory)..\tasks\net472</NeoBuildTasksAssemblyDirectory>
+    <NeoBuildTasksAssemblyDirectory>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0</NeoBuildTasksAssemblyDirectory>
     <NeoBuildTasksAssemblyFile>$(NeoBuildTasksAssemblyPath)\$(NeoBuildTasksAssemblyName).dll</NeoBuildTasksAssemblyFile>
   </PropertyGroup>
 

@@ -9,13 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Models.Interfaces;
 using Neo.Wallets.NEP6;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace Neo.Build.Models.Wallet
 {
-    internal class SCryptParametersModel : JsonModel
+    internal class SCryptParametersModel : JsonModel, IConvertNeoType<ScryptParameters>
     {
         public static readonly SCryptParametersModel Default = new();
 
@@ -43,7 +44,6 @@ namespace Neo.Build.Models.Wallet
             return FromJson<SCryptParametersModel>(jsonString, jsonOptions);
         }
 
-        [return: NotNull]
         public override string ToJson(JsonSerializerOptions? options = default) =>
             JsonSerializer.Serialize(this, options ?? _jsonSerializerOptions);
 

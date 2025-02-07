@@ -17,7 +17,7 @@ namespace Neo.Build.Utilities.Core
     public class NeoWallet : Task
     {
         [Required]
-        public ITaskItem[]? Files { get; set; }
+        public ITaskItem[] Files { get; set; } = [];
 
         public string? Password { get; set; }
 
@@ -29,6 +29,7 @@ namespace Neo.Build.Utilities.Core
         public override bool Execute()
         {
             // add Code
+            Log.LogError("Hello World");
             return true;
         }
     }

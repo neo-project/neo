@@ -23,6 +23,9 @@ namespace Neo.Build.Models
         public Version Version => Version.Parse("1.0");
 
         [MaybeNull]
+        public ProtocolSettingsModel ProtocolSettings { get; set; }
+
+        [MaybeNull]
         public WalletModel[] Wallets { get; set; }
 
         public static BuildProjectModel? FromJson(FileInfo file, JsonSerializerOptions? options = default)

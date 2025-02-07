@@ -34,6 +34,7 @@ namespace Neo.Build
                 new JsonStringEnumConverter(),
                 new JsonStringUInt160Converter(),
                 new JsonStringKeyPairConverter(),
+                new JsonStringECPointConverter(),
             }
         };
     }

@@ -41,7 +41,6 @@ namespace Neo.Build.Models.Wallet
             return FromJson<WalletAccountModel>(jsonString, jsonOptions);
         }
 
-        [return: NotNull]
         public override string ToJson(JsonSerializerOptions? options = default) =>
             JsonSerializer.Serialize(this, options ?? _jsonSerializerOptions);
 
