@@ -11,8 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
-using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -22,6 +20,24 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_Storage
     {
+        [TestMethod]
+        public void TestImplicit()
+        {
+            // Test data
+            byte[] keyData = [0x00, 0x00, 0x00, 0x00, 0x12];
+            StorageKey keyA = keyData;
+            StorageKey keyB = new ReadOnlyMemory<byte>(keyData);
+            StorageKey keyC = new ReadOnlySpan<byte>(keyData);
+
+            Assert.AreEqual(0, keyA.Id);
+            Assert.AreEqual(keyA.Id, keyB.Id);
+            Assert.AreEqual(keyB.Id, keyC.Id);
+
+            CollectionAssert.AreEqual(new byte[] { 0x12 }, keyA.Key.Span.ToArray());
+            CollectionAssert.AreEqual(keyA.Key.Span.ToArray(), keyB.Key.Span.ToArray());
+            CollectionAssert.AreEqual(keyB.Key.Span.ToArray(), keyC.Key.Span.ToArray());
+        }
+
         [TestMethod]
         public void TestStorageKey()
         {
@@ -60,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
         {
             // Test data
             byte[] keyData = [0x00, 0x00, 0x00, 0x00, 0x12];
-            BigInteger bigInteger = new BigInteger(1234567890);
+            var bigInteger = new BigInteger(1234567890);
 
             // Test implicit conversion from byte[] to StorageItem
             StorageItem storageItemFromArray = keyData;
