@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <RootNamespace>Neo</RootNamespace>
+    <RootNamespace>Neo.Benchmarks</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
