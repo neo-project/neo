@@ -8,10 +8,11 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj">
+      <Private>false</Private>
+    </ProjectReference>
     <ProjectReference Include="..\RpcServer\RpcServer.csproj" AdditionalProperties="IncludeSettingsFileOutput=False">
       <Private>false</Private>
-      <ExcludeAssets>runtime</ExcludeAssets>
     </ProjectReference>
   </ItemGroup>
 
@@ -25,3 +26,4 @@
     <InternalsVisibleTo Include="$(PackageId).Tests" />
   </ItemGroup>
 </Project>
+

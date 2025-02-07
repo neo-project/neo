@@ -3,8 +3,30 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
+  <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+  </PropertyGroup>
+  
   <ItemGroup>
-    <ProjectReference Include="../../Neo/Neo.csproj" />
+    <ProjectReference Include="../../Neo/Neo.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="../../Neo.IO/Neo.IO.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="../../Neo.Extensions/Neo.Extensions.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="../../Neo.Cryptography.BLS12_381/Neo.Cryptography.BLS12_381.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Neo.Json\Neo.Json.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Neo.VM\Neo.VM.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

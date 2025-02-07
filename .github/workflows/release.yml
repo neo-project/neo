@@ -138,9 +138,7 @@ jobs:
     - name: Remove files (junk)
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
       run: |
-        rm -v Neo*
         rm -v *.pdb
-        rm -v *.xml
 
     # Remove XML comment files from the neo-cli output
     - name: Remove Xml Comment Files
