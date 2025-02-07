@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Build.Defaults
+namespace Neo.Build
 {
     internal static class CommandLineStrings
     {

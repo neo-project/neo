@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Build.Exceptions.Wallet;
-using Neo.Wallets.NEP6;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json;
@@ -22,7 +21,8 @@ namespace Neo.Build.Models.Wallet
         [MaybeNull]
         public string Name { get; set; }
 
-        public ScryptParameters SCrypt { get; set; } = ScryptParameters.Default;
+        [NotNull]
+        public SCryptParametersModel SCrypt { get; set; } = SCryptParametersModel.Default;
 
         [MaybeNull]
         public WalletAccountModel Accounts { get; set; }

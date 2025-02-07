@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Build.Commands.Wallet;
-using Neo.Build.Defaults;
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;

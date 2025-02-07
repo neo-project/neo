@@ -9,11 +9,18 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Exceptions.Interfaces;
+using System.Diagnostics.CodeAnalysis;
+
 namespace Neo.Build.Exceptions.Json
 {
-    internal class JsonInvalidFormatException() : NeoBuildException()
+    internal class JsonInvalidFormatException(
+            [AllowNull] string? value) : NeoBuildException(), IInvalidJsonFormatException
     {
+        /// <inheritdoc />
         public override int HResult =>
             NeoBuildErrorCodes.General.InvalidJsonFormat;
+
+        public virtual string Value => value ?? "null";
     }
 }

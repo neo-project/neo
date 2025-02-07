@@ -9,20 +9,21 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Exceptions.Json;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Neo.Build.Json.Converters
 {
-    internal class JsonUInt160Converter : JsonConverter<UInt160>
+    internal class JsonStringUInt160Converter : JsonConverter<UInt160>
     {
         public override UInt160? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var value = reader.GetString();
 
             if (UInt160.TryParse(value, out var scriptHash) == false)
-                throw new Exception();
+                throw new JsonInvalidFormatException(value);
 
             return scriptHash;
         }

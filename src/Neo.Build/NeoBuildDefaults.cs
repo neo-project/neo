@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Json;
+using Neo.Build.Json.Converters;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,17 +18,11 @@ namespace Neo.Build
 {
     internal static class NeoBuildDefaults
     {
-        public static class NamingPolicy
-        {
-            public static readonly JsonLowerCaseNamingPolicy LowerCase = new();
-            public static readonly JsonUpperCaseNamingPolicy UpperCase = new();
-        }
-
         public static readonly JsonSerializerOptions JsonDefaultSerializerOptions = new()
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DictionaryKeyPolicy = NamingPolicy.LowerCase,
+            DictionaryKeyPolicy = JsonNamingPolicy.CamelCase,
             ReadCommentHandling = JsonCommentHandling.Disallow,
             UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode,
             PreferredObjectCreationHandling = JsonObjectCreationHandling.Replace,
@@ -37,7 +31,9 @@ namespace Neo.Build
             RespectNullableAnnotations = true,
             Converters =
             {
-                new JsonStringEnumConverter(NamingPolicy.UpperCase),
+                new JsonStringEnumConverter(),
+                new JsonStringUInt160Converter(),
+                new JsonStringKeyPairConverter(),
             }
         };
     }
