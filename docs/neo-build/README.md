@@ -1,6 +1,6 @@
 # Neo Build
 This engine, which is also known as `NEBuild`, provides a `JSON` schema
-for a project file that controls how the build platform processes and
+for a project file that controls how the `MSBuild` platform processes and
 builds contracts. `Visual Studio` uses `NEBuild`, but `NEBuild` doesn't
 depend on `Visual Studio`. By invoking `nebuild.exe` or `nebuild` on
 your project, you can orchestrate and build contracts in environments
