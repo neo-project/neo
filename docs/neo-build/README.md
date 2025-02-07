@@ -1,11 +1,10 @@
 # Neo Build
-The Neo Build Engine is a platform for building contracts. This engine,
-which is also known as `NEBuild`, provides a `JSON` schema for a project
-file that controls how the build platform processes and builds contracts.
-`Visual Studio` uses `NEBuild`, but `NEBuild` doesn't depend on
-`Visual Studio`. By invoking `nebuild.exe` or `nebuild` on your project,
-you can orchestrate and build contracts in environments where `Visual Studio`
-isn't installed.
+This engine, which is also known as `NEBuild`, provides a `JSON` schema
+for a project file that controls how the build platform processes and
+builds contracts. `Visual Studio` uses `NEBuild`, but `NEBuild` doesn't
+depend on `Visual Studio`. By invoking `nebuild.exe` or `nebuild` on
+your project, you can orchestrate and build contracts in environments
+where `Visual Studio` isn't installed.
 
 `Visual Studio` uses `NEBuild` to load and build Neo projects. The project
 files in `Visual Studio` (`*.csproj` and others) contain `MSBuild` `XML`
