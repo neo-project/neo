@@ -11,7 +11,7 @@
 
 #nullable enable
 
-namespace Neo.Persistence.Providers
+namespace Neo.Persistence
 {
     public class MemoryStoreProvider : IStoreProvider
     {
@@ -19,5 +19,3 @@ namespace Neo.Persistence.Providers
         public IStore GetStore(string path) => new MemoryStore();
     }
 }
-
-#nullable disable
