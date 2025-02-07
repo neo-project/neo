@@ -135,7 +135,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +      // Index
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
-            (Witness is null ? 1 : 1 + Witness.Size); // Witness, cannot be null for invalid header
+            (Witness is null ? 1 : 1 + Witness.Size); // Witness, cannot be null for valid header
 
         Witness[] IVerifiable.Witnesses
         {

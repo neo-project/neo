@@ -140,16 +140,5 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             item.Witnesses = [new()];
             Assert.AreEqual(1, item.Witnesses.Length);
         }
-
-        [TestMethod]
-        public void Witness()
-        {
-            IVerifiable item = new Header();
-            Action actual = () => item.Witnesses = null;
-            Assert.ThrowsException<ArgumentNullException>(actual);
-
-            item.Witnesses = [new()];
-            Assert.AreEqual(1, item.Witnesses.Length);
-        }
     }
 }
