@@ -9,10 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.AspNetCore.Authorization;
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Plugins.ApplicationLogs.Store;
 using Neo.Plugins.ApplicationLogs.Store.States;
@@ -21,11 +19,7 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Neo.Plugins.ApplicationsLogs.Tests
