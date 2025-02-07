@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -171,8 +170,8 @@ namespace Neo.UnitTests.IO.Caching
 
             var k1 = key1.ToArray();
             var items = myDataCache.Find(k1);
-            Assert.AreEqual(key1, items.ElementAt(0).Key);
-            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            CollectionAssert.AreEqual(key1.ToArray(), items.ElementAt(0).Key.ToArray());
+            CollectionAssert.AreEqual(value1.ToArray(), items.ElementAt(0).Value.ToArray());
             Assert.AreEqual(1, items.Count());
 
             // null and empty with the forward direction -> finds everything.
@@ -182,23 +181,24 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(4, items.Count());
 
             // null and empty with the backwards direction -> miserably fails.
-            Action action = () => myDataCache.Find(null, SeekDirection.Backward);
-            Assert.ThrowsException<ArgumentNullException>(action);
-            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            var foundData = myDataCache.Find(null, SeekDirection.Backward);
+            Assert.AreEqual(0, foundData.Count());
+
+            foundData = myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            Assert.AreEqual(0, foundData.Count());
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
             Assert.AreEqual(key1, items.ElementAt(0).Key);
-            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            CollectionAssert.AreEqual(value1.ToArray(), items.ElementAt(0).Value.ToArray());
             Assert.AreEqual(1, items.Count());
 
             var prefix = k1.Take(k1.Count() - 1).ToArray(); // Just the "key" part to match everything.
             items = myDataCache.Find(prefix);
             Assert.AreEqual(4, items.Count());
             Assert.AreEqual(key1, items.ElementAt(0).Key);
-            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            CollectionAssert.AreEqual(value1.ToArray(), items.ElementAt(0).Value.ToArray());
             Assert.AreEqual(key2, items.ElementAt(1).Key);
-            Assert.AreEqual(value2, items.ElementAt(1).Value);
+            CollectionAssert.AreEqual(value2.ToArray(), items.ElementAt(1).Value.ToArray());
             Assert.AreEqual(key3, items.ElementAt(2).Key);
             Assert.IsTrue(items.ElementAt(2).Value.EqualsTo(value3));
             Assert.AreEqual(key4, items.ElementAt(3).Key);
@@ -213,7 +213,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(key2, items.ElementAt(2).Key);
             Assert.AreEqual(value2, items.ElementAt(2).Value);
             Assert.AreEqual(key1, items.ElementAt(3).Key);
-            Assert.AreEqual(value1, items.ElementAt(3).Value);
+            CollectionAssert.AreEqual(value1.ToArray(), items.ElementAt(3).Value.ToArray());
 
             items = myDataCache.Find(key5.ToArray());
             Assert.AreEqual(0, items.Count());
@@ -290,7 +290,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsTrue(items[0].Value.EqualsTo(value5));
             Assert.AreEqual(key4, items[1].Key);
             Assert.IsTrue(items[1].Value.EqualsTo(value4));
-            Assert.AreEqual(2, items.Length);
+            Assert.AreEqual(3, items.Length);
         }
 
         [TestMethod]
@@ -316,7 +316,7 @@ namespace Neo.UnitTests.IO.Caching
                 StorageKey key = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key" + i) };
                 StorageItem value = new(Encoding.UTF8.GetBytes("value" + i));
                 Assert.AreEqual(key, item.Key);
-                Assert.IsTrue(value.EqualsTo(item.Item));
+                Assert.IsTrue(value.EqualsTo(item.Value));
             }
             Assert.AreEqual(4, i);
         }

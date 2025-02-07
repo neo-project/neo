@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -24,7 +23,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Security.Principal;
 using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
 
@@ -1213,17 +1211,17 @@ namespace Neo.UnitTests.SmartContract.Native
             return (result.GetInteger(), true);
         }
 
-        internal static void CheckValidator(ECPoint eCPoint, DataCache.Trackable trackable)
+        internal static void CheckValidator(ECPoint eCPoint, DataCache.CacheEntry trackable)
         {
-            BigInteger st = trackable.Item;
+            BigInteger st = trackable.Value;
             Assert.AreEqual(0, st);
 
             CollectionAssert.AreEqual(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)).ToArray(), trackable.Key.Key.ToArray());
         }
 
-        internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
+        internal static void CheckBalance(byte[] account, DataCache.CacheEntry trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
-            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
+            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Value.Value, ExecutionEngineLimits.Default);
 
             Assert.AreEqual(3, st.Count);
             CollectionAssert.AreEqual(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance

@@ -80,7 +80,7 @@ namespace Neo.UnitTests.IO.Caching
 
             var items = clonedCache.Find(key1.ToArray());
             Assert.AreEqual(key1, items.ElementAt(0).Key);
-            Assert.AreEqual(value1, items.ElementAt(0).Value);
+            CollectionAssert.AreEqual(value1.ToArray(), items.ElementAt(0).Value.ToArray());
             Assert.AreEqual(1, items.Count());
 
             items = clonedCache.Find(key2.ToArray());

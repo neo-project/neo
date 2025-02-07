@@ -198,8 +198,9 @@ namespace Neo.SmartContract.Native
         /// <returns>The deployed contracts.</returns>
         public IEnumerable<ContractState> ListContracts(DataCache snapshot)
         {
-            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
-            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
+            var listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
+            var results = snapshot.Find(listContractsPrefix);
+            return results.Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]

@@ -71,7 +71,7 @@ namespace Neo.Persistence
             throw new KeyNotFoundException();
         }
 
-        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
+        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[]? keyOrPrefix, SeekDirection direction)
         {
             return _store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }

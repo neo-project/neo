@@ -109,12 +109,12 @@ namespace Neo.Plugins.StorageDumper
                         case TrackState.Added:
                             state["state"] = "Added";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
+                            state["value"] = Convert.ToBase64String(trackable.Value.ToArray());
                             break;
                         case TrackState.Changed:
                             state["state"] = "Changed";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
+                            state["value"] = Convert.ToBase64String(trackable.Value.ToArray());
                             break;
                         case TrackState.Deleted:
                             state["state"] = "Deleted";

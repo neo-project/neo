@@ -345,7 +345,7 @@ namespace Neo.Network.P2P
         {
             if (session.HasTooManyTasks) return;
 
-            DataCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
 
             // If there are pending tasks of InventoryType.Block we should process them
             if (session.AvailableTasks.Count > 0)

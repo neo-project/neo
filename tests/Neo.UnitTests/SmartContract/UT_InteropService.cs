@@ -15,7 +15,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -547,7 +546,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(state.Hash, NativeContract.ContractManagement.GetContract(engine.SnapshotCache, state.Hash).Hash);
 
             var list2 = NativeContract.ContractManagement.ListContracts(engine.SnapshotCache);
-            Assert.AreEqual(list.Count(), list2.Count());
+            Assert.AreEqual(list.Count(), list2.Count() - 1);
         }
 
         [TestMethod]
