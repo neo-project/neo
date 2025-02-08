@@ -25,7 +25,7 @@ namespace Neo.Test
         private static EvaluationStack CreateOrderedStack(int count)
         {
             var check = new Integer[count];
-            var stack = new EvaluationStack(new ReferenceCounter());
+            var stack = new EvaluationStack(new ReferenceCounterV2());
 
             for (int x = 1; x <= count; x++)
             {
@@ -56,7 +56,7 @@ namespace Neo.Test
         public void TestCopyTo()
         {
             var stack = CreateOrderedStack(3);
-            var copy = new EvaluationStack(new ReferenceCounter());
+            var copy = new EvaluationStack(new ReferenceCounterV2());
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => stack.CopyTo(copy, -2));
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => stack.CopyTo(copy, 4));
@@ -93,7 +93,7 @@ namespace Neo.Test
         public void TestMoveTo()
         {
             var stack = CreateOrderedStack(3);
-            var other = new EvaluationStack(new ReferenceCounter());
+            var other = new EvaluationStack(new ReferenceCounterV2());
 
             stack.MoveTo(other, 0);
 
@@ -126,7 +126,7 @@ namespace Neo.Test
         [TestMethod]
         public void TestInsertPeek()
         {
-            var stack = new EvaluationStack(new ReferenceCounter());
+            var stack = new EvaluationStack(new ReferenceCounterV2());
 
             stack.Insert(0, 3);
             stack.Insert(1, 1);
@@ -203,7 +203,7 @@ namespace Neo.Test
         [TestMethod]
         public void TestEvaluationStackPrint()
         {
-            var stack = new EvaluationStack(new ReferenceCounter());
+            var stack = new EvaluationStack(new ReferenceCounterV2());
 
             stack.Insert(0, 3);
             stack.Insert(1, 1);
@@ -216,7 +216,7 @@ namespace Neo.Test
         [TestMethod]
         public void TestPrintInvalidUTF8()
         {
-            var stack = new EvaluationStack(new ReferenceCounter());
+            var stack = new EvaluationStack(new ReferenceCounterV2());
             stack.Insert(0, "4CC95219999D421243C8161E3FC0F4290C067845".FromHexString());
             Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
         }

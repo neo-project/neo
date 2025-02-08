@@ -12,6 +12,7 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Neo.VM.Benchmark;
+using Neo.VM.Benchmark.OpCode;
 using System.Reflection;
 
 // Flag to determine if running benchmark or running methods

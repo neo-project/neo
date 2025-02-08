@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Attributes;
+using Neo.VM.Benchmark.OpCode;
 using System.Diagnostics;
 
 namespace Neo.VM.Benchmark
@@ -387,11 +388,51 @@ namespace Neo.VM.Benchmark
         private static void Run(string poc)
         {
             byte[] script = Convert.FromBase64String(poc);
-            using ExecutionEngine engine = new();
+            using BenchmarkEngine engine = new();
             engine.LoadScript(script);
-            engine.Execute();
+            engine.ExecuteOneGASBenchmark();
 
             Debug.Assert(engine.State == VMState.HALT);
         }
     }
 }
+
+//
+// | Method                 | Mean            | Error          | StdDev         |
+//     |----------------------- |----------------:|---------------:|---------------:|
+//     | NeoIssue2528           |    55,319.65 us |   1,105.171 us |   1,687.713 us |
+//     | NeoVMIssue418          |       347.21 us |       4.985 us |       4.663 us |
+//     | NeoIssue2723           |        71.05 us |       0.674 us |       0.630 us |
+//     | PoC_NewBuffer          |        68.60 us |       0.691 us |       0.646 us |
+//     | PoC_Cat                |        68.96 us |       0.831 us |       0.777 us |
+//     | PoC_Left               |        65.76 us |       0.773 us |       0.723 us |
+//     | PoC_Right              |        64.84 us |       0.679 us |       0.635 us |
+//     | PoC_ReverseN           | 8,399,264.69 us | 152,328.560 us | 135,035.301 us |
+//     | PoC_Substr             |        65.07 us |       1.122 us |       1.050 us |
+//     | PoC_NewArray           | 2,903,663.37 us |  15,827.726 us |  14,805.265 us |
+//     | PoC_NewStruct          | 3,027,978.35 us |  12,747.892 us |  11,300.674 us |
+//     | PoC_Roll               | 1,274,207.78 us |   8,063.045 us |   7,542.177 us |
+//     | PoC_XDrop              | 1,217,206.92 us |  22,759.560 us |  21,289.307 us |
+//     | PoC_MemCpy             |        70.88 us |       1.407 us |       1.728 us |
+//     | PoC_Unpack             |   384,346.69 us |   3,212.166 us |   2,847.502 us |
+//     | PoC_GetScriptContainer |        69.26 us |       0.620 us |       0.580 us |
+
+
+// | Method                 | Mean            | Error          | StdDev         |
+//     |----------------------- |----------------:|---------------:|---------------:|
+//     | NeoIssue2528           |   698,949.53 us |  13,657.042 us |  22,817.849 us |
+//     | NeoVMIssue418          |       589.21 us |      11.631 us |      17.409 us |
+//     | NeoIssue2723           |        70.68 us |       1.375 us |       1.739 us |
+//     | PoC_NewBuffer          |        71.54 us |       1.350 us |       1.607 us |
+//     | PoC_Cat                |        70.13 us |       1.387 us |       2.077 us |
+//     | PoC_Left               |        69.71 us |       1.230 us |       1.151 us |
+//     | PoC_Right              |        70.44 us |       1.358 us |       1.564 us |
+//     | PoC_ReverseN           | 8,387,677.64 us | 157,776.848 us | 154,957.961 us |
+//     | PoC_Substr             |        66.31 us |       0.834 us |       0.780 us |
+//     | PoC_NewArray           | 4,081,067.00 us |  21,804.230 us |  20,395.690 us |
+//     | PoC_NewStruct          | 4,073,281.73 us |  14,618.967 us |  13,674.591 us |
+//     | PoC_Roll               | 1,226,264.36 us |   9,115.778 us |   8,952.913 us |
+//     | PoC_XDrop              | 1,220,594.82 us |  12,695.011 us |   9,911.430 us |
+//     | PoC_MemCpy             |        65.53 us |       0.737 us |       0.616 us |
+//     | PoC_Unpack             |   392,349.50 us |   7,267.582 us |   7,463.272 us |
+//     | PoC_GetScriptContainer |        66.83 us |       0.622 us |       0.551 us |

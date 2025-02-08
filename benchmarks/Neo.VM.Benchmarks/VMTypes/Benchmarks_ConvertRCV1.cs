@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// Benchmarks_Convert.cs file belongs to the neo project and is free
+// Benchmarks_ConvertRCV1.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -16,7 +16,7 @@ using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM.Benchmark
 {
-    public class Benchmarks_Convert
+    public class Benchmarks_ConvertRCV1
     {
         private Dictionary<StackItemType, List<StackItem>>? testItemsByType;
 
@@ -24,6 +24,11 @@ namespace Neo.VM.Benchmark
         public void Setup()
         {
             testItemsByType = CreateTestItemsByType();
+        }
+
+        public virtual IReferenceCounter CreateReferenceCounter()
+        {
+            return new ReferenceCounter();
         }
 
         [Benchmark]
@@ -60,7 +65,7 @@ namespace Neo.VM.Benchmark
 
         private Dictionary<StackItemType, List<StackItem>> CreateTestItemsByType()
         {
-            var referenceCounter = new ReferenceCounter();
+            var referenceCounter = CreateReferenceCounter();
             var result = new Dictionary<StackItemType, List<StackItem>>();
 
             foreach (StackItemType type in Enum.GetValues(typeof(StackItemType)))
