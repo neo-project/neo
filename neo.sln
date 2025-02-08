@@ -86,6 +86,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Benchmarks",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Json.Benchmarks", "benchmarks\Neo.Json.Benchmarks\Neo.Json.Benchmarks.csproj", "{5F984D2B-793F-4683-B53A-80050E6E0286}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{EC5CA9BC-E1AF-4C5B-B104-8374B9AA0643}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.Core", "src\Shared\Neo.Build.Core\Neo.Build.Core.csproj", "{460763E6-80D5-4B14-A3E2-4BBD7640844F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -240,6 +244,10 @@ Global
 		{5F984D2B-793F-4683-B53A-80050E6E0286}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F984D2B-793F-4683-B53A-80050E6E0286}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F984D2B-793F-4683-B53A-80050E6E0286}.Release|Any CPU.Build.0 = Release|Any CPU
+		{460763E6-80D5-4B14-A3E2-4BBD7640844F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{460763E6-80D5-4B14-A3E2-4BBD7640844F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{460763E6-80D5-4B14-A3E2-4BBD7640844F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{460763E6-80D5-4B14-A3E2-4BBD7640844F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -283,6 +291,7 @@ Global
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{B6CB2559-10F9-41AC-8D58-364BFEF9688B} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
 		{5F984D2B-793F-4683-B53A-80050E6E0286} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
+		{460763E6-80D5-4B14-A3E2-4BBD7640844F} = {EC5CA9BC-E1AF-4C5B-B104-8374B9AA0643}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
