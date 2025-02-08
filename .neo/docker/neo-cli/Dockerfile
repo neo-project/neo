@@ -2,7 +2,9 @@ FROM debian:stable-slim
 
 # Install the apt-get packages
 RUN apt-get update
-RUN apt-get install -y libicu-dev libleveldb-dev screen
+RUN apt-get install -y libicu-dev libleveldb-dev screen sqlite3
 
-COPY ./dist /opt/neo-cli
+COPY ./dist/linux-x64 /opt/neo-cli
 RUN ln -s /opt/neo-cli/neo-cli /usr/bin
+
+CMD ["neo-cli"]
