@@ -661,23 +661,23 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(0, _unit.VerifiedCount);
             Assert.AreEqual(4, _unit.UnVerifiedCount);
 
-            AddTransactions(511); // Max per block currently is 512
-            Assert.AreEqual(511, _unit.VerifiedCount);
+            AddTransactions((int)(TestProtocolSettings.Default.MaxTransactionsPerBlock - 1)); // Max per block -1
+            Assert.AreEqual((int)(TestProtocolSettings.Default.MaxTransactionsPerBlock - 1), _unit.VerifiedCount);
             Assert.AreEqual(4, _unit.UnVerifiedCount);
 
             var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, GetSnapshot());
             Assert.IsTrue(result);
-            Assert.AreEqual(512, _unit.VerifiedCount);
+            Assert.AreEqual((int)TestProtocolSettings.Default.MaxTransactionsPerBlock, _unit.VerifiedCount);
             Assert.AreEqual(3, _unit.UnVerifiedCount);
 
             result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, GetSnapshot());
             Assert.IsTrue(result);
-            Assert.AreEqual(514, _unit.VerifiedCount);
+            Assert.AreEqual((int)TestProtocolSettings.Default.MaxTransactionsPerBlock + 2, _unit.VerifiedCount);
             Assert.AreEqual(1, _unit.UnVerifiedCount);
 
             result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(3, GetSnapshot());
             Assert.IsFalse(result);
-            Assert.AreEqual(515, _unit.VerifiedCount);
+            Assert.AreEqual((int)TestProtocolSettings.Default.MaxTransactionsPerBlock + 3, _unit.VerifiedCount);
             Assert.AreEqual(0, _unit.UnVerifiedCount);
         }
 
