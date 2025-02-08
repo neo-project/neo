@@ -46,13 +46,6 @@ jobs:
           -p:DebugType=embedded \
           -p:ServerGarbageCollection=true
 
-    # Copy 'libleveldb' library file
-    - name: Native Content (neo-cli)
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: |
-        mv -v ./runtimes/${{ matrix.runtime }}/native/* .
-        rm -v -R runtimes
-
     - name: Build (LevelDbStore)
       run: |
         dotnet build ./src/Plugins/LevelDBStore \
