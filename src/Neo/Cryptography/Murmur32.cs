@@ -11,6 +11,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.IO.Hashing;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography
@@ -19,7 +20,7 @@ namespace Neo.Cryptography
     /// Computes the murmur hash for the input data.
     /// <remarks>Murmur32 is a non-cryptographic hash function.</remarks>
     /// </summary>
-    public sealed class Murmur32
+    public sealed class Murmur32 : NonCryptographicHashAlgorithm
     {
         private const uint c1 = 0xcc9e2d51;
         private const uint c2 = 0x1b873593;
@@ -32,6 +33,9 @@ namespace Neo.Cryptography
         private uint _hash;
         private int _length;
 
+        private uint _tail;
+        private int _tailLength;
+
         public const int HashSizeInBits = 32;
 
         [Obsolete("Use HashSizeInBits")]
@@ -41,46 +45,74 @@ namespace Neo.Cryptography
         /// Initializes a new instance of the <see cref="Murmur32"/> class with the specified seed.
         /// </summary>
         /// <param name="seed">The seed to be used.</param>
-        public Murmur32(uint seed)
+        public Murmur32(uint seed) : base(HashSizeInBits / 8)
         {
             _seed = seed;
+            Reset();
         }
 
-        /// <summary>
-        /// Append data to murmur computation
-        /// </summary>
-        /// <param name="source">Source</param>
-        private void Append(ReadOnlySpan<byte> source)
+        /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Reset()
+        {
+            _hash = _seed;
+            _length = 0;
+            _tailLength = 0;
+            _tail = 0;
+        }
+
+        /// <inheritdoc/>
+        public override void Append(ReadOnlySpan<byte> source)
         {
             _length += source.Length;
+            if (_tailLength > 0)
+            {
+                int remaining = Math.Min(4 - _tailLength, source.Length);
+                _tail ^= (ReadUInt32(source[..remaining]) << (_tailLength * 8));
+                _tailLength += remaining;
+                if (_tailLength == 4)
+                {
+                    Mix(_tail);
+                    _tailLength = 0;
+                    _tail = 0;
+                }
+                source = source[remaining..];
+            }
+
+#if NET7_0_OR_GREATER
+            for (; source.Length >= 16; source = source[16..])
+            {
+                var k = BinaryPrimitives.ReadUInt128LittleEndian(source);
+                Mix((uint)k);
+                Mix((uint)(k >> 32));
+                Mix((uint)(k >> 64));
+                Mix((uint)(k >> 96));
+            }
+#endif
+
             for (; source.Length >= 4; source = source[4..])
             {
-                var k = BinaryPrimitives.ReadUInt32LittleEndian(source);
-                k *= c1;
-                k = Helper.RotateLeft(k, r1);
-                k *= c2;
-                _hash ^= k;
-                _hash = Helper.RotateLeft(_hash, r2);
-                _hash = _hash * m + n;
+                Mix(BinaryPrimitives.ReadUInt32LittleEndian(source));
             }
+
             if (source.Length > 0)
             {
-                uint remainingBytes = 0;
-                switch (source.Length)
-                {
-                    case 3: remainingBytes ^= (uint)source[2] << 16; goto case 2;
-                    case 2: remainingBytes ^= (uint)source[1] << 8; goto case 1;
-                    case 1: remainingBytes ^= source[0]; break;
-                }
-                remainingBytes *= c1;
-                remainingBytes = Helper.RotateLeft(remainingBytes, r1);
-                remainingBytes *= c2;
-                _hash ^= remainingBytes;
+                _tail = ReadUInt32(source);
+                _tailLength = source.Length;
             }
         }
 
-        private uint GetCurrentHashUInt32()
+        /// <inheritdoc/>
+        protected override void GetCurrentHashCore(Span<byte> destination)
         {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, GetCurrentHashUInt32());
+        }
+
+        internal uint GetCurrentHashUInt32()
+        {
+            if (_tailLength > 0)
+                _hash ^= Helper.RotateLeft(_tail * c1, r1) * c2;
+
             var state = _hash ^ (uint)_length;
             state ^= state >> 16;
             state *= 0x85ebca6b;
@@ -91,10 +123,27 @@ namespace Neo.Cryptography
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Initialize()
+        private void Mix(uint k)
         {
-            _hash = _seed;
-            _length = 0;
+            k *= c1;
+            k = Helper.RotateLeft(k, r1);
+            k *= c2;
+            _hash ^= k;
+            _hash = Helper.RotateLeft(_hash, r2);
+            _hash = _hash * m + n;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint ReadUInt32(ReadOnlySpan<byte> source)
+        {
+            uint value = 0;
+            switch (source.Length)
+            {
+                case 3: value ^= (uint)source[2] << 16; goto case 2;
+                case 2: value ^= (uint)source[1] << 8; goto case 1;
+                case 1: value ^= source[0]; break;
+            }
+            return value;
         }
 
         /// <summary>
@@ -110,14 +159,14 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Computes the murmur hash for the input data and resets the state.
+        /// Resets the state and computes the murmur hash for the input data.
         /// </summary>
         /// <param name="data">The input to compute the hash code for.</param>
         /// <returns>The computed hash code in uint.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ComputeHashUInt32(ReadOnlySpan<byte> data)
         {
-            Initialize();
+            Reset();
             Append(data);
             return GetCurrentHashUInt32();
         }
