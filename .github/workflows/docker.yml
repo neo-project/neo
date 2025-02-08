@@ -51,16 +51,16 @@ jobs:
         dotnet build ./src/Plugins/LevelDBStore \
           --framework net9.0 \
           --configuration Release \
-          --output ${{ env.DIST_DIR }}/linux-x64/Plugins/LevelDBStore \
+          --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \
           --verbosity normal \
           -p:VersionPrefix=${{ env.APP_VERSION }}
 
     - name: Remove (junk)
       run: |
-        rm -v ${{ env.DIST_DIR }}/linux-x64/Plugins/LevelDBStore/Neo*
-        rm -v ${{ env.DIST_DIR }}/linux-x64/Plugins/LevelDBStore/*.pdb
-        rm -v ${{ env.DIST_DIR }}/linux-x64/Plugins/LevelDBStore/*.xml
-        rm -v ${{ env.DIST_DIR }}/linux-x64/*.xml
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.pdb
+        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.xml
+        rm -v ${{ env.DIST_DIR }}/*.xml
 
     - name: Docker Login
       run: |

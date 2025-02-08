@@ -4,7 +4,7 @@ FROM debian:stable-slim
 RUN apt-get update
 RUN apt-get install -y libicu-dev libleveldb-dev screen sqlite3
 
-COPY ./dist/linux-x64 /opt/neo-cli
+COPY ./dist /opt/neo-cli
 RUN ln -s /opt/neo-cli/neo-cli /usr/bin
 
 CMD ["neo-cli"]
