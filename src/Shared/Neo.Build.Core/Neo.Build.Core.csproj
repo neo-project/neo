@@ -5,4 +5,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(RootNamespace).Tests"/>
+  </ItemGroup>
+
 </Project>
