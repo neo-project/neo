@@ -254,7 +254,7 @@ namespace Neo.SmartContract.Native
             int m = engine.ProtocolSettings.CommitteeMembersCount;
             int n = engine.ProtocolSettings.ValidatorsCount;
             int index = (int)(engine.PersistingBlock.Index % (uint)m);
-            var gasPerBlock = GetGasPerBlock(engine.SnapshotCache);
+            var gasPerBlock = GetGasPerBlock(engine, engine.SnapshotCache);
             var committee = GetCommitteeFromCache(engine.SnapshotCache);
             var pubkey = committee[index].PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
@@ -297,11 +297,29 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The amount of GAS generated.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
             return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetGasPerBlock(ApplicationEngine engine, DataCache snapshot)
+        {
+            var currentIndex = Ledger.CurrentIndex(snapshot) + 1;
+            var currentGasPerBlock = GetSortedGasRecords(snapshot, currentIndex).First().GasPerBlock;
+
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+                return currentGasPerBlock;
+
+            var hardfork = engine.ProtocolSettings.Hardforks[Hardfork.HF_Echidna];
+            var preHardforkGasPerBlock = GetSortedGasRecords(snapshot, hardfork).First().GasPerBlock;
+
+            return preHardforkGasPerBlock == currentGasPerBlock
+                ? preHardforkGasPerBlock / 5
+                : currentGasPerBlock;
+        }
+
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetRegisterPrice(ApplicationEngine engine, long registerPrice)
