@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ProtocolSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,12 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Neo.UnitTests
 {
@@ -25,28 +27,28 @@ namespace Neo.UnitTests
         public void CheckFirstLetterOfAddresses()
         {
             UInt160 min = UInt160.Parse("0x0000000000000000000000000000000000000000");
-            min.ToAddress(TestProtocolSettings.Default.AddressVersion)[0].Should().Be('N');
+            Assert.AreEqual('N', min.ToAddress(TestProtocolSettings.Default.AddressVersion)[0]);
             UInt160 max = UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff");
-            max.ToAddress(TestProtocolSettings.Default.AddressVersion)[0].Should().Be('N');
+            Assert.AreEqual('N', max.ToAddress(TestProtocolSettings.Default.AddressVersion)[0]);
         }
 
         [TestMethod]
         public void Default_Network_should_be_mainnet_Network_value()
         {
             var mainNetNetwork = 0x334F454Eu;
-            TestProtocolSettings.Default.Network.Should().Be(mainNetNetwork);
+            Assert.AreEqual(mainNetNetwork, TestProtocolSettings.Default.Network);
         }
 
         [TestMethod]
         public void TestGetMemoryPoolMaxTransactions()
         {
-            TestProtocolSettings.Default.MemoryPoolMaxTransactions.Should().Be(50000);
+            Assert.AreEqual(50000, TestProtocolSettings.Default.MemoryPoolMaxTransactions);
         }
 
         [TestMethod]
         public void TestGetMillisecondsPerBlock()
         {
-            TestProtocolSettings.Default.MillisecondsPerBlock.Should().Be(3000);
+            Assert.AreEqual((uint)3000, (uint)TestProtocolSettings.Default.MillisecondsPerBlock);
         }
 
         [TestMethod]
@@ -56,19 +58,19 @@ namespace Neo.UnitTests
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
-            settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
-            settings.Hardforks[Hardfork.HF_Basilisk].Should().Be(4120000);
+            Assert.AreEqual((uint)0, settings.Hardforks[Hardfork.HF_Aspidochelone]);
+            Assert.AreEqual((uint)4120000, settings.Hardforks[Hardfork.HF_Basilisk]);
 
             // Check IsHardforkEnabled
 
-            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 0).Should().BeTrue();
-            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10).Should().BeTrue();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0).Should().BeFalse();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10).Should().BeFalse();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 4120000).Should().BeTrue();
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 0));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 4120000));
         }
 
         [TestMethod]
@@ -78,19 +80,19 @@ namespace Neo.UnitTests
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
-            settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
-            settings.Hardforks.ContainsKey(Hardfork.HF_Basilisk).Should().BeFalse();
+            Assert.AreEqual((uint)0, settings.Hardforks[Hardfork.HF_Aspidochelone]);
+            Assert.IsFalse(settings.Hardforks.ContainsKey(Hardfork.HF_Basilisk));
 
             // Check IsHardforkEnabled
 
-            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 0).Should().BeTrue();
-            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10).Should().BeTrue();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0).Should().BeFalse();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10).Should().BeFalse();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 4120000).Should().BeFalse();
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 0));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 4120000));
         }
 
         [TestMethod]
@@ -100,18 +102,18 @@ namespace Neo.UnitTests
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
             File.Delete(file);
 
-            settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
-            settings.Hardforks[Hardfork.HF_Basilisk].Should().Be(0);
+            Assert.AreEqual((uint)0, settings.Hardforks[Hardfork.HF_Aspidochelone]);
+            Assert.AreEqual((uint)0, settings.Hardforks[Hardfork.HF_Basilisk]);
 
             // Check IsHardforkEnabled
 
-            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 0).Should().BeTrue();
-            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10).Should().BeTrue();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0).Should().BeTrue();
-            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10).Should().BeTrue();
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 0));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10));
         }
 
         [TestMethod]
@@ -120,7 +122,7 @@ namespace Neo.UnitTests
             string json = CreateHFSettings("\"HF_Aspidochelone\": 4120001, \"HF_Basilisk\": 4120000");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            Assert.ThrowsException<ArgumentException>(() => ProtocolSettings.Load(file, false));
+            Assert.ThrowsException<ArgumentException>(() => ProtocolSettings.Load(file));
             File.Delete(file);
         }
 
@@ -178,7 +180,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetSeedList()
         {
-            TestProtocolSettings.Default.SeedList.Should().BeEquivalentTo(new string[] { "seed1.neo.org:10333", "seed2.neo.org:10333", "seed3.neo.org:10333", "seed4.neo.org:10333", "seed5.neo.org:10333", });
+            CollectionAssert.AreEqual(new string[] { "seed1.neo.org:10333", "seed2.neo.org:10333", "seed3.neo.org:10333", "seed4.neo.org:10333", "seed5.neo.org:10333" }, TestProtocolSettings.Default.SeedList.ToArray());
         }
 
         [TestMethod]
@@ -186,51 +188,53 @@ namespace Neo.UnitTests
         {
             foreach (var point in TestProtocolSettings.Default.StandbyCommittee)
             {
-                point.ToString().Should().MatchRegex("^[0-9A-Fa-f]{66}$"); // ECPoint is 66 hex characters
+                StringAssert.Matches(point.ToString(), new System.Text.RegularExpressions.Regex("^[0-9A-Fa-f]{66}$")); // ECPoint is 66 hex characters
             }
         }
 
         [TestMethod]
         public void TestValidatorsCount()
         {
-            TestProtocolSettings.Default.StandbyCommittee.Count.Should().Be(TestProtocolSettings.Default.ValidatorsCount * 3);
+            Assert.AreEqual(TestProtocolSettings.Default.ValidatorsCount * 3, TestProtocolSettings.Default.StandbyCommittee.Count);
         }
 
         [TestMethod]
         public void TestMaxTransactionsPerBlock()
         {
-            TestProtocolSettings.Default.MaxTransactionsPerBlock.Should().BePositive().And.BeLessOrEqualTo(50000); // Assuming 50000 as a reasonable upper limit
+            Assert.IsTrue(TestProtocolSettings.Default.MaxTransactionsPerBlock > 0);
+            Assert.IsTrue(TestProtocolSettings.Default.MaxTransactionsPerBlock <= 50000); // Assuming 50000 as a reasonable upper limit
         }
 
         [TestMethod]
         public void TestMaxTraceableBlocks()
         {
-            TestProtocolSettings.Default.MaxTraceableBlocks.Should().BePositive();
+            Assert.IsTrue(TestProtocolSettings.Default.MaxTraceableBlocks > 0);
         }
 
         [TestMethod]
         public void TestInitialGasDistribution()
         {
-            TestProtocolSettings.Default.InitialGasDistribution.Should().BeGreaterThan(0);
+            Assert.IsTrue(TestProtocolSettings.Default.InitialGasDistribution > 0);
         }
 
         [TestMethod]
         public void TestHardforksSettings()
         {
-            TestProtocolSettings.Default.Hardforks.Should().NotBeNull();
+            Assert.IsNotNull(TestProtocolSettings.Default.Hardforks);
         }
 
         [TestMethod]
         public void TestAddressVersion()
         {
-            TestProtocolSettings.Default.AddressVersion.Should().BeInRange(0, 255); // Address version is a byte
+            Assert.IsTrue(TestProtocolSettings.Default.AddressVersion >= 0);
+            Assert.IsTrue(TestProtocolSettings.Default.AddressVersion <= 255); // Address version is a byte
         }
 
         [TestMethod]
         public void TestNetworkSettingsConsistency()
         {
-            TestProtocolSettings.Default.Network.Should().BePositive();
-            TestProtocolSettings.Default.SeedList.Should().NotBeEmpty();
+            Assert.IsTrue(TestProtocolSettings.Default.Network > 0);
+            Assert.IsNotNull(TestProtocolSettings.Default.SeedList);
         }
 
         [TestMethod]
@@ -239,7 +243,14 @@ namespace Neo.UnitTests
             foreach (var point in TestProtocolSettings.Default.StandbyCommittee)
             {
                 Action act = () => ECPoint.Parse(point.ToString(), ECCurve.Secp256r1);
-                act.Should().NotThrow();
+                try
+                {
+                    act();
+                }
+                catch (Exception ex)
+                {
+                    Assert.Fail($"Expected no exception, but got: {ex.Message}");
+                }
             }
         }
 
@@ -248,91 +259,91 @@ namespace Neo.UnitTests
         {
             foreach (var seed in TestProtocolSettings.Default.SeedList)
             {
-                seed.Should().MatchRegex(@"^[\w.-]+:\d+$"); // Format: domain:port
+                StringAssert.Matches(seed, new System.Text.RegularExpressions.Regex(@"^[\w.-]+:\d+$")); // Format: domain:port
             }
         }
 
         [TestMethod]
         public void TestDefaultNetworkValue()
         {
-            ProtocolSettings.Default.Network.Should().Be(0);
+            Assert.AreEqual((uint)0, ProtocolSettings.Default.Network);
         }
 
         [TestMethod]
         public void TestDefaultAddressVersionValue()
         {
-            TestProtocolSettings.Default.AddressVersion.Should().Be(ProtocolSettings.Default.AddressVersion);
+            Assert.AreEqual(ProtocolSettings.Default.AddressVersion, TestProtocolSettings.Default.AddressVersion);
         }
 
         [TestMethod]
         public void TestDefaultValidatorsCountValue()
         {
-            ProtocolSettings.Default.ValidatorsCount.Should().Be(0);
+            Assert.AreEqual(0, ProtocolSettings.Default.ValidatorsCount);
         }
 
         [TestMethod]
         public void TestDefaultMillisecondsPerBlockValue()
         {
-            TestProtocolSettings.Default.MillisecondsPerBlock.Should().Be(ProtocolSettings.Default.MillisecondsPerBlock);
+            Assert.AreEqual(ProtocolSettings.Default.MillisecondsPerBlock, TestProtocolSettings.Default.MillisecondsPerBlock);
         }
 
         [TestMethod]
         public void TestDefaultMaxTransactionsPerBlockValue()
         {
-            TestProtocolSettings.Default.MaxTransactionsPerBlock.Should().Be(ProtocolSettings.Default.MaxTransactionsPerBlock);
+            Assert.AreEqual(ProtocolSettings.Default.MaxTransactionsPerBlock, TestProtocolSettings.Default.MaxTransactionsPerBlock);
         }
 
         [TestMethod]
         public void TestDefaultMemoryPoolMaxTransactionsValue()
         {
-            TestProtocolSettings.Default.MemoryPoolMaxTransactions.Should().Be(ProtocolSettings.Default.MemoryPoolMaxTransactions);
+            Assert.AreEqual(ProtocolSettings.Default.MemoryPoolMaxTransactions, TestProtocolSettings.Default.MemoryPoolMaxTransactions);
         }
 
         [TestMethod]
         public void TestDefaultMaxTraceableBlocksValue()
         {
-            TestProtocolSettings.Default.MaxTraceableBlocks.Should().Be(ProtocolSettings.Default.MaxTraceableBlocks);
+            Assert.AreEqual(ProtocolSettings.Default.MaxTraceableBlocks, TestProtocolSettings.Default.MaxTraceableBlocks);
         }
 
         [TestMethod]
         public void TestDefaultInitialGasDistributionValue()
         {
-            TestProtocolSettings.Default.InitialGasDistribution.Should().Be(ProtocolSettings.Default.InitialGasDistribution);
+            Assert.AreEqual(ProtocolSettings.Default.InitialGasDistribution, TestProtocolSettings.Default.InitialGasDistribution);
         }
 
         [TestMethod]
         public void TestDefaultHardforksValue()
         {
-            TestProtocolSettings.Default.Hardforks.Should().BeEquivalentTo(ProtocolSettings.Default.Hardforks);
+            CollectionAssert.AreEqual(ProtocolSettings.Default.Hardforks, TestProtocolSettings.Default.Hardforks);
         }
 
         [TestMethod]
         public void TestTimePerBlockCalculation()
         {
             var expectedTimeSpan = TimeSpan.FromMilliseconds(TestProtocolSettings.Default.MillisecondsPerBlock);
-            TestProtocolSettings.Default.TimePerBlock.Should().Be(expectedTimeSpan);
+            Assert.AreEqual(expectedTimeSpan, TestProtocolSettings.Default.TimePerBlock);
         }
 
         [TestMethod]
         public void TestLoad()
         {
-            var loadedSetting = ProtocolSettings.Load("test.config.json", false);
+            var loadedSetting = ProtocolSettings.Load("test.config.json");
 
             // Comparing all properties
-            TestProtocolSettings.Default.Network.Should().Be(loadedSetting.Network);
-            TestProtocolSettings.Default.AddressVersion.Should().Be(loadedSetting.AddressVersion);
-            TestProtocolSettings.Default.StandbyCommittee.Should().BeEquivalentTo(loadedSetting.StandbyCommittee);
-            TestProtocolSettings.Default.ValidatorsCount.Should().Be(loadedSetting.ValidatorsCount);
-            TestProtocolSettings.Default.SeedList.Should().BeEquivalentTo(loadedSetting.SeedList);
-            TestProtocolSettings.Default.MillisecondsPerBlock.Should().Be(loadedSetting.MillisecondsPerBlock);
-            TestProtocolSettings.Default.MaxTransactionsPerBlock.Should().Be(loadedSetting.MaxTransactionsPerBlock);
-            TestProtocolSettings.Default.MemoryPoolMaxTransactions.Should().Be(loadedSetting.MemoryPoolMaxTransactions);
-            TestProtocolSettings.Default.MaxTraceableBlocks.Should().Be(loadedSetting.MaxTraceableBlocks);
-            TestProtocolSettings.Default.InitialGasDistribution.Should().Be(loadedSetting.InitialGasDistribution);
-            TestProtocolSettings.Default.Hardforks.Should().BeEquivalentTo(loadedSetting.Hardforks);
+            Assert.AreEqual(TestProtocolSettings.Default.Network, loadedSetting.Network);
+            Assert.AreEqual(TestProtocolSettings.Default.AddressVersion, loadedSetting.AddressVersion);
+            CollectionAssert.AreEqual(TestProtocolSettings.Default.StandbyCommittee.ToList(), loadedSetting.StandbyCommittee.ToList());
+            Assert.AreEqual(TestProtocolSettings.Default.ValidatorsCount, loadedSetting.ValidatorsCount);
+            CollectionAssert.AreEqual(TestProtocolSettings.Default.SeedList, loadedSetting.SeedList);
+            Assert.AreEqual(TestProtocolSettings.Default.MillisecondsPerBlock, loadedSetting.MillisecondsPerBlock);
+            Assert.AreEqual(TestProtocolSettings.Default.MaxTransactionsPerBlock, loadedSetting.MaxTransactionsPerBlock);
+            Assert.AreEqual(TestProtocolSettings.Default.MemoryPoolMaxTransactions, loadedSetting.MemoryPoolMaxTransactions);
+            Assert.AreEqual(TestProtocolSettings.Default.MaxTraceableBlocks, loadedSetting.MaxTraceableBlocks);
+            Assert.AreEqual(TestProtocolSettings.Default.InitialGasDistribution, loadedSetting.InitialGasDistribution);
+            CollectionAssert.AreEqual(TestProtocolSettings.Default.Hardforks, loadedSetting.Hardforks);
 
             // If StandbyValidators is a derived property, comparing it as well
-            TestProtocolSettings.Default.StandbyValidators.Should().BeEquivalentTo(loadedSetting.StandbyValidators);
+            CollectionAssert.AreEqual(TestProtocolSettings.Default.StandbyValidators.ToList(), loadedSetting.StandbyValidators.ToList());
         }
     }
 }

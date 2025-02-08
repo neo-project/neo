@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_InvPayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -26,10 +25,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var test = InvPayload.Create(InventoryType.TX, UInt256.Zero);
-            test.Size.Should().Be(34);
+            Assert.AreEqual(34, test.Size);
 
             test = InvPayload.Create(InventoryType.TX, UInt256.Zero, UInt256.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
-            test.Size.Should().Be(66);
+            Assert.AreEqual(66, test.Size);
         }
 
         [TestMethod]

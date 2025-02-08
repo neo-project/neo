@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ExtensiblePayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -31,9 +30,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Sender = Array.Empty<byte>().ToScriptHash(),
                 Category = "123",
                 Data = new byte[] { 1, 2, 3 },
-                Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = Array.Empty<byte>() }
+                Witness = new Witness()
+                {
+                    InvocationScript = new byte[] { 3, 5, 6 },
+                    VerificationScript = Array.Empty<byte>()
+                }
             };
-            test.Size.Should().Be(42);
+            Assert.AreEqual(42, test.Size);
         }
 
         [TestMethod]
@@ -46,7 +49,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 ValidBlockEnd = 789,
                 Sender = Array.Empty<byte>().ToScriptHash(),
                 Data = new byte[] { 1, 2, 3 },
-                Witness = new Witness() { InvocationScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH2, (byte)OpCode.PUSH3 }, VerificationScript = Array.Empty<byte>() }
+                Witness = new Witness()
+                {
+                    InvocationScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH2, (byte)OpCode.PUSH3 },
+                    VerificationScript = Array.Empty<byte>()
+                }
             };
             var clone = test.ToArray().AsSerializable<ExtensiblePayload>();
 
@@ -55,6 +62,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.ValidBlockStart, clone.ValidBlockStart);
             Assert.AreEqual(test.ValidBlockEnd, clone.ValidBlockEnd);
             Assert.AreEqual(test.Category, clone.Category);
+        }
+
+        [TestMethod]
+        public void Witness()
+        {
+            IVerifiable item = new ExtensiblePayload();
+            Action actual = () => item.Witnesses = null;
+            Assert.ThrowsException<ArgumentNullException>(actual);
+
+            item.Witnesses = [new()];
+            Assert.AreEqual(1, item.Witnesses.Length);
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Cryptography_Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
@@ -35,15 +34,15 @@ namespace Neo.UnitTests.Cryptography
             string input = "3vQB7B6MrGQZaxCuFg4oh";
             byte[] result = input.Base58CheckDecode();
             byte[] helloWorld = { 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 };
-            result.Should().Equal(helloWorld);
+            CollectionAssert.AreEqual(helloWorld, result);
 
             input = "3v";
             Action action = () => input.Base58CheckDecode();
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
             input = "3vQB7B6MrGQZaxCuFg4og";
             action = () => input.Base58CheckDecode();
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
             Assert.ThrowsException<FormatException>(() => string.Empty.Base58CheckDecode());
         }
@@ -53,8 +52,8 @@ namespace Neo.UnitTests.Cryptography
         {
             ReadOnlySpan<byte> input = "Hello, world!"u8;
             byte[] input2 = input.ToArray();
-            input.Murmur32(0).Should().Be(input2.Murmur32(0));
-            input.Murmur128(0).Should().Equal(input2.Murmur128(0));
+            Assert.AreEqual(input2.Murmur32(0), input.Murmur32(0));
+            CollectionAssert.AreEqual(input2.Murmur128(0), input.Murmur128(0));
         }
 
         [TestMethod]
@@ -62,10 +61,10 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] value = Encoding.ASCII.GetBytes("hello world");
             byte[] result = value.Sha256(0, value.Length);
-            result.ToHexString().Should().Be("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
-            value.Sha256().Should().Equal(result);
-            ((Span<byte>)value).Sha256().Should().Equal(result);
-            ((ReadOnlySpan<byte>)value).Sha256().Should().Equal(result);
+            Assert.AreEqual("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", result.ToHexString());
+            CollectionAssert.AreEqual(result, value.Sha256());
+            CollectionAssert.AreEqual(result, ((Span<byte>)value).Sha256());
+            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)value).Sha256());
         }
 
         [TestMethod]
@@ -73,9 +72,9 @@ namespace Neo.UnitTests.Cryptography
         {
             var input = "Hello, world!"u8.ToArray();
             var result = input.Keccak256();
-            result.ToHexString().Should().Be("b6e16d27ac5ab427a7f68900ac5559ce272dc6c37c82b3e052246c82244c50e4");
-            ((Span<byte>)input).Keccak256().Should().Equal(result);
-            ((ReadOnlySpan<byte>)input).Keccak256().Should().Equal(result);
+            Assert.AreEqual("b6e16d27ac5ab427a7f68900ac5559ce272dc6c37c82b3e052246c82244c50e4", result.ToHexString());
+            CollectionAssert.AreEqual(result, ((Span<byte>)input).Keccak256());
+            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)input).Keccak256());
         }
 
         [TestMethod]
@@ -83,7 +82,7 @@ namespace Neo.UnitTests.Cryptography
         {
             ReadOnlySpan<byte> value = Encoding.ASCII.GetBytes("hello world");
             byte[] result = value.RIPEMD160();
-            result.ToHexString().Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+            Assert.AreEqual("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f", result.ToHexString());
         }
 
         [TestMethod]
@@ -148,11 +147,11 @@ namespace Neo.UnitTests.Cryptography
                     }
                 }
             };
-            filter.Test(tx).Should().BeFalse();
+            Assert.IsFalse(filter.Test(tx));
             filter.Add(tx.Witnesses[0].ScriptHash.ToArray());
-            filter.Test(tx).Should().BeTrue();
+            Assert.IsTrue(filter.Test(tx));
             filter.Add(tx.Hash.ToArray());
-            filter.Test(tx).Should().BeTrue();
+            Assert.IsTrue(filter.Test(tx));
         }
     }
 }

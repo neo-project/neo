@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExtensiblePayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -71,12 +71,12 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.Extensible;
 
         public int Size =>
-            Category.GetVarSize() + //Category
-            sizeof(uint) +          //ValidBlockStart
-            sizeof(uint) +          //ValidBlockEnd
-            UInt160.Length +        //Sender
-            Data.GetVarSize() +     //Data
-            1 + Witness.Size;       //Witness
+            Category.GetVarSize() + // Category
+            sizeof(uint) +          // ValidBlockStart
+            sizeof(uint) +          // ValidBlockEnd
+            UInt160.Length +        // Sender
+            Data.GetVarSize() +     // Data
+            (Witness is null ? 1 : 1 + Witness.Size); // Witness, cannot be null for valid payload
 
         Witness[] IVerifiable.Witnesses
         {
@@ -86,7 +86,10 @@ namespace Neo.Network.P2P.Payloads
             }
             set
             {
-                if (value.Length != 1) throw new ArgumentException($"Expected 1 witness, got {value.Length}.");
+                if (value is null)
+                    throw new ArgumentNullException(nameof(IVerifiable.Witnesses));
+                if (value.Length != 1)
+                    throw new ArgumentException($"Expected 1 witness, got {value.Length}.", nameof(IVerifiable.Witnesses));
                 Witness = value[0];
             }
         }
@@ -119,7 +122,8 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write((byte)1); writer.Write(Witness);
+            writer.Write((byte)1);
+            writer.Write(Witness);
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Wallets_Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
@@ -27,10 +26,10 @@ namespace Neo.UnitTests.Wallets
         {
             byte[] array = { 0x01 };
             UInt160 scriptHash = new UInt160(Crypto.Hash160(array));
-            "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion).Should().Be(scriptHash);
+            Assert.AreEqual(scriptHash, "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion));
 
             Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash(TestProtocolSettings.Default.AddressVersion);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
             var address = scriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
             Span<byte> data = stackalloc byte[21];
@@ -39,7 +38,7 @@ namespace Neo.UnitTests.Wallets
             scriptHash.ToArray().CopyTo(data[1..]);
             address = Base58.Base58CheckEncode(data);
             action = () => address.ToScriptHash(ProtocolSettings.Default.AddressVersion);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
         }
     }
 }

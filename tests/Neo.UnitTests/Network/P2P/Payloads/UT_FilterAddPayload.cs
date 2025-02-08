@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_FilterAddPayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -25,10 +24,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var test = new FilterAddPayload() { Data = new byte[0] };
-            test.Size.Should().Be(1);
+            Assert.AreEqual(1, test.Size);
 
             test = new FilterAddPayload() { Data = new byte[] { 1, 2, 3 } };
-            test.Size.Should().Be(4);
+            Assert.AreEqual(4, test.Size);
         }
 
         [TestMethod]

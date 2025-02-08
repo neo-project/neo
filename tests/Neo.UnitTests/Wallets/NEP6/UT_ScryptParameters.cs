@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ScryptParameters.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.Wallets.NEP6;
@@ -30,18 +29,18 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_Default_ScryptParameters()
         {
-            uut.N.Should().Be(16384);
-            uut.R.Should().Be(8);
-            uut.P.Should().Be(8);
+            Assert.AreEqual(16384, uut.N);
+            Assert.AreEqual(8, uut.R);
+            Assert.AreEqual(8, uut.P);
         }
 
         [TestMethod]
         public void Test_ScryptParameters_Default_ToJson()
         {
             JObject json = ScryptParameters.Default.ToJson();
-            json["n"].AsNumber().Should().Be(ScryptParameters.Default.N);
-            json["r"].AsNumber().Should().Be(ScryptParameters.Default.R);
-            json["p"].AsNumber().Should().Be(ScryptParameters.Default.P);
+            Assert.AreEqual(ScryptParameters.Default.N, json["n"].AsNumber());
+            Assert.AreEqual(ScryptParameters.Default.R, json["r"].AsNumber());
+            Assert.AreEqual(ScryptParameters.Default.P, json["p"].AsNumber());
         }
 
         [TestMethod]
@@ -53,9 +52,9 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["p"] = 8;
 
             ScryptParameters uut2 = ScryptParameters.FromJson(json);
-            uut2.N.Should().Be(ScryptParameters.Default.N);
-            uut2.R.Should().Be(ScryptParameters.Default.R);
-            uut2.P.Should().Be(ScryptParameters.Default.P);
+            Assert.AreEqual(ScryptParameters.Default.N, uut2.N);
+            Assert.AreEqual(ScryptParameters.Default.R, uut2.R);
+            Assert.AreEqual(ScryptParameters.Default.P, uut2.P);
         }
 
         [TestMethod]
@@ -63,9 +62,9 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             int n = 1, r = 2, p = 3;
             ScryptParameters parameter = new ScryptParameters(n, r, p);
-            parameter.N.Should().Be(n);
-            parameter.R.Should().Be(r);
-            parameter.P.Should().Be(p);
+            Assert.AreEqual(n, parameter.N);
+            Assert.AreEqual(r, parameter.R);
+            Assert.AreEqual(p, parameter.P);
         }
     }
 }

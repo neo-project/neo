@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_KeyPair.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
@@ -31,22 +30,22 @@ namespace Neo.UnitTests.Wallets
                 privateKey[i] = (byte)random.Next(256);
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint publicKey = ECCurve.Secp256r1.G * privateKey;
-            keyPair.PrivateKey.Should().BeEquivalentTo(privateKey);
-            keyPair.PublicKey.Should().Be(publicKey);
+            CollectionAssert.AreEqual(privateKey, keyPair.PrivateKey);
+            Assert.AreEqual(publicKey, keyPair.PublicKey);
 
             byte[] privateKey96 = new byte[96];
             for (int i = 0; i < privateKey96.Length; i++)
                 privateKey96[i] = (byte)random.Next(256);
             keyPair = new KeyPair(privateKey96);
             publicKey = ECPoint.DecodePoint(new byte[] { 0x04 }.Concat(privateKey96.Skip(privateKey96.Length - 96).Take(64)).ToArray(), ECCurve.Secp256r1);
-            keyPair.PrivateKey.Should().BeEquivalentTo(privateKey96.Skip(64).Take(32));
-            keyPair.PublicKey.Should().Be(publicKey);
+            CollectionAssert.AreEqual(privateKey96.Skip(64).Take(32).ToArray(), keyPair.PrivateKey);
+            Assert.AreEqual(publicKey, keyPair.PublicKey);
 
             byte[] privateKey31 = new byte[31];
             for (int i = 0; i < privateKey31.Length; i++)
                 privateKey31[i] = (byte)random.Next(256);
             Action action = () => new KeyPair(privateKey31);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(action);
         }
 
         [TestMethod]
@@ -58,10 +57,10 @@ namespace Neo.UnitTests.Wallets
                 privateKey[i] = (byte)random.Next(256);
             KeyPair keyPair = new KeyPair(privateKey);
             KeyPair keyPair2 = keyPair;
-            keyPair.Equals(keyPair2).Should().BeTrue();
+            Assert.IsTrue(keyPair.Equals(keyPair2));
 
             KeyPair keyPair3 = null;
-            keyPair.Equals(keyPair3).Should().BeFalse();
+            Assert.IsFalse(keyPair.Equals(keyPair3));
 
             byte[] privateKey1 = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
@@ -69,7 +68,7 @@ namespace Neo.UnitTests.Wallets
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02};
             KeyPair keyPair4 = new KeyPair(privateKey1);
             KeyPair keyPair5 = new KeyPair(privateKey2);
-            keyPair4.Equals(keyPair5).Should().BeFalse();
+            Assert.IsFalse(keyPair4.Equals(keyPair5));
         }
 
         [TestMethod]
@@ -81,7 +80,7 @@ namespace Neo.UnitTests.Wallets
                 privateKey[i] = (byte)random.Next(256);
             KeyPair keyPair = new KeyPair(privateKey);
             Object keyPair2 = keyPair;
-            keyPair.Equals(keyPair2).Should().BeTrue();
+            Assert.IsTrue(keyPair.Equals(keyPair2));
         }
 
         [TestMethod]
@@ -92,7 +91,7 @@ namespace Neo.UnitTests.Wallets
             byte[] data = { 0x80, 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new KeyPair(privateKey);
-            keyPair.Export().Should().Be(Base58.Base58CheckEncode(data));
+            Assert.AreEqual(Base58.Base58CheckEncode(data), keyPair.Export());
         }
 
         [TestMethod]
@@ -101,7 +100,7 @@ namespace Neo.UnitTests.Wallets
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new KeyPair(privateKey);
-            keyPair.PublicKeyHash.ToString().Should().Be("0x4ab3d6ac3a0609e87af84599c93d57c2d0890406");
+            Assert.AreEqual("0x4ab3d6ac3a0609e87af84599c93d57c2d0890406", keyPair.PublicKeyHash.ToString());
         }
 
         [TestMethod]
@@ -111,7 +110,7 @@ namespace Neo.UnitTests.Wallets
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair1 = new KeyPair(privateKey);
             KeyPair keyPair2 = new KeyPair(privateKey);
-            keyPair1.GetHashCode().Should().Be(keyPair2.GetHashCode());
+            Assert.AreEqual(keyPair2.GetHashCode(), keyPair1.GetHashCode());
         }
 
         [TestMethod]
@@ -120,7 +119,7 @@ namespace Neo.UnitTests.Wallets
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new KeyPair(privateKey);
-            keyPair.ToString().Should().Be("026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca16");
+            Assert.AreEqual("026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca16", keyPair.ToString());
         }
     }
 }

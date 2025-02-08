@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NeoToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,6 +16,7 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -77,7 +78,7 @@ namespace Neo.SmartContract.Native
             _registerPrice = CreateStorageKey(Prefix_RegisterPrice);
         }
 
-        public override BigInteger TotalSupply(DataCache snapshot)
+        public override BigInteger TotalSupply(IReadOnlyStoreView snapshot)
         {
             return TotalAmount;
         }
@@ -105,6 +106,18 @@ namespace Neo.SmartContract.Native
             var list = engine.CurrentContext.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
+        }
+
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        {
+            if (hfChecker(Hardfork.HF_Echidna, blockHeight))
+            {
+                manifest.SupportedStandards = new[] { "NEP-17", "NEP-27" };
+            }
+            else
+            {
+                manifest.SupportedStandards = new[] { "NEP-17" };
+            }
         }
 
         private GasDistribution DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
@@ -305,7 +318,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The amount of the fees.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public long GetRegisterPrice(DataCache snapshot)
+        public long GetRegisterPrice(IReadOnlyStoreView snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[_registerPrice];
@@ -335,13 +348,42 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state, end);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private async ContractTask OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
+        {
+            if (engine.CallingScriptHash != GAS.Hash)
+                throw new InvalidOperationException("only GAS is accepted");
+
+            if ((long)amount != GetRegisterPrice(engine.SnapshotCache))
+                throw new ArgumentException("incorrect GAS amount for registration");
+
+            var pubkey = ECPoint.DecodePoint(data.GetSpan(), ECCurve.Secp256r1);
+
+            if (!RegisterInternal(engine, pubkey))
+                throw new InvalidOperationException("failed to register candidate");
+
+            await GAS.Burn(engine, Hash, amount);
+        }
+
+        [ContractMethod(true, Hardfork.HF_Echidna, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
-            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+            // This check can be removed post-Echidna if compatible,
+            // RegisterInternal does this anyway.
+            var index = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache);
+            if (!engine.ProtocolSettings.IsHardforkEnabled(Hardfork.HF_Echidna, index) &&
+                !engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             engine.AddFee(GetRegisterPrice(engine.SnapshotCache));
+            return RegisterInternal(engine, pubkey);
+        }
+
+        private bool RegisterInternal(ApplicationEngine engine, ECPoint pubkey)
+        {
+            if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
+                return false;
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             StorageItem item = engine.SnapshotCache.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
@@ -352,7 +394,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -369,7 +412,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(Hardfork.HF_Echidna, /* */ CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
@@ -455,8 +499,8 @@ namespace Neo.SmartContract.Native
 
         internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
         {
-            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
-            return snapshot.Find(prefix_key)
+            byte[] prefixKey = CreateStorageKey(Prefix_Candidate).ToArray();
+            return snapshot.Find(prefixKey)
                 .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
                 .Where(p => p.State.Registered)
                 .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
@@ -469,10 +513,10 @@ namespace Neo.SmartContract.Native
         /// <param name="pubKey">Specific public key</param>
         /// <returns>Votes or -1 if it was not found.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetCandidateVote(DataCache snapshot, ECPoint pubKey)
+        public BigInteger GetCandidateVote(IReadOnlyStoreView snapshot, ECPoint pubKey)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubKey));
-            CandidateState state = storage?.GetInteroperable<CandidateState>();
+            var key = CreateStorageKey(Prefix_Candidate).Add(pubKey);
+            var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<CandidateState>() : null;
             return state?.Registered == true ? state.Votes : -1;
         }
 
@@ -482,7 +526,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The public keys of the members.</returns>
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        public ECPoint[] GetCommittee(DataCache snapshot)
+        public ECPoint[] GetCommittee(IReadOnlyStoreView snapshot)
         {
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
@@ -494,9 +538,10 @@ namespace Neo.SmartContract.Native
         /// <param name="account">account</param>
         /// <returns>The state of the account.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public NeoAccountState GetAccountState(DataCache snapshot, UInt160 account)
+        public NeoAccountState GetAccountState(IReadOnlyStoreView snapshot, UInt160 account)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
+            var key = CreateStorageKey(Prefix_Account).Add(account);
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<NeoAccountState>() : null;
         }
 
         /// <summary>
@@ -505,13 +550,13 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The address of the committee.</returns>
         [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        public UInt160 GetCommitteeAddress(DataCache snapshot)
+        public UInt160 GetCommitteeAddress(IReadOnlyStoreView snapshot)
         {
             ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private CachedCommittee GetCommitteeFromCache(DataCache snapshot)
+        private CachedCommittee GetCommitteeFromCache(IReadOnlyStoreView snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
         }
@@ -554,7 +599,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="validatorsCount">The number of validators in the system.</param>
         /// <returns>The public keys of the validators.</returns>
-        public ECPoint[] GetNextBlockValidators(DataCache snapshot, int validatorsCount)
+        public ECPoint[] GetNextBlockValidators(IReadOnlyStoreView snapshot, int validatorsCount)
         {
             return GetCommitteeFromCache(snapshot)
                 .Take(validatorsCount)

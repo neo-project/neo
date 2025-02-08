@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StatePlugin.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -243,7 +243,7 @@ namespace Neo.Plugins.StateService
             using BinaryReader reader = new(ms, Utility.StrictUTF8);
 
             var key = reader.ReadVarBytes(Node.MaxKeyLength);
-            var count = reader.ReadVarInt();
+            var count = reader.ReadVarInt(byte.MaxValue);
             for (ulong i = 0; i < count; i++)
             {
                 proofs.Add(reader.ReadVarBytes());
@@ -328,7 +328,7 @@ namespace Neo.Plugins.StateService
                     jarr.Add(j);
                 }
                 i++;
-            };
+            }
             if (0 < jarr.Count)
             {
                 json["firstProof"] = GetProof(trie, contract.Id, Convert.FromBase64String(jarr.First()["key"].AsString()));

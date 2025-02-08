@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StoreFactory.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,13 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
     public static class StoreFactory
     {
-        private static readonly Dictionary<string, IStoreProvider> providers = new();
+        private static readonly Dictionary<string, IStoreProvider> s_providers = [];
 
         static StoreFactory()
         {
@@ -23,12 +25,12 @@ namespace Neo.Persistence
             RegisterProvider(memProvider);
 
             // Default cases
-            providers.Add("", memProvider);
+            s_providers.Add("", memProvider);
         }
 
         public static void RegisterProvider(IStoreProvider provider)
         {
-            providers.Add(provider.Name, provider);
+            s_providers.Add(provider.Name, provider);
         }
 
         /// <summary>
@@ -36,9 +38,9 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="name">Name</param>
         /// <returns>Store provider</returns>
-        public static IStoreProvider GetStoreProvider(string name)
+        public static IStoreProvider? GetStoreProvider(string name)
         {
-            if (providers.TryGetValue(name, out var provider))
+            if (s_providers.TryGetValue(name, out var provider))
             {
                 return provider;
             }
@@ -54,7 +56,7 @@ namespace Neo.Persistence
         /// <returns>The storage engine.</returns>
         public static IStore GetStore(string storageProvider, string path)
         {
-            return providers[storageProvider].GetStore(path);
+            return s_providers[storageProvider].GetStore(path);
         }
     }
 }

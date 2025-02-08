@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_SmartContractHelper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,9 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -125,7 +123,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestVerifyWitnesses()
         {
-            var snapshotCache1 = TestBlockchain.GetTestSnapshotCache().CreateSnapshot();
+            var snapshotCache1 = TestBlockchain.GetTestSnapshotCache().CloneCache();
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TestUtils.BlocksAdd(snapshotCache1, index1, new TrimmedBlock()
             {

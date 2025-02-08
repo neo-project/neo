@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // FungibleToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
             Factor = BigInteger.Pow(10, Decimals);
         }
 
-        protected override void OnManifestCompose(ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
             manifest.SupportedStandards = new[] { "NEP-17" };
         }
@@ -107,11 +107,10 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The total supply of the token.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public virtual BigInteger TotalSupply(DataCache snapshot)
+        public virtual BigInteger TotalSupply(IReadOnlyStoreView snapshot)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_TotalSupply));
-            if (storage is null) return BigInteger.Zero;
-            return storage;
+            var key = CreateStorageKey(Prefix_TotalSupply);
+            return snapshot.TryGet(key, out var item) ? item : BigInteger.Zero;
         }
 
         /// <summary>
@@ -121,11 +120,12 @@ namespace Neo.SmartContract.Native
         /// <param name="account">The owner of the account.</param>
         /// <returns>The balance of the account. Or 0 if the account doesn't exist.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
+        public virtual BigInteger BalanceOf(IReadOnlyStoreView snapshot, UInt160 account)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
-            if (storage is null) return BigInteger.Zero;
-            return storage.GetInteroperable<TState>().Balance;
+            var key = CreateStorageKey(Prefix_Account).Add(account);
+            if (snapshot.TryGet(key, out var item))
+                return item.GetInteroperable<TState>().Balance;
+            return BigInteger.Zero;
         }
 
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]

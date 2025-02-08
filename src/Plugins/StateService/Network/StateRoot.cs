@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StateRoot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -53,16 +53,19 @@ namespace Neo.Plugins.StateService.Network
             }
             set
             {
-                if (value.Length != 1) throw new ArgumentException(null, nameof(value));
+                if (value is null)
+                    throw new ArgumentNullException(nameof(IVerifiable.Witnesses));
+                if (value.Length != 1)
+                    throw new ArgumentException($"Expected 1 witness, got {value.Length}.", nameof(IVerifiable.Witnesses));
                 Witness = value[0];
             }
         }
 
         int ISerializable.Size =>
-            sizeof(byte) +      //Version
-            sizeof(uint) +      //Index
-            UInt256.Length +    //RootHash
-            (Witness is null ? 1 : 1 + Witness.Size); //Witness
+            sizeof(byte) +      // Version
+            sizeof(uint) +      // Index
+            UInt256.Length +    // RootHash
+            (Witness is null ? 1 : 1 + Witness.Size); // Witness
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {

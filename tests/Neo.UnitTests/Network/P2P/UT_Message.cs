@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Message.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.IO;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -34,13 +33,13 @@ namespace Neo.UnitTests.Network.P2P
             var copy = buffer.AsSerializable<Message>();
             var payloadCopy = (PingPayload)copy.Payload;
 
-            copy.Command.Should().Be(msg.Command);
-            copy.Flags.Should().Be(msg.Flags);
-            msg.Size.Should().Be(payload.Size + 3);
+            Assert.AreEqual(msg.Command, copy.Command);
+            Assert.AreEqual(msg.Flags, copy.Flags);
+            Assert.AreEqual(payload.Size + 3, msg.Size);
 
-            payloadCopy.LastBlockIndex.Should().Be(payload.LastBlockIndex);
-            payloadCopy.Nonce.Should().Be(payload.Nonce);
-            payloadCopy.Timestamp.Should().Be(payload.Timestamp);
+            Assert.AreEqual(payload.LastBlockIndex, payloadCopy.LastBlockIndex);
+            Assert.AreEqual(payload.Nonce, payloadCopy.Nonce);
+            Assert.AreEqual(payload.Timestamp, payloadCopy.Timestamp);
         }
 
         [TestMethod]
@@ -50,9 +49,9 @@ namespace Neo.UnitTests.Network.P2P
             var buffer = msg.ToArray();
             var copy = buffer.AsSerializable<Message>();
 
-            copy.Command.Should().Be(msg.Command);
-            copy.Flags.Should().Be(msg.Flags);
-            copy.Payload.Should().Be(null);
+            Assert.AreEqual(msg.Command, copy.Command);
+            Assert.AreEqual(msg.Flags, copy.Flags);
+            Assert.IsNull(copy.Payload);
         }
 
         [TestMethod]
@@ -62,7 +61,7 @@ namespace Neo.UnitTests.Network.P2P
             var msg = Message.Create(MessageCommand.Ping, payload);
             _ = msg.ToArray();
 
-            msg.Size.Should().Be(payload.Size + 3);
+            Assert.AreEqual(payload.Size + 3, msg.Size);
         }
 
         [TestMethod]
@@ -75,14 +74,14 @@ namespace Neo.UnitTests.Network.P2P
 
             var payloadCopy = (PingPayload)copy.Payload;
 
-            copy.Command.Should().Be(msg.Command);
-            copy.Flags.Should().Be(msg.Flags);
+            Assert.AreEqual(msg.Command, copy.Command);
+            Assert.AreEqual(msg.Flags, copy.Flags);
 
-            payloadCopy.LastBlockIndex.Should().Be(payload.LastBlockIndex);
-            payloadCopy.Nonce.Should().Be(payload.Nonce);
-            payloadCopy.Timestamp.Should().Be(payload.Timestamp);
+            Assert.AreEqual(payload.LastBlockIndex, payloadCopy.LastBlockIndex);
+            Assert.AreEqual(payload.Nonce, payloadCopy.Nonce);
+            Assert.AreEqual(payload.Timestamp, payloadCopy.Timestamp);
 
-            buffer.Count.Should().Be(length);
+            Assert.AreEqual(length, buffer.Count);
         }
 
         [TestMethod]
@@ -99,11 +98,11 @@ namespace Neo.UnitTests.Network.P2P
             var buffer = ByteString.CopyFrom(msg.ToArray());
             var length = Message.TryDeserialize(buffer, out var copy);
 
-            copy.Command.Should().Be(msg.Command);
-            copy.Flags.Should().Be(msg.Flags);
-            copy.Payload.Should().Be(null);
+            Assert.AreEqual(msg.Command, copy.Command);
+            Assert.AreEqual(msg.Flags, copy.Flags);
+            Assert.IsNull(copy.Payload);
 
-            buffer.Count.Should().Be(length);
+            Assert.AreEqual(length, buffer.Count);
         }
 
         [TestMethod]
@@ -169,7 +168,7 @@ namespace Neo.UnitTests.Network.P2P
             var msg = Message.Create(MessageCommand.Transaction, payload);
             var buffer = msg.ToArray();
 
-            buffer.Length.Should().Be(56);
+            Assert.AreEqual(56, buffer.Length);
 
             byte[] script = new byte[100];
             Array.Fill(script, (byte)OpCode.PUSH2);
@@ -177,13 +176,13 @@ namespace Neo.UnitTests.Network.P2P
             msg = Message.Create(MessageCommand.Transaction, payload);
             buffer = msg.ToArray();
 
-            buffer.Length.Should().Be(30);
-            msg.Flags.HasFlag(MessageFlags.Compressed).Should().BeTrue();
+            Assert.AreEqual(30, buffer.Length);
+            Assert.IsTrue(msg.Flags.HasFlag(MessageFlags.Compressed));
 
             _ = Message.TryDeserialize(ByteString.CopyFrom(msg.ToArray()), out var copy);
             Assert.IsNotNull(copy);
 
-            copy.Flags.HasFlag(MessageFlags.Compressed).Should().BeTrue();
+            Assert.IsTrue(copy.Flags.HasFlag(MessageFlags.Compressed));
         }
     }
 }

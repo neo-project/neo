@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_OrderedDictionary.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -33,66 +33,66 @@ namespace Neo.Json.UnitTests
         public void TestClear()
         {
             od.Clear();
-            od.Count.Should().Be(0);
-            od.TryGetValue("a", out uint i).Should().BeFalse();
+            Assert.AreEqual(0, od.Count);
+            Assert.IsFalse(od.TryGetValue("a", out uint i));
         }
 
         [TestMethod]
         public void TestCount()
         {
-            od.Count.Should().Be(3);
+            Assert.AreEqual(3, od.Count);
             od.Add("d", 4);
-            od.Count.Should().Be(4);
+            Assert.AreEqual(4, od.Count);
         }
 
         [TestMethod]
         public void TestIsReadOnly()
         {
-            od.IsReadOnly.Should().BeFalse();
+            Assert.IsFalse(od.IsReadOnly);
         }
 
         [TestMethod]
         public void TestSetAndGetItem()
         {
             var val = od["a"];
-            val.Should().Be(1);
+            Assert.AreEqual(1u, val);
             od["d"] = 10;
-            od["d"].Should().Be(10);
+            Assert.AreEqual(10u, od["d"]);
             od["d"] = 15;
-            od["d"].Should().Be(15);
+            Assert.AreEqual(15u, od["d"]);
         }
 
         [TestMethod]
         public void TestGetKeys()
         {
             var keys = od.Keys;
-            keys.Should().Contain("a");
-            keys.Count.Should().Be(3);
+            Assert.IsTrue(keys.Contains("a"));
+            Assert.AreEqual(3, keys.Count);
         }
 
         [TestMethod]
         public void TestGetValues()
         {
             var values = od.Values;
-            values.Should().Contain(1);
-            values.Count.Should().Be(3);
+            Assert.IsTrue(values.Contains(1u));
+            Assert.AreEqual(3, values.Count);
         }
 
         [TestMethod]
         public void TestRemove()
         {
             od.Remove("a");
-            od.Count.Should().Be(2);
-            od.ContainsKey("a").Should().BeFalse();
+            Assert.AreEqual(2, od.Count);
+            Assert.IsFalse(od.ContainsKey("a"));
         }
 
         [TestMethod]
         public void TestTryGetValue()
         {
-            od.TryGetValue("a", out uint i).Should().BeTrue();
-            i.Should().Be(1);
-            od.TryGetValue("d", out uint j).Should().BeFalse();
-            j.Should().Be(0);
+            Assert.IsTrue(od.TryGetValue("a", out uint i));
+            Assert.AreEqual(1u, i);
+            Assert.IsFalse(od.TryGetValue("d", out uint j));
+            Assert.AreEqual(0u, j);
         }
 
         [TestMethod]
@@ -101,7 +101,7 @@ namespace Neo.Json.UnitTests
             var pair = new KeyValuePair<string, uint>("d", 4);
             ICollection<KeyValuePair<string, uint>> collection = od;
             collection.Add(pair);
-            collection.Contains(pair).Should().BeTrue();
+            Assert.IsTrue(collection.Contains(pair));
         }
 
         [TestMethod]
@@ -110,12 +110,12 @@ namespace Neo.Json.UnitTests
             var arr = new KeyValuePair<string, uint>[3];
             ICollection<KeyValuePair<string, uint>> collection = od;
             collection.CopyTo(arr, 0);
-            arr[0].Key.Should().Be("a");
-            arr[0].Value.Should().Be(1);
-            arr[1].Key.Should().Be("b");
-            arr[1].Value.Should().Be(2);
-            arr[2].Key.Should().Be("c");
-            arr[2].Value.Should().Be(3);
+            Assert.AreEqual("a", arr[0].Key);
+            Assert.AreEqual(1u, arr[0].Value);
+            Assert.AreEqual("b", arr[1].Key);
+            Assert.AreEqual(2u, arr[1].Value);
+            Assert.AreEqual("c", arr[2].Key);
+            Assert.AreEqual(3u, arr[2].Value);
         }
 
         [TestMethod]
@@ -124,15 +124,15 @@ namespace Neo.Json.UnitTests
             ICollection<KeyValuePair<string, uint>> collection = od;
             var pair = new KeyValuePair<string, uint>("a", 1);
             collection.Remove(pair);
-            collection.Contains(pair).Should().BeFalse();
-            collection.Count.Should().Be(2);
+            Assert.IsFalse(collection.Contains(pair));
+            Assert.AreEqual(2, collection.Count);
         }
 
         [TestMethod]
         public void TestGetEnumerator()
         {
             IEnumerable collection = od;
-            collection.GetEnumerator().MoveNext().Should().BeTrue();
+            Assert.IsTrue(collection.GetEnumerator().MoveNext());
         }
     }
 }

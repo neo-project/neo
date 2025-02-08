@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Hasher.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+
 namespace Neo.Cryptography
 {
     /// <summary>
     /// Represents hash function identifiers supported by ECDSA message signature and verification.
     /// </summary>
+    [Obsolete("Use HashAlgorithm instead")]
     public enum Hasher : byte
     {
         /// <summary>

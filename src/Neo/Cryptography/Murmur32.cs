@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Murmur32.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,14 +11,15 @@
 
 using System;
 using System.Buffers.Binary;
-using System.Security.Cryptography;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography
 {
     /// <summary>
     /// Computes the murmur hash for the input data.
+    /// <remarks>Murmur32 is a non-cryptographic hash function.</remarks>
     /// </summary>
-    public sealed class Murmur32 : HashAlgorithm
+    public sealed class Murmur32
     {
         private const uint c1 = 0xcc9e2d51;
         private const uint c2 = 0x1b873593;
@@ -27,11 +28,14 @@ namespace Neo.Cryptography
         private const uint m = 5;
         private const uint n = 0xe6546b64;
 
-        private readonly uint seed;
-        private uint hash;
-        private int length;
+        private readonly uint _seed;
+        private uint _hash;
+        private int _length;
 
-        public override int HashSize => 32;
+        public const int HashSizeInBits = 32;
+
+        [Obsolete("Use HashSizeInBits")]
+        public int HashSize => HashSizeInBits;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Murmur32"/> class with the specified seed.
@@ -39,27 +43,25 @@ namespace Neo.Cryptography
         /// <param name="seed">The seed to be used.</param>
         public Murmur32(uint seed)
         {
-            this.seed = seed;
-            Initialize();
+            _seed = seed;
         }
 
-        protected override void HashCore(byte[] array, int ibStart, int cbSize)
+        /// <summary>
+        /// Append data to murmur computation
+        /// </summary>
+        /// <param name="source">Source</param>
+        private void Append(ReadOnlySpan<byte> source)
         {
-            HashCore(array.AsSpan(ibStart, cbSize));
-        }
-
-        protected override void HashCore(ReadOnlySpan<byte> source)
-        {
-            length += source.Length;
+            _length += source.Length;
             for (; source.Length >= 4; source = source[4..])
             {
-                uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
+                var k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;
                 k = Helper.RotateLeft(k, r1);
                 k *= c2;
-                hash ^= k;
-                hash = Helper.RotateLeft(hash, r2);
-                hash = hash * m + n;
+                _hash ^= k;
+                _hash = Helper.RotateLeft(_hash, r2);
+                _hash = _hash * m + n;
             }
             if (source.Length > 0)
             {
@@ -73,34 +75,61 @@ namespace Neo.Cryptography
                 remainingBytes *= c1;
                 remainingBytes = Helper.RotateLeft(remainingBytes, r1);
                 remainingBytes *= c2;
-                hash ^= remainingBytes;
+                _hash ^= remainingBytes;
             }
         }
 
-        protected override byte[] HashFinal()
+        private uint GetCurrentHashUInt32()
         {
-            byte[] buffer = new byte[sizeof(uint)];
-            TryHashFinal(buffer, out _);
+            var state = _hash ^ (uint)_length;
+            state ^= state >> 16;
+            state *= 0x85ebca6b;
+            state ^= state >> 13;
+            state *= 0xc2b2ae35;
+            state ^= state >> 16;
+            return state;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Initialize()
+        {
+            _hash = _seed;
+            _length = 0;
+        }
+
+        /// <summary>
+        /// Computes the murmur hash for the input data and resets the state.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code in byte[4].</returns>
+        public byte[] ComputeHash(ReadOnlySpan<byte> data)
+        {
+            var buffer = new byte[HashSizeInBits / 8];
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer, ComputeHashUInt32(data));
             return buffer;
         }
 
-        protected override bool TryHashFinal(Span<byte> destination, out int bytesWritten)
+        /// <summary>
+        /// Computes the murmur hash for the input data and resets the state.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code in uint.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public uint ComputeHashUInt32(ReadOnlySpan<byte> data)
         {
-            hash ^= (uint)length;
-            hash ^= hash >> 16;
-            hash *= 0x85ebca6b;
-            hash ^= hash >> 13;
-            hash *= 0xc2b2ae35;
-            hash ^= hash >> 16;
-
-            bytesWritten = Math.Min(destination.Length, sizeof(uint));
-            return BinaryPrimitives.TryWriteUInt32LittleEndian(destination, hash);
+            Initialize();
+            Append(data);
+            return GetCurrentHashUInt32();
         }
 
-        public override void Initialize()
-        {
-            hash = seed;
-            length = 0;
-        }
+        /// <summary>
+        /// Computes the murmur hash for the input data.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed used by the murmur algorithm.</param>
+        /// <returns>The computed hash code in uint.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint HashToUInt32(ReadOnlySpan<byte> data, uint seed)
+            => new Murmur32(seed).ComputeHashUInt32(data);
     }
 }

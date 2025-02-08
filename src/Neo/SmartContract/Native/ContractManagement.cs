@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractManagement.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private long GetMinimumDeploymentFee(DataCache snapshot)
+        private long GetMinimumDeploymentFee(IReadOnlyStoreView snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
@@ -137,9 +137,10 @@ namespace Neo.SmartContract.Native
         /// <param name="hash">The hash of the deployed contract.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContract(DataCache snapshot, UInt160 hash)
+        public ContractState GetContract(IReadOnlyStoreView snapshot, UInt160 hash)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>(false);
+            var key = CreateStorageKey(Prefix_Contract).Add(hash);
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<ContractState>(false) : null;
         }
 
         /// <summary>
@@ -149,12 +150,10 @@ namespace Neo.SmartContract.Native
         /// <param name="id">Contract ID.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContractById(DataCache snapshot, int id)
+        public ContractState GetContractById(IReadOnlyStoreView snapshot, int id)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
-            if (item is null) return null;
-            var hash = new UInt160(item.Value.Span);
-            return GetContract(snapshot, hash);
+            var key = CreateStorageKey(Prefix_ContractHash).AddBigEndian(id);
+            return snapshot.TryGet(key, out var item) ? GetContract(snapshot, new UInt160(item.Value.Span)) : null;
         }
 
         /// <summary>
@@ -184,7 +183,7 @@ namespace Neo.SmartContract.Native
         /// <param name="pcount">The number of parameters</param>
         /// <returns>True if the method exists.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool HasMethod(DataCache snapshot, UInt160 hash, string method, int pcount)
+        public bool HasMethod(IReadOnlyStoreView snapshot, UInt160 hash, string method, int pcount)
         {
             var contract = GetContract(snapshot, hash);
             if (contract is null) return false;

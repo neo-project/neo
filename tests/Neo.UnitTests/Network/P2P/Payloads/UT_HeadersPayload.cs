@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_HeadersPayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,10 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -23,20 +21,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var header = new Header();
-            TestUtils.SetupHeaderWithValues(null, header, UInt256.Zero, out _, out _, out _, out _, out _, out _);
-
+            var header = TestUtils.MakeHeader(null, UInt256.Zero);
             var test = HeadersPayload.Create();
-            test.Size.Should().Be(1);
+            Assert.AreEqual(1, test.Size);
             test = HeadersPayload.Create(header);
-            test.Size.Should().Be(1 + header.Size);
+            Assert.AreEqual(1 + header.Size, test.Size);
         }
 
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var header = new Header();
-            TestUtils.SetupHeaderWithValues(null, header, UInt256.Zero, out _, out _, out _, out _, out _, out _);
+            var header = TestUtils.MakeHeader(null, UInt256.Zero);
             var test = HeadersPayload.Create(header);
             var clone = test.ToArray().AsSerializable<HeadersPayload>();
 

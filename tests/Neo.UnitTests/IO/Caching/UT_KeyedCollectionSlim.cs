@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_KeyedCollectionSlim.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,15 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.IO.Caching
 {
@@ -35,9 +30,9 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item);
 
             // Assert
-            collection.Count.Should().Be(1);
-            collection.Contains(1).Should().BeTrue();
-            collection.First.Should().Be(item);
+            Assert.AreEqual(1, collection.Count);
+            Assert.IsTrue(collection.Contains(1));
+            Assert.AreEqual(item, collection.First);
         }
 
         [TestMethod]
@@ -52,8 +47,7 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item1);
 
             // Assert
-            var act = (() => collection.Add(item2));
-            act.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => collection.Add(item2));
         }
 
         [TestMethod]
@@ -68,8 +62,8 @@ namespace Neo.UnitTests.IO.Caching
             collection.Remove(1);
 
             // Assert
-            collection.Count.Should().Be(0);
-            collection.Contains(1).Should().BeFalse();
+            Assert.AreEqual(0, collection.Count);
+            Assert.IsFalse(collection.Contains(1));
         }
 
         [TestMethod]
@@ -86,9 +80,9 @@ namespace Neo.UnitTests.IO.Caching
             collection.RemoveFirst();
 
             // Assert
-            collection.Count.Should().Be(1);
-            collection.Contains(1).Should().BeFalse();
-            collection.Contains(2).Should().BeTrue();
+            Assert.AreEqual(1, collection.Count);
+            Assert.IsFalse(collection.Contains(1));
+            Assert.IsTrue(collection.Contains(2));
         }
 
         public class TestItem : IStructuralEquatable, IStructuralComparable, IComparable
@@ -97,13 +91,13 @@ namespace Neo.UnitTests.IO.Caching
 
             public string Name { get; set; }
 
-            public int CompareTo(object? obj)
+            public int CompareTo(object obj)
             {
                 if (obj is not TestItem other) throw new ArgumentException("Object is not a TestItem");
                 return Id.CompareTo(other.Id);
             }
 
-            public bool Equals(object? other, IEqualityComparer comparer)
+            public bool Equals(object other, IEqualityComparer comparer)
             {
                 return other is TestItem item && Id == item.Id && Name == item.Name;
             }
@@ -126,7 +120,7 @@ namespace Neo.UnitTests.IO.Caching
 
         internal class TestKeyedCollectionSlim : KeyedCollectionSlim<int, TestItem>
         {
-            protected override int GetKeyForItem(TestItem? item)
+            protected override int GetKeyForItem(TestItem item)
             {
                 return item?.Id ?? throw new ArgumentNullException(nameof(item), "Item cannot be null");
             }

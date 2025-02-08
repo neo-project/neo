@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Block.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -84,8 +84,14 @@ namespace Neo.Network.P2P.Payloads
         public Witness Witness => Header.Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
+
         public int Size => Header.Size + Transactions.GetVarSize();
-        Witness[] IVerifiable.Witnesses { get => ((IVerifiable)Header).Witnesses; set => throw new NotSupportedException(); }
+
+        Witness[] IVerifiable.Witnesses
+        {
+            get => ((IVerifiable)Header).Witnesses;
+            set => throw new NotSupportedException();
+        }
 
         public void Deserialize(ref MemoryReader reader)
         {

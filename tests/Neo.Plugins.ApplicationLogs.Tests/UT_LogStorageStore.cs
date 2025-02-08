@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_LogStorageStore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,17 +9,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.AspNetCore.Authorization;
+using Neo.Extensions;
+using Neo.IO;
 using Neo.Persistence;
 using Neo.Plugins.ApplicationLogs.Store;
 using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.Plugins.ApplicationsLogs.Tests.Setup;
 using Neo.SmartContract;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 using Xunit;
 
 namespace Neo.Plugins.ApplicationsLogs.Tests
@@ -39,6 +39,10 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             {
                 using (var lss = new LogStorageStore(snapshot))
                 {
+                    var ok = lss.TryGetBlockState(expectedHash, expectedAppTrigger, out var actualState);
+                    Assert.False(ok);
+                    Assert.Null(actualState);
+
                     // Put Block States in Storage for each Trigger
                     lss.PutBlockState(expectedHash, expectedAppTrigger, BlockLogState.Create([expectedGuid]));
                     // Commit Data to "Store" Storage for Lookup
@@ -72,6 +76,10 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             {
                 using (var lss = new LogStorageStore(snapshot))
                 {
+                    var ok = lss.TryGetTransactionEngineState(expectedTxHash, out var actualState);
+                    Assert.False(ok);
+                    Assert.Null(actualState);
+
                     // Put Block States in Storage for each Trigger
                     lss.PutTransactionEngineState(expectedTxHash, TransactionEngineLogState.Create([expectedGuid]));
                     // Commit Data to "Store" Storage for Lookup
@@ -104,6 +112,10 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             {
                 using (var lss = new LogStorageStore(snapshot))
                 {
+                    var ok = lss.TryGetEngineState(Guid.NewGuid(), out var actualState);
+                    Assert.False(ok);
+                    Assert.Null(actualState);
+
                     expectedGuid = lss.PutEngineState(EngineLogState.Create(expectedScriptHash, expectedMessage));
                     snapshot.Commit();
                 }
@@ -134,6 +146,10 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             {
                 using (var lss = new LogStorageStore(snapshot))
                 {
+                    var ok = lss.TryGetNotifyState(Guid.NewGuid(), out var actualState);
+                    Assert.False(ok);
+                    Assert.Null(actualState);
+
                     expectedGuid = lss.PutNotifyState(NotifyLogState.Create(expectedNotifyEventArgs, [expectedItemGuid]));
                     snapshot.Commit();
                 }
@@ -151,6 +167,143 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 Assert.Single(actualState.StackItemIds);
                 Assert.Equal(expectedItemGuid, actualState.StackItemIds[0]);
             }
+        }
+
+        [Fact]
+        public void Test_StackItemState()
+        {
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
+
+            var ok = lss.TryGetStackItemState(Guid.NewGuid(), out var actualState);
+            Assert.False(ok);
+            Assert.Equal(StackItem.Null, actualState);
+
+            var id1 = lss.PutStackItemState(new Integer(1));
+            var id2 = lss.PutStackItemState(new Integer(2));
+
+            snapshot.Commit();
+
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetStackItemState(id1, out var actualState1);
+            Assert.True(ok);
+            Assert.Equal(new Integer(1), actualState1);
+
+            ok = lss2.TryGetStackItemState(id2, out var actualState2);
+            Assert.True(ok);
+            Assert.Equal(new Integer(2), actualState2);
+        }
+
+        [Fact]
+        public void Test_TransactionState()
+        {
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
+
+            // random 32 bytes
+            var bytes = new byte[32];
+            Random.Shared.NextBytes(bytes);
+
+            var hash = new UInt256(bytes);
+            var ok = lss.TryGetTransactionState(hash, out var actualState);
+            Assert.False(ok);
+            Assert.Null(actualState);
+
+            var guid = Guid.NewGuid();
+            lss.PutTransactionState(hash, TransactionLogState.Create([guid]));
+            snapshot.Commit();
+
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetTransactionState(hash, out actualState);
+            Assert.True(ok);
+            Assert.Equal(TransactionLogState.Create([guid]), actualState);
+        }
+
+        [Fact]
+        public void Test_ExecutionState()
+        {
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
+
+            var ok = lss.TryGetExecutionState(Guid.NewGuid(), out var actualState);
+            Assert.False(ok);
+            Assert.Null(actualState);
+
+            // ExecutionLogState.Serialize
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write((byte)VMState.HALT);
+            writer.WriteVarString("Test");
+            writer.Write(100ul);
+            writer.Write(1u);
+            writer.WriteVarBytes(Guid.NewGuid().ToByteArray());
+            writer.Flush();
+
+            var bytes = stream.ToArray();
+            var state = new ExecutionLogState();
+
+            var reader = new MemoryReader(bytes);
+            state.Deserialize(ref reader);
+
+            var guid = lss.PutExecutionState(state);
+            snapshot.Commit();
+
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetExecutionState(guid, out actualState);
+            Assert.True(ok);
+            Assert.Equal(state, actualState);
+        }
+
+        [Fact]
+        public void Test_ContractState()
+        {
+            using var store = new MemoryStore();
+            using var snapshot = store.GetSnapshot();
+            using var lss = new LogStorageStore(snapshot);
+
+            var guid = Guid.NewGuid();
+            var scriptHash = UInt160.Parse("0x0000000000000000000000000000000000000000");
+            var timestamp = 100ul;
+            var index = 1u;
+
+            var ok = lss.TryGetContractState(scriptHash, timestamp, index, out var actualState);
+            Assert.False(ok);
+            Assert.Null(actualState);
+
+            // random 32 bytes
+            var bytes = new byte[32];
+            Random.Shared.NextBytes(bytes);
+
+            // ContractLogState.Serialize
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write(new UInt256(bytes));
+            writer.Write((byte)TriggerType.All);
+            writer.Write(scriptHash);
+            writer.WriteVarString("Test");
+            writer.Write(1u);
+            writer.WriteVarBytes(Guid.NewGuid().ToByteArray());
+            writer.Flush();
+
+            bytes = stream.ToArray();
+            var state = new ContractLogState();
+            var reader = new MemoryReader(bytes);
+            state.Deserialize(ref reader);
+
+            lss.PutContractState(scriptHash, timestamp, index, state);
+            snapshot.Commit();
+
+            using var snapshot2 = store.GetSnapshot();
+            using var lss2 = new LogStorageStore(snapshot2);
+            ok = lss2.TryGetContractState(scriptHash, timestamp, index, out actualState);
+            Assert.True(ok);
+            Assert.Equal(state, actualState);
         }
     }
 }

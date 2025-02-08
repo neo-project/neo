@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_StorageItem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.SmartContract;
@@ -32,7 +31,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Value_Get()
         {
-            uut.Value.IsEmpty.Should().BeTrue();
+            Assert.IsTrue(uut.Value.IsEmpty);
         }
 
         [TestMethod]
@@ -40,23 +39,23 @@ namespace Neo.UnitTests.Ledger
         {
             byte[] val = new byte[] { 0x42, 0x32 };
             uut.Value = val;
-            uut.Value.Length.Should().Be(2);
-            uut.Value.Span[0].Should().Be(val[0]);
-            uut.Value.Span[1].Should().Be(val[1]);
+            Assert.AreEqual(2, uut.Value.Length);
+            Assert.AreEqual(val[0], uut.Value.Span[0]);
+            Assert.AreEqual(val[1], uut.Value.Span[1]);
         }
 
         [TestMethod]
         public void Size_Get()
         {
             uut.Value = TestUtils.GetByteArray(10, 0x42);
-            uut.Size.Should().Be(11); // 1 + 10
+            Assert.AreEqual(11, uut.Size); // 1 + 10
         }
 
         [TestMethod]
         public void Size_Get_Larger()
         {
             uut.Value = TestUtils.GetByteArray(88, 0x42);
-            uut.Size.Should().Be(89); // 1 + 88
+            Assert.AreEqual(89, uut.Size); // 1 + 88
         }
 
         [TestMethod]
@@ -66,11 +65,11 @@ namespace Neo.UnitTests.Ledger
 
             StorageItem newSi = uut.Clone();
             var span = newSi.Value.Span;
-            span.Length.Should().Be(10);
-            span[0].Should().Be(0x42);
+            Assert.AreEqual(10, span.Length);
+            Assert.AreEqual(0x42, span[0]);
             for (int i = 1; i < 10; i++)
             {
-                span[i].Should().Be(0x20);
+                Assert.AreEqual(0x20, span[i]);
             }
         }
 
@@ -81,11 +80,11 @@ namespace Neo.UnitTests.Ledger
             MemoryReader reader = new(data);
             uut.Deserialize(ref reader);
             var span = uut.Value.Span;
-            span.Length.Should().Be(10);
-            span[0].Should().Be(0x42);
+            Assert.AreEqual(10, span.Length);
+            Assert.AreEqual(0x42, span[0]);
             for (int i = 1; i < 10; i++)
             {
-                span[i].Should().Be(0x20);
+                Assert.AreEqual(0x20, span[i]);
             }
         }
 
@@ -106,10 +105,10 @@ namespace Neo.UnitTests.Ledger
 
             byte[] requiredData = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
 
-            data.Length.Should().Be(requiredData.Length);
+            Assert.AreEqual(requiredData.Length, data.Length);
             for (int i = 0; i < requiredData.Length; i++)
             {
-                data[i].Should().Be(requiredData[i]);
+                Assert.AreEqual(requiredData[i], data[i]);
             }
         }
 
@@ -119,7 +118,7 @@ namespace Neo.UnitTests.Ledger
             uut.Value = TestUtils.GetByteArray(10, 0x42);
             StorageItem dest = new StorageItem();
             dest.FromReplica(uut);
-            dest.Value.Should().BeEquivalentTo(uut.Value);
+            CollectionAssert.AreEqual(uut.Value.ToArray(), dest.Value.ToArray());
         }
     }
 }

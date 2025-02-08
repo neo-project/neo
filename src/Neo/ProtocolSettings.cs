@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ProtocolSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -15,6 +15,7 @@ using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 
 namespace Neo
@@ -124,18 +125,68 @@ namespace Neo
         public static ProtocolSettings Custom { get; set; }
 
         /// <summary>
+        /// Searches for a file in the given path. If not found, checks in the executable directory.
+        /// </summary>
+        /// <param name="fileName">The name of the file to search for.</param>
+        /// <param name="path">The primary path to search in.</param>
+        /// <returns>Full path of the file if found, null otherwise.</returns>
+        public static string FindFile(string fileName, string path)
+        {
+            // Check if the given path is relative
+            if (!Path.IsPathRooted(path))
+            {
+                // Combine with the executable directory if relative
+                var executablePath = AppContext.BaseDirectory;
+                path = Path.Combine(executablePath, path);
+            }
+
+            // Check if file exists in the specified (resolved) path
+            var fullPath = Path.Combine(path, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // Check if file exists in the executable directory
+            var executableDir = AppContext.BaseDirectory;
+            fullPath = Path.Combine(executableDir, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            // File not found in either location
+            return null;
+        }
+
+        /// <summary>
+        /// Loads the <see cref="ProtocolSettings"/> from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream of the settings.</param>
+        /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
+        public static ProtocolSettings Load(Stream stream)
+        {
+            var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
+            var section = config.GetSection("ProtocolConfiguration");
+            return Load(section);
+        }
+
+        /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> at the specified path.
         /// </summary>
         /// <param name="path">The path of the settings file.</param>
-        /// <param name="optional">Indicates whether the file is optional.</param>
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
-        public static ProtocolSettings Load(string path, bool optional = true)
+        public static ProtocolSettings Load(string path)
         {
-            IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
-            IConfigurationSection section = config.GetSection("ProtocolConfiguration");
-            var settings = Load(section);
-            CheckingHardfork(settings);
-            return settings;
+            path = FindFile(path, Environment.CurrentDirectory);
+
+            if (path is null)
+            {
+                return Default;
+            }
+
+            using var stream = File.OpenRead(path);
+            return Load(stream);
         }
 
         /// <summary>
@@ -165,6 +216,7 @@ namespace Neo
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
                     : Default.Hardforks
             };
+            CheckingHardfork(Custom);
             return Custom;
         }
 

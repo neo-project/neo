@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_RoleManagement.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -78,8 +77,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 );
                 snapshot1.Commit();
                 ApplicationEngine.Notify -= ev;
-                notifications.Count.Should().Be(1);
-                notifications[0].EventName.Should().Be("Designation");
+                Assert.AreEqual(1, notifications.Count);
+                Assert.AreEqual("Designation", notifications[0].EventName);
                 var snapshot2 = _snapshotCache.CloneCache();
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
@@ -87,10 +86,10 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1u) }
                 );
-                ret.Should().BeOfType<VM.Types.Array>();
-                (ret as VM.Types.Array).Count.Should().Be(2);
-                (ret as VM.Types.Array)[0].GetSpan().ToHexString().Should().Be(publicKeys[0].ToArray().ToHexString());
-                (ret as VM.Types.Array)[1].GetSpan().ToHexString().Should().Be(publicKeys[1].ToArray().ToHexString());
+                Assert.IsInstanceOfType(ret, typeof(VM.Types.Array));
+                Assert.AreEqual(2, (ret as VM.Types.Array).Count);
+                Assert.AreEqual(publicKeys[0].ToArray().ToHexString(), (ret as VM.Types.Array)[0].GetSpan().ToHexString());
+                Assert.AreEqual(publicKeys[1].ToArray().ToHexString(), (ret as VM.Types.Array)[1].GetSpan().ToHexString());
 
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
@@ -98,8 +97,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(0) }
                 );
-                ret.Should().BeOfType<VM.Types.Array>();
-                (ret as VM.Types.Array).Count.Should().Be(0);
+                Assert.IsInstanceOfType(ret, typeof(VM.Types.Array));
+                Assert.AreEqual(0, (ret as VM.Types.Array).Count);
             }
         }
 

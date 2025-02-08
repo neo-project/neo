@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_TaskManagerMailbox.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -44,21 +43,21 @@ namespace Neo.UnitTests.Network.P2P
         public void TaskManager_Test_IsHighPriority()
         {
             // high priority
-            uut.IsHighPriority(new TaskManager.Register()).Should().Be(true);
-            uut.IsHighPriority(new TaskManager.RestartTasks()).Should().Be(true);
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.Register()));
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.RestartTasks()));
 
             // low priority
             // -> NewTasks: generic InvPayload
-            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload() }).Should().Be(false);
+            Assert.IsFalse(uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload() }));
 
             // high priority
             // -> NewTasks: payload Block or Consensus
-            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Block } }).Should().Be(true);
-            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Extensible } }).Should().Be(true);
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Block } }));
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Extensible } }));
 
             // any random object should not have priority
             object obj = null;
-            uut.IsHighPriority(obj).Should().Be(false);
+            Assert.IsFalse(uut.IsHighPriority(obj));
         }
     }
 }

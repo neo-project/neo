@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // DB.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,8 +8,6 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
-
-#nullable enable
 
 using System.Collections;
 using System.Collections.Generic;
@@ -49,7 +47,7 @@ namespace Neo.IO.Storage.LevelDB
         /// If the database contains an entry for "key" return the value,
         /// otherwise return null.
         /// </summary>
-        public byte[] Get(ReadOptions options, byte[] key)
+        public byte[]? Get(ReadOptions options, byte[] key)
         {
             var value = Native.leveldb_get(Handle, options.Handle, key, (nuint)key.Length, out var length, out var error);
             try
@@ -131,7 +129,7 @@ namespace Neo.IO.Storage.LevelDB
         {
             using var iterator = CreateIterator(ReadOptions.Default);
             for (iterator.SeekToFirst(); iterator.Valid(); iterator.Next())
-                yield return new KeyValuePair<byte[], byte[]>(iterator.Key(), iterator.Value());
+                yield return new KeyValuePair<byte[], byte[]>(iterator.Key()!, iterator.Value()!);
         }
 
         IEnumerator IEnumerable.GetEnumerator() =>

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Contract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,10 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -26,6 +26,14 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_Contract
     {
+        private DataCache _snapshotCache;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        }
+
         [TestMethod]
         public void TestGetScriptHash()
         {
@@ -103,7 +111,7 @@ namespace Neo.UnitTests.SmartContract
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => action());
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
@@ -158,6 +166,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestSignatureRedeemScriptFee()
         {
+            var snapshot = _snapshotCache.CloneCache();
             byte[] privateKey = new byte[32];
             RandomNumberGenerator rng = RandomNumberGenerator.Create();
             rng.GetBytes(privateKey);
@@ -167,17 +176,19 @@ namespace Neo.UnitTests.SmartContract
 
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.FeeConsumed.Should().Be(fee);
+                Assert.AreEqual(fee, engine.FeeConsumed);
             }
         }
 
         [TestMethod]
         public void TestCreateMultiSigRedeemScriptFee()
         {
+            var snapshot = _snapshotCache.CloneCache();
             byte[] privateKey1 = new byte[32];
             RandomNumberGenerator rng1 = RandomNumberGenerator.Create();
             rng1.GetBytes(privateKey1);
@@ -195,11 +206,12 @@ namespace Neo.UnitTests.SmartContract
 
             long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.FeeConsumed.Should().Be(fee);
+                Assert.AreEqual(fee, engine.FeeConsumed);
             }
         }
     }

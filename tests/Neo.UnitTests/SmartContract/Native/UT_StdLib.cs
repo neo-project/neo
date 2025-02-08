@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_StdLib.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.SmartContract;
@@ -56,8 +55,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsException<System.FormatException>(() => StdLib.Atoi("g", 16));
             Assert.ThrowsException<System.ArgumentOutOfRangeException>(() => StdLib.Atoi("a", 11));
 
-            StdLib.Atoi(StdLib.Itoa(BigInteger.One, 10)).Should().Be(BigInteger.One);
-            StdLib.Atoi(StdLib.Itoa(BigInteger.MinusOne, 10)).Should().Be(BigInteger.MinusOne);
+            Assert.AreEqual(BigInteger.One, StdLib.Atoi(StdLib.Itoa(BigInteger.One, 10)));
+            Assert.AreEqual(BigInteger.MinusOne, StdLib.Atoi(StdLib.Itoa(BigInteger.MinusOne, 10)));
         }
 
         [TestMethod]
@@ -405,6 +404,26 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
             Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetString(), "test");
+        }
+
+        [TestMethod]
+        public void TestBase64Url()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using (var script = new ScriptBuilder())
+            {
+                // Test encoding
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlEncode", "Subject=test@example.com&Issuer=https://example.com");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(2, engine.ResultStack.Count);
+                Assert.AreEqual("Subject=test@example.com&Issuer=https://example.com", engine.ResultStack.Pop<ByteString>());
+                Assert.AreEqual("U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t", engine.ResultStack.Pop<ByteString>().GetString());
+            }
         }
     }
 }

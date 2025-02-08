@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ServerCapability.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -25,12 +24,12 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
         public void Size_Get()
         {
             var test = new ServerCapability(NodeCapabilityType.TcpServer) { Port = 1 };
-            test.Size.Should().Be(3);
+            Assert.AreEqual(3, test.Size);
 
 #pragma warning disable CS0612 // Type or member is obsolete
             test = new ServerCapability(NodeCapabilityType.WsServer) { Port = 2 };
 #pragma warning restore CS0612 // Type or member is obsolete
-            test.Size.Should().Be(3);
+            Assert.AreEqual(3, test.Size);
         }
 
         [TestMethod]

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // CommandLineOption.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -19,6 +19,7 @@ namespace Neo.CLI
         public string[]? Plugins { get; set; }
         public string? DBEngine { get; init; }
         public string? DBPath { get; init; }
+        public LogLevel Verbose { get; init; } = LogLevel.Info;
         public bool? NoVerify { get; init; }
 
         /// <summary>

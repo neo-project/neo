@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NefFile.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -88,15 +87,15 @@ namespace Neo.UnitTests.SmartContract
             file.CheckSum = NefFile.ComputeChecksum(file);
             var data = file.ToArray();
             var newFile1 = data.AsSerializable<NefFile>();
-            newFile1.Compiler.Should().Be(file.Compiler);
-            newFile1.CheckSum.Should().Be(file.CheckSum);
-            newFile1.Script.Span.SequenceEqual(file.Script.Span).Should().BeTrue();
+            Assert.AreEqual(file.Compiler, newFile1.Compiler);
+            Assert.AreEqual(file.CheckSum, newFile1.CheckSum);
+            Assert.IsTrue(newFile1.Script.Span.SequenceEqual(file.Script.Span));
         }
 
         [TestMethod]
         public void TestGetSize()
         {
-            file.Size.Should().Be(4 + 32 + 32 + 2 + 1 + 2 + 4 + 4);
+            Assert.AreEqual(4 + 32 + 32 + 2 + 1 + 2 + 4 + 4, file.Size);
         }
 
         [TestMethod]

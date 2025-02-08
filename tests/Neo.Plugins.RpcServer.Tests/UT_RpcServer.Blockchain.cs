@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_RpcServer.Blockchain.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Akka.Util.Internal;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -70,7 +69,7 @@ namespace Neo.Plugins.RpcServer.Tests
             result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Hash), true);
             var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
             block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
-            result.ToString().Should().Be(block3.ToString());
+            Assert.AreEqual(block3.ToString(), result.ToString());
         }
 
         [TestMethod]
@@ -92,7 +91,7 @@ namespace Neo.Plugins.RpcServer.Tests
             result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), true);
             var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
             block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
-            result.ToString().Should().Be(block3.ToString());
+            Assert.AreEqual(block3.ToString(), result.ToString());
         }
 
         [TestMethod]
@@ -139,7 +138,7 @@ namespace Neo.Plugins.RpcServer.Tests
             result = _rpcServer.GetBlockHeader(new BlockHashOrIndex(block.Hash), false);
             var headerArr = Convert.FromBase64String(result.AsString());
             var header2 = headerArr.AsSerializable<Header>();
-            header2.ToJson(_neoSystem.Settings).ToString().Should().Be(block.Header.ToJson(_neoSystem.Settings).ToString());
+            Assert.AreEqual(block.Header.ToJson(_neoSystem.Settings).ToString(), header2.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
@@ -158,14 +157,17 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var byId = _rpcServer.GetContractState(new ContractNameOrHashOrId(-1));
             var byName = _rpcServer.GetContractState(new ContractNameOrHashOrId("ContractManagement"));
-            byId.ToString().Should().Be(byName.ToString());
+            Assert.AreEqual(byId.ToString(), byName.ToString());
 
             snapshot.DeleteContract(contractState.Hash);
             snapshot.Commit();
-            Action act = () => _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash));
-            act.Should().Throw<RpcException>().WithMessage(RpcError.UnknownContract.Message);
-            act = () => _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id));
-            act.Should().Throw<RpcException>().WithMessage(RpcError.UnknownContract.Message);
+            var ex1 = Assert.ThrowsException<RpcException>(() =>
+                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash)));
+            Assert.AreEqual(RpcError.UnknownContract.Message, ex1.Message);
+
+            var ex2 = Assert.ThrowsException<RpcException>(() =>
+                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id)));
+            Assert.AreEqual(RpcError.UnknownContract.Message, ex2.Message);
         }
 
         [TestMethod]
@@ -197,7 +199,7 @@ namespace Neo.Plugins.RpcServer.Tests
 
             result = _rpcServer.GetRawTransaction(tx.Hash, false);
             var tx2 = Convert.FromBase64String(result.AsString()).AsSerializable<Transaction>();
-            tx2.ToJson(_neoSystem.Settings).ToString().Should().Be(tx.ToJson(_neoSystem.Settings).ToString());
+            Assert.AreEqual(tx.ToJson(_neoSystem.Settings).ToString(), tx2.ToJson(_neoSystem.Settings).ToString());
         }
 
         [TestMethod]
@@ -239,13 +241,13 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(json.ToString(), result.ToString());
 
             var result2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(key));
-            result2.ToString().Should().Be(result.ToString());
+            Assert.AreEqual(result.ToString(), result2.ToString());
 
             Enumerable.Range(0, 51).ToList().ForEach(i => TestUtils.StorageItemAdd(snapshot, contractState.Id, new byte[] { 0x01, (byte)i }, new byte[] { 0x02 }));
             snapshot.Commit();
             var result4 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(new byte[] { 0x01 }), 0);
-            result4["next"].Should().Be(RpcServerSettings.Default.FindStoragePageSize);
-            (result4["truncated"]).AsBoolean().Should().Be(true);
+            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, result4["next"].AsNumber());
+            Assert.IsTrue(result4["truncated"].AsBoolean());
         }
 
         [TestMethod]
@@ -403,8 +405,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
-            Action act = () => _rpcServer.GetBlockHash(block.Index + 1);
-            act.Should().Throw<RpcException>();
+            Assert.ThrowsException<RpcException>(() => _rpcServer.GetBlockHash(block.Index + 1));
         }
 
         [TestMethod]

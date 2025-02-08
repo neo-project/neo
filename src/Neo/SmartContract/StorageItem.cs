@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StorageItem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,6 +8,8 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+#nullable enable
 
 using Neo.Extensions;
 using Neo.IO;
@@ -23,8 +25,8 @@ namespace Neo.SmartContract
     /// </summary>
     public class StorageItem : ISerializable
     {
-        private ReadOnlyMemory<byte> value;
-        private object cache;
+        private ReadOnlyMemory<byte> _value;
+        private object? _cache;
 
         public int Size => Value.GetVarSize();
 
@@ -35,7 +37,7 @@ namespace Neo.SmartContract
         {
             get
             {
-                return !value.IsEmpty ? value : value = cache switch
+                return !_value.IsEmpty ? _value : _value = _cache switch
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
                     IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default),
@@ -45,8 +47,8 @@ namespace Neo.SmartContract
             }
             set
             {
-                this.value = value;
-                cache = null;
+                _value = value;
+                _cache = null;
             }
         }
 
@@ -61,7 +63,7 @@ namespace Neo.SmartContract
         /// <param name="value">The byte array value of the <see cref="StorageItem"/>.</param>
         public StorageItem(byte[] value)
         {
-            this.value = value;
+            _value = value;
         }
 
         /// <summary>
@@ -70,7 +72,7 @@ namespace Neo.SmartContract
         /// <param name="value">The integer value of the <see cref="StorageItem"/>.</param>
         public StorageItem(BigInteger value)
         {
-            cache = value;
+            _cache = value;
         }
 
         /// <summary>
@@ -79,7 +81,7 @@ namespace Neo.SmartContract
         /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
         public StorageItem(IInteroperable interoperable)
         {
-            cache = interoperable;
+            _cache = interoperable;
         }
 
         /// <summary>
@@ -99,8 +101,8 @@ namespace Neo.SmartContract
         {
             return new()
             {
-                value = value,
-                cache = cache is IInteroperable interoperable ? interoperable.Clone() : cache
+                _value = _value,
+                _cache = _cache is IInteroperable interoperable ? interoperable.Clone() : _cache
             };
         }
 
@@ -115,17 +117,17 @@ namespace Neo.SmartContract
         /// <param name="replica">The instance to be copied.</param>
         public void FromReplica(StorageItem replica)
         {
-            value = replica.value;
-            if (replica.cache is IInteroperable interoperable)
+            _value = replica._value;
+            if (replica._cache is IInteroperable interoperable)
             {
-                if (cache?.GetType() == interoperable.GetType())
-                    ((IInteroperable)cache).FromReplica(interoperable);
+                if (_cache?.GetType() == interoperable.GetType())
+                    ((IInteroperable)_cache).FromReplica(interoperable);
                 else
-                    cache = interoperable.Clone();
+                    _cache = interoperable.Clone();
             }
             else
             {
-                cache = replica.cache;
+                _cache = replica._cache;
             }
         }
 
@@ -136,14 +138,14 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
         public T GetInteroperable<T>() where T : IInteroperable, new()
         {
-            if (cache is null)
+            if (_cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default));
-                cache = interoperable;
+                interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
+                _cache = interoperable;
             }
-            value = null;
-            return (T)cache;
+            _value = null;
+            return (T)_cache;
         }
 
         /// <summary>
@@ -154,14 +156,14 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
         public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
-            if (cache is null)
+            if (_cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default), verify);
-                cache = interoperable;
+                interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
+                _cache = interoperable;
             }
-            value = null;
-            return (T)cache;
+            _value = null;
+            return (T)_cache;
         }
 
         public void Serialize(BinaryWriter writer)
@@ -175,8 +177,8 @@ namespace Neo.SmartContract
         /// <param name="integer">The integer value to set.</param>
         public void Set(BigInteger integer)
         {
-            cache = integer;
-            value = null;
+            _cache = integer;
+            _value = null;
         }
 
         /// <summary>
@@ -185,14 +187,14 @@ namespace Neo.SmartContract
         /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
         public void Set(IInteroperable interoperable)
         {
-            cache = interoperable;
-            value = null;
+            _cache = interoperable;
+            _value = null;
         }
 
         public static implicit operator BigInteger(StorageItem item)
         {
-            item.cache ??= new BigInteger(item.value.Span);
-            return (BigInteger)item.cache;
+            item._cache ??= new BigInteger(item._value.Span);
+            return (BigInteger)item._cache;
         }
 
         public static implicit operator StorageItem(BigInteger value)

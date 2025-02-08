@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO.Caching;
@@ -32,7 +31,7 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new();
             byte[] res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
-            res.ToHexString().Should().Be("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
+            Assert.AreEqual("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5", res.ToHexString());
         }
 
         [TestMethod]
@@ -40,7 +39,7 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new();
             byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), TestProtocolSettings.Default.Network);
-            res.Length.Should().Be(64);
+            Assert.AreEqual(64, res.Length);
         }
 
         [TestMethod]
@@ -48,7 +47,7 @@ namespace Neo.UnitTests
         {
             byte[] testByteArray = TestUtils.GetByteArray(64, 0x42);
             UInt160 res = testByteArray.ToScriptHash();
-            res.Should().Be(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
+            Assert.AreEqual(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), res);
         }
 
         [TestMethod]
@@ -84,14 +83,14 @@ namespace Neo.UnitTests
             byte[] nullStr = null;
             Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
             byte[] empty = Array.Empty<byte>();
-            empty.ToHexString().Should().Be("");
-            empty.ToHexString(false).Should().Be("");
-            empty.ToHexString(true).Should().Be("");
+            Assert.AreEqual("", empty.ToHexString());
+            Assert.AreEqual("", empty.ToHexString(false));
+            Assert.AreEqual("", empty.ToHexString(true));
 
             byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
-            str1.ToHexString().Should().Be("6e656f");
-            str1.ToHexString(false).Should().Be("6e656f");
-            str1.ToHexString(true).Should().Be("6f656e");
+            Assert.AreEqual("6e656f", str1.ToHexString());
+            Assert.AreEqual("6e656f", str1.ToHexString(false));
+            Assert.AreEqual("6f656e", str1.ToHexString(true));
         }
 
         [TestMethod]
@@ -103,7 +102,7 @@ namespace Neo.UnitTests
                 .Where(u => u.FullName == "Anonymously Hosted DynamicMethods Assembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
                 .FirstOrDefault();
             string version = asm?.GetVersion() ?? "";
-            version.Should().Be("0.0.0");
+            Assert.AreEqual("0.0.0", version);
         }
 
         [TestMethod]
@@ -121,21 +120,21 @@ namespace Neo.UnitTests
         {
             Random ran = new();
             Action action1 = () => ran.NextBigInteger(-1);
-            action1.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => action1());
 
-            ran.NextBigInteger(0).Should().Be(0);
-            ran.NextBigInteger(8).Should().NotBeNull();
-            ran.NextBigInteger(9).Should().NotBeNull();
+            Assert.AreEqual(0, ran.NextBigInteger(0));
+            Assert.IsNotNull(ran.NextBigInteger(8));
+            Assert.IsNotNull(ran.NextBigInteger(9));
         }
 
         [TestMethod]
         public void TestUnmapForIPAddress()
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
-            addr.UnMap().Should().Be(addr);
+            Assert.AreEqual(addr, addr.UnMap());
 
             var addr2 = addr.MapToIPv6();
-            addr2.UnMap().Should().Be(addr);
+            Assert.AreEqual(addr, addr2.UnMap());
         }
 
         [TestMethod]
@@ -143,11 +142,11 @@ namespace Neo.UnitTests
         {
             var addr = new IPAddress(new byte[] { 127, 0, 0, 1 });
             var endPoint = new IPEndPoint(addr, 8888);
-            endPoint.UnMap().Should().Be(endPoint);
+            Assert.AreEqual(endPoint, endPoint.UnMap());
 
             var addr2 = addr.MapToIPv6();
             var endPoint2 = new IPEndPoint(addr2, 8888);
-            endPoint2.UnMap().Should().Be(endPoint);
+            Assert.AreEqual(endPoint, endPoint2.UnMap());
         }
     }
 }
