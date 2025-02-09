@@ -14,7 +14,6 @@
 using Neo.Extensions;
 using Neo.SmartContract;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.Persistence
@@ -22,7 +21,7 @@ namespace Neo.Persistence
     /// <summary>
     /// Represents a cache for the snapshot or database of the NEO blockchain.
     /// </summary>
-    public class SnapshotCache : DataCache, IDisposable
+    public class SnapshotCache : SnapshotCacheReadOnly, IDisposable
     {
         private readonly ISnapshot _snapshot;
 
@@ -30,7 +29,7 @@ namespace Neo.Persistence
         /// Initializes a new instance of the <see cref="SnapshotCache"/> class.
         /// </summary>
         /// <param name="snapshot">An <see cref="ISnapshot"/> to create a write cache.</param>
-        public SnapshotCache(ISnapshot snapshot)
+        public SnapshotCache(ISnapshot snapshot) : base(snapshot)
         {
             _snapshot = snapshot;
         }
@@ -56,34 +55,6 @@ namespace Neo.Persistence
         {
             base.Commit();
             _snapshot.Commit();
-        }
-
-        #endregion
-
-        #region Read
-
-        protected override bool ContainsInternal(StorageKey key)
-        {
-            return _snapshot.Contains(key.ToArray());
-        }
-
-        /// <inheritdoc/>
-        protected override StorageItem GetInternal(StorageKey key)
-        {
-            if (_snapshot.TryGet(key.ToArray(), out var value))
-                return new(value);
-            throw new KeyNotFoundException();
-        }
-
-        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
-        {
-            return _snapshot.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
-        }
-
-        /// <inheritdoc/>
-        protected override StorageItem? TryGetInternal(StorageKey key)
-        {
-            return _snapshot.TryGet(key.ToArray(), out var value) ? new(value) : null;
         }
 
         #endregion
