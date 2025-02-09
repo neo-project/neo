@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 #nullable enable
-
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -688,5 +687,3 @@ namespace Neo.Ledger
         }
     }
 }
-
-#nullable disable

@@ -11,7 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.Persistence.Providers;
+using Neo.Persistence;
 using System.Text;
 
 namespace Neo.Cryptography.MPTTrie.Tests

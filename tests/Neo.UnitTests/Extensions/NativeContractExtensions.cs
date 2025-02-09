@@ -17,6 +17,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using Array = System.Array;
 
 namespace Neo.UnitTests.Extensions
 {

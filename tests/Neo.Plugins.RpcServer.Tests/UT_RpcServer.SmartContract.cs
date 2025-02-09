@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -175,7 +176,7 @@ namespace Neo.Plugins.RpcServer.Tests
                     ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
                 }]), validatorSigner, true));
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            var snapshot = _neoSystem.GetSnapshotCache();
+            SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
                 Nonce = 233,
