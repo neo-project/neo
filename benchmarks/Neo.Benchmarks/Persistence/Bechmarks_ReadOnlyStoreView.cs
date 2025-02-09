@@ -61,7 +61,7 @@ namespace Neo.Benchmarks.Persistence.Benchmarks
         [Benchmark]
         public void SnapshotCache_LevelDB()
         {
-            var snapshot = new SnapshotCache(levelDbStore);
+            var snapshot = new SnapshotCacheReadOnly(levelDbStore);
             var ok = snapshot.TryGet(key1, out var _);
             Debug.Assert(ok);
 

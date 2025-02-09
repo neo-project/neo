@@ -24,7 +24,7 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_CloneCache
     {
         private readonly MemoryStore store = new();
-        private SnapshotCache myDataCache;
+        private SnapshotCacheReadOnly myDataCache;
         private ClonedCache clonedCache;
 
         private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };
