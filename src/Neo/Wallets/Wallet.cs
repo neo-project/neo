@@ -11,7 +11,6 @@
 
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -29,6 +28,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using static Neo.SmartContract.Helper;
 using static Neo.Wallets.Helper;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
@@ -362,7 +362,7 @@ namespace Neo.Wallets
             byte[] prikey = XOR(Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
             Array.Clear(derivedhalf1, 0, derivedhalf1.Length);
             Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
-            ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
+            ECPoint pubkey = ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             string address = script_hash.ToAddress(version);
             if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))

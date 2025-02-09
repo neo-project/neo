@@ -19,11 +19,13 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Array = System.Array;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -53,7 +55,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FromStackItem()
         {
-            Assert.ThrowsException<NotSupportedException>(() => ((IInteroperable)uut).FromStackItem(VM.Types.StackItem.Null));
+            Assert.ThrowsException<NotSupportedException>(() => ((IInteroperable)uut).FromStackItem(StackItem.Null));
         }
 
         [TestMethod]

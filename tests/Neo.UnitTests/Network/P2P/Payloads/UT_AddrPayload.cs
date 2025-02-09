@@ -11,7 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Linq;
@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = new AddrPayload() { AddressList = new NetworkAddressWithTime[0] };
             Assert.AreEqual(1, test.Size);
 
-            test = AddrPayload.Create(new NetworkAddressWithTime[] { new NetworkAddressWithTime() { Address = IPAddress.Any, Capabilities = new Neo.Network.P2P.Capabilities.NodeCapability[0], Timestamp = 1 } });
+            test = AddrPayload.Create(new NetworkAddressWithTime[] { new NetworkAddressWithTime() { Address = IPAddress.Any, Capabilities = new NodeCapability[0], Timestamp = 1 } });
             Assert.AreEqual(22, test.Size);
         }
 
@@ -38,7 +38,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = AddrPayload.Create(new NetworkAddressWithTime[] { new NetworkAddressWithTime()
             {
                 Address = IPAddress.Any,
-                Capabilities = new Neo.Network.P2P.Capabilities.NodeCapability[0], Timestamp = 1
+                Capabilities = new NodeCapability[0], Timestamp = 1
             }
             });
             var clone = test.ToArray().AsSerializable<AddrPayload>();

@@ -13,18 +13,19 @@
 
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.IO.Caching
 {
-    record ECDsaCacheItem(Cryptography.ECC.ECPoint Key, ECDsa Value);
+    record ECDsaCacheItem(ECPoint Key, ECDsa Value);
 
-    internal class ECDsaCache : FIFOCache<Cryptography.ECC.ECPoint, ECDsaCacheItem>
+    internal class ECDsaCache : FIFOCache<ECPoint, ECDsaCacheItem>
     {
-        public ECDsaCache(int max_capacity = 20000) : base(max_capacity, EqualityComparer<Cryptography.ECC.ECPoint>.Default)
+        public ECDsaCache(int max_capacity = 20000) : base(max_capacity, EqualityComparer<ECPoint>.Default)
         {
         }
 
-        protected override Cryptography.ECC.ECPoint GetKeyForItem(ECDsaCacheItem item)
+        protected override ECPoint GetKeyForItem(ECDsaCacheItem item)
         {
             return item.Key;
         }

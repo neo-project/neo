@@ -66,7 +66,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static uint Murmur32(this byte[] value, uint seed)
         {
-            return Neo.Cryptography.Murmur32.HashToUInt32(value, seed);
+            return Cryptography.Murmur32.HashToUInt32(value, seed);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static uint Murmur32(this ReadOnlySpan<byte> value, uint seed)
         {
-            return Neo.Cryptography.Murmur32.HashToUInt32(value, seed);
+            return Cryptography.Murmur32.HashToUInt32(value, seed);
         }
 
         /// <summary>
