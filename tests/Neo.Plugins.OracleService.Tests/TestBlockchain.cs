@@ -97,7 +97,7 @@ namespace Neo.Plugins.OracleService.Tests
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + s_theNeoSystem.Settings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer() { Account = TestUtils.ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = script,
                 Witnesses = null,
             };

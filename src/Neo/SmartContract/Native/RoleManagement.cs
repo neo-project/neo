@@ -16,7 +16,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
-using Array = System.Array;
 
 namespace Neo.SmartContract.Native
 {
@@ -57,7 +56,7 @@ namespace Neo.SmartContract.Native
             byte[] boundary = CreateStorageKey((byte)role).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
-                .FirstOrDefault() ?? Array.Empty<ECPoint>();
+                .FirstOrDefault() ?? [];
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]

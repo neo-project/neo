@@ -217,7 +217,7 @@ namespace Neo.Plugins.RpcServer
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
             string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : Array.Empty<ContractParameter>();
+            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : [];
             Signer[] signers = _params.Count >= 4 ? SignersFromJson((JArray)_params[3], system.Settings) : null;
             Witness[] witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
             bool useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
