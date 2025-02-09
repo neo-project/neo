@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Array = System.Array;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -111,14 +111,11 @@ namespace Neo.Network.P2P.Payloads
             if (Scopes.HasFlag(WitnessScope.Global) && Scopes != WitnessScope.Global)
                 throw new FormatException();
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
-                ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
-                : Array.Empty<UInt160>();
+                ? reader.ReadSerializableArray<UInt160>(MaxSubitems) : [];
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
-                ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
-                : Array.Empty<ECPoint>();
+                ? reader.ReadSerializableArray<ECPoint>(MaxSubitems) : [];
             Rules = Scopes.HasFlag(WitnessScope.WitnessRules)
-                ? reader.ReadSerializableArray<WitnessRule>(MaxSubitems)
-                : Array.Empty<WitnessRule>();
+                ? reader.ReadSerializableArray<WitnessRule>(MaxSubitems) : [];
         }
 
         /// <summary>
@@ -229,7 +226,7 @@ namespace Neo.Network.P2P.Payloads
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter,
+            return new Array(referenceCounter,
             [
                 Account.ToArray(),
                 (byte)Scopes,
