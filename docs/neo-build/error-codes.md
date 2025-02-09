@@ -39,6 +39,7 @@ base (_`mb`_).
 1. Modules can _**Only**_ define exactly _**1000**_ known error codes.
 1. Module **MUST** set `HResult` in `System.Exception` class.
 1. Module **MUST** define the root cause of the error, setting `Message` in `System.Exception` class.
+1. Modules **MUST** pick a module base in between `1000` to `9999`.
 
 ## Example
 ```csharp
