@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -26,8 +25,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using static Neo.SmartContract.Helper;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.CLI
 {
@@ -55,7 +56,7 @@ namespace Neo.CLI
             {
                 OpenWallet(path, password);
             }
-            catch (System.Security.Cryptography.CryptographicException)
+            catch (CryptographicException)
             {
                 ConsoleHelper.Error($"Failed to open file \"{path}\"");
             }

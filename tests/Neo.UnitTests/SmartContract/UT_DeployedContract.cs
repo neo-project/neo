@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using System;
 
 namespace Neo.UnitTests.SmartContract
@@ -23,16 +24,16 @@ namespace Neo.UnitTests.SmartContract
         {
             var contract = new DeployedContract(new ContractState()
             {
-                Manifest = new Neo.SmartContract.Manifest.ContractManifest()
+                Manifest = new ContractManifest()
                 {
-                    Abi = new Neo.SmartContract.Manifest.ContractAbi()
+                    Abi = new ContractAbi()
                     {
-                        Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
+                        Methods = new ContractMethodDescriptor[]
                          {
-                             new Neo.SmartContract.Manifest.ContractMethodDescriptor()
+                             new ContractMethodDescriptor()
                              {
                                   Name = "verify",
-                                  Parameters = Array.Empty<Neo.SmartContract.Manifest.ContractParameterDefinition>()
+                                  Parameters = Array.Empty<ContractParameterDefinition>()
                              }
                          }
                     }
@@ -50,16 +51,16 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsException<ArgumentNullException>(() => new DeployedContract(null));
             Assert.ThrowsException<NotSupportedException>(() => new DeployedContract(new ContractState()
             {
-                Manifest = new Neo.SmartContract.Manifest.ContractManifest()
+                Manifest = new ContractManifest()
                 {
-                    Abi = new Neo.SmartContract.Manifest.ContractAbi()
+                    Abi = new ContractAbi()
                     {
-                        Methods = new Neo.SmartContract.Manifest.ContractMethodDescriptor[]
+                        Methods = new ContractMethodDescriptor[]
                          {
-                             new Neo.SmartContract.Manifest.ContractMethodDescriptor()
+                             new ContractMethodDescriptor()
                              {
                                   Name = "noverify",
-                                  Parameters = Array.Empty<Neo.SmartContract.Manifest.ContractParameterDefinition>()
+                                  Parameters = Array.Empty<ContractParameterDefinition>()
                              }
                          }
                     }

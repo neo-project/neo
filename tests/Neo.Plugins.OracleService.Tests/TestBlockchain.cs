@@ -97,13 +97,13 @@ namespace Neo.Plugins.OracleService.Tests
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + s_theNeoSystem.Settings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer() { Account = TestUtils.ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                Attributes = System.Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = script,
                 Witnesses = null,
             };
             var engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: s_theNeoSystem.Settings, gas: 1200_0000_0000);
             engine.SnapshotCache.Commit();
-            var result = (Neo.VM.Types.Array)engine.ResultStack.Peek();
+            var result = (VM.Types.Array)engine.ResultStack.Peek();
             return new UInt160(result[2].GetSpan());
         }
 

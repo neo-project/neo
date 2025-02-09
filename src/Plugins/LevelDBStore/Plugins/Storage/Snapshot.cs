@@ -14,6 +14,7 @@ using Neo.Persistence;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
@@ -30,7 +31,7 @@ namespace Neo.Plugins.Storage
         private readonly WriteBatch _batch;
 
 #if NET9_0_OR_GREATER
-        private readonly System.Threading.Lock _lock = new();
+        private readonly Lock _lock = new();
 #else
         private readonly object _lock = new();
 #endif

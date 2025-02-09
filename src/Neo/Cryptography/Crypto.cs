@@ -10,12 +10,15 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
+using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
 {
@@ -27,8 +30,8 @@ namespace Neo.Cryptography
         private static readonly ECDsaCache CacheECDsa = new();
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         private static readonly ECCurve secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
-        private static readonly X9ECParameters bouncySecp256k1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
-        private static readonly X9ECParameters bouncySecp256r1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
+        private static readonly X9ECParameters bouncySecp256k1 = SecNamedCurves.GetByName("secp256k1");
+        private static readonly X9ECParameters bouncySecp256r1 = SecNamedCurves.GetByName("secp256r1");
 
         /// <summary>
         /// Holds domain parameters for Secp256r1 elliptic curve.
@@ -90,7 +93,7 @@ namespace Neo.Cryptography
                     ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? secp256r1DomainParams :
                     ecCurve == ECC.ECCurve.Secp256k1 ? secp256k1DomainParams :
                     throw new NotSupportedException(nameof(ecCurve));
-                var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
+                var signer = new ECDsaSigner();
                 var privateKey = new BigInteger(1, priKey);
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, domain);
                 signer.Init(true, priKeyParameters);
@@ -135,7 +138,7 @@ namespace Neo.Cryptography
         /// <param name="hasher">The hash algorithm to be used to hash the message.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         [Obsolete("Use VerifySignature(ReadOnlySpan<byte>, ReadOnlySpan<byte>, ECC.ECPoint, HashAlgorithm) instead")]
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, Hasher hasher)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, Hasher hasher)
         {
             return VerifySignature(message, signature, pubkey, (HashAlgorithm)hasher);
         }
@@ -148,7 +151,7 @@ namespace Neo.Cryptography
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="hashAlgorithm">The hash algorithm to be used to hash the message, the default is SHA256.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECPoint pubkey, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
             if (signature.Length != 64) return false;
 
@@ -166,7 +169,7 @@ namespace Neo.Cryptography
                     new BigInteger(pubkey.X.Value.ToString()),
                     new BigInteger(pubkey.Y.Value.ToString()));
                 var pubKey = new ECPublicKeyParameters("ECDSA", point, domain);
-                var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
+                var signer = new ECDsaSigner();
                 signer.Init(false, pubKey);
 
                 var sig = signature.ToArray();
@@ -194,7 +197,7 @@ namespace Neo.Cryptography
         /// <param name="pubkey"></param>
         /// <returns>Cached ECDsa</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public static ECDsa CreateECDsa(ECC.ECPoint pubkey)
+        public static ECDsa CreateECDsa(ECPoint pubkey)
         {
             if (CacheECDsa.TryGet(pubkey, out var cache))
             {
@@ -208,7 +211,7 @@ namespace Neo.Cryptography
             var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = curve,
-                Q = new ECPoint
+                Q = new System.Security.Cryptography.ECPoint
                 {
                     X = buffer[1..33],
                     Y = buffer[33..]
@@ -230,7 +233,7 @@ namespace Neo.Cryptography
         [Obsolete("Use VerifySignature(ReadOnlySpan<byte>, ReadOnlySpan<byte>, ReadOnlySpan<byte>, ECC.ECCurve, HashAlgorithm) instead")]
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, Hasher hasher)
         {
-            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve), (HashAlgorithm)hasher);
+            return VerifySignature(message, signature, ECPoint.DecodePoint(pubkey, curve), (HashAlgorithm)hasher);
         }
 
         /// <summary>
@@ -244,7 +247,7 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
-            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve), hashAlgorithm);
+            return VerifySignature(message, signature, ECPoint.DecodePoint(pubkey, curve), hashAlgorithm);
         }
     }
 }

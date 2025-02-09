@@ -11,6 +11,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM
 {
@@ -31,7 +32,7 @@ namespace Neo.VM
         {
             int length = (int)engine.Pop().GetInteger();
             engine.Limits.AssertMaxItemSize(length);
-            engine.Push(new Types.Buffer(length));
+            engine.Push(new Buffer(length));
         }
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace Neo.VM
             int di = (int)engine.Pop().GetInteger();
             if (di < 0)
                 throw new InvalidOperationException($"The destination index can not be negative for {nameof(OpCode.MEMCPY)}, index: {si}.");
-            Types.Buffer dst = engine.Pop<Types.Buffer>();
+            Buffer dst = engine.Pop<Buffer>();
             if (checked(di + count) > dst.Size)
                 throw new InvalidOperationException($"The destination index + count is out of range for {nameof(OpCode.MEMCPY)}, index: {di}, count: {count}, {di}/[0, {dst.Size}].");
             // TODO: check if we can optimize the memcpy by using peek instead of  dup then pop
@@ -78,7 +79,7 @@ namespace Neo.VM
             var x1 = engine.Pop().GetSpan();
             int length = x1.Length + x2.Length;
             engine.Limits.AssertMaxItemSize(length);
-            Types.Buffer result = new(length, false);
+            Buffer result = new(length, false);
             x1.CopyTo(result.InnerBuffer.Span);
             x2.CopyTo(result.InnerBuffer.Span[x1.Length..]);
             engine.Push(result);
@@ -103,7 +104,7 @@ namespace Neo.VM
             var x = engine.Pop().GetSpan();
             if (checked(index + count) > x.Length)
                 throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
-            Types.Buffer result = new(count, false);
+            Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
         }
@@ -124,7 +125,7 @@ namespace Neo.VM
             var x = engine.Pop().GetSpan();
             if (count > x.Length)
                 throw new InvalidOperationException($"The count is out of range for {nameof(OpCode.LEFT)}, {count}/[0, {x.Length}].");
-            Types.Buffer result = new(count, false);
+            Buffer result = new(count, false);
             x[..count].CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
         }
@@ -145,7 +146,7 @@ namespace Neo.VM
             var x = engine.Pop().GetSpan();
             if (count > x.Length)
                 throw new InvalidOperationException($"The count is out of range for {nameof(OpCode.RIGHT)}, {count}/[0, {x.Length}].");
-            Types.Buffer result = new(count, false);
+            Buffer result = new(count, false);
             x[^count..^0].CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
         }

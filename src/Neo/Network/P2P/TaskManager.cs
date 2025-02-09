@@ -404,7 +404,7 @@ namespace Neo.Network.P2P
 
     internal class TaskManagerMailbox : PriorityMailbox
     {
-        public TaskManagerMailbox(Akka.Actor.Settings settings, Config config)
+        public TaskManagerMailbox(Settings settings, Config config)
             : base(settings, config)
         {
         }

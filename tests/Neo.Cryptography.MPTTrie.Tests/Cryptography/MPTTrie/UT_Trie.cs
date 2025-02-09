@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
@@ -42,9 +41,9 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         public void Commit() { throw new NotImplementedException(); }
 
-        public bool Contains(byte[] key) { throw new System.NotImplementedException(); }
+        public bool Contains(byte[] key) { throw new NotImplementedException(); }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] key, SeekDirection direction) { throw new System.NotImplementedException(); }
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] key, SeekDirection direction) { throw new NotImplementedException(); }
 
         public byte[] TryGet(byte[] key)
         {
@@ -58,7 +57,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
             return store.TryGetValue(StoreKey(key), out value);
         }
 
-        public void Dispose() { throw new System.NotImplementedException(); }
+        public void Dispose() { throw new NotImplementedException(); }
 
         public int Size => store.Count;
     }

@@ -10,10 +10,10 @@
 // modifications are permitted.
 
 using System;
+using System.Runtime.CompilerServices;
 #if !NET9_0_OR_GREATER
 using System.Globalization;
 #endif
-using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {

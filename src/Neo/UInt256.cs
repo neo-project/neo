@@ -12,7 +12,6 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
-using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
