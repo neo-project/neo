@@ -68,7 +68,7 @@ namespace Neo.Build.Core.Tests.Exceptions
             // NeoBuildException
             Assert.AreEqual(NeoBuildErrorCodes.General.InternalException, neoException2.ExitCode);
             Assert.AreEqual(neoException2.ExitCode, neoException2.HResult);
-            Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{neoException2.ExitCode:d04}", neoException2.ErrorCode);
+            Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{(uint)neoException2.ExitCode:d04}", neoException2.ErrorCode);
             Assert.AreEqual($"{neoException2.ErrorCode} Hello World", neoException2.Message);
             Assert.AreEqual(neoException2.Message, $"{neoException2}");
 
