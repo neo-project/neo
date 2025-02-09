@@ -35,11 +35,11 @@ number (_`b`_) times number (_`n`_) of modules plus one (_`1`_) equals module
 base (_`mb`_).
 
 ## Factors
-1. Module base _**MUST BE**_ unique.
-1. Modules can _**Only**_ define exactly _**1000**_ known error codes.
-1. Module **MUST** set `HResult` in `System.Exception` class.
-1. Module **MUST** define the root cause of the error, setting `Message` in `System.Exception` class.
-1. Modules **MUST** pick a module base in between `1000` to `9999`.
+1. **MUST** use a unique module base.
+1. **MUST** define a module base between `1000` to `9999`.
+1. **MUST** define no more than **1000** error codes for one module.
+1. **MUST** set `HResult` property in `System.Exception` with error code number.
+1. **MUST** set `Message` property in `System.Exception` with root cause of the error.
 
 ## Example
 ```csharp
