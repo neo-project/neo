@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -188,7 +187,7 @@ namespace Neo.UnitTests
         {
             foreach (var point in TestProtocolSettings.Default.StandbyCommittee)
             {
-                StringAssert.Matches(point.ToString(), new System.Text.RegularExpressions.Regex("^[0-9A-Fa-f]{66}$")); // ECPoint is 66 hex characters
+                StringAssert.Matches(point.ToString(), new Regex("^[0-9A-Fa-f]{66}$")); // ECPoint is 66 hex characters
             }
         }
 
@@ -259,7 +258,7 @@ namespace Neo.UnitTests
         {
             foreach (var seed in TestProtocolSettings.Default.SeedList)
             {
-                StringAssert.Matches(seed, new System.Text.RegularExpressions.Regex(@"^[\w.-]+:\d+$")); // Format: domain:port
+                StringAssert.Matches(seed, new Regex(@"^[\w.-]+:\d+$")); // Format: domain:port
             }
         }
 

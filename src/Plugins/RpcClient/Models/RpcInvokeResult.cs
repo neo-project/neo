@@ -22,7 +22,7 @@ namespace Neo.Network.RPC.Models
     {
         public string Script { get; set; }
 
-        public VM.VMState State { get; set; }
+        public VMState State { get; set; }
 
         public long GasConsumed { get; set; }
 
