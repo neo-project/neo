@@ -25,7 +25,7 @@ namespace Neo.Persistence
         private readonly IReadOnlyStore _store;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnapshotCache"/> class.
+        /// Initializes a new instance of the <see cref="SnapshotCacheReadOnly"/> class.
         /// </summary>
         /// <param name="store">An <see cref="IReadOnlyStore"/> to create a readonly cache.</param>
         public SnapshotCacheReadOnly(IReadOnlyStore store)
