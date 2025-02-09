@@ -5,12 +5,12 @@ within `Visual Studio` or `dotnet` CLI.
 
 # How to use Error Codes
 When an `Exception` occurs (_whether that be known or unknown_) the number
-**MUST BE** set to the exceptions `HResult` property. Doing so, will set the
+**MUST BE** set to the exception's `HResult` property. Doing so, will set the
 exit code of the application. Exit codes are used by many applications within
 the Neo Build Engine process. These codes are also used as an error string ID
 for exception `Message` property, to help the user identify the root of the
-problem. Error string will be prefixed with `NB` and have a suffix of format
-of `{0:d04}`, for _**example**: `NB1000`, `NB0101`, `NB0070`_. This allows
+problem. Error string will be prefixed with `NB` and have a suffix format of
+`{0:d04}`, for _**example**: `NB1000`, `NB0101`, `NB0070`_. This allows
 padding of zeros for anything less than `1000`.
 
 
@@ -21,12 +21,11 @@ all the error codes for the wallet module. _See
 [What is a Module](#what-is-a-module) for more details_.
 
 # What is a Module
-refers to the part of code doing the processing within the Neo Build
-Engine. For _**example:** `NeoBuildEngine::Wallet:Open()`_. If `Wallet:Open()`
-fails the error code may return an error of `mb + 1`, _see
-[Defining Module Base](#how-to-define-module-base)_ for calculating `mb`. In
-the example, `NeoBuildEngine` and `Wallet` are two separate modules. Neo
-Build Engine will be the base module (_`NeoBuildEngine`_).
+refers to the part of code doing the processing within the Neo Build Engine
+for _**example**, `NeoBuildEngine::Wallet:Open()`_. `Wallet` is the module.
+Each class **SHOULD BE** considered it's own module. Each subclass in the
+module class that has `private` or `internal` **WILL NOT** be considered a
+different module for _**example**, `NeoBuildEngine::Wallet::Cache:AddItem()`_.
 
 # How to Define Module Base
 Each module within Neo Build Engine has it own base error number. These
@@ -36,8 +35,10 @@ number (_`b`_) times number (_`n`_) of modules plus one (_`1`_) equals module
 base (_`mb`_).
 
 ## Factors
-1. Module base _**MUST BE**_ unique from every other module's base.
-2. Each module can _**Only**_ define exactly _**1000**_ known error codes.
+1. Module base _**MUST BE**_ unique.
+1. Modules can _**Only**_ define exactly _**1000**_ known error codes.
+1. Module **MUST** set `HResult` in `System.Exception` class.
+1. Module **MUST** define the root cause of the error, setting `Message` in `System.Exception` class.
 
 ## Example
 ```csharp
