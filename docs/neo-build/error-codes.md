@@ -29,10 +29,11 @@ the example, `NeoBuildEngine` and `Wallet` are two separate modules. Neo
 Build Engine will be the base module (_`NeoBuildEngine`_).
 
 # How to Define Module Base
-Each module within Neo Build Engine has it own `base` error number. These
-modules can hold up to 1000 known errors each. The formula for calculating
-an error modules `base` error number is `mb = b * n`, base (_`b`_) times
-number (_`n`_) of times equals module base (_`mb`_).
+Each module within Neo Build Engine has it own base error number. These
+modules can hold up to `1000` known errors each. The formula for calculating
+an error module's base is `mb = b * (n + 1)`; build engine's module base
+number (_`b`_) times number (_`n`_) of modules plus one (_`1`_) equals module
+base (_`mb`_).
 
 ## Factors
 1. Module base _**MUST BE**_ unique from every other module's base.
@@ -41,15 +42,15 @@ number (_`n`_) of times equals module base (_`mb`_).
 ## Example
 ```csharp
 // Base
-private const int Base = 1000;
+private const int EngineBase = 1;
 
 // Module 1
-private const int ModuleBase = Base * 1;        // 1000
+private const int ModuleBase = Base * 1000;     // 1000
 public const int Exception1 = ModuleBase + 1;   // 1001
 public const int Exception2 = ModuleBase + 2;   // 1002
 
 // Module 2
-private const int ModuleBase = Base * 2;        // 2000
+private const int ModuleBase = Base * 2000;     // 2000
 public const int Exception1 = ModuleBase + 1;   // 2001
 public const int Exception2 = ModuleBase + 2;   // 2002
 ```

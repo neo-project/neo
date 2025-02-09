@@ -15,8 +15,8 @@ namespace Neo.Build.Core
     {
         public sealed class General
         {
-            public const int ModuleId = 1;
-            private const int ModuleBaseErrorCode = BaseErrorCode * ModuleId;
+            public const int ModuleId = 1000;
+            private const int ModuleBaseErrorCode = BuildModuleBaseErrorCode * ModuleId;
 
             public const int InternalException = ModuleBaseErrorCode;
 
