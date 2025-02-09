@@ -34,7 +34,7 @@ namespace Neo.IO.Caching
                 if (attribute == null) continue;
 
                 // Append to cache
-                var key = (T?)field.GetValue(null);
+                var key = field.GetValue(null) as T;
                 if (key == null) continue;
                 s_dictionary.Add(key, attribute.Type);
             }
