@@ -35,7 +35,7 @@ number (_`b`_) times number (_`n`_) of modules plus one (_`1`_) equals module
 base (_`mb`_).
 
 ## Factors
-1. **MUST** use a unique module base.
+1. **MUST** define a unique module base.
 1. **MUST** define a module base between `1000` to `9999`.
 1. **MUST** define no more than **1000** error codes for one module.
 1. **MUST** set `HResult` property in `System.Exception` with error code number.
