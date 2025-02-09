@@ -84,6 +84,7 @@ namespace Neo.UnitTests.SmartContract.Native
                         Assert.AreEqual(0, entries.First().Parameters.Length);
                         Assert.AreEqual(1, entries.Skip(1).First().Parameters.Length);
                         Assert.AreEqual(CallFlags.ReadStates, entries[0].RequiredCallFlags);
+                        Assert.AreEqual(CallFlags.ReadStates | CallFlags.WriteStates, entries[1].RequiredCallFlags);
                     }
                     else
                     {
@@ -101,14 +102,18 @@ namespace Neo.UnitTests.SmartContract.Native
                 {
                     var methods = NativeContract.NEO.GetContractMethods(engine);
                     var entries = methods.Values.Where(u => u.Name == method).ToArray();
-                    Assert.AreEqual(1, entries.Length);
+
                     if (method == "getGasPerBlock")
                     {
-                        Assert.AreEqual(1, entries.First().Parameters.Length);
+                        Assert.AreEqual(2, entries.Length);
+                        Assert.AreEqual(0, entries.First().Parameters.Length);
+                        Assert.AreEqual(1, entries.Skip(1).First().Parameters.Length);
                         Assert.AreEqual(CallFlags.ReadStates, entries[0].RequiredCallFlags);
+                        Assert.AreEqual(CallFlags.ReadStates | CallFlags.WriteStates, entries[1].RequiredCallFlags);
                     }
                     else
                     {
+                        Assert.AreEqual(1, entries.Length);
                         Assert.AreEqual(CallFlags.States | CallFlags.AllowNotify, entries[0].RequiredCallFlags);
                     }
                 }

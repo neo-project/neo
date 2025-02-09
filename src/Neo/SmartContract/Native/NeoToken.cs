@@ -297,13 +297,14 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The amount of GAS generated.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [Obsolete("Use GetGasPerBlock(DataCache) instead")]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
             return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates | CallFlags.WriteStates)]
         public BigInteger GetGasPerBlock(ApplicationEngine engine, DataCache snapshot)
         {
             var currentIndex = Ledger.CurrentIndex(snapshot) + 1;
@@ -312,12 +313,19 @@ namespace Neo.SmartContract.Native
             if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna))
                 return currentGasPerBlock;
 
-            var hardfork = engine.ProtocolSettings.Hardforks[Hardfork.HF_Echidna];
-            var preHardforkGasPerBlock = GetSortedGasRecords(snapshot, hardfork).First().GasPerBlock;
+            var hardforkHeight = engine.ProtocolSettings.Hardforks[Hardfork.HF_Echidna];
 
-            return preHardforkGasPerBlock == currentGasPerBlock
-                ? preHardforkGasPerBlock / 5
-                : currentGasPerBlock;
+            if (hardforkHeight != currentIndex)
+            {
+                return currentGasPerBlock;
+            }
+
+            // At the height of the hardfork Echidna, the gas per block will be reduced by 80%
+            // because the block time is reduced by 80%.
+            currentGasPerBlock /= 5; // I think it should not be a problem for this code to ensure the result is not 0
+            var entry = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(currentIndex), () => new StorageItem(currentGasPerBlock));
+            entry.Set(currentGasPerBlock);
+            return currentGasPerBlock;
         }
 
 
