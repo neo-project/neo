@@ -44,22 +44,19 @@ namespace Neo
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt256"/> class.
         /// </summary>
-        public UInt256()
-        {
-        }
+        public UInt256() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt256"/> class.
         /// </summary>
         /// <param name="value">The value of the <see cref="UInt256"/>.</param>
-        public unsafe UInt256(ReadOnlySpan<byte> value)
+        public UInt256(ReadOnlySpan<byte> value)
         {
-            if (value.Length != Length) throw new FormatException();
-            fixed (ulong* p = &value1)
-            {
-                Span<byte> dst = new(p, Length);
-                value[..Length].CopyTo(dst);
-            }
+            if (value.Length != Length)
+                throw new FormatException($"Invalid length: {value.Length}");
+
+            var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+            value[..Length].CopyTo(span);
         }
 
         public int CompareTo(UInt256 other)
