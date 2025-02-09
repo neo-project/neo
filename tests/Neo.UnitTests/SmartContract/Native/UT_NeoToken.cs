@@ -12,21 +12,21 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
-using Neo.Wallets;
+using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Security.Principal;
 using System.Text;
 using static Neo.SmartContract.Native.NeoToken;
+using Array = System.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -841,7 +841,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(5 * NativeContract.GAS.Factor, result.Item1);
 
             persistingBlock = new Block { Header = new Header { Index = 10 } };
-            (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(clonedCache, 10 * NativeContract.GAS.Factor, persistingBlock);
+            (Boolean, bool) result1 = Check_SetGasPerBlock(clonedCache, 10 * NativeContract.GAS.Factor, persistingBlock);
             Assert.IsTrue(result1.Item2);
             Assert.IsTrue(result1.Item1.GetBoolean());
 
@@ -1047,7 +1047,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var state = engine.Execute();
             Console.WriteLine($"{state} {engine.FaultException}");
             var result = engine.ResultStack.Peek();
-            Assert.AreEqual(typeof(VM.Types.Boolean), result.GetType());
+            Assert.AreEqual(typeof(Boolean), result.GetType());
             return (true, result.GetBoolean());
         }
 
@@ -1085,12 +1085,12 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(Integer));
 
-            return (((VM.Types.Integer)result).GetInteger(), true);
+            return (((Integer)result).GetInteger(), true);
         }
 
-        internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(DataCache clonedCache, BigInteger gasPerBlock, Block persistingBlock)
+        internal static (Boolean Value, bool State) Check_SetGasPerBlock(DataCache clonedCache, BigInteger gasPerBlock, Block persistingBlock)
         {
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(clonedCache);
             using var engine = ApplicationEngine.Create(TriggerType.Application,
@@ -1122,7 +1122,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(Boolean));
 
             return (true, result.GetBoolean());
         }
@@ -1142,7 +1142,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(Boolean));
 
             return (true, result.GetBoolean());
         }
@@ -1172,7 +1172,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 return (false, false);
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(Boolean));
 
             return (true, result.GetBoolean());
         }
@@ -1208,7 +1208,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(Integer));
 
             return (result.GetInteger(), true);
         }
@@ -1223,10 +1223,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
-            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
+            var st = (Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
 
             Assert.AreEqual(3, st.Count);
-            CollectionAssert.AreEqual(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
+            CollectionAssert.AreEqual(new Type[] { typeof(Integer), typeof(Integer), typeof(ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
 
             Assert.AreEqual(balance, st[0].GetInteger()); // Balance
             Assert.AreEqual(height, st[1].GetInteger());  // BalanceHeight
@@ -1262,7 +1262,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(Boolean));
 
             return (true, result.GetBoolean());
         }
@@ -1278,9 +1278,9 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Struct));
+            Assert.IsInstanceOfType(result, typeof(Struct));
 
-            VM.Types.Struct state = (result as VM.Types.Struct);
+            Struct state = (result as Struct);
             var balance = state[0].GetInteger();
             var height = state[1].GetInteger();
             var voteto = state[2].IsNull ? null : state[2].GetSpan().ToArray();

@@ -19,6 +19,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -206,8 +207,8 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Boolean));
-                var res = (VM.Types.Boolean)engine.ResultStack.Pop();
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Boolean));
+                var res = (Boolean)engine.ResultStack.Pop();
                 Assert.IsTrue(res.GetBoolean());
             }
         }

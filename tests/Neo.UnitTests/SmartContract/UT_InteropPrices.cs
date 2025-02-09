@@ -14,6 +14,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -72,7 +73,7 @@ namespace Neo.UnitTests.SmartContract
             ContractState contractState = TestUtils.GetContract(script);
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
-            StorageItem sItem = TestUtils.GetStorageItem(System.Array.Empty<byte>());
+            StorageItem sItem = TestUtils.GetStorageItem(Array.Empty<byte>());
 
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
