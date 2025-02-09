@@ -118,7 +118,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = Enumerable.Repeat((byte)OpCode.RET, byte.MaxValue).ToArray(),
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = Array.Empty<MethodToken>()
+                Tokens = []
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
@@ -216,7 +216,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = new byte[] { 0x01 },
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = Array.Empty<MethodToken>()
+                Tokens = []
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
@@ -231,7 +231,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = new byte[0],
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = Array.Empty<MethodToken>()
+                Tokens = []
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
