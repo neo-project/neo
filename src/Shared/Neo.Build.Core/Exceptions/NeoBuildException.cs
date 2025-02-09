@@ -17,6 +17,9 @@ namespace Neo.Build.Core.Exceptions
         string errorMessage,
         int errorCode = NeoBuildErrorCodes.General.InternalException) : Exception(), INeoBuildException
     {
+        public NeoBuildException(Exception exception) : this(exception.Message, exception.HResult) { }
+        public NeoBuildException(Exception exception, int exitCode) : this(exception.Message, exitCode) { }
+
         /// <summary>
         /// Exit code from the build process.
         /// </summary>
@@ -25,14 +28,12 @@ namespace Neo.Build.Core.Exceptions
         /// <summary>
         /// An error code for referencing the problem.
         /// </summary>
-        public string ErrorCode => $"{NeoBuildErrorCodes.StringPrefix}{ExitCode:d04}";
+        public string ErrorCode => $"{NeoBuildErrorCodes.StringPrefix}{(uint)ExitCode:d04}";
 
         /// <summary>
         /// A description of the root cause of the problem.
         /// </summary>
-        public override string Message => InnerException is null ?
-            $"{ErrorCode} {errorMessage}" :
-            $"{ErrorCode} {errorMessage} {InnerException}";
+        public override string Message => $"{ErrorCode} {errorMessage}";
 
         public override string ToString() =>
             Message;
