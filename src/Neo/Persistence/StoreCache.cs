@@ -22,25 +22,25 @@ namespace Neo.Persistence
     /// <summary>
     /// Represents a cache for the snapshot or database of the NEO blockchain.
     /// </summary>
-    public class SnapshotCache : DataCache, IDisposable
+    public class StoreCache : DataCache, IDisposable
     {
         private readonly IRawReadOnlyStore _store;
         private readonly IStoreSnapshot? _snapshot;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnapshotCache"/> class.
+        /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
         /// <param name="store">An <see cref="IStore"/> to create a readonly cache.</param>
-        public SnapshotCache(IStore store)
+        public StoreCache(IStore store)
         {
             _store = store;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnapshotCache"/> class.
+        /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
         /// <param name="snapshot">An <see cref="IStoreSnapshot"/> to create a snapshot cache.</param>
-        public SnapshotCache(IStoreSnapshot snapshot)
+        public StoreCache(IStoreSnapshot snapshot)
         {
             _store = snapshot;
             _snapshot = snapshot;

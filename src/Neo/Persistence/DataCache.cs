@@ -156,7 +156,7 @@ namespace Neo.Persistence
         /// <summary>
         /// Creates a clone of the snapshot cache, which uses this instance as the underlying storage.
         /// </summary>
-        /// <returns>The <see cref="DataCache"/> of this <see cref="SnapshotCache"/> instance.</returns>
+        /// <returns>The <see cref="ClonedCache"/> of this <see cref="DataCache"/> instance.</returns>
         public DataCache CloneCache()
         {
             return new ClonedCache(this);

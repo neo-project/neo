@@ -18,17 +18,17 @@ namespace Neo.UnitTests.Persistence
 {
     /// <summary>
     /// When adding data to `datacache` <see cref="DataCache"/>,
-    /// it gets passed to `snapshotcache` <see cref="SnapshotCache"/> during commit.
-    /// If `snapshotcache` <see cref="SnapshotCache"/>commits, the data is then passed
+    /// it gets passed to `snapshotcache` <see cref="StoreCache"/> during commit.
+    /// If `snapshotcache` <see cref="StoreCache"/>commits, the data is then passed
     /// to the underlying store <see cref="IStore"/>.
     /// However, because snapshots <see cref="IStoreSnapshot"/> are immutable, the new data
     /// cannot be retrieved from the snapshot <see cref="IStoreSnapshot"/>.
     ///
     /// When deleting data from `datacache` <see cref="DataCache"/>,
-    /// it won't exist in `datacache` upon commit, and therefore will be removed from `snapshotcache` <see cref="SnapshotCache"/>.
-    /// Upon `snapshotcache` <see cref="SnapshotCache"/>commit, the data is deleted from the store <see cref="IStore"/>.
+    /// it won't exist in `datacache` upon commit, and therefore will be removed from `snapshotcache` <see cref="StoreCache"/>.
+    /// Upon `snapshotcache` <see cref="StoreCache"/>commit, the data is deleted from the store <see cref="IStore"/>.
     /// However, since the snapshot <see cref="IStoreSnapshot"/> remains unchanged, the data still exists in the snapshot.
-    /// If you attempt to read this data from `datacache` <see cref="DataCache"/> or `snapshotcache` <see cref="SnapshotCache"/>,
+    /// If you attempt to read this data from `datacache` <see cref="DataCache"/> or `snapshotcache` <see cref="StoreCache"/>,
     /// which do not have the data, they will retrieve it from the snapshot instead of the store.
     /// Thus, they can still access data that has been deleted.
     /// </summary>
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Persistence
     {
         private MemoryStore _memoryStore;
         private MemorySnapshot _snapshot;
-        private SnapshotCache _snapshotCache;
+        private StoreCache _snapshotCache;
         private DataCache _dataCache;
 
         [TestInitialize]
@@ -45,7 +45,7 @@ namespace Neo.UnitTests.Persistence
         {
             _memoryStore = new MemoryStore();
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
-            _snapshotCache = new SnapshotCache(_snapshot);
+            _snapshotCache = new StoreCache(_snapshot);
             _dataCache = _snapshotCache.CloneCache();
         }
 
@@ -94,7 +94,7 @@ namespace Neo.UnitTests.Persistence
 
             // Reset the snapshot to make it accessible to the new value.
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
-            _snapshotCache = new SnapshotCache(_snapshot);
+            _snapshotCache = new StoreCache(_snapshot);
             _dataCache = _snapshotCache.CreateSnapshot();
 
             Assert.IsTrue(_dataCache.Contains(key1));

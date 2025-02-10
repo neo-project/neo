@@ -24,7 +24,7 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_DataCache
     {
         private readonly MemoryStore store = new();
-        private SnapshotCache myDataCache;
+        private StoreCache myDataCache;
 
         private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };
         private static readonly StorageKey key2 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key2") };
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
 
             using var snapshot = store.GetSnapshot();
-            using var myDataCache = new SnapshotCache(snapshot);
+            using var myDataCache = new StoreCache(snapshot);
 
             myDataCache.Add(key1, value1);
             Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
@@ -148,7 +148,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key2.ToArray(), value2.ToArray());
 
             using var snapshot = store.GetSnapshot();
-            using var myDataCache = new SnapshotCache(snapshot);
+            using var myDataCache = new StoreCache(snapshot);
 
             myDataCache.Add(key1, value1);
             myDataCache.Delete(key1);
@@ -245,7 +245,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value4.ToArray());
 
-            var myDataCache = new SnapshotCache(store);
+            var myDataCache = new StoreCache(store);
             myDataCache.Add(key1, value1);
             myDataCache.Add(key2, value2);
 
@@ -381,7 +381,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestFindInvalid()
         {
             using var store = new MemoryStore();
-            using var myDataCache = new SnapshotCache(store);
+            using var myDataCache = new StoreCache(store);
             myDataCache.Add(key1, value1);
 
             store.Put(key2.ToArray(), value2.ToArray());
