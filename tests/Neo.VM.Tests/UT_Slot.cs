@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Numerics;
+using Array = System.Array;
 
 namespace Neo.Test
 {
@@ -84,18 +85,18 @@ namespace Neo.Test
 
             slot = CreateOrderedSlot(0);
 
-            CollectionAssert.AreEqual(System.Array.Empty<Integer>(), slot.ToArray());
+            CollectionAssert.AreEqual(Array.Empty<Integer>(), slot.ToArray());
 
             // Test IEnumerable
 
             enumerable = slot;
             enumerator = enumerable.GetEnumerator();
 
-            CollectionAssert.AreEqual(System.Array.Empty<Integer>(), GetEnumerable(enumerator).Cast<Integer>().ToArray());
+            CollectionAssert.AreEqual(Array.Empty<Integer>(), GetEnumerable(enumerator).Cast<Integer>().ToArray());
 
             Assert.AreEqual(0, slot.Count);
 
-            CollectionAssert.AreEqual(System.Array.Empty<Integer>(), slot.ToArray());
+            CollectionAssert.AreEqual(Array.Empty<Integer>(), slot.ToArray());
         }
     }
 }

@@ -12,7 +12,6 @@
 #pragma warning disable CS0618 // Type or member is obsolete
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
 using Neo.Persistence;
 using System.IO;
 using System.Linq;

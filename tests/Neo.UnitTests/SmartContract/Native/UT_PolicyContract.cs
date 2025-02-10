@@ -11,15 +11,15 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM.Types;
 using System;
-using System.Linq;
 using System.Numerics;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -43,11 +43,11 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshotCache.CloneCache();
 
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(1000, ret.GetInteger());
 
             ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)TransactionAttributeType.Conflicts });
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(PolicyContract.DefaultAttributeFee, ret.GetInteger());
 
             Assert.ThrowsException<InvalidOperationException>(() => NativeContract.Policy.Call(snapshot, "getAttributeFee", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)byte.MaxValue }));
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract.Native
             });
 
             var ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(0, ret.GetInteger());
 
             // With signature, wrong value
@@ -90,7 +90,7 @@ namespace Neo.UnitTests.SmartContract.Native
             });
 
             ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(0, ret.GetInteger());
 
             // Proper set
@@ -99,7 +99,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(300300, ret.GetInteger());
 
             // Set to zero
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(0, ret.GetInteger());
         }
 
@@ -137,7 +137,7 @@ namespace Neo.UnitTests.SmartContract.Native
             });
 
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(1000, ret.GetInteger());
 
             // With signature
@@ -147,7 +147,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(1, ret.GetInteger());
         }
 
@@ -176,7 +176,7 @@ namespace Neo.UnitTests.SmartContract.Native
             });
 
             var ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(30, ret.GetInteger());
 
             // With signature, wrong value
@@ -188,7 +188,7 @@ namespace Neo.UnitTests.SmartContract.Native
             });
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(30, ret.GetInteger());
 
             // Proper set
@@ -197,7 +197,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(50, ret.GetInteger());
         }
 
@@ -226,7 +226,7 @@ namespace Neo.UnitTests.SmartContract.Native
             });
 
             var ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(100000, ret.GetInteger());
 
             // With signature, wrong value
@@ -238,7 +238,7 @@ namespace Neo.UnitTests.SmartContract.Native
             });
 
             ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(100000, ret.GetInteger());
 
             // Proper set
@@ -247,7 +247,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.IsNull);
 
             ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(300300, ret.GetInteger());
         }
 
@@ -282,14 +282,14 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
               "blockAccount",
               new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(ret, typeof(Boolean));
             Assert.IsTrue(ret.GetBoolean());
 
             // Same account
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "blockAccount",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(ret, typeof(Boolean));
             Assert.IsFalse(ret.GetBoolean());
 
             // Account B
@@ -297,7 +297,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "blockAccount",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xb400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(ret, typeof(Boolean));
             Assert.IsTrue(ret.GetBoolean());
 
             // Check
@@ -338,7 +338,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(ret, typeof(Boolean));
             Assert.IsTrue(ret.GetBoolean());
 
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero));
@@ -357,7 +357,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
-            Assert.IsInstanceOfType(ret, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(ret, typeof(Boolean));
             Assert.IsTrue(ret.GetBoolean());
 
             Assert.IsFalse(NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero));

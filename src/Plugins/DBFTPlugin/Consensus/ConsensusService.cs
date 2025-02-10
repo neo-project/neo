@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -70,8 +69,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             blockchain = neoSystem.Blockchain;
             dbftSettings = settings;
             this.context = context;
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            Context.System.EventStream.Subscribe(Self, typeof(PersistCompleted));
+            Context.System.EventStream.Subscribe(Self, typeof(RelayResult));
         }
 
         private void OnPersistCompleted(Block block)
@@ -134,10 +133,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     case Transaction transaction:
                         OnTransaction(transaction);
                         break;
-                    case Blockchain.PersistCompleted completed:
+                    case PersistCompleted completed:
                         OnPersistCompleted(completed.Block);
                         break;
-                    case Blockchain.RelayResult rr:
+                    case RelayResult rr:
                         if (rr.Result == VerifyResult.Succeed && rr.Inventory is ExtensiblePayload payload && payload.Category == "dBFT")
                             OnConsensusPayload(payload);
                         break;
@@ -153,7 +152,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             {
                 if (context.Transactions != null)
                 {
-                    blockchain.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
+                    blockchain.Ask<FillCompleted>(new FillMemoryPool
                     {
                         Transactions = context.Transactions.Values
                     }).Wait();
@@ -246,7 +245,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private bool ReverifyAndProcessPayload(ExtensiblePayload payload)
         {
-            RelayResult relayResult = blockchain.Ask<RelayResult>(new Blockchain.Reverify { Inventories = new IInventory[] { payload } }).Result;
+            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = new IInventory[] { payload } }).Result;
             if (relayResult.Result != VerifyResult.Succeed) return false;
             OnConsensusPayload(payload);
             return true;
