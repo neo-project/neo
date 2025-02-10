@@ -31,18 +31,18 @@ namespace Neo.Build.Core.Tests.Exceptions
             Assert.AreEqual(NeoBuildErrorCodes.General.FileNotFound, exception.ExitCode);
             Assert.AreEqual(exception.ExitCode, exception.HResult);
             Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{(uint)exception.ExitCode:d04}", exception.ErrorCode);
-            Assert.AreEqual($"{exception.ErrorCode} {expectedMessage}", exception.Message);
+            Assert.AreEqual($"Error {exception.ErrorCode} {expectedMessage}", exception.Message);
             Assert.AreEqual(exception.Message, $"{exception}");
             Assert.AreEqual(expectedFilename, exception.Filename);
 
             // INeoBuildException
             Assert.AreEqual(NeoBuildErrorCodes.General.FileNotFound, exceptionInterface.ExitCode);
             Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{(uint)exceptionInterface.ExitCode:d04}", exceptionInterface.ErrorCode);
-            Assert.AreEqual($"{exceptionInterface.ErrorCode} {expectedMessage}", exceptionInterface.Message);
+            Assert.AreEqual($"Error {exceptionInterface.ErrorCode} {expectedMessage}", exceptionInterface.Message);
 
             // System.Exception
             Assert.AreEqual(NeoBuildErrorCodes.General.FileNotFound, exceptionBase.HResult);
-            Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{(uint)exceptionBase.HResult} {expectedMessage}", exceptionBase.Message);
+            Assert.AreEqual($"Error {NeoBuildErrorCodes.StringPrefix}{(uint)exceptionBase.HResult} {expectedMessage}", exceptionBase.Message);
             Assert.AreEqual(exception.Message, $"{exceptionBase}");
         }
     }
