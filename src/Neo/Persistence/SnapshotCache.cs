@@ -24,7 +24,7 @@ namespace Neo.Persistence
     /// </summary>
     public class SnapshotCache : DataCache, IDisposable
     {
-        private readonly IStore _store;
+        private readonly IRawReadOnlyStore _store;
         private readonly IStoreSnapshot? _snapshot;
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Neo.Persistence
         /// <param name="snapshot">An <see cref="IStoreSnapshot"/> to create a snapshot cache.</param>
         public SnapshotCache(IStoreSnapshot snapshot)
         {
-            _store = snapshot.Store;
+            _store = snapshot;
             _snapshot = snapshot;
         }
 

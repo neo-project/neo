@@ -12,7 +12,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
@@ -20,7 +19,7 @@ namespace Neo.Persistence
     /// This interface provides methods for reading, writing from/to database. Developers should implement this interface to provide new storage engines for NEO.
     /// </summary>
     public interface IStore :
-        IReadOnlyStore<byte[], byte[]>,
+        IRawReadOnlyStore,
         IWriteStore<byte[], byte[]>,
         IDisposable
     {
@@ -29,13 +28,5 @@ namespace Neo.Persistence
         /// </summary>
         /// <returns>A snapshot of the database.</returns>
         IStoreSnapshot GetSnapshot();
-
-        /// <summary>
-        /// Seeks to the entry with the specified key.
-        /// </summary>
-        /// <param name="keyOrPrefix">The key(i.e. start key) or prefix to be sought.</param>
-        /// <param name="direction">The direction of seek.</param>
-        /// <returns>An enumerator containing all the entries after (Forward) or before(Backward) seeking.</returns>
-        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction);
     }
 }

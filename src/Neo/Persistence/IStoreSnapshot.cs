@@ -12,7 +12,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
@@ -20,7 +19,7 @@ namespace Neo.Persistence
     /// This interface provides methods for reading, writing, and committing from/to snapshot.
     /// </summary>
     public interface IStoreSnapshot :
-        IReadOnlyStore<byte[], byte[]>,
+        IRawReadOnlyStore,
         IWriteStore<byte[], byte[]>,
         IDisposable
     {
@@ -33,13 +32,5 @@ namespace Neo.Persistence
         /// Commits all changes in the snapshot to the database.
         /// </summary>
         void Commit();
-
-        /// <summary>
-        /// Seeks to the entry with the specified key.
-        /// </summary>
-        /// <param name="keyOrPrefix">The key(i.e. start key) or prefix to be sought.</param>
-        /// <param name="direction">The direction of seek.</param>
-        /// <returns>An enumerator containing all the entries after (Forward) or before(Backward) seeking.</returns>
-        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction);
     }
 }
