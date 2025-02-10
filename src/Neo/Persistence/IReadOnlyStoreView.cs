@@ -9,8 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.SmartContract;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Persistence
 {
@@ -41,6 +44,6 @@ namespace Neo.Persistence
         /// <param name="key">The key to get.</param>
         /// <param name="item">The entry if found, null otherwise.</param>
         /// <returns>True if the entry exists, false otherwise.</returns>
-        bool TryGet(StorageKey key, out StorageItem item);
+        bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item);
     }
 }

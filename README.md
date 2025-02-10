@@ -6,7 +6,7 @@
   </a>
 </p>
 
-<h3 align="center">Neo Blockchain</h3>
+<h3 align="center">CSharp implementation of the neo blockchain protocol.</h3>
 
 <p align="center">
    A modern distributed network for the Smart Economy.
@@ -38,7 +38,7 @@
       src=".github/images/nnt-logo.jpg"
       width="23px">
   </a>
-  &nbsp;  
+  &nbsp;
   <a href="https://t.me/NEO_EN">
       <img
       src=".github/images/telegram-logo.png"
@@ -99,13 +99,12 @@
 1. [Overview](#overview)
 2. [Project structure](#project-structure)
 3. [Related projects](#related-projects)
-4. [Opening a new issue](#opening-a-new-issue)  
+4. [Opening a new issue](#opening-a-new-issue)
 5. [Bounty program](#bounty-program)
 6. [License](#license)
 
 ## Overview
-This repository contain main classes of the 
-[Neo](https://neo.org) blockchain.   
+This repository is a csharp implementation of the [neo](https://neo.org) blockchain. It is jointly maintained by the neo core developers and neo global development community.
 Visit the [tutorials](https://docs.neo.org) to get started.
 
 
@@ -131,7 +130,7 @@ An overview of the project folders can be seen below.
 |[/tests/](https://github.com/neo-project/neo/tree/master/tests)|All unit tests.|
 
 ## Related projects
-Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler. 
+Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler.
 
 * [neo:](https://github.com/neo-project/neo/) Included libraries are Neo, Neo-CLI, Neo-GUI, Neo-VM, test and plugin modules.
 * [neo-express:](https://github.com/neo-project/neo-express/) A private net optimized for development scenarios.

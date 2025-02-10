@@ -25,7 +25,7 @@ namespace Neo.CLI
             return input == "yes" || input == "y";
         }
 
-        public static string ToBase64String(this byte[] input) => System.Convert.ToBase64String(input);
+        public static string ToBase64String(this byte[] input) => Convert.ToBase64String(input);
 
         public static void IsScriptValid(this ReadOnlyMemory<byte> script, ContractAbi abi)
         {

@@ -18,6 +18,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
 using System;
 using System.IO;
 using System.Linq;
@@ -400,7 +401,7 @@ namespace Neo.Plugins.RpcServer.Tests
                     new JObject() { ["type"] = nameof(ContractParameterType.String), ["value"] = manifest },
                 ]),
                 validatorSigner]));
-            Assert.AreEqual(deployResp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(deployResp["state"], nameof(VMState.HALT));
             UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
             SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
@@ -417,19 +418,19 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // invoke verify without signer; should return false
             JObject resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString()]);
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), false);
             // invoke verify with signer; should return true
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([]), validatorSigner]);
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
             // invoke verify with wrong input value; should FAULT
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "0" }]), validatorSigner]);
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.FAULT));
+            Assert.AreEqual(resp["state"], nameof(VMState.FAULT));
             Assert.AreEqual(resp["exception"], "Object reference not set to an instance of an object.");
             // invoke verify with 1 param and signer; should return true
             resp = (JObject)_rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]);
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["stack"][0]["value"].AsBoolean(), true);
             // invoke verify with 2 param (which does not exist); should throw Exception
             Assert.ThrowsException<RpcException>(() => _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),

@@ -16,12 +16,14 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
@@ -63,7 +65,7 @@ namespace Neo.SmartContract.Native
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
             if (md is not null)
                 await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
-            engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+            engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
         }
 
         internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
@@ -110,13 +112,13 @@ namespace Neo.SmartContract.Native
                     }
 
                     // Emit native contract notification
-                    engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+                    engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
                 }
             }
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private long GetMinimumDeploymentFee(DataCache snapshot)
+        private long GetMinimumDeploymentFee(IReadOnlyStoreView snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
@@ -137,9 +139,10 @@ namespace Neo.SmartContract.Native
         /// <param name="hash">The hash of the deployed contract.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContract(DataCache snapshot, UInt160 hash)
+        public ContractState GetContract(IReadOnlyStoreView snapshot, UInt160 hash)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>(false);
+            var key = CreateStorageKey(Prefix_Contract).Add(hash);
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<ContractState>(false) : null;
         }
 
         /// <summary>
@@ -149,12 +152,10 @@ namespace Neo.SmartContract.Native
         /// <param name="id">Contract ID.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContractById(DataCache snapshot, int id)
+        public ContractState GetContractById(IReadOnlyStoreView snapshot, int id)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
-            if (item is null) return null;
-            var hash = new UInt160(item.Value.Span);
-            return GetContract(snapshot, hash);
+            var key = CreateStorageKey(Prefix_ContractHash).AddBigEndian(id);
+            return snapshot.TryGet(key, out var item) ? GetContract(snapshot, new UInt160(item.Value.Span)) : null;
         }
 
         /// <summary>
@@ -184,7 +185,7 @@ namespace Neo.SmartContract.Native
         /// <param name="pcount">The number of parameters</param>
         /// <returns>True if the method exists.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool HasMethod(DataCache snapshot, UInt160 hash, string method, int pcount)
+        public bool HasMethod(IReadOnlyStoreView snapshot, UInt160 hash, string method, int pcount)
         {
             var contract = GetContract(snapshot, hash);
             if (contract is null) return false;
@@ -226,7 +227,7 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
-            Helper.Check(new VM.Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
+            Helper.Check(new Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
             if (Policy.IsBlocked(engine.SnapshotCache, hash))
@@ -290,7 +291,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
-            Helper.Check(new VM.Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
+            Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
             return OnDeployAsync(engine, contract, data, true);
         }
@@ -309,7 +310,7 @@ namespace Neo.SmartContract.Native
             // lock contract
             Policy.BlockAccount(engine.SnapshotCache, hash);
             // emit event
-            engine.SendNotification(Hash, "Destroy", new VM.Types.Array(engine.ReferenceCounter) { hash.ToArray() });
+            engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
         }
     }
 }
