@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="$(RootNamespace).Tests" />
     <InternalsVisibleTo Include="$(RootNamespace).Tests"/>
   </ItemGroup>
 
