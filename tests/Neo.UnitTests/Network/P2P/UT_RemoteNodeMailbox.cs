@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Akka.IO;
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -36,9 +37,9 @@ namespace Neo.UnitTests.Network.P2P
         [TestInitialize]
         public void TestSetup()
         {
-            Akka.Actor.ActorSystem system = Sys;
-            var config = TestKit.DefaultConfig;
-            var akkaSettings = new Akka.Actor.Settings(system, config);
+            ActorSystem system = Sys;
+            var config = DefaultConfig;
+            var akkaSettings = new Settings(system, config);
             uut = new RemoteNodeMailbox(akkaSettings, config);
         }
 

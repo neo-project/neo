@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Text;

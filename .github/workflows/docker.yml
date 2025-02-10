@@ -46,13 +46,6 @@ jobs:
           -p:DebugType=embedded \
           -p:ServerGarbageCollection=true
 
-    # Copy 'libleveldb' library file
-    - name: Native Content (neo-cli)
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: |
-        mv -v ./runtimes/${{ matrix.runtime }}/native/* .
-        rm -v -R runtimes
-
     - name: Build (LevelDbStore)
       run: |
         dotnet build ./src/Plugins/LevelDBStore \
@@ -81,5 +74,6 @@ jobs:
         docker build . \
           --file ./.neo/docker/neo-cli/Dockerfile \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:latest \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:mainnet \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:${{ env.APP_VERSION }} \
           --push

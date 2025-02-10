@@ -16,11 +16,9 @@ using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.Linq;
 
 namespace Neo.UnitTests
 {
