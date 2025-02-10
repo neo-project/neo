@@ -31,7 +31,7 @@ namespace Neo.Persistence
 
         public IStore Store { get; }
 
-        public MemorySnapshot(IStore store, ConcurrentDictionary<byte[], byte[]> innerData)
+        internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData)
         {
             Store = store;
             _innerData = innerData;
