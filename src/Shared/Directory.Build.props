@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <VersionPrefix>3.9.0</VersionPrefix>
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OutputPath>../../../bin/$(RootNamespace)</OutputPath>
+    <IncludeSymbols>true</IncludeSymbols>
+    <DebugType>embedded</DebugType>
+
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <LangVersion>latest</LangVersion>
+
+    <Authors>The Neo Project</Authors>
+    <Company>$(Authors)</Company>
+    <Copyright>2015-2025 $(Authors)</Copyright>
+
+    <IsPackable>true</IsPackable>
+    <PackageId>$(RootNamespace)</PackageId>
+    <PackageIcon>neo.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../../.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="../../../.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
+  </ItemGroup>
+
+</Project>
