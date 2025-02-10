@@ -21,13 +21,13 @@ namespace Neo.UnitTests.Persistence
     /// it gets passed to `snapshotcache` <see cref="SnapshotCache"/> during commit.
     /// If `snapshotcache` <see cref="SnapshotCache"/>commits, the data is then passed
     /// to the underlying store <see cref="IStore"/>.
-    /// However, because snapshots <see cref="ISnapshot"/> are immutable, the new data
-    /// cannot be retrieved from the snapshot <see cref="ISnapshot"/>.
+    /// However, because snapshots <see cref="IStoreSnapshot"/> are immutable, the new data
+    /// cannot be retrieved from the snapshot <see cref="IStoreSnapshot"/>.
     ///
     /// When deleting data from `datacache` <see cref="DataCache"/>,
     /// it won't exist in `datacache` upon commit, and therefore will be removed from `snapshotcache` <see cref="SnapshotCache"/>.
     /// Upon `snapshotcache` <see cref="SnapshotCache"/>commit, the data is deleted from the store <see cref="IStore"/>.
-    /// However, since the snapshot <see cref="ISnapshot"/> remains unchanged, the data still exists in the snapshot.
+    /// However, since the snapshot <see cref="IStoreSnapshot"/> remains unchanged, the data still exists in the snapshot.
     /// If you attempt to read this data from `datacache` <see cref="DataCache"/> or `snapshotcache` <see cref="SnapshotCache"/>,
     /// which do not have the data, they will retrieve it from the snapshot instead of the store.
     /// Thus, they can still access data that has been deleted.

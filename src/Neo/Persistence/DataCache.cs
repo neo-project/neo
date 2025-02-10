@@ -24,7 +24,7 @@ namespace Neo.Persistence
     /// <summary>
     /// Represents a cache for the underlying storage of the NEO blockchain.
     /// </summary>
-    public abstract class DataCache : IReadOnlyStoreView
+    public abstract class DataCache : IReadOnlyStore
     {
         /// <summary>
         /// Represents an entry in the cache.

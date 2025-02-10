@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// IStore.cs file belongs to the neo project and is free
+// IStoreSnapshot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,18 +17,22 @@ using System.Collections.Generic;
 namespace Neo.Persistence
 {
     /// <summary>
-    /// This interface provides methods for reading, writing from/to database. Developers should implement this interface to provide new storage engines for NEO.
+    /// This interface provides methods for reading, writing, and committing from/to snapshot.
     /// </summary>
-    public interface IStore :
+    public interface IStoreSnapshot :
         IReadOnlyStore<byte[], byte[]>,
         IWriteStore<byte[], byte[]>,
         IDisposable
     {
         /// <summary>
-        /// Creates a snapshot of the database.
+        /// Store
         /// </summary>
-        /// <returns>A snapshot of the database.</returns>
-        IStoreSnapshot GetSnapshot();
+        IStore Store { get; }
+
+        /// <summary>
+        /// Commits all changes in the snapshot to the database.
+        /// </summary>
+        void Commit();
 
         /// <summary>
         /// Seeks to the entry with the specified key.

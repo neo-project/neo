@@ -81,7 +81,7 @@ namespace Neo
         /// A readonly view of the store.
         /// </summary>
         /// <remarks>
-        /// It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
+        /// It doesn't need to be disposed because the <see cref="IStoreSnapshot"/> inside it is null.
         /// </remarks>
         public DataCache StoreView => new SnapshotCache(store);
 
