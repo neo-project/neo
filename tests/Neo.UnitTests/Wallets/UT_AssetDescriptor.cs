@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 
 namespace Neo.UnitTests.Wallets
@@ -24,7 +25,7 @@ namespace Neo.UnitTests.Wallets
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             Action action = () =>
             {
-                var descriptor = new Neo.Wallets.AssetDescriptor(snapshotCache, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
+                var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
             };
             Assert.ThrowsException<ArgumentException>(action);
         }
@@ -33,7 +34,7 @@ namespace Neo.UnitTests.Wallets
         public void Check_GAS()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var descriptor = new Neo.Wallets.AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.GAS.Hash);
+            var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.GAS.Hash);
             Assert.AreEqual(NativeContract.GAS.Hash, descriptor.AssetId);
             Assert.AreEqual(nameof(GasToken), descriptor.AssetName);
             Assert.AreEqual(nameof(GasToken), descriptor.ToString());
@@ -45,7 +46,7 @@ namespace Neo.UnitTests.Wallets
         public void Check_NEO()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var descriptor = new Neo.Wallets.AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.NEO.Hash);
+            var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.NEO.Hash);
             Assert.AreEqual(NativeContract.NEO.Hash, descriptor.AssetId);
             Assert.AreEqual(nameof(NeoToken), descriptor.AssetName);
             Assert.AreEqual(nameof(NeoToken), descriptor.ToString());

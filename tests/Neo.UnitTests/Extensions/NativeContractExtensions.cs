@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -18,6 +17,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using Array = System.Array;
 
 namespace Neo.UnitTests.Extensions
 {
@@ -39,7 +39,8 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } }, Attributes = System.Array.Empty<TransactionAttribute>() } : null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: datoshi);
+                sender != null ? new Transaction() { Signers = [new() { Account = sender }], Attributes = [] } : null,
+                snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: datoshi);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)

@@ -74,5 +74,6 @@ jobs:
         docker build . \
           --file ./.neo/docker/neo-cli/Dockerfile \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:latest \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:mainnet \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:${{ env.APP_VERSION }} \
           --push

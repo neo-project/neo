@@ -12,12 +12,12 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.Numerics;
-using System.Security.Cryptography;
 
 namespace Neo.Network.RPC.Tests
 {
@@ -131,21 +131,21 @@ namespace Neo.Network.RPC.Tests
             var rule = new WitnessRule
             {
                 Action = WitnessRuleAction.Allow,
-                Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByEntryCondition()
+                Condition = new CalledByEntryCondition()
             };
             var json = rule.ToJson();
             var result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.OrCondition()
+            rule.Condition = new OrCondition()
             {
-                Expressions = new P2P.Payloads.Conditions.WitnessCondition[]
+                Expressions = new WitnessCondition[]
                 {
-                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    new BooleanCondition()
                     {
                         Expression = true
                     },
-                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    new BooleanCondition()
                     {
                         Expression = false
                     }
@@ -155,15 +155,15 @@ namespace Neo.Network.RPC.Tests
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.AndCondition()
+            rule.Condition = new AndCondition()
             {
-                Expressions = new P2P.Payloads.Conditions.WitnessCondition[]
+                Expressions = new WitnessCondition[]
                 {
-                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    new BooleanCondition()
                     {
                         Expression = true
                     },
-                    new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                    new BooleanCondition()
                     {
                         Expression = false
                     }
@@ -173,14 +173,14 @@ namespace Neo.Network.RPC.Tests
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.BooleanCondition() { Expression = true };
+            rule.Condition = new BooleanCondition() { Expression = true };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.NotCondition()
+            rule.Condition = new NotCondition()
             {
-                Expression = new Neo.Network.P2P.Payloads.Conditions.BooleanCondition()
+                Expression = new BooleanCondition()
                 {
                     Expression = true
                 }
@@ -190,23 +190,23 @@ namespace Neo.Network.RPC.Tests
             Assert.AreEqual(json.ToString(), result.ToString());
 
             var kp = Utility.GetKeyPair("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p");
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.GroupCondition() { Group = kp.PublicKey };
+            rule.Condition = new GroupCondition() { Group = kp.PublicKey };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByContractCondition() { Hash = UInt160.Zero };
+            rule.Condition = new CalledByContractCondition() { Hash = UInt160.Zero };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.ScriptHashCondition() { Hash = UInt160.Zero };
+            rule.Condition = new ScriptHashCondition() { Hash = UInt160.Zero };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());
             Assert.AreEqual(json.ToString(), result.ToString());
 
-            rule.Condition = new Neo.Network.P2P.Payloads.Conditions.CalledByGroupCondition() { Group = kp.PublicKey };
+            rule.Condition = new CalledByGroupCondition() { Group = kp.PublicKey };
             json = rule.ToJson();
             result = Utility.RuleFromJson(json, ProtocolSettings.Default).ToJson();
             Assert.AreEqual(json.ToString(), result.ToString());

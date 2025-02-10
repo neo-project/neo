@@ -50,7 +50,7 @@ namespace Neo.VM.Types
             else
             {
                 Size = value.GetByteCount();
-                if (Size > MaxSize) throw new ArgumentException($"Can not create {nameof(Types.Integer)}, MaxSize of {nameof(Types.Integer)} is exceeded: {Size}/{MaxSize}.");
+                if (Size > MaxSize) throw new ArgumentException($"Can not create {nameof(Integer)}, MaxSize of {nameof(Integer)} is exceeded: {Size}/{MaxSize}.");
             }
             this.value = value;
         }
