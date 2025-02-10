@@ -15,6 +15,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Array = System.Array;
+using Buffer = Neo.VM.Types.Buffer;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.VM
@@ -252,7 +253,7 @@ namespace Neo.VM
                 case PrimitiveType primitive:
                     engine.Push(primitive.Size);
                     break;
-                case Types.Buffer buffer:
+                case Buffer buffer:
                     engine.Push(buffer.Size);
                     break;
                 default:
@@ -292,7 +293,7 @@ namespace Neo.VM
                         break;
                     }
                 // For buffers, check if the index is within bounds and push the result onto the stack.
-                case Types.Buffer buffer:
+                case Buffer buffer:
                     {
                         // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
@@ -395,11 +396,11 @@ namespace Neo.VM
                         engine.Push((BigInteger)byteArray[index]);
                         break;
                     }
-                case Types.Buffer buffer:
+                case Buffer buffer:
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index of {nameof(Types.Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
                         engine.Push((BigInteger)buffer.InnerBuffer.Span[index]);
                         break;
                     }
@@ -453,13 +454,13 @@ namespace Neo.VM
                         map[key] = value;
                         break;
                     }
-                case Types.Buffer buffer:
+                case Buffer buffer:
                     {
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
-                            throw new CatchableException($"The index of {nameof(Types.Buffer)} is out of range, {index}/[0, {buffer.Size}).");
+                            throw new CatchableException($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).");
                         if (value is not PrimitiveType p)
-                            throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Types.Buffer)} in {instruction.OpCode}.");
+                            throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Buffer)} in {instruction.OpCode}.");
                         var b = (int)p.GetInteger();
                         if (b < sbyte.MinValue || b > byte.MaxValue)
                             throw new InvalidOperationException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
@@ -488,7 +489,7 @@ namespace Neo.VM
                 case VMArray array:
                     array.Reverse();
                     break;
-                case Types.Buffer buffer:
+                case Buffer buffer:
                     buffer.InnerBuffer.Span.Reverse();
                     buffer.InvalidateHashCode();
                     break;

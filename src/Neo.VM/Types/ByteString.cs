@@ -87,7 +87,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override BigInteger GetInteger()
         {
-            if (Size > Integer.MaxSize) throw new InvalidCastException($"Can not convert {nameof(ByteString)} to an integer, MaxSize of {nameof(Types.Integer)} is exceeded: {Size}/{Integer.MaxSize}.");
+            if (Size > Integer.MaxSize) throw new InvalidCastException($"Can not convert {nameof(ByteString)} to an integer, MaxSize of {nameof(Integer)} is exceeded: {Size}/{Integer.MaxSize}.");
             return new BigInteger(GetSpan());
         }
 

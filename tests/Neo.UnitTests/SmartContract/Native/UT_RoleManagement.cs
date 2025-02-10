@@ -10,9 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -23,6 +21,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography;
+using Array = Neo.VM.Types.Array;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -47,11 +48,11 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetAndGet()
         {
             byte[] privateKey1 = new byte[32];
-            var rng1 = System.Security.Cryptography.RandomNumberGenerator.Create();
+            var rng1 = RandomNumberGenerator.Create();
             rng1.GetBytes(privateKey1);
             KeyPair key1 = new KeyPair(privateKey1);
             byte[] privateKey2 = new byte[32];
-            var rng2 = System.Security.Cryptography.RandomNumberGenerator.Create();
+            var rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
             ECPoint[] publicKeys = new ECPoint[2];
@@ -86,10 +87,10 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1u) }
                 );
-                Assert.IsInstanceOfType(ret, typeof(VM.Types.Array));
-                Assert.AreEqual(2, (ret as VM.Types.Array).Count);
-                Assert.AreEqual(publicKeys[0].ToArray().ToHexString(), (ret as VM.Types.Array)[0].GetSpan().ToHexString());
-                Assert.AreEqual(publicKeys[1].ToArray().ToHexString(), (ret as VM.Types.Array)[1].GetSpan().ToHexString());
+                Assert.IsInstanceOfType(ret, typeof(Array));
+                Assert.AreEqual(2, (ret as Array).Count);
+                Assert.AreEqual(publicKeys[0].ToArray().ToHexString(), (ret as Array)[0].GetSpan().ToHexString());
+                Assert.AreEqual(publicKeys[1].ToArray().ToHexString(), (ret as Array)[1].GetSpan().ToHexString());
 
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
@@ -97,14 +98,14 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
                     new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(0) }
                 );
-                Assert.IsInstanceOfType(ret, typeof(VM.Types.Array));
-                Assert.AreEqual(0, (ret as VM.Types.Array).Count);
+                Assert.IsInstanceOfType(ret, typeof(Array));
+                Assert.AreEqual(0, (ret as Array).Count);
             }
         }
 
         private void ApplicationEngine_Notify(object sender, NotifyEventArgs e)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

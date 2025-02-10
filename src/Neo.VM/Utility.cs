@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -60,7 +61,7 @@ namespace Neo.VM
 
         public static BigInteger Sqrt(this BigInteger value)
         {
-            if (value < 0) throw new InvalidOperationException($"value {value} can not be negative for {nameof(Types.Integer)}.{nameof(Sqrt)}.");
+            if (value < 0) throw new InvalidOperationException($"value {value} can not be negative for {nameof(Integer)}.{nameof(Sqrt)}.");
             if (value.IsZero) return BigInteger.Zero;
             if (value < 4) return BigInteger.One;
 

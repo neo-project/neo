@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
 using Neo.SmartContract;
+using System;
 
 namespace Neo.UnitTests.Persistence
 {
@@ -57,7 +58,7 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
-        [System.Obsolete]
+        [Obsolete]
         public void SingleSnapshotCacheTest()
         {
             var key1 = new KeyBuilder(0, 1);

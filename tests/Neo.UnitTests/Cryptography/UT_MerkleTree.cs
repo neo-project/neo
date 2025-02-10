@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using System;
 using System.Collections;
 using System.Linq;

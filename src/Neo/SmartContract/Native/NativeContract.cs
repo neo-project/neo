@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
