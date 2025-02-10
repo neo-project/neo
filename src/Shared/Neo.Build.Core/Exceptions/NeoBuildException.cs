@@ -33,7 +33,7 @@ namespace Neo.Build.Core.Exceptions
         /// <summary>
         /// A description of the root cause of the problem.
         /// </summary>
-        public override string Message => $"{ErrorCode} {errorMessage}";
+        public override string Message => $"Error {ErrorCode} {errorMessage}";
 
         public override string ToString() =>
             Message;
