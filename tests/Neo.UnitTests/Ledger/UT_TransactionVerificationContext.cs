@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
@@ -73,12 +72,12 @@ namespace Neo.UnitTests.Ledger
             var tx = CreateTransactionWithFee(1, 2);
             tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
             var conflicts = new List<Transaction>();
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue();
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.AddTransaction(tx);
 
             tx = CreateTransactionWithFee(2, 1);
             tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeFalse();
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
         }
 
         [TestMethod]
@@ -93,15 +92,15 @@ namespace Neo.UnitTests.Ledger
             TransactionVerificationContext verificationContext = new();
             var tx = CreateTransactionWithFee(1, 2);
             var conflicts = new List<Transaction>();
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue();
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.AddTransaction(tx);
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue();
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.AddTransaction(tx);
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeFalse();
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.RemoveTransaction(tx);
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue();
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.AddTransaction(tx);
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeFalse();
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
         }
 
         [TestMethod]
@@ -118,14 +117,14 @@ namespace Neo.UnitTests.Ledger
             var conflictingTx = CreateTransactionWithFee(1, 1); // costs 2 GAS
 
             var conflicts = new List<Transaction>();
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue();
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.AddTransaction(tx);
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue();
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.AddTransaction(tx);
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeFalse();
+            Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
 
             conflicts.Add(conflictingTx);
-            verificationContext.CheckTransaction(tx, conflicts, snapshotCache).Should().BeTrue(); // 1 GAS is left on the balance + 2 GAS is free after conflicts removal => enough for one more trasnaction.
+            Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache)); // 1 GAS is left on the balance + 2 GAS is free after conflicts removal => enough for one more trasnaction.
         }
     }
 }

@@ -9,9 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.SmartContract;
 using System;
@@ -25,7 +23,7 @@ namespace Neo.UnitTests.Ledger
         public void Id_Get()
         {
             var uut = new StorageKey { Id = 1, Key = new byte[] { 0x01 } };
-            uut.Id.Should().Be(1);
+            Assert.AreEqual(1, uut.Id);
         }
 
         [TestMethod]
@@ -33,7 +31,7 @@ namespace Neo.UnitTests.Ledger
         {
             int val = 1;
             StorageKey uut = new() { Id = val };
-            uut.Id.Should().Be(val);
+            Assert.AreEqual(val, uut.Id);
         }
 
         [TestMethod]
@@ -41,23 +39,23 @@ namespace Neo.UnitTests.Ledger
         {
             byte[] val = new byte[] { 0x42, 0x32 };
             StorageKey uut = new() { Key = val };
-            uut.Key.Length.Should().Be(2);
-            uut.Key.Span[0].Should().Be(val[0]);
-            uut.Key.Span[1].Should().Be(val[1]);
+            Assert.AreEqual(2, uut.Key.Length);
+            Assert.AreEqual(val[0], uut.Key.Span[0]);
+            Assert.AreEqual(val[1], uut.Key.Span[1]);
         }
 
         [TestMethod]
         public void Equals_SameObj()
         {
             StorageKey uut = new();
-            uut.Equals(uut).Should().BeTrue();
+            Assert.IsTrue(uut.Equals(uut));
         }
 
         [TestMethod]
         public void Equals_Null()
         {
             StorageKey uut = new();
-            uut.Equals(null).Should().BeFalse();
+            Assert.IsFalse(uut.Equals(null));
         }
 
         [TestMethod]
@@ -71,7 +69,7 @@ namespace Neo.UnitTests.Ledger
                 Key = keyVal
             };
             StorageKey uut = new() { Id = val, Key = keyVal };
-            uut.Equals(newSk).Should().BeTrue();
+            Assert.IsTrue(uut.Equals(newSk));
         }
 
         [TestMethod]
@@ -85,7 +83,7 @@ namespace Neo.UnitTests.Ledger
                 Key = keyVal
             };
             StorageKey uut = new() { Id = 0x78000000, Key = keyVal };
-            uut.Equals(newSk).Should().BeFalse();
+            Assert.IsFalse(uut.Equals(newSk));
         }
 
         [TestMethod]
@@ -99,7 +97,7 @@ namespace Neo.UnitTests.Ledger
                 Key = keyVal
             };
             StorageKey uut = new() { Id = val, Key = TestUtils.GetByteArray(10, 0x88) };
-            uut.Equals(newSk).Should().BeFalse();
+            Assert.IsFalse(uut.Equals(newSk));
         }
 
         [TestMethod]
@@ -107,15 +105,15 @@ namespace Neo.UnitTests.Ledger
         {
             var data = TestUtils.GetByteArray(10, 0x42);
             StorageKey uut = new() { Id = 0x42000000, Key = data };
-            uut.GetHashCode().Should().Be(HashCode.Combine(0x42000000, data.XxHash3_32()));
+            Assert.AreEqual(HashCode.Combine(0x42000000, data.XxHash3_32()), uut.GetHashCode());
         }
 
         [TestMethod]
         public void Equals_Obj()
         {
             StorageKey uut = new();
-            uut.Equals(1u).Should().BeFalse();
-            uut.Equals((object)uut).Should().BeTrue();
+            Assert.IsFalse(uut.Equals(1u));
+            Assert.IsTrue(uut.Equals((object)uut));
         }
     }
 }

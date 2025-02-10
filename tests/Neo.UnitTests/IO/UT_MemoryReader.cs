@@ -9,11 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Text;
@@ -64,7 +62,7 @@ namespace Neo.UnitTests.IO
                 byteArray[0] = (byte)v;
                 MemoryReader reader = new(byteArray);
                 var n = reader.ReadSByte();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
 
             var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
@@ -74,7 +72,7 @@ namespace Neo.UnitTests.IO
                 byteArray[0] = (byte)v;
                 MemoryReader reader = new(byteArray);
                 var n = reader.ReadSByte();
-                n.Should().Be((sbyte)v);
+                Assert.AreEqual((sbyte)v, n);
             }
         }
 
@@ -87,7 +85,7 @@ namespace Neo.UnitTests.IO
                 byte[] bytes = BitConverter.GetBytes(v);
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadInt32();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
 
             var values2 = new long[] { (long)int.MaxValue + 1, (long)int.MinValue - 1 };
@@ -96,7 +94,7 @@ namespace Neo.UnitTests.IO
                 byte[] bytes = BitConverter.GetBytes(v);
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadInt32();
-                n.Should().Be((int)v);
+                Assert.AreEqual((int)v, n);
             }
         }
 
@@ -109,7 +107,7 @@ namespace Neo.UnitTests.IO
                 byte[] bytes = BitConverter.GetBytes(v);
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadUInt64();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
 
             var values2 = new long[] { long.MinValue, -1, long.MaxValue };
@@ -118,7 +116,7 @@ namespace Neo.UnitTests.IO
                 byte[] bytes = BitConverter.GetBytes(v);
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadUInt64();
-                n.Should().Be((ulong)v);
+                Assert.AreEqual((ulong)v, n);
             }
         }
 
@@ -135,7 +133,7 @@ namespace Neo.UnitTests.IO
                 }
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadInt16BigEndian();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
         }
 
@@ -152,7 +150,7 @@ namespace Neo.UnitTests.IO
                 }
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadUInt16BigEndian();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
         }
 
@@ -169,7 +167,7 @@ namespace Neo.UnitTests.IO
                 }
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadInt32BigEndian();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
         }
 
@@ -186,7 +184,7 @@ namespace Neo.UnitTests.IO
                 }
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadUInt32BigEndian();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
         }
 
@@ -203,7 +201,7 @@ namespace Neo.UnitTests.IO
                 }
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadInt64BigEndian();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
         }
 
@@ -220,7 +218,7 @@ namespace Neo.UnitTests.IO
                 }
                 MemoryReader reader = new(bytes);
                 var n = reader.ReadUInt64BigEndian();
-                n.Should().Be(v);
+                Assert.AreEqual(v, n);
             }
         }
     }

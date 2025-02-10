@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,7 +25,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         private byte[] NodeToArrayAsChild(Node n)
         {
             using var ms = new MemoryStream();
-            using var writer = new BinaryWriter(ms, Neo.Utility.StrictUTF8, true);
+            using var writer = new BinaryWriter(ms, Utility.StrictUTF8, true);
 
             n.SerializeAsChild(writer);
             writer.Flush();
@@ -36,14 +35,14 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestLogLevel()
         {
-            Neo.Utility.LogLevel = LogLevel.Debug;
+            Utility.LogLevel = LogLevel.Debug;
             int raised = 0;
-            Neo.Utility.Logging += (a, b, c) => raised++;
+            Utility.Logging += (a, b, c) => raised++;
 
-            Neo.Utility.Log("a", LogLevel.Warning, null);
+            Utility.Log("a", LogLevel.Warning, null);
             Assert.AreEqual(1, raised);
-            Neo.Utility.LogLevel = LogLevel.Fatal;
-            Neo.Utility.Log("a", LogLevel.Warning, null);
+            Utility.LogLevel = LogLevel.Fatal;
+            Utility.Log("a", LogLevel.Warning, null);
             Assert.AreEqual(1, raised);
         }
 

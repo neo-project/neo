@@ -9,13 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.Ledger;
 using Neo.VM;
 using System;
 
@@ -32,17 +32,22 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 0x01, 0x01
             });
 
+        private Conflicts CreateConflictsPayload()
+        {
+            return new Conflicts() { Hash = _u };
+        }
+
         [TestMethod]
         public void Size_Get()
         {
-            var test = new Conflicts() { Hash = _u };
-            test.Size.Should().Be(1 + 32);
+            var test = CreateConflictsPayload();
+            Assert.AreEqual(1 + 32, test.Size);
         }
 
         [TestMethod]
         public void ToJson()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = CreateConflictsPayload();
             var json = test.ToJson().ToString();
             Assert.AreEqual(@"{""type"":""Conflicts"",""hash"":""0x0101010101010101010101010101010101010101010101010101010101010101""}", json);
         }
@@ -50,7 +55,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = CreateConflictsPayload();
 
             var clone = test.ToArray().AsSerializable<Conflicts>();
             Assert.AreEqual(clone.Type, test.Type);
@@ -73,9 +78,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Verify()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = CreateConflictsPayload();
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var key = Ledger.UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
+            var key = UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 
             // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.
             var conflict = new TransactionState();

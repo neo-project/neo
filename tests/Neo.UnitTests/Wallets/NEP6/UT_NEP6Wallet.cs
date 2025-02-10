@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
@@ -110,10 +109,10 @@ namespace Neo.UnitTests.Wallets.NEP6
             File.WriteAllText(wPath, wallet.ToString());
             uut = new NEP6Wallet(wPath, "123", TestProtocolSettings.Default);
             uut.CreateAccount(keyPair.PrivateKey);
-            uut.ChangePassword("456", "123").Should().BeFalse();
-            uut.ChangePassword("123", "456").Should().BeTrue();
-            uut.VerifyPassword("456").Should().BeTrue();
-            uut.ChangePassword("456", "123").Should().BeTrue();
+            Assert.IsFalse(uut.ChangePassword("456", "123"));
+            Assert.IsTrue(uut.ChangePassword("123", "456"));
+            Assert.IsTrue(uut.VerifyPassword("456"));
+            Assert.IsTrue(uut.ChangePassword("456", "123"));
         }
 
         [TestMethod]
@@ -138,7 +137,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             wallet["scrypt"] = ScryptParameters.Default.ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
-            wallet.ToString().Should().Be("{\"name\":\"test\",\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[],\"extra\":{}}");
+            Assert.AreEqual("{\"name\":\"test\",\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[],\"extra\":{}}", wallet.ToString());
             NEP6Wallet w = new(null, "123", TestProtocolSettings.Default, wallet);
             Assert.AreEqual("test", w.Name);
             Assert.AreEqual(Version.Parse("1.0").ToString(), w.Version.ToString());
@@ -201,7 +200,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestCreateAccountWithKeyPair()
         {
-            Neo.SmartContract.Contract contract = Neo.SmartContract.Contract.CreateSignatureContract(keyPair.PublicKey);
+            Contract contract = Contract.CreateSignatureContract(keyPair.PublicKey);
             bool result = uut.Contains(testScriptHash);
             Assert.AreEqual(false, result);
             uut.CreateAccount(contract);
@@ -387,7 +386,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestToJson()
         {
             var json = uut.ToJson();
-            json.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
+            Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", json.ToString());
         }
 
         [TestMethod]
@@ -418,10 +417,10 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void Test_NEP6Wallet_Json()
         {
-            uut.Name.Should().Be("noname");
-            uut.Version.Should().Be(new Version("1.0"));
-            uut.Scrypt.Should().NotBeNull();
-            uut.Scrypt.N.Should().Be(new ScryptParameters(2, 1, 1).N);
+            Assert.AreEqual("noname", uut.Name);
+            Assert.AreEqual(new Version("1.0"), uut.Version);
+            Assert.IsNotNull(uut.Scrypt);
+            Assert.AreEqual(new ScryptParameters(2, 1, 1).N, uut.Scrypt.N);
         }
 
         [TestMethod]

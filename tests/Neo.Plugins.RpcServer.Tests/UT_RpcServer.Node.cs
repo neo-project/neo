@@ -10,10 +10,8 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -31,7 +29,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestGetConnectionCount()
         {
             var result = _rpcServer.GetConnectionCount();
-            result.GetType().Should().Be(typeof(JNumber));
+            Assert.IsInstanceOfType(result, typeof(JNumber));
         }
 
         [TestMethod]
@@ -48,10 +46,10 @@ namespace Neo.Plugins.RpcServer.Tests
             var result = rpcServer.GetPeers();
             Assert.IsInstanceOfType(result, typeof(JObject));
             var json = (JObject)result;
-            json.ContainsProperty("unconnected").Should().BeTrue();
-            (json["unconnected"] as JArray).Count.Should().Be(3);
-            json.ContainsProperty("bad").Should().BeTrue();
-            json.ContainsProperty("connected").Should().BeTrue();
+            Assert.IsTrue(json.ContainsProperty("unconnected"));
+            Assert.AreEqual(3, (json["unconnected"] as JArray).Count);
+            Assert.IsTrue(json.ContainsProperty("bad"));
+            Assert.IsTrue(json.ContainsProperty("connected"));
         }
 
         [TestMethod]

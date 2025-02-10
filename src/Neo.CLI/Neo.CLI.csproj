@@ -5,12 +5,9 @@
     <AssemblyTitle>Neo.CLI</AssemblyTitle>
     <AssemblyName>neo-cli</AssemblyName>
     <OutputType>Exe</OutputType>
-    <PackageId>Neo.CLI</PackageId>
-    <RootNamespace>Neo</RootNamespace>
     <Product>Neo.CLI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
-    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

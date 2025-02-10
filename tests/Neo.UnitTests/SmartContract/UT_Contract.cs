@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
@@ -21,6 +20,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -74,7 +74,7 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            Neo.Cryptography.ECC.ECPoint[] publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
+            ECPoint[] publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
@@ -107,12 +107,12 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            Neo.Cryptography.ECC.ECPoint[] publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
+            ECPoint[] publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsException<ArgumentException>(() => action());
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
@@ -182,7 +182,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.FeeConsumed.Should().Be(fee);
+                Assert.AreEqual(fee, engine.FeeConsumed);
             }
         }
 
@@ -198,7 +198,7 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            Neo.Cryptography.ECC.ECPoint[] publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
+            ECPoint[] publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
@@ -212,7 +212,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
-                engine.FeeConsumed.Should().Be(fee);
+                Assert.AreEqual(fee, engine.FeeConsumed);
             }
         }
     }

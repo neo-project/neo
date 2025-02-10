@@ -9,20 +9,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.Collections.Generic;
-using System.IO.Hashing;
 using System.Linq;
 using System.Text;
+using Helper = Neo.Cryptography.Helper;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -35,15 +32,15 @@ namespace Neo.UnitTests.Cryptography
             string input = "3vQB7B6MrGQZaxCuFg4oh";
             byte[] result = input.Base58CheckDecode();
             byte[] helloWorld = { 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 };
-            result.Should().Equal(helloWorld);
+            CollectionAssert.AreEqual(helloWorld, result);
 
             input = "3v";
             Action action = () => input.Base58CheckDecode();
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
             input = "3vQB7B6MrGQZaxCuFg4og";
             action = () => input.Base58CheckDecode();
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsException<FormatException>(action);
 
             Assert.ThrowsException<FormatException>(() => string.Empty.Base58CheckDecode());
         }
@@ -53,8 +50,8 @@ namespace Neo.UnitTests.Cryptography
         {
             ReadOnlySpan<byte> input = "Hello, world!"u8;
             byte[] input2 = input.ToArray();
-            input.Murmur32(0).Should().Be(input2.Murmur32(0));
-            input.Murmur128(0).Should().Equal(input2.Murmur128(0));
+            Assert.AreEqual(input2.Murmur32(0), input.Murmur32(0));
+            CollectionAssert.AreEqual(input2.Murmur128(0), input.Murmur128(0));
         }
 
         [TestMethod]
@@ -62,10 +59,10 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] value = Encoding.ASCII.GetBytes("hello world");
             byte[] result = value.Sha256(0, value.Length);
-            result.ToHexString().Should().Be("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
-            value.Sha256().Should().Equal(result);
-            ((Span<byte>)value).Sha256().Should().Equal(result);
-            ((ReadOnlySpan<byte>)value).Sha256().Should().Equal(result);
+            Assert.AreEqual("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", result.ToHexString());
+            CollectionAssert.AreEqual(result, value.Sha256());
+            CollectionAssert.AreEqual(result, ((Span<byte>)value).Sha256());
+            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)value).Sha256());
         }
 
         [TestMethod]
@@ -73,9 +70,9 @@ namespace Neo.UnitTests.Cryptography
         {
             var input = "Hello, world!"u8.ToArray();
             var result = input.Keccak256();
-            result.ToHexString().Should().Be("b6e16d27ac5ab427a7f68900ac5559ce272dc6c37c82b3e052246c82244c50e4");
-            ((Span<byte>)input).Keccak256().Should().Equal(result);
-            ((ReadOnlySpan<byte>)input).Keccak256().Should().Equal(result);
+            Assert.AreEqual("b6e16d27ac5ab427a7f68900ac5559ce272dc6c37c82b3e052246c82244c50e4", result.ToHexString());
+            CollectionAssert.AreEqual(result, ((Span<byte>)input).Keccak256());
+            CollectionAssert.AreEqual(result, ((ReadOnlySpan<byte>)input).Keccak256());
         }
 
         [TestMethod]
@@ -83,7 +80,7 @@ namespace Neo.UnitTests.Cryptography
         {
             ReadOnlySpan<byte> value = Encoding.ASCII.GetBytes("hello world");
             byte[] result = value.RIPEMD160();
-            result.ToHexString().Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+            Assert.AreEqual("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f", result.ToHexString());
         }
 
         [TestMethod]
@@ -96,8 +93,8 @@ namespace Neo.UnitTests.Cryptography
             Random random = new Random();
             byte[] nonce = new byte[12];
             random.NextBytes(nonce);
-            var cypher = Neo.Cryptography.Helper.AES256Encrypt(Encoding.UTF8.GetBytes("hello world"), key.PrivateKey, nonce);
-            var m = Neo.Cryptography.Helper.AES256Decrypt(cypher, key.PrivateKey);
+            var cypher = Helper.AES256Encrypt(Encoding.UTF8.GetBytes("hello world"), key.PrivateKey, nonce);
+            var m = Helper.AES256Decrypt(cypher, key.PrivateKey);
             var message2 = Encoding.UTF8.GetString(m);
             Assert.AreEqual("hello world", message2);
         }
@@ -114,8 +111,8 @@ namespace Neo.UnitTests.Cryptography
             KeyPair key2 = account2.GetKey();
             Console.WriteLine($"Account:{1},privatekey:{key1.PrivateKey.ToHexString()},publicKey:{key1.PublicKey.ToArray().ToHexString()}");
             Console.WriteLine($"Account:{2},privatekey:{key2.PrivateKey.ToHexString()},publicKey:{key2.PublicKey.ToArray().ToHexString()}");
-            var secret1 = Neo.Cryptography.Helper.ECDHDeriveKey(key1, key2.PublicKey);
-            var secret2 = Neo.Cryptography.Helper.ECDHDeriveKey(key2, key1.PublicKey);
+            var secret1 = Helper.ECDHDeriveKey(key1, key2.PublicKey);
+            var secret2 = Helper.ECDHDeriveKey(key2, key1.PublicKey);
             Assert.AreEqual(secret1.ToHexString(), secret2.ToHexString());
             var message = Encoding.ASCII.GetBytes("hello world");
             Random random = new Random();
@@ -148,11 +145,11 @@ namespace Neo.UnitTests.Cryptography
                     }
                 }
             };
-            filter.Test(tx).Should().BeFalse();
+            Assert.IsFalse(filter.Test(tx));
             filter.Add(tx.Witnesses[0].ScriptHash.ToArray());
-            filter.Test(tx).Should().BeTrue();
+            Assert.IsTrue(filter.Test(tx));
             filter.Add(tx.Hash.ToArray());
-            filter.Test(tx).Should().BeTrue();
+            Assert.IsTrue(filter.Test(tx));
         }
     }
 }

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
@@ -44,9 +43,9 @@ namespace Neo.UnitTests.IO.Caching
                 Witnesses = Array.Empty<Witness>()
             };
             relayCache.Add(tx);
-            relayCache.Contains(tx).Should().BeTrue();
-            relayCache.TryGet(tx.Hash, out IInventory tmp).Should().BeTrue();
-            (tmp is Transaction).Should().BeTrue();
+            Assert.IsTrue(relayCache.Contains(tx));
+            Assert.IsTrue(relayCache.TryGet(tx.Hash, out IInventory tmp));
+            Assert.IsTrue(tmp is Transaction);
         }
     }
 }
