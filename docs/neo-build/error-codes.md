@@ -1,5 +1,5 @@
 # Error Codes
-are used when an `Exception` is thrown, to identify known issues with
+Are used when an `Exception` is thrown, to identify known issues with
 building, deploying or testing project's `*.nbproj` file or `MSBuild` tasks
 within `Visual Studio` or `dotnet` CLI.
 
@@ -15,13 +15,13 @@ padding of zeros for anything less than `1000`.
 
 
 # Module Filename Format
-will be defined as `NeoBuildErrorCodes.{module}.cs` within `Neo.Build.Core`
+Will be defined as `NeoBuildErrorCodes.{module}.cs` within `Neo.Build.Core`
 library. For _**example**: `NeoBuildErrorCodes.Wallet.cs`_ file would hold
 all the error codes for the wallet module. _See
 [What is a Module](#what-is-a-module) for more details_.
 
 # What is a Module
-refers to the part of code doing the processing within the Neo Build Engine
+Refers to the part of code doing the processing within the Neo Build Engine
 for _**example**, `NeoBuildEngine::Wallet:Open()`_. `Wallet` is the module.
 Each class **SHOULD BE** considered it's own module. Each subclass in the
 module class that has `private` or `internal` **WILL NOT** be considered a
