@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -28,20 +30,20 @@ namespace Neo.Plugins
         /// <summary>
         /// A list of all loaded plugins.
         /// </summary>
-        public static readonly List<Plugin> Plugins = new();
+        public static readonly List<Plugin> Plugins = [];
 
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
         public static readonly string PluginsDirectory =
-            Combine(GetDirectoryName(AppContext.BaseDirectory), "Plugins");
+            Combine(GetDirectoryName(AppContext.BaseDirectory)!, "Plugins");
 
-        private static readonly FileSystemWatcher configWatcher;
+        private static readonly FileSystemWatcher? s_configWatcher;
 
         /// <summary>
         /// Indicates the root path of the plugin.
         /// </summary>
-        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name);
+        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name!);
 
         /// <summary>
         /// Indicates the location of the plugin configuration file.
@@ -66,7 +68,7 @@ namespace Neo.Plugins
         /// <summary>
         /// Indicates the version of the plugin.
         /// </summary>
-        public virtual Version Version => GetType().Assembly.GetName().Version;
+        public virtual Version Version => GetType().Assembly.GetName().Version ?? new Version();
 
         /// <summary>
         /// If the plugin should be stopped when an exception is thrown.
@@ -83,17 +85,17 @@ namespace Neo.Plugins
         static Plugin()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            configWatcher = new FileSystemWatcher(PluginsDirectory)
+            s_configWatcher = new FileSystemWatcher(PluginsDirectory)
             {
                 EnableRaisingEvents = true,
                 IncludeSubdirectories = true,
                 NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime |
                                NotifyFilters.LastWrite | NotifyFilters.Size,
             };
-            configWatcher.Changed += ConfigWatcher_Changed;
-            configWatcher.Created += ConfigWatcher_Changed;
-            configWatcher.Renamed += ConfigWatcher_Changed;
-            configWatcher.Deleted += ConfigWatcher_Changed;
+            s_configWatcher.Changed += ConfigWatcher_Changed;
+            s_configWatcher.Created += ConfigWatcher_Changed;
+            s_configWatcher.Renamed += ConfigWatcher_Changed;
+            s_configWatcher.Deleted += ConfigWatcher_Changed;
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
@@ -114,7 +116,7 @@ namespace Neo.Plugins
         {
         }
 
-        private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
+        private static void ConfigWatcher_Changed(object? sender, FileSystemEventArgs e)
         {
             switch (GetExtension(e.Name))
             {
@@ -126,23 +128,24 @@ namespace Neo.Plugins
             }
         }
 
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
         {
             if (args.Name.Contains(".resources"))
                 return null;
 
             AssemblyName an = new(args.Name);
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
-                                AppDomain.CurrentDomain.GetAssemblies()
-                                    .FirstOrDefault(a => a.GetName().Name == an.Name);
+            var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
+                           AppDomain.CurrentDomain.GetAssemblies()
+                           .FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
-            string filename = an.Name + ".dll";
-            string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(AppContext.BaseDirectory), filename);
+            var filename = an.Name + ".dll";
+            var path = filename;
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(AppContext.BaseDirectory)!, filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
+            if (!File.Exists(path) && !string.IsNullOrEmpty(args.RequestingAssembly?.GetName().Name))
+                path = Combine(PluginsDirectory, args.RequestingAssembly!.GetName().Name!, filename);
             if (!File.Exists(path)) return null;
 
             try
@@ -172,15 +175,17 @@ namespace Neo.Plugins
 
         private static void LoadPlugin(Assembly assembly)
         {
-            foreach (Type type in assembly.ExportedTypes)
+            foreach (var type in assembly.ExportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
 
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
+                var constructor = type.GetConstructor(Type.EmptyTypes);
+                if (constructor == null) continue;
+
                 try
                 {
-                    constructor?.Invoke(null);
+                    constructor.Invoke(null);
                 }
                 catch (Exception ex)
                 {
@@ -192,8 +197,8 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = new();
-            foreach (string rootPath in Directory.GetDirectories(PluginsDirectory))
+            List<Assembly> assemblies = [];
+            foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
@@ -205,7 +210,7 @@ namespace Neo.Plugins
                 }
             }
 
-            foreach (Assembly assembly in assemblies)
+            foreach (var assembly in assemblies)
             {
                 LoadPlugin(assembly);
             }

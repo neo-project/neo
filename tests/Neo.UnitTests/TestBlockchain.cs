@@ -41,7 +41,7 @@ namespace Neo.UnitTests
             TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        internal static SnapshotCache GetTestSnapshotCache(bool reset = true)
+        internal static StoreCache GetTestSnapshotCache(bool reset = true)
         {
             if (reset)
                 ResetStore();

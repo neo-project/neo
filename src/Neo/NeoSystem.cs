@@ -81,9 +81,9 @@ namespace Neo
         /// A readonly view of the store.
         /// </summary>
         /// <remarks>
-        /// It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
+        /// It doesn't need to be disposed because the <see cref="IStoreSnapshot"/> inside it is null.
         /// </remarks>
-        public DataCache StoreView => new SnapshotCache(store);
+        public DataCache StoreView => new StoreCache(store);
 
         /// <summary>
         /// The memory pool of the <see cref="NeoSystem"/>.
@@ -276,11 +276,11 @@ namespace Neo
         /// <summary>
         /// Gets a snapshot of the blockchain storage.
         /// </summary>
-        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
+        /// <returns>An instance of <see cref="StoreCache"/></returns>
         [Obsolete("This method is obsolete, use GetSnapshotCache instead.")]
-        public SnapshotCache GetSnapshot()
+        public StoreCache GetSnapshot()
         {
-            return new SnapshotCache(store.GetSnapshot());
+            return new StoreCache(store.GetSnapshot());
         }
 
         /// <summary>
@@ -288,10 +288,10 @@ namespace Neo
         /// With the snapshot, we have the latest state of the blockchain, with the cache,
         /// we can run transactions in a sandboxed environment.
         /// </summary>
-        /// <returns>An instance of <see cref="SnapshotCache"/></returns>
-        public SnapshotCache GetSnapshotCache()
+        /// <returns>An instance of <see cref="StoreCache"/></returns>
+        public StoreCache GetSnapshotCache()
         {
-            return new SnapshotCache(store.GetSnapshot());
+            return new StoreCache(store.GetSnapshot());
         }
 
         /// <summary>
