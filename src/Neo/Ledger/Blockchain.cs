@@ -419,7 +419,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotCache snapshot = system.GetSnapshotCache())
+            using (var snapshot = system.GetSnapshotCache())
             {
                 List<ApplicationExecuted> all_application_executed = new();
                 TransactionState[] transactionStates;
