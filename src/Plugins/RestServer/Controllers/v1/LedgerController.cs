@@ -16,7 +16,6 @@ using Neo.Plugins.RestServer.Exceptions;
 using Neo.Plugins.RestServer.Extensions;
 using Neo.Plugins.RestServer.Models.Blockchain;
 using Neo.Plugins.RestServer.Models.Error;
-using Neo.Plugins.RestServer.Models.Ledger;
 using Neo.SmartContract.Native;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,10 +48,21 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         /// <response code="400">An error occurred. See Response for details.</response>
         [HttpGet("gas/accounts", Name = "GetGasAccounts")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AccountDetails[]))]
-        public IActionResult ShowGasAccounts()
+        public IActionResult ShowGasAccounts(
+            [FromQuery(Name = "page")]
+            int skip = 1,
+            [FromQuery(Name = "size")]
+            int take = 50)
         {
+            if (skip < 1 || take < 1 || take > RestServerSettings.Current.MaxPageSize)
+                throw new InvalidParameterRangeException();
             var accounts = NativeContract.GAS.ListAccounts(_neoSystem.StoreView, _neoSystem.Settings);
-            return Ok(accounts.OrderByDescending(o => o.Balance));
+            if (accounts.Any() == false)
+                return NoContent();
+            var accountsList = accounts.OrderByDescending(o => o.Balance).Skip((skip - 1) * take).Take(take);
+            if (accountsList.Any() == false)
+                return NoContent();
+            return Ok(accountsList);
         }
 
         /// <summary>
@@ -63,10 +73,21 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         /// <response code="400">An error occurred. See Response for details.</response>
         [HttpGet("neo/accounts", Name = "GetNeoAccounts")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AccountDetails[]))]
-        public IActionResult ShowNeoAccounts()
+        public IActionResult ShowNeoAccounts(
+            [FromQuery(Name = "page")]
+            int skip = 1,
+            [FromQuery(Name = "size")]
+            int take = 50)
         {
+            if (skip < 1 || take < 1 || take > RestServerSettings.Current.MaxPageSize)
+                throw new InvalidParameterRangeException();
             var accounts = NativeContract.NEO.ListAccounts(_neoSystem.StoreView, _neoSystem.Settings);
-            return Ok(accounts.OrderByDescending(o => o.Balance));
+            if (accounts.Any() == false)
+                return NoContent();
+            var accountsList = accounts.OrderByDescending(o => o.Balance).Skip((skip - 1) * take).Take(take);
+            if (accountsList.Any() == false)
+                return NoContent();
+            return Ok(accountsList);
         }
 
         #endregion
@@ -121,8 +142,8 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         public IActionResult GetCurrentBlockHeader()
         {
             var currentIndex = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
-            var blockheader = NativeContract.Ledger.GetHeader(_neoSystem.StoreView, currentIndex);
-            return Ok(blockheader);
+            var blockHeader = NativeContract.Ledger.GetHeader(_neoSystem.StoreView, currentIndex);
+            return Ok(blockHeader);
         }
 
         /// <summary>
@@ -318,22 +339,6 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         }
 
         /// <summary>
-        /// Gets the count of the memory pool.
-        /// </summary>
-        /// <returns>Memory Pool Count Object.</returns>
-        /// <response code="200">Successful</response>
-        /// <response code="400">An error occurred. See Response for details.</response>
-        [HttpGet("memorypool/count", Name = "GetMemoryPoolCount")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MemoryPoolCountModel))]
-        public IActionResult GetMemoryPoolCount() =>
-            Ok(new MemoryPoolCountModel()
-            {
-                Count = _neoSystem.MemPool.Count,
-                UnVerifiedCount = _neoSystem.MemPool.UnVerifiedCount,
-                VerifiedCount = _neoSystem.MemPool.VerifiedCount,
-            });
-
-        /// <summary>
         /// Gets verified memory pool.
         /// </summary>
         /// <param name="skip" example="1">Page</param>
@@ -353,7 +358,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 0 || take < 0 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            if (_neoSystem.MemPool.Any() == false)
+            if (_neoSystem.MemPool.Count == 0)
                 return NoContent();
             var vTx = _neoSystem.MemPool.GetVerifiedTransactions();
             return Ok(vTx.Skip((skip - 1) * take).Take(take));
@@ -379,7 +384,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         {
             if (skip < 0 || take < 0 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
-            if (_neoSystem.MemPool.Any() == false)
+            if (_neoSystem.MemPool.Count == 0)
                 return NoContent();
             _neoSystem.MemPool.GetVerifiedAndUnverifiedTransactions(out _, out var unVerifiedTransactions);
             return Ok(unVerifiedTransactions.Skip((skip - 1) * take).Take(take));

@@ -14,7 +14,6 @@ using Microsoft.AspNetCore.Mvc;
 using Neo.Plugins.RestServer.Exceptions;
 using Neo.Plugins.RestServer.Extensions;
 using Neo.Plugins.RestServer.Helpers;
-using Neo.Plugins.RestServer.Models;
 using Neo.Plugins.RestServer.Models.Error;
 using Neo.Plugins.RestServer.Models.Token;
 using Neo.Plugins.RestServer.Tokens;
@@ -66,7 +65,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             var tokenList = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
             var vaildContracts = tokenList
                 .Where(ContractHelper.IsNep17Supported)
-                .OrderBy(o => o.Manifest.Name)
+                .OrderBy(o => o.Id)
                 .Skip((skip - 1) * take)
                 .Take(take);
             if (vaildContracts.Any() == false)
@@ -83,25 +82,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
                 {
                 }
             }
-            if (listResults.Any() == false)
+            if (listResults.Count == 0)
                 return NoContent();
             return Ok(listResults);
-        }
-
-        /// <summary>
-        /// The count of how many Nep-17 contracts are on the blockchain.
-        /// </summary>
-        /// <returns>Count Object.</returns>
-        /// <response code="200">Successful</response>
-        /// <response code="400">An error occurred. See Response for details.</response>
-        [HttpGet("nep-17/count", Name = "GetNep17TokenCount")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CountModel))]
-        public IActionResult GetNEP17Count()
-        {
-            return Ok(new CountModel()
-            {
-                Count = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView).Count(ContractHelper.IsNep17Supported)
-            });
         }
 
         /// <summary>
@@ -168,15 +151,15 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             if (skip < 1 || take < 1 || take > RestServerSettings.Current.MaxPageSize)
                 throw new InvalidParameterRangeException();
             var tokenList = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
-            var vaildContracts = tokenList
+            var validContracts = tokenList
                 .Where(ContractHelper.IsNep11Supported)
-                .OrderBy(o => o.Manifest.Name)
+                .OrderBy(o => o.Id)
                 .Skip((skip - 1) * take)
                 .Take(take);
-            if (vaildContracts.Any() == false)
+            if (validContracts.Any() == false)
                 return NoContent();
             var listResults = new List<NEP11TokenModel>();
-            foreach (var contract in vaildContracts)
+            foreach (var contract in validContracts)
             {
                 try
                 {
@@ -187,22 +170,9 @@ namespace Neo.Plugins.RestServer.Controllers.v1
                 {
                 }
             }
-            if (listResults.Any() == false)
+            if (listResults.Count == 0)
                 return NoContent();
             return Ok(listResults);
-        }
-
-        /// <summary>
-        /// The count of how many Nep-11 contracts are on the blockchain.
-        /// </summary>
-        /// <returns>Count Object.</returns>
-        /// <response code="200">Successful</response>
-        /// <response code="400">An error occurred. See Response for details.</response>
-        [HttpGet("nep-11/count", Name = "GetNep11TokenCount")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CountModel))]
-        public IActionResult GetNEP11Count()
-        {
-            return Ok(new CountModel() { Count = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView).Count(ContractHelper.IsNep11Supported) });
         }
 
         /// <summary>
@@ -262,7 +232,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
             var tokenList = NativeContract.ContractManagement.ListContracts(_neoSystem.StoreView);
             var validContracts = tokenList
                 .Where(w => ContractHelper.IsNep17Supported(w) || ContractHelper.IsNep11Supported(w))
-                .OrderBy(o => o.Manifest.Name);
+                .OrderBy(o => o.Id);
             var listResults = new List<TokenBalanceModel>();
             foreach (var contract in validContracts)
             {

@@ -44,7 +44,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         /// <returns>An array of the Remote Node Objects.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
-        [HttpGet("peers", Name = "GetNodeRemotePeers")]
+        [HttpGet("peers", Name = "GetPeers")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RemoteNodeModel[]))]
         public IActionResult GetPeers()
         {
@@ -62,7 +62,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         /// <returns>An array of the Plugin objects.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
-        [HttpGet("plugins", Name = "GetNodePlugins")]
+        [HttpGet("plugins", Name = "GetPlugins")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PluginModel[]))]
         public IActionResult GetPlugins() =>
             Ok(Plugin.Plugins.Select(s =>
@@ -79,7 +79,7 @@ namespace Neo.Plugins.RestServer.Controllers.v1
         /// <returns>Protocol Settings Object.</returns>
         /// <response code="200">Successful</response>
         /// <response code="400">An error occurred. See Response for details.</response>
-        [HttpGet("settings", Name = "GetNodeProtocolSettings")]
+        [HttpGet("settings", Name = "GetProtocolSettings")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProtocolSettingsModel))]
         public IActionResult GetSettings() =>
             Ok(_neoSystem.Settings.ToModel());
