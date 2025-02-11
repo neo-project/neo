@@ -12,13 +12,14 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -118,7 +119,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         {
             var json = @"{""name"":""CallOracleContract-6"",""groups"":[],""features"":{},""supportedstandards"":[],""abi"":{""methods"":[{""name"":""request"",""parameters"":[{""name"":""url"",""type"":""String""},{""name"":""filter"",""type"":""String""},{""name"":""gasForResponse"",""type"":""Integer""}],""returntype"":""Void"",""offset"":0,""safe"":false},{""name"":""callback"",""parameters"":[{""name"":""url"",""type"":""String""},{""name"":""userData"",""type"":""Any""},{""name"":""responseCode"",""type"":""Integer""},{""name"":""response"",""type"":""ByteArray""}],""returntype"":""Void"",""offset"":86,""safe"":false},{""name"":""getStoredUrl"",""parameters"":[],""returntype"":""String"",""offset"":129,""safe"":false},{""name"":""getStoredResponseCode"",""parameters"":[],""returntype"":""Integer"",""offset"":142,""safe"":false},{""name"":""getStoredResponse"",""parameters"":[],""returntype"":""ByteArray"",""offset"":165,""safe"":false}],""events"":[]},""permissions"":[{""contract"":""0xfe924b7cfe89ddd271abaf7210a80a7e11178758"",""methods"":""*""},{""contract"":""*"",""methods"":""*""}],""trusts"":[""0xfe924b7cfe89ddd271abaf7210a80a7e11178758"",""*""],""extra"":{}}";
             var manifest = ContractManifest.Parse(json);
-            var s = (VM.Types.Struct)manifest.ToStackItem(new ReferenceCounter());
+            var s = (Struct)manifest.ToStackItem(new ReferenceCounter());
             manifest = s.ToInteroperable<ContractManifest>();
 
             Assert.IsFalse(manifest.Permissions[0].Contract.IsWildcard);
@@ -178,12 +179,12 @@ namespace Neo.UnitTests.SmartContract.Manifest
             check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")), ContractPermissionDescriptor.CreateWildcard());
             var si = check.ToStackItem(null);
 
-            var actualTrusts = ((VM.Types.Array)si)[6];
+            var actualTrusts = ((Array)si)[6];
 
-            Assert.AreEqual(((VM.Types.Array)actualTrusts).Count, 2);
-            Assert.AreEqual(((VM.Types.Array)actualTrusts)[0], new VM.Types.ByteString(UInt160.Parse("0x0000000000000000000000000000000000000001").ToArray()));
+            Assert.AreEqual(((Array)actualTrusts).Count, 2);
+            Assert.AreEqual(((Array)actualTrusts)[0], new ByteString(UInt160.Parse("0x0000000000000000000000000000000000000001").ToArray()));
             // Wildcard trust should be represented as Null stackitem (not as zero-length ByteString):
-            Assert.AreEqual(((VM.Types.Array)actualTrusts)[1], VM.Types.StackItem.Null);
+            Assert.AreEqual(((Array)actualTrusts)[1], StackItem.Null);
         }
 
         [TestMethod]

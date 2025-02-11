@@ -21,11 +21,6 @@ namespace Neo.Cryptography
         /// <summary>
         /// The Keccak256 hash algorithm.
         /// </summary>
-        Keccak256 = 0x01,
-
-        /// <summary>
-        /// None
-        /// </summary>
-        None = 0xFF
+        Keccak256 = 0x01
     }
 }

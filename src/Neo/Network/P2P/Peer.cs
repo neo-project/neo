@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
-using Neo.IO;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -336,7 +335,7 @@ namespace Neo.Network.P2P
             // Check if the number of desired connections is already enough
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
 
-            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers 
+            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
 

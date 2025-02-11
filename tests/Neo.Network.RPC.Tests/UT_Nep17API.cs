@@ -17,6 +17,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
+using System;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -111,7 +112,7 @@ namespace Neo.Network.RPC.Tests
                 rpcClientMock.Setup(p => p.RpcSendAsync("getcontractstate", It.Is<JToken[]>(u => true)))
                 .ReturnsAsync(test.Response.Result)
                 .Verifiable();
-                if (test.Request.Params[0].AsString() == NativeContract.GAS.Hash.ToString() || test.Request.Params[0].AsString().Equals(NativeContract.GAS.Name, System.StringComparison.OrdinalIgnoreCase))
+                if (test.Request.Params[0].AsString() == NativeContract.GAS.Hash.ToString() || test.Request.Params[0].AsString().Equals(NativeContract.GAS.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     var result = await nep17API.GetTokenInfoAsync(NativeContract.GAS.Name.ToLower());
                     Assert.AreEqual(NativeContract.GAS.Symbol, result.Symbol);
@@ -126,7 +127,7 @@ namespace Neo.Network.RPC.Tests
                     Assert.AreEqual("GasToken", result.Name);
                     haveGasTokenUT = true;
                 }
-                else if (test.Request.Params[0].AsString() == NativeContract.NEO.Hash.ToString() || test.Request.Params[0].AsString().Equals(NativeContract.NEO.Name, System.StringComparison.OrdinalIgnoreCase))
+                else if (test.Request.Params[0].AsString() == NativeContract.NEO.Hash.ToString() || test.Request.Params[0].AsString().Equals(NativeContract.NEO.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     var result = await nep17API.GetTokenInfoAsync(NativeContract.NEO.Name.ToLower());
                     Assert.AreEqual(NativeContract.NEO.Symbol, result.Symbol);
