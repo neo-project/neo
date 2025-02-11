@@ -11,6 +11,7 @@
 
 #nullable enable
 
+using Neo.Persistence.Providers;
 using System.Collections.Generic;
 
 namespace Neo.Persistence

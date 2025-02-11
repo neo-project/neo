@@ -18,7 +18,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Neo.Persistence
+namespace Neo.Persistence.Providers
 {
     /// <summary>
     /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>

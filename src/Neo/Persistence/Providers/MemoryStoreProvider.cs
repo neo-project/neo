@@ -11,7 +11,7 @@
 
 #nullable enable
 
-namespace Neo.Persistence
+namespace Neo.Persistence.Providers
 {
     public class MemoryStoreProvider : IStoreProvider
     {
