@@ -32,9 +32,9 @@ namespace Neo.Plugins.Storage
             _db.Dispose();
         }
 
-        public ISnapshot GetSnapshot()
+        public IStoreSnapshot GetSnapshot()
         {
-            return new Snapshot(_db);
+            return new Snapshot(this, _db);
         }
 
         /// <inheritdoc/>
