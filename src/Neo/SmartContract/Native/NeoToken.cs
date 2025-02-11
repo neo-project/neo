@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native
             _registerPrice = CreateStorageKey(Prefix_RegisterPrice);
         }
 
-        public override BigInteger TotalSupply(IReadOnlyStoreView snapshot)
+        public override BigInteger TotalSupply(IReadOnlyStore snapshot)
         {
             return TotalAmount;
         }
@@ -338,7 +338,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The amount of the fees.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public long GetRegisterPrice(IReadOnlyStoreView snapshot)
+        public long GetRegisterPrice(IReadOnlyStore snapshot)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             return (long)(BigInteger)snapshot[_registerPrice];
@@ -533,7 +533,7 @@ namespace Neo.SmartContract.Native
         /// <param name="pubKey">Specific public key</param>
         /// <returns>Votes or -1 if it was not found.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetCandidateVote(IReadOnlyStoreView snapshot, ECPoint pubKey)
+        public BigInteger GetCandidateVote(IReadOnlyStore snapshot, ECPoint pubKey)
         {
             var key = CreateStorageKey(Prefix_Candidate).Add(pubKey);
             var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<CandidateState>() : null;
@@ -546,7 +546,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The public keys of the members.</returns>
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        public ECPoint[] GetCommittee(IReadOnlyStoreView snapshot)
+        public ECPoint[] GetCommittee(IReadOnlyStore snapshot)
         {
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
@@ -558,7 +558,7 @@ namespace Neo.SmartContract.Native
         /// <param name="account">account</param>
         /// <returns>The state of the account.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public NeoAccountState GetAccountState(IReadOnlyStoreView snapshot, UInt160 account)
+        public NeoAccountState GetAccountState(IReadOnlyStore snapshot, UInt160 account)
         {
             var key = CreateStorageKey(Prefix_Account).Add(account);
             return snapshot.TryGet(key, out var item) ? item.GetInteroperable<NeoAccountState>() : null;
@@ -570,13 +570,13 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The address of the committee.</returns>
         [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
-        public UInt160 GetCommitteeAddress(IReadOnlyStoreView snapshot)
+        public UInt160 GetCommitteeAddress(IReadOnlyStore snapshot)
         {
             ECPoint[] committees = GetCommittee(snapshot);
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
-        private CachedCommittee GetCommitteeFromCache(IReadOnlyStoreView snapshot)
+        private CachedCommittee GetCommitteeFromCache(IReadOnlyStore snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
         }
@@ -619,7 +619,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="validatorsCount">The number of validators in the system.</param>
         /// <returns>The public keys of the validators.</returns>
-        public ECPoint[] GetNextBlockValidators(IReadOnlyStoreView snapshot, int validatorsCount)
+        public ECPoint[] GetNextBlockValidators(IReadOnlyStore snapshot, int validatorsCount)
         {
             return GetCommitteeFromCache(snapshot)
                 .Take(validatorsCount)
