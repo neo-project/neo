@@ -34,7 +34,7 @@ namespace Neo.Plugins.Trackers
         protected bool _shouldTrackHistory;
         protected uint _maxResults;
         protected IStore _db;
-        private ISnapshot _levelDbSnapshot;
+        private IStoreSnapshot _levelDbSnapshot;
         protected NeoSystem _neoSystem;
         public abstract string TrackName { get; }
 

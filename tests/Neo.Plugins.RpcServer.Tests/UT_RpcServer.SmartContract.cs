@@ -176,7 +176,7 @@ namespace Neo.Plugins.RpcServer.Tests
                     ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
                 }]), validatorSigner, true));
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
-            SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
                 Nonce = 233,

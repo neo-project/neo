@@ -32,11 +32,11 @@ namespace Neo.Cryptography.MPTTrie
             public TrackState State;
         }
 
-        private readonly ISnapshot store;
+        private readonly IStoreSnapshot store;
         private readonly byte prefix;
         private readonly Dictionary<UInt256, Trackable> cache = new Dictionary<UInt256, Trackable>();
 
-        public Cache(ISnapshot store, byte prefix)
+        public Cache(IStoreSnapshot store, byte prefix)
         {
             this.store = store;
             this.prefix = prefix;

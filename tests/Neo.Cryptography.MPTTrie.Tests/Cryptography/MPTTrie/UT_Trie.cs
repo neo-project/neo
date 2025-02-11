@@ -19,7 +19,7 @@ using System.Text;
 
 namespace Neo.Cryptography.MPTTrie.Tests
 {
-    class TestSnapshot : ISnapshot
+    class TestSnapshot : IStoreSnapshot
     {
         public Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
 
@@ -37,6 +37,8 @@ namespace Neo.Cryptography.MPTTrie.Tests
         {
             store.Remove(StoreKey(key));
         }
+
+        public IStore Store => throw new NotImplementedException();
 
         public void Commit() { throw new NotImplementedException(); }
 
