@@ -687,3 +687,5 @@ namespace Neo.Ledger
         }
     }
 }
+
+#nullable disable

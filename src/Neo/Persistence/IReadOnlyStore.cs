@@ -54,3 +54,5 @@ namespace Neo.Persistence
         bool Contains(byte[] key);
     }
 }
+
+#nullable disable

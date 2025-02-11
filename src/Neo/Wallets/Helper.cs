@@ -226,3 +226,5 @@ namespace Neo.Wallets
         }
     }
 }
+
+#nullable disable
