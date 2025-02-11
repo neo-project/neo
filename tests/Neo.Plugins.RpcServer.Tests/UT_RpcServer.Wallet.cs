@@ -403,7 +403,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 validatorSigner]));
             Assert.AreEqual(deployResp["state"], nameof(VMState.HALT));
             UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
-            SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
                 Nonce = 233,

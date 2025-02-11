@@ -23,7 +23,7 @@ namespace Neo.Persistence
     /// <summary>
     /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
-    internal class MemorySnapshot : ISnapshot
+    internal class MemorySnapshot : IStoreSnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
         private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
@@ -31,8 +31,11 @@ namespace Neo.Persistence
 
         public SerializedCache SerializedCache { get; }
 
-        public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData, SerializedCache serializedCache)
+        public IStore Store { get; }
+
+        internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData, SerializedCache serializedCache)
         {
+            Store = store;
             _innerData = innerData;
             SerializedCache = serializedCache;
             _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);

@@ -21,7 +21,7 @@ namespace Neo.Plugins.Storage
     /// <summary>
     /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
-    internal class Snapshot : ISnapshot
+    internal class Snapshot : IStoreSnapshot
     {
         private readonly RocksDb _db;
         private readonly RocksDbSharp.Snapshot _snapshot;
@@ -36,8 +36,11 @@ namespace Neo.Plugins.Storage
         private readonly object _lock = new();
 #endif
 
-        public Snapshot(RocksDb db, SerializedCache serializedCache)
+        public IStore Store { get; }
+
+        internal Snapshot(Store store, RocksDb db, SerializedCache serializedCache)
         {
+            Store = store;
             SerializedCache = serializedCache;
             _db = db;
             _snapshot = db.CreateSnapshot();

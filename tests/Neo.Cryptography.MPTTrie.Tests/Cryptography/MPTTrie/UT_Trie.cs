@@ -9,19 +9,22 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
 namespace Neo.Cryptography.MPTTrie.Tests
 {
-    class TestSnapshot : ISnapshot
+    class TestSnapshot : IStoreSnapshot
     {
-        public Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+        public Dictionary<byte[], byte[]> store = new(ByteArrayEqualityComparer.Default);
         public SerializedCache SerializedCache { get; } = new();
 
         private byte[] StoreKey(byte[] key)
@@ -39,25 +42,34 @@ namespace Neo.Cryptography.MPTTrie.Tests
             store.Remove(StoreKey(key));
         }
 
+        public IStore Store => throw new NotImplementedException();
+
         public void Commit() { throw new NotImplementedException(); }
 
         public bool Contains(byte[] key) { throw new NotImplementedException(); }
 
-        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] key, SeekDirection direction) { throw new NotImplementedException(); }
+        public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? key, SeekDirection direction) { throw new NotImplementedException(); }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            var result = store.TryGetValue(StoreKey(key), out byte[] value);
+            var result = store.TryGetValue(StoreKey(key), out var value);
             if (result) return value;
             return null;
         }
 
-        public bool TryGet(byte[] key, out byte[] value)
+        public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
             return store.TryGetValue(StoreKey(key), out value);
         }
 
         public void Dispose() { throw new NotImplementedException(); }
+
+        public T? GetFromCache<T>() where T : IStorageCacheEntry
+        {
+            return default;
+        }
+
+        public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry { }
 
         public int Size => store.Count;
     }
@@ -65,16 +77,15 @@ namespace Neo.Cryptography.MPTTrie.Tests
     [TestClass]
     public class UT_Trie
     {
-        private Node root;
-        private IStore mptdb;
+        private readonly Node root;
+        private readonly IStore mptdb;
 
         private void PutToStore(IStore store, Node node)
         {
             store.Put([.. new byte[] { 0xf0 }, .. node.Hash.ToArray()], node.ToArray());
         }
 
-        [TestInitialize]
-        public void TestInit()
+        public UT_Trie()
         {
             var b = Node.NewBranch();
             var r = Node.NewExtension("0a0c".HexToBytes(), b);
@@ -83,9 +94,9 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var v3 = Node.NewLeaf(Encoding.ASCII.GetBytes("existing"));//key=acae
             var v4 = Node.NewLeaf(Encoding.ASCII.GetBytes("missing"));
             var h3 = Node.NewHash(v3.Hash);
-            var e1 = Node.NewExtension(new byte[] { 0x01 }, v1);
-            var e3 = Node.NewExtension(new byte[] { 0x0e }, h3);
-            var e4 = Node.NewExtension(new byte[] { 0x01 }, v4);
+            var e1 = Node.NewExtension([0x01], v1);
+            var e3 = Node.NewExtension([0x0e], h3);
+            var e4 = Node.NewExtension([0x01], v4);
             b.Children[0] = e1;
             b.Children[10] = e3;
             b.Children[16] = v2;

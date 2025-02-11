@@ -37,9 +37,9 @@ namespace Neo.Persistence
         public void Dispose() { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ISnapshot GetSnapshot()
+        public IStoreSnapshot GetSnapshot()
         {
-            return new MemorySnapshot(_innerData, SerializedCache);
+            return new MemorySnapshot(this, _innerData, SerializedCache);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
