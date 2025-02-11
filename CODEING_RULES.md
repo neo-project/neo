@@ -260,3 +260,10 @@ public class Foo
 ```
 
 &#10007; **AVOID** `out` and `ref` parameters.
+
+## References
+
+- https://github.com/dotnet/runtime/tree/main/docs/coding-guidelines
+- https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/identifier-names
+- https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions
+- https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/readme
