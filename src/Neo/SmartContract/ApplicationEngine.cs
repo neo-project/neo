@@ -638,7 +638,7 @@ namespace Neo.SmartContract
             Diagnostic?.PostExecuteInstruction(instruction);
         }
 
-        private static Block CreateDummyBlock(IReadOnlyStoreView snapshot, ProtocolSettings settings)
+        private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
             Block currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
