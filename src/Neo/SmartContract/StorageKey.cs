@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using System;
 using System.Buffers.Binary;
@@ -36,7 +38,10 @@ namespace Neo.SmartContract
         // NOTE: StorageKey is readonly, so we can cache the hash code.
         private int _hashCode = 0;
 
-        public StorageKey() { }
+        public StorageKey()
+        {
+            _cache = null;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageKey"/> class.
@@ -48,6 +53,12 @@ namespace Neo.SmartContract
             Id = BinaryPrimitives.ReadInt32LittleEndian(_cache.Span);
             Key = _cache[sizeof(int)..].ToArray();  // allocate new buffer. NOTE: DONT USE POINTERS HERE
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageKey"/> class.
+        /// </summary>
+        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
+        internal StorageKey(ReadOnlySpan<byte> cache) : this(cache.ToArray()) { }
 
         /// <summary>
         /// Creates a search prefix for a contract.
@@ -63,7 +74,7 @@ namespace Neo.SmartContract
             return buffer.ToArray();
         }
 
-        public bool Equals(StorageKey other)
+        public bool Equals(StorageKey? other)
         {
             if (other is null)
                 return false;

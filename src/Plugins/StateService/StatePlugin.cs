@@ -51,8 +51,8 @@ namespace Neo.Plugins.StateService
 
         public StatePlugin()
         {
-            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
-            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
+            Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
@@ -91,8 +91,8 @@ namespace Neo.Plugins.StateService
         public override void Dispose()
         {
             base.Dispose();
-            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
-            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
+            Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Store is not null) _system.EnsureStopped(Store);
             if (Verifier is not null) _system.EnsureStopped(Verifier);
         }

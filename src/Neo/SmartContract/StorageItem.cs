@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using Neo.IO;
 using Neo.VM;
@@ -24,7 +26,7 @@ namespace Neo.SmartContract
     public class StorageItem : ISerializable
     {
         private ReadOnlyMemory<byte> _value;
-        private object _cache;
+        private object? _cache;
 
         public int Size => Value.GetVarSize();
 

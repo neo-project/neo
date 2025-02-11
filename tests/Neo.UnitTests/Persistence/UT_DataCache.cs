@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -25,7 +24,7 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_DataCache
     {
         private readonly MemoryStore store = new();
-        private SnapshotCache myDataCache;
+        private StoreCache myDataCache;
 
         private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };
         private static readonly StorageKey key2 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key2") };
@@ -108,7 +107,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
 
             using var snapshot = store.GetSnapshot();
-            using var myDataCache = new SnapshotCache(snapshot);
+            using var myDataCache = new StoreCache(snapshot);
 
             myDataCache.Add(key1, value1);
             Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
@@ -149,7 +148,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key2.ToArray(), value2.ToArray());
 
             using var snapshot = store.GetSnapshot();
-            using var myDataCache = new SnapshotCache(snapshot);
+            using var myDataCache = new StoreCache(snapshot);
 
             myDataCache.Add(key1, value1);
             myDataCache.Delete(key1);
@@ -178,13 +177,13 @@ namespace Neo.UnitTests.IO.Caching
             // null and empty with the forward direction -> finds everything.
             items = myDataCache.Find(null);
             Assert.AreEqual(4, items.Count());
-            items = myDataCache.Find(new byte[] { });
+            items = myDataCache.Find([]);
             Assert.AreEqual(4, items.Count());
 
             // null and empty with the backwards direction -> miserably fails.
             Action action = () => myDataCache.Find(null, SeekDirection.Backward);
             Assert.ThrowsException<ArgumentNullException>(action);
-            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            action = () => myDataCache.Find([], SeekDirection.Backward);
             Assert.ThrowsException<ArgumentOutOfRangeException>(action);
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
@@ -246,7 +245,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value4.ToArray());
 
-            var myDataCache = new SnapshotCache(store);
+            var myDataCache = new StoreCache(store);
             myDataCache.Add(key1, value1);
             myDataCache.Add(key2, value2);
 
@@ -382,7 +381,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestFindInvalid()
         {
             using var store = new MemoryStore();
-            using var myDataCache = new SnapshotCache(store);
+            using var myDataCache = new StoreCache(store);
             myDataCache.Add(key1, value1);
 
             store.Put(key2.ToArray(), value2.ToArray());

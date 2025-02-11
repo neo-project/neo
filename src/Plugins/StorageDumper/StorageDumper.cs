@@ -147,7 +147,7 @@ namespace Neo.Plugins.StorageDumper
             }
         }
 
-        private void InitFileWriter(uint network, IReadOnlyStoreView snapshot)
+        private void InitFileWriter(uint network, IReadOnlyStore snapshot)
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (_writer == null

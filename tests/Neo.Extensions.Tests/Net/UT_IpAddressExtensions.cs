@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Extensions;
 using System.Net;
 
 namespace Neo.Extensions.Tests.Net
