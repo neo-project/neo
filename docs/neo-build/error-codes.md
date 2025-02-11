@@ -21,7 +21,7 @@ all the error codes for the wallet module. _See
 [What is a Module](#what-is-a-module) for more details_.
 
 # What is a Module
-refers to the part of code doing the processing within the Neo Build Engine
+Refers to the part of code doing the processing within the Neo Build Engine
 for _**example**, `NeoBuildEngine::Wallet:Open()`_. `Wallet` is the module.
 Each class **SHOULD BE** considered it's own module. Each subclass in the
 module class that has `private` or `internal` **WILL NOT** be considered a
