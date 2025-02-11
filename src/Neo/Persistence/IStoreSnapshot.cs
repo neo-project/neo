@@ -34,3 +34,5 @@ namespace Neo.Persistence
         void Commit();
     }
 }
+
+#nullable disable

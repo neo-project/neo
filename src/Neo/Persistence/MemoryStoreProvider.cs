@@ -19,3 +19,5 @@ namespace Neo.Persistence
         public IStore GetStore(string path) => new MemoryStore();
     }
 }
+
+#nullable disable
