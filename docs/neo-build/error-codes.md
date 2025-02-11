@@ -1,5 +1,5 @@
 # Error Codes
-are used when an `Exception` is thrown, to identify known issues with
+Are used when an `Exception` is thrown, to identify known issues with
 building, deploying or testing project's `*.nbproj` file or `MSBuild` tasks
 within `Visual Studio` or `dotnet` CLI.
 
