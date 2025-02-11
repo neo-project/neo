@@ -32,7 +32,7 @@
     "Network": 894710606,
     "AddressVersion": 53,
     "MillisecondsPerBlock": 3000,
-    "MaxTransactionsPerBlock": 512,
+    "MaxTransactionsPerBlock": 5000,
     "MemoryPoolMaxTransactions": 50000,
     "MaxTraceableBlocks": 2102400,
     "Hardforks": {
