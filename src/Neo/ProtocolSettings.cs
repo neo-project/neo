@@ -115,7 +115,7 @@ namespace Neo
             ValidatorsCount = 0,
             SeedList = Array.Empty<string>(),
             MillisecondsPerBlock = 3000,
-            MaxTransactionsPerBlock = 256,
+            MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,

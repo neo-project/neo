@@ -206,10 +206,7 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
                 engine.SnapshotCache.Add(_votersCount, new StorageItem(Array.Empty<byte>()));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
-                // TODO - Add hardfork otherwise storage will be different
-                // After HARD FORK
                 engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
-
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
             }
             return ContractTask.CompletedTask;
@@ -254,7 +251,7 @@ namespace Neo.SmartContract.Native
             int m = engine.ProtocolSettings.CommitteeMembersCount;
             int n = engine.ProtocolSettings.ValidatorsCount;
             int index = (int)(engine.PersistingBlock.Index % (uint)m);
-            var gasPerBlock = GetGasPerBlock(engine);
+            var gasPerBlock = GetGasPerBlock(engine.SnapshotCache);
             var committee = GetCommitteeFromCache(engine.SnapshotCache);
             var pubkey = committee[index].PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
@@ -295,32 +292,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the amount of GAS generated in each block.
         /// </summary>
-        /// <param name="engine">The ApplicationEngine.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The amount of GAS generated.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger GetGasPerBlock(ApplicationEngine engine)
+        public BigInteger GetGasPerBlock(DataCache snapshot)
         {
-            var snapshot = engine.SnapshotCache;
-            var currentIndex = Ledger.CurrentIndex(snapshot) + 1;
-            var latestGasRecord = GetSortedGasRecords(snapshot, currentIndex).First();
-
-
-            var currentGasPerBlock = latestGasRecord.GasPerBlock;
-
-            if (!engine.IsHardforkEnabled(Hardfork.HF_Echidna))
-                return currentGasPerBlock;
-
-            var hardforkHeight = engine.ProtocolSettings.Hardforks[Hardfork.HF_Echidna];
-
-            // This indicates that a new gasperblock value is set by the council
-            if (latestGasRecord.Index >= hardforkHeight)
-            {
-                return currentGasPerBlock;
-            }
-
-            // If the gasPerBlock is not updated, and the hardfork Echidna is enabled
-            // the gas per block will be reduced by 80% because the block time is reduced by 80%.
-            return currentGasPerBlock / 5; // I think it should not be a problem for this code to ensure the result is not 0
+            return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

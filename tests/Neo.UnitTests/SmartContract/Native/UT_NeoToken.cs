@@ -66,7 +66,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var clonedCache = _snapshotCache.CloneCache();
             var persistingBlock = new Block { Header = new Header() };
 
-            foreach (var method in new[] { "vote", "registerCandidate", "unregisterCandidate", "getGasPerBlock" })
+            foreach (var method in new string[] { "vote", "registerCandidate", "unregisterCandidate" })
             {
                 // Test WITHOUT HF_Echidna
 
@@ -78,17 +78,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     var methods = NativeContract.NEO.GetContractMethods(engine);
                     var entries = methods.Values.Where(u => u.Name == method).ToArray();
 
-                    if (method == "getGasPerBlock")
-                    {
-                        Assert.AreEqual(1, entries.Length);
-                        Assert.AreEqual(0, entries.First().Parameters.Length);
-                        Assert.AreEqual(CallFlags.ReadStates, entries[0].RequiredCallFlags);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(1, entries.Length);
-                        Assert.AreEqual(CallFlags.States, entries[0].RequiredCallFlags);
-                    }
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States);
                 }
 
                 // Test WITH HF_Echidna
@@ -101,17 +92,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     var methods = NativeContract.NEO.GetContractMethods(engine);
                     var entries = methods.Values.Where(u => u.Name == method).ToArray();
 
-                    if (method == "getGasPerBlock")
-                    {
-                        Assert.AreEqual(1, entries.Length);
-                        Assert.AreEqual(0, entries.First().Parameters.Length);
-                        Assert.AreEqual(CallFlags.ReadStates, entries[0].RequiredCallFlags);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(1, entries.Length);
-                        Assert.AreEqual(CallFlags.States | CallFlags.AllowNotify, entries[0].RequiredCallFlags);
-                    }
+                    Assert.AreEqual(entries.Length, 1);
+                    Assert.AreEqual(entries[0].RequiredCallFlags, CallFlags.States | CallFlags.AllowNotify);
                 }
             }
         }
@@ -1032,30 +1014,6 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.State);
             var (_, _, voteto) = GetAccountState(clonedCache, account);
             Assert.AreEqual(ECCurve.Secp256r1.G.ToArray().ToHexString(), voteto.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestGetGasPerBlockEchidna()
-        {
-            var json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 10");
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-            var settings = ProtocolSettings.Load(stream);
-
-            var clonedCache = _snapshotCache.CloneCache();
-            var persistingBlock = new Block { Header = new Header { Index = 11 } };
-            {
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, clonedCache, persistingBlock,
-                    settings: settings);
-                using var script = new ScriptBuilder();
-                script.EmitDynamicCall(NativeContract.NEO.Hash, "getGasPerBlock");
-                engine.LoadScript(script.ToArray());
-
-                Assert.AreEqual(VMState.HALT, engine.Execute());
-
-                var result = engine.ResultStack.Pop();
-                Assert.IsInstanceOfType<Integer>(result);
-                Assert.AreEqual(result.GetInteger(), 1_0000_0000);
-            }
         }
 
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)

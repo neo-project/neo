@@ -133,7 +133,7 @@ namespace Neo.UnitTests
     ""Network"": 860833102,
     ""AddressVersion"": 53,
     ""MillisecondsPerBlock"": 3000,
-    ""MaxTransactionsPerBlock"": 256,
+    ""MaxTransactionsPerBlock"": 512,
     ""MemoryPoolMaxTransactions"": 50000,
     ""MaxTraceableBlocks"": 2102400,
     ""Hardforks"": {
