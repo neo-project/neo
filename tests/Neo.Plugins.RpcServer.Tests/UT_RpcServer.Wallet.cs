@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -342,7 +341,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestCancelTransaction()
         {
             TestUtilOpenWallet();
-            var snapshot = _neoSystem.GetSnapshot();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             snapshot.Commit();
             var paramsArray = new JArray(tx.Hash.ToString(), new JArray(_walletAccount.Address));

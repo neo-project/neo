@@ -20,7 +20,7 @@ namespace Neo.Persistence
     {
         private readonly DataCache _innerCache;
 
-        public ClonedCache(DataCache innerCache) : base(innerCache.HasChangeSet)
+        public ClonedCache(DataCache innerCache) : base(true)
         {
             _innerCache = innerCache;
         }
