@@ -19,7 +19,6 @@ namespace Neo.Benchmark
 {
     public class Benchmarks_Cache
     {
-        // 256 KiB
         readonly MemoryStore _store;
         readonly StoreCache _snapshot;
 
