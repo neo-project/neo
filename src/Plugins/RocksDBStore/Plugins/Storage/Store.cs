@@ -36,7 +36,7 @@ namespace Neo.Plugins.Storage
 
         public IStoreSnapshot GetSnapshot()
         {
-            return new Snapshot(this, _db, SerializedCache);
+            return new Snapshot(this, _db);
         }
 
         /// <inheritdoc/>

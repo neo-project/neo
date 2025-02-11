@@ -36,16 +36,13 @@ namespace Neo.Plugins.Storage
         private readonly object _lock = new();
 #endif
 
-        public SerializedCache SerializedCache { get; }
-
         public IStore Store { get; }
 
-        internal Snapshot(Store store, DB db, SerializedCache serializedCache)
+        internal Snapshot(Store store, DB db)
         {
             Store = store;
             _db = db;
             _snapshot = db.CreateSnapshot();
-            SerializedCache = serializedCache;
             _readOptions = new ReadOptions { FillCache = false, Snapshot = _snapshot };
             _batch = new WriteBatch();
         }

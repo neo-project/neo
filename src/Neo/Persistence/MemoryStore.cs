@@ -39,7 +39,7 @@ namespace Neo.Persistence
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IStoreSnapshot GetSnapshot()
         {
-            return new MemorySnapshot(this, _innerData, SerializedCache);
+            return new MemorySnapshot(this, _innerData);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

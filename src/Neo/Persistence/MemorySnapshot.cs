@@ -29,15 +29,12 @@ namespace Neo.Persistence
         private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
         private readonly ConcurrentDictionary<byte[], byte[]?> _writeBatch;
 
-        public SerializedCache SerializedCache { get; }
-
         public IStore Store { get; }
 
-        internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData, SerializedCache serializedCache)
+        internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData)
         {
             Store = store;
             _innerData = innerData;
-            SerializedCache = serializedCache;
             _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
             _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
         }

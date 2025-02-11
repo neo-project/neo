@@ -28,8 +28,6 @@ namespace Neo.Plugins.Storage
         private readonly WriteBatch _batch;
         private readonly ReadOptions _options;
 
-        public SerializedCache SerializedCache { get; }
-
 #if NET9_0_OR_GREATER
         private readonly Lock _lock = new();
 #else
@@ -38,10 +36,9 @@ namespace Neo.Plugins.Storage
 
         public IStore Store { get; }
 
-        internal Snapshot(Store store, RocksDb db, SerializedCache serializedCache)
+        internal Snapshot(Store store, RocksDb db)
         {
             Store = store;
-            SerializedCache = serializedCache;
             _db = db;
             _snapshot = db.CreateSnapshot();
             _batch = new WriteBatch();

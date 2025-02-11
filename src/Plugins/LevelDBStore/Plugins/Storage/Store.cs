@@ -50,7 +50,7 @@ namespace Neo.Plugins.Storage
         }
 
         public IStoreSnapshot GetSnapshot() =>
-            new Snapshot(this, _db, SerializedCache);
+            new Snapshot(this, _db);
 
         public void Put(byte[] key, byte[] value) =>
             _db.Put(WriteOptions.Default, key, value);
