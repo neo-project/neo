@@ -172,13 +172,13 @@ namespace Neo.UnitTests.SmartContract.Native
         class TestSpecialParameter
         {
             [ContractMethod]
-            public void TestReadOnlyStoreView(UInt160 address, IReadOnlyStoreView view) { }
+            public void TestReadOnlyStoreView(UInt160 address, IReadOnlyStore view) { }
 
             [ContractMethod]
             public void TestDataCache(UInt160 address, DataCache cache) { }
 
             [ContractMethod]
-            public void TestApplicationEngine(ApplicationEngine engine, IReadOnlyStoreView view) { }
+            public void TestApplicationEngine(ApplicationEngine engine, IReadOnlyStore view) { }
 
             [ContractMethod]
             public void TestSnapshot(DataCache cache, ApplicationEngine engine) { }
@@ -228,7 +228,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 // Implementations of IReadOnlyStoreView
                 // DataCache or it's subclass
                 if (typeof(ApplicationEngine).IsAssignableFrom(param.ParameterType) ||
-                    typeof(IReadOnlyStoreView).IsAssignableFrom(param.ParameterType) ||
+                    typeof(IReadOnlyStore).IsAssignableFrom(param.ParameterType) ||
                     typeof(DataCache).IsAssignableFrom(param.ParameterType))
                 {
                     Assert.AreEqual(0, param.Position);
