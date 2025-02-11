@@ -15,7 +15,7 @@ padding of zeros for anything less than `1000`.
 
 
 # Module Filename Format
-will be defined as `NeoBuildErrorCodes.{module}.cs` within `Neo.Build.Core`
+Will be defined as `NeoBuildErrorCodes.{module}.cs` within `Neo.Build.Core`
 library. For _**example**: `NeoBuildErrorCodes.Wallet.cs`_ file would hold
 all the error codes for the wallet module. _See
 [What is a Module](#what-is-a-module) for more details_.
