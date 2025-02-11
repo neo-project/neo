@@ -48,7 +48,12 @@ namespace Neo.Persistence
         }
 
         private readonly Dictionary<StorageKey, Trackable> _dictionary = new();
-        private readonly HashSet<StorageKey> _changeSet = new();
+        private readonly HashSet<StorageKey>? _changeSet;
+
+        /// <summary>
+        /// True if ChangeSet is enabled
+        /// </summary>
+        public bool HasChangeSet => _changeSet != null;
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -78,6 +83,16 @@ namespace Neo.Persistence
         }
 
         /// <summary>
+        /// Data cache constructor
+        /// </summary>
+        /// <param name="followChangeSet">True if you want to follow the change set</param>
+        protected DataCache(bool followChangeSet)
+        {
+            if (followChangeSet)
+                _changeSet = [];
+        }
+
+        /// <summary>
         /// Adds a new entry to the cache.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -102,7 +117,7 @@ namespace Neo.Persistence
                 {
                     _dictionary[key] = new Trackable(key, value, TrackState.Added);
                 }
-                _changeSet.Add(key);
+                _changeSet?.Add(key);
             }
         }
 
@@ -118,6 +133,11 @@ namespace Neo.Persistence
         /// </summary>
         public virtual void Commit()
         {
+            if (_changeSet is null)
+            {
+                throw new InvalidOperationException("DataCache was created without 'followChangeSet'");
+            }
+
             lock (_dictionary)
             {
                 foreach (var key in _changeSet)
@@ -140,6 +160,24 @@ namespace Neo.Persistence
                     }
                 }
                 _changeSet.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Gets the change set in the cache.
+        /// </summary>
+        /// <returns>The change set.</returns>
+        public IEnumerable<Trackable> GetChangeSet()
+        {
+            if (_changeSet is null)
+            {
+                throw new InvalidOperationException("DataCache was created without 'followChangeSet'");
+            }
+
+            lock (_dictionary)
+            {
+                foreach (var key in _changeSet)
+                    yield return _dictionary[key];
             }
         }
 
@@ -175,12 +213,12 @@ namespace Neo.Persistence
                     if (trackable.State == TrackState.Added)
                     {
                         trackable.State = TrackState.NotFound;
-                        _changeSet.Remove(key);
+                        _changeSet?.Remove(key);
                     }
                     else if (trackable.State != TrackState.NotFound)
                     {
                         trackable.State = TrackState.Deleted;
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                 }
                 else
@@ -188,7 +226,7 @@ namespace Neo.Persistence
                     var item = TryGetInternal(key);
                     if (item == null) return;
                     _dictionary.Add(key, new Trackable(key, item, TrackState.Deleted));
-                    _changeSet.Add(key);
+                    _changeSet?.Add(key);
                 }
             }
         }
@@ -268,19 +306,6 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Gets the change set in the cache.
-        /// </summary>
-        /// <returns>The change set.</returns>
-        public IEnumerable<Trackable> GetChangeSet()
-        {
-            lock (_dictionary)
-            {
-                foreach (StorageKey key in _changeSet)
-                    yield return _dictionary[key];
-            }
-        }
-
-        /// <summary>
         /// Determines whether the cache contains the specified entry.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -342,13 +367,13 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            _changeSet.Add(key);
+                            _changeSet?.Add(key);
                         }
                     }
                     else if (trackable.State == TrackState.None)
                     {
                         trackable.State = TrackState.Changed;
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                 }
                 else
@@ -364,7 +389,7 @@ namespace Neo.Persistence
                         trackable = new Trackable(key, item, TrackState.Changed);
                     }
                     _dictionary.Add(key, trackable);
-                    _changeSet.Add(key);
+                    _changeSet?.Add(key);
                 }
                 return trackable.Item;
             }
@@ -397,7 +422,7 @@ namespace Neo.Persistence
                         else
                         {
                             trackable.State = TrackState.Added;
-                            _changeSet.Add(key);
+                            _changeSet?.Add(key);
                         }
                     }
                 }
@@ -407,7 +432,7 @@ namespace Neo.Persistence
                     if (item == null)
                     {
                         trackable = new Trackable(key, factory(), TrackState.Added);
-                        _changeSet.Add(key);
+                        _changeSet?.Add(key);
                     }
                     else
                     {

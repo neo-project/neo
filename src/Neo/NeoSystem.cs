@@ -83,7 +83,7 @@ namespace Neo
         /// <remarks>
         /// It doesn't need to be disposed because the <see cref="IStoreSnapshot"/> inside it is null.
         /// </remarks>
-        public DataCache StoreView => new StoreCache(store);
+        public StoreCache StoreView => new(store);
 
         /// <summary>
         /// The memory pool of the <see cref="NeoSystem"/>.
