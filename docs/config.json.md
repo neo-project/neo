@@ -45,7 +45,7 @@ This README provides an explanation for each field in the JSON configuration fil
 - **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `3000` (3 seconds).
 
 ### MaxTransactionsPerBlock
-- **MaxTransactionsPerBlock**: Maximum number of transactions allowed per block. Default is `256`.
+- **MaxTransactionsPerBlock**: Maximum number of transactions allowed per block. Default is `512`.
 
 ### MemoryPoolMaxTransactions
 - **MemoryPoolMaxTransactions**: Maximum number of transactions that can be held in the memory pool. Default is `50000`.
