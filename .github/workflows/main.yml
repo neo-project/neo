@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 9.0.x
+  DOTNET_VERSION: 9.0.102
   COVERLET_EXCLUDE_COVERAGE: -p:Exclude="[Neo.UnitTests]*"
 
 jobs:
