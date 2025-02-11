@@ -95,6 +95,7 @@ namespace Neo.Persistence
         /// <param name="value">Value</param>
         public void CopyFrom(SerializedCache value)
         {
+            if (ReferenceEquals(this, value)) return;
             lock (_cache) lock (value._cache)
                 {
                     foreach (var serialized in value._cache)
