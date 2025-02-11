@@ -91,7 +91,7 @@ namespace Neo.Plugins.OracleService.Tests
                 sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", Convert.FromBase64String(base64NefFile), manifest);
                 script = sb.ToArray();
             }
-            SnapshotCache snapshot = s_theNeoSystem.GetSnapshotCache();
+            var snapshot = s_theNeoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
                 Nonce = 233,
@@ -113,7 +113,7 @@ namespace Neo.Plugins.OracleService.Tests
             s_theNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        internal static SnapshotCache GetTestSnapshotCache()
+        internal static StoreCache GetTestSnapshotCache()
         {
             ResetStore();
             return s_theNeoSystem.GetSnapshotCache();

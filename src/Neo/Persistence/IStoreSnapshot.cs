@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ISnapshot.cs file belongs to the neo project and is free
+// IStoreSnapshot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -18,24 +18,19 @@ namespace Neo.Persistence
     /// <summary>
     /// This interface provides methods for reading, writing, and committing from/to snapshot.
     /// </summary>
-    public interface ISnapshot : IDisposable, IReadOnlyStore
+    public interface IStoreSnapshot :
+        IRawReadOnlyStore,
+        IWriteStore<byte[], byte[]>,
+        IDisposable
     {
+        /// <summary>
+        /// Store
+        /// </summary>
+        IStore Store { get; }
+
         /// <summary>
         /// Commits all changes in the snapshot to the database.
         /// </summary>
         void Commit();
-
-        /// <summary>
-        /// Deletes an entry from the snapshot.
-        /// </summary>
-        /// <param name="key">The key of the entry.</param>
-        void Delete(byte[] key);
-
-        /// <summary>
-        /// Puts an entry to the snapshot.
-        /// </summary>
-        /// <param name="key">The key of the entry.</param>
-        /// <param name="value">The data of the entry.</param>
-        void Put(byte[] key, byte[] value);
     }
 }
