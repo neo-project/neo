@@ -38,6 +38,9 @@ namespace Neo.UnitTests.SmartContract.Native
             public bool MethodReadOnlyStoreView(IReadOnlyStore view) => view is null;
 
             [ContractMethod]
+            public bool MethodCachedReadOnlyStoreView(ICacheableReadOnlyStore view) => view is null;
+
+            [ContractMethod]
             public bool MethodDataCache(DataCache dataCache) => dataCache is null;
         }
 
