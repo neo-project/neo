@@ -25,7 +25,7 @@ namespace Neo.Persistence
         /// Get cached entry
         /// </summary>
         /// <typeparam name="T">Type</typeparam>
-        /// <returns>Cache</returns>
+        /// <returns>The cached entry. If not cached, the default value will be returned</returns>
         public T? Get<T>()
         {
             if (_cache.TryGetValue(typeof(T), out var ret))
