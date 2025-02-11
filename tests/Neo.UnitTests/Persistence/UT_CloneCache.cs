@@ -40,7 +40,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestInitialize]
         public void Init()
         {
-            myDataCache = new(store);
+            myDataCache = new(store, true);
             clonedCache = new ClonedCache(myDataCache);
         }
 

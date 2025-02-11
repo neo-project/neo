@@ -31,7 +31,8 @@ namespace Neo.Persistence
         /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
         /// <param name="store">An <see cref="IStore"/> to create a readonly cache.</param>
-        public StoreCache(IStore store) : base(false)
+        /// <param name="followChangeSet">True if you want to follow the change set</param>
+        public StoreCache(IStore store, bool followChangeSet = false) : base(followChangeSet)
         {
             _store = store;
         }
