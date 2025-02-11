@@ -15,7 +15,7 @@ namespace Neo.Build.Core.Exceptions
 {
     public class NeoBuildException(
         string errorMessage,
-        int errorCode = NeoBuildErrorCodes.General.InternalException) : Exception(), INeoBuildException
+        int errorCode = NeoBuildErrorCodes.General.InternalException) : SystemException(), INeoBuildException
     {
         public NeoBuildException(Exception exception) : this(exception.Message, exception.HResult) { }
         public NeoBuildException(Exception exception, int exitCode) : this(exception.Message, exitCode) { }
