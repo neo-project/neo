@@ -12,13 +12,31 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
 using Neo.SmartContract;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.UnitTests.Persistence
 {
     [TestClass]
-    public class UT_ReadOnlyStoreView
+    public class UT_ReadOnlyStore
     {
+        [TestMethod]
+        public void TestError()
+        {
+            var store = new MemoryStore();
+            var snapshot = new StoreCache(store);
+
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.GetChangeSet().ToArray());
+            Assert.ThrowsException<InvalidOperationException>(snapshot.Commit);
+
+            // No errors
+
+            snapshot = new StoreCache(store.GetSnapshot());
+            _ = snapshot.GetChangeSet().ToArray();
+            snapshot.Commit();
+        }
+
         [TestMethod]
         public void TestReadOnlyStoreView()
         {
