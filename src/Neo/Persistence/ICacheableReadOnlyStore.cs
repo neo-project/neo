@@ -27,11 +27,6 @@ namespace Neo.Persistence
     public interface ICacheableReadOnlyStore<TKey, TValue> : IReadOnlyStore<TKey, TValue>
     {
         /// <summary>
-        /// Serialized cache
-        /// </summary>
-        public SerializedCache SerializedCache { get; }
-
-        /// <summary>
         /// Tries to get the entry from cache.
         /// </summary>
         /// <typeparam name="T">Cache type</typeparam>

@@ -25,9 +25,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
     class TestSnapshot : IStoreSnapshot
     {
         public Dictionary<byte[], byte[]> store = new(ByteArrayEqualityComparer.Default);
-        public SerializedCache SerializedCache { get; } = new();
-
-        private byte[] StoreKey(byte[] key)
+        private static byte[] StoreKey(byte[] key)
         {
             return [.. key];
         }
@@ -64,13 +62,6 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
         public void Dispose() { throw new NotImplementedException(); }
 
-        public T? GetFromCache<T>() where T : IStorageCacheEntry
-        {
-            return default;
-        }
-
-        public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry { }
-
         public int Size => store.Count;
     }
 
@@ -80,7 +71,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         private readonly Node root;
         private readonly IStore mptdb;
 
-        private void PutToStore(IStore store, Node node)
+        private static void PutToStore(IStore store, Node node)
         {
             store.Put([.. new byte[] { 0xf0 }, .. node.Hash.ToArray()], node.ToArray());
         }

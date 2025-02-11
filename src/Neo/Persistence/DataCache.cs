@@ -145,21 +145,9 @@ namespace Neo.Persistence
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
         public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry
         {
-            AddToCache(typeof(T), value);
-        }
-
-        /// <summary>
-        /// Adds a new entry to the cache.
-        /// </summary>
-        /// <param name="type">Cache type</param>
-        /// <param name="value">The data of the entry.</param>
-        /// <exception cref="ArgumentException">The entry has already been cached.</exception>
-        /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void AddToCache(Type type, IStorageCacheEntry? value)
-        {
-            _serializedCacheChanges.Set(type, value);
+            var type = typeof(T);
             SerializedCache.Remove(type);
+            _serializedCacheChanges.Set(type, value);
         }
 
         /// <summary>
