@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.Plugins.ApplicationLogs;
 using Neo.Plugins.ApplicationLogs.Store.Models;
 using Neo.SmartContract;
