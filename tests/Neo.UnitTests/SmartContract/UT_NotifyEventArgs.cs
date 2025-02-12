@@ -55,7 +55,7 @@ namespace Neo.UnitTests.SmartContract
             for (var i = 0; i < 500; i++)
             {
                 ns.Add("");
-            };
+            }
 
             var hash = UInt160.Parse("0x179ab5d297fd34ecd48643894242fc3527f42853");
             engine.SendNotification(hash, "Test", ns);

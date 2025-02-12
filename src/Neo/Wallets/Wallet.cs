@@ -616,10 +616,13 @@ namespace Neo.Wallets
                         {
                             account = GetAccount(point);
                             if (account?.HasKey != true) continue;
+
                             KeyPair key = account.GetKey();
                             byte[] signature = context.Verifiable.Sign(key, context.Network);
-                            fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
-                            if (fSuccess) m--;
+                            var ok = context.AddSignature(multiSigContract, key.PublicKey, signature);
+                            if (ok) m--;
+
+                            fSuccess |= ok;
                             if (context.Completed || m <= 0) break;
                         }
                         continue;
