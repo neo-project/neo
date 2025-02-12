@@ -45,13 +45,15 @@ namespace Neo.UnitTests.Persistence
             var value1 = new StorageItem([0x03, 0x04]);
 
             _snapshotCache.Delete(key1);
-            Assert.IsNull(_snapshotCache.TryGet(key1));
+            Assert.IsFalse(_snapshotCache.TryGet(key1, out var ret));
+            Assert.IsNull(ret);
 
             // Adding value to the snapshot cache will not affect the snapshot or the store
             // But the snapshot cache itself can see the added item right after it is added.
             _snapshotCache.Add(key1, value1);
 
-            Assert.AreEqual(value1.Value, _snapshotCache.TryGet(key1).Value);
+            Assert.IsTrue(_snapshotCache.TryGet(key1, out ret));
+            Assert.AreEqual(value1.Value, ret.Value);
             Assert.IsNull(_snapshot.TryGet(key1.ToArray()));
             Assert.IsNull(_memoryStore.TryGet(key1.ToArray()));
 
@@ -59,7 +61,8 @@ namespace Neo.UnitTests.Persistence
             // the value can be get from the snapshot cache and store but still can not get from the snapshot
             _snapshotCache.Commit();
 
-            Assert.AreEqual(value1.Value, _snapshotCache.TryGet(key1).Value);
+            Assert.IsTrue(_snapshotCache.TryGet(key1, out ret));
+            Assert.AreEqual(value1.Value, ret.Value);
             Assert.IsFalse(_snapshot.Contains(key1.ToArray()));
             Assert.IsTrue(_memoryStore.Contains(key1.ToArray()));
 
@@ -74,7 +77,8 @@ namespace Neo.UnitTests.Persistence
             _snapshotCache.Delete(key1);
 
             // Value is removed from the snapshot cache immediately
-            Assert.IsNull(_snapshotCache.TryGet(key1));
+            Assert.IsFalse(_snapshotCache.TryGet(key1, out ret));
+            Assert.IsNull(ret);
             // But the underline snapshot will not be changed.
             Assert.IsTrue(_snapshot.Contains(key1.ToArray()));
             // And the store is also not affected.
@@ -96,7 +100,8 @@ namespace Neo.UnitTests.Persistence
             var value1 = new StorageItem([0x03, 0x04]);
 
             _snapshotCache.Delete(key1);
-            Assert.IsNull(_snapshotCache.TryGet(key1));
+            Assert.IsFalse(_snapshotCache.TryGet(key1, out var ret));
+            Assert.IsNull(ret);
 
             // Adding value to the snapshot cache will not affect the snapshot or the store
             // But the snapshot cache itself can see the added item.
@@ -108,7 +113,8 @@ namespace Neo.UnitTests.Persistence
 
             // Get a new snapshot cache to test if the value can be seen from the new snapshot cache
             var snapshotCache2 = new StoreCache(_snapshot);
-            Assert.IsNull(snapshotCache2.TryGet(key1));
+            Assert.IsFalse(_snapshotCache.TryGet(key1, out ret));
+            Assert.IsNull(ret);
             Assert.IsFalse(_snapshot.Contains(key1.ToArray()));
 
             // Test delete
@@ -128,7 +134,8 @@ namespace Neo.UnitTests.Persistence
             snapshotCache2 = new StoreCache(_snapshot);
             // Value is removed from the store, but the snapshot remains the same.
             // thus the snapshot cache from the snapshot will remain the same.
-            Assert.IsNotNull(snapshotCache2.TryGet(key1));
+            Assert.IsTrue(_snapshotCache.TryGet(key1, out ret));
+            Assert.IsNotNull(ret);
             Assert.IsNull(_memoryStore.TryGet(key1.ToArray()));
         }
     }

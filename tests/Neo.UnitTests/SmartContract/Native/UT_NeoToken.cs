@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // no registered
 
-            var accountState = clonedCache.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
+            var accountState = clonedCache.TryGet(CreateStorageKey(20, from), out var item) ? item.GetInteroperable<NeoAccountState>() : null;
             accountState.VoteTo = null;
             ret = Check_Vote(clonedCache, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             Assert.IsFalse(ret.Result);
@@ -152,7 +152,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(clonedCache, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             Assert.IsTrue(ret.Result);
             Assert.IsTrue(ret.State);
-            accountState = clonedCache.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
+            accountState = clonedCache.TryGet(CreateStorageKey(20, from), out item) ? item.GetInteroperable<NeoAccountState>() : null;
             Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
         }
 
@@ -166,13 +166,13 @@ namespace Neo.UnitTests.SmartContract.Native
             clonedCache.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
 
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
-            var accountState = clonedCache.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
+            var accountState = clonedCache.TryGet(CreateStorageKey(20, from), out var item) ? item.GetInteroperable<NeoAccountState>() : null;
             accountState.Balance = 100;
             clonedCache.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
             var ret = Check_Vote(clonedCache, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             Assert.IsTrue(ret.Result);
             Assert.IsTrue(ret.State);
-            accountState = clonedCache.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
+            accountState = clonedCache.TryGet(CreateStorageKey(20, from), out item) ? item.GetInteroperable<NeoAccountState>() : null;
             Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
 
             //two account vote for the same account
@@ -180,7 +180,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(100, stateValidator.Votes);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
-            var secondAccount = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
+            var secondAccount = clonedCache.TryGet(CreateStorageKey(20, G_Account), out item) ? item.GetInteroperable<NeoAccountState>() : null;
             Assert.AreEqual(200, secondAccount.Balance);
             ret = Check_Vote(clonedCache, G_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             Assert.IsTrue(ret.Result);
@@ -200,13 +200,13 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] from = TestProtocolSettings.Default.StandbyValidators[0].ToArray();
             var from_Account = Contract.CreateSignatureContract(TestProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
-            var accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            var accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account), out var item) ? item.GetInteroperable<NeoAccountState>() : null;
             accountState.Balance = 100;
             clonedCache.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
             var ret = Check_Vote(clonedCache, from_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             Assert.IsTrue(ret.Result);
             Assert.IsTrue(ret.State);
-            accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account), out item) ? item.GetInteroperable<NeoAccountState>() : null;
             Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
 
             //from change vote to itself
@@ -234,14 +234,14 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] from = TestProtocolSettings.Default.StandbyValidators[0].ToArray();
             var from_Account = Contract.CreateSignatureContract(TestProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
-            var accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            var accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account), out var item) ? item.GetInteroperable<NeoAccountState>() : null;
             accountState.Balance = 100;
             clonedCache.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
             clonedCache.Add(CreateStorageKey(23, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new BigInteger(100500)));
             var ret = Check_Vote(clonedCache, from_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             Assert.IsTrue(ret.Result);
             Assert.IsTrue(ret.State);
-            accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account), out item) ? item.GetInteroperable<NeoAccountState>() : null;
             Assert.AreEqual(ECCurve.Secp256r1.G, accountState.VoteTo);
             Assert.AreEqual(100500, accountState.LastGasPerVote);
 
@@ -256,7 +256,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.State);
             G_stateValidator = clonedCache.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
             Assert.AreEqual(0, G_stateValidator.Votes);
-            accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
+            accountState = clonedCache.TryGet(CreateStorageKey(20, from_Account), out item) ? item.GetInteroperable<NeoAccountState>() : null;
             Assert.IsNull(accountState.VoteTo);
             Assert.AreEqual(0, accountState.LastGasPerVote);
         }
@@ -388,14 +388,15 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.State);
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState()));
-            var accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
+            var accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account), out item) ? item.GetInteroperable<NeoAccountState>() : null;
             accountState.Balance = 100;
             Check_Vote(clonedCache, G_Account, TestProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
             ret = Check_UnregisterCandidate(clonedCache, point, _persistingBlock);
             Assert.IsTrue(ret.State);
             Assert.IsTrue(ret.Result);
-            Assert.IsNotNull(clonedCache.TryGet(key));
-            StorageItem pointItem = clonedCache.TryGet(key);
+            Assert.IsTrue(clonedCache.TryGet(key, out var storageItem));
+            Assert.IsNotNull(storageItem);
+            Assert.IsTrue(clonedCache.TryGet(key, out var pointItem));
             CandidateState pointState = pointItem.GetInteroperable<CandidateState>();
             Assert.IsFalse(pointState.Registered);
             Assert.AreEqual(100, pointState.Votes);
@@ -404,7 +405,8 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(clonedCache, G_Account, TestProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
             Assert.IsTrue(ret.State);
             Assert.IsFalse(ret.Result);
-            accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
+            accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account), out storageItem) ? storageItem.GetInteroperable<NeoAccountState>() : null;
+            Assert.IsNotNull(accountState);
             Assert.AreEqual(TestProtocolSettings.Default.StandbyValidators[0], accountState.VoteTo);
         }
 
@@ -419,7 +421,7 @@ namespace Neo.UnitTests.SmartContract.Native
             //register with votes with 20000000
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             clonedCache.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState()));
-            var accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
+            var accountState = clonedCache.TryGet(CreateStorageKey(20, G_Account), out var item) ? item.GetInteroperable<NeoAccountState>() : null;
             accountState.Balance = 20000000;
             var ret = Check_RegisterValidator(clonedCache, ECCurve.Secp256r1.G.ToArray(), persistingBlock);
             Assert.IsTrue(ret.State);
@@ -906,10 +908,11 @@ namespace Neo.UnitTests.SmartContract.Native
             var accountB = committee[TestProtocolSettings.Default.CommitteeMembersCount - 1];
             Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(accountA).ScriptHash));
 
-            StorageItem storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountA));
+            Assert.IsTrue(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountA), out var storageItem));
             Assert.AreEqual(30000000000, (BigInteger)storageItem);
 
-            Assert.IsNull(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)));
+            Assert.IsFalse(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1), out storageItem));
+            Assert.IsNull(storageItem);
 
             // Next block
 
@@ -929,7 +932,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[1]).ScriptHash));
 
-            storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[1]));
+            Assert.IsTrue(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[1]), out storageItem));
             Assert.AreEqual(30000000000, (BigInteger)storageItem);
 
             // Next block
@@ -951,7 +954,7 @@ namespace Neo.UnitTests.SmartContract.Native
             accountA = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray()[2];
             Assert.AreEqual(0, NativeContract.NEO.BalanceOf(clonedCache, Contract.CreateSignatureContract(committee[2]).ScriptHash));
 
-            storageItem = clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[2]));
+            Assert.IsTrue(clonedCache.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[2]), out storageItem));
             Assert.AreEqual(30000000000 * 2, (BigInteger)storageItem);
 
             // Claim GAS
