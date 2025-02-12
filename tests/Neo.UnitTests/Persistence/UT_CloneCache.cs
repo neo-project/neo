@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
