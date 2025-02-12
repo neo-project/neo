@@ -208,3 +208,5 @@ namespace Neo.SmartContract
         }
     }
 }
+
+#nullable disable

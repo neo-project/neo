@@ -106,3 +106,5 @@ namespace Neo.Persistence
         #endregion
     }
 }
+
+#nullable disable

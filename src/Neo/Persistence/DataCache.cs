@@ -554,3 +554,5 @@ namespace Neo.Persistence
         protected abstract void UpdateInternal(StorageKey key, StorageItem value);
     }
 }
+
+#nullable disable
