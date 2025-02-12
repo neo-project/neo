@@ -39,3 +39,5 @@ namespace Neo.Persistence
         void PutSync(TKey key, TValue value) => Put(key, value);
     }
 }
+
+#nullable disable
