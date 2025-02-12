@@ -12,7 +12,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -119,7 +118,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = Enumerable.Repeat((byte)OpCode.RET, byte.MaxValue).ToArray(),
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = System.Array.Empty<MethodToken>()
+                Tokens = []
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
@@ -140,10 +139,10 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsException<FormatException>(() => script_exceedMaxLength.ToArray().AsSerializable<NefFile>());
             Assert.ThrowsException<InvalidOperationException>(() => snapshotCache.DeployContract(UInt160.Zero, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
 
-            var script_zeroLength = System.Array.Empty<byte>();
+            var script_zeroLength = Array.Empty<byte>();
             Assert.ThrowsException<ArgumentException>(() => snapshotCache.DeployContract(UInt160.Zero, script_zeroLength, manifest.ToJson().ToByteArray(true)));
 
-            var manifest_zeroLength = System.Array.Empty<byte>();
+            var manifest_zeroLength = Array.Empty<byte>();
             Assert.ThrowsException<ArgumentException>(() => snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest_zeroLength));
 
             manifest = TestUtils.CreateDefaultManifest();
@@ -217,7 +216,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = new byte[] { 0x01 },
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = System.Array.Empty<MethodToken>()
+                Tokens = []
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
@@ -232,7 +231,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = new byte[0],
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = System.Array.Empty<MethodToken>()
+                Tokens = []
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 

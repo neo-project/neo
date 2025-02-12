@@ -91,19 +91,19 @@ namespace Neo.Plugins.OracleService.Tests
                 sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", Convert.FromBase64String(base64NefFile), manifest);
                 script = sb.ToArray();
             }
-            SnapshotCache snapshot = s_theNeoSystem.GetSnapshotCache();
+            var snapshot = s_theNeoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
                 Nonce = 233,
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + s_theNeoSystem.Settings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer() { Account = TestUtils.ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
-                Attributes = System.Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = script,
                 Witnesses = null,
             };
             var engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: s_theNeoSystem.Settings, gas: 1200_0000_0000);
             engine.SnapshotCache.Commit();
-            var result = (Neo.VM.Types.Array)engine.ResultStack.Peek();
+            var result = (VM.Types.Array)engine.ResultStack.Peek();
             return new UInt160(result[2].GetSpan());
         }
 
@@ -113,7 +113,7 @@ namespace Neo.Plugins.OracleService.Tests
             s_theNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        internal static SnapshotCache GetTestSnapshotCache()
+        internal static StoreCache GetTestSnapshotCache()
         {
             ResetStore();
             return s_theNeoSystem.GetSnapshotCache();

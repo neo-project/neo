@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.SmartContract;
 using System;

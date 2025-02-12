@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -49,7 +50,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsException<NotSupportedException>(action4);
 
             List<StackItem> list6 = new List<StackItem> { 1 };
-            StackItem stackItem62 = new VM.Types.Array(list6);
+            StackItem stackItem62 = new Array(list6);
             byte[] result6 = BinarySerializer.Serialize(stackItem62, ExecutionEngineLimits.Default);
             byte[] expectedArray6 = new byte[] {
                         0x40,0x01,0x21,0x01,0x01
@@ -76,7 +77,7 @@ namespace Neo.UnitTests.SmartContract
             Action action9 = () => BinarySerializer.Serialize(stackItem91, ExecutionEngineLimits.Default);
             Assert.ThrowsException<NotSupportedException>(action9);
 
-            VM.Types.Array stackItem10 = new VM.Types.Array();
+            Array stackItem10 = new Array();
             stackItem10.Add(stackItem10);
             Action action10 = () => BinarySerializer.Serialize(stackItem10, ExecutionEngineLimits.Default);
             Assert.ThrowsException<NotSupportedException>(action10);
@@ -106,11 +107,11 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsException<FormatException>(action4);
 
             List<StackItem> list5 = new List<StackItem> { 1 };
-            StackItem stackItem52 = new VM.Types.Array(list5);
+            StackItem stackItem52 = new Array(list5);
             byte[] byteArray5 = BinarySerializer.Serialize(stackItem52, ExecutionEngineLimits.Default);
             StackItem result5 = BinarySerializer.Deserialize(byteArray5, ExecutionEngineLimits.Default);
-            Assert.AreEqual(((VM.Types.Array)stackItem52).Count, ((VM.Types.Array)result5).Count);
-            Assert.AreEqual(((VM.Types.Array)stackItem52).GetEnumerator().Current, ((VM.Types.Array)result5).GetEnumerator().Current);
+            Assert.AreEqual(((Array)stackItem52).Count, ((Array)result5).Count);
+            Assert.AreEqual(((Array)stackItem52).GetEnumerator().Current, ((Array)result5).GetEnumerator().Current);
 
             List<StackItem> list6 = new List<StackItem> { 1 };
             StackItem stackItem62 = new Struct(list6);
