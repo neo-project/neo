@@ -91,7 +91,7 @@ namespace Neo.UnitTests
         {
             var block = new Block();
             var key = NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock);
-            var state = snapshot.TryGet(key).GetInteroperable<HashIndexState>();
+            var state = snapshot.TryGet(key, out var entry) ? entry.GetInteroperable<HashIndexState>() : throw new Exception("Can't find the current block");
             var header = MakeHeader(snapshot, state.Hash);
 
             block.Header = header;

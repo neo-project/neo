@@ -144,16 +144,6 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Creates a snapshot, which uses this instance as the underlying storage.
-        /// </summary>
-        /// <returns>The snapshot of this instance.</returns>
-        [Obsolete("CreateSnapshot is deprecated, please use CloneCache instead.")]
-        public DataCache CreateSnapshot()
-        {
-            return new ClonedCache(this);
-        }
-
-        /// <summary>
         /// Creates a clone of the snapshot cache, which uses this instance as the underlying storage.
         /// </summary>
         /// <returns>The <see cref="ClonedCache"/> of this <see cref="DataCache"/> instance.</returns>
@@ -484,34 +474,33 @@ namespace Neo.Persistence
         /// <returns>An enumerator containing all the entries after seeking.</returns>
         protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction);
 
-        /// <summary>
-        /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
-        /// </summary>
-        /// <param name="key">The key of the entry.</param>
-        /// <returns>The cached data. Or <see langword="null"/> if it is neither in the cache nor in the underlying storage.</returns>
-        public StorageItem? TryGet(StorageKey key)
+        /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item)
         {
             lock (_dictionary)
             {
                 if (_dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
-                        return null;
-                    return trackable.Item;
+                    {
+                        item = null;
+                        return false;
+                    }
+
+                    item = trackable.Item;
+                    return true;
                 }
                 var value = TryGetInternal(key);
-                if (value == null) return null;
+                if (value == null)
+                {
+                    item = null;
+                    return false;
+                }
                 _dictionary.Add(key, new Trackable(key, value, TrackState.None));
-                return value;
+                item = value;
+                return true;
             }
-        }
-
-        /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGet(StorageKey key, [NotNullWhen(true)] out StorageItem? item)
-        {
-            item = TryGet(key);
-            return item != null;
         }
 
         /// <summary>

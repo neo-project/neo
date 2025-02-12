@@ -59,7 +59,6 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
-        [Obsolete]
         public void SingleSnapshotCacheTest()
         {
             var key1 = new KeyBuilder(0, 1);
@@ -96,7 +95,7 @@ namespace Neo.UnitTests.Persistence
             // Reset the snapshot to make it accessible to the new value.
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
             _snapshotCache = new StoreCache(_snapshot);
-            _dataCache = _snapshotCache.CreateSnapshot();
+            _dataCache = _snapshotCache.CloneCache();
 
             Assert.IsTrue(_dataCache.Contains(key1));
             _dataCache.Delete(key1);

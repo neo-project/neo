@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -65,6 +67,7 @@ namespace Neo.UnitTests.Extensions
             // Fake calling script hash
             if (callingScriptHash != null)
             {
+                if (engine.CurrentContext == null) throw new NullReferenceException(nameof(engine.CurrentContext));
                 engine.CurrentContext.GetState<ExecutionContextState>().NativeCallingScriptHash = callingScriptHash;
                 engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = callingScriptHash;
             }
@@ -88,6 +91,7 @@ namespace Neo.UnitTests.Extensions
             // Fake calling script hash
             if (callingScriptHash != null)
             {
+                if (engine.CurrentContext == null) throw new NullReferenceException(nameof(engine.CurrentContext));
                 engine.CurrentContext.GetState<ExecutionContextState>().NativeCallingScriptHash = callingScriptHash;
                 engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = callingScriptHash;
             }
@@ -114,7 +118,9 @@ namespace Neo.UnitTests.Extensions
         {
             //key: hash, value: ContractState
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
-            var value = snapshot.TryGet(key)?.GetInteroperable<ContractState>();
+            ContractState? value = null;
+            if (snapshot.TryGet(key, out var item))
+                value = item.GetInteroperable<ContractState>();
             snapshot.Delete(key);
             if (value != null)
             {
@@ -124,12 +130,12 @@ namespace Neo.UnitTests.Extensions
             }
         }
 
-        public static StackItem Call(this NativeContract contract, DataCache snapshot, string method, params ContractParameter[] args)
+        public static StackItem? Call(this NativeContract contract, DataCache snapshot, string method, params ContractParameter[] args)
         {
             return Call(contract, snapshot, null, null, method, args);
         }
 
-        public static StackItem Call(this NativeContract contract, DataCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
+        public static StackItem? Call(this NativeContract contract, DataCache snapshot, IVerifiable? container, Block? persistingBlock, string method, params ContractParameter[] args)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
@@ -149,3 +155,5 @@ namespace Neo.UnitTests.Extensions
         }
     }
 }
+
+#nullable disable

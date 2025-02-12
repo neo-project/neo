@@ -163,7 +163,8 @@ namespace Neo.SmartContract.Native
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).AddBigEndian(response.Id);
-                OracleRequest request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
+                if (!engine.SnapshotCache.TryGet(key, out var entry)) continue;
+                var request = entry.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.SnapshotCache.Delete(key);
 
