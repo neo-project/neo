@@ -635,7 +635,7 @@ namespace Neo.CLI
                     return;
                 }
                 tx.NetworkFee += (long)decimalExtraFee.Value;
-            };
+            }
 
             ConsoleHelper.Info("Network fee: ",
                 $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)} GAS\t",
