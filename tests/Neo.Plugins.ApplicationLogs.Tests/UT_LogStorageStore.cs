@@ -11,7 +11,7 @@
 
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.Plugins.ApplicationLogs.Store;
 using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.Plugins.ApplicationsLogs.Tests.Setup;
