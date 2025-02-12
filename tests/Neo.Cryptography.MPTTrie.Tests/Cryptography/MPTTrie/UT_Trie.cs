@@ -21,7 +21,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 {
     class TestSnapshot : IStoreSnapshot
     {
-        public Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+        public Dictionary<byte[], byte[]> store = new Dictionary<byte[], byte[]>(ByteArrayEqualityComparer.Instance);
 
         private byte[] StoreKey(byte[] key)
         {

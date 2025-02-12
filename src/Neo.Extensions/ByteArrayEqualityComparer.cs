@@ -11,13 +11,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Extensions
 {
     public class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
     {
-        public static readonly ByteArrayEqualityComparer Default = new();
+        public static readonly ByteArrayEqualityComparer Instance = new();
 
+        /// <inheritdoc />
         public bool Equals(byte[]? x, byte[]? y)
         {
             if (ReferenceEquals(x, y)) return true;
@@ -26,9 +28,12 @@ namespace Neo.Extensions
             return x.AsSpan().SequenceEqual(y.AsSpan());
         }
 
-        public int GetHashCode(byte[] obj)
-        {
-            return obj.XxHash3_32();
-        }
+        /// <inheritdoc />
+        public int GetHashCode([DisallowNull] byte[] obj) =>
+            obj.XxHash3_32();
+
+        /// <inheritdoc />
+        public int GetHashCode([DisallowNull] object obj) =>
+            obj is byte[] b ? GetHashCode(b) : 0;
     }
 }

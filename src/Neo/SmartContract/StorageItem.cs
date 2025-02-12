@@ -47,7 +47,7 @@ namespace Neo.SmartContract
             }
             set
             {
-                _value = value;
+                _value = value.ToArray(); // create new memory region
                 _cache = null;
             }
         }
@@ -63,7 +63,7 @@ namespace Neo.SmartContract
         /// <param name="value">The byte array value of the <see cref="StorageItem"/>.</param>
         public StorageItem(byte[] value)
         {
-            _value = value;
+            _value = value.AsMemory().ToArray(); // allocate new buffer
         }
 
         /// <summary>
@@ -99,11 +99,13 @@ namespace Neo.SmartContract
         /// <returns>The created <see cref="StorageItem"/>.</returns>
         public StorageItem Clone()
         {
-            return new()
+            var newItem = new StorageItem
             {
-                _value = _value,
-                _cache = _cache is IInteroperable interoperable ? interoperable.Clone() : _cache
+                _value = _value.ToArray(), // allocate new buffer
+                _cache = _cache is IInteroperable interoperable ? interoperable.Clone() : _cache,
             };
+
+            return newItem;
         }
 
         public void Deserialize(ref MemoryReader reader)
@@ -117,7 +119,7 @@ namespace Neo.SmartContract
         /// <param name="replica">The instance to be copied.</param>
         public void FromReplica(StorageItem replica)
         {
-            _value = replica._value;
+            _value = replica._value.ToArray(); // allocate new buffer. DONT USE INSTANCE
             if (replica._cache is IInteroperable interoperable)
             {
                 if (_cache?.GetType() == interoperable.GetType())
@@ -144,7 +146,7 @@ namespace Neo.SmartContract
                 interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
                 _cache = interoperable;
             }
-            _value = null;
+            _value = ReadOnlyMemory<byte>.Empty; // garbage collect the previous allocated memory space
             return (T)_cache;
         }
 
@@ -162,7 +164,7 @@ namespace Neo.SmartContract
                 interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
                 _cache = interoperable;
             }
-            _value = null;
+            _value = ReadOnlyMemory<byte>.Empty; // garbage collect the previous allocated memory space
             return (T)_cache;
         }
 
@@ -178,7 +180,7 @@ namespace Neo.SmartContract
         public void Set(BigInteger integer)
         {
             _cache = integer;
-            _value = null;
+            _value = ReadOnlyMemory<byte>.Empty; // garbage collect the previous allocated memory space
         }
 
         /// <summary>
@@ -188,7 +190,7 @@ namespace Neo.SmartContract
         public void Set(IInteroperable interoperable)
         {
             _cache = interoperable;
-            _value = null;
+            _value = ReadOnlyMemory<byte>.Empty; // garbage collect the previous allocated memory space
         }
 
         public static implicit operator BigInteger(StorageItem item)
@@ -199,12 +201,12 @@ namespace Neo.SmartContract
 
         public static implicit operator StorageItem(BigInteger value)
         {
-            return new StorageItem(value);
+            return new(value);
         }
 
         public static implicit operator StorageItem(byte[] value)
         {
-            return new StorageItem(value);
+            return new(value);
         }
     }
 }

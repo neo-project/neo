@@ -25,7 +25,7 @@ namespace Neo.Cryptography.MPTTrie
                 throw new ArgumentException("could not be empty", nameof(key));
             if (path.Length > Node.MaxKeyLength)
                 throw new ArgumentException("exceeds limit", nameof(key));
-            proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+            proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Instance);
             return GetProof(ref root, path, proof);
         }
 

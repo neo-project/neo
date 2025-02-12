@@ -33,7 +33,7 @@ namespace Neo.SmartContract
         /// </summary>
         public ReadOnlyMemory<byte> Key { get; init; }
 
-        private byte[]? _cache;
+        private Memory<byte> _cache;
 
         // NOTE: StorageKey is readonly, so we can cache the hash code.
         private int _hashCode = 0;
@@ -49,9 +49,9 @@ namespace Neo.SmartContract
         /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
         internal StorageKey(byte[] cache)
         {
-            _cache = cache;
-            Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
-            Key = cache.AsMemory(sizeof(int));
+            _cache = cache.AsMemory().ToArray();    // allocate new buffer
+            Id = BinaryPrimitives.ReadInt32LittleEndian(_cache.Span);
+            Key = _cache[sizeof(int)..].ToArray();  // allocate new buffer. NOTE: DONT USE POINTERS HERE
         }
 
         /// <summary>
@@ -68,10 +68,10 @@ namespace Neo.SmartContract
         /// <returns>The created search prefix.</returns>
         public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
         {
-            var buffer = new byte[sizeof(int) + prefix.Length];
+            Span<byte> buffer = stackalloc byte[sizeof(int) + prefix.Length];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
-            prefix.CopyTo(buffer.AsSpan(sizeof(int)));
-            return buffer;
+            prefix.CopyTo(buffer[sizeof(int)..]);
+            return buffer.ToArray();
         }
 
         public bool Equals(StorageKey? other)
@@ -92,23 +92,23 @@ namespace Neo.SmartContract
 
         public byte[] ToArray()
         {
-            if (_cache is null)
+            if (_cache is { IsEmpty: true })
             {
-                _cache = new byte[sizeof(int) + Key.Length];
-                BinaryPrimitives.WriteInt32LittleEndian(_cache, Id);
-                Key.CopyTo(_cache.AsMemory(sizeof(int)));
+                _cache = new byte[sizeof(int) + Key.Length];    // allocate new buffer
+                BinaryPrimitives.WriteInt32LittleEndian(_cache.Span, Id);
+                Key.CopyTo(_cache[sizeof(int)..]);
             }
-            return _cache;
+            return _cache.ToArray();                            // allocate new buffer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator StorageKey(byte[] value) => new(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator StorageKey(ReadOnlyMemory<byte> value) => new(value.Span);
+        public static implicit operator StorageKey(ReadOnlyMemory<byte> value) => new(value.ToArray());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new(value);
+        public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new(value.ToArray());
     }
 }
 

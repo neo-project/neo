@@ -35,8 +35,8 @@ namespace Neo.Persistence
         {
             Store = store;
             _innerData = innerData;
-            _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
+            _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Instance);
+            _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Instance);
         }
 
         public void Commit()
@@ -64,16 +64,21 @@ namespace Neo.Persistence
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             keyOrPrefix ??= [];
+
             if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
 
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
+
             if (keyOrPrefix.Length > 0)
                 records = records
                     .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+
             records = records.OrderBy(p => p.Key, comparer);
+
             foreach (var pair in records)
-                yield return (pair.Key[..], pair.Value[..]);
+                yield return new(pair.Key[..], pair.Value[..]);
         }
 
         public byte[]? TryGet(byte[] key)
