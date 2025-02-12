@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using System;
 
