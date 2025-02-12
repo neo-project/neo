@@ -38,7 +38,10 @@ namespace Neo.Extensions
             if (storageKey is null)
                 storageKey = [];
 
-            return snapshot.TryGet(StorageKey.CreateSearchPrefix(contractState.Id, storageKey));
+            if (snapshot.TryGet(StorageKey.CreateSearchPrefix(contractState.Id, storageKey), out var ret))
+                return ret;
+
+            return null;
         }
 
         /// <summary>

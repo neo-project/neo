@@ -11,7 +11,6 @@
 
 using Neo.Persistence;
 using Neo.VM;
-using System;
 
 namespace Neo.SmartContract
 {
@@ -44,9 +43,6 @@ namespace Neo.SmartContract
         /// The <see cref="SmartContract.CallFlags"/> of the current context.
         /// </summary>
         public CallFlags CallFlags { get; set; } = CallFlags.All;
-
-        [Obsolete("Use SnapshotCache instead")]
-        public DataCache Snapshot => SnapshotCache;
 
         public DataCache SnapshotCache { get; set; }
 

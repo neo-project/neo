@@ -67,8 +67,10 @@ namespace Neo.UnitTests.IO.Caching
             clonedCache.Delete(key1);   //  trackable.State = TrackState.Deleted
             clonedCache.Commit();
 
-            Assert.IsNull(clonedCache.TryGet(key1));
-            Assert.IsNull(myDataCache.TryGet(key1));
+            Assert.IsFalse(clonedCache.TryGet(key1, out var ret));
+            Assert.IsNull(ret);
+            Assert.IsFalse(myDataCache.TryGet(key1, out ret));
+            Assert.IsNull(ret);
         }
 
         [TestMethod]
@@ -122,10 +124,16 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(key2, value2);
             store.Put(key3.ToArray(), value3.ToArray());
 
-            Assert.IsTrue(value1.EqualsTo(clonedCache.TryGet(key1)));
-            Assert.IsTrue(value2.EqualsTo(clonedCache.TryGet(key2)));
-            Assert.IsTrue(value3.EqualsTo(clonedCache.TryGet(key3)));
-            Assert.IsNull(clonedCache.TryGet(key4));
+            Assert.IsTrue(clonedCache.TryGet(key1, out var v1));
+            Assert.IsTrue(clonedCache.TryGet(key2, out var v2));
+            Assert.IsTrue(clonedCache.TryGet(key3, out var v3));
+
+            Assert.IsTrue(value1.EqualsTo(v1));
+            Assert.IsTrue(value2.EqualsTo(v2));
+            Assert.IsTrue(value3.EqualsTo(v3));
+
+            Assert.IsFalse(clonedCache.TryGet(key4, out var v4));
+            Assert.IsNull(v4);
         }
 
         [TestMethod]
@@ -173,10 +181,10 @@ namespace Neo.UnitTests.IO.Caching
             var item = storages.GetAndChange(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
             item.Value = new byte[] { 0x06 };
 
-            var res = snapshotCache.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            Assert.IsTrue(snapshotCache.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 }, out var res));
             Assert.AreEqual("05", res.Value.Span.ToHexString());
             storages.Commit();
-            res = snapshotCache.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            Assert.IsTrue(snapshotCache.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 }, out res));
             Assert.AreEqual("06", res.Value.Span.ToHexString());
         }
     }

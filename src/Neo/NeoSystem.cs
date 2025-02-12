@@ -274,16 +274,6 @@ namespace Neo
         }
 
         /// <summary>
-        /// Gets a snapshot of the blockchain storage.
-        /// </summary>
-        /// <returns>An instance of <see cref="StoreCache"/></returns>
-        [Obsolete("This method is obsolete, use GetSnapshotCache instead.")]
-        public StoreCache GetSnapshot()
-        {
-            return new StoreCache(store.GetSnapshot());
-        }
-
-        /// <summary>
         /// Gets a snapshot of the blockchain storage with an execution cache.
         /// With the snapshot, we have the latest state of the blockchain, with the cache,
         /// we can run transactions in a sandboxed environment.

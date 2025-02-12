@@ -299,9 +299,10 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
-            UInt160 hash = engine.CallingScriptHash;
-            StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
-            ContractState contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperable<ContractState>(false);
+            var hash = engine.CallingScriptHash;
+            var ckey = CreateStorageKey(Prefix_Contract).Add(hash);
+            if (!engine.SnapshotCache.TryGet(ckey, out var contractEntry)) return;
+            var contract = contractEntry.GetInteroperable<ContractState>(false);
             if (contract is null) return;
             engine.SnapshotCache.Delete(ckey);
             engine.SnapshotCache.Delete(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id));

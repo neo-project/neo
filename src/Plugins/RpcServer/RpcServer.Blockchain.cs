@@ -234,11 +234,12 @@ namespace Neo.Plugins.RpcServer
                 id = contractNameOrHashOrId.AsId();
             }
             var key = Convert.FromBase64String(base64Key);
-            var item = snapshot.TryGet(new StorageKey
+            snapshot.TryGet(new StorageKey
             {
                 Id = id,
                 Key = key
-            }).NotNull_Or(RpcError.UnknownStorageItem);
+            }, out var item).True_Or(RpcError.UnknownStorageItem);
+            item.NotNull_Or(RpcError.UnknownStorageItem);
             return Convert.ToBase64String(item.Value.Span);
         }
 

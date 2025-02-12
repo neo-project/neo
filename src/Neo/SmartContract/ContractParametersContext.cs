@@ -72,12 +72,6 @@ namespace Neo.SmartContract
         public readonly IVerifiable Verifiable;
 
         /// <summary>
-        /// The snapshot used to read data.
-        /// </summary>
-        [Obsolete("Use SnapshotCache instead")]
-        public DataCache Snapshot => SnapshotCache;
-
-        /// <summary>
         /// The snapshotcache <see cref="SnapshotCache"/> used to read data.
         /// </summary>
         public readonly DataCache SnapshotCache;

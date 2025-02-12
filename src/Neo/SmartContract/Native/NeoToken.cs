@@ -126,12 +126,13 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null) return null;
 
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
+            var datoshi = CalculateBonus(engine.SnapshotCache, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
             {
                 var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(state.VoteTo);
-                var latestGasPerVote = engine.SnapshotCache.TryGet(keyLastest) ?? BigInteger.Zero;
+                if (!engine.SnapshotCache.TryGet(keyLastest, out var latestGasPerVote))
+                    latestGasPerVote = BigInteger.Zero;
                 state.LastGasPerVote = latestGasPerVote;
             }
             if (datoshi == 0) return null;
@@ -151,11 +152,12 @@ namespace Neo.SmartContract.Native
             if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, state.Balance, state.BalanceHeight, end);
+            var neoHolderReward = CalculateNeoHolderReward(snapshot, state.Balance, state.BalanceHeight, end);
             if (state.VoteTo is null) return neoHolderReward;
 
             var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(state.VoteTo);
-            var latestGasPerVote = snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
+            if (!snapshot.TryGet(keyLastest, out var latestGasPerVote))
+                latestGasPerVote = BigInteger.Zero;
             var voteReward = state.Balance * (latestGasPerVote - state.LastGasPerVote) / 100000000L;
 
             return neoHolderReward + voteReward;
@@ -339,9 +341,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
-            if (storage is null) return BigInteger.Zero;
-            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
+            if (!snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account), out var storage))
+                return BigInteger.Zero;
+            var state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state, end);
         }
 
@@ -398,7 +400,7 @@ namespace Neo.SmartContract.Native
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
-            if (engine.SnapshotCache.TryGet(key) is null) return true;
+            if (!engine.SnapshotCache.Contains(key)) return true;
             StorageItem item = engine.SnapshotCache.GetAndChange(key);
             CandidateState state = item.GetInteroperable<CandidateState>();
             if (!state.Registered) return true;
@@ -443,8 +445,9 @@ namespace Neo.SmartContract.Native
             }
             if (voteTo != null && voteTo != state_account.VoteTo)
             {
-                StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteTo);
-                var latestGasPerVote = engine.SnapshotCache.TryGet(voterRewardKey) ?? BigInteger.Zero;
+                var voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteTo);
+                if (!engine.SnapshotCache.TryGet(voterRewardKey, out var latestGasPerVote))
+                    latestGasPerVote = BigInteger.Zero;
                 state_account.LastGasPerVote = latestGasPerVote;
             }
             ECPoint from = state_account.VoteTo;

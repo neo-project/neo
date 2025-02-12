@@ -129,10 +129,13 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsNull(store.TryGet(key2.ToArray()));
             Assert.IsTrue(store.TryGet(key3.ToArray()).SequenceEqual(value4.ToArray()));
 
-            Assert.IsTrue(myDataCache.TryGet(key1).Value.ToArray().SequenceEqual(value1.ToArray()));
+            Assert.IsTrue(myDataCache.TryGet(key1, out var val));
+            Assert.IsTrue(val.Value.ToArray().SequenceEqual(value1.ToArray()));
             // Though value is deleted from the store, the value can still be gotten from the snapshot cache.
-            Assert.IsTrue(myDataCache.TryGet(key2).Value.ToArray().SequenceEqual(value2.ToArray()));
-            Assert.IsTrue(myDataCache.TryGet(key3).Value.ToArray().SequenceEqual(value4.ToArray()));
+            Assert.IsTrue(myDataCache.TryGet(key2, out val));
+            Assert.IsTrue(val.Value.ToArray().SequenceEqual(value2.ToArray()));
+            Assert.IsTrue(myDataCache.TryGet(key3, out val));
+            Assert.IsTrue(val.Value.ToArray().SequenceEqual(value4.ToArray()));
         }
 
         [TestMethod]
@@ -372,9 +375,12 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Delete(key3);
             Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
 
-            Assert.IsTrue(myDataCache.TryGet(key1).EqualsTo(value1));
-            Assert.IsTrue(myDataCache.TryGet(key2).EqualsTo(value2));
-            Assert.IsNull(myDataCache.TryGet(key3));
+            Assert.IsTrue(myDataCache.TryGet(key1, out var val));
+            Assert.IsTrue(val.EqualsTo(value1));
+            Assert.IsTrue(myDataCache.TryGet(key2, out val));
+            Assert.IsTrue(val.EqualsTo(value2));
+            Assert.IsFalse(myDataCache.TryGet(key3, out val));
+            Assert.IsNull(val);
         }
 
         [TestMethod]
@@ -392,7 +398,7 @@ namespace Neo.UnitTests.IO.Caching
             items.MoveNext();
             Assert.AreEqual(key1, items.Current.Key);
 
-            myDataCache.TryGet(key3); // GETLINE
+            Assert.IsTrue(myDataCache.TryGet(key3, out var val)); // GETLINE
 
             items.MoveNext();
             Assert.AreEqual(key2, items.Current.Key);

@@ -12,7 +12,6 @@
 #nullable enable
 
 using Neo.SmartContract;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -42,14 +41,6 @@ namespace Neo.Persistence
                 throw new KeyNotFoundException();
             }
         }
-
-        /// <summary>
-        /// Reads a specified entry from the database.
-        /// </summary>
-        /// <param name="key">The key of the entry.</param>
-        /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        [Obsolete("use TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value) instead.")]
-        TValue? TryGet(TKey key);
 
         /// <summary>
         /// Reads a specified entry from the database.

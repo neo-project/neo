@@ -369,7 +369,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(1, members.Count());
             Assert.AreEqual(keyCount + 1, clonedCache.GetChangeSet().Count());
             StorageKey key = CreateStorageKey(33, point);
-            Assert.IsNotNull(clonedCache.TryGet(key));
+            Assert.IsTrue(clonedCache.TryGet(key, out var retEntry));
+            Assert.IsNotNull(retEntry);
 
             ret = Check_UnregisterCandidate(clonedCache, point, _persistingBlock);
             Assert.IsTrue(ret.State);
@@ -379,7 +380,8 @@ namespace Neo.UnitTests.SmartContract.Native
 
             members = NativeContract.NEO.GetCandidatesInternal(clonedCache);
             Assert.AreEqual(0, members.Count());
-            Assert.IsNull(clonedCache.TryGet(key));
+            Assert.IsFalse(clonedCache.TryGet(key, out retEntry));
+            Assert.IsNull(retEntry);
 
             //register with votes, then unregister
             ret = Check_RegisterValidator(clonedCache, point, _persistingBlock);

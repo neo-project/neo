@@ -85,7 +85,7 @@ namespace Neo.UnitTests.Persistence
             store.Add(key, value);
             store.Commit();
 
-            var result = store.TryGet(key);
+            Assert.IsTrue(store.TryGet(key, out var result));
             // The StoreView is a readonly view of the store, here it will have value in the cache
             Assert.AreEqual("testValue", Encoding.UTF8.GetString(result.Value.ToArray()));
 
@@ -103,7 +103,8 @@ namespace Neo.UnitTests.Persistence
             storeCache.Add(key, new StorageItem(UInt256.Zero.ToArray()));
             storeCache.Commit();
 
-            CollectionAssert.AreEqual(UInt256.Zero.ToArray(), storeCache.TryGet(key).ToArray());
+            Assert.IsTrue(storeCache.TryGet(key, out var result));
+            CollectionAssert.AreEqual(UInt256.Zero.ToArray(), result.ToArray());
         }
 
         [TestMethod]
@@ -113,9 +114,11 @@ namespace Neo.UnitTests.Persistence
             var key = new KeyBuilder(1, 1);
             var item = new StorageItem([1, 2, 3]);
             storeView.Delete(key);
-            Assert.IsNull(storeView.TryGet(key));
+            Assert.IsFalse(storeView.TryGet(key, out var result));
+            Assert.IsNull(result);
             storeView.Add(key, item);
-            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, storeView.TryGet(key).ToArray());
+            Assert.IsTrue(storeView.TryGet(key, out result));
+            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, result.ToArray());
 
             var key2 = new KeyBuilder(1, 2);
             var item2 = new StorageItem([4, 5, 6]);

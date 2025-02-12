@@ -130,7 +130,7 @@ namespace Neo.SmartContract
             {
                 Id = context.Id,
                 Key = key
-            })?.Value;
+            }, out var ret) ? ret.Value : null;
         }
 
         /// <summary>

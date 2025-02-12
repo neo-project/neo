@@ -113,7 +113,7 @@ namespace Neo.Plugins.Storage.Tests
 
             snapshot.Put(testKey, testValue);
             // Data saved to the leveldb snapshot shall not be visible to the store
-            Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(store.TryGet(testKey, out var ret));
             Assert.IsFalse(snapshot.TryGet(testKey, out var got));
             Assert.IsNull(got);
 
@@ -124,11 +124,12 @@ namespace Neo.Plugins.Storage.Tests
             snapshot.Commit();
 
             // After commit, the data shall be visible to the store but not to the snapshot
-            Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(store.TryGet(testKey, out ret));
             Assert.IsFalse(snapshot.TryGet(testKey, out got));
             Assert.IsNull(got);
 
-            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
+            Assert.IsTrue(store.TryGet(testKey, out ret));
+            CollectionAssert.AreEqual(testValue, ret);
             Assert.IsTrue(store.TryGet(testKey, out got));
             CollectionAssert.AreEqual(testValue, got);
 
@@ -147,12 +148,13 @@ namespace Neo.Plugins.Storage.Tests
 
             snapshot.Put(testKey, testValue);
             snapshot.Commit();
-            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
+            Assert.IsTrue(store.TryGet(testKey, out var ret));
+            CollectionAssert.AreEqual(testValue, ret);
 
             using var snapshot2 = store.GetSnapshot();
 
             // Data saved to the leveldb from snapshot1 shall only be visible to snapshot2
-            Assert.IsTrue(snapshot2.TryGet(testKey, out var ret));
+            Assert.IsTrue(snapshot2.TryGet(testKey, out ret));
             CollectionAssert.AreEqual(testValue, ret);
         }
 
@@ -166,21 +168,21 @@ namespace Neo.Plugins.Storage.Tests
             var value1 = new byte[] { 0x03, 0x04 };
 
             store.Delete(key1);
-            var ret = store.TryGet(key1);
+            Assert.IsFalse(store.TryGet(key1, out var ret));
             Assert.IsNull(ret);
 
             store.Put(key1, value1);
-            ret = store.TryGet(key1);
+            Assert.IsTrue(store.TryGet(key1, out ret));
             CollectionAssert.AreEqual(value1, ret);
             Assert.IsTrue(store.Contains(key1));
 
-            ret = store.TryGet(value1);
+            Assert.IsFalse(store.TryGet(value1, out ret));
             Assert.IsNull(ret);
             Assert.IsTrue(store.Contains(key1));
 
             store.Delete(key1);
 
-            ret = store.TryGet(key1);
+            Assert.IsFalse(store.TryGet(key1, out ret));
             Assert.IsNull(ret);
             Assert.IsFalse(store.Contains(key1));
 

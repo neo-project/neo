@@ -54,7 +54,10 @@ namespace Neo.Persistence
 
         protected override StorageItem? TryGetInternal(StorageKey key)
         {
-            return _innerCache.TryGet(key)?.Clone();
+            if (_innerCache.TryGet(key, out var ret))
+                return ret.Clone();
+
+            return null;
         }
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
