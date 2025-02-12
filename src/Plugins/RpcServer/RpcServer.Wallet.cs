@@ -461,7 +461,7 @@ namespace Neo.Plugins.RpcServer
                 (BigDecimal.TryParse(extraFee, descriptor.Decimals, out BigDecimal decimalExtraFee) && decimalExtraFee.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Incorrect amount format."));
 
                 tx.NetworkFee += (long)decimalExtraFee.Value;
-            };
+            }
             return SignAndRelay(system.StoreView, tx);
         }
 

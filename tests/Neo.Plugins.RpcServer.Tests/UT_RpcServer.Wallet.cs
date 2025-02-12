@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
@@ -403,7 +402,7 @@ namespace Neo.Plugins.RpcServer.Tests
                 validatorSigner]));
             Assert.AreEqual(deployResp["state"], nameof(VMState.HALT));
             UInt160 deployedScriptHash = new UInt160(Convert.FromBase64String(deployResp["notifications"][0]["state"]["value"][0]["value"].AsString()));
-            SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
                 Nonce = 233,
