@@ -13,7 +13,6 @@ using BenchmarkDotNet.Attributes;
 using Neo.Persistence;
 using Neo.Plugins.Storage;
 using Neo.SmartContract;
-using System.Diagnostics;
 
 namespace Neo.Benchmarks.Persistence.Benchmarks
 {
