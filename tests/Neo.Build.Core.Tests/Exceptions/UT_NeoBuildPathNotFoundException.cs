@@ -27,7 +27,7 @@ namespace Neo.Build.Core.Tests.Exceptions
             var exceptionInterface = exception as INeoBuildException;
             var exceptionBase = exception as Exception;
 
-            // NeoBuildFileNotFoundException
+            // NeoBuildPathNotFoundException
             Assert.AreEqual(NeoBuildErrorCodes.General.PathNotFound, exception.ExitCode);
             Assert.AreEqual(exception.ExitCode, exception.HResult);
             Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{(uint)exception.ExitCode:d04}", exception.ErrorCode);
