@@ -31,3 +31,5 @@ namespace Neo.Persistence
         IStore GetStore(string path);
     }
 }
+
+#nullable disable

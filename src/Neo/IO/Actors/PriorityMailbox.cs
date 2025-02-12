@@ -29,3 +29,5 @@ namespace Neo.IO.Actors
         internal protected virtual bool ShallDrop(object message, IEnumerable queue) => false;
     }
 }
+
+#nullable disable

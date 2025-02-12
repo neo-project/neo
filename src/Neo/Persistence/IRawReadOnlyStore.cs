@@ -29,3 +29,5 @@ namespace Neo.Persistence
         IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction);
     }
 }
+
+#nullable disable

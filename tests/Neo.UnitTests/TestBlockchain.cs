@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System;
 
 namespace Neo.UnitTests
