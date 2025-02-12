@@ -113,7 +113,7 @@ namespace Neo.UnitTests.Persistence
 
             // Get a new snapshot cache to test if the value can be seen from the new snapshot cache
             var snapshotCache2 = new StoreCache(_snapshot);
-            Assert.IsFalse(_snapshotCache.TryGet(key1, out ret));
+            Assert.IsFalse(snapshotCache2.TryGet(key1, out ret));
             Assert.IsNull(ret);
             Assert.IsFalse(_snapshot.Contains(key1.ToArray()));
 
@@ -134,7 +134,7 @@ namespace Neo.UnitTests.Persistence
             snapshotCache2 = new StoreCache(_snapshot);
             // Value is removed from the store, but the snapshot remains the same.
             // thus the snapshot cache from the snapshot will remain the same.
-            Assert.IsTrue(_snapshotCache.TryGet(key1, out ret));
+            Assert.IsTrue(snapshotCache2.TryGet(key1, out ret));
             Assert.IsNotNull(ret);
             Assert.IsNull(_memoryStore.TryGet(key1.ToArray()));
         }
