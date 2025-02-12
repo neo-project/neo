@@ -43,7 +43,7 @@ namespace Neo.Cryptography.MPTTrie
                         return size;
                     default:
                         throw new InvalidOperationException($"{nameof(Node)} Cannt get size, unsupport type");
-                };
+                }
             }
         }
 
