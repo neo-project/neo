@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System.Linq;
 
 namespace Neo.UnitTests.Persistence
