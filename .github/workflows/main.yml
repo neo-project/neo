@@ -39,7 +39,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
 
     - name: Build (Everything)
-      run: dotnet build
+      run: dotnet build -p:GITHUB_ACTIONS=true
 
     - name: Install dependencies
       run: |
@@ -69,36 +69,36 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew install leveldb
-        dotnet build
+        dotnet build -p:GITHUB_ACTIONS=true
         cp -vp /opt/homebrew/Cellar/leveldb/1.23_2/lib/libleveldb.dylib ./tests/Neo.Plugins.Storage.Tests/bin/Debug/net9.0/
-        dotnet test --no-build
+        dotnet test --no-build -p:GITHUB_ACTIONS=true
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
         dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
-        dotnet build
-        dotnet test --no-build
+        dotnet build -p:GITHUB_ACTIONS=true
+        dotnet test --no-build -p:GITHUB_ACTIONS=true
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
 
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.Extensions.Tests --output ./bin/tests/Neo.Extensions.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.Extensions.Tests --output ./bin/tests/Neo.Extensions.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
 
         # Plugins
-        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
-        dotnet test ./tests/Neo.Plugins.ApplicationLogs.Tests --output ./bin/tests/Neo.Plugins.ApplicationLogs.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }}
+        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet test ./tests/Neo.Plugins.ApplicationLogs.Tests --output ./bin/tests/Neo.Plugins.ApplicationLogs.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
