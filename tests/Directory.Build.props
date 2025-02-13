@@ -13,7 +13,8 @@
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
     <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
-    <TestingPlatformShowTestsFailure >true</TestingPlatformShowTestsFailure>
+    <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
   </PropertyGroup>
 
   <ItemGroup>
