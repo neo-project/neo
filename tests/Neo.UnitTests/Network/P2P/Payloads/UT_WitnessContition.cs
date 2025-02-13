@@ -11,8 +11,11 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
+using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -362,6 +365,161 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var bc = (BooleanCondition)or_condi1.Expressions[1];
             Assert.IsTrue(cbgc.Group.Equals(point));
             Assert.IsTrue(bc.Expression);
+        }
+
+        [TestMethod]
+        public void Test_WitnessCondition_Nesting()
+        {
+            WitnessCondition nested;
+
+            nested = new OrCondition
+            {
+                Expressions = new WitnessCondition[]
+                {
+                    new OrCondition
+            {
+            Expressions = new WitnessCondition[]
+            {
+                new BooleanCondition { Expression = true }
+            }
+            }
+                }
+            };
+
+            var buf = nested.ToArray();
+            var reader = new MemoryReader(buf);
+
+            var deser = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            Assert.AreEqual(nested, deser);
+
+            nested = new AndCondition
+            {
+                Expressions = new WitnessCondition[]
+                    {
+                    new AndCondition
+            {
+            Expressions = new WitnessCondition[]
+            {
+                new BooleanCondition { Expression = true }
+            }
+            }
+                    }
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            deser = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            Assert.AreEqual(nested, deser);
+
+            nested = new NotCondition
+            {
+                Expression = new NotCondition
+                {
+                    Expression = new BooleanCondition { Expression = true }
+                }
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            deser = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            Assert.AreEqual(nested, deser);
+
+            // Overflow maxNestingDepth
+            nested = new OrCondition
+            {
+                Expressions = new WitnessCondition[]
+                    {
+                    new OrCondition
+            {
+            Expressions = new WitnessCondition[] {
+                new OrCondition
+                {
+                Expressions = new WitnessCondition[]
+                {
+                    new BooleanCondition { Expression = true }
+                }
+                }
+            }
+            }
+                    }
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            var exceptionHappened = false;
+            // CS8175 prevents from using Assert.ThrowsException here
+            try
+            {
+                WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            }
+            catch (FormatException)
+            {
+                exceptionHappened = true;
+            }
+            Assert.IsTrue(exceptionHappened);
+
+            nested = new AndCondition
+            {
+                Expressions = new WitnessCondition[]
+                    {
+                    new AndCondition
+            {
+            Expressions = new WitnessCondition[] {
+                new AndCondition
+                {
+                Expressions = new WitnessCondition[]
+                {
+                    new BooleanCondition { Expression = true }
+                }
+                }
+            }
+            }
+                    }
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            exceptionHappened = false;
+            // CS8175 prevents from using Assert.ThrowsException here
+            try
+            {
+                WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            }
+            catch (FormatException)
+            {
+                exceptionHappened = true;
+            }
+            Assert.IsTrue(exceptionHappened);
+
+            nested = new NotCondition
+            {
+                Expression = new NotCondition
+                {
+                    Expression = new NotCondition
+                    {
+                        Expression = new BooleanCondition { Expression = true }
+                    }
+                }
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            exceptionHappened = false;
+            // CS8175 prevents from using Assert.ThrowsException here
+            try
+            {
+                WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            }
+            catch (FormatException)
+            {
+                exceptionHappened = true;
+            }
+            Assert.IsTrue(exceptionHappened);
         }
     }
 }
