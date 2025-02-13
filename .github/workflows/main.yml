@@ -90,10 +90,10 @@ jobs:
       uses: coverallsapp/github-action@v2.3.6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        debug: true
+        debug: false
         measure: true
         allow-empty: true
-        coverage-reporter-platform: linux-x86_64
+        format: lcov
         files:
           ${{ github.workspace }}/TestResults/Neo.Cryptography.BLS12_381.Tests/coverage.info
           ${{ github.workspace }}/TestResults/Neo.ConsoleService.Tests/coverage.info
