@@ -142,7 +142,8 @@ jobs:
         dotnet pack \
         --configuration Release \
         --output ./out \
-        --version-suffix ${{ env.VERSION_SUFFIX }}
+        --version-suffix ${{ env.VERSION_SUFFIX }} \
+        -p:GITHUB_ACTIONS=true
 
     - name: Publish to Github Packages
       working-directory: ./out

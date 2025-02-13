@@ -121,7 +121,8 @@ jobs:
         -p:PublishReadyToRun=true \
         -p:EnableCompressionInSingleFile=true \
         -p:DebugType=embedded \
-        -p:ServerGarbageCollection=true
+        -p:ServerGarbageCollection=true \
+        -p:GITHUB_ACTIONS=true
 
     # Build the LevelDBStore plugin
     - name: .NET Build (LevelDBStore)
@@ -132,7 +133,8 @@ jobs:
         --configuration ${{ env.CONFIGURATION }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal \
-        -p:VersionPrefix=${{ env.APP_VERSION }}
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:GITHUB_ACTIONS=true
 
     # Remove unnecessary files from the LevelDBStore plugin output
     - name: Remove files (junk)

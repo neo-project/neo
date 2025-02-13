@@ -44,7 +44,8 @@ jobs:
           -p:PublishReadyToRun=true \
           -p:EnableCompressionInSingleFile=true \
           -p:DebugType=embedded \
-          -p:ServerGarbageCollection=true
+          -p:ServerGarbageCollection=true \
+          -p:GITHUB_ACTIONS=true
 
     - name: Build (LevelDbStore)
       run: |
