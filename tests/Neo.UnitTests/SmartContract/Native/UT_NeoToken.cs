@@ -20,6 +20,7 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -1213,17 +1214,17 @@ namespace Neo.UnitTests.SmartContract.Native
             return (result.GetInteger(), true);
         }
 
-        internal static void CheckValidator(ECPoint eCPoint, DataCache.Trackable trackable)
+        internal static void CheckValidator(ECPoint eCPoint, KeyValuePair<StorageKey, DataCache.Trackable> trackable)
         {
-            BigInteger st = trackable.Item;
+            BigInteger st = trackable.Value.Item;
             Assert.AreEqual(0, st);
 
             CollectionAssert.AreEqual(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)).ToArray(), trackable.Key.Key.ToArray());
         }
 
-        internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
+        internal static void CheckBalance(byte[] account, KeyValuePair<StorageKey, DataCache.Trackable> trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
-            var st = (Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
+            var st = (Struct)BinarySerializer.Deserialize(trackable.Value.Item.Value, ExecutionEngineLimits.Default);
 
             Assert.AreEqual(3, st.Count);
             CollectionAssert.AreEqual(new Type[] { typeof(Integer), typeof(Integer), typeof(ByteString) }, st.Select(u => u.GetType()).ToArray()); // Balance
@@ -1232,7 +1233,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(height, st[1].GetInteger());  // BalanceHeight
             Assert.AreEqual(voteTo, ECPoint.DecodePoint(st[2].GetSpan(), ECCurve.Secp256r1));  // Votes
 
-            CollectionAssert.AreEqual(new byte[] { 20 }.Concat(account).ToArray(), trackable.Key.Key.ToArray());
+            CollectionAssert.AreEqual(new byte[] { 20 }.Concat(account).ToArray(), trackable.Key.ToArray());
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)

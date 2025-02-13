@@ -143,16 +143,16 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static JArray ToJson(IEnumerable<DataCache.Trackable> changes)
+        private static JArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
         {
             JArray array = new();
             foreach (var entry in changes)
             {
                 array.Add(new JObject
                 {
-                    ["state"] = entry.State.ToString(),
+                    ["state"] = entry.Value.State.ToString(),
                     ["key"] = Convert.ToBase64String(entry.Key.ToArray()),
-                    ["value"] = Convert.ToBase64String(entry.Item.Value.ToArray())
+                    ["value"] = Convert.ToBase64String(entry.Value.Item.Value.ToArray())
                 });
             }
             return array;
