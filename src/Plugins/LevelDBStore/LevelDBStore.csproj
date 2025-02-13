@@ -9,4 +9,25 @@
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
+  <Target Name="DownloadNativeLibs" BeforeTargets="PreBuildEvent">
+    <DownloadFile Condition="!Exists('runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceUrl="https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(BaseIntermediateOutputPath)" />
+    <Unzip Condition="Exists('$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip') And !Exists('runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceFiles="$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(BaseIntermediateOutputPath)" />
+    <Move SourceFiles="$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/%(NativeLib.Lib)" DestinationFolder="$(BaseIntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/" />
+  </Target>
+
+  <ItemGroup>
+    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-x64" Lib="libleveldb.dll" />
+    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-arm64" Lib="libleveldb.dll" />
+    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-x64" Lib="libleveldb.so" />
+    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-arm64" Lib="libleveldb.so" />
+    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-x64" Lib="libleveldb.dylib" />
+    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-arm64" Lib="libleveldb.dylib" />
+
+    <Content Include="@(NativeLib -> '$(BaseIntermediateOutputPath)libleveldb-%(RuntimeId)/runtimes/%(RuntimeId)/native/%(Lib)')" PackagePath="runtimes/%(RuntimeId)/native/%(Lib)" Link="runtimes/%(RuntimeId)/native/%(Lib)">
+      <Pack>true</Pack>
+      <Visible>false</Visible>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

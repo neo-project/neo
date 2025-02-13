@@ -57,6 +57,7 @@ jobs:
 
     - name: Remove (junk)
       run: |
+        rm -v -R ${{ env.DIST_DIR }}/Plugins/LevelDBStore/runtimes
         rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
         rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.pdb
         rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.xml

@@ -69,14 +69,13 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew install leveldb
+        brew install gperftools
         dotnet build
-        cp -vp /opt/homebrew/Cellar/leveldb/1.23_2/lib/libleveldb.dylib ./tests/Neo.Plugins.Storage.Tests/bin/Debug/net9.0/
         dotnet test --no-build
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet build
         dotnet test --no-build
 
