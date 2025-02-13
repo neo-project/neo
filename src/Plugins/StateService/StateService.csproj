@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
     <PackageId>Neo.Plugins.StateService</PackageId>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
