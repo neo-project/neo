@@ -11,6 +11,7 @@
 
 using BenchmarkDotNet.Attributes;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System.Numerics;
