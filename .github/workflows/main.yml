@@ -87,7 +87,7 @@ jobs:
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@v2.3.0
+      uses: coverallsapp/github-action@v2.3.6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         files:
