@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Windows.Forms;
 
 namespace Neo.GUI
@@ -35,7 +36,7 @@ namespace Neo.GUI
             return box.ShowDialog();
         }
 
-        private void button1_Click(object sender, System.EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
         {
             textBox1.SelectAll();
             textBox1.Copy();

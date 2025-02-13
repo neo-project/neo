@@ -4,9 +4,7 @@
     <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageId>Neo.Extensions</PackageId>
     <PackageTags>NEO;Blockchain;Extensions</PackageTags>
-    <OutputPath>../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

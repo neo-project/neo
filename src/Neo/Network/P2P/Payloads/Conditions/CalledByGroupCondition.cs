@@ -21,6 +21,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -88,7 +89,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
+            var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Group.ToArray());
             return result;
         }

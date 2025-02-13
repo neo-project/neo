@@ -13,9 +13,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Text;
+using Array = System.Array;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -70,23 +73,23 @@ namespace Neo.UnitTests.SmartContract
             // Buffer
 
             array.Clear();
-            array.Add(new VM.Types.Buffer(1));
+            array.Add(new Buffer(1));
             engine.CurrentContext.GetState<ExecutionContextState>().Contract.Manifest.Abi.Events[0].Parameters[0].Type = ContractParameterType.ByteArray;
 
             engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array);
-            Assert.AreEqual(VM.Types.StackItemType.ByteString, engine.Notifications[0].State[0].Type);
+            Assert.AreEqual(StackItemType.ByteString, engine.Notifications[0].State[0].Type);
 
             // Pointer
 
             array.Clear();
-            array.Add(new VM.Types.Pointer(Array.Empty<byte>(), 1));
+            array.Add(new Pointer(Array.Empty<byte>(), 1));
 
             Assert.ThrowsException<InvalidOperationException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
 
             // InteropInterface
 
             array.Clear();
-            array.Add(new VM.Types.InteropInterface(new object()));
+            array.Add(new InteropInterface(new object()));
             engine.CurrentContext.GetState<ExecutionContextState>().Contract.Manifest.Abi.Events[0].Parameters[0].Type = ContractParameterType.InteropInterface;
 
             Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));

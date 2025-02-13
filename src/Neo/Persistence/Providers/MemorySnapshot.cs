@@ -18,19 +18,22 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Neo.Persistence
+namespace Neo.Persistence.Providers
 {
     /// <summary>
     /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
-    internal class MemorySnapshot : ISnapshot
+    internal class MemorySnapshot : IStoreSnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
         private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
         private readonly ConcurrentDictionary<byte[], byte[]?> _writeBatch;
 
-        public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
+        public IStore Store { get; }
+
+        internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData)
         {
+            Store = store;
             _innerData = innerData;
             _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
             _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
@@ -90,3 +93,5 @@ namespace Neo.Persistence
         }
     }
 }
+
+#nullable disable
