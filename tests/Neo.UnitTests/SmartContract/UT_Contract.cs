@@ -20,6 +20,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -73,7 +74,7 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            Neo.Cryptography.ECC.ECPoint[] publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
+            ECPoint[] publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
@@ -106,7 +107,7 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            Neo.Cryptography.ECC.ECPoint[] publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
+            ECPoint[] publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
@@ -197,7 +198,7 @@ namespace Neo.UnitTests.SmartContract
             RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
             KeyPair key2 = new KeyPair(privateKey2);
-            Neo.Cryptography.ECC.ECPoint[] publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
+            ECPoint[] publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();

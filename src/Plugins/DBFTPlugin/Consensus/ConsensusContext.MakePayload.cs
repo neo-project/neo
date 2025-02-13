@@ -20,6 +20,7 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
@@ -177,7 +178,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private static ulong GetNonce()
         {
             Span<byte> buffer = stackalloc byte[8];
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(buffer);
             }

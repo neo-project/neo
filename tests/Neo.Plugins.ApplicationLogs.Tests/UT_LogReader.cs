@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.Plugins.ApplicationLogs;
 using Neo.Plugins.ApplicationLogs.Store.Models;
 using Neo.SmartContract;
@@ -29,6 +30,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using static Neo.Plugins.ApplicationsLogs.Tests.UT_LogReader;
+using Settings = Neo.Plugins.ApplicationLogs.Settings;
 
 namespace Neo.Plugins.ApplicationsLogs.Tests
 {
@@ -66,7 +68,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 _memoryStoreProvider = new TestMemoryStoreProvider(_memoryStore);
                 logReader = new LogReader();
                 Plugin.Plugins.Add(logReader);  // initialize before NeoSystem to let NeoSystem load the plugin
-                _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode with { Network = ApplicationLogs.Settings.Default.Network }, _memoryStoreProvider);
+                _neoSystem = new NeoSystem(TestProtocolSettings.SoleNode with { Network = Settings.Default.Network }, _memoryStoreProvider);
                 _walletAccount = _wallet.Import("KxuRSsHgJMb3AMSN6B9P3JHNGMFtxmuimqgR9MmXPcv3CLLfusTd");
 
                 NeoSystem system = _neoSystem;
@@ -82,7 +84,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                         SystemFee = 1000_0000,
                     }
                 ];
-                byte[] signature = txs[0].Sign(_walletAccount.GetKey(), ApplicationLogs.Settings.Default.Network);
+                byte[] signature = txs[0].Sign(_walletAccount.GetKey(), Settings.Default.Network);
                 txs[0].Witnesses = [new Witness
                 {
                     InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),
@@ -102,7 +104,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                     Transactions = txs,
                 };
                 block.Header.MerkleRoot ??= MerkleTree.ComputeRoot(block.Transactions.Select(t => t.Hash).ToArray());
-                signature = block.Sign(_walletAccount.GetKey(), ApplicationLogs.Settings.Default.Network);
+                signature = block.Sign(_walletAccount.GetKey(), Settings.Default.Network);
                 block.Header.Witness = new Witness
                 {
                     InvocationScript = new byte[] { (byte)OpCode.PUSHDATA1, (byte)signature.Length }.Concat(signature).ToArray(),

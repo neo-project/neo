@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 #nullable enable
-using Akka.Util.Internal;
+
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -277,7 +277,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedTransactions)
+                unsortedTxPool = ReferenceEquals(sortedPool, _unverifiedSortedTransactions)
                    ? _unverifiedTransactions : _unsortedTransactions;
             }
         }
@@ -688,3 +688,5 @@ namespace Neo.Ledger
         }
     }
 }
+
+#nullable disable
