@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using System;
 
@@ -41,11 +42,51 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        public void TestSnapstot()
+        {
+            var store = new MemoryStore();
+            var entry = new TestCacheEntry(42);
+            store.SerializedCache.Set(entry);
+            var retrieved = store.SerializedCache.Get<TestCacheEntry>();
+            Assert.AreEqual(42, retrieved.Value, "Retrieved entry does not match the set value");
+
+            var snapshot = new StoreCache(store.GetSnapshot());
+            entry = new TestCacheEntry(43);
+            snapshot.Upsert(new StorageKey(new byte[10]), entry);
+
+            retrieved = store.SerializedCache.Get<TestCacheEntry>();
+            Assert.AreEqual(42, retrieved.Value, "Retrieved entry does not match the set value");
+            retrieved = snapshot.GetFromCache<TestCacheEntry>();
+            Assert.AreEqual(43, retrieved.Value, "Retrieved entry does not match the set value");
+
+            var clone = snapshot.CloneCache();
+
+            entry = new TestCacheEntry(44);
+            clone.Upsert(new StorageKey(new byte[10]), entry);
+            retrieved = store.SerializedCache.Get<TestCacheEntry>();
+            Assert.AreEqual(42, retrieved.Value, "Retrieved entry does not match the set value");
+            retrieved = snapshot.GetFromCache<TestCacheEntry>();
+            Assert.AreEqual(43, retrieved.Value, "Retrieved entry does not match the set value");
+            retrieved = clone.GetFromCache<TestCacheEntry>();
+            Assert.AreEqual(44, retrieved.Value, "Retrieved entry does not match the set value");
+
+            clone.Commit();
+            retrieved = store.SerializedCache.Get<TestCacheEntry>();
+            Assert.AreEqual(42, retrieved.Value, "Retrieved entry does not match the set value");
+            retrieved = snapshot.GetFromCache<TestCacheEntry>();
+            Assert.AreEqual(44, retrieved.Value, "Retrieved entry does not match the set value");
+
+            snapshot.Commit();
+            retrieved = store.SerializedCache.Get<TestCacheEntry>();
+            Assert.AreEqual(44, retrieved.Value, "Retrieved entry does not match the set value");
+        }
+
+        [TestMethod]
         public void TestSetAndGet()
         {
             var entry = new TestCacheEntry(42);
             var cache = new SerializedCache();
-            cache.Set<TestCacheEntry>(entry);
+            cache.Set(entry);
             var retrieved = cache.Get<TestCacheEntry>();
             Assert.IsNotNull(retrieved, "Entry was not set correctly");
             Assert.AreEqual(42, retrieved.Value, "Retrieved entry does not match the set value");
@@ -56,7 +97,7 @@ namespace Neo.UnitTests.Persistence
         {
             var entry = new TestCacheEntry(42);
             var cache = new SerializedCache();
-            cache.Set<TestCacheEntry>(entry);
+            cache.Set(entry);
             cache.Remove(typeof(TestCacheEntry));
             Assert.IsNull(cache.Get<TestCacheEntry>(), "Entry should be null after removal");
         }
@@ -65,8 +106,8 @@ namespace Neo.UnitTests.Persistence
         public void TestClear()
         {
             var cache = new SerializedCache();
-            cache.Set<TestCacheEntry>(new TestCacheEntry(1));
-            cache.Set<TestCacheEntry2>(new TestCacheEntry2("one"));
+            cache.Set(new TestCacheEntry(1));
+            cache.Set(new TestCacheEntry2("one"));
             cache.Clear();
             Assert.IsNull(cache.Get<TestCacheEntry>(), "Cache should be cleared for first type");
             Assert.IsNull(cache.Get<TestCacheEntry2>(), "Cache should be cleared for second type");
@@ -76,10 +117,10 @@ namespace Neo.UnitTests.Persistence
         public void TestCopyFrom()
         {
             var source = new SerializedCache();
-            source.Set<TestCacheEntry>(new TestCacheEntry(99));
+            source.Set(new TestCacheEntry(99));
 
             var target = new SerializedCache();
-            target.Set<TestCacheEntry2>(new TestCacheEntry2("hello"));
+            target.Set(new TestCacheEntry2("hello"));
 
             target.CopyFrom(source);
 
@@ -97,7 +138,7 @@ namespace Neo.UnitTests.Persistence
         {
             var cache = new SerializedCache();
             var entry = new TestCacheEntry(42);
-            cache.Set<TestCacheEntry>(entry);
+            cache.Set(entry);
             Assert.IsNotNull(cache.Get<TestCacheEntry>(), "Entry should be set initially");
 
             cache.Set<TestCacheEntry>(null);
@@ -111,8 +152,8 @@ namespace Neo.UnitTests.Persistence
             var entry1 = new TestCacheEntry(42);
             var entry2 = new TestCacheEntry2("test");
 
-            cache.Set<TestCacheEntry>(entry1);
-            cache.Set<TestCacheEntry2>(entry2);
+            cache.Set(entry1);
+            cache.Set(entry2);
 
             var retrieved1 = cache.Get<TestCacheEntry>();
             var retrieved2 = cache.Get<TestCacheEntry2>();
@@ -127,8 +168,8 @@ namespace Neo.UnitTests.Persistence
         public void TestOverwriteExistingEntry()
         {
             var cache = new SerializedCache();
-            cache.Set<TestCacheEntry>(new TestCacheEntry(42));
-            cache.Set<TestCacheEntry>(new TestCacheEntry(99));
+            cache.Set(new TestCacheEntry(42));
+            cache.Set(new TestCacheEntry(99));
 
             var retrieved = cache.Get<TestCacheEntry>();
             Assert.IsNotNull(retrieved, "Entry should exist");
@@ -140,7 +181,7 @@ namespace Neo.UnitTests.Persistence
         {
             var source = new SerializedCache();
             var target = new SerializedCache();
-            target.Set<TestCacheEntry>(new TestCacheEntry(42));
+            target.Set(new TestCacheEntry(42));
 
             target.CopyFrom(source);
 
@@ -160,7 +201,7 @@ namespace Neo.UnitTests.Persistence
                 var value = i;
                 tasks[i] = System.Threading.Tasks.Task.Run(() =>
                 {
-                    cache.Set<TestCacheEntry>(new TestCacheEntry(value));
+                    cache.Set(new TestCacheEntry(value));
                     cache.Get<TestCacheEntry>();
                     if (value % 2 == 0)
                         cache.Remove(typeof(TestCacheEntry));
@@ -178,7 +219,7 @@ namespace Neo.UnitTests.Persistence
         {
             var source = new SerializedCache();
             var target = new SerializedCache();
-            source.Set<TestCacheEntry>(new TestCacheEntry(42));
+            source.Set(new TestCacheEntry(42));
 
             var tasks = new System.Threading.Tasks.Task[5];
             for (int i = 0; i < tasks.Length; i++)

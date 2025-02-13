@@ -42,7 +42,6 @@ namespace Neo.Persistence
             public TrackState State { get; set; } = state;
         }
 
-        private readonly SerializedCache _serializedCacheChanges = new();
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
         private readonly HashSet<StorageKey> _changeSet = [];
 
@@ -50,6 +49,11 @@ namespace Neo.Persistence
         /// Serialized cache
         /// </summary>
         public SerializedCache SerializedCache { get; }
+
+        /// <summary>
+        /// This is where the cache changes are stored
+        /// </summary>
+        internal SerializedCache SerializedCacheChanges { get; } = new();
 
         /// <summary>
         /// Constructor
@@ -141,8 +145,7 @@ namespace Neo.Persistence
         public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry
         {
             var type = typeof(T);
-            SerializedCache.Remove(type);
-            _serializedCacheChanges.Set(type, value);
+            SerializedCacheChanges.Set(type, value);
         }
 
         /// <summary>
@@ -152,7 +155,7 @@ namespace Neo.Persistence
         /// <returns>The entry if found, null otherwise.</returns>
         public T? GetFromCache<T>() where T : IStorageCacheEntry
         {
-            var value = _serializedCacheChanges.Get<T>();
+            var value = SerializedCacheChanges.Get<T>();
 
             if (value != null)
             {
@@ -195,8 +198,8 @@ namespace Neo.Persistence
                             break;
                     }
                 }
-                SerializedCache.CopyFrom(_serializedCacheChanges);
-                _serializedCacheChanges.Clear();
+                SerializedCache.CopyFrom(SerializedCacheChanges);
+                SerializedCacheChanges.Clear();
                 _changeSet.Clear();
             }
         }
