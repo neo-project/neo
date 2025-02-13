@@ -32,4 +32,8 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" Visible="false" />
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
 </Project>
