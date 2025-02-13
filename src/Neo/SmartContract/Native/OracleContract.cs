@@ -103,7 +103,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The pending request. Or <see langword="null"/> if no request with the specified id is found.</returns>
         public OracleRequest GetRequest(IReadOnlyStore snapshot, ulong id)
         {
-            var key = CreateStorageKey(Prefix_Request).AddBigEndian(id);
+            var key = CreateStorageKey(Prefix_Request, id);
             return snapshot.TryGet(key, out var item) ? item.GetInteroperable<OracleRequest>() : null;
         }
 
@@ -127,12 +127,12 @@ namespace Neo.SmartContract.Native
         /// <returns>All the requests with the specified url.</returns>
         public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(IReadOnlyStore snapshot, string url)
         {
-            var listKey = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url));
+            var listKey = CreateStorageKey(Prefix_IdList, GetUrlHash(url));
             IdList list = snapshot.TryGet(listKey, out var item) ? item.GetInteroperable<IdList>() : null;
             if (list is null) yield break;
             foreach (ulong id in list)
             {
-                var key = CreateStorageKey(Prefix_Request).AddBigEndian(id);
+                var key = CreateStorageKey(Prefix_Request, id);
                 yield return (id, snapshot[key].GetInteroperable<OracleRequest>());
             }
         }
@@ -162,13 +162,13 @@ namespace Neo.SmartContract.Native
                 if (response is null) continue;
 
                 //Remove the request from storage
-                StorageKey key = CreateStorageKey(Prefix_Request).AddBigEndian(response.Id);
+                StorageKey key = CreateStorageKey(Prefix_Request, response.Id);
                 OracleRequest request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.SnapshotCache.Delete(key);
 
                 //Remove the id from IdList
-                key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
+                key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
                 IdList list = engine.SnapshotCache.GetAndChange(key).GetInteroperable<IdList>();
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.SnapshotCache.Delete(key);
@@ -215,7 +215,7 @@ namespace Neo.SmartContract.Native
             //Put the request to storage
             if (ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request).AddBigEndian(id), new StorageItem(new OracleRequest
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), new StorageItem(new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForResponse,
@@ -227,7 +227,7 @@ namespace Neo.SmartContract.Native
             }));
 
             //Add the id to the IdList
-            var list = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
+            var list = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);

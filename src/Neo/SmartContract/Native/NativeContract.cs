@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
@@ -347,10 +348,42 @@ namespace Neo.SmartContract.Native
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
-        private protected KeyBuilder CreateStorageKey(byte prefix)
-        {
-            return new KeyBuilder(Id, prefix);
-        }
+        #region Storage keys
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix) => KeyBuilder.Create(Id, prefix);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, byte data) => KeyBuilder.Create(Id, prefix, data);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, int bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, uint bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, long bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, ulong bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, byte[] content) => KeyBuilder.Create(Id, prefix, content);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash) => KeyBuilder.Create(Id, prefix, hash);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash) => KeyBuilder.Create(Id, prefix, hash);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => KeyBuilder.Create(Id, prefix, hash, signer);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected StorageKey CreateStorageKey(byte prefix, ISerializable serializable) => KeyBuilder.Create(Id, prefix, serializable);
+
+        #endregion
 
         /// <summary>
         /// Gets the native contract with the specified hash.

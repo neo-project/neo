@@ -11,6 +11,7 @@
 
 #nullable enable
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
@@ -25,6 +26,193 @@ namespace Neo.SmartContract
     public class KeyBuilder
     {
         private readonly MemoryStream _stream;
+        private const int StorageKeyBaseLength = sizeof(int) + 1;
+        private const int StorageKeyByteLength = StorageKeyBaseLength + 1;
+        private const int StorageKeyInt32Length = StorageKeyBaseLength + sizeof(int);
+        private const int StorageKeyInt64Length = StorageKeyBaseLength + sizeof(long);
+        private const int StorageKeyUInt160Length = StorageKeyBaseLength + UInt160.Length;
+        private const int StorageKeyUInt256Length = StorageKeyBaseLength + UInt256.Length;
+        private const int StorageKeyUInt256UInt160Length = StorageKeyBaseLength + UInt256.Length + UInt160.Length;
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="data">Data to write</param>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        private static StorageKey Create(Span<byte> data, int id, byte prefix)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(data, id);
+            data[sizeof(int)] = prefix;
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyBaseLength];
+            Create(data, id, prefix);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="content">Content</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, byte content)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyByteLength];
+            Create(data, id, prefix);
+            data[StorageKeyBaseLength] = content;
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="hash">Hash</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, UInt160 hash)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyUInt160Length];
+            Create(data, id, prefix);
+            hash.ToArray().AsSpan().CopyTo(data[StorageKeyBaseLength..]);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="hash">Hash</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, UInt256 hash)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyUInt256Length];
+            Create(data, id, prefix);
+            hash.ToArray().AsSpan().CopyTo(data[StorageKeyBaseLength..]);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="hash">Hash</param>
+        /// <param name="signer">Signer</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, UInt256 hash, UInt160 signer)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyUInt256UInt160Length];
+            Create(data, id, prefix);
+            hash.ToArray().AsSpan().CopyTo(data[StorageKeyBaseLength..]);
+            signer.ToArray().AsSpan().CopyTo(data[StorageKeyUInt256Length..]);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="bigEndian">Big Endian key.</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static StorageKey Create(int id, byte prefix, int bigEndian)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyInt32Length];
+            Create(data, id, prefix);
+            BinaryPrimitives.WriteInt32BigEndian(data[StorageKeyBaseLength..], bigEndian);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="bigEndian">Big Endian key.</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static StorageKey Create(int id, byte prefix, uint bigEndian)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyInt32Length];
+            Create(data, id, prefix);
+            BinaryPrimitives.WriteUInt32BigEndian(data[StorageKeyBaseLength..], bigEndian);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="bigEndian">Big Endian key.</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static StorageKey Create(int id, byte prefix, long bigEndian)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyInt64Length];
+            Create(data, id, prefix);
+            BinaryPrimitives.WriteInt64BigEndian(data[StorageKeyBaseLength..], bigEndian);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="bigEndian">Big Endian key.</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static StorageKey Create(int id, byte prefix, ulong bigEndian)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyInt64Length];
+            Create(data, id, prefix);
+            BinaryPrimitives.WriteUInt64BigEndian(data[StorageKeyBaseLength..], bigEndian);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="content">Content</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, byte[] content)
+        {
+            Span<byte> data = stackalloc byte[StorageKeyBaseLength + content.Length];
+            Create(data, id, prefix);
+            content.AsSpan().CopyTo(data[StorageKeyBaseLength..]);
+            return new(data);
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="serializable">Serializable</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, ISerializable serializable)
+        {
+            return Create(id, prefix, serializable.ToArray());
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyBuilder"/> class.
