@@ -130,7 +130,7 @@ namespace Neo.Persistence
         {
             if (_changeSet is null)
             {
-                throw new InvalidOperationException("DataCache was created without 'followChangeSet'");
+                throw new InvalidOperationException("DataCache is read only");
             }
 
             lock (_dictionary)
@@ -166,7 +166,7 @@ namespace Neo.Persistence
         {
             if (_changeSet is null)
             {
-                throw new InvalidOperationException("DataCache was created without 'followChangeSet'");
+                throw new InvalidOperationException("DataCache is read only");
             }
 
             lock (_dictionary)
