@@ -91,18 +91,17 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         files:
-          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Json.UnitTests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.ApplicationLogs.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Extensions.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Cryptography.BLS12_381.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.ConsoleService.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.VM.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Json.UnitTests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Cryptography.MPTTrie.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Network.RPC.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.OracleService.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.RpcServer.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.Storage.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.ApplicationLogs.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Extensions.Tests/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
