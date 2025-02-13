@@ -294,7 +294,7 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var index = engine.PersistingBlock.Index + 1;
-            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), new LastGasPerBlock(gasPerBlock, index));
+            engine.SnapshotCache.Upsert(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), new LastGasPerBlock(gasPerBlock, index));
         }
 
         /// <summary>

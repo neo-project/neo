@@ -201,7 +201,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(_feePerByte, new LastFeePerByte(value));
+            engine.SnapshotCache.Upsert(_feePerByte, new LastFeePerByte(value));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -209,7 +209,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(_execFeeFactor, new LastExecFee(value));
+            engine.SnapshotCache.Upsert(_execFeeFactor, new LastExecFee(value));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -217,7 +217,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(_storagePrice, new LastStorageFee(value));
+            engine.SnapshotCache.Upsert(_storagePrice, new LastStorageFee(value));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
