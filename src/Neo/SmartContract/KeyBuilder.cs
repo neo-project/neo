@@ -56,7 +56,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix)
         {
-            Span<byte> data = stackalloc byte[StorageKeyBaseLength];
+            Span<byte> data = new byte[StorageKeyBaseLength];
             FillHeader(data, id, prefix);
             return new(data);
         }
