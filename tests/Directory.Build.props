@@ -13,7 +13,6 @@
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
     <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <TestingPlatformShowTestsFailure >true</TestingPlatformShowTestsFailure>
   </PropertyGroup>
 
