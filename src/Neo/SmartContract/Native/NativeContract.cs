@@ -369,7 +369,7 @@ namespace Neo.SmartContract.Native
         private protected StorageKey CreateStorageKey(byte prefix, ulong bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, byte[] content) => KeyBuilder.Create(Id, prefix, content);
+        private protected StorageKey CreateStorageKey(byte prefix, byte[] content) => KeyBuilder.Create(Id, prefix, content.AsSpan());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash) => KeyBuilder.Create(Id, prefix, hash);
