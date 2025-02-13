@@ -46,9 +46,9 @@ namespace Neo.Persistence
         private readonly HashSet<StorageKey>? _changeSet;
 
         /// <summary>
-        /// True if ChangeSet is enabled
+        /// True if DataCache is readOnly
         /// </summary>
-        public bool HasChangeSet => _changeSet != null;
+        public bool IsReadOnly => _changeSet == null;
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -80,10 +80,10 @@ namespace Neo.Persistence
         /// <summary>
         /// Data cache constructor
         /// </summary>
-        /// <param name="followChangeSet">True if you want to follow the change set</param>
-        protected DataCache(bool followChangeSet)
+        /// <param name="readOnly">True if you don't want to allow writes</param>
+        protected DataCache(bool readOnly)
         {
-            if (followChangeSet)
+            if (!readOnly)
                 _changeSet = [];
         }
 

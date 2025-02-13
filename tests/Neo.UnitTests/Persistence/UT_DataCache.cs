@@ -42,7 +42,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestInitialize]
         public void Initialize()
         {
-            myDataCache = new(store, true);
+            myDataCache = new(store, false);
         }
 
         [TestMethod]
