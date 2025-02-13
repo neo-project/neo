@@ -61,8 +61,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
-            Expressions = DeserializeConditions(ref reader, maxNestDepth - 1);
+            Expressions = DeserializeConditions(ref reader, maxNestDepth);
             if (Expressions.Length == 0) throw new FormatException();
         }
 
