@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ISpanSerializable.cs file belongs to the neo project and is free
+// ISerializableSpan.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -16,7 +16,7 @@ namespace Neo.IO
     /// <summary>
     /// Represents NEO objects that can be serialized.
     /// </summary>
-    public interface ISpanSerializable
+    public interface ISerializableSpan
     {
         /// <summary>
         /// The size of the object in bytes after serialization.

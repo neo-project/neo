@@ -79,7 +79,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
-        public KeyBuilder Add(ISpanSerializable key) => Add(key.GetSpan());
+        public KeyBuilder Add(ISerializableSpan key) => Add(key.GetSpan());
 
         /// <summary>
         /// Adds part of the key to the builder in BigEndian.

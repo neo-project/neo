@@ -22,7 +22,7 @@ namespace Neo
     /// Represents a 256-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable, ISpanSerializable
+    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt256"/> values.

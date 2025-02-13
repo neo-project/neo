@@ -22,7 +22,7 @@ namespace Neo.Cryptography.ECC
     /// <summary>
     /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
     /// </summary>
-    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable, ISpanSerializable
+    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable, ISerializableSpan
     {
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
