@@ -113,17 +113,17 @@ namespace Neo.Cryptography.ECC
         {
             if (_curve.Q.TestBit(1))
             {
-                ECFieldElement z = new(BigInteger.ModPow(Value, (_curve.Q >> 2) + 1, _curve.Q), _curve);
+                var z = new ECFieldElement(BigInteger.ModPow(Value, (_curve.Q >> 2) + 1, _curve.Q), _curve);
                 return z.Square().Equals(this) ? z : null;
             }
-            BigInteger qMinusOne = _curve.Q - 1;
-            BigInteger legendreExponent = qMinusOne >> 1;
+            var qMinusOne = _curve.Q - 1;
+            var legendreExponent = qMinusOne >> 1;
             if (BigInteger.ModPow(Value, legendreExponent, _curve.Q) != 1)
                 return null;
-            BigInteger u = qMinusOne >> 2;
-            BigInteger k = (u << 1) + 1;
-            BigInteger Q = Value;
-            BigInteger fourQ = (Q << 2).Mod(_curve.Q);
+            var u = qMinusOne >> 2;
+            var k = (u << 1) + 1;
+            var Q = Value;
+            var fourQ = (Q << 2).Mod(_curve.Q);
             BigInteger U, V;
             do
             {
@@ -134,7 +134,7 @@ namespace Neo.Cryptography.ECC
                     P = rand.NextBigInteger((int)VM.Utility.GetBitLength(_curve.Q));
                 }
                 while (P >= _curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, _curve.Q) != qMinusOne);
-                BigInteger[] result = FastLucasSequence(_curve.Q, P, Q, k);
+                var result = FastLucasSequence(_curve.Q, P, Q, k);
                 U = result[0];
                 V = result[1];
                 if ((V * V).Mod(_curve.Q) == fourQ)

@@ -90,9 +90,9 @@ namespace Neo.Cryptography.ECC
                     {
                         if (encoded.Length != (2 * curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
-                        var x1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
-                        var y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
-                        p = new ECPoint(new ECFieldElement(x1, curve), new ECFieldElement(y1, curve), curve)
+                        var X1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
+                        var Y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
+                        p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve)
                         {
                             _uncompressedPoint = encoded.ToArray()
                         };
@@ -115,17 +115,17 @@ namespace Neo.Cryptography.ECC
             if (!pointCache.TryGet(compressedPoint, out var p))
             {
                 var yTilde = encoded[0] & 1;
-                var x1 = new BigInteger(encoded[1..], isUnsigned: true, isBigEndian: true);
-                p = DecompressPoint(yTilde, x1, curve);
+                var X1 = new BigInteger(encoded[1..], isUnsigned: true, isBigEndian: true);
+                p = DecompressPoint(yTilde, X1, curve);
                 p._compressedPoint = compressedPoint;
                 pointCache.Add(p);
             }
             return p;
         }
 
-        private static ECPoint DecompressPoint(int yTilde, BigInteger x1, ECCurve curve)
+        private static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
         {
-            var x = new ECFieldElement(x1, curve);
+            var x = new ECFieldElement(X1, curve);
             var alpha = x * (x.Square() + curve.A) + curve.B;
             var beta = alpha.Sqrt() ?? throw new ArithmeticException("Invalid point compression");
             var betaValue = beta.Value;
