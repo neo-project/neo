@@ -370,20 +370,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Test_WitnessCondition_Nesting()
         {
-            WitnessCondition nested;
-
-            nested = new OrCondition
+            WitnessCondition nested = new OrCondition
             {
-                Expressions = new WitnessCondition[]
-                {
-                    new OrCondition
-            {
-            Expressions = new WitnessCondition[]
-            {
-                new BooleanCondition { Expression = true }
-            }
-            }
-                }
+                Expressions = [
+                    new OrCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                    ]
             };
 
             var buf = nested.ToArray();
@@ -394,16 +385,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             nested = new AndCondition
             {
-                Expressions = new WitnessCondition[]
-                    {
-                    new AndCondition
-            {
-            Expressions = new WitnessCondition[]
-            {
-                new BooleanCondition { Expression = true }
-            }
-            }
-                    }
+                Expressions = [
+                    new AndCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                    ]
             };
 
             buf = nested.ToArray();
@@ -429,21 +413,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Overflow maxNestingDepth
             nested = new OrCondition
             {
-                Expressions = new WitnessCondition[]
-                    {
-                    new OrCondition
-            {
-            Expressions = new WitnessCondition[] {
-                new OrCondition
-                {
-                Expressions = new WitnessCondition[]
-                {
-                    new BooleanCondition { Expression = true }
-                }
-                }
-            }
-            }
-                    }
+                Expressions = [
+                    new OrCondition {
+                        Expressions = [
+                            new OrCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                            ]
+                        }
+                    ]
             };
 
             buf = nested.ToArray();
@@ -463,21 +439,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             nested = new AndCondition
             {
-                Expressions = new WitnessCondition[]
-                    {
-                    new AndCondition
-            {
-            Expressions = new WitnessCondition[] {
-                new AndCondition
-                {
-                Expressions = new WitnessCondition[]
-                {
-                    new BooleanCondition { Expression = true }
-                }
-                }
-            }
-            }
-                    }
+                Expressions = [
+                    new AndCondition {
+                        Expressions = [
+                            new AndCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                            ]
+                        }
+                    ]
             };
 
             buf = nested.ToArray();
