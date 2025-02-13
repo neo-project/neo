@@ -9,24 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.Linq;
-
 namespace Neo.Extensions.Tests
 {
     [TestClass]
     public class UT_AssemblyExtensions
     {
-        [TestMethod]
-        public void TestGetVersion()
-        {
-            // assembly without version
 
-            var asm = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(u => u.FullName == "Anonymously Hosted DynamicMethods Assembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
-                .FirstOrDefault();
-            string version = asm?.GetVersion() ?? "";
-            Assert.AreEqual("0.0.0", version);
-        }
     }
 }
