@@ -76,7 +76,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         dotnet build --disable-build-servers
-        dotnet test --no-build
+        dotnet test --no-build --disable-build-servers
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
