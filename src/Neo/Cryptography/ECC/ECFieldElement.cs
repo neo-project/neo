@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using System;
 using System.Numerics;
@@ -18,26 +20,25 @@ namespace Neo.Cryptography.ECC
     internal class ECFieldElement : IComparable<ECFieldElement>, IEquatable<ECFieldElement>
     {
         internal readonly BigInteger Value;
-        private readonly ECCurve curve;
+        private readonly ECCurve _curve;
 
         public ECFieldElement(BigInteger value, ECCurve curve)
         {
-            if (curve is null)
-                throw new ArgumentNullException(nameof(curve));
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
             Value = value;
-            this.curve = curve;
+            _curve = curve;
         }
 
-        public int CompareTo(ECFieldElement other)
+        public int CompareTo(ECFieldElement? other)
         {
             if (ReferenceEquals(this, other)) return 0;
-            if (!curve.Equals(other.curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
+            if (other == null) throw new ArgumentNullException(nameof(other));
+            if (!_curve.Equals(other._curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             return Value.CompareTo(other.Value);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == this)
                 return true;
@@ -48,15 +49,18 @@ namespace Neo.Cryptography.ECC
             return Equals(other);
         }
 
-        public bool Equals(ECFieldElement other)
+        public bool Equals(ECFieldElement? other)
         {
-            return Value.Equals(other.Value) && curve.Equals(other.curve);
+            if (ReferenceEquals(this, other)) return true;
+            if (other == null) return false;
+
+            return Value.Equals(other.Value) && _curve.Equals(other._curve);
         }
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
         {
-            int n = (int)VM.Utility.GetBitLength(k);
-            int s = k.GetLowestSetBit();
+            var n = (int)VM.Utility.GetBitLength(k);
+            var s = k.GetLowestSetBit();
 
             BigInteger Uh = 1;
             BigInteger Vl = 2;
@@ -90,14 +94,14 @@ namespace Neo.Cryptography.ECC
             Vl = (Vh * Vl - P * Ql).Mod(p);
             Ql = (Ql * Qh).Mod(p);
 
-            for (int j = 1; j <= s; ++j)
+            for (var j = 1; j <= s; ++j)
             {
                 Uh = Uh * Vl * p;
                 Vl = ((Vl * Vl) - (Ql << 1)).Mod(p);
                 Ql = (Ql * Ql).Mod(p);
             }
 
-            return new BigInteger[] { Uh, Vl };
+            return [Uh, Vl];
         }
 
         public override int GetHashCode()
@@ -105,21 +109,21 @@ namespace Neo.Cryptography.ECC
             return Value.GetHashCode();
         }
 
-        public ECFieldElement Sqrt()
+        public ECFieldElement? Sqrt()
         {
-            if (curve.Q.TestBit(1))
+            if (_curve.Q.TestBit(1))
             {
-                ECFieldElement z = new(BigInteger.ModPow(Value, (curve.Q >> 2) + 1, curve.Q), curve);
+                ECFieldElement z = new(BigInteger.ModPow(Value, (_curve.Q >> 2) + 1, _curve.Q), _curve);
                 return z.Square().Equals(this) ? z : null;
             }
-            BigInteger qMinusOne = curve.Q - 1;
+            BigInteger qMinusOne = _curve.Q - 1;
             BigInteger legendreExponent = qMinusOne >> 1;
-            if (BigInteger.ModPow(Value, legendreExponent, curve.Q) != 1)
+            if (BigInteger.ModPow(Value, legendreExponent, _curve.Q) != 1)
                 return null;
             BigInteger u = qMinusOne >> 2;
             BigInteger k = (u << 1) + 1;
             BigInteger Q = Value;
-            BigInteger fourQ = (Q << 2).Mod(curve.Q);
+            BigInteger fourQ = (Q << 2).Mod(_curve.Q);
             BigInteger U, V;
             do
             {
@@ -127,20 +131,20 @@ namespace Neo.Cryptography.ECC
                 BigInteger P;
                 do
                 {
-                    P = rand.NextBigInteger((int)VM.Utility.GetBitLength(curve.Q));
+                    P = rand.NextBigInteger((int)VM.Utility.GetBitLength(_curve.Q));
                 }
-                while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
-                BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);
+                while (P >= _curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, _curve.Q) != qMinusOne);
+                BigInteger[] result = FastLucasSequence(_curve.Q, P, Q, k);
                 U = result[0];
                 V = result[1];
-                if ((V * V).Mod(curve.Q) == fourQ)
+                if ((V * V).Mod(_curve.Q) == fourQ)
                 {
                     if (V.TestBit(0))
                     {
-                        V += curve.Q;
+                        V += _curve.Q;
                     }
                     V >>= 1;
-                    return new ECFieldElement(V, curve);
+                    return new ECFieldElement(V, _curve);
                 }
             }
             while (U.Equals(BigInteger.One) || U.Equals(qMinusOne));
@@ -149,42 +153,44 @@ namespace Neo.Cryptography.ECC
 
         public ECFieldElement Square()
         {
-            return new ECFieldElement((Value * Value).Mod(curve.Q), curve);
+            return new ECFieldElement((Value * Value).Mod(_curve.Q), _curve);
         }
 
         public byte[] ToByteArray()
         {
-            byte[] data = Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var data = Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             if (data.Length == 32)
                 return data;
-            byte[] buffer = new byte[32];
+            var buffer = new byte[32];
             Buffer.BlockCopy(data, 0, buffer, buffer.Length - data.Length, data.Length);
             return buffer;
         }
 
         public static ECFieldElement operator -(ECFieldElement x)
         {
-            return new ECFieldElement((-x.Value).Mod(x.curve.Q), x.curve);
+            return new ECFieldElement((-x.Value).Mod(x._curve.Q), x._curve);
         }
 
         public static ECFieldElement operator *(ECFieldElement x, ECFieldElement y)
         {
-            return new ECFieldElement((x.Value * y.Value).Mod(x.curve.Q), x.curve);
+            return new ECFieldElement((x.Value * y.Value).Mod(x._curve.Q), x._curve);
         }
 
         public static ECFieldElement operator /(ECFieldElement x, ECFieldElement y)
         {
-            return new ECFieldElement((x.Value * y.Value.ModInverse(x.curve.Q)).Mod(x.curve.Q), x.curve);
+            return new ECFieldElement((x.Value * y.Value.ModInverse(x._curve.Q)).Mod(x._curve.Q), x._curve);
         }
 
         public static ECFieldElement operator +(ECFieldElement x, ECFieldElement y)
         {
-            return new ECFieldElement((x.Value + y.Value).Mod(x.curve.Q), x.curve);
+            return new ECFieldElement((x.Value + y.Value).Mod(x._curve.Q), x._curve);
         }
 
         public static ECFieldElement operator -(ECFieldElement x, ECFieldElement y)
         {
-            return new ECFieldElement((x.Value - y.Value).Mod(x.curve.Q), x.curve);
+            return new ECFieldElement((x.Value - y.Value).Mod(x._curve.Q), x._curve);
         }
     }
 }
+
+#nullable disable
