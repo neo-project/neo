@@ -75,7 +75,6 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
             Expression = FromJson((JObject)json["expression"], maxNestDepth - 1);
         }
 
