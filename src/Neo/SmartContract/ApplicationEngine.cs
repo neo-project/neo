@@ -25,6 +25,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Array = System.Array;
+using Buffer = Neo.VM.Types.Buffer;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -191,9 +192,17 @@ namespace Neo.SmartContract
             ProtocolSettings = settings;
             _feeAmount = gas;
             Diagnostic = diagnostic;
-            ExecFeeFactor = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshotCache);
-            StoragePrice = snapshotCache is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshotCache);
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            if (snapshotCache is null || persistingBlock?.Index == 0)
+            {
+                ExecFeeFactor = PolicyContract.DefaultExecFeeFactor;
+                StoragePrice = PolicyContract.DefaultStoragePrice;
+            }
+            else
+            {
+                ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+                StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+            }
             if (persistingBlock is not null)
             {
                 fixed (byte* p = nonceData)
@@ -438,7 +447,7 @@ namespace Neo.SmartContract
             if (index + count > x.Length)
                 throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
 
-            VM.Types.Buffer result = new(count, false);
+            Buffer result = new(count, false);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
         }
@@ -637,7 +646,7 @@ namespace Neo.SmartContract
             Diagnostic?.PostExecuteInstruction(instruction);
         }
 
-        private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
+        private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
             Block currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);

@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Extensions;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System;
 using System.Collections.Generic;
 
@@ -86,7 +86,7 @@ namespace Neo.Cryptography.MPTTrie
             using var memoryStore = new MemoryStore();
             foreach (byte[] data in proof)
                 memoryStore.Put(Key(Crypto.Hash256(data)), [.. data, .. new byte[] { 1 }]);
-            using ISnapshot snapshot = memoryStore.GetSnapshot();
+            using var snapshot = memoryStore.GetSnapshot();
             var trie = new Trie(snapshot, root, false);
             return trie[key];
         }

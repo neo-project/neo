@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Akka.Actor;
 using Akka.Dispatch;
 using Akka.Dispatch.MessageQueues;
@@ -59,3 +61,5 @@ namespace Neo.IO.Actors
         }
     }
 }
+
+#nullable disable

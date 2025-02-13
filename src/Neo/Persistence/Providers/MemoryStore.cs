@@ -18,7 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Neo.Persistence
+namespace Neo.Persistence.Providers
 {
     /// <summary>
     /// An in-memory <see cref="IStore"/> implementation that uses ConcurrentDictionary as the underlying storage.
@@ -36,9 +36,9 @@ namespace Neo.Persistence
         public void Dispose() { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ISnapshot GetSnapshot()
+        public IStoreSnapshot GetSnapshot()
         {
-            return new MemorySnapshot(_innerData);
+            return new MemorySnapshot(this, _innerData);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,3 +89,5 @@ namespace Neo.Persistence
         }
     }
 }
+
+#nullable disable

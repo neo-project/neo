@@ -14,7 +14,6 @@ using Neo.Cryptography;
 using Neo.Cryptography.BLS12_381;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -864,7 +863,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ECPoint pubR1 = ECPoint.Parse("04cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d736413643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
             byte[] privK1 = "0b5fb3a050385196b327be7d86cbce6e40a04c8832445af83ad19c82103b3ed9".HexToBytes();
             ECPoint pubK1 = ECPoint.Parse("04b6363b353c3ee1620c5af58594458aa00abf43a6d134d7c4cb2d901dc0f474fd74c94740bd7169aa0b1ef7bc657e824b1d7f4283c547e7ec18c8576acf84418a", ECCurve.Secp256k1);
-            byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
+            byte[] message = Encoding.Default.GetBytes("HelloWorld");
 
             // secp256r1 + SHA256
             byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, HashAlgorithm.SHA256);
