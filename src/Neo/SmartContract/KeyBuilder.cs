@@ -87,7 +87,7 @@ namespace Neo.SmartContract
         {
             Span<byte> data = stackalloc byte[StorageKeyUInt160Length];
             Create(data, id, prefix);
-            hash.ToArray().AsSpan().CopyTo(data[StorageKeyBaseLength..]);
+            hash.GetSpan().CopyTo(data[StorageKeyBaseLength..]);
             return new(data);
         }
 
@@ -102,7 +102,7 @@ namespace Neo.SmartContract
         {
             Span<byte> data = stackalloc byte[StorageKeyUInt256Length];
             Create(data, id, prefix);
-            hash.ToArray().AsSpan().CopyTo(data[StorageKeyBaseLength..]);
+            hash.GetSpan().CopyTo(data[StorageKeyBaseLength..]);
             return new(data);
         }
 
@@ -118,8 +118,8 @@ namespace Neo.SmartContract
         {
             Span<byte> data = stackalloc byte[StorageKeyUInt256UInt160Length];
             Create(data, id, prefix);
-            hash.ToArray().AsSpan().CopyTo(data[StorageKeyBaseLength..]);
-            signer.ToArray().AsSpan().CopyTo(data[StorageKeyUInt256Length..]);
+            hash.GetSpan().CopyTo(data[StorageKeyBaseLength..]);
+            signer.GetSpan().CopyTo(data[StorageKeyUInt256Length..]);
             return new(data);
         }
 
