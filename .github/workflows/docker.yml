@@ -73,6 +73,7 @@ jobs:
 
     - name: Remove (junk)
       run: |
+        rm -v -R ${{ env.DIST_DIR }}/Plugins/LevelDBStore/runtimes
         rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
 
     - name: Docker Login
