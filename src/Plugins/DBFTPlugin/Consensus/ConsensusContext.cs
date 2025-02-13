@@ -54,7 +54,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// </summary>
         public TransactionVerificationContext VerificationContext = new();
 
-        public SnapshotCache Snapshot { get; private set; }
+        public StoreCache Snapshot { get; private set; }
         private KeyPair keyPair;
         private int _witnessSize;
         private readonly NeoSystem neoSystem;

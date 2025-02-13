@@ -11,8 +11,8 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -25,7 +25,7 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_DataCache
     {
         private readonly MemoryStore store = new();
-        private SnapshotCache myDataCache;
+        private StoreCache myDataCache;
 
         private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };
         private static readonly StorageKey key2 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key2") };
@@ -92,9 +92,9 @@ namespace Neo.UnitTests.IO.Caching
 
             store.Put(key2.ToArray(), value2.ToArray());
             myDataCache.Delete(key2);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.Value.State).FirstOrDefault());
             myDataCache.Add(key2, value2);
-            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.Value.State).FirstOrDefault());
 
             action = () => myDataCache.Add(key2, value2);
             Assert.ThrowsException<ArgumentException>(action);
@@ -108,19 +108,19 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
 
             using var snapshot = store.GetSnapshot();
-            using var myDataCache = new SnapshotCache(snapshot);
+            using var myDataCache = new StoreCache(snapshot);
 
             myDataCache.Add(key1, value1);
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.Value.State).FirstOrDefault());
 
             myDataCache.Delete(key2);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.Value.State).FirstOrDefault());
 
-            Assert.AreEqual(TrackState.None, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.None, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.Value.State).FirstOrDefault());
             myDataCache.Delete(key3);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.Value.State).FirstOrDefault());
             myDataCache.Add(key3, value4);
-            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.Value.State).FirstOrDefault());
 
             // If we use myDataCache after it is committed, it will return wrong result.
             myDataCache.Commit();
@@ -149,7 +149,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key2.ToArray(), value2.ToArray());
 
             using var snapshot = store.GetSnapshot();
-            using var myDataCache = new SnapshotCache(snapshot);
+            using var myDataCache = new StoreCache(snapshot);
 
             myDataCache.Add(key1, value1);
             myDataCache.Delete(key1);
@@ -178,13 +178,13 @@ namespace Neo.UnitTests.IO.Caching
             // null and empty with the forward direction -> finds everything.
             items = myDataCache.Find(null);
             Assert.AreEqual(4, items.Count());
-            items = myDataCache.Find(new byte[] { });
+            items = myDataCache.Find([]);
             Assert.AreEqual(4, items.Count());
 
             // null and empty with the backwards direction -> miserably fails.
             Action action = () => myDataCache.Find(null, SeekDirection.Backward);
             Assert.ThrowsException<ArgumentNullException>(action);
-            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            action = () => myDataCache.Find([], SeekDirection.Backward);
             Assert.ThrowsException<ArgumentOutOfRangeException>(action);
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
@@ -246,7 +246,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value4.ToArray());
 
-            var myDataCache = new SnapshotCache(store);
+            var myDataCache = new StoreCache(store);
             myDataCache.Add(key1, value1);
             myDataCache.Add(key2, value2);
 
@@ -297,16 +297,16 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetChangeSet()
         {
             myDataCache.Add(key1, value1);
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.Value.State).FirstOrDefault());
             myDataCache.Add(key2, value2);
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.Value.State).FirstOrDefault());
 
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value4.ToArray());
             myDataCache.Delete(key3);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.Value.State).FirstOrDefault());
             myDataCache.Delete(key4);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key4)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key4)).Select(u => u.Value.State).FirstOrDefault());
 
             var items = myDataCache.GetChangeSet();
             int i = 0;
@@ -316,7 +316,7 @@ namespace Neo.UnitTests.IO.Caching
                 StorageKey key = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key" + i) };
                 StorageItem value = new(Encoding.UTF8.GetBytes("value" + i));
                 Assert.AreEqual(key, item.Key);
-                Assert.IsTrue(value.EqualsTo(item.Item));
+                Assert.IsTrue(value.EqualsTo(item.Value.Item));
             }
             Assert.AreEqual(4, i);
         }
@@ -325,11 +325,11 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetAndChange()
         {
             myDataCache.Add(key1, value1);
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.Value.State).FirstOrDefault());
             store.Put(key2.ToArray(), value2.ToArray());
             store.Put(key3.ToArray(), value3.ToArray());
             myDataCache.Delete(key3);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.Value.State).FirstOrDefault());
 
             StorageItem value_bk_1 = new(Encoding.UTF8.GetBytes("value_bk_1"));
             StorageItem value_bk_2 = new(Encoding.UTF8.GetBytes("value_bk_2"));
@@ -346,11 +346,11 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetOrAdd()
         {
             myDataCache.Add(key1, value1);
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.Value.State).FirstOrDefault());
             store.Put(key2.ToArray(), value2.ToArray());
             store.Put(key3.ToArray(), value3.ToArray());
             myDataCache.Delete(key3);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.Value.State).FirstOrDefault());
 
             StorageItem value_bk_1 = new(Encoding.UTF8.GetBytes("value_bk_1"));
             StorageItem value_bk_2 = new(Encoding.UTF8.GetBytes("value_bk_2"));
@@ -367,11 +367,11 @@ namespace Neo.UnitTests.IO.Caching
         public void TestTryGet()
         {
             myDataCache.Add(key1, value1);
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.Value.State).FirstOrDefault());
             store.Put(key2.ToArray(), value2.ToArray());
             store.Put(key3.ToArray(), value3.ToArray());
             myDataCache.Delete(key3);
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.Value.State).FirstOrDefault());
 
             Assert.IsTrue(myDataCache.TryGet(key1).EqualsTo(value1));
             Assert.IsTrue(myDataCache.TryGet(key2).EqualsTo(value2));
@@ -382,7 +382,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestFindInvalid()
         {
             using var store = new MemoryStore();
-            using var myDataCache = new SnapshotCache(store);
+            using var myDataCache = new StoreCache(store);
             myDataCache.Add(key1, value1);
 
             store.Put(key2.ToArray(), value2.ToArray());

@@ -94,27 +94,27 @@ namespace Neo.Plugins.StorageDumper
 
         private void OnPersistStorage(uint network, DataCache snapshot)
         {
-            uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+            var blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (blockIndex >= Settings.Default!.HeightToBegin)
             {
-                JArray stateChangeArray = new JArray();
+                var stateChangeArray = new JArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
                     if (Settings.Default.Exclude.Contains(trackable.Key.Id))
                         continue;
-                    JObject state = new JObject();
-                    switch (trackable.State)
+                    var state = new JObject();
+                    switch (trackable.Value.State)
                     {
                         case TrackState.Added:
                             state["state"] = "Added";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
+                            state["value"] = Convert.ToBase64String(trackable.Value.Item.ToArray());
                             break;
                         case TrackState.Changed:
                             state["state"] = "Changed";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
+                            state["value"] = Convert.ToBase64String(trackable.Value.Item.ToArray());
                             break;
                         case TrackState.Deleted:
                             state["state"] = "Deleted";
@@ -124,7 +124,7 @@ namespace Neo.Plugins.StorageDumper
                     stateChangeArray.Add(state);
                 }
 
-                JObject bs_item = new JObject();
+                var bs_item = new JObject();
                 bs_item["block"] = blockIndex;
                 bs_item["size"] = stateChangeArray.Count;
                 bs_item["storage"] = stateChangeArray;
@@ -135,10 +135,10 @@ namespace Neo.Plugins.StorageDumper
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            OnCommitStorage(system.Settings.Network, system.StoreView);
+            OnCommitStorage(system.Settings.Network);
         }
 
-        void OnCommitStorage(uint network, DataCache snapshot)
+        void OnCommitStorage(uint network)
         {
             if (_currentBlock != null && _writer != null)
             {
@@ -147,7 +147,7 @@ namespace Neo.Plugins.StorageDumper
             }
         }
 
-        private void InitFileWriter(uint network, DataCache snapshot)
+        private void InitFileWriter(uint network, IReadOnlyStore snapshot)
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (_writer == null

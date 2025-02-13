@@ -14,7 +14,6 @@ using Akka.Util.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -25,7 +24,6 @@ using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
 using System;
 using System.Linq;
-using System.Security.Policy;
 using static Neo.SmartContract.Native.NeoToken;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -63,11 +61,11 @@ namespace Neo.Plugins.RpcServer.Tests
             var block2 = blockArr.AsSerializable<Block>();
             block2.Transactions.ForEach(tx =>
             {
-                Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
+                Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
             });
 
             result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Hash), true);
-            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            var block3 = block.ToJson(TestProtocolSettings.Default);
             block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
             Assert.AreEqual(block3.ToString(), result.ToString());
         }
@@ -85,11 +83,11 @@ namespace Neo.Plugins.RpcServer.Tests
             var block2 = blockArr.AsSerializable<Block>();
             block2.Transactions.ForEach(tx =>
             {
-                Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(UnitTests.TestProtocolSettings.Default));
+                Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
             });
 
             result = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), true);
-            var block3 = block.ToJson(UnitTests.TestProtocolSettings.Default);
+            var block3 = block.ToJson(TestProtocolSettings.Default);
             block3["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
             Assert.AreEqual(block3.ToString(), result.ToString());
         }
