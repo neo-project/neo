@@ -35,3 +35,5 @@ namespace Neo.Persistence
         IStoreSnapshot GetSnapshot();
     }
 }
+
+#nullable disable

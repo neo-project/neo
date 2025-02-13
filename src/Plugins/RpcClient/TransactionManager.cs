@@ -146,7 +146,7 @@ namespace Neo.Network.RPC
             if (!context.Add(contract, parameters))
             {
                 throw new Exception("AddWitness failed!");
-            };
+            }
             return this;
         }
 
