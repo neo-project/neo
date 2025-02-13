@@ -41,11 +41,11 @@ namespace Neo.SmartContract
         /// <param name="id">The id of the contract.</param>
         /// <param name="prefix">The prefix of the key.</param>
         /// <returns>The <see cref="StorageKey"/> class</returns>
-        private static StorageKey Create(Span<byte> data, int id, byte prefix)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void Create(Span<byte> data, int id, byte prefix)
         {
             BinaryPrimitives.WriteInt32LittleEndian(data, id);
             data[sizeof(int)] = prefix;
-            return new(data);
         }
 
         /// <summary>
