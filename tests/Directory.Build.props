@@ -7,11 +7,12 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutput>TestResults/</CoverletOutput>
+    <CoverletOutput>../../tests/$(MSBuildProjectName)/TestResults</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
+    <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
