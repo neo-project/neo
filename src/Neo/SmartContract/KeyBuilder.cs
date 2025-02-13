@@ -70,7 +70,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, byte content)
         {
-            Span<byte> data = stackalloc byte[StorageKeyByteLength];
+            Span<byte> data = new byte[StorageKeyByteLength];
             FillHeader(data, id, prefix);
             data[StorageKeyBaseLength] = content;
             return new(data);
@@ -85,7 +85,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt160 hash)
         {
-            Span<byte> data = stackalloc byte[StorageKeyUInt160Length];
+            Span<byte> data = new byte[StorageKeyUInt160Length];
             FillHeader(data, id, prefix);
             hash.GetSpan().CopyTo(data[StorageKeyBaseLength..]);
             return new(data);
@@ -100,7 +100,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt256 hash)
         {
-            Span<byte> data = stackalloc byte[StorageKeyUInt256Length];
+            Span<byte> data = new byte[StorageKeyUInt256Length];
             FillHeader(data, id, prefix);
             hash.GetSpan().CopyTo(data[StorageKeyBaseLength..]);
             return new(data);
@@ -116,7 +116,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt256 hash, UInt160 signer)
         {
-            Span<byte> data = stackalloc byte[StorageKeyUInt256UInt160Length];
+            Span<byte> data = new byte[StorageKeyUInt256UInt160Length];
             FillHeader(data, id, prefix);
             hash.GetSpan().CopyTo(data[StorageKeyBaseLength..]);
             signer.GetSpan().CopyTo(data[StorageKeyUInt256Length..]);
@@ -133,7 +133,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, int bigEndian)
         {
-            Span<byte> data = stackalloc byte[StorageKeyInt32Length];
+            Span<byte> data = new byte[StorageKeyInt32Length];
             FillHeader(data, id, prefix);
             BinaryPrimitives.WriteInt32BigEndian(data[StorageKeyBaseLength..], bigEndian);
             return new(data);
@@ -149,7 +149,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, uint bigEndian)
         {
-            Span<byte> data = stackalloc byte[StorageKeyInt32Length];
+            Span<byte> data = new byte[StorageKeyInt32Length];
             FillHeader(data, id, prefix);
             BinaryPrimitives.WriteUInt32BigEndian(data[StorageKeyBaseLength..], bigEndian);
             return new(data);
@@ -165,7 +165,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, long bigEndian)
         {
-            Span<byte> data = stackalloc byte[StorageKeyInt64Length];
+            Span<byte> data = new byte[StorageKeyInt64Length];
             FillHeader(data, id, prefix);
             BinaryPrimitives.WriteInt64BigEndian(data[StorageKeyBaseLength..], bigEndian);
             return new(data);
@@ -181,7 +181,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, ulong bigEndian)
         {
-            Span<byte> data = stackalloc byte[StorageKeyInt64Length];
+            Span<byte> data = new byte[StorageKeyInt64Length];
             FillHeader(data, id, prefix);
             BinaryPrimitives.WriteUInt64BigEndian(data[StorageKeyBaseLength..], bigEndian);
             return new(data);
@@ -196,7 +196,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, ReadOnlySpan<byte> content)
         {
-            Span<byte> data = stackalloc byte[StorageKeyBaseLength + content.Length];
+            Span<byte> data = new byte[StorageKeyBaseLength + content.Length];
             FillHeader(data, id, prefix);
             content.CopyTo(data[StorageKeyBaseLength..]);
             return new(data);
