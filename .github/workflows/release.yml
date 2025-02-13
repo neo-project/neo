@@ -97,6 +97,7 @@ jobs:
     - name: Remove files (junk)
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
       run: |
+        rm -v *.pdb
 
     # Create the distribution directory
     - name: Create Distribution Directory
