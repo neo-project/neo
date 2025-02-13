@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
     <PackageId>Neo.Consensus.DBFT</PackageId>
     <RootNamespace>Neo.Consensus</RootNamespace>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>

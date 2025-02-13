@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
     <PackageId>Neo.Plugins.RpcServer</PackageId>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>

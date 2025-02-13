@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
     <PackageId>Neo.Plugins.Storage.RocksDBStore</PackageId>
     <RootNamespace>Neo.Plugins.Storage</RootNamespace>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>

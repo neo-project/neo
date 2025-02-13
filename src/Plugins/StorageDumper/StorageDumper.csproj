@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
     <PackageId>Neo.Plugins.StorageDumper</PackageId>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

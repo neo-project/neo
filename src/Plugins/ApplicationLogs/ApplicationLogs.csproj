@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
     <PackageId>Neo.Plugins.ApplicationLogs</PackageId>
     <RootNamespace>Neo.Plugins</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
