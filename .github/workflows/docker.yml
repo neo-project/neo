@@ -43,8 +43,15 @@ jobs:
           -p:PublishSingleFile=true \
           -p:PublishReadyToRun=true \
           -p:EnableCompressionInSingleFile=true \
-          -p:DebugType=embedded \
-          -p:ServerGarbageCollection=true
+          -p:DebugSymbols=false \
+          -p:DebugType=none \
+          -p:ServerGarbageCollection=true \
+          -p:TieredCompilation=true \
+          -p:TieredCompilationQuickJitForLoops=false \
+          -p:TieredPGO=true \
+          -p:GenerateDocumentationFile=false \
+          -p:PublishDocumentationFiles=false \
+          -p:PublishReferencesDocumentationFiles=false
 
     - name: Build (LevelDbStore)
       run: |
@@ -53,14 +60,21 @@ jobs:
           --configuration Release \
           --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \
           --verbosity normal \
-          -p:VersionPrefix=${{ env.APP_VERSION }}
+          -p:VersionPrefix=${{ env.APP_VERSION }} \
+          -p:DebugSymbols=false \
+          -p:DebugType=none \
+          -p:ServerGarbageCollection=true \
+          -p:TieredCompilation=true \
+          -p:TieredCompilationQuickJitForLoops=false \
+          -p:TieredPGO=true \
+          -p:GenerateDocumentationFile=false \
+          -p:PublishDocumentationFiles=false \
+          -p:PublishReferencesDocumentationFiles=false
 
     - name: Remove (junk)
       run: |
+        rm -v -R ${{ env.DIST_DIR }}/Plugins/LevelDBStore/runtimes
         rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
-        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.pdb
-        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.xml
-        rm -v ${{ env.DIST_DIR }}/*.xml
 
     - name: Docker Login
       run: |
@@ -73,5 +87,6 @@ jobs:
         docker build . \
           --file ./.neo/docker/neo-cli/Dockerfile \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:latest \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:mainnet \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:${{ env.APP_VERSION }} \
           --push

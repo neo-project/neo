@@ -2,10 +2,11 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <Copyright>2015-2024 The Neo Project</Copyright>
+    <Copyright>2015-2025 The Neo Project</Copyright>
     <LangVersion>latest</LangVersion>
     <Authors>The Neo Project</Authors>
     <IsPackable>true</IsPackable>
+    <PackageId>$(MSBuildProjectName)</PackageId>
     <PackageIcon>neo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -20,6 +21,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
+    <OutputPath>../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

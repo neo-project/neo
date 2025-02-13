@@ -27,3 +27,5 @@ namespace Neo.Plugins.RpcServer.Tests
         }
     }
 }
+
+#nullable disable
