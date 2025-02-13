@@ -12,13 +12,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using Org.BouncyCastle.Asn1.Tsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +62,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual("{\"type\":\"Boolean\",\"value\":true}", item[3].ToJson().ToString());
             Assert.AreEqual("{\"type\":\"Array\",\"value\":[{\"type\":\"Integer\",\"value\":\"5\"},{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"},{\"type\":\"ByteString\",\"value\":\"AQID\"},{\"type\":\"Boolean\",\"value\":true}]}", item.ToJson().ToString());
 
-            var item2 = new VM.Types.Map();
+            var item2 = new Map();
             item2[1] = new Pointer(new Script(new byte[0]), 0);
 
             Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString());
@@ -127,7 +125,7 @@ namespace Neo.UnitTests.VMT
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
-            CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<VM.Types.Struct>().Select(u => u.GetInteger()).ToArray());
+            CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<Struct>().Select(u => u.GetInteger()).ToArray());
 
             expected = new BigInteger[] { };
             sb = new ScriptBuilder();
@@ -137,7 +135,7 @@ namespace Neo.UnitTests.VMT
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
 
-            Assert.AreEqual(0, engine2.ResultStack.Pop<VM.Types.Struct>().Count);
+            Assert.AreEqual(0, engine2.ResultStack.Pop<Struct>().Count);
         }
 
         [TestMethod]
@@ -152,7 +150,7 @@ namespace Neo.UnitTests.VMT
             engine.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
-            var map = engine.ResultStack.Pop<VM.Types.Map>();
+            var map = engine.ResultStack.Pop<Map>();
             var dic = map.ToDictionary(u => u.Key, u => u.Value);
 
             CollectionAssert.AreEqual(expected.Keys, dic.Keys.Select(u => u.GetInteger()).ToArray());
@@ -272,7 +270,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetInteger());
 
             ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
-            Assert.AreEqual(30000000000000L, (long)((VM.Types.Map)mapParameter.ToStackItem()).Keys.First().GetInteger());
+            Assert.AreEqual(30000000000000L, (long)((Map)mapParameter.ToStackItem()).Keys.First().GetInteger());
         }
 
         [TestMethod]
@@ -641,7 +639,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParameter2Integer()
         {
-            StackItem item = new VM.Types.Integer(0);
+            StackItem item = new Integer(0);
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Integer, parameter.Type);
             Assert.AreEqual(BigInteger.Zero, parameter.Value);
@@ -649,7 +647,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParameter2ByteArray()
         {
-            StackItem item = new VM.Types.ByteString(new byte[] { 0x00 });
+            StackItem item = new ByteString(new byte[] { 0x00 });
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.ByteArray, parameter.Type);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00 }), Encoding.Default.GetString((byte[])parameter.Value));
@@ -665,7 +663,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParameter2Map()
         {
-            StackItem item = new VM.Types.Map();
+            StackItem item = new Map();
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Map, parameter.Type);
             Assert.AreEqual(0, ((List<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Count);
@@ -705,7 +703,7 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestCyclicReference()
         {
-            var map = new VM.Types.Map
+            var map = new Map
             {
                 [1] = 2,
             };
@@ -723,7 +721,7 @@ namespace Neo.UnitTests.VMT
             // check cyclic reference
             map[2] = item;
             var action = () => item.ToJson();
-            Assert.ThrowsException<System.InvalidOperationException>(() => action());
+            Assert.ThrowsException<InvalidOperationException>(() => action());
         }
     }
 }

@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
@@ -33,10 +32,13 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Array = System.Array;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.CLI
 {
@@ -483,7 +485,7 @@ namespace Neo.CLI
                 {
                     ConsoleHelper.Warning($"wallet file \"{Settings.Default.UnlockWallet.Path}\" not found.");
                 }
-                catch (System.Security.Cryptography.CryptographicException)
+                catch (CryptographicException)
                 {
                     ConsoleHelper.Error($"Failed to open file \"{Settings.Default.UnlockWallet.Path}\"");
                 }

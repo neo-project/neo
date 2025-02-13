@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_CloneCache
     {
         private readonly MemoryStore store = new();
-        private SnapshotCache myDataCache;
+        private StoreCache myDataCache;
         private ClonedCache clonedCache;
 
         private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };

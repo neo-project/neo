@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -225,7 +226,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Serialize_Number()
         {
-            var entry = new VM.Types.Array { 1, 9007199254740992 };
+            var entry = new Array { 1, 9007199254740992 };
             Assert.ThrowsException<InvalidOperationException>(() => JsonSerializer.Serialize(entry));
         }
 
@@ -249,7 +250,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Serialize_EmptyArray()
         {
-            var entry = new VM.Types.Array();
+            var entry = new Array();
             var json = JsonSerializer.Serialize(entry).ToString();
 
             Assert.AreEqual(json, "[]");
@@ -262,8 +263,8 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[]"), ExecutionEngineLimits.Default);
 
-            Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)items).Count, 0);
+            Assert.IsInstanceOfType(items, typeof(Array));
+            Assert.AreEqual(((Array)items).Count, 0);
         }
 
         [TestMethod]
@@ -305,7 +306,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Serialize_Array_Bool_Str_Num()
         {
-            var entry = new VM.Types.Array { true, "test", 123 };
+            var entry = new Array { true, "test", 123 };
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
@@ -319,10 +320,10 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
 
-            Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)items).Count, 4);
+            Assert.IsInstanceOfType(items, typeof(Array));
+            Assert.AreEqual(((Array)items).Count, 4);
 
-            var array = (VM.Types.Array)items;
+            var array = (Array)items;
 
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual(array[1].GetString(), "test");
@@ -333,10 +334,10 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Serialize_Array_OfArray()
         {
-            var entry = new VM.Types.Array
+            var entry = new Array
             {
-                new VM.Types.Array { true, "test1", 123 },
-                new VM.Types.Array { true, "test2", 321 }
+                new Array { true, "test1", 123 },
+                new Array { true, "test2", 321 }
             };
 
             var json = JsonSerializer.Serialize(entry).ToString();
@@ -351,23 +352,23 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"), ExecutionEngineLimits.Default);
 
-            Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)items).Count, 2);
+            Assert.IsInstanceOfType(items, typeof(Array));
+            Assert.AreEqual(((Array)items).Count, 2);
 
-            var array = (VM.Types.Array)items;
+            var array = (Array)items;
 
-            Assert.IsInstanceOfType(array[0], typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)array[0]).Count, 3);
+            Assert.IsInstanceOfType(array[0], typeof(Array));
+            Assert.AreEqual(((Array)array[0]).Count, 3);
 
-            array = (VM.Types.Array)array[0];
+            array = (Array)array[0];
             Assert.AreEqual(array.Count, 3);
 
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual(array[1].GetString(), "test1");
             Assert.AreEqual(array[2].GetInteger(), 123);
 
-            array = (VM.Types.Array)items;
-            array = (VM.Types.Array)array[1];
+            array = (Array)items;
+            array = (Array)array[1];
             Assert.AreEqual(array.Count, 3);
 
             Assert.IsTrue(array[0].GetBoolean());

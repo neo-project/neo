@@ -15,6 +15,7 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.Ledger;
 using Neo.VM;
 using System;
 
@@ -79,7 +80,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var test = CreateConflictsPayload();
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var key = Ledger.UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
+            var key = UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 
             // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.
             var conflict = new TransactionState();

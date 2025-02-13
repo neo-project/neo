@@ -9,12 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Dispatch.SysMsg;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;

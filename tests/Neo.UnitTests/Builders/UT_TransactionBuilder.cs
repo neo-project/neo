@@ -14,15 +14,8 @@ using Neo.Builders;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
-using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.VM;
-using Neo.Wallets;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Builders
 {
