@@ -18,13 +18,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="latest">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" >
+      <IncludeAssets>all</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.msbuild" Version="latest">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
+      <IncludeAssets>all</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 </Project>
