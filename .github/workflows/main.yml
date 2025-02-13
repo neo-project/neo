@@ -76,7 +76,6 @@ jobs:
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
         dotnet build -p:GITHUB_ACTIONS=true
         dotnet test --no-build -p:GITHUB_ACTIONS=true
 
