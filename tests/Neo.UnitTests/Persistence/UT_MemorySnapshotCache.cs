@@ -11,8 +11,8 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
-using System.Linq;
 
 namespace Neo.UnitTests.Persistence
 {
@@ -21,14 +21,14 @@ namespace Neo.UnitTests.Persistence
     {
         private MemoryStore _memoryStore;
         private MemorySnapshot _snapshot;
-        private SnapshotCache _snapshotCache;
+        private StoreCache _snapshotCache;
 
         [TestInitialize]
         public void Setup()
         {
             _memoryStore = new MemoryStore();
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
-            _snapshotCache = new SnapshotCache(_snapshot);
+            _snapshotCache = new StoreCache(_snapshot);
         }
 
         [TestCleanup]
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.Persistence
 
             // Reset the snapshot to make it accessible to the new value.
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
-            _snapshotCache = new SnapshotCache(_snapshot);
+            _snapshotCache = new StoreCache(_snapshot);
 
             // Delete value to the snapshot cache will not affect the snapshot or the store
             // But the snapshot cache itself can not see the added item.
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.Persistence
             _snapshotCache.Commit();
 
             // Get a new snapshot cache to test if the value can be seen from the new snapshot cache
-            var snapshotCache2 = new SnapshotCache(_snapshot);
+            var snapshotCache2 = new StoreCache(_snapshot);
             Assert.IsNull(snapshotCache2.TryGet(key1));
             Assert.IsFalse(_snapshot.Contains(key1.ToArray()));
 
@@ -115,7 +115,7 @@ namespace Neo.UnitTests.Persistence
 
             // Reset the snapshot to make it accessible to the new value.
             _snapshot = _memoryStore.GetSnapshot() as MemorySnapshot;
-            _snapshotCache = new SnapshotCache(_snapshot);
+            _snapshotCache = new StoreCache(_snapshot);
 
             // Delete value to the snapshot cache will affect the snapshot
             // But the snapshot and store itself can still see the item.
@@ -125,7 +125,7 @@ namespace Neo.UnitTests.Persistence
             _snapshotCache.Commit();
 
             // reset the snapshotcache2 to snapshot
-            snapshotCache2 = new SnapshotCache(_snapshot);
+            snapshotCache2 = new StoreCache(_snapshot);
             // Value is removed from the store, but the snapshot remains the same.
             // thus the snapshot cache from the snapshot will remain the same.
             Assert.IsNotNull(snapshotCache2.TryGet(key1));

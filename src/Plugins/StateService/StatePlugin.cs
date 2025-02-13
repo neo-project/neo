@@ -15,7 +15,6 @@ using Neo.Cryptography.MPTTrie;
 using Neo.Extensions;
 using Neo.IEventHandlers;
 using Neo.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
@@ -51,8 +50,8 @@ namespace Neo.Plugins.StateService
 
         public StatePlugin()
         {
-            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
-            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
+            Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
@@ -91,8 +90,8 @@ namespace Neo.Plugins.StateService
         public override void Dispose()
         {
             base.Dispose();
-            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
-            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
+            Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Store is not null) _system.EnsureStopped(Store);
             if (Verifier is not null) _system.EnsureStopped(Verifier);
         }
@@ -100,7 +99,7 @@ namespace Neo.Plugins.StateService
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
-            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, snapshot.GetChangeSet().Where(p => p.State != TrackState.None).Where(p => p.Key.Id != NativeContract.Ledger.Id).ToList());
+            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, snapshot.GetChangeSet().Where(p => p.Value.State != TrackState.None).Where(p => p.Key.Id != NativeContract.Ledger.Id).ToList());
         }
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
@@ -328,7 +327,7 @@ namespace Neo.Plugins.StateService
                     jarr.Add(j);
                 }
                 i++;
-            };
+            }
             if (0 < jarr.Count)
             {
                 json["firstProof"] = GetProof(trie, contract.Id, Convert.FromBase64String(jarr.First()["key"].AsString()));

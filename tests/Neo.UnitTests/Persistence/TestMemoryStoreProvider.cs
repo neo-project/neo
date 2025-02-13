@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 
 namespace Neo.UnitTests.Persistence
 {

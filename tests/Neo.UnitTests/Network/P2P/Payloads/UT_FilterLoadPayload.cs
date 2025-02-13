@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -26,14 +26,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = new FilterLoadPayload() { Filter = Array.Empty<byte>(), K = 1, Tweak = uint.MaxValue };
             Assert.AreEqual(6, test.Size);
 
-            test = FilterLoadPayload.Create(new Neo.Cryptography.BloomFilter(8, 10, 123456));
+            test = FilterLoadPayload.Create(new BloomFilter(8, 10, 123456));
             Assert.AreEqual(7, test.Size);
         }
 
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = FilterLoadPayload.Create(new Neo.Cryptography.BloomFilter(8, 10, 123456));
+            var test = FilterLoadPayload.Create(new BloomFilter(8, 10, 123456));
             var clone = test.ToArray().AsSerializable<FilterLoadPayload>();
 
             CollectionAssert.AreEqual(test.Filter.ToArray(), clone.Filter.ToArray());

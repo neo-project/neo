@@ -11,12 +11,12 @@
 
 using Akka.Actor;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.StateService.Network;
 using Neo.Plugins.StateService.Verification;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -65,7 +65,7 @@ namespace Neo.Plugins.StateService.Storage
             return new StateSnapshot(store);
         }
 
-        public ISnapshot GetStoreSnapshot()
+        public IStoreSnapshot GetStoreSnapshot()
         {
             return store.GetSnapshot();
         }
@@ -124,18 +124,18 @@ namespace Neo.Plugins.StateService.Storage
             return true;
         }
 
-        public void UpdateLocalStateRootSnapshot(uint height, List<DataCache.Trackable> change_set)
+        public void UpdateLocalStateRootSnapshot(uint height, IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> change_set)
         {
             _state_snapshot = Singleton.GetSnapshot();
             foreach (var item in change_set)
             {
-                switch (item.State)
+                switch (item.Value.State)
                 {
                     case TrackState.Added:
-                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Item.ToArray());
+                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Value.Item.ToArray());
                         break;
                     case TrackState.Changed:
-                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Item.ToArray());
+                        _state_snapshot.Trie.Put(item.Key.ToArray(), item.Value.Item.ToArray());
                         break;
                     case TrackState.Deleted:
                         _state_snapshot.Trie.Delete(item.Key.ToArray());

@@ -200,7 +200,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestCreateAccountWithKeyPair()
         {
-            Neo.SmartContract.Contract contract = Neo.SmartContract.Contract.CreateSignatureContract(keyPair.PublicKey);
+            Contract contract = Contract.CreateSignatureContract(keyPair.PublicKey);
             bool result = uut.Contains(testScriptHash);
             Assert.AreEqual(false, result);
             uut.CreateAccount(contract);

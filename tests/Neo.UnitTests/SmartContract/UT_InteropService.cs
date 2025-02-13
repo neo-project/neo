@@ -13,9 +13,7 @@ using Akka.TestKit.Xunit2;
 using Akka.Util.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -28,7 +26,11 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
+using Array = System.Array;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -148,7 +150,7 @@ namespace Neo.UnitTests.SmartContract
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                    Parameters = Array.Empty<ContractParameterDefinition>()
                                 }
                             }
                         },
@@ -225,7 +227,7 @@ namespace Neo.UnitTests.SmartContract
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                    Parameters = Array.Empty<ContractParameterDefinition>()
                                 }
                             }
                         },
@@ -338,10 +340,10 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(engine.CheckWitness(pubkey.EncodePoint(true)));
             Assert.IsTrue(engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()));
 
-            ((Transaction)engine.ScriptContainer).Signers = System.Array.Empty<Signer>();
+            ((Transaction)engine.ScriptContainer).Signers = Array.Empty<Signer>();
             Assert.IsFalse(engine.CheckWitness(pubkey.EncodePoint(true)));
 
-            Action action = () => engine.CheckWitness(System.Array.Empty<byte>());
+            Action action = () => engine.CheckWitness(Array.Empty<byte>());
             Assert.ThrowsException<ArgumentException>(action);
         }
 
@@ -406,7 +408,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(engineA.State, VMState.HALT);
 
             var result = engineA.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Null));
+            Assert.IsInstanceOfType(result, typeof(Null));
 
             // Not null
 
@@ -495,7 +497,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(engine.State, VMState.HALT);
 
             var result = engine.ResultStack.Pop();
-            Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(Integer));
             Assert.AreEqual(0, result.GetInteger());
         }
 
@@ -653,7 +655,7 @@ namespace Neo.UnitTests.SmartContract
 
             //value length == 0
             key = new byte[] { 0x01 };
-            value = System.Array.Empty<byte>();
+            value = Array.Empty<byte>();
             engine.Put(storageContext, key, value);
         }
 
@@ -786,13 +788,13 @@ namespace Neo.UnitTests.SmartContract
         public void TestVerifyWithECDsaV0()
         {
             var privateKey = new byte[32];
-            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(privateKey);
             var publicKeyR1 = new KeyPair(privateKey).PublicKey.ToArray();
-            var publicKeyK1 = (Neo.Cryptography.ECC.ECCurve.Secp256k1.G * privateKey).ToArray();
+            var publicKeyK1 = (ECCurve.Secp256k1.G * privateKey).ToArray();
             var hexMessage = "Hello, world!"u8.ToArray();
-            var signatureR1 = Crypto.Sign(hexMessage, privateKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
-            var signatureK1 = Crypto.Sign(hexMessage, privateKey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
+            var signatureR1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256r1);
+            var signatureK1 = Crypto.Sign(hexMessage, privateKey, ECCurve.Secp256k1);
 
             var result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyR1, signatureR1, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(result);
