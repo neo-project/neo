@@ -36,7 +36,13 @@ jobs:
         --configuration Release \
         --output ./sbin \
         --verbosity normal \
-        -p:VersionPrefix=${{ env.APP_VERSION }}
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:DebugSymbols=false \
+        -p:DebugType=none \
+        -p:ServerGarbageCollection=true \
+        -p:TieredCompilation=true \
+        -p:TieredCompilationQuickJitForLoops=false \
+        -p:TieredPGO=true
 
     - name: Publish to NuGet.org
       run: |
