@@ -77,33 +77,9 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds part of the key to the builder.
         /// </summary>
-        /// <param name="key">Part of the key represented by a <see cref="UInt160"/>.</param>
-        /// <returns>A reference to this instance after the add operation has completed.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public KeyBuilder Add(UInt160 key) => Add(key.GetSpan());
-
-        /// <summary>
-        /// Adds part of the key to the builder.
-        /// </summary>
-        /// <param name="key">Part of the key represented by a <see cref="UInt256"/>.</param>
-        /// <returns>A reference to this instance after the add operation has completed.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public KeyBuilder Add(UInt256 key) => Add(key.GetSpan());
-
-        /// <summary>
-        /// Adds part of the key to the builder.
-        /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
-        public KeyBuilder Add(ISerializable key)
-        {
-            using (BinaryWriter writer = new(_stream, Utility.StrictUTF8, true))
-            {
-                key.Serialize(writer);
-                writer.Flush();
-            }
-            return this;
-        }
+        public KeyBuilder Add(ISerializableSpan key) => Add(key.GetSpan());
 
         /// <summary>
         /// Adds part of the key to the builder in BigEndian.
