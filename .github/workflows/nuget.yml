@@ -43,7 +43,8 @@ jobs:
         -p:ServerGarbageCollection=true \
         -p:TieredCompilation=true \
         -p:TieredCompilationQuickJitForLoops=false \
-        -p:TieredPGO=true
+        -p:TieredPGO=true \
+        -p:GITHUB_ACTIONS=true
 
     - name: Publish to NuGet.org
       run: |
