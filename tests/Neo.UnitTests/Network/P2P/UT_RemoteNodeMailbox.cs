@@ -24,12 +24,6 @@ namespace Neo.UnitTests.Network.P2P
     {
         RemoteNodeMailbox uut;
 
-        [TestCleanup]
-        public void Cleanup()
-        {
-
-        }
-
         [TestInitialize]
         public void TestSetup()
         {
