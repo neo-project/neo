@@ -94,7 +94,7 @@ namespace Neo.Cryptography
             return tree._root!.Hash;
         }
 
-        private static void DepthFirstSearch(MerkleTreeNode node, IList<UInt256> hashes)
+        private static void DepthFirstSearch(MerkleTreeNode node, List<UInt256> hashes)
         {
             if (node.LeftChild == null)
             {
