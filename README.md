@@ -63,14 +63,11 @@
     <a href="https://github.com/neo-project/neo/releases">
       <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg" alt="Current neo version.">
     </a>
-    <a href='https://coveralls.io/github/neo-project/neo'>
-      <img src='https://coveralls.io/repos/github/neo-project/neo/badge.svg' alt='Coverage Status' />
-    </a>
-    <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
-      <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
-    </a>
     <a href="https://github.com/neo-project/neo/pulls">
       <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues-pr/neo-project/neo">
+    </a>
+    <a href='https://coveralls.io/github/neo-project/neo'>
+      <img src='https://coveralls.io/repos/github/neo-project/neo/badge.svg' alt='Coverage Status' />
     </a>
     <a href="https://github.com/neo-project/neo/archive/refs/heads/master.zip">
       <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/neo-project/neo">
