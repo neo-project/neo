@@ -150,11 +150,11 @@ namespace Neo.UnitTests.Cryptography
             // v:  27
 
             var privateKey = "1234567890123456789012345678901234567890123456789012345678901234".HexToBytes();
-            var expectedPubKey1 = (ECCurve.Secp256k1.G * privateKey).ToArray();
+            var expectedPubKey1 = (ECCurve.Secp256k1.G * privateKey);
 
-            Console.WriteLine($"Expected PubKey: {expectedPubKey1.ToHexString()}");
+            Console.WriteLine($"Expected PubKey: {expectedPubKey1.ToArray().ToHexString()}");
             var message1 = Encoding.UTF8.GetBytes("Hello World");
-            var messageHash1 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message1.Count()}")).Concat(message1).ToArray().Keccak256();
+            var messageHash1 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message1.Length}")).Concat(message1).ToArray().Keccak256();
             Console.WriteLine($"Message Hash: {Convert.ToHexString(messageHash1)}");
 
             // Signature values from EIP-2098 test case
@@ -170,6 +170,18 @@ namespace Neo.UnitTests.Cryptography
             Console.WriteLine($"yParity: {(signature1[32] & 0x80) != 0}");
 
             var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
+            CollectionAssert.AreEqual(expectedPubKey1.EncodePoint(true), recoveredKey1.EncodePoint(true));
+
+            var sig = "68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90".HexToBytes()
+                .Concat("7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064".HexToBytes())
+                .Concat(new byte[] { 0x1B })
+                .ToArray();
+
+            var pubKey = Crypto.ECRecover(sig, messageHash1);
+
+            Console.WriteLine($"Recovered PubKey: {pubKey.EncodePoint(true).ToHexString()}");
+            Console.WriteLine($"Recovered PubKey: {recoveredKey1.EncodePoint(true).ToHexString()}");
+            CollectionAssert.AreEqual(expectedPubKey1.EncodePoint(true), pubKey.EncodePoint(true));
 
             // Private Key: 0x1234567890123456789012345678901234567890123456789012345678901234
             // Message: "It's a small(er) world"
@@ -178,19 +190,8 @@ namespace Neo.UnitTests.Cryptography
             // s:  0x139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793
             // v:  28
 
-            var sig = "68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90".HexToBytes()
-              .Concat("7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064".HexToBytes())
-              .Concat(new byte[] { 0x1B })
-              .ToArray();
-
-            var pubKey = Crypto.ECRecover(sig, messageHash1);
-
-            Console.WriteLine($"Recovered PubKey: {pubKey.EncodePoint(true).ToHexString()}");
-            Console.WriteLine($"Recovered PubKey: {recoveredKey1.EncodePoint(true).ToHexString()}");
-            Assert.AreEqual(recoveredKey1, recoveredKey1);
-
             var message2Body = Encoding.UTF8.GetBytes("It's a small(er) world");
-            var message2 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message2Body.Count()}")).Concat(message2Body).ToArray();
+            var message2 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message2Body.Length}")).Concat(message2Body).ToArray();
             var messageHash2 = message2.Keccak256();
             Console.WriteLine($"\nMessage Hash 2: {Convert.ToHexString(messageHash2)}");
 
@@ -198,16 +199,23 @@ namespace Neo.UnitTests.Cryptography
             var r2 = "9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76".HexToBytes();
             var s2 = "939c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793".HexToBytes();
             var signature2 = new byte[64];
+
             Array.Copy(r2, 0, signature2, 0, 32);
             Array.Copy(s2, 0, signature2, 32, 32);
 
             Console.WriteLine($"r: {Convert.ToHexString(signature2.Take(32).ToArray())}");
             Console.WriteLine($"s: {Convert.ToHexString(signature2.Skip(32).Take(32).ToArray())}");
-            Console.WriteLine($"yParity: {(signature2[32] & 0x80) != 0}");
+            Console.WriteLine($"yParity: {(signature2[31] & 0x80) != 0}");
 
             var recoveredKey2 = Crypto.ECRecover(signature2, messageHash2);
-            CollectionAssert.AreEqual(expectedPubKey1, recoveredKey2.EncodePoint(true));
-            Assert.IsTrue(Crypto.VerifySignature(message2, signature2, recoveredKey2, Neo.Cryptography.HashAlgorithm.Keccak256));
+            CollectionAssert.AreEqual(expectedPubKey1.ToArray(), recoveredKey2.EncodePoint(true));
+
+            // Normal signature without recovery param
+            var verifySig = "9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76".HexToBytes()
+                .Concat("139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793".HexToBytes())
+                .ToArray();
+
+            Assert.IsTrue(Crypto.VerifySignature(message2, verifySig, recoveredKey2, Neo.Cryptography.HashAlgorithm.Keccak256));
         }
     }
 }
