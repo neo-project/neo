@@ -81,7 +81,7 @@
 </p>
 
 
-## Table of Contents
+## Navigate
 1. [Tutorials](https://docs.neo.org)
 1. [Bounty Program](SECURITY.md)
 1. [Opening a New Issue](https://github.com/neo-project/neo/issues)
