@@ -1,9 +1,63 @@
 <p align="center">
   <a href="https://neo.org/">
-      <img
-      src="https://neo3.azureedge.net/images/logo%20files-dark.svg"
-      width="250px" alt="neo-logo">
+    <img src=".github/images/NEO_512_512.svg" align="center" width="150" alt="neo-logo">
   </a>
+  <p align="center">
+    <a href="https://twitter.com/neo_blockchain">
+        <img
+        src=".github/images/twitter-logo.png"
+        width="25px">
+    </a>
+    &nbsp;
+    <a href="https://medium.com/neo-smart-economy">
+        <img
+        src=".github/images/medium-logo.png"
+        width="23px">
+    </a>
+    &nbsp;
+    <a href="https://neonewstoday.com">
+        <img
+        src=".github/images/nnt-logo.jpg"
+        width="23px">
+    </a>
+    &nbsp;
+    <a href="https://t.me/NEO_EN">
+        <img
+        src=".github/images/telegram-logo.png"
+        width="24px" >
+    </a>
+    &nbsp;
+    <a href="https://www.reddit.com/r/NEO/">
+        <img
+        src=".github/images/reddit-logo.png"
+        width="24px">
+    </a>
+    &nbsp;
+    <a href="https://discord.io/neo">
+        <img
+        src=".github/images/discord-logo.png"
+        width="25px">
+    </a>
+    &nbsp;
+    <a href="https://www.youtube.com/neosmarteconomy">
+        <img
+        src=".github/images/youtube-logo.png"
+        width="32px">
+    </a>
+    &nbsp;
+    <!--How to get a link? -->
+    <a href="https://neo.org/">
+        <img
+        src=".github/images/we-chat-logo.png"
+        width="25px">
+    </a>
+    &nbsp;
+    <a href="https://weibo.com/neosmarteconomy">
+        <img
+        src=".github/images/weibo-logo.png"
+        width="28px">
+    </a>
+  </p>
   <h3 align="center">(C#) implementation of the Neo Blockchain Protocol.</h3>
   <p align="center">
     <a href="https://github.com/neo-project/neo/releases">
@@ -86,72 +140,18 @@ If you found a security issue, please refer to our [security policy](https://git
 You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
 
 <hr />
-
 <p align="center">
-  <a href="https://twitter.com/neo_blockchain">
-      <img
-      src=".github/images/twitter-logo.png"
-      width="25px">
-  </a>
-  &nbsp;
-  <a href="https://medium.com/neo-smart-economy">
-      <img
-      src=".github/images/medium-logo.png"
-      width="23px">
-  </a>
-  &nbsp;
-  <a href="https://neonewstoday.com">
-      <img
-      src=".github/images/nnt-logo.jpg"
-      width="23px">
-  </a>
-  &nbsp;
-  <a href="https://t.me/NEO_EN">
-      <img
-      src=".github/images/telegram-logo.png"
-      width="24px" >
-  </a>
-  &nbsp;
-  <a href="https://www.reddit.com/r/NEO/">
-      <img
-      src=".github/images/reddit-logo.png"
-      width="24px">
-  </a>
-  &nbsp;
-  <a href="https://discord.io/neo">
-      <img
-      src=".github/images/discord-logo.png"
-      width="25px">
-  </a>
-  &nbsp;
-  <a href="https://www.youtube.com/neosmarteconomy">
-      <img
-      src=".github/images/youtube-logo.png"
-      width="32px">
-  </a>
-  &nbsp;
-  <!--How to get a link? -->
-  <a href="https://neo.org/">
-      <img
-      src=".github/images/we-chat-logo.png"
-      width="25px">
-  </a>
-  &nbsp;
-  <a href="https://weibo.com/neosmarteconomy">
-      <img
-      src=".github/images/weibo-logo.png"
-      width="28px">
-  </a>
-</p>
-<p align="center">
-   A modern distributed network for the Smart Economy.
-  <br>
-  <a href="https://docs.neo.org/"><strong>Read Docs</strong></a>
-  <br>
-  <br>
   <a href="https://github.com/neo-project/neo-express"><strong>Express</strong></a>
   ·
   <a href="https://github.com/neo-project/proposals"><strong>Proposals</strong></a>
   ·
   <a href="https://github.com/neo-project/neo-devpack-dotnet"><strong>Compiler</strong></a>
+  ·
+  <a href="https://docs.neo.org/"><strong>Read Docs</strong></a>
+  <br />
+  A modern distributed network for the <img src=".github/images/NEO_512_512.svg" style="width: 25px;" alt="neo-logo"> Smart Economy
+  <br />
+  Copyright &copy; 2015-2025
+  <br />
+  <br />
 </p>
