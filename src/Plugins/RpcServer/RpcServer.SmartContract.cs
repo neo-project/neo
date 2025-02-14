@@ -132,7 +132,7 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static JObject ToJson(TreeNode<UInt160> node)
+        protected static JObject ToJson(TreeNode<UInt160> node)
         {
             JObject json = new();
             json["hash"] = node.Item.ToString();
@@ -143,7 +143,7 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        private static JArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
+        protected static JArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
         {
             JArray array = new();
             foreach (var entry in changes)
