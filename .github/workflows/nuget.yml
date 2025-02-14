@@ -43,7 +43,6 @@ jobs:
         -p:TieredCompilation=true \
         -p:TieredCompilationQuickJitForLoops=false \
         -p:TieredPGO=true
-        -p:VersionPrefix=${{ env.APP_VERSION }} \
         -p:GITHUB_ACTIONS=true
 
     - name: Publish to NuGet.org

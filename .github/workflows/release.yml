@@ -67,8 +67,6 @@ jobs:
         -p:GenerateDocumentationFile=false \
         -p:PublishDocumentationFiles=false \
         -p:PublishReferencesDocumentationFiles=false
-        -p:DebugType=embedded \
-        -p:ServerGarbageCollection=true \
         -p:GITHUB_ACTIONS=true
 
     # Copy 'libleveldb' library file
@@ -95,7 +93,6 @@ jobs:
         -p:TieredCompilationQuickJitForLoops=false \
         -p:TieredPGO=true \
         -p:GenerateDocumentationFile=false
-        -p:VersionPrefix=${{ env.APP_VERSION }} \
         -p:GITHUB_ACTIONS=true
 
     # Remove unnecessary files from the LevelDBStore plugin output

@@ -52,8 +52,6 @@ jobs:
           -p:GenerateDocumentationFile=false \
           -p:PublishDocumentationFiles=false \
           -p:PublishReferencesDocumentationFiles=false
-          -p:DebugType=embedded \
-          -p:ServerGarbageCollection=true \
           -p:GITHUB_ACTIONS=true
 
     - name: Build (LevelDbStore)
@@ -73,6 +71,7 @@ jobs:
           -p:GenerateDocumentationFile=false \
           -p:PublishDocumentationFiles=false \
           -p:PublishReferencesDocumentationFiles=false
+          -p:GITHUB_ACTIONS=true
 
     - name: Remove (junk)
       run: |
