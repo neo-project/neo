@@ -149,7 +149,7 @@ You can be rewarded by finding security issues. Please refer to our [bounty prog
   ·
   <a href="https://docs.neo.org/"><strong>Read Docs</strong></a>
   <br />
-  A modern distributed network for the <img src=".github/images/NEO_512_512.svg" style="width: 25px;" alt="neo-logo"> Smart Economy
+  A modern distributed network for the Smart Economy
   <br />
   Copyright &copy; 2015-2025
   <br />
