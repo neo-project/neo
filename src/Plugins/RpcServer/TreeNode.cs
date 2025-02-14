@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Neo.Plugins.RpcServer
 {
-    class TreeNode<T>
+    public class TreeNode<T>
     {
         private readonly List<TreeNode<T>> children = new();
 
