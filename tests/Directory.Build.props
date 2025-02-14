@@ -3,7 +3,6 @@
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <CollectCoverage>true</CollectCoverage>
