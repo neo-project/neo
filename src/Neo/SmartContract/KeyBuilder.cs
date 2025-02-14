@@ -210,6 +210,18 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of the key.</param>
         /// <param name="content">Content</param>
         /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, ISerializableSpan content)
+        {
+            return Create(id, prefix, content.GetSpan());
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="content">Content</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, ReadOnlySpan<byte> content)
         {
             var data = new byte[PrefixLength + content.Length];
