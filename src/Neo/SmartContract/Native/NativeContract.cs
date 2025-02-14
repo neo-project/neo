@@ -381,7 +381,7 @@ namespace Neo.SmartContract.Native
         private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => KeyBuilder.Create(Id, prefix, hash, signer);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, ISerializable serializable) => KeyBuilder.Create(Id, prefix, serializable);
+        private protected StorageKey CreateStorageKey(byte prefix, ISerializableSpan serializable) => KeyBuilder.Create(Id, prefix, serializable);
 
         #endregion
 

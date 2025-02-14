@@ -213,9 +213,9 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of the key.</param>
         /// <param name="serializable">Serializable</param>
         /// <returns>The <see cref="StorageKey"/> class</returns>
-        public static StorageKey Create(int id, byte prefix, ISerializable serializable)
+        public static StorageKey Create(int id, byte prefix, ISerializableSpan serializable)
         {
-            return Create(id, prefix, serializable.ToArray().AsSpan());
+            return Create(id, prefix, serializable.GetSpan());
         }
 
         #endregion
