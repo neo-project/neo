@@ -86,6 +86,9 @@
   <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
   </a>
+  <a href="git-client://clone?repo=https%3A%2F%2Fgithub.com%2Fneo-project%2Fneo">
+    <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/neo-project/neo">
+  </a>
 </p>
 
 <p align="center">
