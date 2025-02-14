@@ -60,7 +60,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix)
         {
-            Span<byte> data = new byte[PrefixLength];
+            var data = new byte[PrefixLength];
             FillHeader(data, id, prefix);
             return new(data);
         }
@@ -74,7 +74,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, byte content)
         {
-            Span<byte> data = new byte[ByteLength];
+            var data = new byte[ByteLength];
             FillHeader(data, id, prefix);
             data[PrefixLength] = content;
             return new(data);
@@ -89,9 +89,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt160 hash)
         {
-            Span<byte> data = new byte[UInt160Length];
+            var data = new byte[UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data[PrefixLength..]);
+            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
             return new(data);
         }
 
@@ -104,9 +104,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt256 hash)
         {
-            Span<byte> data = new byte[UInt256Length];
+            var data = new byte[UInt256Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data[PrefixLength..]);
+            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
             return new(data);
         }
 
@@ -120,10 +120,10 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt256 hash, UInt160 signer)
         {
-            Span<byte> data = new byte[UInt256UInt160Length];
+            var data = new byte[UInt256UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data[PrefixLength..]);
-            signer.GetSpan().CopyTo(data[UInt256Length..]);
+            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
+            signer.GetSpan().CopyTo(data.AsSpan()[UInt256Length..]);
             return new(data);
         }
 
@@ -137,9 +137,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, int bigEndian)
         {
-            Span<byte> data = new byte[Int32Length];
+            var data = new byte[Int32Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteInt32BigEndian(data[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteInt32BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
             return new(data);
         }
 
@@ -153,9 +153,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, uint bigEndian)
         {
-            Span<byte> data = new byte[Int32Length];
+            var data = new byte[Int32Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteUInt32BigEndian(data[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
             return new(data);
         }
 
@@ -169,9 +169,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, long bigEndian)
         {
-            Span<byte> data = new byte[Int64Length];
+            var data = new byte[Int64Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteInt64BigEndian(data[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteInt64BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
             return new(data);
         }
 
@@ -185,9 +185,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, ulong bigEndian)
         {
-            Span<byte> data = new byte[Int64Length];
+            var data = new byte[Int64Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteUInt64BigEndian(data[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteUInt64BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
             return new(data);
         }
 
@@ -200,9 +200,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, ReadOnlySpan<byte> content)
         {
-            Span<byte> data = new byte[PrefixLength + content.Length];
+            var data = new byte[PrefixLength + content.Length];
             FillHeader(data, id, prefix);
-            content.CopyTo(data[PrefixLength..]);
+            content.CopyTo(data.AsSpan()[PrefixLength..]);
             return new(data);
         }
 
