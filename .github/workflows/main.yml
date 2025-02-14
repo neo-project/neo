@@ -82,7 +82,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
-        dotnet build
+        dotnet build -p:GITHUB_ACTIONS=true
         dotnet test --no-build
 
     - name: Coveralls
