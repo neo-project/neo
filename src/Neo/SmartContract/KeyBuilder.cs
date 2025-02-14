@@ -11,7 +11,7 @@
 
 #nullable enable
 
-using Neo.Extensions;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
@@ -115,6 +115,18 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="id">The id of the contract.</param>
         /// <param name="prefix">The prefix of the key.</param>
+        /// <param name="publicKey">Public key</param>
+        /// <returns>The <see cref="StorageKey"/> class</returns>
+        public static StorageKey Create(int id, byte prefix, ECPoint publicKey)
+        {
+            return Create(id, prefix, publicKey.GetSpan());
+        }
+
+        /// <summary>
+        /// Create StorageKey
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the key.</param>
         /// <param name="hash">Hash</param>
         /// <param name="signer">Signer</param>
         /// <returns>The <see cref="StorageKey"/> class</returns>
@@ -204,18 +216,6 @@ namespace Neo.SmartContract
             FillHeader(data, id, prefix);
             content.CopyTo(data.AsSpan()[PrefixLength..]);
             return new(data);
-        }
-
-        /// <summary>
-        /// Create StorageKey
-        /// </summary>
-        /// <param name="id">The id of the contract.</param>
-        /// <param name="prefix">The prefix of the key.</param>
-        /// <param name="serializable">Serializable</param>
-        /// <returns>The <see cref="StorageKey"/> class</returns>
-        public static StorageKey Create(int id, byte prefix, ISerializableSpan serializable)
-        {
-            return Create(id, prefix, serializable.GetSpan());
         }
 
         #endregion

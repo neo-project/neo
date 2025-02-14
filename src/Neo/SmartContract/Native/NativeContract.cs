@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
@@ -378,10 +378,10 @@ namespace Neo.SmartContract.Native
         private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash) => KeyBuilder.Create(Id, prefix, hash);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => KeyBuilder.Create(Id, prefix, hash, signer);
+        private protected StorageKey CreateStorageKey(byte prefix, ECPoint pubKey) => KeyBuilder.Create(Id, prefix, pubKey);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, ISerializableSpan serializable) => KeyBuilder.Create(Id, prefix, serializable);
+        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => KeyBuilder.Create(Id, prefix, hash, signer);
 
         #endregion
 
