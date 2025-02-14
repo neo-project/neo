@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Ledger
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-            senderProbe = new TestProbe(system.ActorSystem, TestAssertProbe.Instance).CreateTestProbe();
+            senderProbe = new TestProbe(system.ActorSystem, TestAssertProbe.Instance).CreateTestProbe(system.ActorSystem);
             txSample = new Transaction
             {
                 Attributes = [],

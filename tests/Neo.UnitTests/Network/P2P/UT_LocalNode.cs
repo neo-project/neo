@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void TestDefaults()
         {
-            var senderProbe = new TestProbe(testBlockchain.ActorSystem, TestAssertProbe.Instance).CreateTestProbe();
+            var senderProbe = new TestProbe(testBlockchain.ActorSystem, TestAssertProbe.Instance).CreateTestProbe(testBlockchain.ActorSystem);
             senderProbe.Send(testBlockchain.LocalNode, new LocalNode.GetInstance());
             var localnode = senderProbe.ExpectMsg<LocalNode>();
 
