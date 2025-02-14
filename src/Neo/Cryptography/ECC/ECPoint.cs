@@ -18,13 +18,14 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography.ECC
 {
     /// <summary>
     /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
     /// </summary>
-    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable
+    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable, ISerializableSpan
     {
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
@@ -344,6 +345,16 @@ namespace Neo.Cryptography.ECC
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(EncodePoint(true));
+        }
+
+        /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            return EncodePoint(true).AsSpan();
         }
 
         public override string ToString()
