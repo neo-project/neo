@@ -83,7 +83,7 @@ jobs:
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
         dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
-        dotnet test --no-build -p:GITHUB_ACTIONS=true
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*"
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
