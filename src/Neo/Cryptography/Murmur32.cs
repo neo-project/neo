@@ -67,8 +67,8 @@ namespace Neo.Cryptography
             _length += source.Length;
             if (_tailLength > 0)
             {
-                int remaining = Math.Min(4 - _tailLength, source.Length);
-                _tail ^= (ReadUInt32(source[..remaining]) << (_tailLength * 8));
+                var remaining = Math.Min(4 - _tailLength, source.Length);
+                _tail ^= ReadUInt32(source[..remaining]) << (_tailLength * 8);
                 _tailLength += remaining;
                 if (_tailLength == 4)
                 {
@@ -78,7 +78,6 @@ namespace Neo.Cryptography
                 }
                 source = source[remaining..];
             }
-
 #if NET7_0_OR_GREATER
             for (; source.Length >= 16; source = source[16..])
             {
@@ -134,7 +133,7 @@ namespace Neo.Cryptography
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint ReadUInt32(ReadOnlySpan<byte> source)
+        private static uint ReadUInt32(ReadOnlySpan<byte> source)
         {
             uint value = 0;
             switch (source.Length)
