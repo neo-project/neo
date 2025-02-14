@@ -85,9 +85,9 @@
 1. [Overview](#overview)
 2. [Project structure](#project-structure)
 3. [Related projects](#related-projects)
-4. [Opening a new issue](#opening-a-new-issue)
-5. [Bounty program](#bounty-program)
-6. [License](#license)
+4. [Opening a new issue](https://github.com/neo-project/neo/issues)
+5. [Bounty program](SECURITY.md)
+6. [License](LICENSE)
 
 ## Overview
 This repository is a csharp implementation of the [neo](https://neo.org) blockchain. It is jointly maintained by the neo core developers and neo global development community.
