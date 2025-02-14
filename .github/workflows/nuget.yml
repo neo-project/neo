@@ -37,6 +37,13 @@ jobs:
         --output ./sbin \
         --verbosity normal \
         -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:DebugSymbols=false \
+        -p:DebugType=none \
+        -p:ServerGarbageCollection=true \
+        -p:TieredCompilation=true \
+        -p:TieredCompilationQuickJitForLoops=false \
+        -p:TieredPGO=true
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
         -p:GITHUB_ACTIONS=true
 
     - name: Publish to NuGet.org
