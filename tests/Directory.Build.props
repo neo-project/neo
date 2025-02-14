@@ -15,6 +15,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
+    <Exclude>[Neo.UnitTests]*</Exclude>
+    <InstrumentModulesWithoutLocalSources>true</InstrumentModulesWithoutLocalSources>
+    <ExcludeAssembliesWithoutSources>MissingAny</ExcludeAssembliesWithoutSources>
   </PropertyGroup>
 
   <ItemGroup>
