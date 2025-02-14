@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
+using Akka.TestKit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using System;
@@ -19,7 +19,7 @@ using System.Net;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    public class UT_LocalNode : TestKit
+    public class UT_LocalNode
     {
         private static NeoSystem testBlockchain;
 
@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void TestDefaults()
         {
-            var senderProbe = CreateTestProbe();
+            var senderProbe = new TestProbe(testBlockchain.ActorSystem, TestAssertProbe.Instance).CreateTestProbe();
             senderProbe.Send(testBlockchain.LocalNode, new LocalNode.GetInstance());
             var localnode = senderProbe.ExpectMsg<LocalNode>();
 

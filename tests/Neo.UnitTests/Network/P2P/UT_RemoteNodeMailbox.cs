@@ -11,36 +11,30 @@
 
 using Akka.Actor;
 using Akka.IO;
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    public class UT_RemoteNodeMailbox : TestKit
+    public class UT_RemoteNodeMailbox
     {
-        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
-
         RemoteNodeMailbox uut;
 
         [TestCleanup]
         public void Cleanup()
         {
-            Shutdown();
+
         }
 
         [TestInitialize]
         public void TestSetup()
         {
-            ActorSystem system = Sys;
-            var config = DefaultConfig;
-            var akkaSettings = new Settings(system, config);
-            uut = new RemoteNodeMailbox(akkaSettings, config);
+            ActorSystem system = TestBlockchain.TheNeoSystem.ActorSystem;
+            uut = new RemoteNodeMailbox(system.Settings, NeoSystem.SystemConfig);
         }
 
         [TestMethod]

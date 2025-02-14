@@ -9,14 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
-    public class UT_FungibleToken : TestKit
+    public class UT_FungibleToken
     {
         [TestMethod]
         public void TestTotalSupply()

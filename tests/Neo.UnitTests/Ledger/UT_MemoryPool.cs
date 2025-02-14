@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
@@ -29,7 +28,7 @@ using System.Threading.Tasks;
 namespace Neo.UnitTests.Ledger
 {
     [TestClass]
-    public class UT_MemoryPool : TestKit
+    public class UT_MemoryPool
     {
         private static NeoSystem testBlockchain;
 

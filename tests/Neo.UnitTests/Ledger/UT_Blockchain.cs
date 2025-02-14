@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.TestKit;
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -22,7 +21,7 @@ using System;
 namespace Neo.UnitTests.Ledger
 {
     [TestClass]
-    public class UT_Blockchain : TestKit
+    public class UT_Blockchain
     {
         private NeoSystem system;
         private Transaction txSample;
@@ -32,7 +31,7 @@ namespace Neo.UnitTests.Ledger
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-            senderProbe = CreateTestProbe();
+            senderProbe = new TestProbe(system.ActorSystem, TestAssertProbe.Instance).CreateTestProbe();
             txSample = new Transaction
             {
                 Attributes = [],

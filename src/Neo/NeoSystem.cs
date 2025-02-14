@@ -44,14 +44,16 @@ namespace Neo
         /// </summary>
         public ProtocolSettings Settings { get; }
 
-        /// <summary>
-        /// The <see cref="Akka.Actor.ActorSystem"/> used to create actors for the <see cref="NeoSystem"/>.
-        /// </summary>
-        public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
+        internal static Akka.Configuration.Config SystemConfig =
             $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
-            $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}");
+            $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}";
+
+        /// <summary>
+        /// The <see cref="Akka.Actor.ActorSystem"/> used to create actors for the <see cref="NeoSystem"/>.
+        /// </summary>
+        public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem), SystemConfig);
 
         /// <summary>
         /// The genesis block of the NEO blockchain.
