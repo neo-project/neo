@@ -51,7 +51,7 @@ jobs:
           -p:TieredPGO=true \
           -p:GenerateDocumentationFile=false \
           -p:PublishDocumentationFiles=false \
-          -p:PublishReferencesDocumentationFiles=false
+          -p:PublishReferencesDocumentationFiles=false \
           -p:GITHUB_ACTIONS=true
 
     - name: Build (LevelDbStore)
@@ -70,7 +70,7 @@ jobs:
           -p:TieredPGO=true \
           -p:GenerateDocumentationFile=false \
           -p:PublishDocumentationFiles=false \
-          -p:PublishReferencesDocumentationFiles=false
+          -p:PublishReferencesDocumentationFiles=false \
           -p:GITHUB_ACTIONS=true
 
     - name: Remove (junk)
