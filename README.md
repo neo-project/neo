@@ -4,97 +4,29 @@
       src="https://neo3.azureedge.net/images/logo%20files-dark.svg"
       width="250px" alt="neo-logo">
   </a>
-</p>
-
-<h3 align="center">CSharp implementation of the neo blockchain protocol.</h3>
-
-<p align="center">
-   A modern distributed network for the Smart Economy.
-  <br>
-  <a href="https://docs.neo.org/"><strong>Documentation »</strong></a>
-  <br>
-  <br>
-  <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
-  ·
-  <a href="https://github.com/neo-project/neo-modules">Neo Modules</a>
-  ·
-  <a href="https://github.com/neo-project/neo-devpack-dotnet">Neo DevPack</a>
-</p>
-<p align="center">
-  <a href="https://twitter.com/neo_blockchain">
-      <img
-      src=".github/images/twitter-logo.png"
-      width="25px">
-  </a>
-  &nbsp;
-  <a href="https://medium.com/neo-smart-economy">
-      <img
-      src=".github/images/medium-logo.png"
-      width="23px">
-  </a>
-  &nbsp;
-  <a href="https://neonewstoday.com">
-      <img
-      src=".github/images/nnt-logo.jpg"
-      width="23px">
-  </a>
-  &nbsp;
-  <a href="https://t.me/NEO_EN">
-      <img
-      src=".github/images/telegram-logo.png"
-      width="24px" >
-  </a>
-  &nbsp;
-  <a href="https://www.reddit.com/r/NEO/">
-      <img
-      src=".github/images/reddit-logo.png"
-      width="24px">
-  </a>
-  &nbsp;
-  <a href="https://discord.io/neo">
-      <img
-      src=".github/images/discord-logo.png"
-      width="25px">
-  </a>
-  &nbsp;
-  <a href="https://www.youtube.com/neosmarteconomy">
-      <img
-      src=".github/images/youtube-logo.png"
-      width="32px">
-  </a>
-  &nbsp;
-  <!--How to get a link? -->
-  <a href="https://neo.org/">
-      <img
-      src=".github/images/we-chat-logo.png"
-      width="25px">
-  </a>
-  &nbsp;
-  <a href="https://weibo.com/neosmarteconomy">
-      <img
-      src=".github/images/weibo-logo.png"
-      width="28px">
-  </a>
-</p>
-<p align="center">
-  <a href="https://github.com/neo-project/neo/releases">
-    <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg" alt="Current neo version.">
-  </a>
-  <a href='https://coveralls.io/github/neo-project/neo'>
-    <img src='https://coveralls.io/repos/github/neo-project/neo/badge.svg' alt='Coverage Status' />
-  </a>
-  <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
-  </a>
-  <a href="git-client://clone?repo=https%3A%2F%2Fgithub.com%2Fneo-project%2Fneo">
-    <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/neo-project/neo">
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://codespaces.new/neo-project/neo">
-    <img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces.">
-  </a>
+  <h3 align="center">(C#) implementation of the Neo Blockchain Protocol.</h3>
+  <p align="center">
+    <a href="https://github.com/neo-project/neo/releases">
+      <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg" alt="Current neo version.">
+    </a>
+    <a href='https://coveralls.io/github/neo-project/neo'>
+      <img src='https://coveralls.io/repos/github/neo-project/neo/badge.svg' alt='Coverage Status' />
+    </a>
+    <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
+      <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
+    </a>
+    <a href="https://github.com/neo-project/neo/pulls">
+      <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues-pr/neo-project/neo">
+    </a>
+    <a href="https://github.com/neo-project/neo/archive/refs/heads/master.zip">
+      <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/neo-project/neo">
+    </a>
+  </p>
+  <p align="center">
+    <a href="https://codespaces.new/neo-project/neo">
+      <img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces.">
+    </a>
+  </p>
 </p>
 
 
@@ -153,5 +85,73 @@ If you found a security issue, please refer to our [security policy](https://git
 ## Bounty program
 You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
 
-## License
-The NEO project is licensed under the [MIT license](LICENSE).
+<hr />
+
+<p align="center">
+  <a href="https://twitter.com/neo_blockchain">
+      <img
+      src=".github/images/twitter-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://medium.com/neo-smart-economy">
+      <img
+      src=".github/images/medium-logo.png"
+      width="23px">
+  </a>
+  &nbsp;
+  <a href="https://neonewstoday.com">
+      <img
+      src=".github/images/nnt-logo.jpg"
+      width="23px">
+  </a>
+  &nbsp;
+  <a href="https://t.me/NEO_EN">
+      <img
+      src=".github/images/telegram-logo.png"
+      width="24px" >
+  </a>
+  &nbsp;
+  <a href="https://www.reddit.com/r/NEO/">
+      <img
+      src=".github/images/reddit-logo.png"
+      width="24px">
+  </a>
+  &nbsp;
+  <a href="https://discord.io/neo">
+      <img
+      src=".github/images/discord-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://www.youtube.com/neosmarteconomy">
+      <img
+      src=".github/images/youtube-logo.png"
+      width="32px">
+  </a>
+  &nbsp;
+  <!--How to get a link? -->
+  <a href="https://neo.org/">
+      <img
+      src=".github/images/we-chat-logo.png"
+      width="25px">
+  </a>
+  &nbsp;
+  <a href="https://weibo.com/neosmarteconomy">
+      <img
+      src=".github/images/weibo-logo.png"
+      width="28px">
+  </a>
+</p>
+<p align="center">
+   A modern distributed network for the Smart Economy.
+  <br>
+  <a href="https://docs.neo.org/"><strong>Read Docs</strong></a>
+  <br>
+  <br>
+  <a href="https://github.com/neo-project/neo-express"><strong>Express</strong></a>
+  ·
+  <a href="https://github.com/neo-project/proposals"><strong>Proposals</strong></a>
+  ·
+  <a href="https://github.com/neo-project/neo-devpack-dotnet"><strong>Compiler</strong></a>
+</p>

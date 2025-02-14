@@ -53,6 +53,11 @@ indent_size = 2
 end_of_line = lf
 indent_size = 2
 
+# Markdown files
+[*.md]
+end_of_line = lf
+indent_size = 2
+
 # Dotnet code style settings:
 [*.{cs,vb}]
 # Use block-scoped namespace
