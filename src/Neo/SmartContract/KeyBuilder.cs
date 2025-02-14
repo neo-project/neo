@@ -27,9 +27,9 @@ namespace Neo.SmartContract
     {
         private readonly MemoryStream _stream;
 
-        public const int PrefixLength = sizeof(int) + 1;
+        public const int PrefixLength = sizeof(int) + sizeof(byte);
 
-        private const int ByteLength = PrefixLength + 1;
+        private const int ByteLength = PrefixLength + sizeof(byte);
         private const int Int32Length = PrefixLength + sizeof(int);
         private const int Int64Length = PrefixLength + sizeof(long);
         private const int UInt160Length = PrefixLength + UInt160.Length;
