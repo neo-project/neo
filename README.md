@@ -82,17 +82,18 @@
 
 
 ## Table of Contents
-1. [Overview](#overview)
-2. [Project structure](#project-structure)
-3. [Related projects](#related-projects)
-4. [Opening a new issue](https://github.com/neo-project/neo/issues)
-5. [Bounty program](SECURITY.md)
-6. [License](LICENSE)
+1. [Tutorials](https://docs.neo.org)
+1. [Bounty Program](SECURITY.md)
+1. [Opening a New Issue](https://github.com/neo-project/neo/issues)
+1. [Project Structure](#project-structure)
+1. [Related Projects](#related-projects)
+1. [Contributor Guide](https://github.com/neo-project/.github/docs/neo-coding-rules.md)
+1. [License](LICENSE)
 
 ## Overview
-This repository is a csharp implementation of the [neo](https://neo.org) blockchain. It is jointly maintained by the neo core developers and neo global development community.
-Visit the [tutorials](https://docs.neo.org) to get started.
+This repository is the (C#) implementation of the [Neo](https://neo.org) Clockchain. It is jointly maintained by the [Neo Core Developers](https://github.com/orgs/neo-project/teams/core) and Neo Global Development (NGD) community.
 
+Visit [tutorials](https://docs.neo.org) to get started.
 
 ## Project structure
 An overview of the project folders can be seen below.
