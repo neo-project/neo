@@ -10,21 +10,15 @@
 // modifications are permitted.
 
 using BenchmarkDotNet.Running;
+using Neo.Json.Benchmarks;
 
-namespace Neo.Json.Benchmarks
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            BenchmarkRunner.Run<Benchmark_JsonDeserialize>();
-            //BenchmarkRunner.Run<Benchmark_OrderedDictionary>();
-            //BenchmarkRunner.Run<Benchmark_JBoolean>();
-            //BenchmarkRunner.Run<Benchmark_JNumber>();
-            //BenchmarkRunner.Run<Benchmark_JObject>();
-            //BenchmarkRunner.Run<Benchmark_JPath>();
-            //BenchmarkRunner.Run<Benchmark_JString>();
-            //BenchmarkRunner.Run<Benchmark_JsonArray>();
-        }
-    }
-}
+// List all bencharks:
+//  dotnet run -c Release --framework [for example: net9.0] -- --list flat(or tree)
+// Run a specific benchmark:
+//  dotnet run -c Release --framework [for example: net9.0] -- -f [benchmark name]
+// Run all benchmarks:
+//  dotnet run -c Release --framework [for example: net9.0] -- -f *
+// Run all bencharks of a class:
+//  dotnet run -c Release --framework [for example: net9.0] -- -f '*Class*'
+// More options: https://benchmarkdotnet.org/articles/guides/console-args.html
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
