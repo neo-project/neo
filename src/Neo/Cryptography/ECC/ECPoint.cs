@@ -15,13 +15,14 @@ using Neo.IO.Caching;
 using System;
 using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography.ECC
 {
     /// <summary>
     /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
     /// </summary>
-    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable
+    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable, ISerializableSpan
     {
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
@@ -187,10 +188,10 @@ namespace Neo.Cryptography.ECC
             {
                 if (_uncompressedPoint != null) return _uncompressedPoint;
                 data = new byte[65];
-                byte[] yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+                var yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
             }
-            byte[] xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
             if (commpressed) _compressedPoint = data;
@@ -348,6 +349,16 @@ namespace Neo.Cryptography.ECC
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(EncodePoint(true));
+        }
+
+        /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            return EncodePoint(true).AsSpan();
         }
 
         public override string ToString()
