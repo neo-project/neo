@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
-using Neo.Ledger;
 using System;
 using System.IO;
 using System.Linq;
