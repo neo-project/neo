@@ -30,7 +30,7 @@ namespace Neo.Plugins.OracleService.Tests
         public static readonly UInt160 MultisigScriptHash = MultisigScript.ToScriptHash();
         public static readonly string MultisigAddress = MultisigScriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
 
-        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializableSpan key)
         {
             var k = new KeyBuilder(contract.Id, prefix);
             if (key != null) k = k.Add(key);
