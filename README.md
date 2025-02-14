@@ -58,7 +58,6 @@
         width="28px">
     </a>
   </p>
-  <hr />
   <h3 align="center">(C#) implementation of the Neo Blockchain Protocol.</h3>
   <p align="center">
     <a href="https://github.com/neo-project/neo/releases">
