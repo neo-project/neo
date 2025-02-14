@@ -13,69 +13,7 @@ env:
   OUTPUT_PATH: /tmp/out
 
 jobs:
-  build-leveldb:
-    name: Build leveldb win-${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest]
-        arch: [x64, arm64]
-
-    steps:
-    # Step to lookup cache for the LevelDB build distribution
-    - name: Lookup Cache Distribution
-      id: cache-leveldb
-      uses: actions/cache@v4
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-${{ matrix.os }}-${{ matrix.arch }}
-        enableCrossOsArchive: true
-        lookup-only: true
-
-    # Conditionally checkout LevelDB repository if cache is not found
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
-      name: Checkout Repository Code (leveldb)
-      uses: actions/checkout@v4
-      with:
-        repository: google/leveldb
-        path: leveldb
-        submodules: true
-        fetch-depth: 0
-
-    # Conditionally setup MSBuild if cache is not found
-    - if: ${{ matrix.os == 'windows-latest' && steps.cache-leveldb.outputs.cache-hit != 'true' }}
-      name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-
-    # Conditionally setup LevelDB build directory if cache is not found
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
-      name: Setup LevelDb
-      working-directory: ./leveldb
-      run: mkdir -p ./build/Release
-
-    # Conditionally create build files for LevelDB if cache is not found
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
-      name: Create Build Files (win-${{ matrix.arch }})
-      working-directory: ./leveldb/build
-      run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
-
-    # Conditionally build LevelDB using MSBuild if cache is not found
-    - if: ${{ matrix.os == 'windows-latest' && steps.cache-leveldb.outputs.cache-hit != 'true' }}
-      name: Build (MSBuild)
-      working-directory: ./leveldb/build
-      run: msbuild ./leveldb.sln /p:Configuration=Release
-
-    # Conditionally cache the LevelDB distribution if it was built
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
-      name: Cache Distribution
-      uses: actions/cache/save@v4
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-${{ matrix.os }}-${{ matrix.arch }}
-        enableCrossOsArchive: true
-
   build-neo-cli:
-    needs: [build-leveldb]
     name: ${{ matrix.runtime }}
     runs-on: ubuntu-latest
     strategy:
@@ -120,8 +58,23 @@ jobs:
         -p:PublishSingleFile=true \
         -p:PublishReadyToRun=true \
         -p:EnableCompressionInSingleFile=true \
-        -p:DebugType=embedded \
-        -p:ServerGarbageCollection=true
+        -p:DebugSymbols=false \
+        -p:DebugType=none \
+        -p:ServerGarbageCollection=true \
+        -p:TieredCompilation=true \
+        -p:TieredCompilationQuickJitForLoops=false \
+        -p:TieredPGO=true \
+        -p:GenerateDocumentationFile=false \
+        -p:PublishDocumentationFiles=false \
+        -p:PublishReferencesDocumentationFiles=false \
+        -p:GITHUB_ACTIONS=true
+
+    # Copy 'libleveldb' library file
+    - name: Native Content (neo-cli)
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: |
+        mv -v ./runtimes/${{ matrix.runtime }}/native/* .
+        rm -v -R runtimes
 
     # Build the LevelDBStore plugin
     - name: .NET Build (LevelDBStore)
@@ -132,45 +85,22 @@ jobs:
         --configuration ${{ env.CONFIGURATION }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal \
-        -p:VersionPrefix=${{ env.APP_VERSION }}
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:DebugSymbols=false \
+        -p:DebugType=none \
+        -p:ServerGarbageCollection=true \
+        -p:TieredCompilation=true \
+        -p:TieredCompilationQuickJitForLoops=false \
+        -p:TieredPGO=true \
+        -p:GenerateDocumentationFile=false \
+        -p:GITHUB_ACTIONS=true
 
     # Remove unnecessary files from the LevelDBStore plugin output
     - name: Remove files (junk)
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
       run: |
+        rm -v -R runtimes
         rm -v Neo*
-        rm -v *.pdb
-        rm -v *.xml
-
-    # Remove XML comment files from the neo-cli output
-    - name: Remove Xml Comment Files
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: rm -v *.xml
-
-    # Get cached LevelDB distribution for Windows x64 if applicable
-    - if: ${{ startsWith(matrix.runtime, 'win-x64') }}
-      name: Get Distribution Caches (win-x64)
-      uses: actions/cache@v4
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-windows-latest-x64
-        enableCrossOsArchive: true
-        fail-on-cache-miss: true
-
-    # Get cached LevelDB distribution for Windows arm64 if applicable
-    - if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
-      name: Get Distribution Caches (win-arm64)
-      uses: actions/cache@v4
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-windows-latest-arm64
-        enableCrossOsArchive: true
-        fail-on-cache-miss: true
-
-    # Copy LevelDB files to the output directory for Windows
-    - if: ${{ startsWith(matrix.runtime, 'win') }}
-      name: Copy Files (leveldb) (win)
-      run: cp -v ./leveldb/build/Release/leveldb.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
 
     # Create the distribution directory
     - name: Create Distribution Directory

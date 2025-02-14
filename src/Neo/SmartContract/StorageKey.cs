@@ -111,3 +111,5 @@ namespace Neo.SmartContract
         public static implicit operator StorageKey(ReadOnlySpan<byte> value) => new(value);
     }
 }
+
+#nullable disable

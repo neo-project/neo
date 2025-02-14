@@ -67,3 +67,5 @@ namespace Neo.Persistence
         bool Contains(TKey key);
     }
 }
+
+#nullable disable
