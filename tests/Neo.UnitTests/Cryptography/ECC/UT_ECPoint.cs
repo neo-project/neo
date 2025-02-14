@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Ledger;
 using System;
 using System.IO;
 using System.Linq;
@@ -171,7 +172,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestEquals()
         {
-            ECPoint point = ECCurve.Secp256k1.G;
+            var point = ECCurve.Secp256k1.G;
             Assert.IsTrue(point.Equals(point));
             Assert.IsFalse(point.Equals(null));
 
@@ -309,11 +310,15 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestSerialize()
         {
-            MemoryStream stream = new MemoryStream();
-            ECPoint point = new ECPoint(null, null, ECCurve.Secp256k1);
+            var stream = new MemoryStream();
+            var point = new ECPoint(null, null, ECCurve.Secp256k1);
             ISerializable serializable = point;
             serializable.Serialize(new BinaryWriter(stream));
             CollectionAssert.AreEqual(new byte[] { 0 }, stream.ToArray());
+
+            CollectionAssert.AreEqual(point.GetSpan().ToArray(), stream.ToArray());
+            point = ECCurve.Secp256r1.G;
+            CollectionAssert.AreEqual(point.GetSpan().ToArray(), point.ToArray());
         }
 
         [TestMethod]
