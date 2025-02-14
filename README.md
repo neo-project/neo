@@ -58,6 +58,7 @@
         width="28px">
     </a>
   </p>
+  <hr />
   <h3 align="center">(C#) implementation of the Neo Blockchain Protocol.</h3>
   <p align="center">
     <a href="https://github.com/neo-project/neo/releases">
@@ -139,6 +140,8 @@ You can be rewarded by finding security issues. Please refer to our [bounty prog
 <br />
 <hr />
 <p align="center">
+  Copyright &copy; 2015-2025
+  <br />
   <a href="https://github.com/neo-project/neo-express"><strong>Express</strong></a>
   ·
   <a href="https://github.com/neo-project/proposals"><strong>Proposals</strong></a>
@@ -148,8 +151,6 @@ You can be rewarded by finding security issues. Please refer to our [bounty prog
   <a href="https://docs.neo.org/"><strong>Read Docs</strong></a>
   <br />
   A modern distributed network for the Smart Economy
-  <br />
-  Copyright &copy; 2015-2025
   <br />
   <br />
 </p>
