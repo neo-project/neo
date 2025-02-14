@@ -139,6 +139,7 @@ If you found a security issue, please refer to our [security policy](https://git
 ## Bounty program
 You can be rewarded by finding security issues. Please refer to our [bounty program page](https://neo.org/bounty) for more information.
 
+<br />
 <hr />
 <p align="center">
   <a href="https://github.com/neo-project/neo-express"><strong>Express</strong></a>
