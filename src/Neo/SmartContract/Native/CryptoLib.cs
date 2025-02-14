@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native
             try
             {
                 var point = Crypto.ECRecover(signature, messageHash);
-                return point?.EncodePoint(true);
+                return point.EncodePoint(true);
             }
             catch
             {

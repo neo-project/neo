@@ -344,11 +344,7 @@ namespace Neo.Cryptography
                     ECC.ECCurve.Secp256k1.BouncyCastleCurve.G, eInvrInv,
                     decompressedRKey, srInv);
 
-                return ECC.ECPoint.FromBytes(q.Normalize().GetEncoded(false), ECC.ECCurve.Secp256k1);
-            }
-            catch (ArgumentException)
-            {
-                throw;
+                return ECPoint.FromBytes(q.Normalize().GetEncoded(false), ECC.ECCurve.Secp256k1);
             }
             catch (Exception ex)
             {
