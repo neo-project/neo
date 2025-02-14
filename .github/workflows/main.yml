@@ -38,7 +38,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
 
     - name: Build (Everything)
-      run: dotnet build
+      run: dotnet build -p:GITHUB_ACTIONS=true
 
     - name: Install dependencies
       run: |
@@ -69,14 +69,14 @@ jobs:
       run: |
         brew install leveldb
         brew install gperftools
-        dotnet build
-        dotnet test --no-build
+        dotnet build -p:GITHUB_ACTIONS=true
+        dotnet test --no-build -p:GITHUB_ACTIONS=true
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet build
-        dotnet test --no-build
+        dotnet build -p:GITHUB_ACTIONS=true
+        dotnet test --no-build -p:GITHUB_ACTIONS=true
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
@@ -130,7 +130,8 @@ jobs:
         dotnet pack \
         --configuration Release \
         --output ./out \
-        --version-suffix ${{ env.VERSION_SUFFIX }}
+        --version-suffix ${{ env.VERSION_SUFFIX }} \
+        -p:GITHUB_ACTIONS=true
 
     - name: Publish to Github Packages
       working-directory: ./out
