@@ -34,7 +34,7 @@ jobs:
       run: |
         dotnet pack ./neo.sln \
         --disable-build-servers \
-        --verbosity diag \
+        --verbosity detailed \
         --configuration Release \
         --output ./sbin \
         --verbosity normal \
