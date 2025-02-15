@@ -35,8 +35,8 @@ namespace Neo.SmartContract
         /// <param name="keySizeHint">The hint of the storage key size(including the id and prefix).</param>
         public KeyBuilder(int id, byte prefix, int keySizeHint = ApplicationEngine.MaxStorageKeySize)
         {
-            if (keySizeHint < 0)
-                throw new ArgumentOutOfRangeException(nameof(keySizeHint));
+            if (keySizeHint <= 0)
+                throw new ArgumentOutOfRangeException(nameof(keySizeHint), "must greater than 0");
 
             _cacheData = new byte[keySizeHint];
             BinaryPrimitives.WriteInt32LittleEndian(_cacheData.Span, id);
