@@ -33,6 +33,7 @@ jobs:
     - name: Pack NuGet Packages
       run: |
         dotnet pack ./neo.sln \
+        --disable-build-servers \
         --configuration Release \
         --output ./sbin \
         --verbosity normal \

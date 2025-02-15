@@ -22,7 +22,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Check Format (*.cs)
-      run: dotnet format --verify-no-changes --verbosity diagnostic
+      run: dotnet format --verify-no-changes --verbosity diag
 
   Test-Everything:
     needs: [Format]
@@ -38,7 +38,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
 
     - name: Build (Everything)
-      run: dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
+      run: dotnet build --disable-parallel --disable-build-servers --verbosity diag -p:GITHUB_ACTIONS=true
 
     - name: Install dependencies
       run: |
@@ -69,21 +69,21 @@ jobs:
       run: |
         brew install leveldb
         brew install gperftools
-        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
-        dotnet test --no-build -p:GITHUB_ACTIONS=true
+        dotnet build --disable-parallel --disable-build-servers --verbosity diag -p:GITHUB_ACTIONS=true
+        dotnet test --no-build --verbosity diag -p:GITHUB_ACTIONS=true
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
-        dotnet test --no-build -p:GITHUB_ACTIONS=true
+        dotnet build --disable-parallel --disable-build-servers --verbosity diag -p:GITHUB_ACTIONS=true
+        dotnet test --no-build --verbosity diag -p:GITHUB_ACTIONS=true
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
-        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
-        dotnet test --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*"
+        dotnet build --disable-parallel --disable-build-servers --verbosity diag -p:GITHUB_ACTIONS=true
+        dotnet test --no-build --verbosity diag -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*"
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
@@ -129,6 +129,8 @@ jobs:
     - name : Pack (Everything)
       run: |
         dotnet pack \
+        --disable-build-servers \
+        --verbosity diag \
         --configuration Release \
         --output ./out \
         --version-suffix ${{ env.VERSION_SUFFIX }} \
