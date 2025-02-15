@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" InitialTargets="DownloadNativeLibs">
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
@@ -9,10 +9,11 @@
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
-  <Target Name="DownloadNativeLibs" BeforeTargets="PreBuildEvent" Outputs="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip">
-    <DownloadFile Condition="!Exists('runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceUrl="https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(IntermediateOutputPath)" Retries="3" />
-    <Unzip Condition="Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip') And !Exists('runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceFiles="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(IntermediateOutputPath)" OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
-    <Move SourceFiles="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/%(NativeLib.Lib)" DestinationFolder="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/" OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
+  <Target Name="DownloadNativeLibs">
+    <DownloadFile Condition="!Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceUrl="https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(IntermediateOutputPath)" Retries="3" />
+    <Unzip Condition="Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip') And !Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceFiles="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(IntermediateOutputPath)" OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
+    <Move Condition="Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/%(NativeLib.Lib)') And !Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceFiles="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/%(NativeLib.Lib)" DestinationFolder="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/" OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
+    <Message Importance="high" Text="Location is $(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)" />
   </Target>
 
   <ItemGroup>
