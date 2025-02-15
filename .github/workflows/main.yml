@@ -22,7 +22,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Check Format (*.cs)
-      run: dotnet format --verify-no-changes
+      run: dotnet format --verify-no-changes --verbosity diagnostic
 
   Test-Everything:
     needs: [Format]
