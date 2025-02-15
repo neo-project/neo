@@ -26,6 +26,7 @@ namespace Neo.SmartContract
         private readonly Memory<byte> _cacheData;
         private int _keyLength = 0;
 
+
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyBuilder"/> class.
         /// </summary>
@@ -34,11 +35,20 @@ namespace Neo.SmartContract
         /// <param name="keySizeHint">The hint of the storage key size(including the id and prefix).</param>
         public KeyBuilder(int id, byte prefix, int keySizeHint = ApplicationEngine.MaxStorageKeySize)
         {
+            if (keySizeHint < 0)
+                throw new ArgumentOutOfRangeException(nameof(keySizeHint));
+
             _cacheData = new byte[keySizeHint];
             BinaryPrimitives.WriteInt32LittleEndian(_cacheData.Span, id);
 
             _keyLength = sizeof(int);
             _cacheData.Span[_keyLength++] = prefix;
+        }
+
+        private void CheckLength(int length)
+        {
+            if ((length + _keyLength) > _cacheData.Length)
+                throw new OverflowException("Input data too Large!");
         }
 
         /// <summary>
@@ -49,6 +59,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(byte key)
         {
+            CheckLength(1);
             _cacheData.Span[_keyLength++] = key;
             return this;
         }
@@ -61,6 +72,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(ReadOnlySpan<byte> key)
         {
+            CheckLength(key.Length);
             key.CopyTo(_cacheData.Span[_keyLength..]);
             _keyLength += key.Length;
             return this;
