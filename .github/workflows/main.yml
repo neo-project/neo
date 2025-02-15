@@ -7,7 +7,6 @@ on:
 
 env:
   DOTNET_VERSION: 9.0.x
-  COVERLET_EXCLUDE_COVERAGE: -p:Exclude="[Neo.UnitTests]*"
 
 jobs:
 
@@ -39,7 +38,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
 
     - name: Build (Everything)
-      run: dotnet build -p:GITHUB_ACTIONS=true
+      run: dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
 
     - name: Install dependencies
       run: |
@@ -70,53 +69,44 @@ jobs:
       run: |
         brew install leveldb
         brew install gperftools
-        dotnet build -p:GITHUB_ACTIONS=true
+        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
         dotnet test --no-build -p:GITHUB_ACTIONS=true
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
-        dotnet build -p:GITHUB_ACTIONS=true
+        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
         dotnet test --no-build -p:GITHUB_ACTIONS=true
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
-
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.Extensions.Tests --output ./bin/tests/Neo.Extensions.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-
-        # Plugins
-        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
-        dotnet test ./tests/Neo.Plugins.ApplicationLogs.Tests --output ./bin/tests/Neo.Plugins.ApplicationLogs.Tests ${{ env.COVERLET_EXCLUDE_COVERAGE }} -p:GITHUB_ACTIONS=true
+        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*"
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@v2.3.0
+      uses: coverallsapp/github-action@v2.3.6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        debug: false
+        measure: true
+        allow-empty: true
+        format: lcov
         files:
-          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Json.UnitTests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.ApplicationLogs.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Extensions.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.UnitTests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Cryptography.BLS12_381.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.ConsoleService.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.VM.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Json.UnitTests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Cryptography.MPTTrie.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Network.RPC.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.OracleService.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.RpcServer.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.Storage.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.ApplicationLogs.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Extensions.Tests/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
