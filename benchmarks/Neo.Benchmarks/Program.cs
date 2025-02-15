@@ -11,6 +11,8 @@
 
 using BenchmarkDotNet.Running;
 using Neo.Benchmark;
+using Neo.Benchmarks.Persistence.Benchmarks;
+using Neo.SmartContract.Benchmark;
 
 // List all bencharks:
 //  dotnet run -c Release --framework [for example: net9.0] -- --list flat(or tree)
