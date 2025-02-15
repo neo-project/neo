@@ -23,6 +23,8 @@ namespace Neo.SmartContract
     /// </summary>
     public class KeyBuilder
     {
+        public const int PrefixLength = sizeof(int) + sizeof(byte);
+
         private readonly Memory<byte> _cacheData;
         private int _keyLength = 0;
 
@@ -32,13 +34,13 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="id">The id of the contract.</param>
         /// <param name="prefix">The prefix of the key.</param>
-        /// <param name="keySizeHint">The hint of the storage key size(including the id and prefix).</param>
-        public KeyBuilder(int id, byte prefix, int keySizeHint = ApplicationEngine.MaxStorageKeySize)
+        /// <param name="maxLength">The hint of the storage key size(Not including the id and prefix).</param>
+        public KeyBuilder(int id, byte prefix, int maxLength = ApplicationEngine.MaxStorageKeySize)
         {
-            if (keySizeHint < 0)
-                throw new ArgumentOutOfRangeException(nameof(keySizeHint));
+            if (maxLength < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxLength), "Must be greater than or equal to zero.");
 
-            _cacheData = new byte[keySizeHint];
+            _cacheData = new byte[maxLength + PrefixLength];
             BinaryPrimitives.WriteInt32LittleEndian(_cacheData.Span, id);
 
             _keyLength = sizeof(int);
