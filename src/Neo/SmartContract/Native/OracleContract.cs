@@ -137,7 +137,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        private static byte[] GetUrlHash(string url)
+        private static ReadOnlySpan<byte> GetUrlHash(string url)
         {
             return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
         }
