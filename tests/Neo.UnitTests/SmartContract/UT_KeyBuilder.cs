@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
@@ -20,68 +19,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_KeyBuilder
     {
-        [TestMethod]
-        public void SameTest()
-        {
-            // None
-            var key = new KeyBuilder(1, 2);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2).ToArray());
-
-            // Byte[]
-            key = new KeyBuilder(1, 2);
-            key.Add([3, 4]);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, [3, 4]).ToArray());
-
-            // Byte
-            key = new KeyBuilder(1, 2);
-            key.Add((byte)3);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, (byte)3).ToArray());
-
-            // Int
-            key = new KeyBuilder(1, 2);
-            key.AddBigEndian((int)3);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, (int)3).ToArray());
-
-            // UInt
-            key = new KeyBuilder(1, 2);
-            key.AddBigEndian((uint)3);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, (uint)3).ToArray());
-
-            // Long
-            key = new KeyBuilder(1, 2);
-            key.AddBigEndian((long)3);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, (long)3).ToArray());
-
-            // ULong
-            key = new KeyBuilder(1, 2);
-            key.AddBigEndian((ulong)3);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, (ulong)3).ToArray());
-
-            // UInt160
-            key = new KeyBuilder(1, 2);
-            key.Add(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302")).ToArray());
-
-            // UInt256
-            key = new KeyBuilder(1, 2);
-            key.Add(UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"));
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2,
-                UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d")).ToArray());
-
-            // UInt256+UInt160
-            key = new KeyBuilder(1, 2);
-            key.Add(UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"));
-            key.Add(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2,
-                UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"),
-                UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302")).ToArray());
-
-            // ISerializable
-            key = new KeyBuilder(1, 2);
-            key.Add(ECCurve.Secp256r1.G);
-            CollectionAssert.AreEqual(key.ToArray(), KeyBuilder.Create(1, 2, ECCurve.Secp256r1.G).ToArray());
-        }
-
         [TestMethod]
         public void Test()
         {

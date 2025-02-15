@@ -351,37 +351,37 @@ namespace Neo.SmartContract.Native
         #region Storage keys
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix) => KeyBuilder.Create(Id, prefix);
+        private protected StorageKey CreateStorageKey(byte prefix) => StorageKey.Create(Id, prefix);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, byte data) => KeyBuilder.Create(Id, prefix, data);
+        private protected StorageKey CreateStorageKey(byte prefix, byte data) => StorageKey.Create(Id, prefix, data);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, int bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+        private protected StorageKey CreateStorageKey(byte prefix, int bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, uint bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+        private protected StorageKey CreateStorageKey(byte prefix, uint bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, long bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+        private protected StorageKey CreateStorageKey(byte prefix, long bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, ulong bigEndianKey) => KeyBuilder.Create(Id, prefix, bigEndianKey);
+        private protected StorageKey CreateStorageKey(byte prefix, ulong bigEndianKey) => StorageKey.Create(Id, prefix, bigEndianKey);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, byte[] content) => KeyBuilder.Create(Id, prefix, content.AsSpan());
+        private protected StorageKey CreateStorageKey(byte prefix, byte[] content) => StorageKey.Create(Id, prefix, content.AsSpan());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash) => KeyBuilder.Create(Id, prefix, hash);
+        private protected StorageKey CreateStorageKey(byte prefix, UInt160 hash) => StorageKey.Create(Id, prefix, hash);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash) => KeyBuilder.Create(Id, prefix, hash);
+        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash) => StorageKey.Create(Id, prefix, hash);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, ECPoint pubKey) => KeyBuilder.Create(Id, prefix, pubKey);
+        private protected StorageKey CreateStorageKey(byte prefix, ECPoint pubKey) => StorageKey.Create(Id, prefix, pubKey);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => KeyBuilder.Create(Id, prefix, hash, signer);
+        private protected StorageKey CreateStorageKey(byte prefix, UInt256 hash, UInt160 signer) => StorageKey.Create(Id, prefix, hash, signer);
 
         #endregion
 
