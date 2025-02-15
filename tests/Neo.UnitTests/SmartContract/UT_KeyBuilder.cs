@@ -27,11 +27,11 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("0100000002", key.ToArray().ToHexString());
 
             key = new KeyBuilder(1, 2);
-            key = key.Add(new byte[] { 3, 4 });
+            key = key.Add([3, 4]);
             Assert.AreEqual("01000000020304", key.ToArray().ToHexString());
 
             key = new KeyBuilder(1, 2);
-            key = key.Add(new byte[] { 3, 4 });
+            key = key.Add([3, 4]);
             key = key.Add(UInt160.Zero);
             Assert.AreEqual("010000000203040000000000000000000000000000000000000000", key.ToArray().ToHexString());
 
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("0100000002000102030405060708090a0b0c0d0e0f10111213", key.ToArray().ToHexString());
 
             var key2 = new KeyBuilder(1, 2);
-            key2 = key2.Add((ISerializable)(new UInt160(value)));
+            key2 = key2.Add((ISerializableSpan)new UInt160(value));
 
             // It must be same before and after optimization.
             Assert.AreEqual(key.ToArray().ToHexString(), key2.ToArray().ToHexString());
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("0100000002000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", key.ToArray().ToHexString());
 
             key2 = new KeyBuilder(1, 2);
-            key2 = key2.Add((ISerializable)(new UInt256(value)));
+            key2 = key2.Add((ISerializableSpan)new UInt256(value));
 
             // It must be same before and after optimization.
             Assert.AreEqual(key.ToArray().ToHexString(), key2.ToArray().ToHexString());

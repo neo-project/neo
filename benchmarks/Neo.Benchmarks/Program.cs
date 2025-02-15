@@ -12,9 +12,13 @@
 using BenchmarkDotNet.Running;
 using Neo.Benchmark;
 
-BenchmarkRunner.Run<Benchmarks_Cache>();
-//BenchmarkRunner.Run<Benchmarks_UInt160>();
-//BenchmarkRunner.Run<Benchmarks_Hash>();
-//BenchmarkRunner.Run<Benchmarks_StorageKey>();
-//BenchmarkRunner.Run<Bechmarks_ReadOnlyStoreView>();
-//BenchmarkRunner.Run<Bechmarks_LevelDB>();
+// List all bencharks:
+//  dotnet run -c Release --framework [for example: net9.0] -- --list flat(or tree)
+// Run a specific benchmark:
+//  dotnet run -c Release --framework [for example: net9.0] -- -f [benchmark name]
+// Run all benchmarks:
+//  dotnet run -c Release --framework [for example: net9.0] -- -f *
+// Run all bencharks of a class:
+//  dotnet run -c Release --framework [for example: net9.0] -- -f '*Class*'
+// More options: https://benchmarkdotnet.org/articles/guides/console-args.html
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
