@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Native
         /// <param name="messageHash">The hash of the message that was signed.</param>
         /// <param name="signature">The 65-byte signature in format: r[32] + s[32] + v[1]. 64-bytes for eip-2098, where v must be 27 or 28.</param>
         /// <returns>The recovered public key in compressed format, or null if recovery fails.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 10, Name = "recoverSecp256K1")]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
         public static byte[] RecoverSecp256K1(byte[] messageHash, byte[] signature)
         {
             // It will be checked in Crypto.ECRecover
