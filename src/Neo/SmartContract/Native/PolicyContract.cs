@@ -165,7 +165,7 @@ namespace Neo.SmartContract.Native
         private uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType, bool allowNotaryAssisted)
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
-                throw new InvalidOperationException();
+                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
 
             var key = CreateStorageKey(Prefix_AttributeFee).Add(attributeType);
             return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
@@ -221,7 +221,7 @@ namespace Neo.SmartContract.Native
         private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value, bool allowNotaryAssisted)
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
-                throw new InvalidOperationException();
+                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
