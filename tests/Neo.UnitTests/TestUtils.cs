@@ -9,47 +9,38 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
-using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 
 namespace Neo.UnitTests
 {
     public static partial class TestUtils
     {
-        public static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
+        public static readonly Random TestRandom = new(1337); // use fixed seed for guaranteed determinism
 
         public static UInt256 RandomUInt256()
         {
-            byte[] data = new byte[32];
+            var data = new byte[32];
             TestRandom.NextBytes(data);
             return new UInt256(data);
         }
 
         public static UInt160 RandomUInt160()
         {
-            byte[] data = new byte[20];
+            var data = new byte[20];
             TestRandom.NextBytes(data);
             return new UInt160(data);
         }
 
-        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key = null)
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializableSpan key = null)
         {
             var k = new KeyBuilder(contract.Id, prefix);
             if (key != null) k = k.Add(key);
@@ -63,9 +54,9 @@ namespace Neo.UnitTests
 
         public static byte[] GetByteArray(int length, byte firstByte)
         {
-            byte[] array = new byte[length];
+            var array = new byte[length];
             array[0] = firstByte;
-            for (int i = 1; i < length; i++)
+            for (var i = 1; i < length; i++)
             {
                 array[i] = 0x20;
             }
@@ -74,13 +65,13 @@ namespace Neo.UnitTests
 
         public static NEP6Wallet GenerateTestWallet(string password)
         {
-            JObject wallet = new JObject();
+            var wallet = new JObject();
             wallet["name"] = "noname";
             wallet["version"] = new Version("1.0").ToString();
             wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
-            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
+            Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.ToString());
             return new NEP6Wallet(null, password, TestProtocolSettings.Default, wallet);
         }
 
@@ -112,7 +103,7 @@ namespace Neo.UnitTests
 
         public static void FillMemoryPool(DataCache snapshot, NeoSystem system, NEP6Wallet wallet, WalletAccount account)
         {
-            for (int i = 0; i < system.Settings.MemoryPoolMaxTransactions; i++)
+            for (var i = 0; i < system.Settings.MemoryPoolMaxTransactions; i++)
             {
                 var tx = CreateValidTx(snapshot, wallet, account);
                 system.MemPool.TryAdd(tx, snapshot);

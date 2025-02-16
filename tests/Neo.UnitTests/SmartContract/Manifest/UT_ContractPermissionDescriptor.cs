@@ -9,13 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace Neo.UnitTests.SmartContract.Manifest
@@ -53,13 +53,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestContractManifestFromJson()
         {
-            Assert.ThrowsException<NullReferenceException>(() => ContractManifest.FromJson(new Json.JObject()));
-            var jsonFiles = System.IO.Directory.GetFiles(System.IO.Path.Combine("SmartContract", "Manifest", "TestFile"));
+            Assert.ThrowsException<NullReferenceException>(() => ContractManifest.FromJson(new JObject()));
+            var jsonFiles = Directory.GetFiles(Path.Combine("SmartContract", "Manifest", "TestFile"));
             foreach (var item in jsonFiles)
             {
-                var json = JObject.Parse(System.IO.File.ReadAllText(item)) as JObject;
+                var json = JObject.Parse(File.ReadAllText(item)) as JObject;
                 var manifest = ContractManifest.FromJson(json);
-                manifest.ToJson().ToString().Should().Be(json.ToString());
+                Assert.AreEqual(manifest.ToJson().ToString(), json.ToString());
             }
         }
 

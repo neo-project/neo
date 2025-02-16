@@ -9,11 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
 using System;
@@ -112,7 +110,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "000000000000000000000000000000000000000080";
-            attr.ToArray().ToHexString().Should().Be(hex);
+            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -130,7 +128,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "000000000000000000000000000000000000000001";
-            attr.ToArray().ToHexString().Should().Be(hex);
+            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -171,7 +169,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "00000000000000000000000000000000000000004001010201020102010001";
-            attr.ToArray().ToHexString().Should().Be(hex);
+            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
             Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
         }
@@ -209,7 +207,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "00000000000000000000000000000000000000004001010301030103010001";
-            attr.ToArray().ToHexString().Should().Be(hex);
+            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
             Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
         }
@@ -225,7 +223,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
-            attr.ToArray().ToHexString().Should().Be(hex);
+            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -245,7 +243,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "0000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
-            attr.ToArray().ToHexString().Should().Be(hex);
+            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -264,7 +262,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"Global\"}";
-            attr.ToJson().ToString().Should().Be(json);
+            Assert.AreEqual(json, attr.ToJson().ToString());
         }
 
         [TestMethod]
@@ -277,7 +275,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CalledByEntry\"}";
-            attr.ToJson().ToString().Should().Be(json);
+            Assert.AreEqual(json, attr.ToJson().ToString());
         }
 
         [TestMethod]
@@ -291,7 +289,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomContracts\",\"allowedcontracts\":[\"0x0000000000000000000000000000000000000000\"]}";
-            attr.ToJson().ToString().Should().Be(json);
+            Assert.AreEqual(json, attr.ToJson().ToString());
         }
 
         [TestMethod]
@@ -305,7 +303,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomGroups\",\"allowedgroups\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}";
-            attr.ToJson().ToString().Should().Be(json);
+            Assert.AreEqual(json, attr.ToJson().ToString());
         }
 
         [TestMethod]

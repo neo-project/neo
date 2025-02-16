@@ -9,15 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Array = System.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -27,7 +28,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestBinary()
         {
-            var data = System.Array.Empty<byte>();
+            var data = Array.Empty<byte>();
 
             CollectionAssert.AreEqual(data, StdLib.Base64Decode(StdLib.Base64Encode(data)));
             CollectionAssert.AreEqual(data, StdLib.Base58Decode(StdLib.Base58Encode(data)));
@@ -52,12 +53,12 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(1, StdLib.Atoi("+1", 10));
             Assert.AreEqual(-1, StdLib.Atoi("ff", 16));
             Assert.AreEqual(-1, StdLib.Atoi("FF", 16));
-            Assert.ThrowsException<System.FormatException>(() => StdLib.Atoi("a", 10));
-            Assert.ThrowsException<System.FormatException>(() => StdLib.Atoi("g", 16));
-            Assert.ThrowsException<System.ArgumentOutOfRangeException>(() => StdLib.Atoi("a", 11));
+            Assert.ThrowsException<FormatException>(() => StdLib.Atoi("a", 10));
+            Assert.ThrowsException<FormatException>(() => StdLib.Atoi("g", 16));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => StdLib.Atoi("a", 11));
 
-            StdLib.Atoi(StdLib.Itoa(BigInteger.One, 10)).Should().Be(BigInteger.One);
-            StdLib.Atoi(StdLib.Itoa(BigInteger.MinusOne, 10)).Should().Be(BigInteger.MinusOne);
+            Assert.AreEqual(BigInteger.One, StdLib.Atoi(StdLib.Itoa(BigInteger.One, 10)));
+            Assert.AreEqual(BigInteger.MinusOne, StdLib.Atoi(StdLib.Itoa(BigInteger.MinusOne, 10)));
         }
 
         [TestMethod]
@@ -219,7 +220,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(engine.Execute(), VMState.HALT);
             Assert.AreEqual(1, engine.ResultStack.Count);
 
-            var arr = engine.ResultStack.Pop<Array>();
+            var arr = engine.ResultStack.Pop<VM.Types.Array>();
             Assert.AreEqual(2, arr.Count);
             Assert.AreEqual("a", arr[0].GetString());
             Assert.AreEqual("b", arr[1].GetString());

@@ -5,12 +5,9 @@
     <AssemblyTitle>Neo.CLI</AssemblyTitle>
     <AssemblyName>neo-cli</AssemblyName>
     <OutputType>Exe</OutputType>
-    <PackageId>Neo.CLI</PackageId>
-    <RootNamespace>Neo</RootNamespace>
     <Product>Neo.CLI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
-    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -33,11 +30,18 @@
     <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\Neo\Neo.csproj" />
+    <ProjectReference Include="..\Plugins\LevelDBStore\LevelDBStore.csproj" />
+    <ProjectReference Include="..\Plugins\RocksDBStore\RocksDBStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
       <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
       <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
+
+  <Target Name="MoveLevelDbForBuild" BeforeTargets="PostBuildEvent">
+    <Move SourceFiles="$(OutputPath)/LevelDBStore.dll" DestinationFolder="$(OutDir)/Plugins/LevelDBStore" />
+    <Move SourceFiles="$(OutputPath)/RocksDBStore.dll" DestinationFolder="$(OutDir)/Plugins/RocksDBStore" />
+  </Target>
 
 </Project>

@@ -18,19 +18,22 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Neo.Persistence
+namespace Neo.Persistence.Providers
 {
     /// <summary>
     /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
-    internal class MemorySnapshot : ISnapshot
+    internal class MemorySnapshot : IStoreSnapshot
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData;
         private readonly ImmutableDictionary<byte[], byte[]> _immutableData;
         private readonly ConcurrentDictionary<byte[], byte[]?> _writeBatch;
 
-        public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
+        public IStore Store { get; }
+
+        internal MemorySnapshot(MemoryStore store, ConcurrentDictionary<byte[], byte[]> innerData)
         {
+            Store = store;
             _innerData = innerData;
             _immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
             _writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
@@ -60,12 +63,17 @@ namespace Neo.Persistence
         /// <inheritdoc/>
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
+            keyOrPrefix ??= [];
+            if (direction == SeekDirection.Backward && keyOrPrefix.Length == 0) yield break;
+
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _immutableData;
-            if (keyOrPrefix?.Length > 0)
-                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+            if (keyOrPrefix.Length > 0)
+                records = records
+                    .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
-            return records.Select(p => (p.Key[..], p.Value[..]));
+            foreach (var pair in records)
+                yield return (pair.Key[..], pair.Value[..]);
         }
 
         public byte[]? TryGet(byte[] key)
@@ -85,3 +93,5 @@ namespace Neo.Persistence
         }
     }
 }
+
+#nullable disable

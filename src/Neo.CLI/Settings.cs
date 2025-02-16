@@ -11,9 +11,8 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 

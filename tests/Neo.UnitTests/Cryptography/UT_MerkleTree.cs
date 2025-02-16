@@ -9,11 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.IO;
 using System;
 using System.Collections;
 using System.Linq;
@@ -45,16 +43,16 @@ namespace Neo.UnitTests.Cryptography
             UInt256[] hashes = { hash1, hash2, hash3 };
             MerkleTree tree = new MerkleTree(hashes);
             var hashArray = tree.ToHashArray();
-            hashArray[0].Should().Be(hash1);
-            hashArray[1].Should().Be(hash2);
-            hashArray[2].Should().Be(hash3);
-            hashArray[3].Should().Be(hash3);
+            Assert.AreEqual(hash1, hashArray[0]);
+            Assert.AreEqual(hash2, hashArray[1]);
+            Assert.AreEqual(hash3, hashArray[2]);
+            Assert.AreEqual(hash3, hashArray[3]);
 
             var rootHash = MerkleTree.ComputeRoot(hashes);
             var hash4 = Crypto.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
             var hash5 = Crypto.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
             var result = new UInt256(Crypto.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));
-            rootHash.Should().Be(result);
+            Assert.AreEqual(result, rootHash);
         }
 
         [TestMethod]
@@ -77,12 +75,12 @@ namespace Neo.UnitTests.Cryptography
             tree.Trim(bitArray);
             var hashArray = tree.ToHashArray();
 
-            hashArray.Length.Should().Be(1);
+            Assert.AreEqual(1, hashArray.Length);
             var rootHash = MerkleTree.ComputeRoot(hashes);
             var hash4 = Crypto.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
             var hash5 = Crypto.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
             var result = new UInt256(Crypto.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));
-            hashArray[0].Should().Be(result);
+            Assert.AreEqual(result, hashArray[0]);
         }
     }
 }

@@ -9,14 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Text;
+using Array = System.Array;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -28,8 +30,8 @@ namespace Neo.UnitTests.SmartContract
             var tx = TestUtils.GetTransaction(UInt160.Zero);
             using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
-            engine.GetNetwork().Should().Be(TestBlockchain.TheNeoSystem.Settings.Network);
-            engine.GetAddressVersion().Should().Be(TestBlockchain.TheNeoSystem.Settings.AddressVersion);
+            Assert.AreEqual(TestBlockchain.TheNeoSystem.Settings.Network, engine.GetNetwork());
+            Assert.AreEqual(TestBlockchain.TheNeoSystem.Settings.AddressVersion, engine.GetAddressVersion());
         }
 
         [TestMethod]
@@ -71,23 +73,23 @@ namespace Neo.UnitTests.SmartContract
             // Buffer
 
             array.Clear();
-            array.Add(new VM.Types.Buffer(1));
+            array.Add(new Buffer(1));
             engine.CurrentContext.GetState<ExecutionContextState>().Contract.Manifest.Abi.Events[0].Parameters[0].Type = ContractParameterType.ByteArray;
 
             engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array);
-            engine.Notifications[0].State[0].Type.Should().Be(VM.Types.StackItemType.ByteString);
+            Assert.AreEqual(StackItemType.ByteString, engine.Notifications[0].State[0].Type);
 
             // Pointer
 
             array.Clear();
-            array.Add(new VM.Types.Pointer(Array.Empty<byte>(), 1));
+            array.Add(new Pointer(Array.Empty<byte>(), 1));
 
             Assert.ThrowsException<InvalidOperationException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
 
             // InteropInterface
 
             array.Clear();
-            array.Add(new VM.Types.InteropInterface(new object()));
+            array.Add(new InteropInterface(new object()));
             engine.CurrentContext.GetState<ExecutionContextState>().Contract.Manifest.Abi.Events[0].Parameters[0].Type = ContractParameterType.InteropInterface;
 
             Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
@@ -116,17 +118,17 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(BigInteger.Parse("271339657438512451304577787170704246350"));
-            rand_2.Should().Be(BigInteger.Parse("98548189559099075644778613728143131367"));
-            rand_3.Should().Be(BigInteger.Parse("247654688993873392544380234598471205121"));
-            rand_4.Should().Be(BigInteger.Parse("291082758879475329976578097236212073607"));
-            rand_5.Should().Be(BigInteger.Parse("247152297361212656635216876565962360375"));
+            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), rand_1);
+            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), rand_2);
+            Assert.AreEqual(BigInteger.Parse("247654688993873392544380234598471205121"), rand_3);
+            Assert.AreEqual(BigInteger.Parse("291082758879475329976578097236212073607"), rand_4);
+            Assert.AreEqual(BigInteger.Parse("247152297361212656635216876565962360375"), rand_5);
 
-            rand_1.Should().Be(rand_6);
-            rand_2.Should().Be(rand_7);
-            rand_3.Should().Be(rand_8);
-            rand_4.Should().Be(rand_9);
-            rand_5.Should().Be(rand_10);
+            Assert.AreEqual(rand_6, rand_1);
+            Assert.AreEqual(rand_7, rand_2);
+            Assert.AreEqual(rand_8, rand_3);
+            Assert.AreEqual(rand_9, rand_4);
+            Assert.AreEqual(rand_10, rand_5);
         }
 
         [TestMethod]
@@ -163,17 +165,17 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(BigInteger.Parse("271339657438512451304577787170704246350"));
-            rand_2.Should().Be(BigInteger.Parse("98548189559099075644778613728143131367"));
-            rand_3.Should().Be(BigInteger.Parse("247654688993873392544380234598471205121"));
-            rand_4.Should().Be(BigInteger.Parse("291082758879475329976578097236212073607"));
-            rand_5.Should().Be(BigInteger.Parse("247152297361212656635216876565962360375"));
+            Assert.AreEqual(BigInteger.Parse("271339657438512451304577787170704246350"), rand_1);
+            Assert.AreEqual(BigInteger.Parse("98548189559099075644778613728143131367"), rand_2);
+            Assert.AreEqual(BigInteger.Parse("247654688993873392544380234598471205121"), rand_3);
+            Assert.AreEqual(BigInteger.Parse("291082758879475329976578097236212073607"), rand_4);
+            Assert.AreEqual(BigInteger.Parse("247152297361212656635216876565962360375"), rand_5);
 
-            rand_1.Should().NotBe(rand_6);
-            rand_2.Should().NotBe(rand_7);
-            rand_3.Should().NotBe(rand_8);
-            rand_4.Should().NotBe(rand_9);
-            rand_5.Should().NotBe(rand_10);
+            Assert.AreNotEqual(rand_6, rand_1);
+            Assert.AreNotEqual(rand_7, rand_2);
+            Assert.AreNotEqual(rand_8, rand_3);
+            Assert.AreNotEqual(rand_9, rand_4);
+            Assert.AreNotEqual(rand_10, rand_5);
         }
 
         [TestMethod]

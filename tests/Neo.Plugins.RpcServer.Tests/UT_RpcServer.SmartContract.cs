@@ -15,15 +15,17 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
+using Neo.VM;
+using Neo.VM.Types;
 using Neo.Wallets;
 using System;
-using System.Linq;
 using System.Text;
 using System.Threading;
+using Array = System.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -65,10 +67,10 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(resp.ContainsProperty("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
             Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 0);
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["exception"], null);
             Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
-            Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Integer));
+            Assert.AreEqual(resp["stack"][0]["type"], nameof(Integer));
             Assert.AreEqual(resp["stack"][0]["value"], "100000000");
             Assert.IsTrue(resp.ContainsProperty("tx"));
 
@@ -76,10 +78,10 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(resp.Count, 6);
             Assert.IsTrue(resp.ContainsProperty("script"));
             Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["exception"], null);
             Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
-            Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.ByteString));
+            Assert.AreEqual(resp["stack"][0]["type"], nameof(ByteString));
             Assert.AreEqual(resp["stack"][0]["value"], Convert.ToBase64String(Encoding.UTF8.GetBytes("NEO")));
 
             // This call triggers not only NEO but also unclaimed GAS
@@ -95,7 +97,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(resp.ContainsProperty("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
             Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 4);
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash} ({MultisigAddress}) is not found. " +
                                 $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");
             JArray notifications = (JArray)resp["notifications"];
@@ -141,15 +143,15 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
             Assert.IsTrue(resp.ContainsProperty("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["exception"], null);
             Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
-            Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Integer));
+            Assert.AreEqual(resp["stack"][0]["type"], nameof(Integer));
             Assert.AreEqual(resp["stack"][0]["value"], "100000000");
 
             resp = (JObject)_rpcServer.InvokeScript(new JArray(NeoTransferScript));
             Assert.AreEqual(resp.Count, 6);
-            Assert.AreEqual(resp["stack"][0]["type"], nameof(Neo.VM.Types.Boolean));
+            Assert.AreEqual(resp["stack"][0]["type"], nameof(Boolean));
             Assert.AreEqual(resp["stack"][0]["value"], false);
         }
 
@@ -172,8 +174,8 @@ namespace Neo.Plugins.RpcServer.Tests
                     ["type"] = nameof(ContractParameterType.PublicKey),
                     ["value"] = TestProtocolSettings.SoleNode.StandbyCommittee[0].ToString(),
                 }]), validatorSigner, true));
-            Assert.AreEqual(resp["state"], nameof(VM.VMState.HALT));
-            SnapshotCache snapshot = _neoSystem.GetSnapshotCache();
+            Assert.AreEqual(resp["state"], nameof(VMState.HALT));
+            var snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
                 Nonce = 233,
@@ -192,12 +194,12 @@ namespace Neo.Plugins.RpcServer.Tests
             iteratorId = resp["stack"][0]["id"].AsString();
             respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
             Assert.AreEqual(respArray.Count, 1);
-            Assert.AreEqual(respArray[0]["type"], nameof(Neo.VM.Types.Struct));
+            Assert.AreEqual(respArray[0]["type"], nameof(Struct));
             JArray value = (JArray)respArray[0]["value"];
             Assert.AreEqual(value.Count, 2);
-            Assert.AreEqual(value[0]["type"], nameof(Neo.VM.Types.ByteString));
+            Assert.AreEqual(value[0]["type"], nameof(ByteString));
             Assert.AreEqual(value[0]["value"], Convert.ToBase64String(TestProtocolSettings.SoleNode.StandbyCommittee[0].ToArray()));
-            Assert.AreEqual(value[1]["type"], nameof(Neo.VM.Types.Integer));
+            Assert.AreEqual(value[1]["type"], nameof(Integer));
             Assert.AreEqual(value[1]["value"], "0");
 
             // No result when traversed again

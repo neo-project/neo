@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
@@ -22,7 +24,7 @@ namespace Neo.SmartContract
     /// </summary>
     public class KeyBuilder
     {
-        private readonly MemoryStream stream;
+        private readonly MemoryStream _stream;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyBuilder"/> class.
@@ -35,9 +37,9 @@ namespace Neo.SmartContract
             Span<byte> data = stackalloc byte[sizeof(int)];
             BinaryPrimitives.WriteInt32LittleEndian(data, id);
 
-            stream = new(keySizeHint);
-            stream.Write(data);
-            stream.WriteByte(prefix);
+            _stream = new(keySizeHint);
+            _stream.Write(data);
+            _stream.WriteByte(prefix);
         }
 
         /// <summary>
@@ -48,7 +50,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(byte key)
         {
-            stream.WriteByte(key);
+            _stream.WriteByte(key);
             return this;
         }
 
@@ -60,7 +62,7 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public KeyBuilder Add(ReadOnlySpan<byte> key)
         {
-            stream.Write(key);
+            _stream.Write(key);
             return this;
         }
 
@@ -75,33 +77,9 @@ namespace Neo.SmartContract
         /// <summary>
         /// Adds part of the key to the builder.
         /// </summary>
-        /// <param name="key">Part of the key represented by a <see cref="UInt160"/>.</param>
-        /// <returns>A reference to this instance after the add operation has completed.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public KeyBuilder Add(UInt160 key) => Add(key.GetSpan());
-
-        /// <summary>
-        /// Adds part of the key to the builder.
-        /// </summary>
-        /// <param name="key">Part of the key represented by a <see cref="UInt256"/>.</param>
-        /// <returns>A reference to this instance after the add operation has completed.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public KeyBuilder Add(UInt256 key) => Add(key.GetSpan());
-
-        /// <summary>
-        /// Adds part of the key to the builder.
-        /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
-        public KeyBuilder Add(ISerializable key)
-        {
-            using (BinaryWriter writer = new(stream, Utility.StrictUTF8, true))
-            {
-                key.Serialize(writer);
-                writer.Flush();
-            }
-            return this;
-        }
+        public KeyBuilder Add(ISerializableSpan key) => Add(key.GetSpan());
 
         /// <summary>
         /// Adds part of the key to the builder in BigEndian.
@@ -165,18 +143,17 @@ namespace Neo.SmartContract
         /// <returns>The storage key.</returns>
         public byte[] ToArray()
         {
-            using (stream)
+            using (_stream)
             {
-                return stream.ToArray();
+                return _stream.ToArray();
             }
         }
 
         public static implicit operator StorageKey(KeyBuilder builder)
         {
-            using (builder.stream)
-            {
-                return new StorageKey(builder.stream.ToArray());
-            }
+            return new StorageKey(builder.ToArray());
         }
     }
 }
+
+#nullable disable

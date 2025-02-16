@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
@@ -21,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
+using System.Reflection;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -155,6 +154,90 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestNativeContractId()
+        {
+            // native contract id is implicitly defined in NativeContract.cs(the defined order)
+            Assert.AreEqual(NativeContract.ContractManagement.Id, -1);
+            Assert.AreEqual(NativeContract.StdLib.Id, -2);
+            Assert.AreEqual(NativeContract.CryptoLib.Id, -3);
+            Assert.AreEqual(NativeContract.Ledger.Id, -4);
+            Assert.AreEqual(NativeContract.NEO.Id, -5);
+            Assert.AreEqual(NativeContract.GAS.Id, -6);
+            Assert.AreEqual(NativeContract.Policy.Id, -7);
+            Assert.AreEqual(NativeContract.RoleManagement.Id, -8);
+            Assert.AreEqual(NativeContract.Oracle.Id, -9);
+        }
+
+
+        class TestSpecialParameter
+        {
+            [ContractMethod]
+            public void TestReadOnlyStoreView(UInt160 address, IReadOnlyStore view) { }
+
+            [ContractMethod]
+            public void TestDataCache(UInt160 address, DataCache cache) { }
+
+            [ContractMethod]
+            public void TestApplicationEngine(ApplicationEngine engine, IReadOnlyStore view) { }
+
+            [ContractMethod]
+            public void TestSnapshot(DataCache cache, ApplicationEngine engine) { }
+        }
+
+        [TestMethod]
+        public void TestContractMethodWithSpecialParameter()
+        {
+            // If a contract method has ApplicationEngine, IReadOnlyStoreView or DataCache as a parameter,
+            // it should be the first parameter.
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+            foreach (var contract in NativeContract.Contracts)
+            {
+                foreach (var member in typeof(Contract).GetMembers(flags))
+                {
+                    if (member.GetCustomAttributes<ContractMethodAttribute>().Any())
+                        CheckSpecialParameter(member);
+                }
+            }
+
+            var test = new TestSpecialParameter();
+            foreach (var method in typeof(TestSpecialParameter).GetMethods(flags))
+            {
+                if (method.GetCustomAttributes<ContractMethodAttribute>().Any())
+                {
+                    // should be failed
+                    var action = () => CheckSpecialParameter(method);
+                    Assert.ThrowsException<AssertFailedException>(() => action());
+                }
+            }
+        }
+
+        private void CheckSpecialParameter(MemberInfo member)
+        {
+            var handler = member switch
+            {
+                MethodInfo m => m,
+                PropertyInfo p => p.GetMethod,
+                _ => null,
+            };
+            Assert.IsNotNull(handler, $"handler is null, {member.Name}");
+
+            var parameters = handler.GetParameters();
+            foreach (var param in parameters)
+            {
+                // ApplicationEngine or it's subclass
+                // Implementations of IReadOnlyStoreView
+                // DataCache or it's subclass
+                if (typeof(ApplicationEngine).IsAssignableFrom(param.ParameterType) ||
+                    typeof(IReadOnlyStore).IsAssignableFrom(param.ParameterType) ||
+                    typeof(DataCache).IsAssignableFrom(param.ParameterType))
+                {
+                    Assert.AreEqual(0, param.Position);
+                }
+            }
+        }
+
+
+        [TestMethod]
         public void TestGenesisNativeState()
         {
             var persistingBlock = new Block
@@ -188,10 +271,9 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "getContract", address);
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
-
+            Assert.AreEqual(VMState.HALT, engine.Execute());
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Array));
 
             var cs = new ContractState();
             ((IInteroperable)cs).FromStackItem(result);

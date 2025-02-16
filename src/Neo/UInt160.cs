@@ -13,7 +13,6 @@ using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -23,7 +22,7 @@ namespace Neo
     /// Represents a 160-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 20)]
-    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable
+    public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt160"/> values.

@@ -9,10 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -27,10 +25,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void SizeAndEndPoint_Get()
         {
             var test = new VersionPayload() { Capabilities = Array.Empty<NodeCapability>(), UserAgent = "neo3" };
-            test.Size.Should().Be(22);
+            Assert.AreEqual(22, test.Size);
 
             test = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
-            test.Size.Should().Be(25);
+            Assert.AreEqual(25, test.Size);
         }
 
         [TestMethod]
