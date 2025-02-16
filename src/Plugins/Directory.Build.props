@@ -9,7 +9,6 @@
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
-  
   <ItemGroup>
     <ProjectReference Include="../../Neo/Neo.csproj" />
   </ItemGroup>
