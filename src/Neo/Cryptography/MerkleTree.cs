@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using System;
 using System.Collections;
@@ -23,7 +25,7 @@ namespace Neo.Cryptography
     /// </summary>
     public class MerkleTree
     {
-        private readonly MerkleTreeNode root;
+        private readonly MerkleTreeNode? _root;
 
         /// <summary>
         /// The depth of the tree.
@@ -32,22 +34,23 @@ namespace Neo.Cryptography
 
         internal MerkleTree(UInt256[] hashes)
         {
-            root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
-            if (root is null) return;
-            int depth = 1;
-            for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
+            _root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
+            if (_root is null) return;
+
+            var depth = 1;
+            for (var i = _root; i.LeftChild != null; i = i.LeftChild)
                 depth++;
             Depth = depth;
         }
 
-        private static MerkleTreeNode Build(MerkleTreeNode[] leaves)
+        private static MerkleTreeNode? Build(MerkleTreeNode[] leaves)
         {
             if (leaves.Length == 0) return null;
             if (leaves.Length == 1) return leaves[0];
 
             Span<byte> buffer = stackalloc byte[64];
-            MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
-            for (int i = 0; i < parents.Length; i++)
+            var parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
+            for (var i = 0; i < parents.Length; i++)
             {
                 parents[i] = new MerkleTreeNode
                 {
@@ -71,8 +74,8 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static UInt256 Concat(Span<byte> buffer, UInt256 hash1, UInt256 hash2)
         {
-            hash1.ToArray().CopyTo(buffer);
-            hash2.ToArray().CopyTo(buffer[32..]);
+            hash1.GetSpan().CopyTo(buffer);
+            hash2.GetSpan().CopyTo(buffer[32..]);
 
             return new UInt256(Crypto.Hash256(buffer));
         }
@@ -86,11 +89,12 @@ namespace Neo.Cryptography
         {
             if (hashes.Length == 0) return UInt256.Zero;
             if (hashes.Length == 1) return hashes[0];
-            MerkleTree tree = new(hashes);
-            return tree.root.Hash;
+
+            var tree = new MerkleTree(hashes);
+            return tree._root!.Hash;
         }
 
-        private static void DepthFirstSearch(MerkleTreeNode node, IList<UInt256> hashes)
+        private static void DepthFirstSearch(MerkleTreeNode node, List<UInt256> hashes)
         {
             if (node.LeftChild == null)
             {
@@ -110,10 +114,10 @@ namespace Neo.Cryptography
         /// <returns>All nodes of the hash tree.</returns>
         public UInt256[] ToHashArray()
         {
-            if (root is null) return Array.Empty<UInt256>();
-            List<UInt256> hashes = new();
-            DepthFirstSearch(root, hashes);
-            return hashes.ToArray();
+            if (_root is null) return Array.Empty<UInt256>();
+            var hashes = new List<UInt256>();
+            DepthFirstSearch(_root, hashes);
+            return [.. hashes];
         }
 
         /// <summary>
@@ -122,12 +126,12 @@ namespace Neo.Cryptography
         /// <param name="flags">The bit array to be used.</param>
         public void Trim(BitArray flags)
         {
-            if (root is null) return;
+            if (_root is null) return;
             flags = new BitArray(flags)
             {
                 Length = 1 << (Depth - 1)
             };
-            Trim(root, 0, Depth, flags);
+            Trim(_root, 0, Depth, flags);
         }
 
         private static void Trim(MerkleTreeNode node, int index, int depth, BitArray flags)
@@ -155,3 +159,5 @@ namespace Neo.Cryptography
         }
     }
 }
+
+#nullable disable
