@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Extensions;
+using Neo.Build.Core.Tests.Helpers;
 using Neo.Wallets;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -19,18 +20,10 @@ namespace Neo.Build.Core.Tests.Json.Converters
     [TestClass]
     public class UT_JsonStringKeyPairConverter
     {
-        private readonly JsonSerializerOptions _options;
-
         private class TestJson
         {
             public KeyPair Test { get; set; }
         };
-
-        public UT_JsonStringKeyPairConverter()
-        {
-            _options = NeoBuildDefaults.JsonDefaultSerializerOptions;
-            _options.WriteIndented = false;
-        }
 
         [TestMethod]
         public void TestReadJson()
@@ -38,7 +31,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             var expectedBytes = RandomNumberGenerator.GetBytes(32);
             var expectedJsonString = $"{{\"test\":\"{ByteConverter.ToHexString(expectedBytes)}\"}}";
 
-            var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, _options);
+            var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, TestDefaults.JsonDefaultSerializerOptions);
             var actualKeyPair = actualObject.Test;
 
             CollectionAssert.AreEqual(expectedBytes, actualKeyPair.PrivateKey);
@@ -51,7 +44,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             var expectedJsonString = $"{{\"test\":\"{ByteConverter.ToHexString(expectedBytes)}\"}}";
             var expectedJsonObj = new TestJson() { Test = new(expectedBytes), };
 
-            var actualJsonString = JsonSerializer.Serialize(expectedJsonObj, _options);
+            var actualJsonString = JsonSerializer.Serialize(expectedJsonObj, TestDefaults.JsonDefaultSerializerOptions);
 
             Assert.AreEqual(expectedJsonString, actualJsonString);
         }

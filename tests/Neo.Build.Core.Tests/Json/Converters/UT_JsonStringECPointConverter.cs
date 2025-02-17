@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Tests.Helpers;
 using Neo.Cryptography.ECC;
 using System.Text.Json;
 
@@ -17,18 +18,10 @@ namespace Neo.Build.Core.Tests.Json.Converters
     [TestClass]
     public class UT_JsonStringECPointConverter
     {
-        private readonly JsonSerializerOptions _options;
-
         private class TestJson
         {
             public ECPoint Test { get; set; }
         };
-
-        public UT_JsonStringECPointConverter()
-        {
-            _options = NeoBuildDefaults.JsonDefaultSerializerOptions;
-            _options.WriteIndented = false;
-        }
 
         [TestMethod]
         public void TestReadJson()
@@ -36,7 +29,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             var expectedPointString = "036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296";
             var expectedJsonString = $"{{\"test\":\"{expectedPointString}\"}}";
 
-            var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, _options);
+            var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, TestDefaults.JsonDefaultSerializerOptions);
             var actualPoint = actualObject.Test;
 
             Assert.AreEqual(expectedPointString, $"{actualPoint}");
@@ -49,7 +42,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             var expectedJsonString = $"{{\"test\":\"{expectedPointString}\"}}";
             var expectedJsonObj = new TestJson() { Test = ECPoint.Parse(expectedPointString, ECCurve.Secp256r1), };
 
-            var actualJsonString = JsonSerializer.Serialize(expectedJsonObj, _options);
+            var actualJsonString = JsonSerializer.Serialize(expectedJsonObj, TestDefaults.JsonDefaultSerializerOptions);
 
             Assert.AreEqual(expectedJsonString, actualJsonString);
         }

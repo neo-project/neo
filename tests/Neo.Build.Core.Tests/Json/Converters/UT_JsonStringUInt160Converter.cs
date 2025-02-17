@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Tests.Helpers;
 using System.Text.Json;
 
 namespace Neo.Build.Core.Tests.Json.Converters
@@ -16,18 +17,10 @@ namespace Neo.Build.Core.Tests.Json.Converters
     [TestClass]
     public class UT_JsonStringUInt160Converter
     {
-        private readonly JsonSerializerOptions _options;
-
         private class TestJson
         {
             public UInt160 Test { get; set; }
         };
-
-        public UT_JsonStringUInt160Converter()
-        {
-            _options = NeoBuildDefaults.JsonDefaultSerializerOptions;
-            _options.WriteIndented = false;
-        }
 
         [TestMethod]
         public void TestReadJson()
@@ -35,7 +28,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             UInt160 expectedScriptHash = "0xff00000000000000000000000000000000000001";
             var expectedJsonString = $"{{\"test\":\"{expectedScriptHash}\"}}";
 
-            var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, _options);
+            var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, TestDefaults.JsonDefaultSerializerOptions);
             var actualScriptHash = actualObject.Test;
 
             Assert.AreEqual(expectedScriptHash, actualScriptHash);
@@ -48,7 +41,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             var expectedJsonString = $"{{\"test\":\"{expectedScriptHash}\"}}";
             var expectedJsonObj = new TestJson() { Test = expectedScriptHash, };
 
-            var actualJsonString = JsonSerializer.Serialize(expectedJsonObj, _options);
+            var actualJsonString = JsonSerializer.Serialize(expectedJsonObj, TestDefaults.JsonDefaultSerializerOptions);
 
             Assert.AreEqual(expectedJsonString, actualJsonString);
         }
