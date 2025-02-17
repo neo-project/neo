@@ -9,6 +9,7 @@ on:
 env:
   DOTNET_VERSION: 9.0.x
   CONFIGURATION: Release
+  NEO_NUGET_DIR: ./pkgs
 
 jobs:
   nuget-release:
@@ -34,7 +35,7 @@ jobs:
       run: |
         dotnet pack ./neo.sln \
         --configuration Release \
-        --output ./sbin \
+        --output ${{ env.NEO_NUGET_DIR }} \
         --verbosity normal \
         -p:VersionPrefix=${{ env.APP_VERSION }} \
         -p:DebugSymbols=false \
@@ -47,7 +48,7 @@ jobs:
 
     - name: Publish to NuGet.org
       run: |
-        dotnet nuget push ./sbin/*.nupkg \
+        dotnet nuget push ${{ env.NEO_NUGET_DIR }}/*.nupkg \
         --source https://api.nuget.org/v3/index.json \
         --api-key ${{ secrets.NUGET_TOKEN }} \
         --skip-duplicate
