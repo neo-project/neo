@@ -20,6 +20,9 @@ namespace Neo.Build.Core.Json.Converters
     {
         public override UInt160? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
+            if (reader.TokenType != JsonTokenType.String)
+                throw new NeoBuildInvalidScriptHashFormatException();
+
             var valueString = reader.GetString();
 
             if (UInt160.TryParse(valueString, out var scriptHash) == false)

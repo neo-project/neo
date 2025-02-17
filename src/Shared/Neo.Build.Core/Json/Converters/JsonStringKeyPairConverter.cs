@@ -22,6 +22,9 @@ namespace Neo.Build.Core.Json.Converters
     {
         public override KeyPair? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
+            if (reader.TokenType != JsonTokenType.String)
+                throw new NeoBuildInvalidHexFormatException();
+
             var valueString = reader.GetString();
 
             if (string.IsNullOrEmpty(valueString))
