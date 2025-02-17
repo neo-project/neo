@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// TestWallet.cs file belongs to the neo project and is free
+// TestWalletModel.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,7 +14,7 @@ using System.Text.Json;
 
 namespace Neo.Build.Core.Models.Wallet
 {
-    public class TestWallet : JsonModel
+    public class TestWalletModel : JsonModel
     {
         public Version Version { get; set; } = new(1, 0);
 
@@ -22,11 +22,11 @@ namespace Neo.Build.Core.Models.Wallet
 
         public string? Name { get; set; }
 
-        public static TestWallet? FromJson(string jsonString, JsonSerializerOptions? options = default)
+        public static TestWalletModel? FromJson(string jsonString, JsonSerializerOptions? options = default)
         {
             var jsonOptions = options ?? NeoBuildDefaults.JsonDefaultSerializerOptions;
 
-            return FromJson<TestWallet>(jsonString, jsonOptions);
+            return FromJson<TestWalletModel>(jsonString, jsonOptions);
         }
     }
 }
