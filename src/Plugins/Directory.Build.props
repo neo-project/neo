@@ -4,9 +4,10 @@
   <Import Project="../$(MSBuildThisFile)" />
 
   <PropertyGroup>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
-  
+ 
   <ItemGroup>
     <ProjectReference Include="../../Neo/Neo.csproj" />
   </ItemGroup>
