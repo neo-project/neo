@@ -206,7 +206,10 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
                 engine.SnapshotCache.Add(_votersCount, new StorageItem(Array.Empty<byte>()));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
+                // TODO - Add hardfork otherwise storage will be different
+                // After HARD FORK
                 engine.SnapshotCache.Add(_registerPrice, new StorageItem(1000 * GAS.Factor));
+
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
             }
             return ContractTask.CompletedTask;

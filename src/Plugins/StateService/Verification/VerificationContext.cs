@@ -27,7 +27,7 @@ namespace Neo.Plugins.StateService.Verification
 {
     class VerificationContext
     {
-        private const uint MaxValidUntilBlockIncrement = 100;
+        private const uint MaxValidUntilBlockIncrement = 100; // Change to 500!??
         private StateRoot root;
         private ExtensiblePayload rootPayload;
         private ExtensiblePayload votePayload;
