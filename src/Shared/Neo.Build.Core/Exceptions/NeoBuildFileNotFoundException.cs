@@ -9,11 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.IO;
+
 namespace Neo.Build.Core.Exceptions
 {
     public class NeoBuildFileNotFoundException(
-        string filename) : NeoBuildException($"File '{filename}' was not found.", NeoBuildErrorCodes.General.FileNotFound)
+        FileInfo filename) : NeoBuildException($"File '{filename}' was not found.", NeoBuildErrorCodes.General.FileNotFound)
     {
-        public string Filename => filename;
+        public NeoBuildFileNotFoundException(string filename) : this(new FileInfo(filename)) { }
+
+        public FileInfo FileInfo => filename;
     }
 }

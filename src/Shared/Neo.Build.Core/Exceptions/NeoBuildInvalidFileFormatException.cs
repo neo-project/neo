@@ -9,11 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.IO;
+
 namespace Neo.Build.Core.Exceptions
 {
     public class NeoBuildInvalidFileFormatException(
-        string filename) : NeoBuildException($"File '{filename}' is not in the correct format.", NeoBuildErrorCodes.General.InvalidFileFormat)
+        FileInfo filename) : NeoBuildException($"File '{filename}' is not in the correct format.", NeoBuildErrorCodes.General.InvalidFileFormat)
     {
-        public string Filename => filename;
+        public NeoBuildInvalidFileFormatException(string filename) : this(new FileInfo(filename)) { }
+
+        public FileInfo FileInfo => filename;
     }
 }
