@@ -11,11 +11,11 @@
 
 using Neo.Extensions;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract;
-using Neo.Wallets;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -37,10 +37,15 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public ExtensiblePayload MakeCommit()
         {
-            return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
+            if (CommitPayloads[MyIndex] is not null)
+                return CommitPayloads[MyIndex];
+
+            var signData = EnsureHeader().GetSignData(dbftSettings.Network);
+            CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = EnsureHeader().Sign(keyPair, neoSystem.Settings.Network)
-            }));
+                Signature = _wallet.Sign(signData, _myPublicKey)
+            });
+            return CommitPayloads[MyIndex];
         }
 
         private ExtensiblePayload MakeSignedPayload(ConsensusMessage message)
@@ -59,7 +64,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             try
             {
                 sc = new ContractParametersContext(neoSystem.StoreView, payload, dbftSettings.Network);
-                wallet.Sign(sc);
+                _wallet.Sign(sc);
             }
             catch (InvalidOperationException exception)
             {
@@ -149,11 +154,22 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             return MakeSignedPayload(new RecoveryMessage
             {
-                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => GetChangeViewPayloadCompact(p)).Take(M).ToDictionary(p => p.ValidatorIndex),
+                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null)
+                    .Select(p => GetChangeViewPayloadCompact(p))
+                    .Take(M)
+                    .ToDictionary(p => p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => GetPreparationPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex),
+                PreparationHash = TransactionHashes == null
+                    ? PreparationPayloads.Where(p => p != null)
+                        .GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() })
+                        .OrderByDescending(p => p.Count)
+                        .Select(p => p.Hash)
+                        .FirstOrDefault()
+                    : null,
+                PreparationMessages = PreparationPayloads.Where(p => p != null)
+                    .Select(p => GetPreparationPayloadCompact(p))
+                    .ToDictionary(p => p.ValidatorIndex),
                 CommitMessages = CommitSent
                     ? CommitPayloads.Where(p => p != null).Select(p => GetCommitPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex)
                     : new Dictionary<byte, RecoveryMessage.CommitPayloadCompact>()

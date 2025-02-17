@@ -594,7 +594,10 @@ namespace Neo.Wallets
         /// Signs the <see cref="IVerifiable"/> in the specified <see cref="ContractParametersContext"/> with the wallet.
         /// </summary>
         /// <param name="context">The <see cref="ContractParametersContext"/> to be used.</param>
-        /// <returns><see langword="true"/> if the signature is successfully added to the context; otherwise, <see langword="false"/>.</returns>
+        /// <returns>
+        /// <see langword="true"/> if any signature is successfully added to the context;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
         public bool Sign(ContractParametersContext context)
         {
             if (context.Network != ProtocolSettings.Network) return false;
@@ -655,6 +658,36 @@ namespace Neo.Wallets
             }
 
             return fSuccess;
+        }
+
+        /// <summary>
+        /// Signs the specified data with the corresponding private key of the specified public key.
+        /// </summary>
+        /// <param name="signData">The data to sign.</param>
+        /// <param name="publicKey">The public key.</param>
+        /// <returns>The signature.</returns>
+        public byte[] Sign(byte[] signData, ECPoint publicKey)
+        {
+            var account = GetAccount(publicKey);
+            var privateKey = account?.GetKey().PrivateKey;
+            if (privateKey == null) return null;
+            return Crypto.Sign(signData, privateKey);
+        }
+
+        /// <summary>
+        /// Gets the index of the first key pair(public key and corresponding private key) that this Wallet owns in the list.
+        /// </summary>
+        /// <param name="publicKeys">The public key list.</param>
+        /// <returns>The index of the public key in the list; if the public key is not found, return -1.</returns>
+        public int GetMyIndex(IReadOnlyList<ECPoint> publicKeys)
+        {
+            for (int index = 0; index < publicKeys.Count; index++)
+            {
+                var account = GetAccount(publicKeys[index]);
+                if (account != null && account.HasKey)
+                    return index;
+            }
+            return -1;
         }
 
         /// <summary>
