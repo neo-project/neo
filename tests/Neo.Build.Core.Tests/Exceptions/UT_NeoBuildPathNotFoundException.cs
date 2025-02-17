@@ -33,7 +33,7 @@ namespace Neo.Build.Core.Tests.Exceptions
             Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{(uint)exception.ExitCode:d04}", exception.ErrorCode);
             Assert.AreEqual($"Error {exception.ErrorCode} {expectedMessage}", exception.Message);
             Assert.AreEqual(exception.Message, $"{exception}");
-            Assert.AreEqual(expectedPath, exception.Path);
+            Assert.AreEqual(expectedPath, $"{exception.PathInfo}");
 
             // INeoBuildException
             Assert.AreEqual(NeoBuildErrorCodes.General.PathNotFound, exceptionInterface.ExitCode);

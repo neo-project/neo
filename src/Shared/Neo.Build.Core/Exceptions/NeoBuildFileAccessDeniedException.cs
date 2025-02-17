@@ -9,11 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.IO;
+
 namespace Neo.Build.Core.Exceptions
 {
     public class NeoBuildFileAccessDeniedException(
-        string filename) : NeoBuildException($"Accessing file '{filename}' was denied.", NeoBuildErrorCodes.General.FileAccessDenied)
+        FileInfo file) : NeoBuildException($"Accessing file '{file}' was denied.", NeoBuildErrorCodes.General.FileAccessDenied)
     {
-        public string Filename => filename;
+        public NeoBuildFileAccessDeniedException(string filename) : this(new FileInfo(filename)) { }
+
+        public FileInfo FileInfo => file;
     }
 }
