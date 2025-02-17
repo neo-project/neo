@@ -19,15 +19,14 @@ namespace Neo.Build.Core.Tests.Json.Converters
     [TestClass]
     public class UT_JsonStringKeyPairConverter
     {
-        private JsonSerializerOptions _options;
+        private readonly JsonSerializerOptions _options;
 
         private class TestJson
         {
             public KeyPair Test { get; set; }
         };
 
-        [TestInitialize]
-        public void Setup()
+        public UT_JsonStringKeyPairConverter()
         {
             _options = NeoBuildDefaults.JsonDefaultSerializerOptions;
             _options.WriteIndented = false;

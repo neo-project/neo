@@ -16,15 +16,14 @@ namespace Neo.Build.Core.Tests.Json.Converters
     [TestClass]
     public class UT_JsonStringUInt160Converter
     {
-        private JsonSerializerOptions _options;
+        private readonly JsonSerializerOptions _options;
 
         private class TestJson
         {
             public UInt160 Test { get; set; }
         };
 
-        [TestInitialize]
-        public void Setup()
+        public UT_JsonStringUInt160Converter()
         {
             _options = NeoBuildDefaults.JsonDefaultSerializerOptions;
             _options.WriteIndented = false;

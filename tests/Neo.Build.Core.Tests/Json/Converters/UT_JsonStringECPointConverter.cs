@@ -17,15 +17,14 @@ namespace Neo.Build.Core.Tests.Json.Converters
     [TestClass]
     public class UT_JsonStringECPointConverter
     {
-        private JsonSerializerOptions _options;
+        private readonly JsonSerializerOptions _options;
 
         private class TestJson
         {
             public ECPoint Test { get; set; }
         };
 
-        [TestInitialize]
-        public void Setup()
+        public UT_JsonStringECPointConverter()
         {
             _options = NeoBuildDefaults.JsonDefaultSerializerOptions;
             _options.WriteIndented = false;
