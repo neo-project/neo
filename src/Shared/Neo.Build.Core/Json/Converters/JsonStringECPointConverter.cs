@@ -34,7 +34,7 @@ namespace Neo.Build.Core.Json.Converters
 
         public override void Write(Utf8JsonWriter writer, ECPoint value, JsonSerializerOptions options)
         {
-            writer.WriteStringValue($"{value}");
+            writer.WriteStringValue(value.ToString());
         }
     }
 }
