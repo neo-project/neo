@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// JsonStringECPointConverter.cs file belongs to the neo project and is free
+// JsonStringKeyPairConverter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,36 +11,32 @@
 
 using Neo.Build.Core.Exceptions;
 using Neo.Build.Core.Extensions;
-using Neo.Cryptography.ECC;
-using Neo.Extensions;
+using Neo.Wallets;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Json.Converters
 {
-    public class JsonStringECPointConverter : JsonConverter<ECPoint>
+    public class JsonStringKeyPairConverter : JsonConverter<KeyPair>
     {
-        public override ECPoint? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override KeyPair? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType != JsonTokenType.String)
-                throw new NeoBuildInvalidECPointFormatException();
-
             var valueString = reader.GetString();
 
             if (string.IsNullOrEmpty(valueString))
-                throw new NeoBuildInvalidECPointFormatException();
+                throw new NeoBuildInvalidHexFormatException();
 
             var valueBytes = valueString.StartsWith("0x") ?
                 StringConverter.FromHexString(valueString[2..]) :
                 StringConverter.FromHexString(valueString);
 
-            return ECPoint.FromBytes(valueBytes, ECCurve.Secp256r1);
+            return new(valueBytes);
         }
 
-        public override void Write(Utf8JsonWriter writer, ECPoint value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, KeyPair value, JsonSerializerOptions options)
         {
-            var valueBytes = value.ToArray();
+            var valueBytes = value.PrivateKey;
             writer.WriteStringValue(ByteConverter.ToHexString(valueBytes));
         }
     }

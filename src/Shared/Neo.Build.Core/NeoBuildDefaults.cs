@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Json.Converters;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -31,6 +32,9 @@ namespace Neo.Build.Core
             Converters =
             {
                 new JsonStringEnumConverter(),
+                new JsonStringECPointConverter(),
+                new JsonStringKeyPairConverter(),
+                new JsonStringUInt160Converter(),
             }
         };
     }
