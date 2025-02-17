@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Exceptions;
-using Neo.Build.Core.Extensions;
+using Neo.Extensions;
 using Neo.Wallets;
 using System;
 using System.Text.Json;
@@ -22,14 +22,15 @@ namespace Neo.Build.Core.Json.Converters
     {
         public override KeyPair? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
+            if (reader.TokenType != JsonTokenType.String)
+                throw new NeoBuildInvalidHexFormatException();
+
             var valueString = reader.GetString();
 
             if (string.IsNullOrEmpty(valueString))
                 throw new NeoBuildInvalidHexFormatException();
 
-            var valueBytes = valueString.StartsWith("0x") ?
-                StringConverter.FromHexString(valueString[2..]) :
-                StringConverter.FromHexString(valueString);
+            var valueBytes = valueString.HexToBytes();
 
             return new(valueBytes);
         }
@@ -37,7 +38,7 @@ namespace Neo.Build.Core.Json.Converters
         public override void Write(Utf8JsonWriter writer, KeyPair value, JsonSerializerOptions options)
         {
             var valueBytes = value.PrivateKey;
-            writer.WriteStringValue(ByteConverter.ToHexString(valueBytes));
+            writer.WriteStringValue(valueBytes.ToHexString());
         }
     }
 }

@@ -10,9 +10,7 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Exceptions;
-using Neo.Build.Core.Extensions;
 using Neo.Cryptography.ECC;
-using Neo.Extensions;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -28,20 +26,15 @@ namespace Neo.Build.Core.Json.Converters
 
             var valueString = reader.GetString();
 
-            if (string.IsNullOrEmpty(valueString))
+            if (ECPoint.TryParse(valueString, ECCurve.Secp256r1, out var value) == false)
                 throw new NeoBuildInvalidECPointFormatException();
 
-            var valueBytes = valueString.StartsWith("0x") ?
-                StringConverter.FromHexString(valueString[2..]) :
-                StringConverter.FromHexString(valueString);
-
-            return ECPoint.FromBytes(valueBytes, ECCurve.Secp256r1);
+            return value;
         }
 
         public override void Write(Utf8JsonWriter writer, ECPoint value, JsonSerializerOptions options)
         {
-            var valueBytes = value.ToArray();
-            writer.WriteStringValue(ByteConverter.ToHexString(valueBytes));
+            writer.WriteStringValue($"{value}");
         }
     }
 }
