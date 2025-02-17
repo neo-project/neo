@@ -33,7 +33,7 @@ namespace Neo.Build.Core.Tests.Exceptions
             Assert.AreEqual($"{NeoBuildErrorCodes.StringPrefix}{(uint)exception.ExitCode:d04}", exception.ErrorCode);
             Assert.AreEqual($"Error {exception.ErrorCode} {expectedMessage}", exception.Message);
             Assert.AreEqual(exception.Message, $"{exception}");
-            Assert.AreEqual(expectedFilename, exception.Filename);
+            Assert.AreEqual(expectedFilename, $"{exception.FileInfo}");
 
             // INeoBuildException
             Assert.AreEqual(NeoBuildErrorCodes.General.InvalidFileFormat, exceptionInterface.ExitCode);

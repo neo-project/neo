@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// NeoBuildPathNotFoundException.cs file belongs to the neo project and is free
+// NeoBuildInvalidHash256FormatException.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,15 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.IO;
-
 namespace Neo.Build.Core.Exceptions
 {
-    public class NeoBuildPathNotFoundException(
-        DirectoryInfo path) : NeoBuildException($"Path '{path}' was not found.", NeoBuildErrorCodes.General.PathNotFound)
+    public class NeoBuildInvalidHash256FormatException(
+        string message) : NeoBuildException(message, NeoBuildErrorCodes.General.InvalidHash256Format)
     {
-        public NeoBuildPathNotFoundException(string path) : this(new DirectoryInfo(path)) { }
-
-        public DirectoryInfo PathInfo => path;
+        public NeoBuildInvalidHash256FormatException() : this("Invalid Hash256 format.") { }
     }
 }
