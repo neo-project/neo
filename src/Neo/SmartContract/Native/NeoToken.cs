@@ -83,6 +83,15 @@ namespace Neo.SmartContract.Native
             return TotalAmount;
         }
 
+        protected override bool StateIsClean(ApplicationEngine engine, NeoAccountState state)
+        {
+            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+            {
+                if (state.VoteTo != null) return false;
+            }
+            return base.StateIsClean(engine, state);
+        }
+
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
             GasDistribution distribution = DistributeGas(engine, account, state);
