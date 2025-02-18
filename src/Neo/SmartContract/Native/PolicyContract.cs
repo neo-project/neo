@@ -134,7 +134,7 @@ namespace Neo.SmartContract.Native
         /// Gets the fee for attribute.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
-        /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
+        /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetAttributeFee(ApplicationEngine engine, byte attributeType)
@@ -164,7 +164,7 @@ namespace Neo.SmartContract.Native
         /// Sets the fee for attribute before Echidna hardfork.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
-        /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
+        /// <param name="attributeType">Attribute type</param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
