@@ -404,6 +404,8 @@ namespace Neo.CLI
             try
             {
                 var pubKey = WIFToPublicKey(wif);
+                if (string.IsNullOrEmpty(pubKey)) return null;
+
                 return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
             }
             catch (Exception)

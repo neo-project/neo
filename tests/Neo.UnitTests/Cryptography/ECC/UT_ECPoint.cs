@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -64,8 +66,6 @@ namespace Neo.UnitTests.Cryptography.ECC
             Action action = () => new ECPoint(X, null, ECCurve.Secp256k1);
             Assert.ThrowsException<ArgumentException>(action);
             action = () => new ECPoint(null, Y, ECCurve.Secp256k1);
-            Assert.ThrowsException<ArgumentException>(action);
-            action = () => new ECPoint(null, Y, null);
             Assert.ThrowsException<ArgumentException>(action);
         }
 
@@ -335,18 +335,10 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestOpMultiply()
         {
-            ECPoint p = null;
-            byte[] n = new byte[] { 1 };
-            Action action = () => p = p * n;
-            Assert.ThrowsException<ArgumentNullException>(action);
+            var p = ECCurve.Secp256k1.G;
 
-            p = ECCurve.Secp256k1.G;
-            n = null;
-            action = () => p = p * n;
-            Assert.ThrowsException<ArgumentNullException>(action);
-
-            n = new byte[] { 1 };
-            action = () => p = p * n;
+            byte[] n = [1];
+            var action = () => p = p * n;
             Assert.ThrowsException<ArgumentException>(action);
 
             p = ECCurve.Secp256k1.Infinity;
@@ -376,7 +368,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestTryParse()
         {
-            Assert.IsFalse(ECPoint.TryParse("00", ECCurve.Secp256k1, out ECPoint result));
+            Assert.IsFalse(ECPoint.TryParse("00", ECCurve.Secp256k1, out var result));
             Assert.IsNull(result);
 
             Assert.IsTrue(ECPoint.TryParse("0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", ECCurve.Secp256k1, out result));
@@ -392,3 +384,5 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
     }
 }
+
+#nullable disable

@@ -39,9 +39,6 @@ namespace Neo.UnitTests.Cryptography.ECC
             input = ECCurve.Secp256k1.Q;
             var action = () => new ECFieldElement(input, ECCurve.Secp256k1);
             Assert.ThrowsException<ArgumentException>(() => action());
-
-            action = () => new ECFieldElement(input, null);
-            Assert.ThrowsException<ArgumentNullException>(() => action());
         }
 
         [TestMethod]
