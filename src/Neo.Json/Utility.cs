@@ -19,9 +19,7 @@ namespace Neo.Json
 
         static Utility()
         {
-            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
-            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
-            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
+            StrictUTF8 = new UTF8Encoding(false, true);
         }
     }
 }
