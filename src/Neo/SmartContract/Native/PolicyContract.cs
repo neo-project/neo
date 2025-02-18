@@ -144,8 +144,19 @@ namespace Neo.SmartContract.Native
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
                 throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
 
+            return GetAttributeFee(engine.SnapshotCache, attributeType);
+        }
+
+        /// <summary>
+        /// Gets the fee for attribute.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="attributeType">Attribute type</param>
+        /// <returns>The fee for attribute.</returns>
+        internal uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
+        {
             var key = CreateStorageKey(Prefix_AttributeFee).Add(attributeType);
-            return engine.SnapshotCache.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
+            return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
         }
 
         /// <summary>
