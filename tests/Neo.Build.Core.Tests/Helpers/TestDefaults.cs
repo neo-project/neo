@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// NeoBuildDefaults.cs file belongs to the neo project and is free
+// TestDefaults.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,9 +14,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Neo.Build.Core
+namespace Neo.Build.Core.Tests.Helpers
 {
-    public static class NeoBuildDefaults
+    public static class TestDefaults
     {
         public static readonly JsonSerializerOptions JsonDefaultSerializerOptions = new()
         {
@@ -27,7 +27,7 @@ namespace Neo.Build.Core
             UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode,
             PreferredObjectCreationHandling = JsonObjectCreationHandling.Replace,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
-            WriteIndented = true,
+            WriteIndented = false,
             RespectNullableAnnotations = true,
             Converters =
             {
