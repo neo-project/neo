@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32516.85
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -85,6 +85,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Benchmarks", "benchmarks\Neo.Extensions.Benchmarks\Neo.Extensions.Benchmarks.csproj", "{B6CB2559-10F9-41AC-8D58-364BFEF9688B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Json.Benchmarks", "benchmarks\Neo.Json.Benchmarks\Neo.Json.Benchmarks.csproj", "{5F984D2B-793F-4683-B53A-80050E6E0286}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Plugins.DBFTPlugin.Tests", "tests\Neo.Plugins.DBFTPlugin.Tests\Neo.Plugins.DBFTPlugin.Tests.csproj", "{72997EAB-9B0C-4BC8-B797-955C219C2C97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -240,6 +242,10 @@ Global
 		{5F984D2B-793F-4683-B53A-80050E6E0286}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F984D2B-793F-4683-B53A-80050E6E0286}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F984D2B-793F-4683-B53A-80050E6E0286}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72997EAB-9B0C-4BC8-B797-955C219C2C97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72997EAB-9B0C-4BC8-B797-955C219C2C97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72997EAB-9B0C-4BC8-B797-955C219C2C97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72997EAB-9B0C-4BC8-B797-955C219C2C97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -283,6 +289,7 @@ Global
 		{77FDEE2E-9381-4BFC-B9E6-741EDBD6B90F} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{B6CB2559-10F9-41AC-8D58-364BFEF9688B} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
 		{5F984D2B-793F-4683-B53A-80050E6E0286} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
+		{72997EAB-9B0C-4BC8-B797-955C219C2C97} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}

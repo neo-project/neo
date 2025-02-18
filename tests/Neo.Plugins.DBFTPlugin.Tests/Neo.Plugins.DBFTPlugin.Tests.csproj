@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="3.7.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+    <ProjectReference Include="..\..\src\Plugins\DBFTPlugin\DBFTPlugin.csproj" />
+    <ProjectReference Include="..\Neo.UnitTests\Neo.UnitTests.csproj" />
+  </ItemGroup>
+
+</Project>
