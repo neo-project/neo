@@ -70,7 +70,7 @@ namespace Neo
         /// <summary>
         /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field.
         /// </summary>
-        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock;
+        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock; //TODO keep the same??
 
         /// <summary>
         /// Indicates the maximum number of transactions that can be contained in a block.
@@ -114,7 +114,7 @@ namespace Neo
             StandbyCommittee = Array.Empty<ECPoint>(),
             ValidatorsCount = 0,
             SeedList = Array.Empty<string>(),
-            MillisecondsPerBlock = 15000,
+            MillisecondsPerBlock = 3000,
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
