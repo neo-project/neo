@@ -92,7 +92,7 @@ namespace Neo.SmartContract.Native
             }
             if (hardfork == Hardfork.HF_Echidna)
             {
-                engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee).Add((byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
             }
             return ContractTask.CompletedTask;
         }
