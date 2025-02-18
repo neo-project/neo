@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// UT_WitnessContition.cs file belongs to the neo project and is free
+// UT_WitnessCondition.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,8 +11,11 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
+using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -347,7 +350,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hash2 = UInt160.Parse("0xd2a4cff31913016155e38e474a2c06d08be276cf");
             var jstr = "{\"type\":\"Or\",\"expressions\":[{\"type\":\"And\",\"expressions\":[{\"type\":\"CalledByContract\",\"hash\":\"0x0000000000000000000000000000000000000000\"},{\"type\":\"ScriptHash\",\"hash\":\"0xd2a4cff31913016155e38e474a2c06d08be276cf\"}]},{\"type\":\"Or\",\"expressions\":[{\"type\":\"CalledByGroup\",\"group\":\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"},{\"type\":\"Boolean\",\"expression\":true}]}]}";
             var json = (JObject)JToken.Parse(jstr);
-            var condi = WitnessCondition.FromJson(json, 2);
+            var condi = WitnessCondition.FromJson(json, WitnessCondition.MaxNestingDepth);
             var or_condi = (OrCondition)condi;
             Assert.AreEqual(2, or_condi.Expressions.Length);
             var and_condi = (AndCondition)or_condi.Expressions[0];
@@ -362,6 +365,129 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var bc = (BooleanCondition)or_condi1.Expressions[1];
             Assert.IsTrue(cbgc.Group.Equals(point));
             Assert.IsTrue(bc.Expression);
+        }
+
+        [TestMethod]
+        public void Test_WitnessCondition_Nesting()
+        {
+            WitnessCondition nested = new OrCondition
+            {
+                Expressions = [
+                    new OrCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                    ]
+            };
+
+            var buf = nested.ToArray();
+            var reader = new MemoryReader(buf);
+
+            var deser = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            Assert.AreEqual(nested, deser);
+
+            nested = new AndCondition
+            {
+                Expressions = [
+                    new AndCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                    ]
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            deser = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            Assert.AreEqual(nested, deser);
+
+            nested = new NotCondition
+            {
+                Expression = new NotCondition
+                {
+                    Expression = new BooleanCondition { Expression = true }
+                }
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            deser = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            Assert.AreEqual(nested, deser);
+
+            // Overflow maxNestingDepth
+            nested = new OrCondition
+            {
+                Expressions = [
+                    new OrCondition {
+                        Expressions = [
+                            new OrCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                            ]
+                        }
+                    ]
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            var exceptionHappened = false;
+            // CS8175 prevents from using Assert.ThrowsException here
+            try
+            {
+                WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            }
+            catch (FormatException)
+            {
+                exceptionHappened = true;
+            }
+            Assert.IsTrue(exceptionHappened);
+
+            nested = new AndCondition
+            {
+                Expressions = [
+                    new AndCondition {
+                        Expressions = [
+                            new AndCondition { Expressions = [new BooleanCondition { Expression = true }] }
+                            ]
+                        }
+                    ]
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            exceptionHappened = false;
+            // CS8175 prevents from using Assert.ThrowsException here
+            try
+            {
+                WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            }
+            catch (FormatException)
+            {
+                exceptionHappened = true;
+            }
+            Assert.IsTrue(exceptionHappened);
+
+            nested = new NotCondition
+            {
+                Expression = new NotCondition
+                {
+                    Expression = new NotCondition
+                    {
+                        Expression = new BooleanCondition { Expression = true }
+                    }
+                }
+            };
+
+            buf = nested.ToArray();
+            reader = new MemoryReader(buf);
+
+            exceptionHappened = false;
+            // CS8175 prevents from using Assert.ThrowsException here
+            try
+            {
+                WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
+            }
+            catch (FormatException)
+            {
+                exceptionHappened = true;
+            }
+            Assert.IsTrue(exceptionHappened);
         }
     }
 }
