@@ -24,7 +24,7 @@ namespace Neo.Persistence
     /// <summary>
     /// Represents a cache for the underlying storage of the NEO blockchain.
     /// </summary>
-    public abstract class DataCache : IReadOnlyStore
+    public abstract class DataCache : ICacheableReadOnlyStore
     {
         /// <summary>
         /// Represents an entry in the cache.
@@ -44,6 +44,25 @@ namespace Neo.Persistence
 
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
         private readonly HashSet<StorageKey> _changeSet = [];
+
+        /// <summary>
+        /// Serialized cache
+        /// </summary>
+        public SerializedCache SerializedCache { get; }
+
+        /// <summary>
+        /// This is where the cache changes are stored
+        /// </summary>
+        internal SerializedCache SerializedCacheChanges { get; } = new();
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="serializedCache">Serialized cache</param>
+        protected DataCache(SerializedCache serializedCache)
+        {
+            SerializedCache = serializedCache;
+        }
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -102,6 +121,51 @@ namespace Neo.Persistence
         }
 
         /// <summary>
+        /// Adds a new entry to the cache.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="value">The data of the entry.</param>
+        /// <exception cref="ArgumentException">The entry has already been cached.</exception>
+        /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
+        public void Add<T>(StorageKey key, T value) where T : IStorageCacheEntry
+        {
+            lock (_dictionary)
+            {
+                Add(key, value.GetStorageItem());
+                AddToCache(value);
+            }
+        }
+
+        /// <summary>
+        /// Adds a new entry to the cache.
+        /// </summary>
+        /// <param name="value">The data of the entry.</param>
+        /// <exception cref="ArgumentException">The entry has already been cached.</exception>
+        /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
+        public void AddToCache<T>(T? value = default) where T : IStorageCacheEntry
+        {
+            var type = typeof(T);
+            SerializedCacheChanges.Set(type, value);
+        }
+
+        /// <summary>
+        /// Tries to get the entry from cache.
+        /// </summary>
+        /// <typeparam name="T">Cache type</typeparam>
+        /// <returns>The entry if found, null otherwise.</returns>
+        public T? GetFromCache<T>() where T : IStorageCacheEntry
+        {
+            var value = SerializedCacheChanges.Get<T>();
+
+            if (value != null)
+            {
+                return value;
+            }
+
+            return SerializedCache.Get<T>();
+        }
+
+        /// <summary>
         /// Adds a new entry to the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
@@ -134,6 +198,8 @@ namespace Neo.Persistence
                             break;
                     }
                 }
+                SerializedCache.CopyFrom(SerializedCacheChanges);
+                SerializedCacheChanges.Clear();
                 _changeSet.Clear();
             }
         }
@@ -363,6 +429,19 @@ namespace Neo.Persistence
                 }
                 return trackable.Item;
             }
+        }
+
+        /// <summary>
+        /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>.
+        /// If the entry is not in the cache, it will be automatically loaded from the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="serializedCache">Serialized cache</param>
+        public void Upsert<T>(StorageKey key, T serializedCache) where T : IStorageCacheEntry
+        {
+            var ret = GetAndChange(key, serializedCache.GetStorageItem);
+            ret!.FromReplica(serializedCache.GetStorageItem());
+            AddToCache(serializedCache);
         }
 
         /// <summary>

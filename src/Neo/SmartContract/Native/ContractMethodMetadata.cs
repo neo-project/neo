@@ -54,7 +54,7 @@ namespace Neo.SmartContract.Native
             if (parameterInfos.Length > 0)
             {
                 NeedApplicationEngine = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(ApplicationEngine));
-                // snapshot is a DataCache instance, and DataCache implements IReadOnlyStoreView
+                // snapshot is a DataCache instance, and DataCache implements IReadOnlyStore
                 NeedSnapshot = parameterInfos[0].ParameterType.IsAssignableFrom(typeof(DataCache));
             }
             if (NeedApplicationEngine || NeedSnapshot)

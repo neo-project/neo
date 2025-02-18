@@ -22,6 +22,8 @@ namespace Neo.Plugins.Storage
     {
         private readonly RocksDb _db;
 
+        public SerializedCache SerializedCache { get; } = new();
+
         public Store(string path)
         {
             _db = RocksDb.Open(Options.Default, Path.GetFullPath(path));
