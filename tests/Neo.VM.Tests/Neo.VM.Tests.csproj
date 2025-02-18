@@ -8,7 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Neo.VM\Neo.VM.csproj" />
+    <ProjectReference Include="..\..\src\Neo.VM\Neo.VM.csproj">
+      <Private>true</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +21,10 @@
 
   <ItemGroup>
     <PackageReference Include="MSTest" Version="3.7.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Remove="..\..\src\Neo\Neo.csproj" />
   </ItemGroup>
 
 </Project>

@@ -8,9 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
-    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
-    <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
+    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\RpcServer\RpcServer.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

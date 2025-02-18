@@ -7,8 +7,4 @@
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Neo\Neo.csproj" />
-  </ItemGroup>
-
 </Project>

@@ -8,7 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

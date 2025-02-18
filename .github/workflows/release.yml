@@ -100,7 +100,7 @@ jobs:
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore
       run: |
         rm -v -R runtimes
-        rm -v Neo*
+        rm -v *.pdb
 
     # Create the distribution directory
     - name: Create Distribution Directory
