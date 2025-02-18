@@ -45,6 +45,11 @@ namespace Neo.SmartContract.Native
         public const uint DefaultAttributeFee = 0;
 
         /// <summary>
+        /// The default fee for NotaryAssisted attribute.
+        /// </summary>
+        public const uint DefaultNotaryAssistedAttributeFee = 1000_0000;
+
+        /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const uint MaxExecFeeFactor = 100;
@@ -85,6 +90,10 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
                 engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
             }
+            if (hardfork == Hardfork.HF_Echidna)
+            {
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
+            }
             return ContractTask.CompletedTask;
         }
 
@@ -124,13 +133,26 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the fee for attribute.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
+        public uint GetAttributeFee(ApplicationEngine engine, byte attributeType)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
+            return GetAttributeFee(engine.SnapshotCache, attributeType, engine.IsHardforkEnabled(Hardfork.HF_Echidna));
+        }
+
+        /// <summary>
+        /// Gets the fee for attribute.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="attributeType">Attribute type</param>
+        /// <param name="allowNotaryAssisted">True if Echidna was enabled</param>
+        /// <returns>The fee for attribute.</returns>
+        internal uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType, bool allowNotaryAssisted)
+        {
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
 
             var key = CreateStorageKey(Prefix_AttributeFee, attributeType);
             return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
@@ -148,10 +170,20 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
         }
 
+        /// <summary>
+        /// Sets the fee for attribute before Echidna hardfork.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="attributeType">Attribute type</param>
+        /// <param name="value">Attribute fee value</param>
+        /// <returns>The fee for attribute.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value)
         {
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
+            var allowNotaryAssisted = engine.IsHardforkEnabled(Hardfork.HF_Echidna);
+
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
