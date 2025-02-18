@@ -139,12 +139,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetAttributeFee(ApplicationEngine engine, byte attributeType)
         {
-            var allowNotaryAssisted = engine.IsHardforkEnabled(Hardfork.HF_Echidna);
-
-            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
-                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
-
-            return GetAttributeFee(engine.SnapshotCache, attributeType);
+            return GetAttributeFee(engine.SnapshotCache, attributeType, engine.IsHardforkEnabled(Hardfork.HF_Echidna));
         }
 
         /// <summary>
@@ -152,9 +147,13 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
+        /// <param name="allowNotaryAssisted">True if Echidna was enabled</param>
         /// <returns>The fee for attribute.</returns>
-        internal uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
+        internal uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType, bool allowNotaryAssisted)
         {
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
+                throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
+
             var key = CreateStorageKey(Prefix_AttributeFee).Add(attributeType);
             return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
         }
