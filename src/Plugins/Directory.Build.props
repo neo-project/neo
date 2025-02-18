@@ -6,9 +6,10 @@
   <PropertyGroup>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <GenerateDependencyFile>false</GenerateDependencyFile>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
-  
+ 
   <ItemGroup>
     <ProjectReference Include="../../Neo/Neo.csproj">
       <Private>false</Private>
