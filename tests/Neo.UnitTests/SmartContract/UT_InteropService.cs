@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
 using Akka.Util.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
@@ -35,7 +34,7 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public partial class UT_InteropService : TestKit
+    public partial class UT_InteropService
     {
         private DataCache _snapshotCache;
 

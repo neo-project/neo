@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -19,25 +18,17 @@ using System;
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
-    public class UT_TaskManagerMailbox : TestKit
+    public class UT_TaskManagerMailbox
     {
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
         TaskManagerMailbox uut;
 
-        [TestCleanup]
-        public void Cleanup()
-        {
-            Shutdown();
-        }
-
         [TestInitialize]
         public void TestSetup()
         {
-            ActorSystem system = Sys;
-            var config = DefaultConfig;
-            var akkaSettings = new Settings(system, config);
-            uut = new TaskManagerMailbox(akkaSettings, config);
+            ActorSystem system = TestBlockchain.TheNeoSystem.ActorSystem; ;
+            uut = new TaskManagerMailbox(system.Settings, NeoSystem.SystemConfig);
         }
 
         [TestMethod]

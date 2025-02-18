@@ -15,6 +15,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
+    <Exclude>[Neo.UnitTests]*</Exclude>
+    <InstrumentModulesWithoutLocalSources>true</InstrumentModulesWithoutLocalSources>
+    <ExcludeAssembliesWithoutSources>MissingAny</ExcludeAssembliesWithoutSources>
     <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
     <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
