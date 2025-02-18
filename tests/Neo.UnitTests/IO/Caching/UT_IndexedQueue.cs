@@ -104,5 +104,19 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(2, arr[1]);
             Assert.AreEqual(3, arr[2]);
         }
+
+
+        [TestMethod]
+        public void TestQueueClass()
+        {
+            var q = new IndexedQueue<int?>([1, 2]);
+            var item = q.Dequeue();
+            Assert.AreEqual(1, item);
+
+            item = q.Dequeue();
+            Assert.AreEqual(2, item);
+
+            Assert.ThrowsException<InvalidOperationException>(() => q.Dequeue());
+        }
     }
 }
