@@ -131,44 +131,21 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute before Echidna hardfork.
+        /// Gets the fee for attribute.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
-        public uint GetAttributeFeeV0(IReadOnlyStore snapshot, byte attributeType)
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetAttributeFee(ApplicationEngine engine, byte attributeType)
         {
-            return GetAttributeFee(snapshot, attributeType, false);
-        }
+            var allowNotaryAssisted = engine.IsHardforkEnabled(Hardfork.HF_Echidna);
 
-        /// <summary>
-        /// Gets the fee for attribute after Echidna hardfork.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="attributeType">Attribute type</param>
-        /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
-        {
-            return GetAttributeFee(snapshot, attributeType, true);
-        }
-
-        /// <summary>
-        /// Generic handler for GetAttributeFeeV0 and GetAttributeFee that
-        /// gets the fee for attribute.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="attributeType">Attribute type</param>
-        /// <param name="allowNotaryAssisted">Whether to support <see cref="TransactionAttributeType.NotaryAssisted"/> attribute type.</param>
-        /// <returns>The fee for attribute.</returns>
-        private uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType, bool allowNotaryAssisted)
-        {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
                 throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
 
             var key = CreateStorageKey(Prefix_AttributeFee).Add(attributeType);
-            return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
+            return engine.SnapshotCache.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
         }
 
         /// <summary>
@@ -190,36 +167,11 @@ namespace Neo.SmartContract.Native
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
-        private void SetAttributeFeeV0(ApplicationEngine engine, byte attributeType, uint value)
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value)
         {
-            SetAttributeFee(engine, attributeType, value, false);
-        }
+            var allowNotaryAssisted = engine.IsHardforkEnabled(Hardfork.HF_Echidna);
 
-        /// <summary>
-        /// Sets the fee for attribute after Echidna hardfork.
-        /// </summary>
-        /// <param name="engine">The engine used to check committee witness and read data.</param>
-        /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
-        /// <param name="value">Attribute fee value</param>
-        /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
-        private void SetAttributeFeeV1(ApplicationEngine engine, byte attributeType, uint value)
-        {
-            SetAttributeFee(engine, attributeType, value, true);
-        }
-
-        /// <summary>
-        /// Generic handler for SetAttributeFeeV0 and SetAttributeFeeV1 that
-        /// gets the fee for attribute.
-        /// </summary>
-        /// <param name="engine">The engine used to check committee witness and read data.</param>
-        /// <param name="attributeType">Attribute type</param>
-        /// <param name="value">Attribute fee value</param>
-        /// <param name="allowNotaryAssisted">Whether to support <see cref="TransactionAttributeType.NotaryAssisted"/> attribute type.</param>
-        /// <returns>The fee for attribute.</returns>
-        private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value, bool allowNotaryAssisted)
-        {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType) || (!allowNotaryAssisted && attributeType == (byte)(TransactionAttributeType.NotaryAssisted)))
                 throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
