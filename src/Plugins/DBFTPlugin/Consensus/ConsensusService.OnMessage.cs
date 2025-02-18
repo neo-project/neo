@@ -98,6 +98,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
+            onPrepareReceivedTime = TimeProvider.Current.UtcNow;
+            onPrepareBlockIndex = message.BlockIndex;
+
             context.Block.Header.Timestamp = message.Timestamp;
             context.Block.Header.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
