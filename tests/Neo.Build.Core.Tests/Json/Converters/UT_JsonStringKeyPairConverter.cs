@@ -13,6 +13,7 @@ using Neo.Build.Core.Cryptography;
 using Neo.Build.Core.Tests.Helpers;
 using Neo.Extensions;
 using Neo.Wallets;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace Neo.Build.Core.Tests.Json.Converters

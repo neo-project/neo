@@ -33,7 +33,7 @@ namespace Neo.Build.Core.Json.Converters
 
         public override void Write(Utf8JsonWriter writer, UInt160 value, JsonSerializerOptions options)
         {
-            writer.WriteStringValue($"{value}");
+            writer.WriteStringValue(value.ToString());
         }
     }
 }
