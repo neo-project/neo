@@ -72,7 +72,7 @@ namespace Neo.Build.Core.Wallets
 
         public override WalletAccount? GetAccount(UInt160 scriptHash)
         {
-            _walletAccounts.TryGetValue(scriptHash, out var wa);
+            _ = _walletAccounts.TryGetValue(scriptHash, out var wa);
 
             return wa;
         }
