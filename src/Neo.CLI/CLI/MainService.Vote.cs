@@ -210,7 +210,7 @@ namespace Neo.CLI
         [ConsoleCommand("get accountstate", Category = "Vote Commands")]
         private void OnGetAccountState(UInt160 address)
         {
-            const string Notice = "No vote record!";
+            const string notice = "No vote record!";
             var arg = new JObject
             {
                 ["type"] = "Hash160",
