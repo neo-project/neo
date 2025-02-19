@@ -181,11 +181,11 @@ namespace Neo.UnitTests.IO.Caching
             items = myDataCache.Find([]);
             Assert.AreEqual(4, items.Count());
 
-            // null and empty with the backwards direction -> miserably fails.
-            //Action action = () => myDataCache.Find(null, SeekDirection.Backward);
-            //Assert.ThrowsException<ArgumentNullException>(action);
-            //action = () => myDataCache.Find([], SeekDirection.Backward);
-            //Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            //null and empty with the backwards direction -> miserably fails.
+            items = myDataCache.Find(null, SeekDirection.Backward);
+            Assert.AreEqual(0, items.Count());
+            items = myDataCache.Find([], SeekDirection.Backward);
+            Assert.AreEqual(0, items.Count());
 
             items = myDataCache.Find(k1, SeekDirection.Backward);
             Assert.AreEqual(key1, items.ElementAt(0).Key);
