@@ -88,6 +88,7 @@ namespace Neo.Build.Core.Security
                     _key = null;
                 }
             }
+            GC.SuppressFinalize(this);
         }
 
         public bool IsReadOnly()
