@@ -16,9 +16,9 @@ namespace Neo.Build.Core.Models.Wallet
 {
     public class TestWalletModel : JsonModel
     {
-        public Version Version { get; set; } = new(1, 0);
+        public Version? Version { get; set; }
 
-        public SCryptModel SCrypt { get; set; } = SCryptModel.Default;
+        public SCryptModel? SCrypt { get; set; }
 
         public string? Name { get; set; }
 

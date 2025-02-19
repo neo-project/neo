@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Core.Cryptography;
 using Neo.Wallets;
 using System.Text.Json;
 
@@ -17,15 +16,15 @@ namespace Neo.Build.Core.Models.Wallet
 {
     public class TestWalletAccountModel : JsonModel
     {
-        public string? Name { get; set; }
+        public string? Label { get; set; }
 
         public bool IsDefault { get; set; }
 
-        public UInt160 ScriptHash => Key.PublicKeyHash;
+        public UInt160? ScriptHash { get; set; }
 
-        public KeyPair Key { get; set; } = KeyPairHelper.CreateNew();
+        public KeyPair? Key { get; set; }
 
-        public ContractModel Contract { get; set; } = new();
+        public ContractModel? Contract { get; set; }
 
         public static TestWalletAccountModel? FromJson(string jsonString, JsonSerializerOptions? options = default)
         {
