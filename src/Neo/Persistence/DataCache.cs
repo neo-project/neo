@@ -202,7 +202,10 @@ namespace Neo.Persistence
         /// <returns>The entries found with the desired prefix.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyOrPrefix = null, SeekDirection seekDirection = SeekDirection.Forward)
         {
-            if (seekDirection == SeekDirection.Backward && (keyOrPrefix is null || keyOrPrefix.Length == 0)) yield break;
+            if (seekDirection == SeekDirection.Backward && keyOrPrefix == null)
+                throw new ArgumentNullException(nameof(keyOrPrefix));
+            if (seekDirection == SeekDirection.Backward && keyOrPrefix?.Length == 0)
+                throw new ArgumentOutOfRangeException(nameof(keyOrPrefix));
 
             var lastKey = new byte[ApplicationEngine.MaxStorageKeySize];
             Array.Fill<byte>(lastKey, 0xff);
