@@ -161,7 +161,7 @@ namespace Neo.SmartContract
             _cacheData[.._keyLength].ToArray();
 
         public static implicit operator StorageKey(KeyBuilder builder) =>
-            new(builder._cacheData[..builder._keyLength].ToArray());
+            new(builder.ToArray());
     }
 }
 
