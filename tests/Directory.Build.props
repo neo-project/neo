@@ -1,27 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutput>TestResults/</CoverletOutput>
+    <CoverletOutput>../../TestResults/$(MSBuildProjectName)/</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
+    <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
+    <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" >
+      <IncludeAssets>all</IncludeAssets>
     </PackageReference>
     <PackageReference Include="coverlet.msbuild" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <IncludeAssets>all</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
 </Project>

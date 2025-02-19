@@ -1,18 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <RootNamespace>neo_cli.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <PackageReference Include="MSTest" Version="3.7.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.7.2" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.7.2" />
+    <ProjectReference Include="..\..\src\Neo.ConsoleService\Neo.ConsoleService.csproj" />
   </ItemGroup>
 
 </Project>

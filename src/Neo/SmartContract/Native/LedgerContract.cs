@@ -47,22 +47,22 @@ namespace Neo.SmartContract.Native
                 Transaction = p,
                 State = VMState.NONE
             }).ToArray();
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
                 // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(tx));
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(tx));
 
                 // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     foreach (var signer in conflictingSigners)
                     {
-                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash).Add(signer), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     }
                 }
             }
@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            var key = CreateStorageKey(Prefix_BlockHash).AddBigEndian(index);
+            var key = CreateStorageKey(Prefix_BlockHash, index);
             return snapshot.TryGet(key, out var item) ? new UInt256(item.Value.Span) : null;
         }
 
@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            return snapshot.Contains(CreateStorageKey(Prefix_Block).Add(hash));
+            return snapshot.Contains(CreateStorageKey(Prefix_Block, hash));
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentNullException(nameof(signers));
 
             // Check the dummy stub firstly to define whether there's exist at least one conflict record.
-            var key = CreateStorageKey(Prefix_Transaction).Add(hash);
+            var key = CreateStorageKey(Prefix_Transaction, hash);
             var stub = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
             if (stub is null || stub.Transaction is not null || !IsTraceableBlock(snapshot, stub.BlockIndex, maxTraceableBlocks))
                 return false;
@@ -196,7 +196,7 @@ namespace Neo.SmartContract.Native
             // At least one conflict record is found, then need to check signers intersection.
             foreach (var signer in signers)
             {
-                key = CreateStorageKey(Prefix_Transaction).Add(hash).Add(signer);
+                key = CreateStorageKey(Prefix_Transaction, hash, signer);
                 var state = snapshot.TryGet(key, out var tx) ? tx.GetInteroperable<TransactionState>() : null;
                 if (state is not null && IsTraceableBlock(snapshot, state.BlockIndex, maxTraceableBlocks))
                     return true;
@@ -216,7 +216,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            var key = CreateStorageKey(Prefix_Block).Add(hash);
+            var key = CreateStorageKey(Prefix_Block, hash);
             if (snapshot.TryGet(key, out var item))
                 return item.Value.AsSerializable<TrimmedBlock>();
             return null;
@@ -303,7 +303,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            var key = CreateStorageKey(Prefix_Transaction).Add(hash);
+            var key = CreateStorageKey(Prefix_Transaction, hash);
             var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
             return state?.Transaction is null ? null : state;
         }

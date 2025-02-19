@@ -58,8 +58,16 @@ jobs:
         -p:PublishSingleFile=true \
         -p:PublishReadyToRun=true \
         -p:EnableCompressionInSingleFile=true \
-        -p:DebugType=embedded \
-        -p:ServerGarbageCollection=true
+        -p:DebugSymbols=false \
+        -p:DebugType=none \
+        -p:ServerGarbageCollection=true \
+        -p:TieredCompilation=true \
+        -p:TieredCompilationQuickJitForLoops=false \
+        -p:TieredPGO=true \
+        -p:GenerateDocumentationFile=false \
+        -p:PublishDocumentationFiles=false \
+        -p:PublishReferencesDocumentationFiles=false \
+        -p:GITHUB_ACTIONS=true
 
     # Copy 'libleveldb' library file
     - name: Native Content (neo-cli)
@@ -77,7 +85,15 @@ jobs:
         --configuration ${{ env.CONFIGURATION }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal \
-        -p:VersionPrefix=${{ env.APP_VERSION }}
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:DebugSymbols=false \
+        -p:DebugType=none \
+        -p:ServerGarbageCollection=true \
+        -p:TieredCompilation=true \
+        -p:TieredCompilationQuickJitForLoops=false \
+        -p:TieredPGO=true \
+        -p:GenerateDocumentationFile=false \
+        -p:GITHUB_ACTIONS=true
 
     # Remove unnecessary files from the LevelDBStore plugin output
     - name: Remove files (junk)
@@ -85,13 +101,6 @@ jobs:
       run: |
         rm -v -R runtimes
         rm -v Neo*
-        rm -v *.pdb
-        rm -v *.xml
-
-    # Remove XML comment files from the neo-cli output
-    - name: Remove Xml Comment Files
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: rm -v *.xml
 
     # Create the distribution directory
     - name: Create Distribution Directory
