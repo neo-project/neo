@@ -215,12 +215,9 @@ namespace Neo.Persistence
             if (keyOrPrefix.Length > 0)
                 keyOrPrefix.CopyTo(lastKey, 0);
 
-            var results = seekDirection == SeekDirection.Backward ?
+            return seekDirection == SeekDirection.Backward ?
                 FindRange(lastKey, keyOrPrefix, seekDirection) :
                 FindRange(keyOrPrefix, lastKey, seekDirection);
-
-            foreach (var (key, value) in results)
-                yield return new(key, value);
         }
 
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? key_prefix, byte[]? seek_prefix, SeekDirection direction)
