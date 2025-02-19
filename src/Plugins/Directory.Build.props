@@ -7,8 +7,10 @@
     <PackageId>Neo.Plugins.$(MSBuildProjectName)</PackageId>
     <PackageOutputPath>../../../pkgs/</PackageOutputPath>
     <OutputPath>../../../bin/$(PackageId)</OutputPath>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
+ 
   <ItemGroup>
     <ProjectReference Include="../../Neo/Neo.csproj" />
   </ItemGroup>
