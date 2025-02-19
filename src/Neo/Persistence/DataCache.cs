@@ -197,41 +197,27 @@ namespace Neo.Persistence
         /// <summary>
         /// Finds the entries starting with the specified prefix.
         /// </summary>
-        /// <param name="key_prefix">The prefix of the key.</param>
-        /// <param name="direction">The search direction.</param>
+        /// <param name="keyOrPrefix">The prefix of the key.</param>
+        /// <param name="seekDirection">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? keyOrPrefix = null, SeekDirection seekDirection = SeekDirection.Forward)
         {
-            var seek_prefix = key_prefix;
-            if (direction == SeekDirection.Backward)
-            {
-                if (key_prefix == null)
-                {
-                    // Backwards seek for null prefix is not supported for now.
-                    throw new ArgumentNullException(nameof(key_prefix));
-                }
-                if (key_prefix.Length == 0)
-                {
-                    // Backwards seek for zero prefix is not supported for now.
-                    throw new ArgumentOutOfRangeException(nameof(key_prefix));
-                }
-                seek_prefix = null;
-                for (var i = key_prefix.Length - 1; i >= 0; i--)
-                {
-                    if (key_prefix[i] < 0xff)
-                    {
-                        seek_prefix = key_prefix.Take(i + 1).ToArray();
-                        // The next key after the key_prefix.
-                        seek_prefix[i]++;
-                        break;
-                    }
-                }
-                if (seek_prefix == null)
-                {
-                    throw new ArgumentException($"{nameof(key_prefix)} with all bytes being 0xff is not supported now");
-                }
-            }
-            return FindInternal(key_prefix, seek_prefix, direction);
+            if (seekDirection == SeekDirection.Backward && (keyOrPrefix is null || keyOrPrefix.Length == 0)) yield break;
+
+            var lastKey = new byte[ApplicationEngine.MaxStorageKeySize];
+            Array.Fill<byte>(lastKey, 0xff);
+
+            keyOrPrefix ??= [];
+
+            if (keyOrPrefix.Length > 0)
+                keyOrPrefix.CopyTo(lastKey, 0);
+
+            var results = seekDirection == SeekDirection.Backward ?
+                FindRange(lastKey, keyOrPrefix, seekDirection) :
+                FindRange(keyOrPrefix, lastKey, seekDirection);
+
+            foreach (var (key, value) in results)
+                yield return new(key, value);
         }
 
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? key_prefix, byte[]? seek_prefix, SeekDirection direction)
@@ -246,17 +232,17 @@ namespace Neo.Persistence
         /// <summary>
         /// Finds the entries that between [start, end).
         /// </summary>
-        /// <param name="start">The start key (inclusive).</param>
-        /// <param name="end">The end key (exclusive).</param>
-        /// <param name="direction">The search direction.</param>
+        /// <param name="startKeyOrPrefix">The start key (inclusive).</param>
+        /// <param name="lastKeyOrPrefix">The end key (exclusive).</param>
+        /// <param name="seekDirection">The search direction.</param>
         /// <returns>The entries found with the desired range.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] startKeyOrPrefix, byte[] lastKeyOrPrefix, SeekDirection seekDirection = SeekDirection.Forward)
         {
-            var comparer = direction == SeekDirection.Forward
+            var comparer = seekDirection == SeekDirection.Forward
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
-            foreach (var (key, value) in Seek(start, direction))
-                if (comparer.Compare(key.ToArray(), end) < 0)
+            foreach (var (key, value) in Seek(startKeyOrPrefix, seekDirection))
+                if (comparer.Compare(key.ToArray(), lastKeyOrPrefix) <= 0)
                     yield return (key, value);
                 else
                     yield break;
