@@ -17,9 +17,9 @@ namespace Neo.Build.Core.Models
 {
     public class ContractModel : JsonModel, IConvertToObject<Contract>
     {
-        public byte[] Script { get; set; } = [];
+        public byte[]? Script { get; set; }
 
-        public ContractParameterType[] Parameters { get; set; } = [];
+        public ContractParameterType[]? Parameters { get; set; }
 
         public static ContractModel? FromJson(string jsonString, JsonSerializerOptions? options = default)
         {

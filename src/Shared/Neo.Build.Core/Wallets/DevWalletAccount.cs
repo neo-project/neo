@@ -12,6 +12,7 @@
 using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Models;
 using Neo.Build.Core.Models.Wallet;
+using Neo.SmartContract;
 using Neo.Wallets;
 
 namespace Neo.Build.Core.Wallets
@@ -28,7 +29,7 @@ namespace Neo.Build.Core.Wallets
         public DevWalletAccount(
             TestWalletAccountModel walletAccountModel) : base(walletAccountModel.ScriptHash, ProtocolSettings.Default)
         {
-            _keyPair = walletAccountModel.Key!;
+            _keyPair = walletAccountModel.Key;
 
             Label = walletAccountModel.Label;
             IsDefault = walletAccountModel.IsDefault;
@@ -38,10 +39,33 @@ namespace Neo.Build.Core.Wallets
                 Contract = walletAccountModel.Contract.ToObject();
         }
 
+        public DevWalletAccount(
+            KeyPair? walletKeyPair,
+            Contract walletContract,
+            ProtocolSettings protocolSettings,
+            string? accountLabel = null) : base(walletContract.ScriptHash, protocolSettings)
+        {
+            _keyPair = walletKeyPair;
+            Contract = walletContract;
+            Label = accountLabel;
+            IsDefault = false;
+            Lock = false;
+        }
+
+        public DevWalletAccount(
+            UInt160 accountScriptHash,
+            ProtocolSettings protocolSettings,
+            string? accountLabel = null) : base(accountScriptHash, protocolSettings)
+        {
+            Label = accountLabel;
+            IsDefault = false;
+            Lock = false;
+        }
+
         /// <summary>
         /// Public and private key pair.
         /// </summary>
-        private readonly KeyPair _keyPair;
+        private readonly KeyPair? _keyPair;
 
         /// <summary>
         /// Does the account have a key pair.
@@ -52,7 +76,7 @@ namespace Neo.Build.Core.Wallets
         /// Gets the account's <see cref="KeyPair"/> object.
         /// </summary>
         /// <returns>The associated <see cref="KeyPair"/> for the account</returns>
-        public override KeyPair GetKey() =>
+        public override KeyPair? GetKey() =>
             _keyPair;
 
         /// <summary>
