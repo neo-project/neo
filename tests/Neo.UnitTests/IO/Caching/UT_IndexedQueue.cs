@@ -105,7 +105,6 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(3, arr[2]);
         }
 
-
         [TestMethod]
         public void TestQueueClass()
         {
