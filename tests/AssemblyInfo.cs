@@ -9,4 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#if DISABLE_TEST_PARALLELIZATION
+[assembly: DoNotParallelize]
+#else
 [assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
+#endif

@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);DISABLE_TEST_PARALLELIZATION</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
