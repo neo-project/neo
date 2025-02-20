@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Akka.Util.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;

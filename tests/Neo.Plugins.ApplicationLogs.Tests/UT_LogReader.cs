@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Json;
@@ -28,13 +29,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
 using static Neo.Plugins.ApplicationsLogs.Tests.UT_LogReader;
 using Settings = Neo.Plugins.ApplicationLogs.Settings;
 
 namespace Neo.Plugins.ApplicationsLogs.Tests
 {
-    public class UT_LogReader : IClassFixture<NeoSystemFixture>
+    [TestClass]
+    public class UT_LogReader
     {
         static readonly string NeoTransferScript = "CxEMFPlu76Cuc\u002BbgteStE4ozsOWTNUdrDBQtYNweHko3YcnMFOes3ceblcI/lRTAHwwIdHJhbnNmZXIMFPVj6kC8KD1NDgXEjqMFs/Kgc0DvQWJ9W1I=";
         static readonly byte[] ValidatorScript = Contract.CreateSignatureRedeemScript(TestProtocolSettings.SoleNode.StandbyCommittee[0]);
@@ -51,7 +52,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             public IStore GetStore(string path) => MemoryStore;
         }
 
-        public class NeoSystemFixture : IDisposable
+        private class NeoSystemFixture : IDisposable
         {
             public NeoSystem _neoSystem;
             public TestMemoryStoreProvider _memoryStoreProvider;
@@ -120,87 +121,94 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             }
         }
 
-        private readonly NeoSystemFixture _neoSystemFixture;
+        private static NeoSystemFixture s_neoSystemFixture;
 
-        public UT_LogReader(NeoSystemFixture neoSystemFixture)
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext _)
         {
-            _neoSystemFixture = neoSystemFixture;
+            s_neoSystemFixture = new NeoSystemFixture();
         }
 
-        [Fact]
+        [ClassCleanup(ClassCleanupBehavior.EndOfClass)]
+        public static void ClassCleanup()
+        {
+            s_neoSystemFixture.Dispose();
+        }
+
+        [TestMethod]
         public async Task Test_GetApplicationLog()
         {
-            NeoSystem system = _neoSystemFixture._neoSystem;
-            Block block = _neoSystemFixture.block;
+            NeoSystem system = s_neoSystemFixture._neoSystem;
+            Block block = s_neoSystemFixture.block;
             await system.Blockchain.Ask(block);  // persist the block
 
-            JObject blockJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString()]);
-            Assert.Equal(blockJson["blockhash"], block.Hash.ToString());
+            JObject blockJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString()]);
+            Assert.AreEqual(blockJson["blockhash"], block.Hash.ToString());
             JArray executions = (JArray)blockJson["executions"];
-            Assert.Equal(2, executions.Count);
-            Assert.Equal(executions[0]["trigger"], "OnPersist");
-            Assert.Equal(executions[1]["trigger"], "PostPersist");
+            Assert.AreEqual(2, executions.Count);
+            Assert.AreEqual(executions[0]["trigger"], "OnPersist");
+            Assert.AreEqual(executions[1]["trigger"], "PostPersist");
             JArray notifications = (JArray)executions[1]["notifications"];
-            Assert.Equal(1, notifications.Count);
-            Assert.Equal(notifications[0]["contract"], GasToken.GAS.Hash.ToString());
-            Assert.Equal(notifications[0]["eventname"], "Transfer");  // from null to Validator
-            Assert.Equal(notifications[0]["state"]["value"][0]["type"], nameof(ContractParameterType.Any));
-            Assert.Equal(Convert.FromBase64String(notifications[0]["state"]["value"][1]["value"].AsString()), ValidatorScriptHash.ToArray());
-            Assert.Equal(notifications[0]["state"]["value"][2]["value"], "50000000");
+            Assert.AreEqual(1, notifications.Count);
+            Assert.AreEqual(notifications[0]["contract"], GasToken.GAS.Hash.ToString());
+            Assert.AreEqual(notifications[0]["eventname"], "Transfer");  // from null to Validator
+            Assert.AreEqual(notifications[0]["state"]["value"][0]["type"], nameof(ContractParameterType.Any));
+            Assert.AreEqual(Convert.FromBase64String(notifications[0]["state"]["value"][1]["value"].AsString()), ValidatorScriptHash.ToArray());
+            Assert.AreEqual(notifications[0]["state"]["value"][2]["value"], "50000000");
 
-            blockJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString(), "PostPersist"]);
+            blockJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString(), "PostPersist"]);
             executions = (JArray)blockJson["executions"];
-            Assert.Equal(1, executions.Count);
-            Assert.Equal(executions[0]["trigger"], "PostPersist");
+            Assert.AreEqual(1, executions.Count);
+            Assert.AreEqual(executions[0]["trigger"], "PostPersist");
 
-            JObject transactionJson = (JObject)_neoSystemFixture.logReader.GetApplicationLog([_neoSystemFixture.txs[0].Hash.ToString(), true]);  // "true" is invalid but still works
+            JObject transactionJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog([s_neoSystemFixture.txs[0].Hash.ToString(), true]);  // "true" is invalid but still works
             executions = (JArray)transactionJson["executions"];
-            Assert.Equal(1, executions.Count);
-            Assert.Equal(executions[0]["vmstate"], nameof(VMState.HALT));
-            Assert.Equal(executions[0]["stack"][0]["value"], true);
+            Assert.AreEqual(1, executions.Count);
+            Assert.AreEqual(executions[0]["vmstate"], nameof(VMState.HALT));
+            Assert.AreEqual(executions[0]["stack"][0]["value"], true);
             notifications = (JArray)executions[0]["notifications"];
-            Assert.Equal(2, notifications.Count);
-            Assert.Equal("Transfer", notifications[0]["eventname"].AsString());
-            Assert.Equal(notifications[0]["contract"].AsString(), NeoToken.NEO.Hash.ToString());
-            Assert.Equal(notifications[0]["state"]["value"][2]["value"], "1");
-            Assert.Equal("Transfer", notifications[1]["eventname"].AsString());
-            Assert.Equal(notifications[1]["contract"].AsString(), GasToken.GAS.Hash.ToString());
-            Assert.Equal(notifications[1]["state"]["value"][2]["value"], "50000000");
+            Assert.AreEqual(2, notifications.Count);
+            Assert.AreEqual("Transfer", notifications[0]["eventname"].AsString());
+            Assert.AreEqual(notifications[0]["contract"].AsString(), NeoToken.NEO.Hash.ToString());
+            Assert.AreEqual(notifications[0]["state"]["value"][2]["value"], "1");
+            Assert.AreEqual("Transfer", notifications[1]["eventname"].AsString());
+            Assert.AreEqual(notifications[1]["contract"].AsString(), GasToken.GAS.Hash.ToString());
+            Assert.AreEqual(notifications[1]["state"]["value"][2]["value"], "50000000");
         }
 
-        [Fact]
+        [TestMethod]
         public async Task Test_Commands()
         {
-            NeoSystem system = _neoSystemFixture._neoSystem;
-            Block block = _neoSystemFixture.block;
+            NeoSystem system = s_neoSystemFixture._neoSystem;
+            Block block = s_neoSystemFixture.block;
             await system.Blockchain.Ask(block);  // persist the block
 
-            _neoSystemFixture.logReader.OnGetBlockCommand("1");
-            _neoSystemFixture.logReader.OnGetBlockCommand(block.Hash.ToString());
-            _neoSystemFixture.logReader.OnGetContractCommand(NeoToken.NEO.Hash);
-            _neoSystemFixture.logReader.OnGetTransactionCommand(_neoSystemFixture.txs[0].Hash);
+            s_neoSystemFixture.logReader.OnGetBlockCommand("1");
+            s_neoSystemFixture.logReader.OnGetBlockCommand(block.Hash.ToString());
+            s_neoSystemFixture.logReader.OnGetContractCommand(NeoToken.NEO.Hash);
+            s_neoSystemFixture.logReader.OnGetTransactionCommand(s_neoSystemFixture.txs[0].Hash);
 
-            BlockchainExecutionModel blockLog = _neoSystemFixture.logReader._neostore.GetBlockLog(block.Hash, TriggerType.Application);
-            BlockchainExecutionModel transactionLog = _neoSystemFixture.logReader._neostore.GetTransactionLog(_neoSystemFixture.txs[0].Hash);
+            BlockchainExecutionModel blockLog = s_neoSystemFixture.logReader._neostore.GetBlockLog(block.Hash, TriggerType.Application);
+            BlockchainExecutionModel transactionLog = s_neoSystemFixture.logReader._neostore.GetTransactionLog(s_neoSystemFixture.txs[0].Hash);
             foreach (BlockchainExecutionModel log in new BlockchainExecutionModel[] { blockLog, transactionLog })
             {
-                Assert.Equal(VMState.HALT, log.VmState);
-                Assert.True(log.Stack[0].GetBoolean());
-                Assert.Equal(2, log.Notifications.Count());
-                Assert.Equal("Transfer", log.Notifications[0].EventName);
-                Assert.Equal(log.Notifications[0].ScriptHash, NeoToken.NEO.Hash);
-                Assert.Equal(log.Notifications[0].State[2], 1);
-                Assert.Equal("Transfer", log.Notifications[1].EventName);
-                Assert.Equal(log.Notifications[1].ScriptHash, GasToken.GAS.Hash);
-                Assert.Equal(log.Notifications[1].State[2], 50000000);
+                Assert.AreEqual(VMState.HALT, log.VmState);
+                Assert.IsTrue(log.Stack[0].GetBoolean());
+                Assert.AreEqual(2, log.Notifications.Count());
+                Assert.AreEqual("Transfer", log.Notifications[0].EventName);
+                Assert.AreEqual(log.Notifications[0].ScriptHash, NeoToken.NEO.Hash);
+                Assert.AreEqual(log.Notifications[0].State[2], 1);
+                Assert.AreEqual("Transfer", log.Notifications[1].EventName);
+                Assert.AreEqual(log.Notifications[1].ScriptHash, GasToken.GAS.Hash);
+                Assert.AreEqual(log.Notifications[1].State[2], 50000000);
             }
 
-            List<(BlockchainEventModel eventLog, UInt256 txHash)> neoLogs = _neoSystemFixture.logReader._neostore.GetContractLog(NeoToken.NEO.Hash, TriggerType.Application).ToList();
-            Assert.Single(neoLogs);
-            Assert.Equal(neoLogs[0].txHash, _neoSystemFixture.txs[0].Hash);
-            Assert.Equal("Transfer", neoLogs[0].eventLog.EventName);
-            Assert.Equal(neoLogs[0].eventLog.ScriptHash, NeoToken.NEO.Hash);
-            Assert.Equal(neoLogs[0].eventLog.State[2], 1);
+            List<(BlockchainEventModel eventLog, UInt256 txHash)> neoLogs = s_neoSystemFixture.logReader._neostore.GetContractLog(NeoToken.NEO.Hash, TriggerType.Application).ToList();
+            Assert.ContainsSingle(neoLogs);
+            Assert.AreEqual(neoLogs[0].txHash, s_neoSystemFixture.txs[0].Hash);
+            Assert.AreEqual("Transfer", neoLogs[0].eventLog.EventName);
+            Assert.AreEqual(neoLogs[0].eventLog.ScriptHash, NeoToken.NEO.Hash);
+            Assert.AreEqual(neoLogs[0].eventLog.State[2], 1);
         }
     }
 }
