@@ -153,7 +153,7 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             Assert.AreEqual(notifications[0]["contract"], GasToken.GAS.Hash.ToString());
             Assert.AreEqual(notifications[0]["eventname"], "Transfer");  // from null to Validator
             Assert.AreEqual(notifications[0]["state"]["value"][0]["type"], nameof(ContractParameterType.Any));
-            Assert.AreEqual(Convert.FromBase64String(notifications[0]["state"]["value"][1]["value"].AsString()), ValidatorScriptHash.ToArray());
+            CollectionAssert.AreEqual(Convert.FromBase64String(notifications[0]["state"]["value"][1]["value"].AsString()), ValidatorScriptHash.ToArray());
             Assert.AreEqual(notifications[0]["state"]["value"][2]["value"], "50000000");
 
             blockJson = (JObject)s_neoSystemFixture.logReader.GetApplicationLog([block.Hash.ToString(), "PostPersist"]);
