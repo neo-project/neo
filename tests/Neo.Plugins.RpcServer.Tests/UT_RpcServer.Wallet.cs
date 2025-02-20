@@ -30,7 +30,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestOpenWallet()
         {
-            const string Path = "wallet.json";
+            const string Path = "wallet-TestOpenWallet.json";
             const string Password = "123456";
             File.WriteAllText(Path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
             var paramsArray = new JArray(Path, Password);
@@ -46,7 +46,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestOpenInvalidWallet()
         {
-            const string Path = "wallet.json";
+            const string Path = "wallet-TestOpenInvalidWallet.json";
             const string Password = "password";
             File.Delete(Path);
             var paramsArray = new JArray(Path, Password);
@@ -459,7 +459,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             try
             {
-                const string Path = "wallet.json";
+                const string Path = "wallet-TestUtilCloseWallet.json";
                 _rpcServer.CloseWallet([]);
                 File.Delete(Path);
             }
