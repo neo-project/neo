@@ -115,7 +115,7 @@ namespace Neo.UnitTests.IO.Caching
             item = q.Dequeue();
             Assert.AreEqual(2, item);
 
-            Assert.ThrowsException<InvalidOperationException>(() => q.Dequeue());
+            Assert.ThrowsExactly<InvalidOperationException>(() => q.Dequeue());
         }
     }
 }
