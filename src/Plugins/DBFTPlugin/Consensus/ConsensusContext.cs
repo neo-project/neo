@@ -215,11 +215,12 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 if (_witnessSize == 0 || (pv != null && pv.Length != Validators.Length))
                 {
                     // Compute the expected size of the witness
-                    using (ScriptBuilder sb = new())
+                    using (ScriptBuilder sb = new(65 * M + 34 * Validators.Length + 64)) // 64 is extra space
                     {
+                        var buf = new byte[64];
                         for (int x = 0; x < M; x++)
                         {
-                            sb.EmitPush(new byte[64]);
+                            sb.EmitPush(buf);
                         }
                         _witnessSize = new Witness
                         {

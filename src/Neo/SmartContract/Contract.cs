@@ -104,7 +104,7 @@ namespace Neo.SmartContract
         {
             if (!(1 <= m && m <= publicKeys.Count && publicKeys.Count <= 1024))
                 throw new ArgumentException($"Invalid multisig parameters: m={m}, publicKeys.Count={publicKeys.Count}");
-            using ScriptBuilder sb = new();
+            using ScriptBuilder sb = new(2 /* m */ + 34 * publicKeys.Count + 8 /* extra space */);
             sb.EmitPush(m);
             foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
             {
