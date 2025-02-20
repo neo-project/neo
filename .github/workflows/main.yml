@@ -89,7 +89,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: binlogs
+        name: binlogs--${{ matrix.os }}
         path: "*.binlog"
 
     - name: Coveralls
