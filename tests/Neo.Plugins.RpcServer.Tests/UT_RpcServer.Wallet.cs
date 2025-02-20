@@ -21,6 +21,7 @@ using Neo.VM;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -437,14 +438,15 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
 
-        private void TestUtilOpenWallet()
+        private void TestUtilOpenWallet([CallerMemberName] string callerMemberName = "")
         {
             try
             {
-                const string Path = "wallet.json";
+                // Avoid using the same wallet file for different tests when they are run in parallel
+                string path = $"wallet_{callerMemberName}.json";
                 const string Password = "123456";
-                File.WriteAllText(Path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
-                var paramsArray = new JArray(Path, Password);
+                File.WriteAllText(path, "{\"name\":null,\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NVizn8DiExdmnpTQfjiVY3dox8uXg3Vrxv\",\"label\":null,\"isDefault\":false,\"lock\":false,\"key\":\"6PYPMrsCJ3D4AXJCFWYT2WMSBGF7dLoaNipW14t4UFAkZw3Z9vQRQV1bEU\",\"contract\":{\"script\":\"DCEDaR\\u002BFVb8lOdiMZ/wCHLiI\\u002Bzuf17YuGFReFyHQhB80yMpBVuezJw==\",\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":null}");
+                var paramsArray = new JArray(path, Password);
                 _rpcServer.OpenWallet(paramsArray);
             }
             catch (Exception e)

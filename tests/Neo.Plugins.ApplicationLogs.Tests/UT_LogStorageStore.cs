@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence.Providers;
+using Neo.Plugins.ApplicationLogs;
 using Neo.Plugins.ApplicationLogs.Store;
 using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.Plugins.ApplicationsLogs.Tests.Setup;
@@ -176,6 +177,9 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             using var store = new MemoryStore();
             using var snapshot = store.GetSnapshot();
             using var lss = new LogStorageStore(snapshot);
+
+            // Make sure to initialize Settings.Default.
+            using var _ = new LogReader();
 
             var ok = lss.TryGetStackItemState(Guid.NewGuid(), out var actualState);
             Assert.IsFalse(ok);
