@@ -70,8 +70,8 @@ jobs:
       run: |
         brew install leveldb
         brew install gperftools
-        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-macos-binlog
-        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-macos-binlog
+        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-macos.binlog
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-macos.binlog
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
