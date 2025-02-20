@@ -216,16 +216,19 @@ namespace Neo.Persistence
                 keyOrPrefix.CopyTo(lastKey, 0);
 
             return seekDirection == SeekDirection.Backward ?
-                FindRange(lastKey, keyOrPrefix, seekDirection) :
-                FindRange(keyOrPrefix, lastKey, seekDirection);
+                FindInternal(lastKey, keyOrPrefix, seekDirection) :
+                FindInternal(keyOrPrefix, lastKey, seekDirection);
         }
 
-        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[]? key_prefix, byte[]? seek_prefix, SeekDirection direction)
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[] startKeyOrPrefix, byte[] lastKeyOrPrefix, SeekDirection seekDirection)
         {
-            foreach (var (key, value) in Seek(seek_prefix, direction))
-                if (key_prefix == null || key.ToArray().AsSpan().StartsWith(key_prefix))
+            var comparer = seekDirection == SeekDirection.Forward
+                ? ByteArrayComparer.Default
+                : ByteArrayComparer.Reverse;
+            foreach (var (key, value) in Seek(startKeyOrPrefix, seekDirection))
+                if (comparer.Compare(key.ToArray(), lastKeyOrPrefix) <= 0)
                     yield return (key, value);
-                else if (direction == SeekDirection.Forward || (seek_prefix == null || !key.ToArray().SequenceEqual(seek_prefix)))
+                else
                     yield break;
         }
 
@@ -242,7 +245,7 @@ namespace Neo.Persistence
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
             foreach (var (key, value) in Seek(startKeyOrPrefix, seekDirection))
-                if (comparer.Compare(key.ToArray(), lastKeyOrPrefix) <= 0)
+                if (comparer.Compare(key.ToArray(), lastKeyOrPrefix) < 0)
                     yield return (key, value);
                 else
                     yield break;

@@ -290,9 +290,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsTrue(items[0].Value.EqualsTo(value5));
             Assert.AreEqual(key4, items[1].Key);
             Assert.IsTrue(items[1].Value.EqualsTo(value4));
-            Assert.AreEqual(key3, items[2].Key);
-            Assert.IsTrue(items[2].Value.EqualsTo(value3));
-            Assert.AreEqual(3, items.Length);
+            Assert.AreEqual(2, items.Length);
         }
 
         [TestMethod]
