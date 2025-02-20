@@ -11,8 +11,12 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-#if DISABLE_TEST_PARALLELIZATION
-[assembly: DoNotParallelize]
-#else
+// Test projects that wish to enable parallelization should add the following in csproj:
+// <PropertyGroup>
+//   <DefineConstants>$(DefineConstants);DISABLE_TEST_PARALLELIZATION</DefineConstants>
+// </PropertyGroup>
+#if ENABLE_TEST_PARALLELIZATION
 [assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
+#else
+[assembly: DoNotParallelize]
 #endif
