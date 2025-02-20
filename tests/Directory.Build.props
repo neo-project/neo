@@ -8,7 +8,6 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutput>../../TestResults/$(MSBuildProjectName)/</CoverletOutput>
     <CoverletOutputFormat>lcov</CoverletOutputFormat>
@@ -17,7 +16,11 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <OutputPath>../../bin/tests/$(MSBuildProjectName)</OutputPath>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
     <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <MSTestVersion>3.8.2</MSTestVersion>
+    <MSTestAnalysisMode>Recommended</MSTestAnalysisMode>
   </PropertyGroup>
 
   <ItemGroup>
