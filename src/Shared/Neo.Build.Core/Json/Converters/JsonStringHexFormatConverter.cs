@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// JsonStringECPointConverter.cs file belongs to the neo project and is free
+// JsonStringHexFormatConverter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,34 +10,31 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Exceptions;
-using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Json.Converters
 {
-    public class JsonStringECPointConverter : JsonConverter<ECPoint?>
+    public class JsonStringHexFormatConverter : JsonConverter<byte[]?>
     {
-        public override ECPoint? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override byte[]? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.String)
-                throw new NeoBuildInvalidECPointFormatException();
+                throw new NeoBuildInvalidHexFormatException();
 
             var valueString = reader.GetString();
 
             if (string.IsNullOrEmpty(valueString))
                 return default;
 
-            if (ECPoint.TryParse(valueString, ECCurve.Secp256r1, out var value) == false)
-                throw new NeoBuildInvalidECPointFormatException();
-
-            return value;
+            return valueString.HexToBytes();
         }
 
-        public override void Write(Utf8JsonWriter writer, ECPoint? value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, byte[]? value, JsonSerializerOptions options)
         {
-            writer.WriteStringValue(value?.ToString());
+            writer.WriteStringValue(value.ToHexString());
         }
     }
 }

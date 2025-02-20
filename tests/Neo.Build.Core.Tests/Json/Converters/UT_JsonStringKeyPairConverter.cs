@@ -10,11 +10,12 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Cryptography;
+using Neo.Build.Core.Json.Converters;
 using Neo.Build.Core.Tests.Helpers;
 using Neo.Extensions;
 using Neo.Wallets;
-using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Tests.Json.Converters
 {
@@ -23,18 +24,19 @@ namespace Neo.Build.Core.Tests.Json.Converters
     {
         private class TestJson
         {
-            public KeyPair Test { get; set; }
+            [JsonConverter(typeof(JsonStringKeyPairHexFormatConverter))]
+            public KeyPair? Test { get; set; }
         };
 
         [TestMethod]
         public void TestReadJson()
         {
             var keyPair = KeyPairHelper.CreateNew();
-            var expectedBytes = keyPair.PrivateKey;
+            var expectedBytes = keyPair.PrivateKey!;
             var expectedJsonString = $"{{\"test\":\"{expectedBytes.ToHexString()}\"}}";
 
             var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, TestDefaults.JsonDefaultSerializerOptions);
-            var actualKeyPair = actualObject.Test;
+            var actualKeyPair = actualObject!.Test!;
 
             CollectionAssert.AreEqual(expectedBytes, actualKeyPair.PrivateKey);
         }

@@ -10,25 +10,29 @@
 // modifications are permitted.
 
 using Neo.Build.Core.Interfaces;
+using Neo.Build.Core.Json.Converters;
 using Neo.SmartContract;
-using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Serialization;
 
-namespace Neo.Build.Core.Models
+namespace Neo.Build.Core.Models.Wallets
 {
     public class ContractModel : JsonModel, IConvertToObject<Contract>
     {
+        [JsonConverter(typeof(JsonStringHexFormatConverter))]
         public byte[]? Script { get; set; }
 
-        public ContractParameterType[]? Parameters { get; set; }
+        public ICollection<ContractParameterModel>? Parameters { get; set; }
 
-        public static ContractModel? FromJson(string jsonString, JsonSerializerOptions? options = default)
+        public bool Deployed { get; set; }
+
+        public Contract ToObject()
         {
-            var jsonOptions = options ?? NeoBuildDefaults.JsonDefaultSerializerOptions;
+            if (Parameters == null)
+                return Contract.Create([], []);
 
-            return FromJson<ContractModel>(jsonString, jsonOptions);
+            return Contract.Create([.. Parameters.Select(s => s.Type)], Script);
         }
-
-        public Contract ToObject() =>
-            Contract.Create(Parameters, Script);
     }
 }

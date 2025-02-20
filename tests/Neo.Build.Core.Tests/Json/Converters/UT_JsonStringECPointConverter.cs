@@ -20,7 +20,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
     {
         private class TestJson
         {
-            public ECPoint Test { get; set; }
+            public ECPoint? Test { get; set; }
         };
 
         [TestMethod]
@@ -30,7 +30,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             var expectedJsonString = $"{{\"test\":\"{expectedPointString}\"}}";
 
             var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, TestDefaults.JsonDefaultSerializerOptions);
-            var actualPoint = actualObject.Test;
+            var actualPoint = actualObject!.Test;
 
             Assert.AreEqual(expectedPointString, $"{actualPoint}");
         }

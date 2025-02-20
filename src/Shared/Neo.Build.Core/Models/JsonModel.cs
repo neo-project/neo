@@ -25,16 +25,16 @@ namespace Neo.Build.Core.Models
             ToJson(options);
 
         public virtual string ToJson(JsonSerializerOptions? options) =>
-            JsonSerializer.Serialize(this, options ?? _jsonSerializerOptions);
+            JsonSerializer.Serialize<object>(this, options ?? _jsonSerializerOptions);
 
-        public static T? FromJson<T>(string jsonString, JsonSerializerOptions? options = default)
-            where T : notnull, JsonModel =>
-            JsonSerializer.Deserialize<T>(
+        public static TModel? FromJson<TModel>(string jsonString, JsonSerializerOptions? options = default)
+            where TModel : notnull, JsonModel =>
+            JsonSerializer.Deserialize<TModel>(
                 jsonString,
                 options ?? NeoBuildDefaults.JsonDefaultSerializerOptions);
 
-        public static T? FromJson<T>(FileInfo file, JsonSerializerOptions? options = default)
-            where T : notnull, JsonModel
+        public static TModel? FromJson<TModel>(FileInfo file, JsonSerializerOptions? options = default)
+            where TModel : notnull, JsonModel
         {
             if (file.Exists == false)
                 throw new NeoBuildFileNotFoundException(file);
@@ -45,7 +45,7 @@ namespace Neo.Build.Core.Models
             if (string.IsNullOrEmpty(jsonString))
                 throw new NeoBuildInvalidFileFormatException(file);
 
-            return FromJson<T>(jsonString, jsonOptions);
+            return FromJson<TModel>(jsonString, jsonOptions);
         }
     }
 }

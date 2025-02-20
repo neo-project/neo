@@ -10,23 +10,21 @@
 // modifications are permitted.
 
 using System;
-using System.Text.Json;
+using System.Collections.Generic;
+using System.Text.Json.Nodes;
 
-namespace Neo.Build.Core.Models.Wallet
+namespace Neo.Build.Core.Models.Wallets
 {
     public class TestWalletModel : JsonModel
     {
-        public Version? Version { get; set; }
-
-        public SCryptModel? SCrypt { get; set; }
-
         public string? Name { get; set; }
 
-        public static TestWalletModel? FromJson(string jsonString, JsonSerializerOptions? options = default)
-        {
-            var jsonOptions = options ?? NeoBuildDefaults.JsonDefaultSerializerOptions;
+        public Version? Version { get; set; }
 
-            return FromJson<TestWalletModel>(jsonString, jsonOptions);
-        }
+        public SCryptModel? Scrypt { get; set; }
+
+        public ICollection<TestWalletAccountModel>? Accounts { get; set; }
+
+        public JsonNode? Extra { get; set; }
     }
 }

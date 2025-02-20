@@ -9,28 +9,29 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Json.Converters;
 using Neo.Wallets;
-using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
-namespace Neo.Build.Core.Models.Wallet
+namespace Neo.Build.Core.Models.Wallets
 {
     public class TestWalletAccountModel : JsonModel
     {
+        [JsonConverter(typeof(JsonStringAddressConverter))]
+        public UInt160? Address { get; set; }
+
         public string? Label { get; set; }
 
         public bool IsDefault { get; set; }
 
-        public UInt160? ScriptHash { get; set; }
+        public bool Lock { get; set; }
 
+        [JsonConverter(typeof(JsonStringKeyPairHexFormatConverter))]
         public KeyPair? Key { get; set; }
 
         public ContractModel? Contract { get; set; }
 
-        public static TestWalletAccountModel? FromJson(string jsonString, JsonSerializerOptions? options = default)
-        {
-            var jsonOptions = options ?? NeoBuildDefaults.JsonDefaultSerializerOptions;
-
-            return FromJson<TestWalletAccountModel>(jsonString, jsonOptions);
-        }
+        public JsonNode? Extra { get; set; }
     }
 }

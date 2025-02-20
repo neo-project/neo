@@ -11,9 +11,8 @@
 
 using Neo.Build.Core.Interfaces;
 using Neo.Wallets.NEP6;
-using System.Text.Json;
 
-namespace Neo.Build.Core.Models.Wallet
+namespace Neo.Build.Core.Models.Wallets
 {
     public class SCryptModel : JsonModel, IConvertToObject<ScryptParameters>
     {
@@ -38,13 +37,6 @@ namespace Neo.Build.Core.Models.Wallet
         /// Parallelization parameter. Must be a positive integer less than or equal to Int32.MaxValue / (128 * r * 8).
         /// </summary>
         public int P { get; set; }
-
-        public static SCryptModel? FromJson(string jsonString, JsonSerializerOptions? options = default)
-        {
-            var jsonOptions = options ?? NeoBuildDefaults.JsonDefaultSerializerOptions;
-
-            return FromJson<SCryptModel>(jsonString, jsonOptions);
-        }
 
         public ScryptParameters ToObject() =>
             new(N, R, P);

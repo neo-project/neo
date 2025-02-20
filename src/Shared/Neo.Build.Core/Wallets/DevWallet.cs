@@ -9,31 +9,61 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.Exceptions;
+using Neo.Build.Core.Interfaces;
+using Neo.Build.Core.Models;
+using Neo.Build.Core.Models.Wallets;
 using Neo.SmartContract;
 using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.Build.Core.Wallets
 {
-    public class DevWallet : Wallet
+    /// <summary>
+    /// Developer wallet.
+    /// </summary>
+    public class DevWallet : Wallet, IConvertToObject<TestWalletModel>
     {
-        public DevWallet(string walletName) : base(string.Empty, ProtocolSettings.Default)
+        /// <summary>
+        /// Creates a new developer wallet.
+        /// </summary>
+        /// <param name="walletModel">Wallet <see cref="JsonModel"/>.</param>
+        /// <exception cref="NeoBuildInvalidVersionFormatException"></exception>
+        public DevWallet(
+            TestWalletModel walletModel) : base(string.Empty, ProtocolSettings.Default)
         {
-            _walletName = walletName;
+            if (walletModel.Version != Version)
+                throw new NeoBuildInvalidVersionFormatException();
+
+            _walletName = walletModel.Name;
+            _sCryptParameters = walletModel.Scrypt ?? SCryptModel.Default;
+
+            if (walletModel.Accounts != null)
+            {
+                foreach (var account in walletModel.Accounts)
+                {
+                    if (account is null) continue;
+                    if (account.Address is null) continue;
+                    _walletAccounts[account.Address] = new(account);
+                }
+            }
         }
 
         private readonly ConcurrentDictionary<UInt160, DevWalletAccount> _walletAccounts = new();
 
-        private readonly string _walletName;
+        private readonly string? _walletName;
 
-        public override string Name => _walletName;
+        private readonly SCryptModel _sCryptParameters;
+
+        public ScryptParameters SCryptParameters => _sCryptParameters.ToObject();
+
+        public override string? Name => _walletName;
 
         public override Version Version => new(1, 0);
-
-        public override bool ChangePassword(string oldPassword, string newPassword) =>
-            throw new NotImplementedException();
 
         public override bool Contains(UInt160 scriptHash) =>
             _walletAccounts.ContainsKey(scriptHash);
@@ -42,7 +72,7 @@ namespace Neo.Build.Core.Wallets
         {
             var kp = new KeyPair(privateKey);
             var c = Contract.CreateSignatureContract(kp.PublicKey);
-            var wa = new DevWalletAccount(kp, c, ProtocolSettings);
+            var wa = new DevWalletAccount(c, ProtocolSettings, kp);
 
             _ = _walletAccounts.TryAdd(wa.ScriptHash, wa);
 
@@ -51,7 +81,7 @@ namespace Neo.Build.Core.Wallets
 
         public override WalletAccount CreateAccount(Contract contract, KeyPair? key = null)
         {
-            var wa = new DevWalletAccount(key, contract, ProtocolSettings);
+            var wa = new DevWalletAccount(contract, ProtocolSettings, key);
 
             _ = _walletAccounts.TryAdd(wa.ScriptHash, wa);
 
@@ -84,9 +114,30 @@ namespace Neo.Build.Core.Wallets
 
         public override void Save() { }
 
-        public override bool VerifyPassword(string password)
-        {
+        public override bool ChangePassword(string oldPassword, string newPassword) =>
             throw new NotImplementedException();
-        }
+
+        public override bool VerifyPassword(string password) =>
+            throw new NotImplementedException();
+
+        /// <summary>
+        /// Converts to a <see cref="JsonModel"/>.
+        /// </summary>
+        /// <returns>A <see cref="JsonModel"/> that can be serialized to a JSON string.</returns>
+        public TestWalletModel ToObject() =>
+            new()
+            {
+                Name = Name,
+                Version = Version,
+                Scrypt = _sCryptParameters,
+                Accounts = [.. _walletAccounts.Values.Select(s => s.ToObject())]
+            };
+
+        /// <summary>
+        /// <see cref="DevWallet"/> as JSON string.
+        /// </summary>
+        /// <returns>JSON</returns>
+        public override string ToString() =>
+            ToObject().ToString();
     }
 }
