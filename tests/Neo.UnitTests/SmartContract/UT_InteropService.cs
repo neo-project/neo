@@ -344,7 +344,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(engine.CheckWitness(pubkey.EncodePoint(true)));
 
             Action action = () => engine.CheckWitness(Array.Empty<byte>());
-            Assert.ThrowsException<ArgumentException>(action);
+            Assert.ThrowsExactly<ArgumentException>(action);
         }
 
         [TestMethod]
@@ -443,7 +443,7 @@ namespace Neo.UnitTests.SmartContract
 
             var wrongkey = pubkey.EncodePoint(false);
             wrongkey[0] = 5;
-            Assert.ThrowsException<FormatException>(() => engine.CheckSig(wrongkey, signature));
+            Assert.ThrowsExactly<FormatException>(() => _ = engine.CheckSig(wrongkey, signature));
         }
 
         [TestMethod]
@@ -619,18 +619,18 @@ namespace Neo.UnitTests.SmartContract
             //key.Length > MaxStorageKeySize
             key = new byte[ApplicationEngine.MaxStorageKeySize + 1];
             value = new byte[] { 0x02 };
-            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
+            Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //value.Length > MaxStorageValueSize
             key = new byte[] { 0x01 };
             value = new byte[ushort.MaxValue + 1];
-            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
+            Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //context.IsReadOnly
             key = new byte[] { 0x01 };
             value = new byte[] { 0x02 };
             storageContext.IsReadOnly = true;
-            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
+            Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //storage value is constant
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
@@ -687,7 +687,7 @@ namespace Neo.UnitTests.SmartContract
 
             //context is readonly
             storageContext.IsReadOnly = true;
-            Assert.ThrowsException<ArgumentException>(() => engine.Delete(storageContext, key));
+            Assert.ThrowsExactly<ArgumentException>(() => engine.Delete(storageContext, key));
         }
 
         [TestMethod]
@@ -721,7 +721,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
             engine.SnapshotCache.DeleteContract(state.Hash);
             engine.SnapshotCache.AddContract(state.Hash, state);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, args));
+            Assert.ThrowsExactly<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, args));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
             engine.SnapshotCache.DeleteContract(state.Hash);
@@ -730,7 +730,7 @@ namespace Neo.UnitTests.SmartContract
 
             engine.SnapshotCache.DeleteContract(state.Hash);
             engine.SnapshotCache.AddContract(state.Hash, state);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
+            Assert.ThrowsExactly<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
         }
 
         [TestMethod]
@@ -802,7 +802,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result);
             result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[0], NamedCurveHash.secp256k1SHA256);
             Assert.IsFalse(result);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
         }
 
         [TestMethod]

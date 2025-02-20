@@ -46,13 +46,13 @@ namespace Neo.Json.UnitTests
         public void TestAsString()
         {
             Action action1 = () => new JNumber(double.PositiveInfinity).AsString();
-            Assert.ThrowsException<FormatException>(action1);
+            Assert.ThrowsExactly<FormatException>(action1);
 
             Action action2 = () => new JNumber(double.NegativeInfinity).AsString();
-            Assert.ThrowsException<FormatException>(action2);
+            Assert.ThrowsExactly<FormatException>(action2);
 
             Action action3 = () => new JNumber(double.NaN).AsString();
-            Assert.ThrowsException<FormatException>(action3);
+            Assert.ThrowsExactly<FormatException>(action3);
         }
 
         [TestMethod]
@@ -63,7 +63,7 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual(Woo.James, new JNumber(2).GetEnum<Woo>());
             Assert.AreEqual(Woo.Tom, new JNumber(3).AsEnum<Woo>());
             Action action = () => new JNumber(3).GetEnum<Woo>();
-            Assert.ThrowsException<InvalidCastException>(action);
+            Assert.ThrowsExactly<InvalidCastException>(action);
         }
 
         [TestMethod]
@@ -94,7 +94,7 @@ namespace Neo.Json.UnitTests
             Assert.IsFalse(jnum.Equals(null));
             var x = jnum;
             Assert.IsTrue(jnum.Equals(x));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => jnum.Equals(new BigInteger(1)));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = jnum.Equals(new BigInteger(1)));
         }
     }
 }

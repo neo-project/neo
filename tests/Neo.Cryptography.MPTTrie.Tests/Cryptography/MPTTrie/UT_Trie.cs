@@ -107,15 +107,15 @@ namespace Neo.Cryptography.MPTTrie.Tests
         public void TestTryGet()
         {
             var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
-            Assert.ThrowsException<ArgumentException>(() => mpt[Array.Empty<byte>()]);
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt[Array.Empty<byte>()]);
             Assert.AreEqual("abcd", mpt["ac01".HexToBytes()].ToHexString());
             Assert.AreEqual("2222", mpt["ac".HexToBytes()].ToHexString());
-            Assert.ThrowsException<KeyNotFoundException>(() => mpt["ab99".HexToBytes()]);
-            Assert.ThrowsException<KeyNotFoundException>(() => mpt["ac39".HexToBytes()]);
-            Assert.ThrowsException<KeyNotFoundException>(() => mpt["ac02".HexToBytes()]);
-            Assert.ThrowsException<KeyNotFoundException>(() => mpt["ac0100".HexToBytes()]);
-            Assert.ThrowsException<KeyNotFoundException>(() => mpt["ac9910".HexToBytes()]);
-            Assert.ThrowsException<InvalidOperationException>(() => mpt["acf1".HexToBytes()]);
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ab99".HexToBytes()]);
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ac39".HexToBytes()]);
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ac02".HexToBytes()]);
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ac0100".HexToBytes()]);
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = mpt["ac9910".HexToBytes()]);
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt["acf1".HexToBytes()]);
         }
 
         [TestMethod]
@@ -135,10 +135,10 @@ namespace Neo.Cryptography.MPTTrie.Tests
             mpt.Put("acae".HexToBytes(), Encoding.ASCII.GetBytes("existing"));
             mpt.Put("acf1".HexToBytes(), Encoding.ASCII.GetBytes("missing"));
             Assert.AreEqual(root.Hash.ToString(), mpt.Root.Hash.ToString());
-            Assert.ThrowsException<ArgumentException>(() => mpt.Put(Array.Empty<byte>(), "01".HexToBytes()));
+            Assert.ThrowsExactly<ArgumentException>(() => mpt.Put(Array.Empty<byte>(), "01".HexToBytes()));
             mpt.Put("01".HexToBytes(), Array.Empty<byte>());
-            Assert.ThrowsException<ArgumentException>(() => mpt.Put(new byte[Node.MaxKeyLength / 2 + 1], Array.Empty<byte>()));
-            Assert.ThrowsException<ArgumentException>(() => mpt.Put("01".HexToBytes(), new byte[Node.MaxValueLength + 1]));
+            Assert.ThrowsExactly<ArgumentException>(() => mpt.Put(new byte[Node.MaxKeyLength / 2 + 1], Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => mpt.Put("01".HexToBytes(), new byte[Node.MaxValueLength + 1]));
             mpt.Put("ac01".HexToBytes(), "ab".HexToBytes());
         }
 
@@ -146,7 +146,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
         public void TestPutCantResolve()
         {
             var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
-            Assert.ThrowsException<InvalidOperationException>(() => mpt.Put("acf111".HexToBytes(), new byte[] { 1 }));
+            Assert.ThrowsExactly<InvalidOperationException>(() => mpt.Put("acf111".HexToBytes(), new byte[] { 1 }));
         }
 
         [TestMethod]
@@ -155,9 +155,9 @@ namespace Neo.Cryptography.MPTTrie.Tests
             var mpt = new Trie(mptdb.GetSnapshot(), root.Hash);
             Assert.IsNotNull(mpt["ac".HexToBytes()]);
             Assert.IsFalse(mpt.Delete("0c99".HexToBytes()));
-            Assert.ThrowsException<ArgumentException>(() => mpt.Delete(Array.Empty<byte>()));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.Delete(Array.Empty<byte>()));
             Assert.IsFalse(mpt.Delete("ac20".HexToBytes()));
-            Assert.ThrowsException<InvalidOperationException>(() => mpt.Delete("acf1".HexToBytes()));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.Delete("acf1".HexToBytes()));
             Assert.IsTrue(mpt.Delete("ac".HexToBytes()));
             Assert.IsFalse(mpt.Delete("acae01".HexToBytes()));
             Assert.IsTrue(mpt.Delete("acae".HexToBytes()));
@@ -201,7 +201,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
             var snapshot = store.GetSnapshot();
             var mpt = new Trie(snapshot, r.Hash);
-            Assert.ThrowsException<InvalidOperationException>(() => mpt.Delete("ac01".HexToBytes()));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.Delete("ac01".HexToBytes()));
         }
 
 
@@ -279,12 +279,12 @@ namespace Neo.Cryptography.MPTTrie.Tests
             result = mpt.TryGetProof("acae".HexToBytes(), out proof);
             Assert.AreEqual(4, proof.Count);
 
-            Assert.ThrowsException<ArgumentException>(() => mpt.TryGetProof(Array.Empty<byte>(), out proof));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = mpt.TryGetProof(Array.Empty<byte>(), out proof));
 
             result = mpt.TryGetProof("ac0100".HexToBytes(), out proof);
             Assert.IsFalse(result);
 
-            Assert.ThrowsException<InvalidOperationException>(() => mpt.TryGetProof("acf1".HexToBytes(), out var proof));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.TryGetProof("acf1".HexToBytes(), out var proof));
         }
 
         [TestMethod]
@@ -372,7 +372,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
             var snapshot = store.GetSnapshot();
             var mpt = new Trie(snapshot, r.Hash);
-            Assert.ThrowsException<InvalidOperationException>(() => mpt.Find("ac".HexToBytes()).Count());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.Find("ac".HexToBytes()).Count());
         }
 
         [TestMethod]
@@ -387,7 +387,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
             Assert.AreEqual(1, results.Count());
 
             prefix = new byte[] { 0xac }; // =  FromNibbles(path = { 0x0a, 0x0c });
-            Assert.ThrowsException<InvalidOperationException>(() => mpt.Find(prefix).ToArray());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = mpt.Find(prefix).ToArray());
         }
 
         [TestMethod]
@@ -409,7 +409,7 @@ namespace Neo.Cryptography.MPTTrie.Tests
 
             var snapshot = store.GetSnapshot();
             var mpt = new Trie(snapshot, r.Hash);
-            Assert.ThrowsException<FormatException>(() => mpt.Find(Array.Empty<byte>()).Count());
+            Assert.ThrowsExactly<FormatException>(() => _ = mpt.Find(Array.Empty<byte>()).Count());
         }
 
         [TestMethod]

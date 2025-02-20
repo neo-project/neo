@@ -150,13 +150,13 @@ namespace Neo.UnitTests.IO.Caching
             string[] temp = new string[2];
 
             Action action = () => cache.CopyTo(null, 1);
-            Assert.ThrowsException<ArgumentNullException>(() => action());
+            Assert.ThrowsExactly<ArgumentNullException>(() => action());
 
             action = () => cache.CopyTo(temp, -1);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => action());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action());
 
             action = () => cache.CopyTo(temp, 1);
-            Assert.ThrowsException<ArgumentException>(() => action());
+            Assert.ThrowsExactly<ArgumentException>(() => action());
 
             cache.CopyTo(temp, 0);
             Assert.AreEqual("hello", temp[0]);
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 string temp = cache["non exist string".GetHashCode()];
             };
-            Assert.ThrowsException<KeyNotFoundException>(() => action());
+            Assert.ThrowsExactly<KeyNotFoundException>(() => action());
         }
 
         [TestMethod]
@@ -261,7 +261,7 @@ namespace Neo.UnitTests.IO.Caching
             {
                 int count = cache.Count;
             };
-            Assert.ThrowsException<ObjectDisposedException>(() => action());
+            Assert.ThrowsExactly<ObjectDisposedException>(() => action());
         }
     }
 }
