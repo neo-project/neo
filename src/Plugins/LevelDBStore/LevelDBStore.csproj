@@ -11,20 +11,78 @@
   </PropertyGroup>
 
   <Target Name="DownloadNativeLibs">
-    <DownloadFile Condition="!Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceUrl="https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(IntermediateOutputPath)" Retries="3" />
-    <Unzip Condition="Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip') And !Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceFiles="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId).zip" DestinationFolder="$(IntermediateOutputPath)" OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
-    <Move Condition="Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/%(NativeLib.Lib)') And !Exists('$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)')" SourceFiles="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/%(NativeLib.Lib)" DestinationFolder="$(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/" OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
-    <Message Importance="high" Text="Location is $(IntermediateOutputPath)libleveldb-%(NativeLib.RuntimeId)/runtimes/%(NativeLib.RuntimeId)/native/%(NativeLib.Lib)" />
+    <PropertyGroup>
+      <!-- Set Platform for macOS -->
+      <Platform Condition="'$(OS)' == 'Unix' AND $([MSBuild]::IsOSPlatform('OSX'))">arm64</Platform>
+      <Platform Condition="'$(Platform)' == ''">x64</Platform>
+
+      <DetectedRuntimeId Condition="'$(OS)' == 'Windows_NT'">win-$(Platform)</DetectedRuntimeId>
+      <DetectedRuntimeId Condition="'$(OS)' == 'Unix' AND $([MSBuild]::IsOSPlatform('Linux'))">linux-$(Platform)</DetectedRuntimeId>
+      <DetectedRuntimeId Condition="'$(OS)' == 'Unix' AND $([MSBuild]::IsOSPlatform('OSX'))">osx-$(Platform)</DetectedRuntimeId>
+      <!-- Default to a common runtime if none of the above conditions are met -->
+      <DetectedRuntimeId Condition="'$(DetectedRuntimeId)' == ''">linux-x64</DetectedRuntimeId>
+
+      <!-- Define the final library path -->
+      <FinalLibPath>$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/runtimes/$(DetectedRuntimeId)/native/libleveldb</FinalLibPath>
+      <FinalLibPath Condition="'$(DetectedRuntimeId)' == 'win-x64' Or '$(DetectedRuntimeId)' == 'win-arm64'">$(FinalLibPath).dll</FinalLibPath>
+      <FinalLibPath Condition="'$(DetectedRuntimeId)' == 'linux-x64' Or '$(DetectedRuntimeId)' == 'linux-arm64'">$(FinalLibPath).so</FinalLibPath>
+      <FinalLibPath Condition="'$(DetectedRuntimeId)' == 'osx-x64' Or '$(DetectedRuntimeId)' == 'osx-arm64'">$(FinalLibPath).dylib</FinalLibPath>
+    </PropertyGroup>
+
+    <Message Importance="high" Text="Detected Platform: $(Platform)" />
+    <Message Importance="high" Text="Detected Runtime ID: $(DetectedRuntimeId)" />
+    <Message Importance="high" Text="Final Library Path: $(FinalLibPath)" />
+
+    <!-- Only download and extract if the final library doesn't exist -->
+    <DownloadFile
+      Condition="!Exists('$(FinalLibPath)')"
+      SourceUrl="https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-$(DetectedRuntimeId).zip"
+      DestinationFolder="$(IntermediateOutputPath)"
+      Retries="3" />
+
+    <Unzip
+      Condition="!Exists('$(FinalLibPath)') And Exists('$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId).zip')"
+      SourceFiles="$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId).zip"
+      DestinationFolder="$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)"
+      OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
+
+    <MakeDir
+      Condition="!Exists('$(FinalLibPath)')"
+      Directories="$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/runtimes/$(DetectedRuntimeId)/native/" />
+
+    <!-- Move the library file to the correct location if it doesn't exist -->
+    <Move
+      Condition="!Exists('$(FinalLibPath)') And Exists('$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/libleveldb.dylib')"
+      SourceFiles="$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/libleveldb.dylib"
+      DestinationFiles="$(FinalLibPath)"
+      OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
+
+    <Move
+      Condition="!Exists('$(FinalLibPath)') And Exists('$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/libleveldb.so')"
+      SourceFiles="$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/libleveldb.so"
+      DestinationFiles="$(FinalLibPath)"
+      OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
+
+    <Move
+      Condition="!Exists('$(FinalLibPath)') And Exists('$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/libleveldb.dll')"
+      SourceFiles="$(IntermediateOutputPath)libleveldb-$(DetectedRuntimeId)/libleveldb.dll"
+      DestinationFiles="$(FinalLibPath)"
+      OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)" />
+
+    <Message Importance="high" Text="Library location: $(FinalLibPath)" />
+
+    <ItemGroup>
+      <NativeLib Remove="@(NativeLib)" />
+      <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-x64" Lib="libleveldb.dll" Condition="'$(DetectedRuntimeId)' == 'win-x64'" />
+      <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-arm64" Lib="libleveldb.dll" Condition="'$(DetectedRuntimeId)' == 'win-arm64'" />
+      <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-x64" Lib="libleveldb.so" Condition="'$(DetectedRuntimeId)' == 'linux-x64'" />
+      <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-arm64" Lib="libleveldb.so" Condition="'$(DetectedRuntimeId)' == 'linux-arm64'" />
+      <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-x64" Lib="libleveldb.dylib" Condition="'$(DetectedRuntimeId)' == 'osx-x64'" />
+      <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-arm64" Lib="libleveldb.dylib" Condition="'$(DetectedRuntimeId)' == 'osx-arm64'" />
+    </ItemGroup>
   </Target>
 
   <ItemGroup>
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-x64" Lib="libleveldb.dll" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="win-arm64" Lib="libleveldb.dll" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-x64" Lib="libleveldb.so" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="linux-arm64" Lib="libleveldb.so" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-x64" Lib="libleveldb.dylib" />
-    <NativeLib Include="%(RuntimeId)-%(Lib)" RuntimeId="osx-arm64" Lib="libleveldb.dylib" />
-
     <Content Include="@(NativeLib -> '$(IntermediateOutputPath)libleveldb-%(RuntimeId)/runtimes/%(RuntimeId)/native/%(Lib)')" PackagePath="runtimes/%(RuntimeId)/native/%(Lib)" Link="runtimes/%(RuntimeId)/native/%(Lib)">
       <Pack>true</Pack>
       <Visible>false</Visible>
