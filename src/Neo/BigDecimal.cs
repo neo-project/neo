@@ -13,6 +13,7 @@
 
 using System;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace Neo
 {
@@ -54,17 +55,19 @@ namespace Neo
         /// Initializes a new instance of the <see cref="BigDecimal"/> struct with the value of <see cref="decimal"/>.
         /// </summary>
         /// <param name="value">The value of the number.</param>
-        public unsafe BigDecimal(decimal value)
+        public BigDecimal(decimal value)
         {
+#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
-            span = decimal.GetBits(value);
-            fixed (int* p = span)
-            {
-                ReadOnlySpan<byte> buffer = new(p, 16);
-                _value = new BigInteger(buffer[..12], isUnsigned: true);
-                if (buffer[15] != 0) _value = -_value;
-                _decimals = buffer[14];
-            }
+            decimal.GetBits(value, span);
+#else
+            var span = decimal.GetBits(value);
+#endif
+            var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
+            _value = new BigInteger(buffer[..12], isUnsigned: true);
+
+            if (buffer[15] != 0) _value = -_value;
+            _decimals = buffer[14];
         }
 
         /// <summary>
@@ -72,21 +75,22 @@ namespace Neo
         /// </summary>
         /// <param name="value">The value of the number.</param>
         /// <param name="decimals">The number of decimal places for this number.</param>
-        public unsafe BigDecimal(decimal value, byte decimals)
+        public BigDecimal(decimal value, byte decimals)
         {
+#if NET5_0_OR_GREATER
             Span<int> span = stackalloc int[4];
-            span = decimal.GetBits(value);
-            fixed (int* p = span)
-            {
-                ReadOnlySpan<byte> buffer = new(p, 16);
-                _value = new BigInteger(buffer[..12], isUnsigned: true);
-                if (buffer[14] > decimals)
-                    throw new ArgumentException(null, nameof(value));
-                else if (buffer[14] < decimals)
-                    _value *= BigInteger.Pow(10, decimals - buffer[14]);
-                if (buffer[15] != 0)
-                    _value = -_value;
-            }
+            decimal.GetBits(value, span);
+#else
+            var span = decimal.GetBits(value);
+#endif
+            var buffer = MemoryMarshal.AsBytes((ReadOnlySpan<int>)span);
+            _value = new BigInteger(buffer[..12], isUnsigned: true);
+            if (buffer[14] > decimals)
+                throw new ArgumentException($"Invalid decimals: {buffer[14]}-{decimals}", nameof(value));
+            else if (buffer[14] < decimals)
+                _value *= BigInteger.Pow(10, decimals - buffer[14]);
+
+            if (buffer[15] != 0) _value = -_value;
             _decimals = decimals;
         }
 
