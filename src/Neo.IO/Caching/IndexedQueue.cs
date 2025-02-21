@@ -168,6 +168,7 @@ namespace Neo.IO.Caching
             else
             {
                 item = _array[_head];
+                _array[_head] = default!;
                 ++_head;
                 _head %= _array.Length;
                 --_count;
