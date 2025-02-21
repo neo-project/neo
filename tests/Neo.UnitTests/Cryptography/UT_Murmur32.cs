@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using System;
 using System.Buffers.Binary;
 
 namespace Neo.UnitTests.Cryptography
@@ -47,6 +48,51 @@ namespace Neo.UnitTests.Cryptography
             var murmur3 = new Murmur32(10u);
             var hash = murmur3.ComputeHashUInt32("hello worldhello world"u8.ToArray());
             Assert.AreEqual(60539726u, hash);
+
+            hash = murmur3.ComputeHashUInt32("he"u8.ToArray());
+            Assert.AreEqual(972873329u, hash);
+        }
+
+        [TestMethod]
+        public void TestAppend()
+        {
+            var murmur3 = new Murmur32(10u);
+            murmur3.Append("h"u8.ToArray());
+            murmur3.Append("e"u8.ToArray());
+            Assert.AreEqual(972873329u, murmur3.GetCurrentHashUInt32());
+
+            murmur3.Reset();
+            murmur3.Append("hello world"u8.ToArray());
+            murmur3.Append("hello world"u8.ToArray());
+            Assert.AreEqual(60539726u, murmur3.GetCurrentHashUInt32());
+
+            murmur3.Reset();
+            murmur3.Append("hello worldh"u8.ToArray());
+            murmur3.Append("ello world"u8.ToArray());
+            Assert.AreEqual(60539726u, murmur3.GetCurrentHashUInt32());
+
+            murmur3.Reset();
+            murmur3.Append("hello worldhello world"u8.ToArray());
+            murmur3.Append(""u8.ToArray());
+            Assert.AreEqual(60539726u, murmur3.GetCurrentHashUInt32());
+
+            murmur3.Reset();
+            murmur3.Append(""u8.ToArray());
+            murmur3.Append("hello worldhello world"u8.ToArray());
+            Assert.AreEqual(60539726u, murmur3.GetCurrentHashUInt32());
+
+            // random data, random split
+            var random = new Random();
+            var data = new byte[random.Next(1, 2048)];
+            random.NextBytes(data);
+            for (int i = 0; i < 32; i++)
+            {
+                var split = random.Next(1, data.Length - 1);
+                murmur3.Reset();
+                murmur3.Append(data.AsSpan(0, split));
+                murmur3.Append(data.AsSpan(split));
+                Assert.AreEqual(data.Murmur32(10u), murmur3.GetCurrentHashUInt32());
+            }
         }
     }
 }
