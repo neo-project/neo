@@ -665,7 +665,7 @@ namespace Neo.Wallets
         /// </summary>
         /// <param name="signData">The data to sign.</param>
         /// <param name="publicKey">The public key.</param>
-        /// <returns>The signature.</returns>
+        /// <returns>The signature, or null if was not found.</returns>
         public byte[] Sign(byte[] signData, ECPoint publicKey)
         {
             var account = GetAccount(publicKey);
