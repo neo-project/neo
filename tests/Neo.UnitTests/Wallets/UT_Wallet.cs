@@ -271,10 +271,10 @@ namespace Neo.UnitTests.Wallets
         public void TestGetPrivateKeyFromNEP2()
         {
             Action action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             CollectionAssert.AreEqual(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 }, Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1));
         }
@@ -283,10 +283,10 @@ namespace Neo.UnitTests.Wallets
         public void TestGetPrivateKeyFromWIF()
         {
             Action action = () => Wallet.GetPrivateKeyFromWIF(null);
-            Assert.ThrowsException<ArgumentNullException>(action);
+            Assert.ThrowsExactly<ArgumentNullException>(action);
 
             action = () => Wallet.GetPrivateKeyFromWIF("3vQB7B6MrGQZaxCuFg4oh");
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             CollectionAssert.AreEqual(new byte[] { 199, 19, 77, 111, 216, 231, 61, 129, 158, 130, 117, 92, 100, 201, 55, 136, 216, 219, 9, 97, 146, 158, 2, 90, 83, 54, 60, 76, 192, 42, 105, 98 }, Wallet.GetPrivateKeyFromWIF("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU"));
         }
@@ -324,7 +324,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             }, UInt160.Zero);
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             action = () => wallet.MakeTransaction(snapshotCache, new TransferOutput[]
             {
@@ -336,7 +336,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             }, account.ScriptHash);
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             action = () => wallet.MakeTransaction(snapshotCache, new TransferOutput[]
             {
@@ -348,7 +348,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             }, account.ScriptHash);
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             // Fake balance
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
@@ -394,7 +394,7 @@ namespace Neo.UnitTests.Wallets
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             MyWallet wallet = new();
             Action action = () => wallet.MakeTransaction(snapshotCache, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>());
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);

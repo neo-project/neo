@@ -121,7 +121,7 @@ namespace Neo.UnitTests
             string json = CreateHFSettings("\"HF_Aspidochelone\": 4120001, \"HF_Basilisk\": 4120000");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            Assert.ThrowsException<ArgumentException>(() => ProtocolSettings.Load(file));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = ProtocolSettings.Load(file));
             File.Delete(file);
         }
 

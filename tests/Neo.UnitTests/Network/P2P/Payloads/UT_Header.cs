@@ -135,7 +135,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             IVerifiable item = new Header();
             void Actual() => item.Witnesses = null;
-            Assert.ThrowsException<ArgumentNullException>(Actual);
+            Assert.ThrowsExactly<ArgumentNullException>(Actual);
 
             item.Witnesses = [new()];
             Assert.AreEqual(1, item.Witnesses.Length);
