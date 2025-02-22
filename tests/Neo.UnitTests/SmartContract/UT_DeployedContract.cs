@@ -48,8 +48,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestErrors()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new DeployedContract(null));
-            Assert.ThrowsException<NotSupportedException>(() => new DeployedContract(new ContractState()
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = new DeployedContract(null));
+            Assert.ThrowsExactly<NotSupportedException>(() => _ = new DeployedContract(new ContractState()
             {
                 Manifest = new ContractManifest()
                 {

@@ -134,12 +134,12 @@ namespace Neo.UnitTests.Plugins
             _ = new TestNonPlugin();
 
             // Ensure exception is thrown
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
            {
                Blockchain.InvokeCommitting(null, null, null, null);
            });
 
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
            {
                Blockchain.InvokeCommitted(null, null);
            });
@@ -206,12 +206,12 @@ namespace Neo.UnitTests.Plugins
             // node will stop on pp exception.
             var pp = new TestPlugin(UnhandledExceptionPolicy.StopNode);
             Assert.AreEqual(false, pp.IsStopped);
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
             {
                 Blockchain.InvokeCommitting(null, null, null, null);
             });
 
-            Assert.ThrowsException<NotImplementedException>(() =>
+            Assert.ThrowsExactly<NotImplementedException>(() =>
             {
                 Blockchain.InvokeCommitted(null, null);
             });
