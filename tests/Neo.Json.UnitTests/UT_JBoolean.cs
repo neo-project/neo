@@ -51,7 +51,7 @@ namespace Neo.Json.UnitTests
         public void TestNullJBoolean()
         {
             JBoolean nullJBoolean = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullJBoolean.AsNumber());
+            Assert.ThrowsExactly<NullReferenceException>(() => _ = nullJBoolean.AsNumber());
         }
 
         [TestMethod]

@@ -37,13 +37,13 @@ namespace Neo.UnitTests.IO.Caching
             Assert.IsFalse(queue.TryDequeue(out a));
             Assert.AreEqual(0, a);
 
-            Assert.ThrowsException<InvalidOperationException>(() => queue.Peek());
-            Assert.ThrowsException<InvalidOperationException>(() => queue.Dequeue());
-            Assert.ThrowsException<IndexOutOfRangeException>(() => _ = queue[-1]);
-            Assert.ThrowsException<IndexOutOfRangeException>(() => queue[-1] = 1);
-            Assert.ThrowsException<IndexOutOfRangeException>(() => _ = queue[1]);
-            Assert.ThrowsException<IndexOutOfRangeException>(() => queue[1] = 1);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new IndexedQueue<int>(-1));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = queue.Peek());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = queue.Dequeue());
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => _ = _ = queue[-1]);
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => _ = queue[-1] = 1);
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => _ = _ = queue[1]);
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => _ = queue[1] = 1);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = new IndexedQueue<int>(-1));
         }
 
         [TestMethod]
@@ -88,9 +88,9 @@ namespace Neo.UnitTests.IO.Caching
             int[] arr = new int[3];
             var queue = new IndexedQueue<int>(new int[] { 1, 2, 3 });
 
-            Assert.ThrowsException<ArgumentNullException>(() => queue.CopyTo(null, 0));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => queue.CopyTo(arr, -1));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => queue.CopyTo(arr, 2));
+            Assert.ThrowsExactly<ArgumentNullException>(() => queue.CopyTo(null, 0));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => queue.CopyTo(arr, -1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => queue.CopyTo(arr, 2));
 
             queue.CopyTo(arr, 0);
 
@@ -103,6 +103,19 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(1, arr[0]);
             Assert.AreEqual(2, arr[1]);
             Assert.AreEqual(3, arr[2]);
+        }
+
+        [TestMethod]
+        public void TestQueueClass()
+        {
+            var q = new IndexedQueue<int?>([1, 2]);
+            var item = q.Dequeue();
+            Assert.AreEqual(1, item);
+
+            item = q.Dequeue();
+            Assert.AreEqual(2, item);
+
+            Assert.ThrowsExactly<InvalidOperationException>(() => q.Dequeue());
         }
     }
 }

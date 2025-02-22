@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.Timestamp, clone.Timestamp);
             CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
 
-            Assert.ThrowsException<FormatException>(() => VersionPayload.Create(123, 456, "neo3",
+            Assert.ThrowsExactly<FormatException>(() => _ = VersionPayload.Create(123, 456, "neo3",
                 new NodeCapability[] {
                     new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
                     new ServerCapability(NodeCapabilityType.TcpServer, 22)

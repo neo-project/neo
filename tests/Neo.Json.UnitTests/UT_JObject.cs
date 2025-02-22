@@ -58,20 +58,20 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestParse()
         {
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => JObject.Parse("", -1));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("aaa"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("hello world"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("100.a"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("100.+"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"\\s\""));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"a"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\",\"k1\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\":\"v1\""));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"\\uDBFF\\u0DFFF\""));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = JObject.Parse("", -1));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("aaa"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("hello world"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("100.a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("100.+"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"\\s\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\",\"k1\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"\\uDBFF\\u0DFFF\""));
 
             Assert.IsNull(JObject.Parse("null"));
             Assert.IsTrue(JObject.Parse("true").AsBoolean());
@@ -88,7 +88,7 @@ namespace Neo.Json.UnitTests
             Assert.AreEqual(Woo.Tom, alice.AsEnum<Woo>());
 
             Action action = () => alice.GetEnum<Woo>();
-            Assert.ThrowsException<InvalidCastException>(action);
+            Assert.ThrowsExactly<InvalidCastException>(action);
         }
 
         [TestMethod]
