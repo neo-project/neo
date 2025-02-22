@@ -43,7 +43,7 @@ namespace Neo.Extensions.Tests.Collections
             // Zero chunk size
             var zero = new List<int> { 1, 2, 3 };
             var zeroChunks = zero.Chunk(0).GetEnumerator();
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => zeroChunks.MoveNext());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = zeroChunks.MoveNext());
 
             // Null source
             IReadOnlyCollection<int>? nullSource = null;

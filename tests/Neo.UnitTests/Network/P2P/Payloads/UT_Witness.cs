@@ -115,13 +115,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check max size
 
-            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
 
             // Check max size
 
             witness.InvocationScript = new byte[10];
             witness.VerificationScript = new byte[1025];
-            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
         }
 
         [TestMethod]

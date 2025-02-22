@@ -31,7 +31,7 @@ namespace Neo.UnitTests
             BigDecimal result3 = originalValue.ChangeDecimals(5);
             Assert.AreEqual(originalValue.Value, result3.Value);
             Action action = () => originalValue.ChangeDecimals(2);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
         }
 
         [TestMethod]
@@ -119,7 +119,7 @@ namespace Neo.UnitTests
 
             s = "abcdEfg";
             Action action = () => BigDecimal.Parse(s, decimals);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
         }
 
         [TestMethod]

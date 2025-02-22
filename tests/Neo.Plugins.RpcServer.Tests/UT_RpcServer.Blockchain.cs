@@ -159,12 +159,10 @@ namespace Neo.Plugins.RpcServer.Tests
 
             snapshot.DeleteContract(contractState.Hash);
             snapshot.Commit();
-            var ex1 = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash)));
+            var ex1 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Hash)));
             Assert.AreEqual(RpcError.UnknownContract.Message, ex1.Message);
 
-            var ex2 = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id)));
+            var ex2 = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId(contractState.Id)));
             Assert.AreEqual(RpcError.UnknownContract.Message, ex2.Message);
         }
 
@@ -403,7 +401,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 3);
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Commit();
-            Assert.ThrowsException<RpcException>(() => _rpcServer.GetBlockHash(block.Index + 1));
+            Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.GetBlockHash(block.Index + 1));
         }
 
         [TestMethod]

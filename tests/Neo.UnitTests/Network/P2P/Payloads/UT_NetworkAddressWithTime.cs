@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.Timestamp, clone.Timestamp);
             CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
 
-            Assert.ThrowsException<FormatException>(() => NetworkAddressWithTime.Create(IPAddress.Any, 1,
+            Assert.ThrowsExactly<FormatException>(() => _ = NetworkAddressWithTime.Create(IPAddress.Any, 1,
                 new NodeCapability[] {
                     new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
                     new ServerCapability(NodeCapabilityType.TcpServer, 22)

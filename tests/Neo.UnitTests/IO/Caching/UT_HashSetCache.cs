@@ -59,10 +59,10 @@ namespace Neo.UnitTests.IO.Caching
         public void TestConstructor()
         {
             Action action1 = () => new HashSetCache<UInt256>(-1);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => action1());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action1());
 
             Action action2 = () => new HashSetCache<UInt256>(1, -1);
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => action2());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action2());
         }
 
         [TestMethod]

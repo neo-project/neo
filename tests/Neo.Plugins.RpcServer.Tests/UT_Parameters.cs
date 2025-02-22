@@ -42,7 +42,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(UInt160.Parse("0x1234567890abcdef1234567890abcdef12345678"), ((ContractNameOrHashOrId)ParameterConverter.ConvertParameter(token3, typeof(ContractNameOrHashOrId))).AsHash());
 
             JToken token4 = "0xabc";
-            Assert.ThrowsException<RpcException>(() => ((ContractNameOrHashOrId)ParameterConverter.ConvertParameter(token4, typeof(ContractNameOrHashOrId))).AsHash());
+            Assert.ThrowsExactly<RpcException>(() => _ = ((ContractNameOrHashOrId)ParameterConverter.ConvertParameter(token4, typeof(ContractNameOrHashOrId))).AsHash());
         }
 
         [TestMethod]
@@ -59,13 +59,13 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(1u, ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token, typeof(BlockHashOrIndex))).AsIndex());
 
             JToken token2 = -1;
-            Assert.ThrowsException<RpcException>(() => ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token2, typeof(BlockHashOrIndex))).AsIndex());
+            Assert.ThrowsExactly<RpcException>(() => _ = ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token2, typeof(BlockHashOrIndex))).AsIndex());
 
             JToken token3 = "1";
             Assert.AreEqual(1u, ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token3, typeof(BlockHashOrIndex))).AsIndex());
 
             JToken token4 = "-1";
-            Assert.ThrowsException<RpcException>(() => ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token4, typeof(BlockHashOrIndex))).AsIndex());
+            Assert.ThrowsExactly<RpcException>(() => _ = ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token4, typeof(BlockHashOrIndex))).AsIndex());
 
             JToken token5 = "0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d";
             Assert.AreEqual(UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"), ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token5, typeof(BlockHashOrIndex))).AsHash());
@@ -74,7 +74,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(UInt256.Parse("0x761a9bb72ca2a63984db0cc43f943a2a25e464f62d1a91114c2b6fbbfd24b51d"), ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token6, typeof(BlockHashOrIndex))).AsHash());
 
             JToken token7 = "0xabc";
-            Assert.ThrowsException<RpcException>(() => ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token7, typeof(BlockHashOrIndex))).AsHash());
+            Assert.ThrowsExactly<RpcException>(() => _ = ((BlockHashOrIndex)ParameterConverter.ConvertParameter(token7, typeof(BlockHashOrIndex))).AsHash());
         }
 
         [TestMethod]
@@ -84,7 +84,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(UInt160.Parse("0x1234567890abcdef1234567890abcdef12345678"), ParameterConverter.ConvertUInt160(token, TestProtocolSettings.Default.AddressVersion));
 
             JToken token2 = "0xabc";
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertUInt160(token2, TestProtocolSettings.Default.AddressVersion));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertUInt160(token2, TestProtocolSettings.Default.AddressVersion));
 
             JToken token3 = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             Assert.AreEqual("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion), ParameterConverter.ConvertUInt160(token3, TestProtocolSettings.Default.AddressVersion));
@@ -97,7 +97,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(UInt256.Parse("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"), ParameterConverter.ConvertParameter(token, typeof(UInt256)));
 
             JToken token2 = "0xabc";
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(UInt256)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(UInt256)));
         }
 
         [TestMethod]
@@ -115,14 +115,14 @@ namespace Neo.Plugins.RpcServer.Tests
 
             JToken token2 = 1.1;
 
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(int)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(long)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(uint)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(ulong)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(short)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(ushort)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(byte)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token2, typeof(sbyte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(uint)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(ulong)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(short)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(ushort)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(byte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token2, typeof(sbyte)));
 
             JToken token3 = "1";
 
@@ -136,35 +136,35 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual((sbyte)1, ParameterConverter.ConvertParameter(token3, typeof(sbyte)));
 
             JToken token4 = "1.1";
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(int)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(long)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(uint)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(ulong)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(short)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(ushort)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(byte)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token4, typeof(sbyte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(uint)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(ulong)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(short)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(ushort)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(byte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token4, typeof(sbyte)));
 
             JToken token5 = "abc";
 
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(int)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(long)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(uint)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(ulong)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(short)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(ushort)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(byte)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token5, typeof(sbyte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(uint)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(ulong)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(short)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(ushort)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(byte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token5, typeof(sbyte)));
 
             JToken token6 = -1;
 
             Assert.AreEqual(-1, ParameterConverter.ConvertParameter(token6, typeof(int)));
             Assert.AreEqual((long)-1, ParameterConverter.ConvertParameter(token6, typeof(long)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token6, typeof(uint)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token6, typeof(ulong)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token6, typeof(uint)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token6, typeof(ulong)));
             Assert.AreEqual((short)-1, ParameterConverter.ConvertParameter(token6, typeof(short)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token6, typeof(ushort)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(token6, typeof(byte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token6, typeof(ushort)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(token6, typeof(byte)));
             Assert.AreEqual((sbyte)-1, ParameterConverter.ConvertParameter(token6, typeof(sbyte)));
         }
 
@@ -221,11 +221,11 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = (long)int.MaxValue + 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(int)));
 
             // Test underflow
             JToken underflowToken = (long)int.MinValue - 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(int)));
         }
 
         private void TestByteConversions()
@@ -240,11 +240,11 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = (int)byte.MaxValue + 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(byte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(byte)));
 
             // Test underflow
             JToken underflowToken = -1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(byte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(byte)));
         }
 
         private void TestSByteConversions()
@@ -259,11 +259,11 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = (int)sbyte.MaxValue + 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(sbyte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(sbyte)));
 
             // Test underflow
             JToken underflowToken = (int)sbyte.MinValue - 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(sbyte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(sbyte)));
         }
 
         private void TestShortConversions()
@@ -278,11 +278,11 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = (int)short.MaxValue + 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(short)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(short)));
 
             // Test underflow
             JToken underflowToken = (int)short.MinValue - 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(short)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(short)));
         }
 
         private void TestUShortConversions()
@@ -297,11 +297,11 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = (int)ushort.MaxValue + 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(ushort)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(ushort)));
 
             // Test underflow
             JToken underflowToken = -1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(ushort)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(ushort)));
         }
 
         private void TestUIntConversions()
@@ -316,11 +316,11 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = (ulong)uint.MaxValue + 1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(uint)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(uint)));
 
             // Test underflow
             JToken underflowToken = -1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(uint)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(uint)));
         }
 
         private void TestLongConversions()
@@ -335,11 +335,11 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = $"{JNumber.MAX_SAFE_INTEGER}0"; // This will be parsed as a string, causing overflow
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(long)));
 
             // Test underflow
             JToken underflowToken = $"-{JNumber.MIN_SAFE_INTEGER}0"; // This will be parsed as a string, causing underflow
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(long)));
         }
 
         private void TestULongConversions()
@@ -354,36 +354,36 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test overflow
             JToken overflowToken = $"{JNumber.MAX_SAFE_INTEGER}0"; // This will be parsed as a string, causing overflow
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(overflowToken, typeof(ulong)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(overflowToken, typeof(ulong)));
 
             // Test underflow
             JToken underflowToken = -1;
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(underflowToken, typeof(ulong)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(underflowToken, typeof(ulong)));
         }
 
         [TestMethod]
         public void TestAdditionalEdgeCases()
         {
             // Test conversion of fractional values slightly less than integers
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(0.9999999999999, typeof(int)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(-0.0000000000001, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(0.9999999999999, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(-0.0000000000001, typeof(int)));
 
             // Test conversion of very large double values to integer types
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(double.MaxValue, typeof(long)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(double.MinValue, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(double.MaxValue, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(double.MinValue, typeof(long)));
 
             // Test conversion of NaN and Infinity
-            Assert.ThrowsException<FormatException>(() => ParameterConverter.ConvertParameter(double.NaN, typeof(int)));
-            Assert.ThrowsException<FormatException>(() => ParameterConverter.ConvertParameter(double.PositiveInfinity, typeof(long)));
-            Assert.ThrowsException<FormatException>(() => ParameterConverter.ConvertParameter(double.NegativeInfinity, typeof(ulong)));
+            Assert.ThrowsExactly<FormatException>(() => _ = ParameterConverter.ConvertParameter(double.NaN, typeof(int)));
+            Assert.ThrowsExactly<FormatException>(() => _ = ParameterConverter.ConvertParameter(double.PositiveInfinity, typeof(long)));
+            Assert.ThrowsExactly<FormatException>(() => _ = ParameterConverter.ConvertParameter(double.NegativeInfinity, typeof(ulong)));
 
             // Test conversion of string representations of numbers
             Assert.AreEqual(int.MaxValue, ParameterConverter.ConvertParameter(int.MaxValue.ToString(), typeof(int)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(long.MinValue.ToString(), typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(long.MinValue.ToString(), typeof(long)));
 
             // Test conversion of hexadecimal string representations
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter("0xFF", typeof(int)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter("0x100", typeof(byte)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter("0xFF", typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter("0x100", typeof(byte)));
 
             // Test conversion of whitespace-padded strings
             Assert.AreEqual(42, ParameterConverter.ConvertParameter("  42  ", typeof(int)));
@@ -391,14 +391,14 @@ namespace Neo.Plugins.RpcServer.Tests
 
             // Test conversion of empty or null values
             Assert.AreEqual(0, ParameterConverter.ConvertParameter("", typeof(int)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(JToken.Null, typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(JToken.Null, typeof(int)));
 
             // Test conversion to non-numeric types
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter(42, typeof(DateTime)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter(42, typeof(DateTime)));
 
             // Test conversion of values just outside the safe integer range for long and ulong
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter((double)long.MaxValue, typeof(long)));
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter((double)ulong.MaxValue, typeof(ulong)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter((double)long.MaxValue, typeof(long)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter((double)ulong.MaxValue, typeof(ulong)));
 
             // Test conversion of scientific notation
             Assert.AreEqual(1000000, ParameterConverter.ConvertParameter("1e6", typeof(int)));
@@ -409,7 +409,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(0, ParameterConverter.ConvertParameter(false, typeof(int)));
 
             // Test conversion of Unicode numeric characters
-            Assert.ThrowsException<RpcException>(() => ParameterConverter.ConvertParameter("１２３４", typeof(int)));
+            Assert.ThrowsExactly<RpcException>(() => _ = ParameterConverter.ConvertParameter("１２３４", typeof(int)));
         }
     }
 }

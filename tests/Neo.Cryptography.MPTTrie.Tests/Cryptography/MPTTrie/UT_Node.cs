@@ -172,21 +172,21 @@ namespace Neo.Cryptography.MPTTrie.Tests
         [TestMethod]
         public void TestNewExtensionException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewExtension(null, new Node()));
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewExtension(new byte[] { 0x01 }, null));
-            Assert.ThrowsException<InvalidOperationException>(() => Node.NewExtension(Array.Empty<byte>(), new Node()));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewExtension(null, new Node()));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewExtension(new byte[] { 0x01 }, null));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = Node.NewExtension(Array.Empty<byte>(), new Node()));
         }
 
         [TestMethod]
         public void TestNewHashException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewHash(null));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewHash(null));
         }
 
         [TestMethod]
         public void TestNewLeafException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => Node.NewLeaf(null));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = Node.NewLeaf(null));
         }
 
         [TestMethod]

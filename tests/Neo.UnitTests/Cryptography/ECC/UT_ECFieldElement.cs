@@ -38,10 +38,10 @@ namespace Neo.UnitTests.Cryptography.ECC
 
             input = ECCurve.Secp256k1.Q;
             var action = () => new ECFieldElement(input, ECCurve.Secp256k1);
-            Assert.ThrowsException<ArgumentException>(() => action());
+            Assert.ThrowsExactly<ArgumentException>(() => _ = action());
 
             action = () => new ECFieldElement(input, null);
-            Assert.ThrowsException<ArgumentNullException>(() => action());
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = action());
         }
 
         [TestMethod]
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             Assert.AreEqual(1, point3.CompareTo(point1));
 
             var action = new Action(() => point3.CompareTo(point4));
-            Assert.ThrowsException<InvalidOperationException>(() => action());
+            Assert.ThrowsExactly<InvalidOperationException>(() => action());
         }
 
         [TestMethod]

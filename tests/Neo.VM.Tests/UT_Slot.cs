@@ -53,7 +53,7 @@ namespace Neo.Test
             Assert.IsTrue(slot[0] is Integer item0 && item0.Equals(1));
             Assert.IsTrue(slot[1] is Integer item1 && item1.Equals(2));
             Assert.IsTrue(slot[2] is Integer item2 && item2.Equals(3));
-            Assert.ThrowsException<IndexOutOfRangeException>(() => slot[3] is Integer item3);
+            Assert.ThrowsExactly<IndexOutOfRangeException>(() => _ = slot[3] is Integer item3);
         }
 
         [TestMethod]

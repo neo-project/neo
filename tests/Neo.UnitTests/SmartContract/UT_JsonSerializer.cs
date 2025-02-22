@@ -38,22 +38,22 @@ namespace Neo.UnitTests.SmartContract
         public void JsonTest_WrongJson()
         {
             var json = "[    ]XXXXXXX";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "{   }XXXXXXX";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[,,,,]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "false,X";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "false@@@";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"{""length"":99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
         }
 
         [TestMethod]
@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
                 [new byte[] { 0xC1 }] = 1,
                 [new byte[] { 0xC2 }] = 2,
             };
-            Assert.ThrowsException<DecoderFallbackException>(() => JsonSerializer.Serialize(entry));
+            Assert.ThrowsExactly<DecoderFallbackException>(() => _ = JsonSerializer.Serialize(entry));
         }
 
         [TestMethod]
@@ -90,7 +90,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("[true,false]", parsed.ToString());
 
             json = "[True,FALSE] ";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
         }
 
         [TestMethod]
@@ -107,40 +107,40 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28]", parsed.ToString());
 
             json = "[-]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[1.]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[.123]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[--1.123]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[+1.123]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[1.12.3]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[e--1]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[e++1]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[E- 1]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[3e--1]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[2e++1]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = "[1E- 1]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
         }
 
         [TestMethod]
@@ -162,19 +162,19 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(json, parsed.ToString());
 
             json = @"[""]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"[""\uaaa""]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"[""\uaa""]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"[""\ua""]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"[""\u""]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
         }
 
         [TestMethod]
@@ -191,13 +191,13 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(@"{""\uAAAA"":true}", parsed.ToString());
 
             json = @"{""a"":}";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"{NULL}";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
 
             json = @"[""a"":]";
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(json));
         }
 
         [TestMethod]
@@ -205,13 +205,13 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-            Assert.ThrowsException<FormatException>(() => JsonSerializer.Deserialize(engine, JObject.Parse("x"), ExecutionEngineLimits.Default));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonSerializer.Deserialize(engine, JObject.Parse("x"), ExecutionEngineLimits.Default));
         }
 
         [TestMethod]
         public void Serialize_WrongJson()
         {
-            Assert.ThrowsException<FormatException>(() => JsonSerializer.Serialize(StackItem.FromInterface(new object())));
+            Assert.ThrowsExactly<FormatException>(() => _ = JsonSerializer.Serialize(StackItem.FromInterface(new object())));
         }
 
         [TestMethod]
@@ -227,7 +227,7 @@ namespace Neo.UnitTests.SmartContract
         public void Serialize_Number()
         {
             var entry = new Array { 1, 9007199254740992 };
-            Assert.ThrowsException<InvalidOperationException>(() => JsonSerializer.Serialize(entry));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = JsonSerializer.Serialize(entry));
         }
 
         [TestMethod]
