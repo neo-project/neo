@@ -665,7 +665,7 @@ namespace Neo.Wallets
         /// </summary>
         /// <param name="signData">The data to sign.</param>
         /// <param name="publicKey">The public key.</param>
-        /// <returns>The signature, or null if was not found.</returns>
+        /// <returns>The signature, or null if the public key was not found or the corresponding private key is not available.</returns>
         public byte[] Sign(byte[] signData, ECPoint publicKey)
         {
             var account = GetAccount(publicKey);
@@ -675,19 +675,18 @@ namespace Neo.Wallets
         }
 
         /// <summary>
-        /// Gets the index of the first key pair(public key and corresponding private key) that this Wallet owns in the list.
+        /// Checks if the wallet contains the specified public key and the corresponding private key.
+        /// If the wallet has the public key but not the private key, it will return <see langword="false"/>.
         /// </summary>
-        /// <param name="publicKeys">The public key list.</param>
-        /// <returns>The index of the public key in the list; if the public key is not found, return -1.</returns>
-        public int GetMyIndex(IReadOnlyList<ECPoint> publicKeys)
+        /// <param name="publicKey">The public key.</param>
+        /// <returns>
+        /// <see langword="true"/> if the wallet contains the specified public key and the corresponding private key;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool ContainsKeyPair(ECPoint publicKey)
         {
-            for (int index = 0; index < publicKeys.Count; index++)
-            {
-                var account = GetAccount(publicKeys[index]);
-                if (account != null && account.HasKey)
-                    return index;
-            }
-            return -1;
+            var account = GetAccount(publicKey);
+            return account != null && account.HasKey;
         }
 
         /// <summary>

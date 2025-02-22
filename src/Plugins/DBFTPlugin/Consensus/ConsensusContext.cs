@@ -246,16 +246,14 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     }
                 }
 
-                var index = _wallet.GetMyIndex(Validators);
-                if (index >= 0 && index < Validators.Length)
+                _myPublicKey = null;
+                for (int i = 0; i < Validators.Length; i++)
                 {
-                    MyIndex = index;
+                    // ContainsKeyPair may be called multiple times
+                    if (!_wallet.ContainsKeyPair(Validators[i])) continue;
+                    MyIndex = i;
                     _myPublicKey = Validators[MyIndex];
-                }
-                else
-                {
-                    MyIndex = -1;
-                    _myPublicKey = null;
+                    break;
                 }
                 cachedMessages = new Dictionary<UInt256, ConsensusMessage>();
             }

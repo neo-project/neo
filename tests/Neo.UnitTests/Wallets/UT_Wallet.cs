@@ -449,30 +449,40 @@ namespace Neo.UnitTests.Wallets
         }
 
         [TestMethod]
-        public void TestIndexOf()
+        public void TestContainsKeyPair()
         {
             MyWallet wallet = new();
-            var index = wallet.GetMyIndex([glkey.PublicKey]);
-            Assert.AreEqual(-1, index);
+            var contains = wallet.ContainsKeyPair(glkey.PublicKey);
+            Assert.IsFalse(contains);
 
             wallet.CreateAccount(glkey.PrivateKey);
 
-            index = wallet.GetMyIndex([glkey.PublicKey]);
-            Assert.AreEqual(0, index);
+            contains = wallet.ContainsKeyPair(glkey.PublicKey);
+            Assert.IsTrue(contains);
 
             var key = new byte[32];
             Array.Fill(key, (byte)0x01);
 
             var pair = new KeyPair(key);
-            index = wallet.GetMyIndex([pair.PublicKey]);
-            Assert.AreEqual(-1, index);
-
-            index = wallet.GetMyIndex([pair.PublicKey, glkey.PublicKey]);
-            Assert.AreEqual(1, index);
+            contains = wallet.ContainsKeyPair(pair.PublicKey);
+            Assert.IsFalse(contains);
 
             wallet.CreateAccount(pair.PrivateKey);
-            index = wallet.GetMyIndex([pair.PublicKey, glkey.PublicKey]);
-            Assert.AreEqual(0, index);
+            contains = wallet.ContainsKeyPair(pair.PublicKey);
+            Assert.IsTrue(contains);
+
+            contains = wallet.ContainsKeyPair(glkey.PublicKey);
+            Assert.IsTrue(contains);
+
+            key = new byte[32];
+            Array.Fill(key, (byte)0x02);
+
+            pair = new KeyPair(key);
+            var scriptHash = Contract.CreateSignatureRedeemScript(pair.PublicKey).ToScriptHash();
+            wallet.CreateAccount(scriptHash);
+
+            contains = wallet.ContainsKeyPair(pair.PublicKey);
+            Assert.IsFalse(contains); // no private key
         }
     }
 }
