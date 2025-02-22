@@ -49,16 +49,13 @@ namespace Neo
         /// Initializes a new instance of the <see cref="UInt160"/> class.
         /// </summary>
         /// <param name="value">The value of the <see cref="UInt160"/>.</param>
-        public unsafe UInt160(ReadOnlySpan<byte> value)
+        public UInt160(ReadOnlySpan<byte> value)
         {
             if (value.Length != Length)
-                throw new FormatException();
+                throw new FormatException($"Invalid length: {value.Length}");
 
-            fixed (void* p = &_value1)
-            {
-                Span<byte> dst = new(p, Length);
-                value[..Length].CopyTo(dst);
-            }
+            var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+            value[..Length].CopyTo(span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
