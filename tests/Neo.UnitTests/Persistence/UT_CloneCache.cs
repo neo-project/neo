@@ -116,8 +116,8 @@ namespace Neo.UnitTests.IO.Caching
             void Action()
             {
                 var item = clonedCache[s_key4];
-            };
-            Assert.ThrowsExactly<KeyNotFoundException>(action);
+            }
+            Assert.ThrowsExactly<KeyNotFoundException>(Action);
         }
 
         [TestMethod]
