@@ -28,8 +28,8 @@ namespace Neo.UnitTests.Persistence
             var store = new MemoryStore();
             var snapshot = new StoreCache(store);
 
-            Assert.ThrowsException<InvalidOperationException>(() => snapshot.GetChangeSet().ToArray());
-            Assert.ThrowsException<InvalidOperationException>(snapshot.Commit);
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshot.GetChangeSet().ToArray());
+            Assert.ThrowsExactly<InvalidOperationException>(snapshot.Commit);
 
             // No errors
 
