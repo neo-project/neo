@@ -28,14 +28,32 @@ namespace Neo.SmartContract
         /// <summary>
         /// The id of the contract.
         /// </summary>
-        public int Id { get; init; }
+        public int Id
+        {
+            get => _id;
+            init => _id = value;
+        }
 
         /// <summary>
         /// The key of the storage entry.
         /// </summary>
-        public ReadOnlyMemory<byte> Key { get; init; }
+        public ReadOnlyMemory<byte> Key
+        {
+            get => _key;
+            // The example below shows how you would of been
+            // able to overwrite keys in the pass
+            // Example:
+            //      byte[] keyData = [0x00, 0x00, 0x00, 0x00, 0x12];
+            //      var keyMemory = new ReadOnlyMemory<byte>(keyData);
+            //      var storageKey1 = new StorageKey { Id = 0, Key = keyMemory };
+            //      // Below will overwrite the key in "storageKey1.Key"
+            //      keyData[0] = 0xff;
+            init => _key = value.ToArray(); // make new region of memory (a copy).
+        }
 
-        private byte[]? _cache;
+        private Memory<byte> _cache;
+        private readonly int _id;
+        private readonly ReadOnlyMemory<byte> _key;
 
         // NOTE: StorageKey is readonly, so we can cache the hash code.
         private int _hashCode = 0;
@@ -73,7 +91,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix)
         {
-            var data = new byte[PrefixLength];
+            Span<byte> data = stackalloc byte[PrefixLength];
             FillHeader(data, id, prefix);
             return new(id, data);
         }
@@ -87,7 +105,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, byte content)
         {
-            var data = new byte[ByteLength];
+            Span<byte> data = stackalloc byte[ByteLength];
             FillHeader(data, id, prefix);
             data[PrefixLength] = content;
             return new(id, data);
@@ -102,9 +120,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt160 hash)
         {
-            var data = new byte[UInt160Length];
+            Span<byte> data = stackalloc byte[UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
+            hash.GetSpan().CopyTo(data[PrefixLength..]);
             return new(id, data);
         }
 
@@ -117,9 +135,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt256 hash)
         {
-            var data = new byte[UInt256Length];
+            Span<byte> data = stackalloc byte[UInt256Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
+            hash.GetSpan().CopyTo(data[PrefixLength..]);
             return new(id, data);
         }
 
@@ -145,10 +163,10 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, UInt256 hash, UInt160 signer)
         {
-            var data = new byte[UInt256UInt160Length];
+            Span<byte> data = stackalloc byte[UInt256UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
-            signer.GetSpan().CopyTo(data.AsSpan()[UInt256Length..]);
+            hash.GetSpan().CopyTo(data[PrefixLength..]);
+            signer.GetSpan().CopyTo(data[UInt256Length..]);
             return new(id, data);
         }
 
@@ -162,9 +180,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, int bigEndian)
         {
-            var data = new byte[Int32Length];
+            Span<byte> data = stackalloc byte[Int32Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteInt32BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteInt32BigEndian(data[PrefixLength..], bigEndian);
             return new(id, data);
         }
 
@@ -178,9 +196,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, uint bigEndian)
         {
-            var data = new byte[Int32Length];
+            Span<byte> data = stackalloc byte[Int32Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteUInt32BigEndian(data[PrefixLength..], bigEndian);
             return new(id, data);
         }
 
@@ -194,9 +212,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, long bigEndian)
         {
-            var data = new byte[Int64Length];
+            Span<byte> data = stackalloc byte[Int64Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteInt64BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteInt64BigEndian(data[PrefixLength..], bigEndian);
             return new(id, data);
         }
 
@@ -210,9 +228,9 @@ namespace Neo.SmartContract
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static StorageKey Create(int id, byte prefix, ulong bigEndian)
         {
-            var data = new byte[Int64Length];
+            Span<byte> data = stackalloc byte[Int64Length];
             FillHeader(data, id, prefix);
-            BinaryPrimitives.WriteUInt64BigEndian(data.AsSpan()[PrefixLength..], bigEndian);
+            BinaryPrimitives.WriteUInt64BigEndian(data[PrefixLength..], bigEndian);
             return new(id, data);
         }
 
@@ -225,9 +243,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="StorageKey"/> class</returns>
         public static StorageKey Create(int id, byte prefix, ReadOnlySpan<byte> content)
         {
-            var data = new byte[PrefixLength + content.Length];
+            Span<byte> data = stackalloc byte[PrefixLength + content.Length];
             FillHeader(data, id, prefix);
-            content.CopyTo(data.AsSpan()[PrefixLength..]);
+            content.CopyTo(data[PrefixLength..]);
             return new(id, data);
         }
 
@@ -255,29 +273,25 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="id">Contract Id</param>
         /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
-        private StorageKey(int id, byte[] cache)
+        private StorageKey(int id, ReadOnlySpan<byte> cache)
         {
-            _cache = cache;
+            // DO NOT CHANGE OR ELSE "Create" WILL HAVE PROBLEMS
+            _cache = cache.ToArray(); // Make a copy
             Id = id;
-            Key = cache.AsMemory(sizeof(int));
+            Key = _cache[sizeof(int)..]; // "Key" init makes a copy already.
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageKey"/> class.
         /// </summary>
         /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
-        internal StorageKey(byte[] cache)
+        internal StorageKey(ReadOnlySpan<byte> cache)
         {
-            _cache = cache;
+            // DO NOT CHANGE OR ELSE "Create" WILL HAVE PROBLEMS
+            _cache = cache.ToArray(); // Make a copy
             Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
-            Key = cache.AsMemory(sizeof(int));
+            Key = _cache[sizeof(int)..]; // "Key" init makes a copy already.
         }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StorageKey"/> class.
-        /// </summary>
-        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
-        internal StorageKey(ReadOnlySpan<byte> cache) : this(cache.ToArray()) { }
 
         /// <summary>
         /// Creates a search prefix for a contract.
@@ -287,10 +301,10 @@ namespace Neo.SmartContract
         /// <returns>The created search prefix.</returns>
         public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
         {
-            var buffer = new byte[sizeof(int) + prefix.Length];
+            Span<byte> buffer = stackalloc byte[sizeof(int) + prefix.Length];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
-            prefix.CopyTo(buffer.AsSpan(sizeof(int)));
-            return buffer;
+            prefix.CopyTo(buffer[sizeof(int)..]);
+            return [.. buffer]; // Copy off stack
         }
 
         public bool Equals(StorageKey? other)
@@ -311,13 +325,13 @@ namespace Neo.SmartContract
 
         public byte[] ToArray()
         {
-            if (_cache is null)
+            if (_cache is { IsEmpty: true })
             {
                 _cache = new byte[sizeof(int) + Key.Length];
-                BinaryPrimitives.WriteInt32LittleEndian(_cache, Id);
-                Key.CopyTo(_cache.AsMemory(sizeof(int)));
+                BinaryPrimitives.WriteInt32LittleEndian(_cache.Span, Id);
+                Key.CopyTo(_cache[sizeof(int)..]);
             }
-            return _cache;
+            return _cache.ToArray(); // Make a copy
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
