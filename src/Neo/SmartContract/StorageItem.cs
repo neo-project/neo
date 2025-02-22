@@ -47,7 +47,7 @@ namespace Neo.SmartContract
             }
             set
             {
-                _value = value;
+                _value = value.ToArray(); // Make a copy
                 _cache = null;
             }
         }
@@ -61,9 +61,9 @@ namespace Neo.SmartContract
         /// Initializes a new instance of the <see cref="StorageItem"/> class.
         /// </summary>
         /// <param name="value">The byte array value of the <see cref="StorageItem"/>.</param>
-        public StorageItem(byte[] value)
+        public StorageItem(ReadOnlySpan<byte> value)
         {
-            _value = value;
+            _value = value.ToArray(); // Make a copy
         }
 
         /// <summary>
@@ -101,14 +101,14 @@ namespace Neo.SmartContract
         {
             return new()
             {
-                _value = _value,
+                _value = _value.ToArray(), // Make a real clone/copy
                 _cache = _cache is IInteroperable interoperable ? interoperable.Clone() : _cache
             };
         }
 
         public void Deserialize(ref MemoryReader reader)
         {
-            Value = reader.ReadToEnd();
+            Value = reader.ReadToEnd().ToArray(); // Make a copy
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Neo.SmartContract
         /// <param name="replica">The instance to be copied.</param>
         public void FromReplica(StorageItem replica)
         {
-            _value = replica._value;
+            _value = replica._value.ToArray(); // Make a copy
             if (replica._cache is IInteroperable interoperable)
             {
                 if (_cache?.GetType() == interoperable.GetType())
@@ -199,12 +199,12 @@ namespace Neo.SmartContract
 
         public static implicit operator StorageItem(BigInteger value)
         {
-            return new StorageItem(value);
+            return new(value);
         }
 
         public static implicit operator StorageItem(byte[] value)
         {
-            return new StorageItem(value);
+            return new(value);
         }
     }
 }
