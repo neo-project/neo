@@ -39,13 +39,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.IndexStart, clone.IndexStart);
 
             test = new GetBlockByIndexPayload() { Count = -2, IndexStart = int.MaxValue };
-            Assert.ThrowsException<FormatException>(() => test.ToArray().AsSerializable<GetBlockByIndexPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = test.ToArray().AsSerializable<GetBlockByIndexPayload>());
 
             test = new GetBlockByIndexPayload() { Count = 0, IndexStart = int.MaxValue };
-            Assert.ThrowsException<FormatException>(() => test.ToArray().AsSerializable<GetBlockByIndexPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = test.ToArray().AsSerializable<GetBlockByIndexPayload>());
 
             test = new GetBlockByIndexPayload() { Count = HeadersPayload.MaxHeadersCount + 1, IndexStart = int.MaxValue };
-            Assert.ThrowsException<FormatException>(() => test.ToArray().AsSerializable<GetBlockByIndexPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = test.ToArray().AsSerializable<GetBlockByIndexPayload>());
         }
     }
 }

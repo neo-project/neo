@@ -81,7 +81,7 @@ namespace Neo.UnitTests
         public void TestToHexString()
         {
             byte[] nullStr = null;
-            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString());
             byte[] empty = Array.Empty<byte>();
             Assert.AreEqual("", empty.ToHexString());
             Assert.AreEqual("", empty.ToHexString(false));
@@ -120,7 +120,7 @@ namespace Neo.UnitTests
         {
             Random ran = new();
             Action action1 = () => ran.NextBigInteger(-1);
-            Assert.ThrowsException<ArgumentException>(() => action1());
+            Assert.ThrowsExactly<ArgumentException>(() => action1());
 
             Assert.AreEqual(0, ran.NextBigInteger(0));
             Assert.IsNotNull(ran.NextBigInteger(8));

@@ -21,7 +21,7 @@ namespace Neo.Extensions.Tests
         {
             Random ran = new();
             Action action1 = () => ran.NextBigInteger(-1);
-            Assert.ThrowsException<ArgumentException>(action1);
+            Assert.ThrowsExactly<ArgumentException>(action1);
 
             Assert.AreEqual(0, ran.NextBigInteger(0));
             Assert.IsNotNull(ran.NextBigInteger(8));

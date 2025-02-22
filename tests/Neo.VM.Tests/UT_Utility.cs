@@ -22,7 +22,7 @@ namespace Neo.Test
         [TestMethod]
         public void TestSqrtTest()
         {
-            Assert.ThrowsException<InvalidOperationException>(() => BigInteger.MinusOne.Sqrt());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = BigInteger.MinusOne.Sqrt());
 
             Assert.AreEqual(BigInteger.Zero, BigInteger.Zero.Sqrt());
             Assert.AreEqual(new BigInteger(1), new BigInteger(1).Sqrt());
@@ -54,7 +54,7 @@ namespace Neo.Test
             var random = new Random();
 
             // Big Number (net standard didn't work)
-            Assert.ThrowsException<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
+            Assert.ThrowsExactly<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
 
             // Trivial cases
             //                     sign bit|shortest two's complement
@@ -93,11 +93,11 @@ namespace Neo.Test
         [TestMethod]
         public void TestModInverseTest()
         {
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.One.ModInverse(BigInteger.Zero));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.One.ModInverse(BigInteger.One));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.Zero.ModInverse(BigInteger.Zero));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.Zero.ModInverse(BigInteger.One));
-            Assert.ThrowsException<InvalidOperationException>(() => new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
 
             Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
         }

@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Wallets
             Assert.AreEqual(scriptHash, "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion));
 
             Action action = () => "3vQB7B6MrGQZaxCuFg4oh".ToScriptHash(TestProtocolSettings.Default.AddressVersion);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             var address = scriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
             Span<byte> data = stackalloc byte[21];
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Wallets
             scriptHash.ToArray().CopyTo(data[1..]);
             address = Base58.Base58CheckEncode(data);
             action = () => address.ToScriptHash(ProtocolSettings.Default.AddressVersion);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
         }
     }
 }
