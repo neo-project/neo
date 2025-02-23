@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>nebuild</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <PackageTags>NEO;Blockchain;Build;Core;CLI;NEBuild</PackageTags>
+    <PackAsTool>True</PackAsTool>
+    <ApplicationIcon>../../../.neo/icons/neo-build.ico</ApplicationIcon>
+    <ToolCommandName>$(AssemblyName)</ToolCommandName>
+    <RollForward>LatestMinor</RollForward>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
+    <PackageReference Include="System.CommandLine.Rendering" Version="0.4.0-alpha.22272.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../../.neo/icons/neo-build.ico" Visible="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Neo.Build.Core\Neo.Build.Core.csproj" />
+  </ItemGroup>
+
+</Project>
