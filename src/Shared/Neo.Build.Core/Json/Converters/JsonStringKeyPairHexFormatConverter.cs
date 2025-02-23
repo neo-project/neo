@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// JsonStringKeyPairConverter.cs file belongs to the neo project and is free
+// JsonStringKeyPairHexFormatConverter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -18,7 +18,7 @@ using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Json.Converters
 {
-    public class JsonStringKeyPairConverter : JsonConverter<KeyPair>
+    public class JsonStringKeyPairHexFormatConverter : JsonConverter<KeyPair?>
     {
         public override KeyPair? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
@@ -28,17 +28,17 @@ namespace Neo.Build.Core.Json.Converters
             var valueString = reader.GetString();
 
             if (string.IsNullOrEmpty(valueString))
-                throw new NeoBuildInvalidHexFormatException();
+                return default;
 
             var valueBytes = valueString.HexToBytes();
 
             return new(valueBytes);
         }
 
-        public override void Write(Utf8JsonWriter writer, KeyPair value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, KeyPair? value, JsonSerializerOptions options)
         {
-            var valueBytes = value.PrivateKey;
-            writer.WriteStringValue(valueBytes.ToHexString());
+            var valueBytes = value?.PrivateKey;
+            writer.WriteStringValue(valueBytes?.ToHexString());
         }
     }
 }
