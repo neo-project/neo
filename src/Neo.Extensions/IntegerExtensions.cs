@@ -15,7 +15,6 @@ namespace Neo.Extensions
 {
     public static class IntegerExtensions
     {
-
         /// <summary>
         /// Gets the size of variable-length of the data.
         /// </summary>
