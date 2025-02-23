@@ -94,6 +94,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F1B9D671
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.Core.Tests", "tests\Neo.Build.Core.Tests\Neo.Build.Core.Tests.csproj", "{F976B9EB-F23B-4A02-BCA3-573C0EE0E000}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Build.ToolSet", "src\Shared\Neo.Build.ToolSet\Neo.Build.ToolSet.csproj", "{A138EB41-7EAE-47A4-962B-4156AF1C1323}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -256,6 +258,10 @@ Global
 		{F976B9EB-F23B-4A02-BCA3-573C0EE0E000}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F976B9EB-F23B-4A02-BCA3-573C0EE0E000}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F976B9EB-F23B-4A02-BCA3-573C0EE0E000}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A138EB41-7EAE-47A4-962B-4156AF1C1323}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A138EB41-7EAE-47A4-962B-4156AF1C1323}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A138EB41-7EAE-47A4-962B-4156AF1C1323}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A138EB41-7EAE-47A4-962B-4156AF1C1323}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -302,6 +308,7 @@ Global
 		{460763E6-80D5-4B14-A3E2-4BBD7640844F} = {EC5CA9BC-E1AF-4C5B-B104-8374B9AA0643}
 		{F1B9D671-F973-4E59-813A-8B7E285985BB} = {EC5CA9BC-E1AF-4C5B-B104-8374B9AA0643}
 		{F976B9EB-F23B-4A02-BCA3-573C0EE0E000} = {F1B9D671-F973-4E59-813A-8B7E285985BB}
+		{A138EB41-7EAE-47A4-962B-4156AF1C1323} = {EC5CA9BC-E1AF-4C5B-B104-8374B9AA0643}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
