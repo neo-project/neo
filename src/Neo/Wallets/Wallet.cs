@@ -665,12 +665,26 @@ namespace Neo.Wallets
         /// </summary>
         /// <param name="signData">The data to sign.</param>
         /// <param name="publicKey">The public key.</param>
-        /// <returns>The signature, or null if the public key was not found or the corresponding private key is not available.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="signData"/> or <paramref name="publicKey"/> is <see langword="null"/>.
+        /// </exception>
+        /// <exception cref="SignException">
+        /// Thrown when no account is found for the given public key or no private key is found for the given public key.
+        /// </exception>
+        /// <returns>The signature</returns>
         public byte[] Sign(byte[] signData, ECPoint publicKey)
         {
+            if (signData is null) throw new ArgumentNullException(nameof(signData));
+            if (publicKey is null) throw new ArgumentNullException(nameof(publicKey));
+
             var account = GetAccount(publicKey);
-            var privateKey = account?.GetKey().PrivateKey;
-            if (privateKey == null) return null;
+            if (account is null)
+                throw new SignException("No such account found");
+
+            var privateKey = account.GetKey()?.PrivateKey;
+            if (privateKey is null)
+                throw new SignException("No private key found for the given public key");
+
             return Crypto.Sign(signData, privateKey);
         }
 

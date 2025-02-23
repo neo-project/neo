@@ -438,6 +438,9 @@ namespace Neo.UnitTests.Wallets
         public void TestSign()
         {
             MyWallet wallet = new();
+            Action action = () => wallet.Sign([0xa, 0xb, 0xc, 0xd], glkey.PublicKey);
+            Assert.ThrowsException<SignException>(action); // no account
+
             wallet.CreateAccount(glkey.PrivateKey);
 
             var signature = wallet.Sign([0xa, 0xb, 0xc, 0xd], glkey.PublicKey);
@@ -446,6 +449,17 @@ namespace Neo.UnitTests.Wallets
 
             var isValid = Crypto.VerifySignature([0xa, 0xb, 0xc, 0xd], signature, glkey.PublicKey);
             Assert.IsTrue(isValid);
+
+            var key = new byte[32];
+            Array.Fill(key, (byte)0x02);
+
+            var pair = new KeyPair(key);
+            var scriptHash = Contract.CreateSignatureRedeemScript(pair.PublicKey).ToScriptHash();
+            wallet.CreateAccount(scriptHash);
+            Assert.IsNotNull(pair.PublicKey);
+
+            action = () => wallet.Sign([0xa, 0xb, 0xc, 0xd], pair.PublicKey);
+            Assert.ThrowsException<SignException>(action); // no private key
         }
 
         [TestMethod]
