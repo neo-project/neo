@@ -74,7 +74,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             Action action = () => ContractParametersContext.Parse("{\"type\":\"wrongType\",\"data\":\"00000000007c97764845172d827d3c863743293931a691271a0000000000000000000000000000000000000000000100\",\"items\":{\"0x1bd5c777ec35768892bd3daab60fb7a1cb905066\":{\"script\":\"21026ff03b949241ce1dadd43519e6960e0a85b41a69a05c328103aa2bce1594ca1650680a906ad4\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"01\"}]}}}", snapshotCache);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
         }
 
         [TestMethod]
@@ -137,7 +137,7 @@ namespace Neo.UnitTests.SmartContract
 
             contract1.ParameterList = new[] { ContractParameterType.Signature, ContractParameterType.Signature };
             Action action1 = () => context.AddSignature(contract1, key.PublicKey, new byte[] { 0x01 });
-            Assert.ThrowsException<NotSupportedException>(action1);
+            Assert.ThrowsExactly<NotSupportedException>(action1);
 
             //multiSign
 

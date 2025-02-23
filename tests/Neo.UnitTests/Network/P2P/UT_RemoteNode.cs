@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Akka.IO;
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P;

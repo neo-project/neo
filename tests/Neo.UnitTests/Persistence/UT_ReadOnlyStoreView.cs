@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Persistence
             Assert.IsFalse(view.TryGet(key, out var item));
 
             // Test this[]
-            Assert.ThrowsException<KeyNotFoundException>(() => view[key]);
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = view[key]);
 
             // Test Put
             var value = new byte[] { 1, 2, 3 };

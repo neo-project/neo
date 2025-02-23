@@ -1,14 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <EnableMSTestRunner>true</EnableMSTestRunner>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Akka.TestKit" Version="1.5.36" />
-    <PackageReference Include="MSTest" Version="3.7.2" />
+    <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
+
+    <!-- Following is the dependency tree from this project to BouncyCastle -->
+    <!-- OracleService.Tests.csproj
+           -> OracleService.csproj
+             -> NeoFS.API 3.5.0
+                -> BouncyCastle.NetCore 1.9.0
+             -> Neo.csproj
+                -> BouncyCastle.NetCore 2.2.1 -->
+    <!--
+        Note that BouncyCastle.NetCore 1.9.0 has assembly version of 1.9.0.0
+        While BouncyCastle.NetCore 2.2.1 has assembly version of 0.0.0.0
+        So, when NeoFS.API attempts to load BouncyCastle.Castle 1.9.0.0 assembly, it will fail because 0.0.0.0 is not compatible.
+        This used to work with VSTest before migrating to Microsoft.Testing.Platform because VSTest has an assembly resolver that ignores versions
+        The ideal fix there is to have a new version of NeoFS.API which is using BouncyCastle 2.2.1 and update NeoFS.API. Then, the package reference below is not needed
+     -->
+    <PackageReference Include="BouncyCastle.NetCore" Version="1.9.0" NoWarn="NU1605" />
   </ItemGroup>
 
   <ItemGroup>

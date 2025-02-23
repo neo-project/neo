@@ -272,10 +272,10 @@ namespace Neo.UnitTests.Wallets
         {
             Action action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2",
                 ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             CollectionAssert.AreEqual("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f".HexToBytes(),
                 Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1));
@@ -285,10 +285,10 @@ namespace Neo.UnitTests.Wallets
         public void TestGetPrivateKeyFromWIF()
         {
             Action action = () => Wallet.GetPrivateKeyFromWIF(null);
-            Assert.ThrowsException<ArgumentNullException>(action);
+            Assert.ThrowsExactly<ArgumentNullException>(action);
 
             action = () => Wallet.GetPrivateKeyFromWIF("3vQB7B6MrGQZaxCuFg4oh");
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             CollectionAssert.AreEqual("c7134d6fd8e73d819e82755c64c93788d8db0961929e025a53363c4cc02a6962".HexToBytes(),
                 Wallet.GetPrivateKeyFromWIF("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU"));
@@ -326,7 +326,7 @@ namespace Neo.UnitTests.Wallets
                     Data = "Dec 12th"
                 }
             ], UInt160.Zero);
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             action = () => wallet.MakeTransaction(snapshotCache, [
                 new()
@@ -337,7 +337,7 @@ namespace Neo.UnitTests.Wallets
                     Data = "Dec 12th"
                 }
             ], account.ScriptHash);
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             action = () => wallet.MakeTransaction(snapshotCache, [
                 new()
@@ -348,7 +348,7 @@ namespace Neo.UnitTests.Wallets
                      Data = "Dec 12th"
                 }
             ], account.ScriptHash);
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             // Fake balance
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
@@ -392,7 +392,7 @@ namespace Neo.UnitTests.Wallets
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             MyWallet wallet = new();
             Action action = () => wallet.MakeTransaction(snapshotCache, Array.Empty<byte>(), null, null, []);
-            Assert.ThrowsException<InvalidOperationException>(action);
+            Assert.ThrowsExactly<InvalidOperationException>(action);
 
             Contract contract = Contract.Create([ContractParameterType.Boolean], [1]);
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
@@ -439,7 +439,7 @@ namespace Neo.UnitTests.Wallets
         {
             MyWallet wallet = new();
             Action action = () => wallet.Sign([0xa, 0xb, 0xc, 0xd], glkey.PublicKey);
-            Assert.ThrowsException<SignException>(action); // no account
+            Assert.ThrowsExactly<SignException>(action); // no account
 
             wallet.CreateAccount(glkey.PrivateKey);
 
@@ -459,7 +459,7 @@ namespace Neo.UnitTests.Wallets
             Assert.IsNotNull(pair.PublicKey);
 
             action = () => wallet.Sign([0xa, 0xb, 0xc, 0xd], pair.PublicKey);
-            Assert.ThrowsException<SignException>(action); // no private key
+            Assert.ThrowsExactly<SignException>(action); // no private key
         }
 
         [TestMethod]

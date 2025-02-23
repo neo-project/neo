@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             IVerifiable item = new ExtensiblePayload();
             Action actual = () => item.Witnesses = null;
-            Assert.ThrowsException<ArgumentNullException>(actual);
+            Assert.ThrowsExactly<ArgumentNullException>(actual);
 
             item.Witnesses = [new()];
             Assert.AreEqual(1, item.Witnesses.Length);

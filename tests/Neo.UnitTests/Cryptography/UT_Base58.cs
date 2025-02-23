@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Cryptography
             foreach (var s in invalidBase58)
             {
                 var action = new Action(() => Base58.Decode(s));
-                Assert.ThrowsException<FormatException>(action);
+                Assert.ThrowsExactly<FormatException>(action);
             }
         }
     }
