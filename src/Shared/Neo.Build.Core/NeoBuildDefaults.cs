@@ -31,11 +31,12 @@ namespace Neo.Build.Core
             RespectNullableAnnotations = true,
             Converters =
             {
+                // TODO: Add more default for NEP-6
+                // NOTE: JsonConverterAttribute overrides these converters
                 new JsonStringEnumConverter(),
                 new JsonStringECPointConverter(),
-                new JsonStringKeyPairConverter(),
                 new JsonStringUInt160Converter(),
-            }
+            },
         };
     }
 }

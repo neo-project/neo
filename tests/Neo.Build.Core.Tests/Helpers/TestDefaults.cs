@@ -16,7 +16,7 @@ using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
-    public static class TestDefaults
+    internal static class TestDefaults
     {
         public static readonly JsonSerializerOptions JsonDefaultSerializerOptions = new()
         {
@@ -28,12 +28,13 @@ namespace Neo.Build.Core.Tests.Helpers
             PreferredObjectCreationHandling = JsonObjectCreationHandling.Replace,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
             WriteIndented = false,
-            RespectNullableAnnotations = true,
+            RespectNullableAnnotations = false,
             Converters =
             {
+                // TODO: Make sure you add the same converters from NeoBuildDefaults.JsonDefaultSerializerOptions.Converters
+                // NOTE: JsonConverterAttribute overrides these converters
                 new JsonStringEnumConverter(),
                 new JsonStringECPointConverter(),
-                new JsonStringKeyPairConverter(),
                 new JsonStringUInt160Converter(),
             }
         };

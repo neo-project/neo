@@ -19,7 +19,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
     {
         private class TestJson
         {
-            public UInt160 Test { get; set; }
+            public UInt160? Test { get; set; }
         };
 
         [TestMethod]
@@ -29,7 +29,7 @@ namespace Neo.Build.Core.Tests.Json.Converters
             var expectedJsonString = $"{{\"test\":\"{expectedScriptHash}\"}}";
 
             var actualObject = JsonSerializer.Deserialize<TestJson>(expectedJsonString, TestDefaults.JsonDefaultSerializerOptions);
-            var actualScriptHash = actualObject.Test;
+            var actualScriptHash = actualObject!.Test!;
 
             Assert.AreEqual(expectedScriptHash, actualScriptHash);
         }
