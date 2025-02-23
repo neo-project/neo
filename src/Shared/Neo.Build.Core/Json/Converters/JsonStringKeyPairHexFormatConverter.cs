@@ -37,8 +37,13 @@ namespace Neo.Build.Core.Json.Converters
 
         public override void Write(Utf8JsonWriter writer, KeyPair? value, JsonSerializerOptions options)
         {
-            var valueBytes = value?.PrivateKey;
-            writer.WriteStringValue(valueBytes?.ToHexString());
+            if (value is null)
+                writer.WriteNullValue();
+            else
+            {
+                var valueBytes = value?.PrivateKey;
+                writer.WriteStringValue(valueBytes?.ToHexString());
+            }
         }
     }
 }
