@@ -53,17 +53,17 @@ namespace Neo.Extensions.Tests
             {
                 if (i == 0)
                 {
-                    int result = UnsafeData.GetVarSize(1);
+                    int result = 1.GetVarSize();
                     Assert.AreEqual(1, result);
                 }
                 else if (i == 1)
                 {
-                    int result = UnsafeData.GetVarSize(0xFFFF);
+                    int result = 0xFFFF.GetVarSize();
                     Assert.AreEqual(3, result);
                 }
                 else
                 {
-                    int result = UnsafeData.GetVarSize(0xFFFFFF);
+                    int result = 0xFFFFFF.GetVarSize();
                     Assert.AreEqual(5, result);
                 }
             }

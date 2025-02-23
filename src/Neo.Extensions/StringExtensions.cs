@@ -59,7 +59,7 @@ namespace Neo.Extensions
         public static int GetVarSize(this string value)
         {
             var size = Utility.StrictUTF8.GetByteCount(value);
-            return UnsafeData.GetVarSize(size) + size;
+            return size.GetVarSize() + size;
         }
     }
 }
