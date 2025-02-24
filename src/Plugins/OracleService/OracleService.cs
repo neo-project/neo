@@ -443,10 +443,10 @@ namespace Neo.Plugins.OracleService
 
             // Base size for transaction: includes const_header + signers + script + hashes + witnesses, except attributes
 
-            int size_inv = 66 * m;
+            int sizeInv = 66 * m;
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Script.GetVarSize()
-                + UnsafeData.GetVarSize(hashes.Length) + witnessDict[NativeContract.Oracle.Hash].Size
-                + UnsafeData.GetVarSize(size_inv) + size_inv + oracleSignContract.Script.GetVarSize();
+                + hashes.Length.GetVarSize() + witnessDict[NativeContract.Oracle.Hash].Size
+                + sizeInv.GetVarSize() + sizeInv + oracleSignContract.Script.GetVarSize();
 
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
             if (response.Result.Length > OracleResponse.MaxResultSize)
