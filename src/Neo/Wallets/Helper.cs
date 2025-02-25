@@ -108,13 +108,16 @@ namespace Neo.Wallets
         /// <param name="accountScript">Function to retrive the script's account from a hash.</param>
         /// <param name="maxExecutionCost">The maximum cost that can be spent when a contract is executed.</param>
         /// <returns>The network fee of the transaction.</returns>
-        public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings, Func<UInt160, byte[]?>? accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
+        public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings,
+            Func<UInt160, byte[]?>? accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
         {
             var hashes = tx.GetScriptHashesForVerifying(snapshot);
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + UnsafeData.GetVarSize(hashes.Length), index = -1;
-            var exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
+                + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
+            int index = -1;
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
             foreach (var hash in hashes)
             {
@@ -188,7 +191,9 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx,
+                        snapshot.CloneCache(), settings: settings, gas: maxExecutionCost);
+
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.HALT)
@@ -207,13 +212,13 @@ namespace Neo.Wallets
                     if (IsSignatureContract(witnessScript))
                     {
                         size += 67 + witnessScript.GetVarSize();
-                        networkFee += exec_fee_factor * SignatureContractCost();
+                        networkFee += execFeeFactor * SignatureContractCost();
                     }
                     else if (IsMultiSigContract(witnessScript, out int m, out int n))
                     {
-                        var size_inv = 66 * m;
-                        size += UnsafeData.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
-                        networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
+                        var sizeInv = 66 * m;
+                        size += sizeInv.GetVarSize() + sizeInv + witnessScript.GetVarSize();
+                        networkFee += execFeeFactor * MultiSignatureContractCost(m, n);
                     }
                 }
             }
