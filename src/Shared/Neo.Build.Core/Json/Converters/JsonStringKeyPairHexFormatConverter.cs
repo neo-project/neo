@@ -42,7 +42,7 @@ namespace Neo.Build.Core.Json.Converters
             else
             {
                 var valueBytes = value?.PrivateKey;
-                writer.WriteStringValue(valueBytes?.ToHexString());
+                writer.WriteStringValue(valueBytes.ToHexString());
             }
         }
     }

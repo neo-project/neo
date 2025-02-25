@@ -46,7 +46,7 @@ namespace Neo.Build.Core.Json.Converters
             if (value is null)
                 writer.WriteNullValue();
             else
-                writer.WriteStringValue(value?.ToAddress(ProtocolSettings.Default.AddressVersion));
+                writer.WriteStringValue(value.ToAddress(ProtocolSettings.Default.AddressVersion));
         }
     }
 }

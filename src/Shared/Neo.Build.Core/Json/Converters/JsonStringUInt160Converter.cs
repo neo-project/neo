@@ -39,7 +39,7 @@ namespace Neo.Build.Core.Json.Converters
             if (value is null)
                 writer.WriteNullValue();
             else
-                writer.WriteStringValue(value?.ToString());
+                writer.WriteStringValue(value.ToString());
         }
     }
 }
