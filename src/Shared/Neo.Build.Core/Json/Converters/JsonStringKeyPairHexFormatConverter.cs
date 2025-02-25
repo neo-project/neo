@@ -37,11 +37,11 @@ namespace Neo.Build.Core.Json.Converters
 
         public override void Write(Utf8JsonWriter writer, KeyPair? value, JsonSerializerOptions options)
         {
-            if (value is null)
+            if (value?.PrivateKey is null)
                 writer.WriteNullValue();
             else
             {
-                var valueBytes = value?.PrivateKey;
+                var valueBytes = value.PrivateKey;
                 writer.WriteStringValue(valueBytes.ToHexString());
             }
         }

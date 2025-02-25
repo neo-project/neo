@@ -37,7 +37,6 @@ namespace Neo.Build.Core.Json.Converters
             {
                 throw new NeoBuildInvalidAddressFormatException();
             }
-
         }
 
         public override void Write(Utf8JsonWriter writer, UInt160? value, JsonSerializerOptions options)
