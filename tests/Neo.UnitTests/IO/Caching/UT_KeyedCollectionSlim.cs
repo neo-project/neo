@@ -47,7 +47,7 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item1);
 
             // Assert
-            Assert.ThrowsException<ArgumentException>(() => collection.Add(item2));
+            Assert.ThrowsExactly<ArgumentException>(() => collection.Add(item2));
         }
 
         [TestMethod]

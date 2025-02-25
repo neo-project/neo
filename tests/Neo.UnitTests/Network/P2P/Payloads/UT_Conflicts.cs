@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Wrong type
             buffer[0] = 0xff;
-            Assert.ThrowsException<FormatException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
             {
                 var reader = new MemoryReader(buffer);
                 TransactionAttribute.DeserializeFrom(ref reader);

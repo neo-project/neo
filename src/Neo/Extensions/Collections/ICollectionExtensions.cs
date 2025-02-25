@@ -52,7 +52,7 @@ namespace Neo.Extensions
             {
                 value_size = value.Count * Marshal.SizeOf<T>();
             }
-            return UnsafeData.GetVarSize(value.Count) + value_size;
+            return value.Count.GetVarSize() + value_size;
         }
 
         /// <summary>

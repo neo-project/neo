@@ -94,8 +94,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestSendRawTransaction_InvalidTransactionFormat()
         {
-            Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction("invalid_transaction_string"),
+            Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction("invalid_transaction_string"),
                 "Should throw RpcException for invalid transaction format");
         }
 
@@ -106,8 +105,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateInvalidTransaction(snapshot, _wallet, _walletAccount, TestUtils.InvalidTransactionType.InsufficientBalance);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for insufficient balance");
             Assert.AreEqual(RpcError.InsufficientFunds.Code, exception.HResult);
         }
@@ -119,8 +117,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateInvalidTransaction(snapshot, _wallet, _walletAccount, TestUtils.InvalidTransactionType.InvalidSignature);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid signature");
             Assert.AreEqual(RpcError.InvalidSignature.Code, exception.HResult);
         }
@@ -132,8 +129,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateInvalidTransaction(snapshot, _wallet, _walletAccount, TestUtils.InvalidTransactionType.InvalidScript);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid script");
             Assert.AreEqual(RpcError.InvalidScript.Code, exception.HResult);
         }
@@ -145,8 +141,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateInvalidTransaction(snapshot, _wallet, _walletAccount, TestUtils.InvalidTransactionType.InvalidAttribute);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid attribute");
             // Transaction with invalid attribute can not pass the Transaction deserialization
             // and will throw invalid params exception.
@@ -160,8 +155,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateInvalidTransaction(snapshot, _wallet, _walletAccount, TestUtils.InvalidTransactionType.Oversized);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for invalid format transaction");
             // Oversized transaction will not pass the deserialization.
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
@@ -174,8 +168,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = TestUtils.CreateInvalidTransaction(snapshot, _wallet, _walletAccount, TestUtils.InvalidTransactionType.Expired);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for expired transaction");
             Assert.AreEqual(RpcError.ExpiredTransaction.Code, exception.HResult);
         }
@@ -189,8 +182,7 @@ namespace Neo.Plugins.RpcServer.Tests
             NativeContract.Policy.BlockAccount(snapshot, _walletAccount.ScriptHash);
             snapshot.Commit();
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for conflicting transaction");
             Assert.AreEqual(RpcError.PolicyFailed.Code, exception.HResult);
         }
@@ -203,8 +195,7 @@ namespace Neo.Plugins.RpcServer.Tests
             _neoSystem.MemPool.TryAdd(tx, snapshot);
             var txString = Convert.ToBase64String(tx.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(txString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString),
                 "Should throw RpcException for transaction already in memory pool");
             Assert.AreEqual(RpcError.AlreadyInPool.Code, exception.HResult);
         }
@@ -217,7 +208,7 @@ namespace Neo.Plugins.RpcServer.Tests
             TestUtils.AddTransactionToBlockchain(snapshot, tx);
             snapshot.Commit();
             var txString = Convert.ToBase64String(tx.ToArray());
-            var exception = Assert.ThrowsException<RpcException>(() => _rpcServer.SendRawTransaction(txString));
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString));
             Assert.AreEqual(RpcError.AlreadyExists.Code, exception.HResult);
         }
 
@@ -242,8 +233,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             string invalidBlockString = TestUtils.CreateInvalidBlockFormat();
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(invalidBlockString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(invalidBlockString),
                 "Should throw RpcException for invalid block format");
 
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
@@ -259,8 +249,7 @@ namespace Neo.Plugins.RpcServer.Tests
             snapshot.Commit();
             var blockString = Convert.ToBase64String(block.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(blockString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(blockString),
                 "Should throw RpcException when block already exists");
             Assert.AreEqual(RpcError.AlreadyExists.Code, exception.HResult);
         }
@@ -273,8 +262,7 @@ namespace Neo.Plugins.RpcServer.Tests
             block.Header.Witness = new Witness();
             var blockString = Convert.ToBase64String(block.ToArray());
 
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(blockString),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(blockString),
                 "Should throw RpcException for invalid block");
             Assert.AreEqual(RpcError.VerificationFailed.Code, exception.HResult);
         }
@@ -286,8 +274,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestSendRawTransaction_NullInput()
         {
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction((string)null),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction((string)null),
                 "Should throw RpcException for null input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }
@@ -295,8 +282,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestSendRawTransaction_EmptyInput()
         {
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SendRawTransaction(string.Empty),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(string.Empty),
                 "Should throw RpcException for empty input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }
@@ -304,8 +290,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestSubmitBlock_NullInput()
         {
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock((string)null),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock((string)null),
                 "Should throw RpcException for null input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }
@@ -313,8 +298,7 @@ namespace Neo.Plugins.RpcServer.Tests
         [TestMethod]
         public void TestSubmitBlock_EmptyInput()
         {
-            var exception = Assert.ThrowsException<RpcException>(() =>
-                _rpcServer.SubmitBlock(string.Empty),
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(string.Empty),
                 "Should throw RpcException for empty input");
             Assert.AreEqual(RpcError.InvalidParams.Code, exception.HResult);
         }

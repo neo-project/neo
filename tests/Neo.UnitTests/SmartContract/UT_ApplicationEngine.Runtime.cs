@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract
             VM.Types.Array array = new();
             array.Add(array);
 
-            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
+            Assert.ThrowsExactly<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
 
             // Buffer
 
@@ -84,7 +84,7 @@ namespace Neo.UnitTests.SmartContract
             array.Clear();
             array.Add(new Pointer(Array.Empty<byte>(), 1));
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
+            Assert.ThrowsExactly<InvalidOperationException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
 
             // InteropInterface
 
@@ -92,7 +92,7 @@ namespace Neo.UnitTests.SmartContract
             array.Add(new InteropInterface(new object()));
             engine.CurrentContext.GetState<ExecutionContextState>().Contract.Manifest.Abi.Events[0].Parameters[0].Type = ContractParameterType.InteropInterface;
 
-            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
+            Assert.ThrowsExactly<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
         }
 
         [TestMethod]
@@ -187,7 +187,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 68, 216, 160, 6, 89, 102, 86, 72, 37, 15, 132, 45, 76, 221, 170, 21, 128, 51, 34, 168, 205, 56, 10, 228, 51, 114, 4, 218, 245, 155, 172, 132
             };
-            Assert.ThrowsException<ArgumentException>(() => engine.RuntimeLog(msg));
+            Assert.ThrowsExactly<ArgumentException>(() => engine.RuntimeLog(msg));
         }
     }
 }

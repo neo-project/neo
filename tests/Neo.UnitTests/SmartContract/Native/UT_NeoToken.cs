@@ -518,9 +518,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Bad inputs
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(clonedCache, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(clonedCache, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.NEO.Transfer(clonedCache, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.NEO.Transfer(clonedCache, from, new byte[19], BigInteger.One, false, persistingBlock));
 
             // More than balance
 

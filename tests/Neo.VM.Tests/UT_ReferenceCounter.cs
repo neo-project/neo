@@ -244,7 +244,6 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
         public void TestInvalidReferenceStackItem()
         {
             var reference = new ReferenceCounter();
@@ -256,8 +255,7 @@ namespace Neo.Test
                 arr2.Add(i);
             }
 
-            arr.Add(arr2);
-            Assert.AreEqual(11, reference.Count);
+            Assert.ThrowsExactly<InvalidOperationException>(() => arr.Add(arr2));
         }
     }
 }

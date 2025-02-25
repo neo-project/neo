@@ -55,19 +55,19 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
 
             clone = new ServerCapability(NodeCapabilityType.TcpServer, 123);
 
-            Assert.ThrowsException<FormatException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
             {
                 var br2 = new MemoryReader(buffer);
                 ((ISerializable)clone).Deserialize(ref br2);
             });
-            Assert.ThrowsException<ArgumentException>(() =>
+            Assert.ThrowsExactly<ArgumentException>(() =>
             {
                 _ = new ServerCapability(NodeCapabilityType.FullNode);
             });
 
             // Wrong type
             buffer[0] = 0xFF;
-            Assert.ThrowsException<FormatException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
             {
                 var br2 = new MemoryReader(buffer);
                 NodeCapability.DeserializeFrom(ref br2);
