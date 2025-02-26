@@ -55,11 +55,11 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         public TransactionVerificationContext VerificationContext = new();
 
         public StoreCache Snapshot { get; private set; }
-        private KeyPair keyPair;
+        private ECPoint _myPublicKey;
         private int _witnessSize;
         private readonly NeoSystem neoSystem;
         private readonly Settings dbftSettings;
-        private readonly Wallet wallet;
+        private readonly Wallet _wallet;
         private readonly IStore store;
         private Dictionary<UInt256, ConsensusMessage> cachedMessages;
 
@@ -114,7 +114,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public ConsensusContext(NeoSystem neoSystem, Settings settings, Wallet wallet)
         {
-            this.wallet = wallet;
+            _wallet = wallet;
             this.neoSystem = neoSystem;
             dbftSettings = settings;
 
@@ -245,13 +245,14 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                             LastSeenMessage[validator] = height;
                     }
                 }
-                keyPair = null;
+
+                _myPublicKey = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
-                    WalletAccount account = wallet?.GetAccount(Validators[i]);
-                    if (account?.HasKey != true) continue;
+                    // ContainsKeyPair may be called multiple times
+                    if (!_wallet.ContainsKeyPair(Validators[i])) continue;
                     MyIndex = i;
-                    keyPair = account.GetKey();
+                    _myPublicKey = Validators[MyIndex];
                     break;
                 }
                 cachedMessages = new Dictionary<UInt256, ConsensusMessage>();
