@@ -36,13 +36,13 @@ namespace Neo.UnitTests.Cryptography
 
             input = "3v";
             Action action = () => input.Base58CheckDecode();
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
             input = "3vQB7B6MrGQZaxCuFg4og";
             action = () => input.Base58CheckDecode();
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
 
-            Assert.ThrowsException<FormatException>(() => string.Empty.Base58CheckDecode());
+            Assert.ThrowsExactly<FormatException>(() => _ = string.Empty.Base58CheckDecode());
         }
 
         [TestMethod]

@@ -11,7 +11,7 @@
 
 using Akka.Actor;
 using Akka.IO;
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;

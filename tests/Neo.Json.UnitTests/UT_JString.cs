@@ -59,17 +59,14 @@ namespace Neo.Json.UnitTests
             string s = "hello world";
             JString jstring = new JString(s);
             Assert.AreEqual(s, jstring.Value);
-            Assert.ThrowsException<ArgumentNullException>(() => new JString(null));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = new JString(null));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
         public void TestConstructorNull()
         {
             string s = null;
-            JString jstring = new JString(s);
-            Assert.AreEqual(s, jstring.Value);
-            Assert.ThrowsException<ArgumentNullException>(() => new JString(null!));
+            Assert.ThrowsExactly<ArgumentNullException>(() => new JString(s));
         }
 
         [TestMethod]
@@ -86,7 +83,7 @@ namespace Neo.Json.UnitTests
             string s = "    ";
             JString jstring = new JString(s);
             Assert.AreEqual(s, jstring.Value);
-            Assert.ThrowsException<ArgumentNullException>(() => new JString(null));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = new JString(null));
         }
 
         [TestMethod]
@@ -183,11 +180,10 @@ namespace Neo.Json.UnitTests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
         public void TestInValidGetEnum()
         {
             JString validEnum = "_James";
-            Woo woo = validEnum.GetEnum<Woo>();
+            Assert.ThrowsExactly<ArgumentException>(() => validEnum.GetEnum<Woo>());
         }
 
         [TestMethod]
@@ -428,7 +424,7 @@ namespace Neo.Json.UnitTests
             var result = invalidEnum.AsEnum(Woo.Jerry);
             Assert.AreEqual(Woo.Jerry, result);
 
-            Assert.ThrowsException<ArgumentException>(() => invalidEnum.GetEnum<Woo>());
+            Assert.ThrowsExactly<ArgumentException>(() => _ = invalidEnum.GetEnum<Woo>());
         }
     }
     public enum EnumExample

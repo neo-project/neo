@@ -9,9 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Persistence.Providers;
+using Neo.Plugins.ApplicationLogs;
 using Neo.Plugins.ApplicationLogs.Store;
 using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.Plugins.ApplicationsLogs.Tests.Setup;
@@ -20,16 +22,16 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
-using Xunit;
 
 namespace Neo.Plugins.ApplicationsLogs.Tests
 {
+    [TestClass]
     public class UT_LogStorageStore
     {
-        [Theory]
-        [InlineData(TriggerType.OnPersist, "0x0000000000000000000000000000000000000000000000000000000000000001")]
-        [InlineData(TriggerType.Application, "0x0000000000000000000000000000000000000000000000000000000000000002")]
-        [InlineData(TriggerType.PostPersist, "0x0000000000000000000000000000000000000000000000000000000000000003")]
+        [TestMethod]
+        [DataRow(TriggerType.OnPersist, "0x0000000000000000000000000000000000000000000000000000000000000001")]
+        [DataRow(TriggerType.Application, "0x0000000000000000000000000000000000000000000000000000000000000002")]
+        [DataRow(TriggerType.PostPersist, "0x0000000000000000000000000000000000000000000000000000000000000003")]
         public void Test_Put_Get_BlockState_Storage(TriggerType expectedAppTrigger, string expectedBlockHashString)
         {
             var expectedGuid = Guid.NewGuid();
@@ -40,8 +42,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 using (var lss = new LogStorageStore(snapshot))
                 {
                     var ok = lss.TryGetBlockState(expectedHash, expectedAppTrigger, out var actualState);
-                    Assert.False(ok);
-                    Assert.Null(actualState);
+                    Assert.IsFalse(ok);
+                    Assert.IsNull(actualState);
 
                     // Put Block States in Storage for each Trigger
                     lss.PutBlockState(expectedHash, expectedAppTrigger, BlockLogState.Create([expectedGuid]));
@@ -56,17 +58,17 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 // Get OnPersist Block State from Storage
                 var actualFound = lss.TryGetBlockState(expectedHash, expectedAppTrigger, out var actualState);
 
-                Assert.True(actualFound);
-                Assert.NotNull(actualState);
-                Assert.NotNull(actualState.NotifyLogIds);
-                Assert.Single(actualState.NotifyLogIds);
-                Assert.Equal(expectedGuid, actualState.NotifyLogIds[0]);
+                Assert.IsTrue(actualFound);
+                Assert.IsNotNull(actualState);
+                Assert.IsNotNull(actualState.NotifyLogIds);
+                Assert.ContainsSingle(actualState.NotifyLogIds);
+                Assert.AreEqual(expectedGuid, actualState.NotifyLogIds[0]);
             }
         }
 
-        [Theory]
-        [InlineData("00000000-0000-0000-0000-000000000000", "0x0000000000000000000000000000000000000000000000000000000000000000")]
-        [InlineData("00000000-0000-0000-0000-000000000001", "0x0000000000000000000000000000000000000000000000000000000000000001")]
+        [TestMethod]
+        [DataRow("00000000-0000-0000-0000-000000000000", "0x0000000000000000000000000000000000000000000000000000000000000000")]
+        [DataRow("00000000-0000-0000-0000-000000000001", "0x0000000000000000000000000000000000000000000000000000000000000001")]
         public void Test_Put_Get_TransactionEngineState_Storage(string expectedLogId, string expectedHashString)
         {
             var expectedGuid = Guid.Parse(expectedLogId);
@@ -77,8 +79,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 using (var lss = new LogStorageStore(snapshot))
                 {
                     var ok = lss.TryGetTransactionEngineState(expectedTxHash, out var actualState);
-                    Assert.False(ok);
-                    Assert.Null(actualState);
+                    Assert.IsFalse(ok);
+                    Assert.IsNull(actualState);
 
                     // Put Block States in Storage for each Trigger
                     lss.PutTransactionEngineState(expectedTxHash, TransactionEngineLogState.Create([expectedGuid]));
@@ -92,17 +94,17 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 // Get OnPersist Block State from Storage
                 var actualFound = lss.TryGetTransactionEngineState(expectedTxHash, out var actualState);
 
-                Assert.True(actualFound);
-                Assert.NotNull(actualState);
-                Assert.NotNull(actualState.LogIds);
-                Assert.Single(actualState.LogIds);
-                Assert.Equal(expectedGuid, actualState.LogIds[0]);
+                Assert.IsTrue(actualFound);
+                Assert.IsNotNull(actualState);
+                Assert.IsNotNull(actualState.LogIds);
+                Assert.ContainsSingle(actualState.LogIds);
+                Assert.AreEqual(expectedGuid, actualState.LogIds[0]);
             }
         }
 
-        [Theory]
-        [InlineData("0x0000000000000000000000000000000000000000", "Hello World")]
-        [InlineData("0x0000000000000000000000000000000000000001", "Hello Again")]
+        [TestMethod]
+        [DataRow("0x0000000000000000000000000000000000000000", "Hello World")]
+        [DataRow("0x0000000000000000000000000000000000000001", "Hello Again")]
         public void Test_Put_Get_EngineState_Storage(string expectedScriptHashString, string expectedMessage)
         {
             var expectedScriptHash = UInt160.Parse(expectedScriptHashString);
@@ -113,8 +115,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 using (var lss = new LogStorageStore(snapshot))
                 {
                     var ok = lss.TryGetEngineState(Guid.NewGuid(), out var actualState);
-                    Assert.False(ok);
-                    Assert.Null(actualState);
+                    Assert.IsFalse(ok);
+                    Assert.IsNull(actualState);
 
                     expectedGuid = lss.PutEngineState(EngineLogState.Create(expectedScriptHash, expectedMessage));
                     snapshot.Commit();
@@ -125,16 +127,16 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             {
                 var actualFound = lss.TryGetEngineState(expectedGuid, out var actualState);
 
-                Assert.True(actualFound);
-                Assert.NotNull(actualState);
-                Assert.Equal(expectedScriptHash, actualState.ScriptHash);
-                Assert.Equal(expectedMessage, actualState.Message);
+                Assert.IsTrue(actualFound);
+                Assert.IsNotNull(actualState);
+                Assert.AreEqual(expectedScriptHash, actualState.ScriptHash);
+                Assert.AreEqual(expectedMessage, actualState.Message);
             }
         }
 
-        [Theory]
-        [InlineData("0x0000000000000000000000000000000000000000", "SayHello", "00000000-0000-0000-0000-000000000000")]
-        [InlineData("0x0000000000000000000000000000000000000001", "SayGoodBye", "00000000-0000-0000-0000-000000000001")]
+        [TestMethod]
+        [DataRow("0x0000000000000000000000000000000000000000", "SayHello", "00000000-0000-0000-0000-000000000000")]
+        [DataRow("0x0000000000000000000000000000000000000001", "SayGoodBye", "00000000-0000-0000-0000-000000000001")]
         public void Test_Put_Get_NotifyState_Storage(string expectedScriptHashString, string expectedEventName, string expectedItemGuidString)
         {
             var expectedScriptHash = UInt160.Parse(expectedScriptHashString);
@@ -147,8 +149,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
                 using (var lss = new LogStorageStore(snapshot))
                 {
                     var ok = lss.TryGetNotifyState(Guid.NewGuid(), out var actualState);
-                    Assert.False(ok);
-                    Assert.Null(actualState);
+                    Assert.IsFalse(ok);
+                    Assert.IsNull(actualState);
 
                     expectedGuid = lss.PutNotifyState(NotifyLogState.Create(expectedNotifyEventArgs, [expectedItemGuid]));
                     snapshot.Commit();
@@ -159,26 +161,29 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             {
                 var actualFound = lss.TryGetNotifyState(expectedGuid, out var actualState);
 
-                Assert.True(actualFound);
-                Assert.NotNull(actualState);
-                Assert.Equal(expectedScriptHash, actualState.ScriptHash);
-                Assert.Equal(expectedEventName, actualState.EventName);
-                Assert.NotNull(actualState.StackItemIds);
-                Assert.Single(actualState.StackItemIds);
-                Assert.Equal(expectedItemGuid, actualState.StackItemIds[0]);
+                Assert.IsTrue(actualFound);
+                Assert.IsNotNull(actualState);
+                Assert.AreEqual(expectedScriptHash, actualState.ScriptHash);
+                Assert.AreEqual(expectedEventName, actualState.EventName);
+                Assert.IsNotNull(actualState.StackItemIds);
+                Assert.ContainsSingle(actualState.StackItemIds);
+                Assert.AreEqual(expectedItemGuid, actualState.StackItemIds[0]);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void Test_StackItemState()
         {
             using var store = new MemoryStore();
             using var snapshot = store.GetSnapshot();
             using var lss = new LogStorageStore(snapshot);
 
+            // Make sure to initialize Settings.Default.
+            using var _ = new LogReader();
+
             var ok = lss.TryGetStackItemState(Guid.NewGuid(), out var actualState);
-            Assert.False(ok);
-            Assert.Equal(StackItem.Null, actualState);
+            Assert.IsFalse(ok);
+            Assert.AreEqual(StackItem.Null, actualState);
 
             var id1 = lss.PutStackItemState(new Integer(1));
             var id2 = lss.PutStackItemState(new Integer(2));
@@ -188,15 +193,15 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             using var snapshot2 = store.GetSnapshot();
             using var lss2 = new LogStorageStore(snapshot2);
             ok = lss2.TryGetStackItemState(id1, out var actualState1);
-            Assert.True(ok);
-            Assert.Equal(new Integer(1), actualState1);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(new Integer(1), actualState1);
 
             ok = lss2.TryGetStackItemState(id2, out var actualState2);
-            Assert.True(ok);
-            Assert.Equal(new Integer(2), actualState2);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(new Integer(2), actualState2);
         }
 
-        [Fact]
+        [TestMethod]
         public void Test_TransactionState()
         {
             using var store = new MemoryStore();
@@ -209,8 +214,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
 
             var hash = new UInt256(bytes);
             var ok = lss.TryGetTransactionState(hash, out var actualState);
-            Assert.False(ok);
-            Assert.Null(actualState);
+            Assert.IsFalse(ok);
+            Assert.IsNull(actualState);
 
             var guid = Guid.NewGuid();
             lss.PutTransactionState(hash, TransactionLogState.Create([guid]));
@@ -219,11 +224,11 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             using var snapshot2 = store.GetSnapshot();
             using var lss2 = new LogStorageStore(snapshot2);
             ok = lss2.TryGetTransactionState(hash, out actualState);
-            Assert.True(ok);
-            Assert.Equal(TransactionLogState.Create([guid]), actualState);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(TransactionLogState.Create([guid]), actualState);
         }
 
-        [Fact]
+        [TestMethod]
         public void Test_ExecutionState()
         {
             using var store = new MemoryStore();
@@ -231,8 +236,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             using var lss = new LogStorageStore(snapshot);
 
             var ok = lss.TryGetExecutionState(Guid.NewGuid(), out var actualState);
-            Assert.False(ok);
-            Assert.Null(actualState);
+            Assert.IsFalse(ok);
+            Assert.IsNull(actualState);
 
             // ExecutionLogState.Serialize
             using var stream = new MemoryStream();
@@ -256,11 +261,11 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             using var snapshot2 = store.GetSnapshot();
             using var lss2 = new LogStorageStore(snapshot2);
             ok = lss2.TryGetExecutionState(guid, out actualState);
-            Assert.True(ok);
-            Assert.Equal(state, actualState);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(state, actualState);
         }
 
-        [Fact]
+        [TestMethod]
         public void Test_ContractState()
         {
             using var store = new MemoryStore();
@@ -273,8 +278,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             var index = 1u;
 
             var ok = lss.TryGetContractState(scriptHash, timestamp, index, out var actualState);
-            Assert.False(ok);
-            Assert.Null(actualState);
+            Assert.IsFalse(ok);
+            Assert.IsNull(actualState);
 
             // random 32 bytes
             var bytes = new byte[32];
@@ -302,8 +307,8 @@ namespace Neo.Plugins.ApplicationsLogs.Tests
             using var snapshot2 = store.GetSnapshot();
             using var lss2 = new LogStorageStore(snapshot2);
             ok = lss2.TryGetContractState(scriptHash, timestamp, index, out actualState);
-            Assert.True(ok);
-            Assert.Equal(state, actualState);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(state, actualState);
         }
     }
 }
