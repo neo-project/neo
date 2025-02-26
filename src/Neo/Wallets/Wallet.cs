@@ -594,7 +594,10 @@ namespace Neo.Wallets
         /// Signs the <see cref="IVerifiable"/> in the specified <see cref="ContractParametersContext"/> with the wallet.
         /// </summary>
         /// <param name="context">The <see cref="ContractParametersContext"/> to be used.</param>
-        /// <returns><see langword="true"/> if the signature is successfully added to the context; otherwise, <see langword="false"/>.</returns>
+        /// <returns>
+        /// <see langword="true"/> if any signature is successfully added to the context;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
         public bool Sign(ContractParametersContext context)
         {
             if (context.Network != ProtocolSettings.Network) return false;
@@ -655,6 +658,49 @@ namespace Neo.Wallets
             }
 
             return fSuccess;
+        }
+
+        /// <summary>
+        /// Signs the specified data with the corresponding private key of the specified public key.
+        /// </summary>
+        /// <param name="signData">The data to sign.</param>
+        /// <param name="publicKey">The public key.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="signData"/> or <paramref name="publicKey"/> is <see langword="null"/>.
+        /// </exception>
+        /// <exception cref="SignException">
+        /// Thrown when no account is found for the given public key or no private key is found for the given public key.
+        /// </exception>
+        /// <returns>The signature</returns>
+        public byte[] Sign(byte[] signData, ECPoint publicKey)
+        {
+            if (signData is null) throw new ArgumentNullException(nameof(signData));
+            if (publicKey is null) throw new ArgumentNullException(nameof(publicKey));
+
+            var account = GetAccount(publicKey);
+            if (account is null)
+                throw new SignException("No such account found");
+
+            var privateKey = account.GetKey()?.PrivateKey;
+            if (privateKey is null)
+                throw new SignException("No private key found for the given public key");
+
+            return Crypto.Sign(signData, privateKey);
+        }
+
+        /// <summary>
+        /// Checks if the wallet contains the specified public key and the corresponding private key.
+        /// If the wallet has the public key but not the private key, it will return <see langword="false"/>.
+        /// </summary>
+        /// <param name="publicKey">The public key.</param>
+        /// <returns>
+        /// <see langword="true"/> if the wallet contains the specified public key and the corresponding private key;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool ContainsKeyPair(ECPoint publicKey)
+        {
+            var account = GetAccount(publicKey);
+            return account != null && account.HasKey;
         }
 
         /// <summary>

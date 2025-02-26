@@ -15,10 +15,9 @@ namespace Neo.UnitTests
 {
     public static class TestProtocolSettings
     {
-        public static readonly ProtocolSettings Default = new()
+        public static readonly ProtocolSettings Default = ProtocolSettings.Default with
         {
             Network = 0x334F454Eu,
-            AddressVersion = ProtocolSettings.Default.AddressVersion,
             StandbyCommittee =
             [
                 //Validators
@@ -54,18 +53,11 @@ namespace Neo.UnitTests
                 "seed4.neo.org:10333",
                 "seed5.neo.org:10333"
             ],
-            MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
-            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
-            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
-            MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
-            InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
-            Hardforks = ProtocolSettings.Default.Hardforks
         };
 
-        public static readonly ProtocolSettings SoleNode = new()
+        public static readonly ProtocolSettings SoleNode = ProtocolSettings.Default with
         {
             Network = 0x334F454Eu,
-            AddressVersion = ProtocolSettings.Default.AddressVersion,
             StandbyCommittee =
             [
                 //Validators
@@ -80,12 +72,6 @@ namespace Neo.UnitTests
                 "seed4.neo.org:10333",
                 "seed5.neo.org:10333"
             ],
-            MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
-            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
-            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
-            MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
-            InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
-            Hardforks = ProtocolSettings.Default.Hardforks
         };
     }
 }
