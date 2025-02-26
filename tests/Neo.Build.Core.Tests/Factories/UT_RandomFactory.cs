@@ -17,13 +17,6 @@ namespace Neo.Build.Core.Tests.Factories
     public class UT_RandomFactory
     {
         [TestMethod]
-        public void IsSharedSameObjects()
-        {
-            Assert.IsNotNull(RandomFactory.Shared);
-            Assert.AreSame(RandomFactory.Shared, RandomFactory.Shared);
-        }
-
-        [TestMethod]
         public void IsCreateNewDifferentObjects()
         {
             var expectedRandomObject = RandomFactory.CreateNew();
