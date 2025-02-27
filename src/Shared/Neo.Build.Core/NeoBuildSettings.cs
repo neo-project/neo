@@ -9,9 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Build.Core.Exceptions;
+using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Json;
 using Neo.Build.Core.Models;
+using Neo.Build.Core.Models.SmartContract;
+using Neo.Build.Core.SmartContract;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -21,27 +24,33 @@ namespace Neo.Build.Core
     {
         public NeoBuildSettings(JsonNode jsonExtras, JsonSerializerOptions? options = null)
         {
+            _jsonExtras = jsonExtras;
             _options = options ?? NeoBuildDefaults.JsonDefaultSerializerOptions;
 
-            ProtocolSettings = BindJsonNodeToProtocolSettings(jsonExtras[JsonPropertyNames.ProtocolSettings]);
+            ProtocolSettings = GetObject<ProtocolSettingsModel, ProtocolSettings>(JsonPropertyNames.ProtocolSettings, NeoBuildDefaults.ProtocolSettings);
+            ApplicationEngineSettings = GetObject<ApplicationEngineSettingsModel, ApplicationEngineSettings>(JsonPropertyNames.ProtocolSettings, ApplicationEngineDefaults.Settings);
         }
 
         public ProtocolSettings ProtocolSettings { get; }
+        public ApplicationEngineSettings ApplicationEngineSettings { get; }
 
         private readonly JsonSerializerOptions _options;
+        private readonly JsonNode _jsonExtras;
 
-        private ProtocolSettings BindJsonNodeToProtocolSettings(JsonNode? protocolSettingNode)
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        private TResult? GetObject<TModel, TResult>(string? propertyName, TResult? defaultValue)
+            where TResult : notnull
+            where TModel : notnull, JsonModel, new()
         {
+            var protocolSettingNode = string.IsNullOrEmpty(propertyName) ? _jsonExtras : _jsonExtras[propertyName];
             if (protocolSettingNode is null)
-                return NeoBuildDefaults.ProtocolDefaultSettings;
+                return defaultValue;
 
-            var protocolSettingModel = JsonModel.FromJson<ProtocolSettingsModel>(protocolSettingNode.ToJsonString(), _options);
+            var model = JsonModel.FromJson<TModel>(protocolSettingNode.ToJsonString(), _options);
+            if (model is not IConvertToObject<TResult> result)
+                return defaultValue;
 
-            // TODO: Create new "NeoBuildException" class for this error and error code.
-            if (protocolSettingModel is null)
-                throw new NeoBuildException(string.Empty); // This function shouldn't reach here
-
-            return protocolSettingModel.ToObject();
+            return result.ToObject();
         }
     }
 }

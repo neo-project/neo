@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// JsonPropertyNames.cs file belongs to the neo project and is free
+// ApplicationEngineBase.StaticMethods.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,11 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Build.Core.Json
+namespace Neo.Build.Core.SmartContract
 {
-    public sealed class JsonPropertyNames
+    public partial class ApplicationEngineBase
     {
-        public const string ProtocolSettings = "protocolConfiguration";
-        public const string ApplicationEngineSettings = "applicationEngineSettings";
+
     }
 }
