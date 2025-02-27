@@ -40,7 +40,7 @@ namespace Neo.Build.Core
         [return: NotNullIfNotNull(nameof(defaultValue))]
         private TResult? GetObject<TModel, TResult>(string? propertyName, TResult? defaultValue)
             where TResult : notnull
-            where TModel : notnull, JsonModel, new()
+            where TModel : notnull, JsonModel
         {
             var protocolSettingNode = string.IsNullOrEmpty(propertyName) ? _jsonExtras : _jsonExtras[propertyName];
             if (protocolSettingNode is null)

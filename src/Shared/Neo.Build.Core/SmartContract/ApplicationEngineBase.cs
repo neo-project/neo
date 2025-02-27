@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -21,33 +23,79 @@ namespace Neo.Build.Core.SmartContract
     public abstract partial class ApplicationEngineBase : ApplicationEngine
     {
         protected ApplicationEngineBase(
-            TriggerType trigger,
-            IVerifiable container,
+            ProtocolSettings protocolSettings,
             DataCache snapshotCache,
-            Block persistingBlock,
-            ProtocolSettings settings,
-            long gas,
+            long maxGas,
+            TriggerType trigger = TriggerType.Application,
+            IVerifiable? container = null,
+            Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
-            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null) : base(trigger, container, snapshotCache, persistingBlock, settings, gas, diagnostic, DefaultJumpTable)
+            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null,
+            ILoggerFactory? loggerFactory = null)
+            : base(
+                  trigger,
+                  container,
+                  snapshotCache,
+                  persistingBlock,
+                  protocolSettings,
+                  maxGas,
+                  diagnostic,
+                  DefaultJumpTable)
         {
+            Log += OnLog;
+            Notify += OnNotify;
+
             _orgSysCall = DefaultJumpTable[OpCode.SYSCALL];
             DefaultJumpTable[OpCode.SYSCALL] = OnSystemCall;
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
+            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+            _mainLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
         }
 
         protected ApplicationEngineBase(
-            TriggerType trigger,
-            IVerifiable container,
+            ApplicationEngineSettings engineSettings,
+            ProtocolSettings protocolSettings,
             DataCache snapshotCache,
-            Block persistingBlock,
-            NeoBuildSettings settings,
-            IDiagnostic? diagnostic = null) : this(trigger, container, snapshotCache, persistingBlock, settings.ProtocolSettings, gas, diagnostic, null)
-        {
+            TriggerType trigger = TriggerType.Application,
+            IVerifiable? container = null,
+            Block? persistingBlock = null,
+            IDiagnostic? diagnostic = null,
+            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
+            : this(
+                protocolSettings,
+                snapshotCache,
+                engineSettings.MaxGas,
+                trigger,
+                container,
+                persistingBlock,
+                diagnostic,
+                systemCallMethods)
+        { }
 
-        }
+        protected ApplicationEngineBase(
+            NeoBuildSettings settings,
+            DataCache snapshotCache,
+            TriggerType trigger = TriggerType.Application,
+            IVerifiable? container = null,
+            Block? persistingBlock = null,
+            IDiagnostic? diagnostic = null,
+            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
+            : this(
+                settings.ApplicationEngineSettings,
+                settings.ProtocolSettings,
+                snapshotCache,
+                trigger,
+                container,
+                persistingBlock,
+                diagnostic,
+                systemCallMethods)
+        { }
 
         private readonly JumpTable.DelAction _orgSysCall;
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
+
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _mainLogger;
 
         public override void Dispose()
         {
@@ -66,6 +114,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected override void OnFault(Exception ex)
         {
+            _mainLogger.LogError(ex, "{Exception}", ex.Message);
             base.OnFault(ex);
         }
 
@@ -87,6 +136,16 @@ namespace Neo.Build.Core.SmartContract
                 OnSysCall(descriptor);
             else
                 _orgSysCall(engine, instruction);
+        }
+
+        protected virtual void OnLog(object? sender, LogEventArgs e)
+        {
+
+        }
+
+        protected virtual void OnNotify(object? sender, NotifyEventArgs e)
+        {
+
         }
     }
 }
