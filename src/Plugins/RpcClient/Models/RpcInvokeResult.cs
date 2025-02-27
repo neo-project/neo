@@ -79,7 +79,7 @@ namespace Neo.Network.RPC.Models
     {
         public string Type { get; set; }
 
-        public string Value { get; set; }
+        public JToken Value { get; set; }
 
         public JObject ToJson()
         {
@@ -94,7 +94,7 @@ namespace Neo.Network.RPC.Models
             return new RpcStack
             {
                 Type = json["type"].AsString(),
-                Value = json["value"].AsString()
+                Value = json["value"]
             };
         }
     }
