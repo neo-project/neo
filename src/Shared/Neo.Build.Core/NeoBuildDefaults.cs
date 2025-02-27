@@ -40,7 +40,7 @@ namespace Neo.Build.Core
             },
         };
 
-        public static readonly ProtocolSettings ProtocolDefaultSettings = ProtocolSettings.Default with
+        public static readonly ProtocolSettings ProtocolSettings = ProtocolSettings.Default with
         {
             Network = FunctionFactory.GetDevNetwork(0), // DEV0 Magic Code
             MillisecondsPerBlock = 1000u,
