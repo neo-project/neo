@@ -9,8 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Hosting;
 using Neo.Build.Core.Exceptions;
 using Neo.Build.ToolSet.Commands;
+using Neo.Build.ToolSet.Extensions;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
@@ -22,14 +24,15 @@ using System.Threading.Tasks;
 
 namespace Neo.Build.ToolSet
 {
-    internal class Program
+    internal partial class Program
     {
         private static async Task<int> Main(string[] args)
         {
             var rootCommand = new ProgramRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
-                .UseHost(builder =>
+                .UseHost(DefaultNeoBuildHostFactory, builder =>
                 {
+                    // Add Console Commands Here
                     builder.UseCommandHandler<ProgramRootCommand, ProgramRootCommand.Handler>();
                 })
                 .UseDefaults()
@@ -49,14 +52,21 @@ namespace Neo.Build.ToolSet
 
             if (exception is NeoBuildException nbe)
             {
-                context.Console.Error.Write(nbe.Message + Environment.NewLine);
+                if (context.Console.IsErrorRedirected)
+                    context.Console.Error.Write(nbe.Message + Environment.NewLine);
+                else
+                    context.Console.ErrorMessage(nbe);
                 context.ExitCode = nbe.ExitCode;
                 return;
             }
 
-            context.Console.Error.Write($"{exception}");
+            context.Console.ErrorMessage(exception, showStackTrace: true);
             context.ExitCode = exception.HResult;
         }
+
+        private static IHostBuilder DefaultNeoBuildHostFactory(string[] args) =>
+            new HostBuilder()
+            .UseNeoBuildConfiguration();
     }
 
 }
