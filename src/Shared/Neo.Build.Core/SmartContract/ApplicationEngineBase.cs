@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -42,14 +41,9 @@ namespace Neo.Build.Core.SmartContract
                   diagnostic,
                   DefaultJumpTable)
         {
-            Log += OnLog;
-            Notify += OnNotify;
-
             _orgSysCall = DefaultJumpTable[OpCode.SYSCALL];
             DefaultJumpTable[OpCode.SYSCALL] = OnSystemCall;
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
-            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-            _mainLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
         }
 
         protected ApplicationEngineBase(
@@ -91,11 +85,10 @@ namespace Neo.Build.Core.SmartContract
                 systemCallMethods)
         { }
 
+        public Transaction? CurrentTransaction => ScriptContainer as Transaction;
+
         private readonly JumpTable.DelAction _orgSysCall;
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
-
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly ILogger _mainLogger;
 
         public override void Dispose()
         {
@@ -114,7 +107,6 @@ namespace Neo.Build.Core.SmartContract
 
         protected override void OnFault(Exception ex)
         {
-            _mainLogger.LogError(ex, "{Exception}", ex.Message);
             base.OnFault(ex);
         }
 
@@ -136,16 +128,6 @@ namespace Neo.Build.Core.SmartContract
                 OnSysCall(descriptor);
             else
                 _orgSysCall(engine, instruction);
-        }
-
-        protected virtual void OnLog(object? sender, LogEventArgs e)
-        {
-
-        }
-
-        protected virtual void OnNotify(object? sender, NotifyEventArgs e)
-        {
-
         }
     }
 }
