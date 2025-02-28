@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -44,6 +45,8 @@ namespace Neo.Build.Core.SmartContract
             _orgSysCall = DefaultJumpTable[OpCode.SYSCALL];
             DefaultJumpTable[OpCode.SYSCALL] = OnSystemCall;
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
+            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+            _traceLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
         }
 
         protected ApplicationEngineBase(
@@ -89,6 +92,9 @@ namespace Neo.Build.Core.SmartContract
 
         private readonly JumpTable.DelAction _orgSysCall;
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
+
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _traceLogger;
 
         public override void Dispose()
         {
