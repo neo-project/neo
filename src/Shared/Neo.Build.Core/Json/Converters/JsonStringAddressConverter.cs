@@ -37,13 +37,15 @@ namespace Neo.Build.Core.Json.Converters
             {
                 throw new NeoBuildInvalidAddressFormatException();
             }
-
         }
 
         public override void Write(Utf8JsonWriter writer, UInt160? value, JsonSerializerOptions options)
         {
             // TODO: Remove `ProtocolSettings.Default` and Create settings class.
-            writer.WriteStringValue(value?.ToAddress(ProtocolSettings.Default.AddressVersion));
+            if (value is null)
+                writer.WriteNullValue();
+            else
+                writer.WriteStringValue(value.ToAddress(ProtocolSettings.Default.AddressVersion));
         }
     }
 }
