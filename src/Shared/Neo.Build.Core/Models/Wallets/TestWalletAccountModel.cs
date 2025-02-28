@@ -11,7 +11,6 @@
 
 using Neo.Build.Core.Json.Converters;
 using Neo.Wallets;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Neo.Build.Core.Models.Wallets
@@ -32,6 +31,6 @@ namespace Neo.Build.Core.Models.Wallets
 
         public ContractModel? Contract { get; set; }
 
-        public JsonNode? Extra { get; set; }
+        public object? Extra { get; set; }
     }
 }

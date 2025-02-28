@@ -21,7 +21,7 @@ namespace Neo.Build.Core.Tests.Wallets
         [TestMethod]
         public void CreateAccountWithPrivateKey()
         {
-            var testWalletModel = TestObjectHelper.CreateTestWalletModel()!;
+            var testWalletModel = TestObjectHelper.CreateTestWalletModelWithOutExtras()!;
             var devWallet = new DevWallet(testWalletModel);
 
             var expectedPrivateKey = RandomNumberGenerator.GetBytes(32);

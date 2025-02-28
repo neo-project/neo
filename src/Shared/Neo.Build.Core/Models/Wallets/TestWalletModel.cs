@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Nodes;
 
 namespace Neo.Build.Core.Models.Wallets
 {
@@ -25,6 +24,6 @@ namespace Neo.Build.Core.Models.Wallets
 
         public ICollection<TestWalletAccountModel>? Accounts { get; set; }
 
-        public JsonNode? Extra { get; set; }
+        public object? Extra { get; set; }
     }
 }
