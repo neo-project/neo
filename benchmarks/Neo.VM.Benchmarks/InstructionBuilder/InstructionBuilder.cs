@@ -11,6 +11,7 @@
 
 using System.Buffers.Binary;
 using System.Numerics;
+using Neo.Extensions;
 
 namespace Neo.VM.Benchmark
 {
@@ -96,7 +97,7 @@ namespace Neo.VM.Benchmark
 
         internal Instruction Push(string s)
         {
-            return Push(Utility.StrictUTF8.GetBytes(s));
+            return Push(s.GetStrictUTF8Bytes());
         }
 
         internal Instruction Push(byte[] data)

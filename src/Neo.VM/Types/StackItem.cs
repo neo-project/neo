@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Neo.Extensions;
 
 namespace Neo.VM.Types
 {
@@ -178,7 +179,7 @@ namespace Neo.VM.Types
         /// <returns>The <see cref="string"/> value represented by the VM object.</returns>
         public virtual string? GetString()
         {
-            return Utility.StrictUTF8.GetString(GetSpan());
+            return GetSpan().GetStrictUTF8String();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

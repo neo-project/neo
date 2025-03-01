@@ -13,6 +13,7 @@ using System;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Neo.Extensions;
 
 namespace Neo.VM.Types
 {
@@ -118,7 +119,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator ByteString(string value)
         {
-            return new ByteString(Utility.StrictUTF8.GetBytes(value));
+            return new ByteString(value.GetStrictUTF8Bytes());
         }
 
         public override string ToString()

@@ -90,7 +90,7 @@ namespace Neo.CLI
         {
             try
             {
-                if (!IsHex(hex)) return null;
+                if (!hex.IsHex()) return null;
                 return "0x" + hex.HexToBytes().Reverse().ToArray().ToHexString();
             }
             catch (FormatException)
@@ -111,7 +111,7 @@ namespace Neo.CLI
             {
                 var hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
                 hex = hasHexPrefix ? hex[2..] : hex;
-                if (!hasHexPrefix || !IsHex(hex)) return null;
+                if (!hasHexPrefix || !hex.IsHex()) return null;
                 return hex.HexToBytes().Reverse().ToArray().ToHexString();
             }
             catch
@@ -126,12 +126,12 @@ namespace Neo.CLI
         /// output: SGVsbG8gV29ybGQh
         /// </summary>
         [ParseFunction("String to Base64")]
-        private string? StringToBase64(string strParam)
+        private string? StringToBase64(string value)
         {
             try
             {
-                var bytearray = Utility.StrictUTF8.GetBytes(strParam);
-                return Convert.ToBase64String(bytearray.AsSpan());
+                var bytes = value.GetStrictUTF8Bytes();
+                return Convert.ToBase64String(bytes.AsSpan());
             }
             catch
             {
@@ -145,24 +145,20 @@ namespace Neo.CLI
         /// output: QOIB
         /// </summary>
         [ParseFunction("Big Integer to Base64")]
-        private string? NumberToBase64(string strParam)
+        private string? NumberToBase64(string value)
         {
             try
             {
-                if (!BigInteger.TryParse(strParam, out var number))
-                {
-                    return null;
-                }
-                var bytearray = number.ToByteArray();
-                return Convert.ToBase64String(bytearray.AsSpan());
+                if (!BigInteger.TryParse(value, out var number)) return null;
+
+                var bytes = number.ToByteArray();
+                return Convert.ToBase64String(bytes.AsSpan());
             }
             catch
             {
                 return null;
             }
         }
-
-        private static bool IsHex(string str) => str.Length % 2 == 0 && str.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
 
         /// <summary>
         /// Fix for Base64 strings containing unicode
@@ -179,7 +175,7 @@ namespace Neo.CLI
                 if (str[i] == '\\' && i + 5 < str.Length && str[i + 1] == 'u')
                 {
                     var hex = str.Substring(i + 2, 4);
-                    if (IsHex(hex))
+                    if (hex.IsHex())
                     {
                         var bts = new byte[2];
                         bts[0] = (byte)int.Parse(hex.Substring(2, 2), NumberStyles.HexNumber);
@@ -333,7 +329,7 @@ namespace Neo.CLI
             try
             {
                 var result = Convert.FromBase64String(bytearray);
-                var utf8String = Utility.StrictUTF8.GetString(result);
+                var utf8String = result.GetStrictUTF8String();
                 return IsPrintable(utf8String) ? utf8String : null;
             }
             catch

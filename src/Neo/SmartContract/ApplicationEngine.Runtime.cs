@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -335,7 +336,7 @@ namespace Neo.SmartContract
             if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
             try
             {
-                string message = Utility.StrictUTF8.GetString(state);
+                string message = state.GetStrictUTF8String();
                 Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
             }
             catch
@@ -358,7 +359,8 @@ namespace Neo.SmartContract
                 return;
             }
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
-            string name = Utility.StrictUTF8.GetString(eventName);
+
+            string name = eventName.GetStrictUTF8String();
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
             if (contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
@@ -387,7 +389,7 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
+            SendNotification(CurrentScriptHash, eventName.GetStrictUTF8String(), state);
         }
 
         /// <summary>
@@ -477,7 +479,7 @@ namespace Neo.SmartContract
                         {
                             try
                             {
-                                _ = Utility.StrictUTF8.GetString(item.GetSpan()); // Prevent any non-UTF8 string
+                                _ = item.GetSpan().GetStrictUTF8String(); // Prevent any non-UTF8 string
                                 return true;
                             }
                             catch { }

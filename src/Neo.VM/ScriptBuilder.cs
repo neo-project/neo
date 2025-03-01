@@ -12,6 +12,7 @@
 using System;
 using System.IO;
 using System.Numerics;
+using Neo.Extensions;
 
 namespace Neo.VM
 {
@@ -161,7 +162,7 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(string data)
         {
-            return EmitPush(Utility.StrictUTF8.GetBytes(data));
+            return EmitPush(data.GetStrictUTF8Bytes());
         }
 
         /// <summary>
