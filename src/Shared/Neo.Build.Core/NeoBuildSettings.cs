@@ -12,6 +12,8 @@
 using Neo.Build.Core.Interfaces;
 using Neo.Build.Core.Json;
 using Neo.Build.Core.Models;
+using Neo.Build.Core.Models.SmartContract;
+using Neo.Build.Core.SmartContract;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -26,9 +28,11 @@ namespace Neo.Build.Core
             _options = options ?? NeoBuildDefaults.JsonDefaultSerializerOptions;
 
             ProtocolSettings = GetObject<ProtocolSettingsModel, ProtocolSettings>(JsonPropertyNames.ProtocolSettings, NeoBuildDefaults.ProtocolSettings);
+            ApplicationEngineSettings = GetObject<ApplicationEngineSettingsModel, ApplicationEngineSettings>(JsonPropertyNames.ProtocolSettings, ApplicationEngineDefaults.Settings);
         }
 
         public ProtocolSettings ProtocolSettings { get; }
+        public ApplicationEngineSettings ApplicationEngineSettings { get; }
 
         private readonly JsonSerializerOptions _options;
         private readonly JsonNode _jsonExtras;
@@ -36,7 +40,7 @@ namespace Neo.Build.Core
         [return: NotNullIfNotNull(nameof(defaultValue))]
         private TResult? GetObject<TModel, TResult>(string? propertyName, TResult? defaultValue)
             where TResult : notnull
-            where TModel : notnull, JsonModel, new()
+            where TModel : notnull, JsonModel
         {
             var jsonNode = string.IsNullOrEmpty(propertyName) ? _jsonExtras : _jsonExtras[propertyName];
             if (jsonNode is null)
