@@ -14,6 +14,6 @@ namespace Neo.Build.Core
     public partial class NeoBuildErrorCodes
     {
         public const string StringPrefix = "NB";
-        public const int BuildModuleBaseErrorCode = 1;
+        public const int BuildModuleBaseErrorCode = 1000;
     }
 }
