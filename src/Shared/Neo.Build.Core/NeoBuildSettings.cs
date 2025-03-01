@@ -40,13 +40,13 @@ namespace Neo.Build.Core
         [return: NotNullIfNotNull(nameof(defaultValue))]
         private TResult? GetObject<TModel, TResult>(string? propertyName, TResult? defaultValue)
             where TResult : notnull
-            where TModel : notnull, JsonModel
+            where TModel : notnull, JsonModel, new()
         {
-            var protocolSettingNode = string.IsNullOrEmpty(propertyName) ? _jsonExtras : _jsonExtras[propertyName];
-            if (protocolSettingNode is null)
+            var jsonNode = string.IsNullOrEmpty(propertyName) ? _jsonExtras : _jsonExtras[propertyName];
+            if (jsonNode is null)
                 return defaultValue;
 
-            var model = JsonModel.FromJson<TModel>(protocolSettingNode.ToJsonString(), _options);
+            var model = JsonModel.FromJson<TModel>(jsonNode.ToJsonString(), _options);
             if (model is not IConvertToObject<TResult> result)
                 return defaultValue;
 
