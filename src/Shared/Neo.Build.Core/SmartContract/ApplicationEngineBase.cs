@@ -29,12 +29,13 @@ namespace Neo.Build.Core.SmartContract
             ProtocolSettings protocolSettings,
             DataCache snapshotCache,
             long maxGas,
+            StorageSettings? storageSettings = null,
+            ILoggerFactory? loggerFactory = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
-            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null,
-            ILoggerFactory? loggerFactory = null)
+            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : base(
                   trigger,
                   container,
@@ -50,12 +51,14 @@ namespace Neo.Build.Core.SmartContract
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _traceLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
+            _storageSettings = storageSettings ?? new();
         }
 
         protected ApplicationEngineBase(
             ApplicationEngineSettings engineSettings,
             ProtocolSettings protocolSettings,
             DataCache snapshotCache,
+            ILoggerFactory? loggerFactory = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
@@ -65,6 +68,8 @@ namespace Neo.Build.Core.SmartContract
                 protocolSettings,
                 snapshotCache,
                 engineSettings.MaxGas,
+                engineSettings.Storage,
+                loggerFactory,
                 trigger,
                 container,
                 persistingBlock,
@@ -75,6 +80,7 @@ namespace Neo.Build.Core.SmartContract
         protected ApplicationEngineBase(
             NeoBuildSettings settings,
             DataCache snapshotCache,
+            ILoggerFactory? loggerFactory = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
@@ -84,6 +90,7 @@ namespace Neo.Build.Core.SmartContract
                 settings.ApplicationEngineSettings,
                 settings.ProtocolSettings,
                 snapshotCache,
+                loggerFactory,
                 trigger,
                 container,
                 persistingBlock,
@@ -100,6 +107,8 @@ namespace Neo.Build.Core.SmartContract
         private readonly ILogger _traceLogger;
 
         private readonly UTF8Encoding _encoding = new(false, true);
+
+        private readonly StorageSettings _storageSettings;
 
         public override void Dispose()
         {

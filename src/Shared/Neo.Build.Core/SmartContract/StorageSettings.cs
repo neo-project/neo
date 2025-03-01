@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ApplicationEngineSettings.cs file belongs to the neo project and is free
+// StorageSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,10 +11,9 @@
 
 namespace Neo.Build.Core.SmartContract
 {
-    public class ApplicationEngineSettings
+    public class StorageSettings
     {
-        public long MaxGas { get; set; } = ApplicationEngineDefaults.MaxGas;
-
-        public StorageSettings Storage { get; set; } = new();
+        public TextFormatterType KeyFormat { get; set; }
+        public TextFormatterType ValueFormat { get; set; }
     }
 }

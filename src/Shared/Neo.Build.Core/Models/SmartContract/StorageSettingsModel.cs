@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ApplicationEngineSettingsModel.cs file belongs to the neo project and is free
+// StorageSettingsModel.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,17 +14,16 @@ using Neo.Build.Core.SmartContract;
 
 namespace Neo.Build.Core.Models.SmartContract
 {
-    public class ApplicationEngineSettingsModel : JsonModel, IConvertToObject<ApplicationEngineSettings>
+    public class StorageSettingsModel : JsonModel, IConvertToObject<StorageSettings>
     {
-        public long MaxGas { get; set; }
+        public TextFormatterType KeyFormat { get; set; }
+        public TextFormatterType ValueFormat { get; set; }
 
-        public StorageSettingsModel? Storage { get; set; }
-
-        public ApplicationEngineSettings ToObject() =>
+        public StorageSettings ToObject() =>
             new()
             {
-                MaxGas = MaxGas,
-                Storage = Storage?.ToObject() ?? new(),
+                KeyFormat = KeyFormat,
+                ValueFormat = ValueFormat,
             };
     }
 }
