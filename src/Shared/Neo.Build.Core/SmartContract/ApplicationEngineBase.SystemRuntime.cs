@@ -216,7 +216,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected internal void SystemRuntimeLog(byte[] state)
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.Log,
                 "{SysCall} message={State}",
                 nameof(System_Runtime_Log), _encoding.GetString(state));
 
@@ -225,7 +225,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected internal void SystemRuntimeNotify(byte[] eventName, Array state)
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.Notify,
                 "{SysCall} event={Event}, state={State}",
                 nameof(System_Runtime_Notify), eventName, state.ToJson());
 
@@ -264,7 +264,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual void SystemRuntimeBurnGas(long datoshi)
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.Burn,
                 "{SysCall} gas={Gas}",
                 nameof(System_Runtime_BurnGas), datoshi);
 

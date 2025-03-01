@@ -92,7 +92,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual void SystemContractNativeOnPersist()
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.Persist,
                 "{SysCall}",
                 nameof(System_Contract_NativeOnPersist));
 
@@ -101,7 +101,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected internal void SystemContractNativePostPersist()
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.PostPersist,
                 "{SysCall}",
                 nameof(System_Contract_NativePostPersist));
 
