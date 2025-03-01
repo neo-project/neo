@@ -11,12 +11,15 @@
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Neo.Build.Core.Logging;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Neo.Build.Core.SmartContract
 {
@@ -96,6 +99,8 @@ namespace Neo.Build.Core.SmartContract
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _traceLogger;
 
+        private readonly UTF8Encoding _encoding = new(false, true);
+
         public override void Dispose()
         {
             base.Dispose();
@@ -103,17 +108,40 @@ namespace Neo.Build.Core.SmartContract
 
         public override VMState Execute()
         {
-            return base.Execute();
+            _traceLogger.LogInformation(VMEventLog.Execute,
+                "Executing container={TxHash}, script={Script}",
+                ScriptContainer.Hash, CurrentTransaction?.Script);
+
+            var result = base.Execute();
+
+            _traceLogger.LogInformation(VMEventLog.Execute,
+                "Executed state={VMState}, gas={Consumed}, leftover={GasLeft}, result={Result}",
+                result, FeeConsumed, GasLeft, ResultStack.ToJson());
+
+            return result;
         }
 
         public override void LoadContext(ExecutionContext context)
         {
             base.LoadContext(context);
+
+            var contextState = context.GetState<ExecutionContextState>();
+            var contractState = contextState.Contract;
+
+            if (contextState.ScriptHash is not null &&
+                contractState is not null)
+                _traceLogger.LogInformation(VMEventLog.Load,
+                    "Loaded name={Name}, hash={ScriptHash}",
+                    contractState.Manifest.Name, contextState.ScriptHash);
         }
 
         protected override void OnFault(Exception ex)
         {
             base.OnFault(ex);
+
+            _traceLogger.LogError(VMEventLog.Fault, ex,
+                "{Message}",
+                ex.InnerException?.Message ?? ex.Message);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
@@ -126,7 +154,7 @@ namespace Neo.Build.Core.SmartContract
             base.PreExecuteInstruction(instruction);
         }
 
-        protected void OnSystemCall(ExecutionEngine engine, Instruction instruction)
+        protected virtual void OnSystemCall(ExecutionEngine engine, Instruction instruction)
         {
             var systemCallMethodPointer = instruction.TokenU32;
 
