@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
-    <PackageId>Neo.Plugins.TokensTracker</PackageId>
-    <OutputPath>../../../bin/$(PackageId)</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
