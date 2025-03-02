@@ -32,11 +32,11 @@ namespace Neo.Cryptography.MPTTrie
                 switch (type)
                 {
                     case NodeType.BranchNode:
-                        return size + BranchSize + UnsafeData.GetVarSize(Reference);
+                        return size + BranchSize + Reference.GetVarSize();
                     case NodeType.ExtensionNode:
-                        return size + ExtensionSize + UnsafeData.GetVarSize(Reference);
+                        return size + ExtensionSize + Reference.GetVarSize();
                     case NodeType.LeafNode:
-                        return size + LeafSize + UnsafeData.GetVarSize(Reference);
+                        return size + LeafSize + Reference.GetVarSize();
                     case NodeType.HashNode:
                         return size + HashSize;
                     case NodeType.Empty:

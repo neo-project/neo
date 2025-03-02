@@ -68,7 +68,7 @@ namespace Neo.Extensions
         /// <returns>The size of the array.</returns>
         public static int GetVarSize(this ReadOnlyMemory<byte> value)
         {
-            return UnsafeData.GetVarSize(value.Length) + value.Length;
+            return value.Length.GetVarSize() + value.Length;
         }
     }
 }

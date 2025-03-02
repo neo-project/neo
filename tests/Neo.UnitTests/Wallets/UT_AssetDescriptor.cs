@@ -27,7 +27,7 @@ namespace Neo.UnitTests.Wallets
             {
                 var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
             };
-            Assert.ThrowsException<ArgumentException>(action);
+            Assert.ThrowsExactly<ArgumentException>(action);
         }
 
         [TestMethod]

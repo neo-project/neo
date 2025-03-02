@@ -23,7 +23,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestNotNull_Or()
         {
             ContractState? contracts = null;
-            Assert.ThrowsException<RpcException>(() => contracts.NotNull_Or(RpcError.UnknownContract).ToJson());
+            Assert.ThrowsExactly<RpcException>(() => _ = contracts.NotNull_Or(RpcError.UnknownContract).ToJson());
         }
     }
 }

@@ -129,17 +129,17 @@ namespace Neo.Extensions.Tests
 
             a = new BigInteger(6);
             n = new BigInteger(12); // 6 and 12 are not coprime
-            Assert.ThrowsException<ArithmeticException>(() => a.ModInverse(n));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = a.ModInverse(n));
         }
 
         [TestMethod]
         public void TestModInverse_EdgeCases()
         {
-            Assert.ThrowsException<ArithmeticException>(() => BigInteger.Zero.ModInverse(11));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = BigInteger.Zero.ModInverse(11));
 
             Assert.AreEqual(1, BigInteger.One.ModInverse(2));
 
-            Assert.ThrowsException<ArithmeticException>(() => new BigInteger(2).ModInverse(4));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = new BigInteger(2).ModInverse(4));
 
             Assert.AreEqual(long.MaxValue - 1, new BigInteger(long.MaxValue - 1).ModInverse(long.MaxValue));
         }

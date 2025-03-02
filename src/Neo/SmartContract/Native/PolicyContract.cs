@@ -170,7 +170,7 @@ namespace Neo.SmartContract.Native
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
 
-            var key = CreateStorageKey(Prefix_AttributeFee).Add(attributeType);
+            var key = CreateStorageKey(Prefix_AttributeFee, attributeType);
             return snapshot.TryGet(key, out var item) ? (uint)(BigInteger)item : DefaultAttributeFee;
         }
 
@@ -183,7 +183,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsBlocked(IReadOnlyStore snapshot, UInt160 account)
         {
-            return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
+            return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -193,7 +193,7 @@ namespace Neo.SmartContract.Native
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -231,7 +231,7 @@ namespace Neo.SmartContract.Native
         {
             if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
 
-            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
+            var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (snapshot.Contains(key)) return false;
 
             snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
@@ -243,7 +243,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
+            var key = CreateStorageKey(Prefix_BlockedAccount, account);
             if (!engine.SnapshotCache.Contains(key)) return false;
 
             engine.SnapshotCache.Delete(key);

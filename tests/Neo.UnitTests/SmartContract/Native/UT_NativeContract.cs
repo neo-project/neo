@@ -206,7 +206,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 {
                     // should be failed
                     var action = () => CheckSpecialParameter(method);
-                    Assert.ThrowsException<AssertFailedException>(() => action());
+                    Assert.ThrowsExactly<AssertFailedException>(() => action());
                 }
             }
         }

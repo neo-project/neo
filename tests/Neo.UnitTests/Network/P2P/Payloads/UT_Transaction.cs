@@ -55,7 +55,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FromStackItem()
         {
-            Assert.ThrowsException<NotSupportedException>(() => ((IInteroperable)uut).FromStackItem(StackItem.Null));
+            Assert.ThrowsExactly<NotSupportedException>(() => ((IInteroperable)uut).FromStackItem(StackItem.Null));
         }
 
         [TestMethod]
@@ -581,7 +581,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Transaction tx = null;
             // expects FAULT on execution of 'transfer' Application script
             // due to lack of a valid witness validation
-            Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
             Assert.IsNull(tx);
         }
 
@@ -712,7 +712,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // expects FAULT on execution of 'transfer' Application script
             // due to lack of a valid witness validation
             Transaction tx = null;
-            Assert.ThrowsException<InvalidOperationException>(() => tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers, attributes));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = tx = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers, attributes));
             Assert.IsNull(tx);
         }
 
@@ -762,7 +762,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // expects ArgumentException on execution of 'CalculateNetworkFee' due to
             // null witness_script (no account in the wallet, no corresponding witness
             // and no verification contract for the signer)
-            Assert.ThrowsException<ArgumentException>(() => walletWithoutAcc.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = walletWithoutAcc.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
             Assert.IsNull(tx);
         }
 
@@ -887,8 +887,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
-            Assert.ThrowsException<FormatException>(() =>
-                tx2 = sTx.AsSerializable<Transaction>()
+            Assert.ThrowsExactly<FormatException>(() => _ = tx2 = sTx.AsSerializable<Transaction>()
             );
             Assert.IsNull(tx2);
         }
@@ -934,7 +933,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx1 = txCosigners1.ToArray();
 
             // back to transaction (should fail, due to non-distinct cosigners)
-            Assert.ThrowsException<FormatException>(() => sTx1.AsSerializable<Transaction>());
+            Assert.ThrowsExactly<FormatException>(() => _ = sTx1.AsSerializable<Transaction>());
 
             // ----------------------------
             // this should fail (max + 1)
@@ -969,8 +968,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
-            Assert.ThrowsException<FormatException>(() =>
-                tx2 = sTx2.AsSerializable<Transaction>()
+            Assert.ThrowsExactly<FormatException>(() => _ = tx2 = sTx2.AsSerializable<Transaction>()
             );
             Assert.IsNull(tx2);
         }
@@ -1017,7 +1015,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     Scopes =  WitnessScope.None
                 } };
 
-            Assert.ThrowsException<InvalidOperationException>(() => wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
 
             // change to global scope
             signers[0].Scopes = WitnessScope.Global;

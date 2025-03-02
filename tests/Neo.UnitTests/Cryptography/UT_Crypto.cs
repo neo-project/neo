@@ -66,9 +66,9 @@ namespace Neo.UnitTests.Cryptography
 
             wrongKey[0] = 0x03;
             for (int i = 1; i < 33; i++) wrongKey[i] = byte.MaxValue;
-            Assert.ThrowsException<ArgumentException>(() => Crypto.VerifySignature(message, signature, wrongKey, ECCurve.Secp256r1));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.VerifySignature(message, signature, wrongKey, ECCurve.Secp256r1));
 
-            Assert.ThrowsException<FormatException>(() => Crypto.VerifySignature(message, signature, wrongKey2, ECCurve.Secp256r1));
+            Assert.ThrowsExactly<FormatException>(() => _ = Crypto.VerifySignature(message, signature, wrongKey2, ECCurve.Secp256r1));
         }
 
         [TestMethod]
@@ -125,12 +125,12 @@ namespace Neo.UnitTests.Cryptography
 
             // Test invalid cases
             var invalidSignature = new byte[65];
-            Assert.ThrowsException<ArgumentException>(() => Crypto.ECRecover(invalidSignature, messageHash1));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidSignature, messageHash1));
 
             // Test with invalid recovery value
             var invalidRecoverySignature = signature1.ToArray();
             invalidRecoverySignature[64] = 29; // Invalid recovery value
-            Assert.ThrowsException<ArgumentException>(() => Crypto.ECRecover(invalidRecoverySignature, messageHash1));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidRecoverySignature, messageHash1));
 
             // Test with wrong message hash
             var recoveredWrongHash = Crypto.ECRecover(signature1, messageHash2);
