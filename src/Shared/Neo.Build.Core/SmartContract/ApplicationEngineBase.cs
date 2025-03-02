@@ -117,9 +117,12 @@ namespace Neo.Build.Core.SmartContract
 
         public override VMState Execute()
         {
+            ReadOnlyMemory<byte> memoryScript = CurrentContext?.Script ?? ReadOnlyMemory<byte>.Empty;
+            var scriptString = System.Convert.ToBase64String(memoryScript.Span);
+
             _traceLogger.LogInformation(VMEventLog.Execute,
                 "Executing container={TxHash}, script={Script}",
-                ScriptContainer.Hash, CurrentTransaction?.Script);
+                ScriptContainer?.Hash, scriptString);
 
             var result = base.Execute();
 
@@ -142,6 +145,15 @@ namespace Neo.Build.Core.SmartContract
                 _traceLogger.LogInformation(VMEventLog.Load,
                     "Loaded name={Name}, hash={ScriptHash}",
                     contractState.Manifest.Name, contextState.ScriptHash);
+            else
+            {
+                ReadOnlyMemory<byte> memBytes = context.Script;
+                var scriptString = System.Convert.ToBase64String(memBytes.Span);
+
+                _traceLogger.LogInformation(VMEventLog.Load,
+                    "Loaded script={Script}",
+                    scriptString);
+            }
         }
 
         protected override void OnFault(Exception ex)

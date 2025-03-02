@@ -41,7 +41,7 @@ namespace Neo.Build.Core.Models
         public ICollection<string>? SeedList { get; set; }
 
         public ProtocolSettings ToObject() =>
-            ProtocolSettings.Custom with
+            ProtocolSettings.Default with
             {
                 Network = Network,
                 AddressVersion = AddressVersion,
@@ -52,6 +52,7 @@ namespace Neo.Build.Core.Models
                 InitialGasDistribution = InitialGasDistribution,
                 Hardforks = Hardforks!.ToImmutableDictionary(),
                 StandbyCommittee = [.. StandbyCommittee!],
+                ValidatorsCount = ValidatorsCount,
                 SeedList = [.. SeedList!],
             };
     }

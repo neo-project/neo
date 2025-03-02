@@ -97,7 +97,7 @@ namespace Neo.Build.Core.Builders
             return this;
         }
 
-        public BlockBuilder Witness(Action<WitnessBuilder> config)
+        public BlockBuilder AddWitness(Action<WitnessBuilder> config)
         {
 
             var wb = WitnessBuilder.CreateEmpty();
@@ -107,7 +107,7 @@ namespace Neo.Build.Core.Builders
             return this;
         }
 
-        public BlockBuilder Transaction(Action<TransactionBuilder> config)
+        public BlockBuilder AddTransaction(Action<TransactionBuilder> config)
         {
 
             var tx = TransactionBuilder.CreateEmpty();

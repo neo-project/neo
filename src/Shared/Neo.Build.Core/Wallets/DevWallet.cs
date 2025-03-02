@@ -32,9 +32,12 @@ namespace Neo.Build.Core.Wallets
         /// Creates a new developer wallet.
         /// </summary>
         /// <param name="walletModel">Wallet <see cref="JsonModel"/>.</param>
+        /// <param name="protocolSettings"></param>
         /// <exception cref="NeoBuildInvalidVersionFormatException"></exception>
         public DevWallet(
-            TestWalletModel walletModel) : base(string.Empty, ProtocolSettings.Default)
+            TestWalletModel walletModel,
+            ProtocolSettings protocolSettings)
+            : base(string.Empty, protocolSettings)
         {
             if (walletModel.Version != Version)
                 throw new NeoBuildInvalidVersionFormatException();
@@ -52,6 +55,8 @@ namespace Neo.Build.Core.Wallets
                 }
             }
         }
+
+        public DevWallet(TestWalletModel walletModel) : this(walletModel, ProtocolSettings.Default) { }
 
         private readonly ConcurrentDictionary<UInt160, DevWalletAccount> _walletAccounts = new();
 

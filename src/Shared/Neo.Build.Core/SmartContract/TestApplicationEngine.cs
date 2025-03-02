@@ -27,7 +27,5 @@ namespace Neo.Build.Core.SmartContract
         {
 
         }
-
-
     }
 }
