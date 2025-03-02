@@ -26,6 +26,7 @@ namespace Neo.Persistence.Providers
     public class MemoryStore : IStore
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData = new(ByteArrayEqualityComparer.Default);
+        public SerializedCache SerializedCache { get; } = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Delete(byte[] key)

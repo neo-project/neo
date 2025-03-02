@@ -69,6 +69,23 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
 
+        private class LastFeePerByte(long feePerByte) : IStorageCacheEntry
+        {
+            public readonly long FeePerByte = feePerByte;
+            public StorageItem GetStorageItem() => new(FeePerByte);
+        }
+
+        private class LastStorageFee(uint storagePrice) : IStorageCacheEntry
+        {
+            public readonly uint StoragePrice = storagePrice;
+            public StorageItem GetStorageItem() => new(StoragePrice);
+        }
+
+        private class LastExecFee(uint execFeeFactor) : IStorageCacheEntry
+        {
+            public readonly uint ExecFeeFactor = execFeeFactor;
+            public StorageItem GetStorageItem() => new(ExecFeeFactor);
+        }
 
         internal PolicyContract() : base()
         {
@@ -81,9 +98,9 @@ namespace Neo.SmartContract.Native
         {
             if (hardfork == ActiveIn)
             {
-                engine.SnapshotCache.Add(_feePerByte, new StorageItem(DefaultFeePerByte));
-                engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
-                engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
+                engine.SnapshotCache.Add(_feePerByte, new LastFeePerByte(DefaultFeePerByte));
+                engine.SnapshotCache.Add(_execFeeFactor, new LastExecFee(DefaultExecFeeFactor));
+                engine.SnapshotCache.Add(_storagePrice, new LastStorageFee(DefaultStoragePrice));
             }
             return ContractTask.CompletedTask;
         }
@@ -94,9 +111,16 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The network fee per transaction byte.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public long GetFeePerByte(IReadOnlyStore snapshot)
+        public long GetFeePerByte(ICacheableReadOnlyStore snapshot)
         {
-            return (long)(BigInteger)snapshot[_feePerByte];
+            var cached = snapshot.GetFromCache<LastFeePerByte>();
+            if (cached != null)
+            {
+                return cached.FeePerByte;
+            }
+            var fee = (long)(BigInteger)snapshot[_feePerByte];
+            snapshot.AddToCache(new LastFeePerByte(fee));
+            return fee;
         }
 
         /// <summary>
@@ -105,9 +129,16 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The execution fee factor.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetExecFeeFactor(IReadOnlyStore snapshot)
+        public uint GetExecFeeFactor(ICacheableReadOnlyStore snapshot)
         {
-            return (uint)(BigInteger)snapshot[_execFeeFactor];
+            var cached = snapshot.GetFromCache<LastExecFee>();
+            if (cached != null)
+            {
+                return cached.ExecFeeFactor;
+            }
+            var fee = (uint)(BigInteger)snapshot[_execFeeFactor];
+            snapshot.AddToCache(new LastExecFee(fee));
+            return fee;
         }
 
         /// <summary>
@@ -116,9 +147,16 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The storage price.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetStoragePrice(IReadOnlyStore snapshot)
+        public uint GetStoragePrice(ICacheableReadOnlyStore snapshot)
         {
-            return (uint)(BigInteger)snapshot[_storagePrice];
+            var cached = snapshot.GetFromCache<LastStorageFee>();
+            if (cached != null)
+            {
+                return cached.StoragePrice;
+            }
+            var fee = (uint)(BigInteger)snapshot[_storagePrice];
+            snapshot.AddToCache(new LastStorageFee(fee));
+            return fee;
         }
 
         /// <summary>
@@ -163,7 +201,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
+            engine.SnapshotCache.Upsert(_feePerByte, new LastFeePerByte(value));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -171,7 +209,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
+            engine.SnapshotCache.Upsert(_execFeeFactor, new LastExecFee(value));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -179,7 +217,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
+            engine.SnapshotCache.Upsert(_storagePrice, new LastStorageFee(value));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
