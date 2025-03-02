@@ -45,52 +45,67 @@ namespace Neo.Build.Core.Builders
 
         public static BlockBuilder CreateNext(Block prevBlock) =>
             new BlockBuilder()
-                .PrevHash(prevBlock.Hash)
-                .Index(prevBlock.Index + 1);
+                .AddPrevHash(prevBlock.Hash)
+                .AddIndex(prevBlock.Index + 1);
 
-        public BlockBuilder Index(uint index)
+        public static BlockBuilder CreateNext(Block prevBlock, ProtocolSettings protocolSettings) =>
+            new BlockBuilder()
+                .AddPrevHash(prevBlock.Hash)
+                .AddIndex(prevBlock.Index + 1)
+                .AddTimestamp(config => config += protocolSettings.MillisecondsPerBlock);
+
+        public BlockBuilder AddIndex(uint index)
         {
             _block.Header.Index = index;
 
             return this;
         }
 
-        public BlockBuilder PrimaryIndex(byte index)
+        public BlockBuilder AddPrimaryIndex(byte index)
         {
             _block.Header.PrimaryIndex = index;
 
             return this;
         }
 
-        public BlockBuilder NextConsensus(UInt160 hash)
+        public BlockBuilder AddNextConsensus(UInt160 hash)
         {
             _block.Header.NextConsensus = hash;
 
             return this;
         }
 
-        public BlockBuilder Nonce(ulong nonce)
+        public BlockBuilder AddNonce(ulong nonce)
         {
             _block.Header.Nonce = nonce;
 
             return this;
         }
 
-        public BlockBuilder PrevHash(UInt256 hash)
+        public BlockBuilder AddPrevHash(UInt256 hash)
         {
             _block.Header.PrevHash = hash;
 
             return this;
         }
 
-        public BlockBuilder Timestamp(ulong timestamp)
+        public BlockBuilder AddTimestamp(ulong timestamp)
         {
             _block.Header.Timestamp = timestamp;
 
             return this;
         }
 
-        public BlockBuilder Version(uint version)
+        public BlockBuilder AddTimestamp(Action<ulong> config)
+        {
+            var timestamp = _block.Header.Timestamp;
+            config(timestamp);
+            _block.Header.Timestamp = timestamp;
+
+            return this;
+        }
+
+        public BlockBuilder AddVersion(uint version)
         {
             _block.Header.Version = version;
 

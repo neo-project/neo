@@ -35,7 +35,7 @@ namespace Neo.Build.Core.Tests.SmartContract
         }
 
         [TestMethod]
-        public void Test()
+        public void TestApplciationEngine()
         {
             var engine = new TestApplicationEngine(TestNode.BuildSettings, TestNode.NeoSystem.GetSnapshotCache(), _loggerFactory);
 
