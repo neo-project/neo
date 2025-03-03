@@ -339,15 +339,27 @@ namespace Neo.Ledger
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewTransaction(Transaction transaction)
+        private VerifyResult OnNewTransaction(Transaction tx)
         {
-            switch (system.ContainsTransaction(transaction.Hash))
+            UInt256 hash;
+            try
+            {
+                // Avoid serialization problems
+                hash = tx.Hash;
+            }
+            catch
+            {
+                return VerifyResult.Invalid;
+            }
+
+            switch (system.ContainsTransaction(hash))
             {
                 case ContainsTransactionType.ExistsInPool: return VerifyResult.AlreadyInPool;
                 case ContainsTransactionType.ExistsInLedger: return VerifyResult.AlreadyExists;
             }
-            if (system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
-            return system.MemPool.TryAdd(transaction, system.StoreView);
+
+            if (system.ContainsConflictHash(hash, tx.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
+            return system.MemPool.TryAdd(tx, system.StoreView);
         }
 
         private void OnPreverifyCompleted(TransactionRouter.PreverifyCompleted task)
@@ -399,7 +411,19 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
-            switch (system.ContainsTransaction(tx.Hash))
+            UInt256 hash;
+            try
+            {
+                // Avoid serialization problems
+                hash = tx.Hash;
+            }
+            catch
+            {
+                SendRelayResult(tx, VerifyResult.Invalid);
+                return;
+            }
+
+            switch (system.ContainsTransaction(hash))
             {
                 case ContainsTransactionType.ExistsInPool:
                     SendRelayResult(tx, VerifyResult.AlreadyInPool);
