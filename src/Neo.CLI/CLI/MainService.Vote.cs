@@ -247,10 +247,16 @@ namespace Neo.CLI
                 return;
             }
 
-            var publickey = ECPoint.Parse(hexPubKey, ECCurve.Secp256r1);
-            ConsoleHelper.Info("Voted: ", Contract.CreateSignatureRedeemScript(publickey).ToScriptHash().ToAddress(NeoSystem.Settings.AddressVersion));
-            ConsoleHelper.Info("Amount: ", new BigDecimal(((Integer)resJArray[0]).GetInteger(), NativeContract.NEO.Decimals).ToString());
-            ConsoleHelper.Info("Block: ", ((Integer)resJArray[1]).GetInteger().ToString());
+            if (ECPoint.TryParse(hexPubKey, ECCurve.Secp256r1, out var publickey))
+            {
+                ConsoleHelper.Info("Voted: ", Contract.CreateSignatureRedeemScript(publickey).ToScriptHash().ToAddress(NeoSystem.Settings.AddressVersion));
+                ConsoleHelper.Info("Amount: ", new BigDecimal(((Integer)resJArray[0]).GetInteger(), NativeContract.NEO.Decimals).ToString());
+                ConsoleHelper.Info("Block: ", ((Integer)resJArray[1]).GetInteger().ToString());
+            }
+            else
+            {
+                ConsoleHelper.Error("Error parsing the result");
+            }
         }
     }
 }
