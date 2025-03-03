@@ -338,7 +338,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             var p = ECCurve.Secp256k1.G;
 
             byte[] n = [1];
-            var action = () => p = p * n;
+            Action action = () => p = p * n;
             Assert.ThrowsExactly<ArgumentException>(action);
 
             p = ECCurve.Secp256k1.Infinity;
