@@ -211,15 +211,19 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
+            var state = CurrentContext.GetState<ExecutionContextState>();
+            if (state.IsDynamicCall && IsHardforkEnabled(Hardfork.HF_Echidna))
+            {
+                throw new InvalidOperationException("Can't call a dynamic script from a dynamic one");
+            }
+            var context = LoadScript(new Script(script, true), configureState: p =>
             {
                 p.CallingContext = CurrentContext;
                 p.CallFlags = callFlags & state.CallFlags & CallFlags.ReadOnly;
                 p.IsDynamicCall = true;
             });
 
-            for (int i = args.Count - 1; i >= 0; i--)
+            for (var i = args.Count - 1; i >= 0; i--)
                 context.EvaluationStack.Push(args[i]);
         }
 

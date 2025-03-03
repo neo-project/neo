@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Numerics;
@@ -24,6 +25,16 @@ namespace Neo.UnitTests.SmartContract
 {
     public partial class UT_ApplicationEngine
     {
+        [TestMethod]
+        public void TestMultiDynamicScript()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var script = (Script)Convert.FromBase64String("wh8MKsIfDB/CHwwUISEhISEhISEhISEhISEhISEhIgBBswyAj0kIQbMMgI9JCEGzDICP");
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, null, ProtocolSettings.Default);
+            engine.LoadScript(script);
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+        }
+
         [TestMethod]
         public void TestGetNetworkAndAddressVersion()
         {
