@@ -488,18 +488,18 @@ namespace Neo.Network.P2P.Payloads
 
         private static ReadOnlyMemory<byte>[] GetMultiSignatures(ReadOnlyMemory<byte> script)
         {
-            ReadOnlySpan<byte> span = script.Span;
-            int i = 0;
+            var span = script.Span;
+            var i = 0;
             var signatures = new List<ReadOnlyMemory<byte>>();
             while (i < script.Length)
             {
-                if (span[i++] != (byte)OpCode.PUSHDATA1) return null;
-                if (i + 65 > script.Length) return null;
-                if (span[i++] != 64) return null;
+                if (span[i++] != (byte)OpCode.PUSHDATA1) return [];
+                if (i + 65 > script.Length) return [];
+                if (span[i++] != 64) return [];
                 signatures.Add(script[i..(i + 64)]);
                 i += 64;
             }
-            return signatures.ToArray();
+            return [.. signatures];
         }
     }
 }

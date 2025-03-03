@@ -62,7 +62,7 @@ namespace Neo.UnitTests.IO
 
             using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
             {
-                Assert.ThrowsException<FormatException>(() => reader.ReadFixedBytes(5));
+                Assert.ThrowsExactly<FormatException>(() => _ = reader.ReadFixedBytes(5));
                 Assert.AreEqual(4, reader.BaseStream.Position);
             }
         }
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.IO
 
             // Read Error
 
-            Assert.ThrowsException<FormatException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
             {
                 var reader = new MemoryReader(data);
                 reader.ReadNullableArray<UInt160>(2);
@@ -154,14 +154,14 @@ namespace Neo.UnitTests.IO
 
             // Error max length
 
-            Assert.ThrowsException<FormatException>(() => byteArray.Span.DecompressLz4(byte.MaxValue - 1));
-            Assert.ThrowsException<FormatException>(() => byteArray.Span.DecompressLz4(-1));
+            Assert.ThrowsExactly<FormatException>(() => _ = byteArray.Span.DecompressLz4(byte.MaxValue - 1));
+            Assert.ThrowsExactly<FormatException>(() => _ = byteArray.Span.DecompressLz4(-1));
 
             // Error length
 
             byte[] data_wrong = byteArray.ToArray();
             data_wrong[0]++;
-            Assert.ThrowsException<FormatException>(() => data_wrong.DecompressLz4(byte.MaxValue));
+            Assert.ThrowsExactly<FormatException>(() => _ = data_wrong.DecompressLz4(byte.MaxValue));
         }
 
         [TestMethod]
@@ -241,7 +241,7 @@ namespace Neo.UnitTests.IO
                     stream.Seek(0, SeekOrigin.Begin);
                     BinaryReader reader = new(stream);
                     Action action = () => reader.ReadVarInt(0xFFFFFFFF);
-                    Assert.ThrowsException<FormatException>(action);
+                    Assert.ThrowsExactly<FormatException>(action);
                 }
             }
         }
@@ -306,21 +306,21 @@ namespace Neo.UnitTests.IO
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteFixedString(null, 0);
-                    Assert.ThrowsException<ArgumentNullException>(action);
+                    Assert.ThrowsExactly<ArgumentNullException>(action);
                 }
                 else if (i == 1)
                 {
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteFixedString("AA", Encoding.UTF8.GetBytes("AA").Length - 1);
-                    Assert.ThrowsException<ArgumentException>(action);
+                    Assert.ThrowsExactly<ArgumentException>(action);
                 }
                 else if (i == 2)
                 {
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteFixedString("拉拉", Encoding.UTF8.GetBytes("拉拉").Length - 1);
-                    Assert.ThrowsException<ArgumentException>(action);
+                    Assert.ThrowsExactly<ArgumentException>(action);
                 }
                 else if (i == 3)
                 {
@@ -359,7 +359,7 @@ namespace Neo.UnitTests.IO
                     MemoryStream stream = new();
                     BinaryWriter writer = new(stream);
                     Action action = () => writer.WriteVarInt(-1);
-                    Assert.ThrowsException<ArgumentOutOfRangeException>(action);
+                    Assert.ThrowsExactly<ArgumentOutOfRangeException>(action);
                 }
                 else if (i == 1)
                 {

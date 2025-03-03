@@ -30,7 +30,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(0, s.Count);
 
             jstring = new JString("hello world");
-            Assert.ThrowsException<FormatException>(() => WildcardContainer<string>.FromJson(jstring, u => u.AsString()));
+            Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jstring, u => u.AsString()));
 
             JObject alice = new JObject();
             alice["name"] = "alice";
@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual("{\"name\":\"alice\",\"age\":30}", r[0]);
 
             JBoolean jbool = new JBoolean();
-            Assert.ThrowsException<FormatException>(() => WildcardContainer<string>.FromJson(jbool, u => u.AsString()));
+            Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jbool, u => u.AsString()));
         }
 
         [TestMethod]

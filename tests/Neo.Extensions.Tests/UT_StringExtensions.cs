@@ -26,7 +26,7 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual(Array.Empty<byte>().ToHexString(), emptyStr.HexToBytes().ToHexString());
             string str1 = "hab";
             Action action = () => str1.HexToBytes();
-            Assert.ThrowsException<FormatException>(action);
+            Assert.ThrowsExactly<FormatException>(action);
             string str2 = "0102";
             byte[] bytes = str2.HexToBytes();
             Assert.AreEqual(new byte[] { 0x01, 0x02 }.ToHexString(), bytes.ToHexString());
@@ -53,17 +53,17 @@ namespace Neo.Extensions.Tests
             {
                 if (i == 0)
                 {
-                    int result = UnsafeData.GetVarSize(1);
+                    int result = 1.GetVarSize();
                     Assert.AreEqual(1, result);
                 }
                 else if (i == 1)
                 {
-                    int result = UnsafeData.GetVarSize(0xFFFF);
+                    int result = 0xFFFF.GetVarSize();
                     Assert.AreEqual(3, result);
                 }
                 else
                 {
-                    int result = UnsafeData.GetVarSize(0xFFFFFF);
+                    int result = 0xFFFFFF.GetVarSize();
                     Assert.AreEqual(5, result);
                 }
             }

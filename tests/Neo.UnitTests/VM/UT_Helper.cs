@@ -236,7 +236,7 @@ namespace Neo.UnitTests.VMT
         public void TestToStackItem()
         {
             ContractParameter parameter = null;
-            Assert.ThrowsException<ArgumentNullException>(() => parameter.ToStackItem());
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = parameter.ToStackItem());
 
             ContractParameter byteParameter = new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() };
             Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetInteger());
@@ -261,7 +261,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual("test😂👍", strParameter.ToStackItem().GetString());
 
             ContractParameter interopParameter = new ContractParameter { Type = ContractParameterType.InteropInterface, Value = new object() };
-            Assert.ThrowsException<ArgumentException>(() => interopParameter.ToStackItem());
+            Assert.ThrowsExactly<ArgumentException>(() => _ = interopParameter.ToStackItem());
 
             ContractParameter interopParameter2 = new ContractParameter { Type = ContractParameterType.InteropInterface };
             Assert.AreEqual(StackItem.Null, interopParameter2.ToStackItem());
@@ -445,7 +445,7 @@ namespace Neo.UnitTests.VMT
 
             ScriptBuilder sb = new ScriptBuilder();
             Action action = () => sb.EmitPush(new object());
-            Assert.ThrowsException<ArgumentException>(() => action());
+            Assert.ThrowsExactly<ArgumentException>(() => action());
         }
 
 
@@ -627,7 +627,7 @@ namespace Neo.UnitTests.VMT
         private void TestToParameterNull()
         {
             StackItem item = null;
-            Assert.ThrowsException<ArgumentNullException>(() => item.ToParameter());
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = item.ToParameter());
         }
 
         private void TestToParameter2InteropInterface()
@@ -721,7 +721,7 @@ namespace Neo.UnitTests.VMT
             // check cyclic reference
             map[2] = item;
             var action = () => item.ToJson();
-            Assert.ThrowsException<InvalidOperationException>(() => action());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = action());
         }
     }
 }

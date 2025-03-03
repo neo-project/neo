@@ -165,7 +165,7 @@ namespace Neo.Plugins.RpcServer.Tests
             JArray respArray = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]);
             Assert.AreEqual(respArray.Count, 0);
             _rpcServer.TerminateSession([sessionId]);
-            Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
+            Assert.ThrowsExactly<RpcException>(() => _ = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
 
             // register candidate in snapshot
             resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "registerCandidate",
@@ -226,7 +226,7 @@ namespace Neo.Plugins.RpcServer.Tests
             string notExpiredSessionId = resp["session"].AsString();
             string notExpiredIteratorId = resp["stack"][0]["id"].AsString();
             _rpcServer.OnTimer(new object());
-            Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
+            Assert.ThrowsExactly<RpcException>(() => _ = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
             // If you want to run the following line without exception,
             // DO NOT BREAK IN THE DEBUGGER, because the session expires quickly
             respArray = (JArray)_rpcServer.TraverseIterator([notExpiredSessionId, notExpiredIteratorId, 1]);
@@ -237,7 +237,7 @@ namespace Neo.Plugins.RpcServer.Tests
             sessionId = resp["session"].AsString();
             iteratorId = resp["stack"][0]["id"].AsString();
             _rpcServer.Dispose_SmartContract();
-            Assert.ThrowsException<RpcException>(() => (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
+            Assert.ThrowsExactly<RpcException>(() => _ = (JArray)_rpcServer.TraverseIterator([sessionId, iteratorId, 100]), "Unknown session");
         }
 
         [TestMethod]

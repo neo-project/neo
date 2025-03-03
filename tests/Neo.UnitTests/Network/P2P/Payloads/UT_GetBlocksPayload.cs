@@ -40,8 +40,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(5, clone.Count);
             Assert.AreEqual("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01", clone.HashStart.ToString());
 
-            Assert.ThrowsException<FormatException>(() => GetBlocksPayload.Create(UInt256.Zero, -2).ToArray().AsSerializable<GetBlocksPayload>());
-            Assert.ThrowsException<FormatException>(() => GetBlocksPayload.Create(UInt256.Zero, 0).ToArray().AsSerializable<GetBlocksPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = GetBlocksPayload.Create(UInt256.Zero, -2).ToArray().AsSerializable<GetBlocksPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = GetBlocksPayload.Create(UInt256.Zero, 0).ToArray().AsSerializable<GetBlocksPayload>());
         }
     }
 }

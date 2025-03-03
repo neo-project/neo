@@ -45,7 +45,7 @@ namespace Neo.UnitTests.Wallets
             for (int i = 0; i < privateKey31.Length; i++)
                 privateKey31[i] = (byte)random.Next(256);
             Action action = () => new KeyPair(privateKey31);
-            Assert.ThrowsException<ArgumentException>(action);
+            Assert.ThrowsExactly<ArgumentException>(action);
         }
 
         [TestMethod]

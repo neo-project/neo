@@ -171,7 +171,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "00000000000000000000000000000000000000004001010201020102010001";
             CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
+            Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
         }
 
         [TestMethod]
@@ -209,7 +209,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "00000000000000000000000000000000000000004001010301030103010001";
             CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
 
-            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
+            Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
         }
 
         [TestMethod]
