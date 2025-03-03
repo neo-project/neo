@@ -17,6 +17,8 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 using static Neo.Wallets.Helper;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
 {
@@ -33,7 +35,7 @@ namespace Neo.Wallets
         /// <summary>
         /// The public key.
         /// </summary>
-        public readonly Cryptography.ECC.ECPoint PublicKey;
+        public readonly ECPoint PublicKey;
 
         /// <summary>
         /// The hash of the public key.
@@ -51,11 +53,11 @@ namespace Neo.Wallets
             PrivateKey = privateKey[^32..];
             if (privateKey.Length == 32)
             {
-                PublicKey = Cryptography.ECC.ECCurve.Secp256r1.G * privateKey;
+                PublicKey = ECCurve.Secp256r1.G * privateKey;
             }
             else
             {
-                PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
+                PublicKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
             }
         }
 

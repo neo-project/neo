@@ -51,8 +51,8 @@ namespace Neo.UnitTests.SmartContract
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
 
-            Assert.AreEqual("0x9b9628e4f1611af90e761eea8cc21372380c74b6", Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, nef.CheckSum, "").ToString());
-            Assert.AreEqual("0x66eec404d86b918d084e62a29ac9990e3b6f4286", Neo.SmartContract.Helper.GetContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef.CheckSum, "").ToString());
+            Assert.AreEqual("0x9b9628e4f1611af90e761eea8cc21372380c74b6", GetContractHash(UInt160.Zero, nef.CheckSum, "").ToString());
+            Assert.AreEqual("0x66eec404d86b918d084e62a29ac9990e3b6f4286", GetContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef.CheckSum, "").ToString());
         }
 
         [TestMethod]
@@ -137,7 +137,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
 
-            Assert.AreEqual(Neo.SmartContract.Helper.SignatureContractCost() * PolicyContract.DefaultExecFeeFactor, engine.FeeConsumed);
+            Assert.AreEqual(SignatureContractCost() * PolicyContract.DefaultExecFeeFactor, engine.FeeConsumed);
         }
 
         [TestMethod]
@@ -158,7 +158,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
 
-            Assert.AreEqual(Neo.SmartContract.Helper.MultiSignatureContractCost(1, 1) * PolicyContract.DefaultExecFeeFactor, engine.FeeConsumed);
+            Assert.AreEqual(MultiSignatureContractCost(1, 1) * PolicyContract.DefaultExecFeeFactor, engine.FeeConsumed);
         }
     }
 }

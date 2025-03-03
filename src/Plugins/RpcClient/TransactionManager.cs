@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -147,7 +146,7 @@ namespace Neo.Network.RPC
             if (!context.Add(contract, parameters))
             {
                 throw new Exception("AddWitness failed!");
-            };
+            }
             return this;
         }
 

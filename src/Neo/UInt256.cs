@@ -12,7 +12,6 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
-using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -23,7 +22,7 @@ namespace Neo
     /// Represents a 256-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable
+    public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable, ISerializableSpan
     {
         /// <summary>
         /// The length of <see cref="UInt256"/> values.
@@ -45,22 +44,19 @@ namespace Neo
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt256"/> class.
         /// </summary>
-        public UInt256()
-        {
-        }
+        public UInt256() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UInt256"/> class.
         /// </summary>
         /// <param name="value">The value of the <see cref="UInt256"/>.</param>
-        public unsafe UInt256(ReadOnlySpan<byte> value)
+        public UInt256(ReadOnlySpan<byte> value)
         {
-            if (value.Length != Length) throw new FormatException();
-            fixed (ulong* p = &value1)
-            {
-                Span<byte> dst = new(p, Length);
-                value[..Length].CopyTo(dst);
-            }
+            if (value.Length != Length)
+                throw new FormatException($"Invalid length: {value.Length}");
+
+            var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+            value[..Length].CopyTo(span);
         }
 
         public int CompareTo(UInt256 other)

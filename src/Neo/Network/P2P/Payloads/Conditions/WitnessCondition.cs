@@ -18,13 +18,14 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
     public abstract class WitnessCondition : IInteroperable, ISerializable
     {
         internal const int MaxSubitems = 16;
-        internal const int MaxNestingDepth = 2;
+        internal const int MaxNestingDepth = 3;
 
         /// <summary>
         /// The type of the <see cref="WitnessCondition"/>.
@@ -53,7 +54,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         {
             WitnessCondition[] conditions = new WitnessCondition[reader.ReadVarInt(MaxSubitems)];
             for (int i = 0; i < conditions.Length; i++)
-                conditions[i] = DeserializeFrom(ref reader, maxNestDepth);
+                conditions[i] = DeserializeFrom(ref reader, maxNestDepth - 1);
             return conditions;
         }
 
@@ -65,6 +66,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The deserialized <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition DeserializeFrom(ref MemoryReader reader, int maxNestDepth)
         {
+            if (maxNestDepth <= 0) throw new FormatException();
             WitnessConditionType type = (WitnessConditionType)reader.ReadByte();
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException();
@@ -108,6 +110,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition FromJson(JObject json, int maxNestDepth)
         {
+            if (maxNestDepth <= 0) throw new FormatException();
             WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException("Invalid WitnessConditionType.");
@@ -134,7 +137,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
+            return new Array(referenceCounter, new StackItem[] { (byte)Type });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

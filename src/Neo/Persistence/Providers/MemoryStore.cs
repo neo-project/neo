@@ -18,7 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Neo.Persistence
+namespace Neo.Persistence.Providers
 {
     /// <summary>
     /// An in-memory <see cref="IStore"/> implementation that uses ConcurrentDictionary as the underlying storage.
@@ -36,9 +36,9 @@ namespace Neo.Persistence
         public void Dispose() { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ISnapshot GetSnapshot()
+        public IStoreSnapshot GetSnapshot()
         {
-            return new MemorySnapshot(_innerData);
+            return new MemorySnapshot(this, _innerData);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -56,7 +56,8 @@ namespace Neo.Persistence
             var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             IEnumerable<KeyValuePair<byte[], byte[]>> records = _innerData;
             if (keyOrPrefix.Length > 0)
-                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+                records = records
+                    .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
             foreach (var pair in records)
                 yield return (pair.Key[..], pair.Value[..]);
@@ -88,3 +89,5 @@ namespace Neo.Persistence
         }
     }
 }
+
+#nullable disable

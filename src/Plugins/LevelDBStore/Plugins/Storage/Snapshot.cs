@@ -14,6 +14,7 @@ using Neo.Persistence;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using LSnapshot = Neo.IO.Storage.LevelDB.Snapshot;
 
 namespace Neo.Plugins.Storage
@@ -22,7 +23,7 @@ namespace Neo.Plugins.Storage
     /// <code>Iterating over the whole dataset can be time-consuming. Depending upon how large the dataset is.</code>
     /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
-    internal class Snapshot : ISnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
+    internal class Snapshot : IStoreSnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private readonly DB _db;
         private readonly LSnapshot _snapshot;
@@ -30,13 +31,16 @@ namespace Neo.Plugins.Storage
         private readonly WriteBatch _batch;
 
 #if NET9_0_OR_GREATER
-        private readonly System.Threading.Lock _lock = new();
+        private readonly Lock _lock = new();
 #else
         private readonly object _lock = new();
 #endif
 
-        public Snapshot(DB db)
+        public IStore Store { get; }
+
+        internal Snapshot(Store store, DB db)
         {
+            Store = store;
             _db = db;
             _snapshot = db.CreateSnapshot();
             _readOptions = new ReadOptions { FillCache = false, Snapshot = _snapshot };

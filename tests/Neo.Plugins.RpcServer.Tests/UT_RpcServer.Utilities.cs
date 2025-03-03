@@ -9,19 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.Json;
-using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
-using Neo.SmartContract.Native;
-using Neo.UnitTests;
-using Neo.UnitTests.Extensions;
-using System;
-using System.IO;
-using System.Linq;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -32,7 +21,7 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             JArray resp = (JArray)_rpcServer.ListPlugins([]);
             Assert.AreEqual(resp.Count, 0);
-            Plugins.Plugin.Plugins.Add(new RpcServerPlugin());
+            Plugin.Plugins.Add(new RpcServerPlugin());
             resp = (JArray)_rpcServer.ListPlugins([]);
             Assert.AreEqual(resp.Count, 2);
             foreach (JObject p in resp)

@@ -11,11 +11,13 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using System.Collections.Generic;
 
 namespace Neo.UnitTests.Persistence
 {
+    [TestClass]
     public class UT_ReadOnlyStoreView
     {
         [TestMethod]
@@ -23,7 +25,7 @@ namespace Neo.UnitTests.Persistence
         {
             var store = new MemoryStore();
             var key = new KeyBuilder(1, 2).Add(new UInt160()).ToArray();
-            var view = new ReadOnlyStoreView(store);
+            var view = (IReadOnlyStore<byte[], byte[]>)store;
 
             // Test Contains
             Assert.IsFalse(view.Contains(key));
@@ -32,7 +34,7 @@ namespace Neo.UnitTests.Persistence
             Assert.IsFalse(view.TryGet(key, out var item));
 
             // Test this[]
-            Assert.ThrowsException<KeyNotFoundException>(() => view[key]);
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = view[key]);
 
             // Test Put
             var value = new byte[] { 1, 2, 3 };
@@ -42,11 +44,11 @@ namespace Neo.UnitTests.Persistence
             Assert.IsTrue(view.Contains(key));
 
             // Test this[]
-            CollectionAssert.AreEqual(value, view[key].Value.ToArray());
+            CollectionAssert.AreEqual(value, view[key]);
 
             // Test TryGet
             Assert.IsTrue(view.TryGet(key, out item));
-            CollectionAssert.AreEqual(value, item.Value.ToArray());
+            CollectionAssert.AreEqual(value, item);
         }
     }
 }

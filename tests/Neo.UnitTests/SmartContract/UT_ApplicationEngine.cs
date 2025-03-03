@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.SmartContract;
@@ -20,6 +19,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -38,20 +38,20 @@ namespace Neo.UnitTests.SmartContract
             const string notifyEvent = "TestEvent";
 
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
-            eventName.Should().Be(notifyEvent);
+            Assert.AreEqual(notifyEvent, eventName);
 
             ApplicationEngine.Notify += Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
-            eventName.Should().Be(null);
+            Assert.AreEqual(null, eventName);
 
             eventName = notifyEvent;
             ApplicationEngine.Notify -= Test_Notify1;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
-            eventName.Should().Be(null);
+            Assert.AreEqual(null, eventName);
 
             ApplicationEngine.Notify -= Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
-            eventName.Should().Be(null);
+            Assert.AreEqual(null, eventName);
         }
 
         private void Test_Notify1(object sender, NotifyEventArgs e)
@@ -70,9 +70,9 @@ namespace Neo.UnitTests.SmartContract
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshotCache, settings: TestProtocolSettings.Default);
-            engine.PersistingBlock.Version.Should().Be(0);
-            engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
-            engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
+            Assert.AreEqual(0u, engine.PersistingBlock.Version);
+            Assert.AreEqual(TestBlockchain.TheNeoSystem.GenesisBlock.Hash, engine.PersistingBlock.PrevHash);
+            Assert.AreEqual(new UInt256(), engine.PersistingBlock.MerkleRoot);
         }
 
         [TestMethod]
@@ -98,13 +98,13 @@ namespace Neo.UnitTests.SmartContract
 
                 // If they aren't consecutive, return false.
                 var inc = nextIndex - currentIndex;
-                inc.Should().Be(1);
+                Assert.AreEqual(1, inc);
             }
 
             // Check that block numbers are not higher in earlier hardforks than in later ones
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
             {
-                (setting[sortedHardforks[i]] > setting[sortedHardforks[i + 1]]).Should().Be(false);
+                Assert.IsFalse(setting[sortedHardforks[i]] > setting[sortedHardforks[i + 1]]);
             }
         }
 
@@ -207,8 +207,8 @@ namespace Neo.UnitTests.SmartContract
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
                 Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(VM.Types.Boolean));
-                var res = (VM.Types.Boolean)engine.ResultStack.Pop();
+                Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Boolean));
+                var res = (Boolean)engine.ResultStack.Pop();
                 Assert.IsTrue(res.GetBoolean());
             }
         }

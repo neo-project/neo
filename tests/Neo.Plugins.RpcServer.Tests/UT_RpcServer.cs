@@ -11,18 +11,13 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
-using Neo.Ledger;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.Linq;
-using System.Net;
-using System.Numerics;
 using System.Text;
 
 namespace Neo.Plugins.RpcServer.Tests

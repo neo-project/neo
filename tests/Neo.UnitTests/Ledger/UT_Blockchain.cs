@@ -10,19 +10,14 @@
 // modifications are permitted.
 
 using Akka.TestKit;
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using Neo.Wallets;
-using Neo.Wallets.NEP6;
 using System;
-using System.Linq;
-using System.Numerics;
 
 namespace Neo.UnitTests.Ledger
 {

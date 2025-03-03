@@ -11,7 +11,6 @@
 
 #pragma warning disable CS1718 // Comparison made to same variable
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using System;
@@ -24,7 +23,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestFail()
         {
-            Assert.ThrowsException<FormatException>(() => new UInt160(new byte[UInt160.Length + 1]));
+            Assert.ThrowsExactly<FormatException>(() => _ = new UInt160(new byte[UInt160.Length + 1]));
         }
 
         [TestMethod]
@@ -79,11 +78,11 @@ namespace Neo.UnitTests.IO
         public void TestParse()
         {
             Action action = () => UInt160.Parse(null);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(action);
             UInt160 result = UInt160.Parse("0x0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result);
             Action action1 = () => UInt160.Parse("000000000000000000000000000000000000000");
-            action1.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(action1);
             UInt160 result1 = UInt160.Parse("0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result1);
         }

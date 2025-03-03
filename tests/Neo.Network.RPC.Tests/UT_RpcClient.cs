@@ -9,12 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
@@ -116,7 +114,14 @@ namespace Neo.Network.RPC.Tests
             //dummy url for test
             var client = new RpcClient(new Uri("http://www.xxx.yyy"));
             Action action = () => client.Dispose();
-            action.Should().NotThrow<Exception>();
+            try
+            {
+                action();
+            }
+            catch
+            {
+                Assert.Fail("Dispose should not throw exception");
+            }
         }
 
         [TestMethod]

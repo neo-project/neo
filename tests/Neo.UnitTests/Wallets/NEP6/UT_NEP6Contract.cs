@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
@@ -26,7 +25,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestFromNullJson()
         {
             NEP6Contract nep6Contract = NEP6Contract.FromJson(null);
-            nep6Contract.Should().BeNull();
+            Assert.IsNull(nep6Contract);
         }
 
         [TestMethod]
@@ -37,12 +36,12 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject @object = (JObject)JToken.Parse(json);
 
             NEP6Contract nep6Contract = NEP6Contract.FromJson(@object);
-            nep6Contract.Script.Should().BeEquivalentTo("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes());
-            nep6Contract.ParameterList.Length.Should().Be(1);
-            nep6Contract.ParameterList[0].Should().Be(ContractParameterType.Signature);
-            nep6Contract.ParameterNames.Length.Should().Be(1);
-            nep6Contract.ParameterNames[0].Should().Be("signature");
-            nep6Contract.Deployed.Should().BeFalse();
+            CollectionAssert.AreEqual("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes(), nep6Contract.Script);
+            Assert.AreEqual(1, nep6Contract.ParameterList.Length);
+            Assert.AreEqual(ContractParameterType.Signature, nep6Contract.ParameterList[0]);
+            Assert.AreEqual(1, nep6Contract.ParameterNames.Length);
+            Assert.AreEqual("signature", nep6Contract.ParameterNames[0]);
+            Assert.IsFalse(nep6Contract.Deployed);
         }
 
         [TestMethod]
@@ -58,23 +57,23 @@ namespace Neo.UnitTests.Wallets.NEP6
 
             JObject @object = nep6Contract.ToJson();
             JString jString = (JString)@object["script"];
-            jString.Value.Should().Be(Convert.ToBase64String(nep6Contract.Script, Base64FormattingOptions.None));
+            Assert.AreEqual(Convert.ToBase64String(nep6Contract.Script, Base64FormattingOptions.None), jString.Value);
 
             JBoolean jBoolean = (JBoolean)@object["deployed"];
-            jBoolean.Value.Should().BeFalse();
+            Assert.IsFalse(jBoolean.Value);
 
             JArray parameters = (JArray)@object["parameters"];
-            parameters.Count.Should().Be(2);
+            Assert.AreEqual(2, parameters.Count);
 
             jString = (JString)parameters[0]["name"];
-            jString.Value.Should().Be("param1");
+            Assert.AreEqual("param1", jString.Value);
             jString = (JString)parameters[0]["type"];
-            jString.Value.Should().Be(ContractParameterType.Boolean.ToString());
+            Assert.AreEqual(ContractParameterType.Boolean.ToString(), jString.Value);
 
             jString = (JString)parameters[1]["name"];
-            jString.Value.Should().Be("param2");
+            Assert.AreEqual("param2", jString.Value);
             jString = (JString)parameters[1]["type"];
-            jString.Value.Should().Be(ContractParameterType.Integer.ToString());
+            Assert.AreEqual(ContractParameterType.Integer.ToString(), jString.Value);
         }
     }
 }

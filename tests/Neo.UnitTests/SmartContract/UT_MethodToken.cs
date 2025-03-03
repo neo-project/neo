@@ -11,7 +11,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.SmartContract;
 using System;
 
@@ -53,11 +52,11 @@ namespace Neo.UnitTests.SmartContract
                 HasReturnValue = true
             };
 
-            Assert.ThrowsException<FormatException>(() => result.ToArray().AsSerializable<MethodToken>());
+            Assert.ThrowsExactly<FormatException>(() => _ = result.ToArray().AsSerializable<MethodToken>());
 
             result.CallFlags = CallFlags.All;
             result.Method += "-123123123123123123123123";
-            Assert.ThrowsException<FormatException>(() => result.ToArray().AsSerializable<MethodToken>());
+            Assert.ThrowsExactly<FormatException>(() => _ = result.ToArray().AsSerializable<MethodToken>());
         }
     }
 }

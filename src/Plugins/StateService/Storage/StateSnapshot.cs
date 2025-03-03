@@ -19,7 +19,7 @@ namespace Neo.Plugins.StateService.Storage
 {
     class StateSnapshot : IDisposable
     {
-        private readonly ISnapshot snapshot;
+        private readonly IStoreSnapshot snapshot;
         public Trie Trie;
 
         public StateSnapshot(IStore store)

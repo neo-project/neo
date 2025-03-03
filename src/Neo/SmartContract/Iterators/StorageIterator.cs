@@ -13,6 +13,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Iterators
 {
@@ -52,9 +53,9 @@ namespace Neo.SmartContract.Iterators
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))
-                item = ((VM.Types.Array)item)[0];
+                item = ((Array)item)[0];
             else if (options.HasFlag(FindOptions.PickField1))
-                item = ((VM.Types.Array)item)[1];
+                item = ((Array)item)[1];
 
             if (options.HasFlag(FindOptions.KeysOnly))
                 return key;

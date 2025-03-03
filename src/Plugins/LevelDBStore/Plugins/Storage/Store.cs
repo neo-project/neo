@@ -47,8 +47,8 @@ namespace Neo.Plugins.Storage
             _options.Dispose();
         }
 
-        public ISnapshot GetSnapshot() =>
-            new Snapshot(_db);
+        public IStoreSnapshot GetSnapshot() =>
+            new Snapshot(this, _db);
 
         public void Put(byte[] key, byte[] value) =>
             _db.Put(WriteOptions.Default, key, value);

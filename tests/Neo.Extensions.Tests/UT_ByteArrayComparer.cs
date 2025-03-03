@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using System;
 
 namespace Neo.Extensions.Tests
@@ -22,64 +21,64 @@ namespace Neo.Extensions.Tests
         {
             ByteArrayComparer comparer = ByteArrayComparer.Default;
             byte[]? x = null, y = null;
-            comparer.Compare(x, y).Should().Be(0);
+            Assert.AreEqual(0, comparer.Compare(x, y));
 
             x = new byte[] { 1, 2, 3, 4, 5 };
             y = x;
-            comparer.Compare(x, y).Should().Be(0);
-            comparer.Compare(x, x).Should().Be(0);
+            Assert.AreEqual(0, comparer.Compare(x, y));
+            Assert.AreEqual(0, comparer.Compare(x, x));
 
             y = null;
-            comparer.Compare(x, y).Should().BeGreaterThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) > 0);
 
             y = x;
             x = null;
-            comparer.Compare(x, y).Should().BeLessThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) < 0);
 
             x = new byte[] { 1 };
             y = Array.Empty<byte>();
-            comparer.Compare(x, y).Should().BeGreaterThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) > 0);
             y = x;
-            comparer.Compare(x, y).Should().Be(0);
+            Assert.AreEqual(0, comparer.Compare(x, y));
 
             x = new byte[] { 1 };
             y = new byte[] { 2 };
-            comparer.Compare(x, y).Should().BeLessThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) < 0);
 
-            comparer.Compare(null, Array.Empty<byte>()).Should().Be(0);
-            comparer.Compare(Array.Empty<byte>(), null).Should().Be(0);
+            Assert.AreEqual(0, comparer.Compare(null, Array.Empty<byte>()));
+            Assert.AreEqual(0, comparer.Compare(Array.Empty<byte>(), null));
 
             x = new byte[] { 1, 2, 3, 4, 5 };
             y = new byte[] { 1, 2, 3 };
-            comparer.Compare(x, y).Should().BeGreaterThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) > 0);
 
             x = new byte[] { 1, 2, 3, 4, 5 };
             y = new byte[] { 1, 2, 3, 4, 5, 6 };
-            comparer.Compare(x, y).Should().BeLessThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) < 0);
 
             // cases for reverse comparer
             comparer = ByteArrayComparer.Reverse;
 
             x = new byte[] { 3 };
-            comparer.Compare(x, y).Should().BeLessThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) < 0);
 
             y = x;
-            comparer.Compare(x, y).Should().Be(0);
+            Assert.AreEqual(0, comparer.Compare(x, y));
 
             x = new byte[] { 1 };
             y = new byte[] { 2 };
-            comparer.Compare(x, y).Should().BeGreaterThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) > 0);
 
-            comparer.Compare(null, Array.Empty<byte>()).Should().Be(0);
-            comparer.Compare(Array.Empty<byte>(), null).Should().Be(0);
+            Assert.AreEqual(0, comparer.Compare(null, Array.Empty<byte>()));
+            Assert.AreEqual(0, comparer.Compare(Array.Empty<byte>(), null));
 
             x = new byte[] { 1, 2, 3, 4, 5 };
             y = new byte[] { 1, 2, 3 };
-            comparer.Compare(x, y).Should().BeLessThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) < 0);
 
             x = new byte[] { 1, 2, 3, 4, 5 };
             y = new byte[] { 1, 2, 3, 4, 5, 6 };
-            comparer.Compare(x, y).Should().BeGreaterThan(0);
+            Assert.IsTrue(comparer.Compare(x, y) > 0);
         }
     }
 }

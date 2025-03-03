@@ -10,10 +10,10 @@
 // modifications are permitted.
 
 using System;
+using System.Runtime.CompilerServices;
 #if !NET9_0_OR_GREATER
 using System.Globalization;
 #endif
-using System.Runtime.CompilerServices;
 
 namespace Neo.Extensions
 {
@@ -59,7 +59,7 @@ namespace Neo.Extensions
         public static int GetVarSize(this string value)
         {
             var size = Utility.StrictUTF8.GetByteCount(value);
-            return UnsafeData.GetVarSize(size) + size;
+            return size.GetVarSize() + size;
         }
     }
 }

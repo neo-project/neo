@@ -20,6 +20,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Plugins.RpcServer
 {
@@ -360,7 +361,7 @@ namespace Neo.Plugins.RpcServer
 
                     foreach (var item in resultstack)
                     {
-                        var value = (VM.Types.Array)item;
+                        var value = (Array)item;
                         foreach (Struct ele in value)
                         {
                             var publickey = ele[0].GetSpan().ToHexString();

@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;

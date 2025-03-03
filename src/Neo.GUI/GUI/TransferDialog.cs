@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Linq;

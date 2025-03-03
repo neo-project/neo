@@ -10,15 +10,8 @@
 // modifications are permitted.
 
 using Neo.Persistence;
-using Neo.Plugins.ApplicationLogs.Store;
 using Neo.Plugins.Storage;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Neo.Plugins.ApplicationsLogs.Tests.Setup
 {

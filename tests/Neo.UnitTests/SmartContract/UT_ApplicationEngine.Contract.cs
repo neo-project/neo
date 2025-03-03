@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Persistence;
@@ -43,7 +42,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            new UInt160(result.GetSpan()).Should().Be(Contract.CreateSignatureRedeemScript(settings.StandbyCommittee[0]).ToScriptHash());
+            Assert.AreEqual(Contract.CreateSignatureRedeemScript(settings.StandbyCommittee[0]).ToScriptHash(), new UInt160(result.GetSpan()));
         }
 
         [TestMethod]
@@ -67,7 +66,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            new UInt160(result.GetSpan()).Should().Be(Contract.CreateMultiSigRedeemScript(2, settings.StandbyCommittee.Take(3).ToArray()).ToScriptHash());
+            Assert.AreEqual(Contract.CreateMultiSigRedeemScript(2, settings.StandbyCommittee.Take(3).ToArray()).ToScriptHash(), new UInt160(result.GetSpan()));
         }
     }
 }

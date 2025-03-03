@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Akka.Util.Internal;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.StateService.Network;

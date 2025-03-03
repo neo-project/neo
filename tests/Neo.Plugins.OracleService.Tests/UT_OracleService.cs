@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
@@ -19,7 +18,7 @@ using Neo.SmartContract.Native;
 namespace Neo.Plugins.OracleService.Tests
 {
     [TestClass]
-    public class UT_OracleService : TestKit
+    public class UT_OracleService
     {
         [TestMethod]
         public void TestFilter()

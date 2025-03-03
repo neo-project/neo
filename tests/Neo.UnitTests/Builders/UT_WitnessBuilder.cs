@@ -11,12 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Neo.VM;
 
 namespace Neo.UnitTests.Builders
 {
@@ -36,9 +31,9 @@ namespace Neo.UnitTests.Builders
             var witness = WitnessBuilder.CreateEmpty()
                 .AddInvocation(sb =>
                 {
-                    sb.Emit(VM.OpCode.NOP);
-                    sb.Emit(VM.OpCode.NOP);
-                    sb.Emit(VM.OpCode.NOP);
+                    sb.Emit(OpCode.NOP);
+                    sb.Emit(OpCode.NOP);
+                    sb.Emit(OpCode.NOP);
                 })
                 .Build();
 
@@ -65,9 +60,9 @@ namespace Neo.UnitTests.Builders
             var witness = WitnessBuilder.CreateEmpty()
                 .AddVerification(sb =>
                 {
-                    sb.Emit(VM.OpCode.NOP);
-                    sb.Emit(VM.OpCode.NOP);
-                    sb.Emit(VM.OpCode.NOP);
+                    sb.Emit(OpCode.NOP);
+                    sb.Emit(OpCode.NOP);
+                    sb.Emit(OpCode.NOP);
                 })
                 .Build();
 

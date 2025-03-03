@@ -10,10 +10,8 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -29,7 +27,7 @@ using static Neo.Plugins.OracleService.Tests.TestUtils;
 namespace Neo.Plugins.OracleService.Tests
 {
     [TestClass]
-    public class E2E_Https : TestKit
+    public class E2E_Https
     {
         UInt160 customContract;
 

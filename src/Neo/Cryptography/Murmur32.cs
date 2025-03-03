@@ -11,13 +11,16 @@
 
 using System;
 using System.Buffers.Binary;
+using System.IO.Hashing;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography
 {
     /// <summary>
     /// Computes the murmur hash for the input data.
+    /// <remarks>Murmur32 is a non-cryptographic hash function.</remarks>
     /// </summary>
-    public sealed class Murmur32 : System.Security.Cryptography.HashAlgorithm
+    public sealed class Murmur32 : NonCryptographicHashAlgorithm
     {
         private const uint c1 = 0xcc9e2d51;
         private const uint c2 = 0x1b873593;
@@ -26,82 +29,155 @@ namespace Neo.Cryptography
         private const uint m = 5;
         private const uint n = 0xe6546b64;
 
-        private readonly uint seed;
-        private uint hash;
-        private int length;
+        private readonly uint _seed;
+        private uint _hash;
+        private int _length;
+
+        private uint _tail;
+        private int _tailLength;
 
         public const int HashSizeInBits = 32;
-        public override int HashSize => HashSizeInBits;
+
+        [Obsolete("Use HashSizeInBits")]
+        public int HashSize => HashSizeInBits;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Murmur32"/> class with the specified seed.
         /// </summary>
         /// <param name="seed">The seed to be used.</param>
-        public Murmur32(uint seed)
+        public Murmur32(uint seed) : base(HashSizeInBits / 8)
         {
-            this.seed = seed;
-            HashSizeValue = HashSizeInBits;
-            Initialize();
+            _seed = seed;
+            Reset();
         }
 
-        protected override void HashCore(byte[] array, int ibStart, int cbSize)
+        /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Reset()
         {
-            HashCore(array.AsSpan(ibStart, cbSize));
+            _hash = _seed;
+            _length = 0;
+            _tailLength = 0;
+            _tail = 0;
         }
 
-        protected override void HashCore(ReadOnlySpan<byte> source)
+        /// <inheritdoc/>
+        public override void Append(ReadOnlySpan<byte> source)
         {
-            length += source.Length;
+            _length += source.Length;
+            if (_tailLength > 0)
+            {
+                var remaining = Math.Min(4 - _tailLength, source.Length);
+                _tail ^= ReadUInt32(source[..remaining]) << (_tailLength * 8);
+                _tailLength += remaining;
+                if (_tailLength == 4)
+                {
+                    Mix(_tail);
+                    _tailLength = 0;
+                    _tail = 0;
+                }
+                source = source[remaining..];
+            }
+#if NET7_0_OR_GREATER
+            for (; source.Length >= 16; source = source[16..])
+            {
+                var k = BinaryPrimitives.ReadUInt128LittleEndian(source);
+                Mix((uint)k);
+                Mix((uint)(k >> 32));
+                Mix((uint)(k >> 64));
+                Mix((uint)(k >> 96));
+            }
+#endif
+
             for (; source.Length >= 4; source = source[4..])
             {
-                uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
-                k *= c1;
-                k = Helper.RotateLeft(k, r1);
-                k *= c2;
-                hash ^= k;
-                hash = Helper.RotateLeft(hash, r2);
-                hash = hash * m + n;
+                Mix(BinaryPrimitives.ReadUInt32LittleEndian(source));
             }
+
             if (source.Length > 0)
             {
-                uint remainingBytes = 0;
-                switch (source.Length)
-                {
-                    case 3: remainingBytes ^= (uint)source[2] << 16; goto case 2;
-                    case 2: remainingBytes ^= (uint)source[1] << 8; goto case 1;
-                    case 1: remainingBytes ^= source[0]; break;
-                }
-                remainingBytes *= c1;
-                remainingBytes = Helper.RotateLeft(remainingBytes, r1);
-                remainingBytes *= c2;
-                hash ^= remainingBytes;
+                _tail = ReadUInt32(source);
+                _tailLength = source.Length;
             }
         }
 
-        protected override byte[] HashFinal()
+        /// <inheritdoc/>
+        protected override void GetCurrentHashCore(Span<byte> destination)
         {
-            byte[] buffer = new byte[sizeof(uint)];
-            TryHashFinal(buffer, out _);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, GetCurrentHashUInt32());
+        }
+
+        internal uint GetCurrentHashUInt32()
+        {
+            if (_tailLength > 0)
+                _hash ^= Helper.RotateLeft(_tail * c1, r1) * c2;
+
+            var state = _hash ^ (uint)_length;
+            state ^= state >> 16;
+            state *= 0x85ebca6b;
+            state ^= state >> 13;
+            state *= 0xc2b2ae35;
+            state ^= state >> 16;
+            return state;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Mix(uint k)
+        {
+            k *= c1;
+            k = Helper.RotateLeft(k, r1);
+            k *= c2;
+            _hash ^= k;
+            _hash = Helper.RotateLeft(_hash, r2);
+            _hash = _hash * m + n;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ReadUInt32(ReadOnlySpan<byte> source)
+        {
+            uint value = 0;
+            switch (source.Length)
+            {
+                case 3: value ^= (uint)source[2] << 16; goto case 2;
+                case 2: value ^= (uint)source[1] << 8; goto case 1;
+                case 1: value ^= source[0]; break;
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// Computes the murmur hash for the input data and resets the state.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code in byte[4].</returns>
+        public byte[] ComputeHash(ReadOnlySpan<byte> data)
+        {
+            var buffer = new byte[HashSizeInBits / 8];
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer, ComputeHashUInt32(data));
             return buffer;
         }
 
-        protected override bool TryHashFinal(Span<byte> destination, out int bytesWritten)
+        /// <summary>
+        /// Resets the state and computes the murmur hash for the input data.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code in uint.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public uint ComputeHashUInt32(ReadOnlySpan<byte> data)
         {
-            hash ^= (uint)length;
-            hash ^= hash >> 16;
-            hash *= 0x85ebca6b;
-            hash ^= hash >> 13;
-            hash *= 0xc2b2ae35;
-            hash ^= hash >> 16;
-
-            bytesWritten = Math.Min(destination.Length, sizeof(uint));
-            return BinaryPrimitives.TryWriteUInt32LittleEndian(destination, hash);
+            Reset();
+            Append(data);
+            return GetCurrentHashUInt32();
         }
 
-        public override void Initialize()
-        {
-            hash = seed;
-            length = 0;
-        }
+        /// <summary>
+        /// Computes the murmur hash for the input data.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed used by the murmur algorithm.</param>
+        /// <returns>The computed hash code in uint.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint HashToUInt32(ReadOnlySpan<byte> data, uint seed)
+            => new Murmur32(seed).ComputeHashUInt32(data);
     }
 }

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Extensions;
 using Neo.IO;
 using System.Collections.Generic;
 using System.IO;
@@ -53,7 +52,7 @@ namespace Neo.Extensions
             {
                 value_size = value.Count * Marshal.SizeOf<T>();
             }
-            return UnsafeData.GetVarSize(value.Count) + value_size;
+            return value.Count.GetVarSize() + value_size;
         }
 
         /// <summary>

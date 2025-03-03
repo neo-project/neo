@@ -10,7 +10,10 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Persistence;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using System.Reflection;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -27,6 +30,49 @@ namespace Neo.UnitTests.SmartContract.Native
             arg = new ContractMethodAttribute(Hardfork.HF_Aspidochelone);
 
             Assert.AreEqual(Hardfork.HF_Aspidochelone, arg.ActiveIn);
+        }
+
+        class NeedSnapshot
+        {
+            [ContractMethod]
+            public bool MethodReadOnlyStoreView(IReadOnlyStore view) => view is null;
+
+            [ContractMethod]
+            public bool MethodDataCache(DataCache dataCache) => dataCache is null;
+        }
+
+        class NoNeedSnapshot
+        {
+            [ContractMethod]
+            public bool MethodTwo(ApplicationEngine engine, UInt160 account)
+                => engine is null || account is null;
+
+            [ContractMethod]
+            public bool MethodOne(ApplicationEngine engine) => engine is null;
+        }
+
+        [TestMethod]
+        public void TestNeedSnapshot()
+        {
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+            foreach (var member in typeof(NeedSnapshot).GetMembers(flags))
+            {
+                foreach (var attribute in member.GetCustomAttributes<ContractMethodAttribute>())
+                {
+                    var metadata = new ContractMethodMetadata(member, attribute);
+                    Assert.IsTrue(metadata.NeedSnapshot);
+                }
+            }
+
+            foreach (var member in typeof(NoNeedSnapshot).GetMembers(flags))
+            {
+                foreach (var attribute in member.GetCustomAttributes<ContractMethodAttribute>())
+                {
+                    var metadata = new ContractMethodMetadata(member, attribute);
+                    Assert.IsFalse(metadata.NeedSnapshot);
+                    Assert.IsTrue(metadata.NeedApplicationEngine);
+                }
+            }
         }
     }
 }

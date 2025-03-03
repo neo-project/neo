@@ -12,7 +12,6 @@
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;

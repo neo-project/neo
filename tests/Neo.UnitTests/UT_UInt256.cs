@@ -11,7 +11,6 @@
 
 #pragma warning disable CS1718
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
@@ -26,7 +25,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestFail()
         {
-            Assert.ThrowsException<FormatException>(() => new UInt256(new byte[UInt256.Length + 1]));
+            Assert.ThrowsExactly<FormatException>(() => _ = new UInt256(new byte[UInt256.Length + 1]));
         }
 
         [TestMethod]
@@ -61,7 +60,7 @@ namespace Neo.UnitTests.IO
             using BinaryWriter writer = new(stream);
             writer.Write(new byte[20]);
             UInt256 uInt256 = new();
-            Assert.ThrowsException<FormatException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
             {
                 MemoryReader reader = new(stream.ToArray());
                 ((ISerializable)uInt256).Deserialize(ref reader);
@@ -105,11 +104,11 @@ namespace Neo.UnitTests.IO
         public void TestParse()
         {
             Action action = () => UInt256.Parse(null);
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(() => action());
             UInt256 result = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000");
             Assert.AreEqual(UInt256.Zero, result);
             Action action1 = () => UInt256.Parse("000000000000000000000000000000000000000000000000000000000000000");
-            action1.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(() => action1());
             UInt256 result1 = UInt256.Parse("0000000000000000000000000000000000000000000000000000000000000000");
             Assert.AreEqual(UInt256.Zero, result1);
         }

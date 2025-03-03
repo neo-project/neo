@@ -11,7 +11,6 @@
 
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract.Native;
 using System.Linq;
 
 namespace Neo.Plugins.RpcServer

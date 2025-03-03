@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
@@ -30,7 +30,7 @@ namespace Neo.Plugins.OracleService.Tests
         public static readonly UInt160 MultisigScriptHash = MultisigScript.ToScriptHash();
         public static readonly string MultisigAddress = MultisigScriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
 
-        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializableSpan key)
         {
             var k = new KeyBuilder(contract.Id, prefix);
             if (key != null) k = k.Add(key);
@@ -50,7 +50,7 @@ namespace Neo.Plugins.OracleService.Tests
             wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
-            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
+            Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.ToString());
             return new NEP6Wallet(null, password, settings, wallet);
         }
     }

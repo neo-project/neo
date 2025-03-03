@@ -11,7 +11,6 @@
 
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
-using System;
 using System.Linq;
 
 namespace Neo.UnitTests

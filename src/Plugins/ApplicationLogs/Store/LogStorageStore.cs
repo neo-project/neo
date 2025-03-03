@@ -42,13 +42,13 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         #region Global Variables
 
-        private readonly ISnapshot _snapshot;
+        private readonly IStoreSnapshot _snapshot;
 
         #endregion
 
         #region Ctor
 
-        public LogStorageStore(ISnapshot snapshot)
+        public LogStorageStore(IStoreSnapshot snapshot)
         {
             ArgumentNullException.ThrowIfNull(snapshot, nameof(snapshot));
             _snapshot = snapshot;

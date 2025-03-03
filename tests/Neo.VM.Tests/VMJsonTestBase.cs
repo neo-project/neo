@@ -19,6 +19,9 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Array = Neo.VM.Types.Array;
+using Boolean = Neo.VM.Types.Boolean;
+using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.Test
 {
@@ -240,7 +243,7 @@ namespace Neo.Test
 
             switch (item)
             {
-                case VM.Types.Null _:
+                case Null _:
                     {
                         return new JObject
                         {
@@ -255,12 +258,12 @@ namespace Neo.Test
                             ["value"] = p.Position
                         };
                     }
-                case VM.Types.Boolean v: value = new JValue(v.GetBoolean()); break;
-                case VM.Types.Integer v: value = new JValue(v.GetInteger().ToString()); break;
-                case VM.Types.ByteString v: value = new JValue(v.GetSpan().ToArray()); break;
-                case VM.Types.Buffer v: value = new JValue(v.InnerBuffer.ToArray()); break;
+                case Boolean v: value = new JValue(v.GetBoolean()); break;
+                case Integer v: value = new JValue(v.GetInteger().ToString()); break;
+                case ByteString v: value = new JValue(v.GetSpan().ToArray()); break;
+                case Buffer v: value = new JValue(v.InnerBuffer.ToArray()); break;
                 //case VM.Types.Struct v:
-                case VM.Types.Array v:
+                case Array v:
                     {
                         var jarray = new JArray();
 
@@ -272,7 +275,7 @@ namespace Neo.Test
                         value = jarray;
                         break;
                     }
-                case VM.Types.Map v:
+                case Map v:
                     {
                         var jdic = new JObject();
 
@@ -284,7 +287,7 @@ namespace Neo.Test
                         value = jdic;
                         break;
                     }
-                case VM.Types.InteropInterface v:
+                case InteropInterface v:
                     {
                         type = "Interop";
                         var obj = v.GetInterface<object>();

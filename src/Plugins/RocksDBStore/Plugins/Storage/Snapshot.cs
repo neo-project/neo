@@ -14,13 +14,14 @@ using RocksDbSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 
 namespace Neo.Plugins.Storage
 {
     /// <summary>
     /// <remarks>On-chain write operations on a snapshot cannot be concurrent.</remarks>
     /// </summary>
-    internal class Snapshot : ISnapshot
+    internal class Snapshot : IStoreSnapshot
     {
         private readonly RocksDb _db;
         private readonly RocksDbSharp.Snapshot _snapshot;
@@ -28,13 +29,16 @@ namespace Neo.Plugins.Storage
         private readonly ReadOptions _options;
 
 #if NET9_0_OR_GREATER
-        private readonly System.Threading.Lock _lock = new();
+        private readonly Lock _lock = new();
 #else
         private readonly object _lock = new();
 #endif
 
-        public Snapshot(RocksDb db)
+        public IStore Store { get; }
+
+        internal Snapshot(Store store, RocksDb db)
         {
+            Store = store;
             _db = db;
             _snapshot = db.CreateSnapshot();
             _batch = new WriteBatch();

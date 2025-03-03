@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using System.Net;
@@ -24,22 +23,22 @@ namespace Neo.UnitTests.Network.P2P
         {
             var config = new ChannelsConfig();
 
-            config.Tcp.Should().BeNull();
-            config.MinDesiredConnections.Should().Be(10);
-            config.MaxConnections.Should().Be(40);
-            config.MaxConnectionsPerAddress.Should().Be(3);
+            Assert.IsNull(config.Tcp);
+            Assert.AreEqual(10, config.MinDesiredConnections);
+            Assert.AreEqual(40, config.MaxConnections);
+            Assert.AreEqual(3, config.MaxConnectionsPerAddress);
 
-            config.Tcp = config.Tcp = new IPEndPoint(IPAddress.Any, 21);
+            config.Tcp = new IPEndPoint(IPAddress.Any, 21);
             config.MaxConnectionsPerAddress++;
             config.MaxConnections++;
             config.MinDesiredConnections++;
 
-            config.Tcp.Should().BeSameAs(config.Tcp);
-            config.Tcp.Address.Should().BeEquivalentTo(IPAddress.Any);
-            config.Tcp.Port.Should().Be(21);
-            config.MinDesiredConnections.Should().Be(11);
-            config.MaxConnections.Should().Be(41);
-            config.MaxConnectionsPerAddress.Should().Be(4);
+            Assert.AreSame(config.Tcp, config.Tcp);
+            CollectionAssert.AreEqual(IPAddress.Any.GetAddressBytes(), config.Tcp.Address.GetAddressBytes());
+            Assert.AreEqual(21, config.Tcp.Port);
+            Assert.AreEqual(11, config.MinDesiredConnections);
+            Assert.AreEqual(41, config.MaxConnections);
+            Assert.AreEqual(4, config.MaxConnectionsPerAddress);
         }
     }
 }

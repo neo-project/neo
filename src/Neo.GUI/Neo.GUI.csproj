@@ -6,12 +6,10 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <RootNamespace>Neo</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
     <Product>Neo.GUI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
-    <OutputPath>../../bin/$(AssemblyTitle)</OutputPath>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

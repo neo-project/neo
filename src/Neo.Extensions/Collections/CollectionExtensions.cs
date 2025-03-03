@@ -13,7 +13,6 @@
 using System;
 using System.Collections.Generic;
 
-
 namespace Neo.Extensions
 {
     public static class CollectionExtensions

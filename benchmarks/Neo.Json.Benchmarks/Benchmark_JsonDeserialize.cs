@@ -138,7 +138,7 @@ namespace Neo.Json.Benchmarks
                 result.Add(token);
             }
 
-            return [.. result];  // Converting a List to an Array of JTokens
+            return [.. result!];  // Converting a List to an Array of JTokens
         }
     }
 }

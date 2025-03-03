@@ -14,7 +14,6 @@ using Moq;
 using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.Wallets;
 using System.Numerics;
 using System.Threading.Tasks;

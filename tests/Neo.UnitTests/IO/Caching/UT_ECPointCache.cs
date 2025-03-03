@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
@@ -31,9 +30,9 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetKeyForItem()
         {
             relayCache.Add(ECCurve.Secp256r1.G);
-            relayCache.Contains(ECCurve.Secp256r1.G).Should().BeTrue();
-            relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out ECPoint tmp).Should().BeTrue();
-            (tmp is ECPoint).Should().BeTrue();
+            Assert.IsTrue(relayCache.Contains(ECCurve.Secp256r1.G));
+            Assert.IsTrue(relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out ECPoint tmp));
+            Assert.IsTrue(tmp is ECPoint);
         }
     }
 }

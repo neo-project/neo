@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network;
 using System;
+using System.Net.Sockets;
 
 namespace Neo.UnitTests.Network
 {
@@ -27,9 +28,9 @@ namespace Neo.UnitTests.Network
         [TestMethod]
         public void NoService()
         {
-            Assert.ThrowsException<Exception>(() => UPnP.ForwardPort(1, System.Net.Sockets.ProtocolType.Tcp, ""));
-            Assert.ThrowsException<Exception>(() => UPnP.DeleteForwardingRule(1, System.Net.Sockets.ProtocolType.Tcp));
-            Assert.ThrowsException<Exception>(() => UPnP.GetExternalIP());
+            Assert.ThrowsExactly<Exception>(() => UPnP.ForwardPort(1, ProtocolType.Tcp, ""));
+            Assert.ThrowsExactly<Exception>(() => UPnP.DeleteForwardingRule(1, ProtocolType.Tcp));
+            Assert.ThrowsExactly<Exception>(() => _ = UPnP.GetExternalIP());
         }
     }
 }

@@ -66,3 +66,5 @@ namespace Neo.Persistence
         }
     }
 }
+
+#nullable disable

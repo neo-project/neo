@@ -19,6 +19,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -60,8 +61,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
-            Expressions = DeserializeConditions(ref reader, maxNestDepth - 1);
+            Expressions = DeserializeConditions(ref reader, maxNestDepth);
             if (Expressions.Length == 0) throw new FormatException();
         }
 
@@ -77,7 +77,6 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
             JArray expressions = (JArray)json["expressions"];
             if (expressions.Count > MaxSubitems) throw new FormatException();
             Expressions = expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1)).ToArray();
@@ -93,8 +92,8 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
-            result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
+            var result = (Array)base.ToStackItem(referenceCounter);
+            result.Add(new Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
             return result;
         }
 

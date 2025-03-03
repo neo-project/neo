@@ -44,9 +44,9 @@ namespace Neo.Test
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
             Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
 
-            itemA = new VM.Types.Buffer(1);
-            itemB = new VM.Types.Buffer(1);
-            itemC = new VM.Types.Buffer(2);
+            itemA = new Buffer(1);
+            itemB = new Buffer(1);
+            itemC = new Buffer(2);
 
             Assert.IsTrue(itemA.GetHashCode() == itemB.GetHashCode());
             Assert.IsTrue(itemA.GetHashCode() != itemC.GetHashCode());
@@ -219,7 +219,7 @@ namespace Neo.Test
 
             item = true;
 
-            Assert.IsInstanceOfType(item, typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(item, typeof(Boolean));
             Assert.IsTrue(item.GetBoolean());
 
             // ByteString
