@@ -433,7 +433,7 @@ namespace Neo.Ledger
                     break;
                 default:
                     {
-                        if (system.ContainsConflictHash(tx.Hash, tx.Signers.Select(s => s.Account)))
+                        if (system.ContainsConflictHash(hash, tx.Signers.Select(s => s.Account)))
                             SendRelayResult(tx, VerifyResult.HasConflicts);
                         else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
                         break;
