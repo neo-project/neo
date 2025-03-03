@@ -137,7 +137,7 @@ namespace Neo
             const int IxValue3 = sizeof(ulong) * 2;
             const int IxValue4 = sizeof(ulong) * 3;
 
-            Span<byte> buffer = stackalloc byte[sizeof(ulong) * 4];
+            Span<byte> buffer = stackalloc byte[Length];
             BinaryPrimitives.WriteUInt64LittleEndian(buffer, value1);
             BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], value2);
             BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue3..], value3);
