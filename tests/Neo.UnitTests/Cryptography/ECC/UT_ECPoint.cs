@@ -362,7 +362,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestOpUnaryNegation()
         {
-            Assert.AreEqual(new ECPoint(ECCurve.Secp256k1.G.X, -ECCurve.Secp256k1.G.Y, ECCurve.Secp256k1), -ECCurve.Secp256k1.G);
+            Assert.AreEqual(new ECPoint(ECCurve.Secp256k1.G.X, -ECCurve.Secp256k1.G.Y!, ECCurve.Secp256k1), -ECCurve.Secp256k1.G);
         }
 
         [TestMethod]
