@@ -325,7 +325,7 @@ namespace Neo.SmartContract
 
         public byte[] ToArray()
         {
-            if (_cache.IsEmpty)
+            if (_cache is { IsEmpty: true })
             {
                 _cache = new byte[sizeof(int) + Key.Length];
                 BinaryPrimitives.WriteInt32LittleEndian(_cache.Span, Id);
