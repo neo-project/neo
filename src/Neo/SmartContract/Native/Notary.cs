@@ -17,6 +17,7 @@ using Neo.Extensions;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -81,6 +82,11 @@ namespace Neo.SmartContract.Native
             var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
 
             foreach (var notary in notaries) await GAS.Mint(engine, notary.EncodePoint(true).ToScriptHash(), singleReward, false);
+        }
+
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        {
+            manifest.SupportedStandards = new[] { "NEP-27" };
         }
 
         /// <summary>
