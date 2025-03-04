@@ -74,6 +74,29 @@ namespace Neo.UnitTests.Ledger
             senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyInPool);
         }
 
+        [TestMethod]
+        public void TestInvalidTransaction()
+        {
+            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshotCache();
+            var walletA = TestUtils.GenerateTestWallet("123");
+            var acc = walletA.CreateAccount();
+
+            // Fake balance
+
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(acc.ScriptHash);
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            // Make transaction
+
+            var tx = TestUtils.CreateValidTx(snapshot, walletA, acc.ScriptHash, 0);
+            tx.Signers = null;
+
+            senderProbe.Send(system.Blockchain, tx);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Invalid);
+        }
+
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
             byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
