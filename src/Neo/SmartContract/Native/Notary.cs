@@ -45,6 +45,8 @@ namespace Neo.SmartContract.Native
 
         internal Notary() : base() { }
 
+        public override Hardfork? ActiveIn => Hardfork.HF_Echidna;
+
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
