@@ -45,8 +45,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 }
 
                 // Timeout extension due to prepare response sent
-                // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
-                ExtendTimerByFactor(2);
+                // around 4*3/M=12.0/5 ~ 80% block time (for M=5)
+                ExtendTimerByFactor(4);
 
                 Log($"Sending {nameof(PrepareResponse)}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
@@ -95,7 +95,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
-                ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock));
+                TimeSpan blockTime = GetBlockTimeFromPolicyContract();
+                ChangeTimer(blockTime);
                 CheckCommits();
             }
         }
