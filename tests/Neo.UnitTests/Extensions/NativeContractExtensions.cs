@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -16,6 +17,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using Org.BouncyCastle.Crypto.Engines;
 using System;
 
 namespace Neo.UnitTests.Extensions
@@ -132,6 +134,11 @@ namespace Neo.UnitTests.Extensions
         public static StackItem Call(this NativeContract contract, DataCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            return Call(contract, engine, method, args);
+        }
+
+        public static StackItem Call(this NativeContract contract, ApplicationEngine engine, string method, params ContractParameter[] args)
+        {
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(contract.Hash, method, args);
             engine.LoadScript(script.ToArray());
