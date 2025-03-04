@@ -4,12 +4,22 @@
   <Import Project="../$(MSBuildThisFile)" />
 
   <PropertyGroup>
+    <PackageId>Neo.Plugins.$(MSBuildProjectName)</PackageId>
+    <PackageOutputPath>../../../pkgs/</PackageOutputPath>
+    <OutputPath>../../../bin/$(PackageId)</OutputPath>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
  
   <ItemGroup>
     <ProjectReference Include="../../Neo/Neo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="../../.neo/neo.png" />
+    <None Remove="../../.neo/README.md" />
+    <None Include="../../../.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="../../../.neo/README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 
 </Project>
