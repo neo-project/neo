@@ -13,6 +13,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.IO;
 using System;
 
 namespace Neo.UnitTests.IO
@@ -140,6 +141,14 @@ namespace Neo.UnitTests.IO
             var value = new UInt160(data);
             var span = value.GetSpan();
             Assert.IsTrue(span.SequenceEqual(value.ToArray()));
+
+            data = new byte[UInt160.Length];
+            value.Serialize(data.AsSpan());
+            CollectionAssert.AreEqual(data, value.ToArray());
+
+            data = new byte[UInt160.Length];
+            ((ISerializableSpan)value).Serialize(data.AsSpan());
+            CollectionAssert.AreEqual(data, value.ToArray());
         }
     }
 }
