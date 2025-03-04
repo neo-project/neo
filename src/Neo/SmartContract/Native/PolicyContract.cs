@@ -45,6 +45,11 @@ namespace Neo.SmartContract.Native
         public const uint DefaultAttributeFee = 0;
 
         /// <summary>
+        /// The default block generation time in milliseconds.
+        /// </summary>
+        public const uint DefaultBlockGenTime = 15000;
+
+        /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const uint MaxExecFeeFactor = 100;
@@ -59,22 +64,29 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxStoragePrice = 10000000;
 
+        /// <summary>
+        /// The minimum block generation time that the committee can set in milliseconds.
+        /// </summary>
+        public const uint MinBlockGenTime = 1000;
+
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
+        private const byte Prefix_BlockGenTime = 21;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
-
+        private readonly StorageKey _blockGenTime;
 
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
             _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
             _storagePrice = CreateStorageKey(Prefix_StoragePrice);
+            _blockGenTime = CreateStorageKey(Prefix_BlockGenTime);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -84,7 +96,11 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_feePerByte, new StorageItem(DefaultFeePerByte));
                 engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
                 engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
+
+                // Consensus need this right after the node is updated, can not wait for hardfork
+                engine.SnapshotCache.Add(_blockGenTime, new StorageItem(DefaultBlockGenTime));
             }
+
             return ContractTask.CompletedTask;
         }
 
@@ -122,6 +138,19 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Gets the block generation time in milliseconds.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The block generation time in milliseconds.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetBlockGenTime(IReadOnlyStore snapshot)
+        {
+            var item = snapshot.TryGet(_blockGenTime, out var value) ? value : null;
+            if (item is null) return DefaultBlockGenTime;
+            return (uint)(BigInteger)item;
+        }
+
+        /// <summary>
         /// Gets the fee for attribute.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -146,6 +175,22 @@ namespace Neo.SmartContract.Native
         public bool IsBlocked(IReadOnlyStore snapshot, UInt160 account)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
+        }
+
+        /// <summary>
+        ///  Sets the block generation time in milliseconds.
+        /// This can only be set by the committee after the HF_Echidna.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="milliseconds">The block generation time in milliseconds.</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
+        {
+            if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds));
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.SnapshotCache.GetAndChange(_blockGenTime).Set(milliseconds);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
