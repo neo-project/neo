@@ -250,7 +250,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 for (int i = 0; i < Validators.Length; i++)
                 {
                     // ContainsKeyPair may be called multiple times
-                    if (!_wallet.ContainsKeyPair(Validators[i])) continue;
+                    if (!_wallet.ContainsSignable(Validators[i])) continue;
                     MyIndex = i;
                     _myPublicKey = Validators[MyIndex];
                     break;
