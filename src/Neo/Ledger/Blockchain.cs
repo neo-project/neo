@@ -246,6 +246,18 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
+            UInt256 blockHash;
+
+            try
+            {
+                // Avoid serialization problems
+                blockHash = block.Hash;
+            }
+            catch
+            {
+                return VerifyResult.Invalid;
+            }
+
             var snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
@@ -263,10 +275,10 @@ namespace Neo.Ledger
             }
             else
             {
-                if (!block.Hash.Equals(system.HeaderCache[block.Index].Hash))
+                if (!blockHash.Equals(system.HeaderCache[block.Index].Hash))
                     return VerifyResult.Invalid;
             }
-            block_cache.TryAdd(block.Hash, block);
+            block_cache.TryAdd(blockHash, block);
             if (block.Index == currentHeight + 1)
             {
                 Block block_persist = block;
@@ -332,6 +344,18 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
+            UInt256 hash;
+
+            try
+            {
+                // Avoid serialization problems
+                hash = payload.Hash;
+            }
+            catch
+            {
+                return VerifyResult.Invalid;
+            }
+
             var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
@@ -339,13 +363,13 @@ namespace Neo.Ledger
             return VerifyResult.Succeed;
         }
 
-        private VerifyResult OnNewTransaction(Transaction tx)
+        private VerifyResult OnNewTransaction(Transaction transaction)
         {
             UInt256 hash;
             try
             {
                 // Avoid serialization problems
-                hash = tx.Hash;
+                hash = transaction.Hash;
             }
             catch
             {
@@ -358,8 +382,8 @@ namespace Neo.Ledger
                 case ContainsTransactionType.ExistsInLedger: return VerifyResult.AlreadyExists;
             }
 
-            if (system.ContainsConflictHash(hash, tx.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
-            return system.MemPool.TryAdd(tx, system.StoreView);
+            if (system.ContainsConflictHash(hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
+            return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
         private void OnPreverifyCompleted(TransactionRouter.PreverifyCompleted task)
