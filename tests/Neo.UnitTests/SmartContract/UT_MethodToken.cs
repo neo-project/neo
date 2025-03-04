@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_MethodToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 
@@ -52,11 +52,11 @@ namespace Neo.UnitTests.SmartContract
                 HasReturnValue = true
             };
 
-            Assert.ThrowsException<FormatException>(() => result.ToArray().AsSerializable<MethodToken>());
+            Assert.ThrowsExactly<FormatException>(() => _ = result.ToArray().AsSerializable<MethodToken>());
 
             result.CallFlags = CallFlags.All;
             result.Method += "-123123123123123123123123";
-            Assert.ThrowsException<FormatException>(() => result.ToArray().AsSerializable<MethodToken>());
+            Assert.ThrowsExactly<FormatException>(() => _ = result.ToArray().AsSerializable<MethodToken>());
         }
     }
 }

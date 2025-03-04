@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Settings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,13 +16,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
-    class Settings
+    class Settings : PluginSettings
     {
         public IReadOnlyList<RpcServerSettings> Servers { get; init; }
 
-        public Settings(IConfigurationSection section)
+        public Settings(IConfigurationSection section) : base(section)
         {
             Servers = section.GetSection(nameof(Servers)).GetChildren().Select(p => RpcServerSettings.Load(p)).ToArray();
         }
@@ -44,7 +44,9 @@ namespace Neo.Plugins
         public string[] AllowOrigins { get; init; }
         public int KeepAliveTimeout { get; init; }
         public uint RequestHeadersTimeout { get; init; }
+        // In the unit of datoshi, 1 GAS = 10^8 datoshi
         public long MaxGasInvoke { get; init; }
+        // In the unit of datoshi, 1 GAS = 10^8 datoshi
         public long MaxFee { get; init; }
         public int MaxIteratorResultItems { get; init; }
         public int MaxStackSize { get; init; }

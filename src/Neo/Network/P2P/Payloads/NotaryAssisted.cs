@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NotaryAssisted.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,6 +20,11 @@ namespace Neo.Network.P2P.Payloads
 {
     public class NotaryAssisted : TransactionAttribute
     {
+        /// <summary>
+        /// Native Notary contract hash stub used until native Notary contract is properly implemented.
+        /// </summary>
+        private static readonly UInt160 notaryHash = Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, 0, "Notary");
+
         /// <summary>
         /// Indicates the number of keys participating in the transaction (main or fallback) signing process.
         /// </summary>
@@ -50,7 +55,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            return tx.Signers.Any(p => p.Account.Equals(NativeContract.Notary.Hash));
+            return tx.Signers.Any(p => p.Account.Equals(notaryHash));
         }
 
         /// <summary>

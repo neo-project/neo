@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // GasToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -49,10 +49,10 @@ namespace Neo.SmartContract.Native
                 var notaryAssisted = tx.GetAttribute<NotaryAssisted>();
                 if (notaryAssisted is not null)
                 {
-                    totalNetworkFee -= (notaryAssisted.NKeys + 1) * Policy.GetAttributeFee(engine.Snapshot, (byte)notaryAssisted.Type);
+                    totalNetworkFee -= (notaryAssisted.NKeys + 1) * Policy.GetAttributeFee(engine.SnapshotCache, (byte)notaryAssisted.Type);
                 }
             }
-            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            ECPoint[] validators = NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             await Mint(engine, primary, totalNetworkFee, false);
         }

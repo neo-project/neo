@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // InteroperableList.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
         public void Sort() => List.Sort();
 
         protected abstract T ElementFromStackItem(StackItem item);
-        protected abstract StackItem ElementToStackItem(T element, ReferenceCounter referenceCounter);
+        protected abstract StackItem ElementToStackItem(T element, IReferenceCounter referenceCounter);
 
         public void FromStackItem(StackItem stackItem)
         {
@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter, this.Select(p => ElementToStackItem(p, referenceCounter)));
         }

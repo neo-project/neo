@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExecutionLogState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.VM;
 
-namespace ApplicationLogs.Store.States
+namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class ExecutionLogState : ISerializable, IEquatable<ExecutionLogState>
     {

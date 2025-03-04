@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // WitnessCondition.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -17,13 +17,15 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
     public abstract class WitnessCondition : IInteroperable, ISerializable
     {
         internal const int MaxSubitems = 16;
-        internal const int MaxNestingDepth = 2;
+        internal const int MaxNestingDepth = 3;
 
         /// <summary>
         /// The type of the <see cref="WitnessCondition"/>.
@@ -31,6 +33,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public abstract WitnessConditionType Type { get; }
 
         public virtual int Size => sizeof(WitnessConditionType);
+
+        public abstract override bool Equals(object obj);
+
+        public abstract override int GetHashCode();
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
@@ -48,7 +54,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         {
             WitnessCondition[] conditions = new WitnessCondition[reader.ReadVarInt(MaxSubitems)];
             for (int i = 0; i < conditions.Length; i++)
-                conditions[i] = DeserializeFrom(ref reader, maxNestDepth);
+                conditions[i] = DeserializeFrom(ref reader, maxNestDepth - 1);
             return conditions;
         }
 
@@ -60,6 +66,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The deserialized <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition DeserializeFrom(ref MemoryReader reader, int maxNestDepth)
         {
+            if (maxNestDepth <= 0) throw new FormatException();
             WitnessConditionType type = (WitnessConditionType)reader.ReadByte();
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException();
@@ -103,6 +110,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition FromJson(JObject json, int maxNestDepth)
         {
+            if (maxNestDepth <= 0) throw new FormatException();
             WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException("Invalid WitnessConditionType.");
@@ -127,9 +135,27 @@ namespace Neo.Network.P2P.Payloads.Conditions
             throw new NotSupportedException();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
+            return new Array(referenceCounter, new StackItem[] { (byte)Type });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(WitnessCondition left, WitnessCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(WitnessCondition left, WitnessCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Cache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
-using Neo.Persistence;
+using Neo.Extensions;
+using Neo.Persistence.Providers;
 using System.Text;
 
 namespace Neo.Cryptography.MPTTrie.Tests

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_GasToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,13 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using Neo.IO;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -24,7 +20,6 @@ using Neo.SmartContract;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.Extensions;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
@@ -39,41 +34,40 @@ using System.Numerics;
 using System.Numerics;
 using System.Threading.Tasks;
 using VMTypes = Neo.VM.Types;
-// using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_GasToken
     {
-        private DataCache _snapshot;
+        private DataCache _snapshotCache;
         private Block _persistingBlock;
 
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshot = TestBlockchain.GetTestSnapshot();
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
             _persistingBlock = new Block { Header = new Header() };
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name.Should().Be(nameof(GasToken));
+        public void Check_Name() => Assert.AreEqual(nameof(GasToken), NativeContract.GAS.Name);
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("GAS");
+        public void Check_Symbol() => Assert.AreEqual("GAS", NativeContract.GAS.Symbol(_snapshotCache));
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
+        public void Check_Decimals() => Assert.AreEqual(8, NativeContract.GAS.Decimals(_snapshotCache));
 
         [TestMethod]
         public async Task Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = _snapshot.CreateSnapshot();
+            var snapshot = _snapshotCache.CloneCache();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(5200000050000000); // 3000000000000000 + 50000000 (neo holder reward)
+            Assert.AreEqual(5200000050000000, supply); // 3000000000000000 + 50000000 (neo holder reward)
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
@@ -81,77 +75,77 @@ namespace Neo.UnitTests.SmartContract.Native
             // Check unclaim
 
             var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
-            unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
-            unclaim.State.Should().BeTrue();
+            Assert.AreEqual(new BigInteger(0.5 * 1000 * 100000000L), unclaim.Value);
+            Assert.IsTrue(unclaim.State);
 
             // Transfer
 
-            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock).Should().BeTrue();
-            Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
-            Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
-            NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000);
-            NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
+            Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
+            Assert.AreEqual(100000000, NativeContract.NEO.BalanceOf(snapshot, from));
+            Assert.AreEqual(0, NativeContract.NEO.BalanceOf(snapshot, to));
 
-            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(52000500_00000000);
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(0);
+            Assert.AreEqual(52000500_00000000, NativeContract.GAS.BalanceOf(snapshot, from));
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(snapshot, to));
 
             // Check unclaim
 
             unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
-            unclaim.Value.Should().Be(new BigInteger(0));
-            unclaim.State.Should().BeTrue();
+            Assert.AreEqual(new BigInteger(0), unclaim.Value);
+            Assert.IsTrue(unclaim.State);
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(5200050050000000);
+            Assert.AreEqual(5200050050000000, supply);
 
-            snapshot.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
+            Assert.AreEqual(keyCount + 3, snapshot.GetChangeSet().Count()); // Gas
 
             // Transfer
 
             keyCount = snapshot.GetChangeSet().Count();
 
-            NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, false, persistingBlock).Should().BeFalse(); // Not signed
-            NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000001, true, persistingBlock).Should().BeFalse(); // More than balance
-            NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, true, persistingBlock).Should().BeTrue(); // All balance
+            Assert.IsFalse(NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, false, persistingBlock)); // Not signed
+            Assert.IsFalse(NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000001, true, persistingBlock)); // More than balance
+            Assert.IsTrue(NativeContract.GAS.Transfer(snapshot, from, to, 52000500_00000000, true, persistingBlock)); // All balance
 
             // Balance of
 
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(52000500_00000000);
-            NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(0);
+            Assert.AreEqual(52000500_00000000, NativeContract.GAS.BalanceOf(snapshot, to));
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(snapshot, from));
 
-            snapshot.GetChangeSet().Count().Should().Be(keyCount + 1); // All
+            Assert.AreEqual(keyCount + 1, snapshot.GetChangeSet().Count()); // All
 
             // Burn
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             engine.LoadScript(Array.Empty<byte>());
 
-            await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
+            await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(async () =>
                 await NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
 
             // Burn more than expected
 
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
                 await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(52000500_00000001)));
 
             // Real burn
 
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
-            NativeContract.GAS.BalanceOf(engine.Snapshot, to).Should().Be(5200049999999999);
+            Assert.AreEqual(5200049999999999, NativeContract.GAS.BalanceOf(engine.SnapshotCache, to));
 
-            engine.Snapshot.GetChangeSet().Count().Should().Be(2);
+            Assert.AreEqual(2, engine.SnapshotCache.GetChangeSet().Count());
 
             // Burn all
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(5200049999999999));
 
-            (keyCount - 2).Should().Be(engine.Snapshot.GetChangeSet().Count());
+            Assert.AreEqual(keyCount - 2, engine.SnapshotCache.GetChangeSet().Count());
 
             // Bad inputs
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.GAS.Transfer(engine.SnapshotCache, from, new byte[19], BigInteger.One, false, persistingBlock));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)
@@ -206,44 +200,25 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = new Transaction[] { tx1, tx2 }
             };
-            var snapshot = _snapshot.CreateSnapshot();
-
-            // Designate single Notary node.
-            byte[] privateKey1 = new byte[32];
-            var rng1 = System.Security.Cryptography.RandomNumberGenerator.Create();
-            rng1.GetBytes(privateKey1);
-            KeyPair key1 = new KeyPair(privateKey1);
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            var ret = NativeContract.RoleManagement.Call(
-                snapshot,
-                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                new Block { Header = new Header() },
-                "designateAsRole",
-                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
-                new ContractParameter(ContractParameterType.Array) { Value = new List<ContractParameter>() { new ContractParameter(ContractParameterType.ByteArray) { Value = key1.PublicKey.ToArray() } } }
-            );
-            snapshot.Commit();
-
+            var snapshot = _snapshotCache.CloneCache();
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
             var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             // Check that block's Primary balance is 0.
-            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
             var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-            NativeContract.GAS.BalanceOf(engine.Snapshot, primary).Should().Be(0);
+            Assert.AreEqual(0, NativeContract.GAS.BalanceOf(engine.SnapshotCache, primary));
 
             // Execute OnPersist script.
             engine.LoadScript(script.ToArray());
             Assert.IsTrue(engine.Execute() == VMState.HALT);
 
             // Check that proper amount of GAS was minted to block's Primary and the rest
-            // is minted to Notary nodes as a reward.
-            Assert.AreEqual(2 + 1 + 1, engine.Notifications.Count()); // burn tx1 and tx2 network fee + mint primary reward + transfer Notary node reward
+            // will be minted to Notary nodes as a reward once Notary contract is implemented.
+            Assert.AreEqual(2 + 1, engine.Notifications.Count()); // burn tx1 and tx2 network fee + mint primary reward
             Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, engine.Notifications[2].State[2]);
-            NativeContract.GAS.BalanceOf(engine.Snapshot, primary).Should().Be(netFee1 + netFee2 - expectedNotaryReward);
-            Assert.AreEqual(expectedNotaryReward, engine.Notifications[3].State[2]);
-            NativeContract.GAS.BalanceOf(engine.Snapshot, key1.PublicKey.EncodePoint(true).ToScriptHash()).Should().Be(expectedNotaryReward);
+            Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, NativeContract.GAS.BalanceOf(engine.SnapshotCache, primary));
         }
     }
 }

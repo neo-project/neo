@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Diagnostic.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,9 +12,9 @@
 using Neo.SmartContract;
 using Neo.VM;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
-    class Diagnostic : IDiagnostic
+    public class Diagnostic : IDiagnostic
     {
         public Tree<UInt160> InvocationTree { get; } = new();
 

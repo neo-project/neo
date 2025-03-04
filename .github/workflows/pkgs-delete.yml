@@ -61,67 +61,53 @@ jobs:
 
         shell: python
 
-  delete-git-pkgs:
-    name: Delete Old Nuget Packages
+  delete-git-docker-pkgs:
+    name: Delete Old Docker Images
     runs-on: ubuntu-latest
 
     steps:
-    - name: Delete Neo.Cryptography.BLS12_381 Package
+    - name: Delete Neo Package (docker)
       uses: actions/delete-package-versions@v4
-      with:
-        package-name: Neo.Cryptography.BLS12_381
-        package-type: nuget
-        min-versions-to-keep: 3
-        delete-only-pre-release-versions: "true"
-        token: "${{ secrets.GITHUB_TOKEN }}"
-
-    - name: Delete Neo.VM Package
-      uses: actions/delete-package-versions@v4
-      with:
-        package-name: Neo.VM
-        package-type: nuget
-        min-versions-to-keep: 3
-        delete-only-pre-release-versions: "true"
-        token: "${{ secrets.GITHUB_TOKEN }}"
-
-    - name: Delete Neo.Json Package
-      uses: actions/delete-package-versions@v4
-      with:
-        package-name: Neo.Json
-        package-type: nuget
-        min-versions-to-keep: 3
-        delete-only-pre-release-versions: "true"
-        token: "${{ secrets.GITHUB_TOKEN }}"
-
-    - name: Delete Neo.IO Package
-      uses: actions/delete-package-versions@v4
-      with:
-        package-name: Neo.IO
-        package-type: nuget
-        min-versions-to-keep: 3
-        delete-only-pre-release-versions: "true"
-        token: "${{ secrets.GITHUB_TOKEN }}"
-
-    - name: Delete Neo Package
-      uses: actions/delete-package-versions@v4
+      continue-on-error: true
       with:
         package-name: Neo
-        package-type: nuget
-        min-versions-to-keep: 3
-        delete-only-pre-release-versions: "true"
+        package-type: docker
+        min-versions-to-keep: 1
         token: "${{ secrets.GITHUB_TOKEN }}"
-    - name: Delete Neo.ConsoleService Package
+
+  delete-git-nuget-pkgs:
+    name: Delete Old Nuget Packages
+    strategy:
+      matrix:
+        pkgs:
+          - "Neo.Plugins.StatesDumper"
+          - "Neo.Plugins.StateService"
+          - "Neo.Plugins.Storage.LevelDBStore"
+          - "Neo.Plugins.Storage.RocksDBStore"
+          - "Neo.Plugins.StorageDumper"
+          - "Neo.Plugins.TokensTracker"
+          - "Neo.Wallets.SQLite"
+          - "Neo.Consensus.DBFT"
+          - "Neo.ConsoleService"
+          - "Neo.Cryptography.MPT"
+          - "Neo.Extensions"
+          - "Neo.Network.RPC.RpcClient"
+          - "Neo.Plugins.ApplicationLogs"
+          - "Neo.Plugins.OracleService"
+          - "Neo.Plugins.RpcServer"
+          - "Neo.Cryptography.BLS12_381"
+          - "Neo.VM"
+          - "Neo.Json"
+          - "Neo.IO"
+          - "Neo"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Delete ${{ matrix.pkgs }} Package
       uses: actions/delete-package-versions@v4
+      continue-on-error: true
       with:
-        package-name: Neo.ConsoleService
-        package-type: nuget
-        min-versions-to-keep: 3
-        delete-only-pre-release-versions: "true"
-        token: "${{ secrets.GITHUB_TOKEN }}"
-    - name: Delete Neo.Extensions Package
-      uses: actions/delete-package-versions@v4
-      with:
-        package-name: Neo.Extensions
+        package-name: ${{ matrix.pkgs }}
         package-type: nuget
         min-versions-to-keep: 3
         delete-only-pre-release-versions: "true"

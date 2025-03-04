@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExecutionContext.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -107,7 +107,7 @@ namespace Neo.VM
             }
         }
 
-        internal ExecutionContext(Script script, int rvcount, ReferenceCounter referenceCounter)
+        internal ExecutionContext(Script script, int rvcount, IReferenceCounter referenceCounter)
             : this(new SharedStates(script, referenceCounter), rvcount, 0)
         {
         }

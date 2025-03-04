@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Logger.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.IEventHandlers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +20,7 @@ using static System.IO.Path;
 
 namespace Neo.CLI
 {
-    partial class MainService
+    partial class MainService : ILoggingHandler
     {
         private static readonly ConsoleColorSet DebugColor = new(ConsoleColor.Cyan);
         private static readonly ConsoleColorSet InfoColor = new(ConsoleColor.White);
@@ -32,12 +33,12 @@ namespace Neo.CLI
 
         private void Initialize_Logger()
         {
-            Utility.Logging += OnLog;
+            Utility.Logging += ((ILoggingHandler)this).Utility_Logging_Handler;
         }
 
         private void Dispose_Logger()
         {
-            Utility.Logging -= OnLog;
+            Utility.Logging -= ((ILoggingHandler)this).Utility_Logging_Handler;
         }
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace Neo.CLI
             }
         }
 
-        private void OnLog(string source, LogLevel level, object message)
+        void ILoggingHandler.Utility_Logging_Handler(string source, LogLevel level, object message)
         {
             if (!Settings.Default.Logger.Active)
                 return;

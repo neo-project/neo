@@ -2,7 +2,7 @@
 name: Feature or enhancement request
 about: Suggest an idea for Neo
 title: ''
-labels: discussion
+labels: Discussion
 assignees: ''
 ---
 

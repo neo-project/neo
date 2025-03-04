@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_AssetDescriptor.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 
 namespace Neo.UnitTests.Wallets
@@ -22,36 +22,36 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestConstructorWithNonexistAssetId()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             Action action = () =>
             {
-                var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
+                var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
             };
-            action.Should().Throw<ArgumentException>();
+            Assert.ThrowsExactly<ArgumentException>(action);
         }
 
         [TestMethod]
         public void Check_GAS()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, NativeContract.GAS.Hash);
-            descriptor.AssetId.Should().Be(NativeContract.GAS.Hash);
-            descriptor.AssetName.Should().Be(nameof(GasToken));
-            descriptor.ToString().Should().Be(nameof(GasToken));
-            descriptor.Symbol.Should().Be("GAS");
-            descriptor.Decimals.Should().Be(8);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.GAS.Hash);
+            Assert.AreEqual(NativeContract.GAS.Hash, descriptor.AssetId);
+            Assert.AreEqual(nameof(GasToken), descriptor.AssetName);
+            Assert.AreEqual(nameof(GasToken), descriptor.ToString());
+            Assert.AreEqual("GAS", descriptor.Symbol);
+            Assert.AreEqual(8, descriptor.Decimals);
         }
 
         [TestMethod]
         public void Check_NEO()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, TestProtocolSettings.Default, NativeContract.NEO.Hash);
-            descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
-            descriptor.AssetName.Should().Be(nameof(NeoToken));
-            descriptor.ToString().Should().Be(nameof(NeoToken));
-            descriptor.Symbol.Should().Be("NEO");
-            descriptor.Decimals.Should().Be(0);
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var descriptor = new AssetDescriptor(snapshotCache, TestProtocolSettings.Default, NativeContract.NEO.Hash);
+            Assert.AreEqual(NativeContract.NEO.Hash, descriptor.AssetId);
+            Assert.AreEqual(nameof(NeoToken), descriptor.AssetName);
+            Assert.AreEqual(nameof(NeoToken), descriptor.ToString());
+            Assert.AreEqual("NEO", descriptor.Symbol);
+            Assert.AreEqual(0, descriptor.Decimals);
         }
     }
 }

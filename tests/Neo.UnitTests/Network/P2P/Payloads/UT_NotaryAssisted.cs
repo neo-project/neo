@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NotaryAssisted.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -57,7 +58,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Wrong type
             buffer[0] = 0xff;
-            Assert.ThrowsException<FormatException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
             {
                 var reader = new MemoryReader(buffer);
                 TransactionAttribute.DeserializeFrom(ref reader);
@@ -72,7 +73,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Temporary use Notary contract hash stub for valid transaction.
             var txGood = new Transaction { Signers = new Signer[] { new Signer() { Account = notaryHash } } };
             var txBad = new Transaction { Signers = new Signer[] { new Signer() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") } } };
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
 
             Assert.IsTrue(attr.Verify(snapshot, txGood));
             Assert.IsFalse(attr.Verify(snapshot, txBad));
@@ -81,7 +82,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void CalculateNetworkFee()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
             var attr = new NotaryAssisted() { NKeys = 4 };
             var tx = new Transaction { Signers = new Signer[] { new Signer() { Account = notaryHash } } };
 

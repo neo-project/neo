@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ReferenceCounter.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,6 +12,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Test
 {
@@ -239,6 +241,21 @@ namespace Neo.Test
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
+        }
+
+        [TestMethod]
+        public void TestInvalidReferenceStackItem()
+        {
+            var reference = new ReferenceCounter();
+            var arr = new Array(reference);
+            var arr2 = new Array();
+
+            for (var i = 0; i < 10; i++)
+            {
+                arr2.Add(i);
+            }
+
+            Assert.ThrowsExactly<InvalidOperationException>(() => arr.Add(arr2));
         }
     }
 }

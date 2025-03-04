@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Wallet.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,7 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
-using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -25,8 +25,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using static Neo.SmartContract.Helper;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.CLI
 {
@@ -54,7 +56,7 @@ namespace Neo.CLI
             {
                 OpenWallet(path, password);
             }
-            catch (System.Security.Cryptography.CryptographicException)
+            catch (CryptographicException)
             {
                 ConsoleHelper.Error($"Failed to open file \"{path}\"");
             }
@@ -618,7 +620,7 @@ namespace Neo.CLI
                 return;
             }
 
-            if (NeoSystem.MemPool.TryGetValue(txid, out Transaction conflictTx))
+            if (NeoSystem.MemPool.TryGetValue(txid, out var conflictTx))
             {
                 tx.NetworkFee = Math.Max(tx.NetworkFee, conflictTx.NetworkFee) + 1;
             }
@@ -626,17 +628,17 @@ namespace Neo.CLI
             {
                 var snapshot = NeoSystem.StoreView;
                 AssetDescriptor descriptor = new(snapshot, NeoSystem.Settings, NativeContract.GAS.Hash);
-                string extracFee = ConsoleHelper.ReadUserInput("This tx is not in mempool, please input extra fee manually");
+                string extracFee = ConsoleHelper.ReadUserInput("This tx is not in mempool, please input extra fee (datoshi) manually");
                 if (!BigDecimal.TryParse(extracFee, descriptor.Decimals, out BigDecimal decimalExtraFee) || decimalExtraFee.Sign <= 0)
                 {
                     ConsoleHelper.Error("Incorrect Amount Format");
                     return;
                 }
                 tx.NetworkFee += (long)decimalExtraFee.Value;
-            };
+            }
 
             ConsoleHelper.Info("Network fee: ",
-                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
+                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)} GAS\t",
                 "Total fee: ",
                 $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
             if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ContractPermissionDescriptor.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,8 +10,12 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Json;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
+using System;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace Neo.UnitTests.SmartContract.Manifest
@@ -33,7 +37,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
-        public void TestFromAndToJson()
+        public void TestContractPermissionDescriptorFromAndToJson()
         {
             byte[] privateKey = new byte[32];
             RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -43,6 +47,33 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractPermissionDescriptor result = ContractPermissionDescriptor.FromJson(temp.ToJson());
             Assert.AreEqual(null, result.Hash);
             Assert.AreEqual(result.Group, result.Group);
+            Assert.ThrowsExactly<FormatException>(() => _ = ContractPermissionDescriptor.FromJson(string.Empty));
+        }
+
+        [TestMethod]
+        public void TestContractManifestFromJson()
+        {
+            Assert.ThrowsExactly<NullReferenceException>(() => _ = ContractManifest.FromJson(new JObject()));
+            var jsonFiles = Directory.GetFiles(Path.Combine("SmartContract", "Manifest", "TestFile"));
+            foreach (var item in jsonFiles)
+            {
+                var json = JObject.Parse(File.ReadAllText(item)) as JObject;
+                var manifest = ContractManifest.FromJson(json);
+                Assert.AreEqual(manifest.ToJson().ToString(), json.ToString());
+            }
+        }
+
+        [TestMethod]
+        public void TestEquals()
+        {
+            var descriptor1 = ContractPermissionDescriptor.CreateWildcard();
+            var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+
+            Assert.AreNotEqual(descriptor1, descriptor2);
+
+            var descriptor3 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
+
+            Assert.AreEqual(descriptor2, descriptor3);
         }
     }
 }

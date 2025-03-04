@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StorageDumper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,23 +10,27 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
-using Neo.IO;
+using Neo.Extensions;
+using Neo.IEventHandlers;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.StorageDumper
 {
-    public class StorageDumper : Plugin
+    public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
         private readonly Dictionary<uint, NeoSystem> systems = new Dictionary<uint, NeoSystem>();
 
-        private StreamWriter _writer;
-        private JObject _currentBlock;
-        private string _lastCreateDirectory;
-
+        private StreamWriter? _writer;
+        /// <summary>
+        /// _currentBlock stores the last cached item
+        /// </summary>
+        private JObject? _currentBlock;
+        private string? _lastCreateDirectory;
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
         public override string Description => "Exports Neo-CLI status data";
 
@@ -34,14 +38,14 @@ namespace Neo.Plugins
 
         public StorageDumper()
         {
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         public override void Dispose()
         {
-            Blockchain.Committing -= OnCommitting;
-            Blockchain.Committed -= OnCommitted;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
@@ -70,7 +74,7 @@ namespace Neo.Plugins
                 prefix = BitConverter.GetBytes(contract.Id);
             }
             var states = systems[network].StoreView.Find(prefix);
-            JArray array = new JArray(states.Where(p => !Settings.Default.Exclude.Contains(p.Key.Id)).Select(p => new JObject
+            JArray array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
                 ["value"] = Convert.ToBase64String(p.Value.ToArray())
@@ -82,7 +86,7 @@ namespace Neo.Plugins
                 $"{path}");
         }
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             InitFileWriter(system.Settings.Network, snapshot);
             OnPersistStorage(system.Settings.Network, snapshot);
@@ -90,68 +94,67 @@ namespace Neo.Plugins
 
         private void OnPersistStorage(uint network, DataCache snapshot)
         {
-            uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (blockIndex >= Settings.Default.HeightToBegin)
+            var blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (blockIndex >= Settings.Default!.HeightToBegin)
             {
-                JArray array = new JArray();
+                var stateChangeArray = new JArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
                     if (Settings.Default.Exclude.Contains(trackable.Key.Id))
                         continue;
-                    JObject state = new JObject();
-                    switch (trackable.State)
+                    var state = new JObject();
+                    switch (trackable.Value.State)
                     {
                         case TrackState.Added:
                             state["state"] = "Added";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
-                            // Here we have a new trackable.Key and trackable.Item
+                            state["value"] = Convert.ToBase64String(trackable.Value.Item.ToArray());
                             break;
                         case TrackState.Changed:
                             state["state"] = "Changed";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
-                            state["value"] = Convert.ToBase64String(trackable.Item.ToArray());
+                            state["value"] = Convert.ToBase64String(trackable.Value.Item.ToArray());
                             break;
                         case TrackState.Deleted:
                             state["state"] = "Deleted";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             break;
                     }
-                    array.Add(state);
+                    stateChangeArray.Add(state);
                 }
 
-                JObject bs_item = new JObject();
+                var bs_item = new JObject();
                 bs_item["block"] = blockIndex;
-                bs_item["size"] = array.Count;
-                bs_item["storage"] = array;
+                bs_item["size"] = stateChangeArray.Count;
+                bs_item["storage"] = stateChangeArray;
                 _currentBlock = bs_item;
             }
         }
 
 
-        private void OnCommitted(NeoSystem system, Block block)
+        void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            OnCommitStorage(system.Settings.Network, system.StoreView);
+            OnCommitStorage(system.Settings.Network);
         }
 
-        void OnCommitStorage(uint network, DataCache snapshot)
+        void OnCommitStorage(uint network)
         {
-            if (_currentBlock != null)
+            if (_currentBlock != null && _writer != null)
             {
                 _writer.WriteLine(_currentBlock.ToString());
                 _writer.Flush();
             }
         }
 
-        private void InitFileWriter(uint network, DataCache snapshot)
+        private void InitFileWriter(uint network, IReadOnlyStore snapshot)
         {
             uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (_writer == null
-                || blockIndex % Settings.Default.BlockCacheSize == 0)
+                || blockIndex % Settings.Default!.BlockCacheSize == 0)
             {
                 string path = GetOrCreateDirectory(network, blockIndex);
-                var filepart = (blockIndex / Settings.Default.BlockCacheSize) * Settings.Default.BlockCacheSize;
+                var filepart = (blockIndex / Settings.Default!.BlockCacheSize) * Settings.Default.BlockCacheSize;
                 path = $"{path}/dump-block-{filepart}.dump";
                 if (_writer != null)
                 {
@@ -174,9 +177,7 @@ namespace Neo.Plugins
 
         private string GetDirectoryPath(uint network, uint blockIndex)
         {
-            //Default Parameter
-            uint storagePerFolder = 100000;
-            uint folder = (blockIndex / storagePerFolder) * storagePerFolder;
+            uint folder = (blockIndex / Settings.Default!.StoragePerFolder) * Settings.Default.StoragePerFolder;
             return $"./StorageDumper_{network}/BlockStorage_{folder}";
         }
 

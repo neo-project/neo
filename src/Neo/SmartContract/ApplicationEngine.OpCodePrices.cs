@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ApplicationEngine.OpCodePrices.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -221,6 +221,10 @@ namespace Neo.SmartContract
             [OpCode.CONVERT] = 1 << 13,
         };
 
+        /// <summary>
+        /// The prices of all the opcodes.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        /// </summary>
         public static readonly long[] OpCodePriceTable = new long[byte.MaxValue];
 
         /// <summary>

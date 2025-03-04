@@ -1,0 +1,54 @@
+name: Release (nuget)
+
+# Trigger the workflow on a release event when a new release is published
+on:
+  release:
+    types: [published]
+
+# Define environment variables
+env:
+  DOTNET_VERSION: 9.0.x
+  CONFIGURATION: Release
+  NEO_NUGET_DIR: ./pkgs
+
+jobs:
+  nuget-release:
+    runs-on: ubuntu-latest
+    steps:
+    # Step to set the application version from the release tag
+    - name: Set Application Version (Environment Variable)
+      run: |
+        APP_VERSION=$(echo '${{ github.event.release.tag_name }}' | cut -d 'v' -f 2)
+        echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Pack NuGet Packages
+      run: |
+        dotnet pack ./neo.sln \
+        --configuration Release \
+        --output ${{ env.NEO_NUGET_DIR }} \
+        --verbosity normal \
+        -p:VersionPrefix=${{ env.APP_VERSION }} \
+        -p:DebugSymbols=false \
+        -p:DebugType=none \
+        -p:ServerGarbageCollection=true \
+        -p:TieredCompilation=true \
+        -p:TieredCompilationQuickJitForLoops=false \
+        -p:TieredPGO=true \
+        -p:GITHUB_ACTIONS=true
+
+    - name: Publish to NuGet.org
+      run: |
+        dotnet nuget push ${{ env.NEO_NUGET_DIR }}/*.nupkg \
+        --source https://api.nuget.org/v3/index.json \
+        --api-key ${{ secrets.NUGET_TOKEN }} \
+        --skip-duplicate

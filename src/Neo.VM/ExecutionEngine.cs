@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExecutionEngine.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -34,7 +34,7 @@ namespace Neo.VM
         /// <summary>
         /// Used for reference counting of objects in the VM.
         /// </summary>
-        public ReferenceCounter ReferenceCounter { get; }
+        public IReferenceCounter ReferenceCounter { get; }
 
         /// <summary>
         /// The invocation stack of the VM.
@@ -83,17 +83,18 @@ namespace Neo.VM
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionEngine"/> class.
         /// </summary>
+        /// <param name="jumpTable">The jump table to be used.</param>
         public ExecutionEngine(JumpTable? jumpTable = null) : this(jumpTable, new ReferenceCounter(), ExecutionEngineLimits.Default)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class with the specified <see cref="VM.ReferenceCounter"/> and <see cref="ExecutionEngineLimits"/>.
+        /// Initializes a new instance of the <see cref="ExecutionEngine"/> class with the specified <see cref="VM.IReferenceCounter"/> and <see cref="ExecutionEngineLimits"/>.
         /// </summary>
         /// <param name="jumpTable">The jump table to be used.</param>
         /// <param name="referenceCounter">The reference counter to be used.</param>
         /// <param name="limits">Restrictions on the VM.</param>
-        protected ExecutionEngine(JumpTable? jumpTable, ReferenceCounter referenceCounter, ExecutionEngineLimits limits)
+        protected ExecutionEngine(JumpTable? jumpTable, IReferenceCounter referenceCounter, ExecutionEngineLimits limits)
         {
             JumpTable = jumpTable ?? JumpTable.Default;
             Limits = limits;
@@ -235,6 +236,13 @@ namespace Neo.VM
         protected virtual void OnFault(Exception ex)
         {
             State = VMState.FAULT;
+
+#if VMPERF
+            if (ex != null)
+            {
+                Console.Error.WriteLine(ex);
+            }
+#endif
         }
 
         /// <summary>
@@ -283,7 +291,7 @@ namespace Neo.VM
         {
             if (ReferenceCounter.Count < Limits.MaxStackSize) return;
             if (ReferenceCounter.CheckZeroReferred() > Limits.MaxStackSize)
-                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}");
+                throw new InvalidOperationException($"MaxStackSize exceed: {ReferenceCounter.Count}/{Limits.MaxStackSize}");
         }
 
         /// <summary>

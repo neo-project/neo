@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Trie.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -18,12 +18,12 @@ namespace Neo.Cryptography.MPTTrie
     {
         private const byte Prefix = 0xf0;
         private readonly bool full;
-        private readonly ISnapshot store;
+        private readonly IStoreSnapshot store;
         private Node root;
         private readonly Cache cache;
         public Node Root => root;
 
-        public Trie(ISnapshot store, UInt256 root, bool full_state = false)
+        public Trie(IStoreSnapshot store, UInt256 root, bool full_state = false)
         {
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             cache = new Cache(store, Prefix);

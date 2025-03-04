@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_RemoteNode.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,10 +10,9 @@
 // modifications are permitted.
 
 using Akka.IO;
-using Akka.TestKit.Xunit2;
-using FluentAssertions;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
@@ -87,7 +86,7 @@ namespace Neo.UnitTests.Network.P2P
             var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
 
             //Verack
-            verackMessage.Data.Count.Should().Be(3);
+            Assert.AreEqual(3, verackMessage.Data.Count);
         }
     }
 }

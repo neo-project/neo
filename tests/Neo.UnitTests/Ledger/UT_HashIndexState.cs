@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_HashIndexState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.SmartContract;
@@ -42,8 +41,8 @@ namespace Neo.UnitTests.Ledger
             HashIndexState dest = new();
             ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
-            dest.Hash.Should().Be(origin.Hash);
-            dest.Index.Should().Be(origin.Index);
+            Assert.AreEqual(origin.Hash, dest.Hash);
+            Assert.AreEqual(origin.Index, dest.Index);
         }
     }
 }

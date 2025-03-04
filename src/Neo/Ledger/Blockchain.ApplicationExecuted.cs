@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Blockchain.ApplicationExecuted.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -62,7 +62,7 @@ namespace Neo.Ledger
                 Transaction = engine.ScriptContainer as Transaction;
                 Trigger = engine.Trigger;
                 VMState = engine.State;
-                GasConsumed = engine.GasConsumed;
+                GasConsumed = engine.FeeConsumed;
                 Exception = engine.FaultException;
                 Stack = engine.ResultStack.ToArray();
                 Notifications = engine.Notifications.ToArray();

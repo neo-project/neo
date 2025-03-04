@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RecoveryMessage.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,14 +9,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Consensus;
+using Neo.Plugins.DBFTPlugin.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Messages
 {
     public partial class RecoveryMessage : ConsensusMessage
     {

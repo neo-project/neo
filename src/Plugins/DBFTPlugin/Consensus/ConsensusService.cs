@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,17 +10,19 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Neo.Ledger.Blockchain;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusService : UntypedActor
     {
@@ -65,8 +67,8 @@ namespace Neo.Consensus
             blockchain = neoSystem.Blockchain;
             dbftSettings = settings;
             this.context = context;
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            Context.System.EventStream.Subscribe(Self, typeof(PersistCompleted));
+            Context.System.EventStream.Subscribe(Self, typeof(RelayResult));
         }
 
         private void OnPersistCompleted(Block block)
@@ -127,10 +129,10 @@ namespace Neo.Consensus
                     case Transaction transaction:
                         OnTransaction(transaction);
                         break;
-                    case Blockchain.PersistCompleted completed:
+                    case PersistCompleted completed:
                         OnPersistCompleted(completed.Block);
                         break;
-                    case Blockchain.RelayResult rr:
+                    case RelayResult rr:
                         if (rr.Result == VerifyResult.Succeed && rr.Inventory is ExtensiblePayload payload && payload.Category == "dBFT")
                             OnConsensusPayload(payload);
                         break;
@@ -146,7 +148,7 @@ namespace Neo.Consensus
             {
                 if (context.Transactions != null)
                 {
-                    blockchain.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
+                    blockchain.Ask<FillCompleted>(new FillMemoryPool
                     {
                         Transactions = context.Transactions.Values
                     }).Wait();
@@ -239,7 +241,7 @@ namespace Neo.Consensus
 
         private bool ReverifyAndProcessPayload(ExtensiblePayload payload)
         {
-            RelayResult relayResult = blockchain.Ask<RelayResult>(new Blockchain.Reverify { Inventories = new IInventory[] { payload } }).Result;
+            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = new IInventory[] { payload } }).Result;
             if (relayResult.Result != VerifyResult.Succeed) return false;
             OnConsensusPayload(payload);
             return true;

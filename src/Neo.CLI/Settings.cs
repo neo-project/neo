@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Settings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
-using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System;
 using System.Reflection;
 using System.Threading;
@@ -109,6 +109,7 @@ namespace Neo
     public class P2PSettings
     {
         public ushort Port { get; }
+        public bool EnableCompression { get; }
         public int MinDesiredConnections { get; }
         public int MaxConnections { get; }
         public int MaxConnectionsPerAddress { get; }
@@ -116,6 +117,7 @@ namespace Neo
         public P2PSettings(IConfigurationSection section)
         {
             Port = section.GetValue<ushort>(nameof(Port), 10333);
+            EnableCompression = section.GetValue(nameof(EnableCompression), Peer.DefaultEnableCompression);
             MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), Peer.DefaultMinDesiredConnections);
             MaxConnections = section.GetValue(nameof(MaxConnections), Peer.DefaultMaxConnections);
             MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), 3);
@@ -165,7 +167,7 @@ namespace Neo
 
     public class PluginsSettings
     {
-        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
+        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo/releases");
         public bool Prerelease { get; init; } = false;
         public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
 

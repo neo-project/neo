@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Network.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P;
@@ -43,6 +44,7 @@ namespace Neo.CLI
                 AddrPayload.Create(
                     NetworkAddressWithTime.Create(
                         payload, DateTime.UtcNow.ToTimestamp(),
+                        new ArchivalNodeCapability(),
                         new FullNodeCapability(),
                         new ServerCapability(NodeCapabilityType.TcpServer, port))
                     ));
@@ -117,7 +119,7 @@ namespace Neo.CLI
         [ConsoleCommand("broadcast transaction", Category = "Network Commands")]
         private void OnBroadcastTransactionCommand(UInt256 hash)
         {
-            if (NeoSystem.MemPool.TryGetValue(hash, out Transaction tx))
+            if (NeoSystem.MemPool.TryGetValue(hash, out var tx))
                 OnBroadcastCommand(MessageCommand.Transaction, tx);
         }
 

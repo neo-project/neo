@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ApplicationEngineLogModel.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Plugins.Store.States;
+using Neo.Plugins.ApplicationLogs.Store.States;
 
-namespace Neo.Plugins.Store.Models
+namespace Neo.Plugins.ApplicationLogs.Store.Models
 {
     public class ApplicationEngineLogModel
     {

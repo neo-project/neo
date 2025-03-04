@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Blockchain.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -82,7 +82,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("", "       PrevHash: ", $"{block.PrevHash}");
                 ConsoleHelper.Info("", "  NextConsensus: ", $"{block.NextConsensus}");
                 ConsoleHelper.Info("", "   PrimaryIndex: ", $"{block.PrimaryIndex}");
-                ConsoleHelper.Info("", "  PrimaryPubKey: ", $"{NativeContract.NEO.GetCommittee(NeoSystem.GetSnapshot())[block.PrimaryIndex]}");
+                ConsoleHelper.Info("", "  PrimaryPubKey: ", $"{NativeContract.NEO.GetCommittee(NeoSystem.GetSnapshotCache())[block.PrimaryIndex]}");
                 ConsoleHelper.Info("", "        Version: ", $"{block.Version}");
                 ConsoleHelper.Info("", "           Size: ", $"{block.Size} Byte(s)");
                 ConsoleHelper.Info();
@@ -137,9 +137,9 @@ namespace Neo.CLI
                 ConsoleHelper.Info("", "            Nonce: ", $"{tx.Transaction.Nonce}");
                 ConsoleHelper.Info("", "           Sender: ", $"{tx.Transaction.Sender}");
                 ConsoleHelper.Info("", "  ValidUntilBlock: ", $"{tx.Transaction.ValidUntilBlock}");
-                ConsoleHelper.Info("", "       FeePerByte: ", $"{tx.Transaction.FeePerByte}");
-                ConsoleHelper.Info("", "       NetworkFee: ", $"{tx.Transaction.NetworkFee}");
-                ConsoleHelper.Info("", "        SystemFee: ", $"{tx.Transaction.SystemFee}");
+                ConsoleHelper.Info("", "       FeePerByte: ", $"{tx.Transaction.FeePerByte} datoshi");
+                ConsoleHelper.Info("", "       NetworkFee: ", $"{tx.Transaction.NetworkFee} datoshi");
+                ConsoleHelper.Info("", "        SystemFee: ", $"{tx.Transaction.SystemFee} datoshi");
                 ConsoleHelper.Info("", "           Script: ", $"{Convert.ToBase64String(tx.Transaction.Script.Span)}");
                 ConsoleHelper.Info("", "          Version: ", $"{tx.Transaction.Version}");
                 ConsoleHelper.Info("", "       BlockIndex: ", $"{block.Index}");

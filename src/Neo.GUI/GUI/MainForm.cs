@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainForm.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions;
 using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -201,7 +202,7 @@ namespace Neo.GUI
             check_nep5_balance = false;
             UInt160[] addresses = Service.CurrentWallet.GetAccounts().Select(p => p.ScriptHash).ToArray();
             if (addresses.Length == 0) return;
-            using var snapshot = Service.NeoSystem.GetSnapshot();
+            using var snapshot = Service.NeoSystem.GetSnapshotCache();
             foreach (UInt160 assetId in NEP5Watched)
             {
                 byte[] script;

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NamedCurveHash.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,7 +13,6 @@ namespace Neo.SmartContract.Native
 {
     /// <summary>
     /// Represents a pair of the named curve used in ECDSA and a hash algorithm used to hash message.
-    /// This is a compatible extension of an obsolete <see cref="NamedCurve"/> enum.
     /// </summary>
     public enum NamedCurveHash : byte
     {

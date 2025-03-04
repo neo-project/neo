@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Conflicts.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,12 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.Ledger;
 using Neo.VM;
 using System;
 
@@ -31,17 +32,22 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 0x01, 0x01
             });
 
+        private Conflicts CreateConflictsPayload()
+        {
+            return new Conflicts() { Hash = _u };
+        }
+
         [TestMethod]
         public void Size_Get()
         {
-            var test = new Conflicts() { Hash = _u };
-            test.Size.Should().Be(1 + 32);
+            var test = CreateConflictsPayload();
+            Assert.AreEqual(1 + 32, test.Size);
         }
 
         [TestMethod]
         public void ToJson()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = CreateConflictsPayload();
             var json = test.ToJson().ToString();
             Assert.AreEqual(@"{""type"":""Conflicts"",""hash"":""0x0101010101010101010101010101010101010101010101010101010101010101""}", json);
         }
@@ -49,7 +55,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = new Conflicts() { Hash = _u };
+            var test = CreateConflictsPayload();
 
             var clone = test.ToArray().AsSerializable<Conflicts>();
             Assert.AreEqual(clone.Type, test.Type);
@@ -62,7 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Wrong type
             buffer[0] = 0xff;
-            Assert.ThrowsException<FormatException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
             {
                 var reader = new MemoryReader(buffer);
                 TransactionAttribute.DeserializeFrom(ref reader);
@@ -72,29 +78,29 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Verify()
         {
-            var test = new Conflicts() { Hash = _u };
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var key = Ledger.UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
+            var test = CreateConflictsPayload();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var key = UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 
             // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.
             var conflict = new TransactionState();
-            snapshot.Add(key, new StorageItem(conflict));
-            Assert.IsTrue(test.Verify(snapshot, new Transaction()));
+            snapshotCache.Add(key, new StorageItem(conflict));
+            Assert.IsTrue(test.Verify(snapshotCache, new Transaction()));
 
             // Conflicting transaction is on-chain.
-            snapshot.Delete(key);
+            snapshotCache.Delete(key);
             conflict = new TransactionState
             {
                 BlockIndex = 123,
                 Transaction = new Transaction(),
                 State = VMState.NONE
             };
-            snapshot.Add(key, new StorageItem(conflict));
-            Assert.IsFalse(test.Verify(snapshot, new Transaction()));
+            snapshotCache.Add(key, new StorageItem(conflict));
+            Assert.IsFalse(test.Verify(snapshotCache, new Transaction()));
 
             // There's no conflicting transaction at all.
-            snapshot.Delete(key);
-            Assert.IsTrue(test.Verify(snapshot, new Transaction()));
+            snapshotCache.Delete(key);
+            Assert.IsTrue(test.Verify(snapshotCache, new Transaction()));
         }
     }
 }

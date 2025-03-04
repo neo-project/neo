@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ApplicationEngine.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -22,7 +23,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Array = System.Array;
+using Buffer = Neo.VM.Types.Buffer;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -33,9 +36,11 @@ namespace Neo.SmartContract
     public partial class ApplicationEngine : ExecutionEngine
     {
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+        protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
@@ -50,14 +55,17 @@ namespace Neo.SmartContract
         public static event EventHandler<LogEventArgs> Log;
 
         private static Dictionary<uint, InteropDescriptor> services;
-        private readonly long gas_amount;
+        // Total amount of GAS spent to execute.
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
+        private readonly long _feeAmount;
         private Dictionary<Type, object> states;
-        private readonly DataCache originalSnapshot;
+        private readonly DataCache originalSnapshotCache;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         internal readonly uint ExecFeeFactor;
+        // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
 
@@ -91,7 +99,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
+        [Obsolete("This property is deprecated. Use SnapshotCache instead.")]
+        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
+
+        /// <summary>
+        /// The snapshotcache <see cref="SnapshotCache"/> used to read or write data.
+        /// </summary>
+        public DataCache SnapshotCache => CurrentContext?.GetState<ExecutionContextState>().SnapshotCache ?? originalSnapshotCache;
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -105,13 +119,22 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// GAS spent to execute.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
+        [Obsolete("This property is deprecated. Use FeeConsumed instead.")]
         public long GasConsumed { get; private set; } = 0;
 
         /// <summary>
-        /// The remaining GAS that can be spent in order to complete the execution.
+        /// GAS spent to execute.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
-        public long GasLeft => gas_amount - GasConsumed;
+        public long FeeConsumed { get; private set; } = 0;
+
+        /// <summary>
+        /// The remaining GAS that can be spent in order to complete the execution.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
+        /// </summary>
+        public long GasLeft => _feeAmount - FeeConsumed;
 
         /// <summary>
         /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
@@ -151,33 +174,46 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="trigger">The trigger of the execution.</param>
         /// <param name="container">The container of the script.</param>
-        /// <param name="snapshot">The snapshot used by the engine during execution.</param>
-        /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
+        /// <param name="snapshotCache">The snapshot used by the engine during execution.</param>
+        /// <param name="persistingBlock">
+        /// The block being persisted.
+        /// It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.
+        /// </param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">
+        /// The maximum gas, in the unit of datoshi, used in this execution.
+        /// The execution will fail when the gas is exhausted.
+        /// </param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(
-            TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock,
+        protected ApplicationEngine(
+            TriggerType trigger, IVerifiable container, DataCache snapshotCache, Block persistingBlock,
             ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
             : base(jumpTable ?? DefaultJumpTable)
         {
             Trigger = trigger;
             ScriptContainer = container;
-            originalSnapshot = snapshot;
+            originalSnapshotCache = snapshotCache;
             PersistingBlock = persistingBlock;
             ProtocolSettings = settings;
-            gas_amount = gas;
+            _feeAmount = gas;
             Diagnostic = diagnostic;
-            ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
-            StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            if (snapshotCache is null || persistingBlock?.Index == 0)
+            {
+                ExecFeeFactor = PolicyContract.DefaultExecFeeFactor;
+                StoragePrice = PolicyContract.DefaultStoragePrice;
+            }
+            else
+            {
+                ExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
+                StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
+            }
+
             if (persistingBlock is not null)
             {
-                fixed (byte* p = nonceData)
-                {
-                    *(ulong*)p ^= persistingBlock.Nonce;
-                }
+                ref ulong nonce = ref System.Runtime.CompilerServices.Unsafe.As<byte, ulong>(ref nonceData[0]);
+                nonce ^= persistingBlock.Nonce;
             }
             diagnostic?.Initialized(this);
         }
@@ -192,6 +228,13 @@ namespace Neo.SmartContract
             table[OpCode.CALLT] = OnCallT;
 
             return table;
+        }
+
+        public static JumpTable ComposeNotEchidnaJumpTable()
+        {
+            var jumpTable = ComposeDefaultJumpTable();
+            jumpTable[OpCode.SUBSTR] = VulnerableSubStr;
+            return jumpTable;
         }
 
         protected static void OnCallT(ExecutionEngine engine, Instruction instruction)
@@ -222,9 +265,7 @@ namespace Neo.SmartContract
         {
             if (engine is ApplicationEngine app)
             {
-                uint method = instruction.TokenU32;
-
-                app.OnSysCall(services[method]);
+                app.OnSysCall(GetInteropDescriptor(instruction.TokenU32));
             }
             else
             {
@@ -235,13 +276,15 @@ namespace Neo.SmartContract
         #endregion
 
         /// <summary>
-        /// Adds GAS to <see cref="GasConsumed"/> and checks if it has exceeded the maximum limit.
+        /// Adds GAS to <see cref="FeeConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
-        /// <param name="gas">The amount of GAS to be added.</param>
-        protected internal void AddGas(long gas)
+        /// <param name="datoshi">The amount of GAS, in the unit of datoshi, 1 datoshi = 1e-8 GAS, to be added.</param>
+        protected internal void AddFee(long datoshi)
         {
-            GasConsumed = checked(GasConsumed + gas);
-            if (GasConsumed > gas_amount)
+#pragma warning disable CS0618 // Type or member is obsolete
+            FeeConsumed = GasConsumed = checked(FeeConsumed + datoshi);
+#pragma warning restore CS0618 // Type or member is obsolete
+            if (FeeConsumed > _feeAmount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -259,7 +302,7 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Length);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
@@ -268,17 +311,21 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
-            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+            if (NativeContract.Policy.IsBlocked(SnapshotCache, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
 
+            ExecutionContext currentContext = CurrentContext;
+            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
             if (method.Safe)
             {
                 flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
             }
             else
             {
-                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
-                if (currentContract?.CanCall(contract, method.Name) == false)
+                var executingContract = IsHardforkEnabled(Hardfork.HF_Domovoi)
+                ? state.Contract // use executing contract state to avoid possible contract update/destroy side-effects, ref. https://github.com/neo-project/neo/pull/3290.
+                : NativeContract.ContractManagement.GetContract(SnapshotCache, CurrentScriptHash);
+                if (executingContract?.CanCall(contract, method.Name) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
 
@@ -291,8 +338,6 @@ namespace Neo.SmartContract
                 invocationCounter[contract.Hash] = 1;
             }
 
-            ExecutionContext currentContext = CurrentContext;
-            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
@@ -335,7 +380,7 @@ namespace Neo.SmartContract
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (UncaughtException is null)
                 {
-                    state.Snapshot?.Commit();
+                    state.SnapshotCache?.Commit();
                     if (CurrentContext != null)
                     {
                         ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
@@ -365,23 +410,58 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Use the loaded <see cref="IApplicationEngineProvider"/> to create a new instance of the <see cref="ApplicationEngine"/> class. If no <see cref="IApplicationEngineProvider"/> is loaded, the constructor of <see cref="ApplicationEngine"/> will be called.
+        /// Use the loaded <see cref="IApplicationEngineProvider"/> to create a new instance of the <see cref="ApplicationEngine"/> class.
+        /// If no <see cref="IApplicationEngineProvider"/> is loaded, the constructor of <see cref="ApplicationEngine"/> will be called.
         /// </summary>
         /// <param name="trigger">The trigger of the execution.</param>
         /// <param name="container">The container of the script.</param>
         /// <param name="snapshot">The snapshot used by the engine during execution.</param>
-        /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
+        /// <param name="persistingBlock">
+        /// The block being persisted.
+        /// It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.
+        /// </param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">
+        /// The maximum gas used in this execution, in the unit of datoshi.
+        /// The execution will fail when the gas is exhausted.
+        /// </param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            // Adjust jump table according persistingBlock
-            var jumpTable = ApplicationEngine.DefaultJumpTable;
+            var index = persistingBlock?.Index ?? (snapshot == null ? 0 : NativeContract.Ledger.CurrentIndex(snapshot));
 
+            // Adjust jump table according persistingBlock
+
+            var jumpTable = settings == null || settings.IsHardforkEnabled(Hardfork.HF_Echidna, index) ? DefaultJumpTable : NotEchidnaJumpTable;
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
+        }
+
+        /// <summary>
+        /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
+        /// <see cref="OpCode.SUBSTR"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 3, Push 1</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void VulnerableSubStr(ExecutionEngine engine, Instruction instruction)
+        {
+            var count = (int)engine.Pop().GetInteger();
+            if (count < 0)
+                throw new InvalidOperationException($"The count can not be negative for {nameof(OpCode.SUBSTR)}, count: {count}.");
+            var index = (int)engine.Pop().GetInteger();
+            if (index < 0)
+                throw new InvalidOperationException($"The index can not be negative for {nameof(OpCode.SUBSTR)}, index: {index}.");
+            var x = engine.Pop().GetSpan();
+            // Note: here it's the main change
+            if (index + count > x.Length)
+                throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
+
+            Buffer result = new(count, false);
+            x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
+            engine.Push(result);
         }
 
         public override void LoadContext(ExecutionContext context)
@@ -421,7 +501,7 @@ namespace Neo.SmartContract
                 });
 
             // Call initialization
-            var init = contract.Manifest.Abi.GetMethod("_initialize", 0);
+            var init = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Initialize, ContractBasicMethod.InitializePCount);
             if (init != null)
             {
                 LoadContext(context.Clone(init.Offset));
@@ -443,7 +523,7 @@ namespace Neo.SmartContract
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             ExecutionContextState state = context.GetState<ExecutionContextState>();
-            state.Snapshot = Snapshot?.CreateSnapshot();
+            state.SnapshotCache = SnapshotCache?.CloneCache();
             configureState?.Invoke(state);
 
             // Load context
@@ -555,7 +635,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddGas(descriptor.FixedPrice * ExecFeeFactor);
+            AddFee(descriptor.FixedPrice * ExecFeeFactor);
 
             object[] parameters = new object[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -569,7 +649,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddGas(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
+            AddFee(ExecFeeFactor * OpCodePriceTable[(byte)instruction.OpCode]);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
@@ -578,7 +658,7 @@ namespace Neo.SmartContract
             Diagnostic?.PostExecuteInstruction(instruction);
         }
 
-        private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
+        private static Block CreateDummyBlock(IReadOnlyStore snapshot, ProtocolSettings settings)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
             Block currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
@@ -619,6 +699,17 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
+        /// Get Interop Descriptor
+        /// </summary>
+        /// <param name="methodHash">Method Hash</param>
+        /// <returns>InteropDescriptor</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static InteropDescriptor GetInteropDescriptor(uint methodHash)
+        {
+            return services[methodHash];
+        }
+
+        /// <summary>
         /// Creates a new instance of the <see cref="ApplicationEngine"/> class, and use it to run the specified script.
         /// </summary>
         /// <param name="script">The script to be executed.</param>
@@ -627,7 +718,7 @@ namespace Neo.SmartContract
         /// <param name="persistingBlock">The block being persisted.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="offset">The initial position of the instruction pointer.</param>
-        /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="gas">The maximum gas, in the unit of datoshi, used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)

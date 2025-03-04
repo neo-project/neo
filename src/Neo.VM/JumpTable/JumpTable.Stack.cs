@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // JumpTable.Stack.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -47,7 +47,7 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// 
+        /// Removes the second-to-top stack item.
         /// <see cref="OpCode.NIP"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
@@ -59,7 +59,7 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Removes the nth item from the top of the evaluation stack.
+        /// Removes the n-th item from the top of the evaluation stack.
         /// <see cref="OpCode.XDROP"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>

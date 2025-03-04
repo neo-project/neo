@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.Utilities.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,12 +13,12 @@ using Neo.Json;
 using Neo.Wallets;
 using System.Linq;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
         [RpcMethod]
-        protected virtual JToken ListPlugins(JArray _params)
+        protected internal virtual JToken ListPlugins(JArray _params)
         {
             return new JArray(Plugin.Plugins
                 .OrderBy(u => u.Name)
@@ -34,7 +34,7 @@ namespace Neo.Plugins
         }
 
         [RpcMethod]
-        protected virtual JToken ValidateAddress(JArray _params)
+        protected internal virtual JToken ValidateAddress(JArray _params)
         {
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invlid address format: {_params[0]}"));
             JObject json = new();

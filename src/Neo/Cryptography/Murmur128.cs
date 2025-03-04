@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Murmur128.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,14 +12,13 @@
 using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
     /// <summary>
     /// Computes the 128 bits murmur hash for the input data.
     /// </summary>
-    public sealed class Murmur128 : HashAlgorithm
+    public sealed class Murmur128 : System.Security.Cryptography.HashAlgorithm
     {
         private const ulong c1 = 0x87c37b91114253d5;
         private const ulong c2 = 0x4cf5ad432745937f;
@@ -32,7 +31,8 @@ namespace Neo.Cryptography
         private readonly uint seed;
         private int length;
 
-        public override int HashSize => 128;
+        public const int HashSizeInBits = 128;
+        public override int HashSize => HashSizeInBits;
 
         private ulong H1 { get; set; }
         private ulong H2 { get; set; }
@@ -44,6 +44,7 @@ namespace Neo.Cryptography
         public Murmur128(uint seed)
         {
             this.seed = seed;
+            HashSizeValue = HashSizeInBits;
             Initialize();
         }
 

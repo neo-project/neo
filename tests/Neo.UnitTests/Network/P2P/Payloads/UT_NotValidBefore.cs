@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NotValidBefore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
@@ -25,7 +25,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var test = new NotValidBefore();
-            test.Size.Should().Be(5);
+            Assert.AreEqual(5, test.Size);
         }
 
         [TestMethod]
@@ -77,12 +77,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Verify()
         {
             var test = new NotValidBefore();
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            test.Height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            test.Height = NativeContract.Ledger.CurrentIndex(snapshotCache) + 1;
 
-            Assert.IsFalse(test.Verify(snapshot, new Transaction()));
+            Assert.IsFalse(test.Verify(snapshotCache, new Transaction()));
             test.Height--;
-            Assert.IsTrue(test.Verify(snapshot, new Transaction()));
+            Assert.IsTrue(test.Verify(snapshotCache, new Transaction()));
         }
     }
 }

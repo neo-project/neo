@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Settings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Neo.Plugins.StateService
 {
-    internal class Settings
+    internal class Settings : PluginSettings
     {
         public string Path { get; }
         public bool FullState { get; }
@@ -23,7 +23,7 @@ namespace Neo.Plugins.StateService
 
         public static Settings Default { get; private set; }
 
-        private Settings(IConfigurationSection section)
+        private Settings(IConfigurationSection section) : base(section)
         {
             Path = section.GetValue("Path", "Data_MPT_{0}");
             FullState = section.GetValue("FullState", false);

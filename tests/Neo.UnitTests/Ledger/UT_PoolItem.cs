@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_PoolItem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
@@ -47,30 +46,30 @@ namespace Neo.UnitTests.Ledger
         public void PoolItem_CompareTo_Fee()
         {
             int size1 = 51;
-            int netFeeSatoshi1 = 1;
-            var tx1 = GenerateTx(netFeeSatoshi1, size1);
+            int netFeeDatoshi1 = 1;
+            var tx1 = GenerateTx(netFeeDatoshi1, size1);
             int size2 = 51;
-            int netFeeSatoshi2 = 2;
-            var tx2 = GenerateTx(netFeeSatoshi2, size2);
+            int netFeeDatoshi2 = 2;
+            var tx2 = GenerateTx(netFeeDatoshi2, size2);
 
             PoolItem pitem1 = new PoolItem(tx1);
             PoolItem pitem2 = new PoolItem(tx2);
 
             Console.WriteLine($"item1 time {pitem1.Timestamp} item2 time {pitem2.Timestamp}");
             // pitem1 < pitem2 (fee) => -1
-            pitem1.CompareTo(pitem2).Should().Be(-1);
+            Assert.AreEqual(-1, pitem1.CompareTo(pitem2));
             // pitem2 > pitem1 (fee) => 1
-            pitem2.CompareTo(pitem1).Should().Be(1);
+            Assert.AreEqual(1, pitem2.CompareTo(pitem1));
         }
 
         [TestMethod]
         public void PoolItem_CompareTo_Hash()
         {
             int sizeFixed = 51;
-            int netFeeSatoshiFixed = 1;
+            int netFeeDatoshiFixed = 1;
 
-            var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
-            var tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
+            var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeDatoshiFixed, sizeFixed);
+            var tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeDatoshiFixed, sizeFixed);
 
             tx1.Attributes = new TransactionAttribute[] { new HighPriorityAttribute() };
 
@@ -78,24 +77,24 @@ namespace Neo.UnitTests.Ledger
             PoolItem pitem2 = new PoolItem(tx2);
 
             // Different priority
-            pitem2.CompareTo(pitem1).Should().Be(-1);
+            Assert.AreEqual(-1, pitem2.CompareTo(pitem1));
 
             // Bulk test
             for (int testRuns = 0; testRuns < 30; testRuns++)
             {
-                tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
-                tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
+                tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeDatoshiFixed, sizeFixed);
+                tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeDatoshiFixed, sizeFixed);
 
                 pitem1 = new PoolItem(tx1);
                 pitem2 = new PoolItem(tx2);
 
-                pitem2.CompareTo((Transaction)null).Should().Be(1);
+                Assert.AreEqual(1, pitem2.CompareTo((Transaction)null));
 
                 // pitem2.tx.Hash < pitem1.tx.Hash => 1 descending order
-                pitem2.CompareTo(pitem1).Should().Be(1);
+                Assert.AreEqual(1, pitem2.CompareTo(pitem1));
 
                 // pitem2.tx.Hash > pitem1.tx.Hash => -1 descending order
-                pitem1.CompareTo(pitem2).Should().Be(-1);
+                Assert.AreEqual(-1, pitem1.CompareTo(pitem2));
             }
         }
 
@@ -103,16 +102,16 @@ namespace Neo.UnitTests.Ledger
         public void PoolItem_CompareTo_Equals()
         {
             int sizeFixed = 500;
-            int netFeeSatoshiFixed = 10;
-            var tx = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
+            int netFeeDatoshiFixed = 10;
+            var tx = GenerateTx(netFeeDatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
 
             PoolItem pitem1 = new PoolItem(tx);
             PoolItem pitem2 = new PoolItem(tx);
 
             // pitem1 == pitem2 (fee) => 0
-            pitem1.CompareTo(pitem2).Should().Be(0);
-            pitem2.CompareTo(pitem1).Should().Be(0);
-            pitem2.CompareTo((PoolItem)null).Should().Be(1);
+            Assert.AreEqual(0, pitem1.CompareTo(pitem2));
+            Assert.AreEqual(0, pitem2.CompareTo(pitem1));
+            Assert.AreEqual(1, pitem2.CompareTo((PoolItem)null));
         }
 
         public Transaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, long networkFee, int size)
@@ -157,8 +156,8 @@ namespace Neo.UnitTests.Ledger
                 }
             };
 
-            tx.Attributes.Length.Should().Be(0);
-            tx.Signers.Length.Should().Be(0);
+            Assert.AreEqual(0, tx.Attributes.Length);
+            Assert.AreEqual(0, tx.Signers.Length);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // AccountState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Native
             Balance = ((Struct)stackItem)[0].GetInteger();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { Balance };
         }

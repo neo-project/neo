@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusService.Check.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,13 +10,14 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
 using System;
 using System.Linq;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusService
     {

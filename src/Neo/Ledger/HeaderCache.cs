@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // HeaderCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -55,12 +55,26 @@ namespace Neo.Ledger
         /// <summary>
         /// Gets the number of elements in the cache.
         /// </summary>
-        public int Count => headers.Count;
+        public int Count
+        {
+            get
+            {
+                readerWriterLock.EnterReadLock();
+                try
+                {
+                    return headers.Count;
+                }
+                finally
+                {
+                    readerWriterLock.ExitReadLock();
+                }
+            }
+        }
 
         /// <summary>
         /// Indicates whether the cache is full.
         /// </summary>
-        public bool Full => headers.Count >= 10000;
+        public bool Full => Count >= 10000;
 
         /// <summary>
         /// Gets the last <see cref="Header"/> in the cache. Or <see langword="null"/> if the cache is empty.

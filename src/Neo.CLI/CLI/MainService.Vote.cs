@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Vote.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -19,6 +20,7 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Numerics;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.CLI
 {
@@ -140,7 +142,7 @@ namespace Neo.CLI
         {
             if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCandidates", out StackItem result, null, null, false)) return;
 
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
 
             if (resJArray.Count > 0)
             {
@@ -149,7 +151,7 @@ namespace Neo.CLI
 
                 foreach (var item in resJArray)
                 {
-                    var value = (VM.Types.Array)item;
+                    var value = (Array)item;
                     if (value is null) continue;
 
                     Console.Write(((ByteString)value[0])?.GetSpan().ToHexString() + "\t");
@@ -166,7 +168,7 @@ namespace Neo.CLI
         {
             if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getCommittee", out StackItem result, null, null, false)) return;
 
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
 
             if (resJArray.Count > 0)
             {
@@ -188,7 +190,7 @@ namespace Neo.CLI
         {
             if (!OnInvokeWithResult(NativeContract.NEO.Hash, "getNextBlockValidators", out StackItem result, null, null, false)) return;
 
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
 
             if (resJArray.Count > 0)
             {
@@ -222,7 +224,7 @@ namespace Neo.CLI
                 ConsoleHelper.Warning(notice);
                 return;
             }
-            var resJArray = (VM.Types.Array)result;
+            var resJArray = (Array)result;
             if (resJArray is null)
             {
                 ConsoleHelper.Warning(notice);

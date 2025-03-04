@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ScriptBuilder.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,26 +20,33 @@ namespace Neo.VM
     /// </summary>
     public class ScriptBuilder : IDisposable
     {
-        private readonly MemoryStream ms = new();
-        private readonly BinaryWriter writer;
+        private readonly MemoryStream _stream;
+        private readonly BinaryWriter _writer;
 
         /// <summary>
         /// The length of the script.
         /// </summary>
-        public int Length => (int)ms.Position;
+        public int Length => (int)_stream.Position;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScriptBuilder"/> class.
         /// </summary>
-        public ScriptBuilder()
+        /// <param name="initialCapacity">The initial capacity of the script.</param>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="initialCapacity"/> is negative.
+        /// </exception>
+        public ScriptBuilder(int initialCapacity = 0)
         {
-            writer = new BinaryWriter(ms);
+            if (initialCapacity < 0)
+                throw new ArgumentOutOfRangeException(nameof(initialCapacity), "cannot be negative");
+            _stream = new MemoryStream(initialCapacity);
+            _writer = new BinaryWriter(_stream);
         }
 
         public void Dispose()
         {
-            writer.Dispose();
-            ms.Dispose();
+            _writer.Dispose();
+            _stream.Dispose();
         }
 
         /// <summary>
@@ -50,8 +57,8 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder Emit(OpCode opcode, ReadOnlySpan<byte> operand = default)
         {
-            writer.Write((byte)opcode);
-            writer.Write(operand);
+            _writer.Write((byte)opcode);
+            _writer.Write(operand);
             return this;
         }
 
@@ -104,7 +111,8 @@ namespace Neo.VM
                 <= 4 => Emit(OpCode.PUSHINT32, PadRight(buffer, bytesWritten, 4, value.Sign < 0)),
                 <= 8 => Emit(OpCode.PUSHINT64, PadRight(buffer, bytesWritten, 8, value.Sign < 0)),
                 <= 16 => Emit(OpCode.PUSHINT128, PadRight(buffer, bytesWritten, 16, value.Sign < 0)),
-                _ => Emit(OpCode.PUSHINT256, PadRight(buffer, bytesWritten, 32, value.Sign < 0)),
+                <= 32 => Emit(OpCode.PUSHINT256, PadRight(buffer, bytesWritten, 32, value.Sign < 0)),
+                _ => throw new ArgumentOutOfRangeException(nameof(value), "Invalid value: BigInteger is too large"),
             };
         }
 
@@ -125,25 +133,23 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(ReadOnlySpan<byte> data)
         {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data));
             if (data.Length < 0x100)
             {
                 Emit(OpCode.PUSHDATA1);
-                writer.Write((byte)data.Length);
-                writer.Write(data);
+                _writer.Write((byte)data.Length);
+                _writer.Write(data);
             }
             else if (data.Length < 0x10000)
             {
                 Emit(OpCode.PUSHDATA2);
-                writer.Write((ushort)data.Length);
-                writer.Write(data);
+                _writer.Write((ushort)data.Length);
+                _writer.Write(data);
             }
             else// if (data.Length < 0x100000000L)
             {
                 Emit(OpCode.PUSHDATA4);
-                writer.Write(data.Length);
-                writer.Write(data);
+                _writer.Write(data.Length);
+                _writer.Write(data);
             }
             return this;
         }
@@ -165,7 +171,7 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitRaw(ReadOnlySpan<byte> script = default)
         {
-            writer.Write(script);
+            _writer.Write(script);
             return this;
         }
 
@@ -185,8 +191,8 @@ namespace Neo.VM
         /// <returns>A byte array contains the script.</returns>
         public byte[] ToArray()
         {
-            writer.Flush();
-            return ms.ToArray();
+            _writer.Flush();
+            return _stream.ToArray();
         }
 
         private static ReadOnlySpan<byte> PadRight(Span<byte> buffer, int dataLength, int padLength, bool negative)

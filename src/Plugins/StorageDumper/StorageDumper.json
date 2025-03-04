@@ -2,6 +2,8 @@
   "PluginConfiguration": {
     "BlockCacheSize": 1000,
     "HeightToBegin": 0,
-    "Exclude": [ -4 ]
+    "StoragePerFolder": 100000,
+    "Exclude": [ -4 ],
+    "UnhandledExceptionPolicy": "Ignore"
   }
 }
