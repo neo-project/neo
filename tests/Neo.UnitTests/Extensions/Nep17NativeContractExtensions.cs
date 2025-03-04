@@ -71,7 +71,7 @@ namespace Neo.UnitTests.Extensions
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(Boolean));
 
             return result.GetBoolean();
         }

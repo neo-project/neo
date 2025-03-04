@@ -129,6 +129,47 @@ namespace Neo.UnitTests
             };
         }
 
+        public static Transaction GetTransaction(UInt160 sender, UInt160 signer)
+        {
+            return new Transaction
+            {
+                Script = new[] { (byte)OpCode.PUSH2 },
+                Attributes = [],
+                Signers =
+                [
+                    new Signer
+                    {
+                        Account = sender,
+                        Scopes = WitnessScope.CalledByEntry,
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
+                    },
+                    new Signer
+                    {
+                        Account = signer,
+                        Scopes = WitnessScope.CalledByEntry,
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
+                    }
+                ],
+                Witnesses =
+                [
+                    new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
+                    },
+                    new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
+                    }
+                ]
+            };
+        }
+
         public static Transaction CreateInvalidTransaction(DataCache snapshot, NEP6Wallet wallet, WalletAccount account, InvalidTransactionType type, UInt256 conflict = null)
         {
             var rand = new Random();

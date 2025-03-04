@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Notary.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,7 +13,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native
         {
             if (hardfork == ActiveIn)
             {
-                engine.Snapshot.Add(CreateStorageKey(Prefix_MaxNotValidBeforeDelta), new StorageItem(DefaultMaxNotValidBeforeDelta));
+                engine.SnapshotCache.Add(CreateStorageKey(Prefix_MaxNotValidBeforeDelta), new StorageItem(DefaultMaxNotValidBeforeDelta));
             }
             return ContractTask.CompletedTask;
         }
@@ -63,20 +63,21 @@ namespace Neo.SmartContract.Native
                 var attr = tx.GetAttribute<NotaryAssisted>();
                 if (attr is not null)
                 {
-                    notaries ??= GetNotaryNodes(engine.Snapshot);
+                    notaries ??= GetNotaryNodes(engine.SnapshotCache);
                     var nKeys = attr.NKeys;
                     nFees += (long)nKeys + 1;
                     if (tx.Sender == Hash)
                     {
                         var payer = tx.Signers[1];
-                        var balance = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Deposit).Add(payer.Account.ToArray()))?.GetInteroperable<Deposit>();
+                        var balance = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, payer.Account))?.GetInteroperable<Deposit>();
                         balance.Amount -= tx.SystemFee + tx.NetworkFee;
-                        if (balance.Amount.Sign == 0) RemoveDepositFor(engine.Snapshot, payer.Account);
+                        if (balance.Amount.Sign == 0) RemoveDepositFor(engine.SnapshotCache, payer.Account);
                     }
                 }
             }
             if (nFees == 0) return;
-            var singleReward = CalculateNotaryReward(engine.Snapshot, nFees, notaries.Length);
+            var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
+
             foreach (var notary in notaries) await GAS.Mint(engine, notary.EncodePoint(true).ToScriptHash(), singleReward, false);
         }
 
@@ -104,10 +105,10 @@ namespace Neo.SmartContract.Native
             {
                 if (tx.Signers.Length != 2) return false;
                 var payer = tx.Signers[1].Account;
-                var balance = GetDepositFor(engine.Snapshot, payer);
+                var balance = GetDepositFor(engine.SnapshotCache, payer);
                 if (balance is null || balance.Amount.CompareTo(tx.NetworkFee + tx.SystemFee) < 0) return false;
             }
-            ECPoint[] notaries = GetNotaryNodes(engine.Snapshot);
+            ECPoint[] notaries = GetNotaryNodes(engine.SnapshotCache);
             var hash = tx.GetSignData(engine.GetNetwork());
             return notaries.Any(n => Crypto.VerifySignature(hash, sig, n));
         }
@@ -131,13 +132,13 @@ namespace Neo.SmartContract.Native
             var till = (uint)additionalParams[1].GetInteger();
             var tx = (Transaction)engine.ScriptContainer;
             var allowedChangeTill = tx.Sender == to;
-            var currentHeight = Ledger.CurrentIndex(engine.Snapshot);
-            Deposit deposit = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Deposit).Add(to.ToArray()))?.GetInteroperable<Deposit>();
+            var currentHeight = Ledger.CurrentIndex(engine.SnapshotCache);
+            Deposit deposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, to))?.GetInteroperable<Deposit>();
             if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
             if (deposit is null)
             {
-                var feePerKey = Policy.GetAttributeFee(engine.Snapshot, (byte)TransactionAttributeType.NotaryAssisted);
+                var feePerKey = Policy.GetAttributeFee(engine.SnapshotCache, (byte)TransactionAttributeType.NotaryAssisted);
                 if ((long)amount < 2 * feePerKey) throw new ArgumentOutOfRangeException(string.Format("first deposit can not be less than {0}, got {1}", 2 * feePerKey, amount));
                 deposit = new Deposit() { Amount = 0, Till = 0 };
                 if (!allowedChangeTill) till = currentHeight + DefaultDepositDeltaTill;
@@ -160,8 +161,8 @@ namespace Neo.SmartContract.Native
         public bool LockDepositUntil(ApplicationEngine engine, UInt160 addr, uint till)
         {
             if (!engine.CheckWitnessInternal(addr)) return false;
-            if (till < Ledger.CurrentIndex(engine.Snapshot)) return false;
-            Deposit deposit = GetDepositFor(engine.Snapshot, addr);
+            if (till < Ledger.CurrentIndex(engine.SnapshotCache)) return false;
+            Deposit deposit = GetDepositFor(engine.SnapshotCache, addr);
             if (deposit is null) return false;
             if (till < deposit.Till) return false;
             deposit.Till = till;
@@ -211,9 +212,9 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CheckWitnessInternal(from)) throw new InvalidOperationException(string.Format("Failed to check witness for {0}", from.ToString()));
             var receive = to is null ? from : to;
-            var deposit = GetDepositFor(engine.Snapshot, from) ?? throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
-            if (Ledger.CurrentIndex(engine.Snapshot) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
-            RemoveDepositFor(engine.Snapshot, from);
+            var deposit = GetDepositFor(engine.SnapshotCache, from) ?? throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
+            if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
+            RemoveDepositFor(engine.SnapshotCache, from);
             if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, StackItem.Null))
             {
                 throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
@@ -242,7 +243,7 @@ namespace Neo.SmartContract.Native
         {
             if (value > engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount) throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}", engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MaxNotValidBeforeDelta)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MaxNotValidBeforeDelta)).Set(value);
         }
 
         /// <summary>
@@ -256,7 +257,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// GetDepositFor returns state.Deposit for the specified account or nil in case if deposit
+        /// GetDepositFor returns Deposit for the specified account or nil in case if deposit
         /// is not found in storage.
         /// </summary>
         /// <param name="snapshot"></param>
@@ -264,7 +265,7 @@ namespace Neo.SmartContract.Native
         /// <returns>Deposit for the specified account.</returns>
         private Deposit GetDepositFor(DataCache snapshot, UInt160 acc)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Deposit).Add(acc.ToArray()))?.GetInteroperable<Deposit>();
+            return snapshot.TryGet(CreateStorageKey(Prefix_Deposit, acc))?.GetInteroperable<Deposit>();
         }
 
         /// <summary>
@@ -275,7 +276,7 @@ namespace Neo.SmartContract.Native
         /// <param name="deposit">deposit</param>
         private void PutDepositFor(ApplicationEngine engine, UInt160 acc, Deposit deposit)
         {
-            var indeposit = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Deposit).Add(acc.ToArray()), () => new StorageItem(deposit));
+            var indeposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, acc), () => new StorageItem(deposit));
             indeposit.Value = new StorageItem(deposit).Value;
         }
 
@@ -286,7 +287,7 @@ namespace Neo.SmartContract.Native
         /// <param name="acc">Account</param>
         private void RemoveDepositFor(DataCache snapshot, UInt160 acc)
         {
-            snapshot.Delete(CreateStorageKey(Prefix_Deposit).Add(acc.ToArray()));
+            snapshot.Delete(CreateStorageKey(Prefix_Deposit, acc));
         }
 
         /// <summary>
@@ -313,7 +314,7 @@ namespace Neo.SmartContract.Native
                 Till = (uint)@struct[1].GetInteger();
             }
 
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            public StackItem ToStackItem(IReferenceCounter referenceCounter)
             {
                 return new Struct(referenceCounter) { Amount, Till };
             }
