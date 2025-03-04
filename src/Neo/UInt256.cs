@@ -108,7 +108,10 @@ namespace Neo
         {
             if (BitConverter.IsLittleEndian)
                 return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
-            return this.ToArray().AsSpan(); // Keep the same output as Serialize when BigEndian
+
+            Span<byte> buffer = new byte[Length];
+            Serialize(buffer);
+            return buffer; // Keep the same output as Serialize when BigEndian
         }
 
         /// <summary>
@@ -133,17 +136,24 @@ namespace Neo
 
         public void Serialize(Span<byte> destination)
         {
-            const int IxValue2 = sizeof(ulong);
-            const int IxValue3 = sizeof(ulong) * 2;
-            const int IxValue4 = sizeof(ulong) * 3;
+            if (BitConverter.IsLittleEndian)
+            {
+                var buffer = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref value1), Length);
+                buffer.CopyTo(destination);
+            }
+            else
+            {
+                const int IxValue2 = sizeof(ulong);
+                const int IxValue3 = sizeof(ulong) * 2;
+                const int IxValue4 = sizeof(ulong) * 3;
 
-            Span<byte> buffer = stackalloc byte[Length];
-            BinaryPrimitives.WriteUInt64LittleEndian(buffer, value1);
-            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], value2);
-            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue3..], value3);
-            BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue4..], value4);
-
-            buffer.CopyTo(destination);
+                Span<byte> buffer = stackalloc byte[Length];
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer, value1);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], value2);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue3..], value3);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue4..], value4);
+                buffer.CopyTo(destination);
+            }
         }
 
         public override string ToString()
