@@ -342,7 +342,7 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestCancelTransaction()
         {
             TestUtilOpenWallet();
-            var snapshot = _neoSystem.GetSnapshot();
+            var snapshot = _neoSystem.GetSnapshotCache();
             var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount);
             snapshot.Commit();
             var paramsArray = new JArray(tx.Hash.ToString(), new JArray(_walletAccount.Address));

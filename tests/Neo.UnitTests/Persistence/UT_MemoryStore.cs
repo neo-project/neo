@@ -14,6 +14,7 @@ using Neo.Extensions;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
 using Neo.SmartContract;
+using System;
 using System.Linq;
 using System.Text;
 
@@ -84,7 +85,7 @@ namespace Neo.UnitTests.Persistence
             var value = new StorageItem(Encoding.UTF8.GetBytes("testValue"));
 
             store.Add(key, value);
-            store.Commit();
+            _ = Assert.ThrowsExactly<InvalidOperationException>(store.Commit);
 
             var result = store.TryGet(key);
             // The StoreView is a readonly view of the store, here it will have value in the cache
