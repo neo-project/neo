@@ -82,9 +82,6 @@ namespace Neo.SmartContract
         public StorageItem(IInteroperable interoperable)
         {
             _cache = interoperable;
-            // Test serialization limmits
-            _value = BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
-            _value = null;
         }
 
         /// <summary>
