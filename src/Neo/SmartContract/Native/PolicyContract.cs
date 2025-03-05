@@ -49,6 +49,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint DefaultBlockGenTime = 15000;
 
+        /// <summary>
         /// The default fee for NotaryAssisted attribute.
         /// </summary>
         public const uint DefaultNotaryAssistedAttributeFee = 1000_0000;
@@ -234,6 +235,7 @@ namespace Neo.SmartContract.Native
                 [new VM.Types.Integer(oldTime), new VM.Types.Integer(milliseconds)]);
         }
 
+        /// <summary>
         /// Sets the fee for attribute before Echidna hardfork.
         /// </summary>
         /// <param name="engine">The engine used to check committee witness and read data.</param>
