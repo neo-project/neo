@@ -53,16 +53,16 @@ namespace Neo.SmartContract.Native
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
                 // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(tx));
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(tx));
 
                 // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     foreach (var signer in conflictingSigners)
                     {
-                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     }
                 }
             }
@@ -73,7 +73,13 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
-            HashIndexState state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()
+            {
+                Hash = engine.PersistingBlock.Hash,
+                Index = engine.PersistingBlock.Index
+            }))
+            .GetInteroperable<HashIndexState>();
+
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
             return ContractTask.CompletedTask;
