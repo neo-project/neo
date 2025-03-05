@@ -322,9 +322,10 @@ namespace Neo.Ledger
             if (!system.HeaderCache.Full)
             {
                 var snapshot = system.StoreView;
-                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-                foreach (Header header in headers)
+                var headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                foreach (var header in headers)
                 {
+                    if (ProtocolSettings.Default.IsBlacklisted(header.Hash)) continue;
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
                     if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
