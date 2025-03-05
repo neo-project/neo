@@ -329,9 +329,18 @@ namespace Neo.Ledger
             if (!system.HeaderCache.Full)
             {
                 var snapshot = system.StoreView;
-                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-                foreach (Header header in headers)
+                var headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                foreach (var header in headers)
                 {
+                    try
+                    {
+                        // Avoid serialization problems
+                        _ = header.Hash;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
                     if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
@@ -347,7 +356,7 @@ namespace Neo.Ledger
             try
             {
                 // Avoid serialization problems
-                var _ = payload.Hash;
+                _ = payload.Hash;
             }
             catch
             {
