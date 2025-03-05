@@ -604,24 +604,23 @@ namespace Neo.Wallets
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
-                WalletAccount account = GetAccount(scriptHash);
-
+                var account = GetAccount(scriptHash);
                 if (account != null)
                 {
+                    if (account.Lock) continue;
+
                     // Try to sign self-contained multiSig
-
-                    Contract multiSigContract = account.Contract;
-
+                    var multiSigContract = account.Contract;
                     if (multiSigContract != null &&
                         IsMultiSigContract(multiSigContract.Script, out int m, out ECPoint[] points))
                     {
                         foreach (var point in points)
                         {
                             account = GetAccount(point);
-                            if (account?.HasKey != true) continue;
+                            if (account?.HasKey != true) continue; // check `Lock` or not?
 
-                            KeyPair key = account.GetKey();
-                            byte[] signature = context.Verifiable.Sign(key, context.Network);
+                            var key = account.GetKey();
+                            var signature = context.Verifiable.Sign(key, context.Network);
                             var ok = context.AddSignature(multiSigContract, key.PublicKey, signature);
                             if (ok) m--;
 
@@ -633,23 +632,20 @@ namespace Neo.Wallets
                     else if (account.HasKey)
                     {
                         // Try to sign with regular accounts
-                        KeyPair key = account.GetKey();
-                        byte[] signature = context.Verifiable.Sign(key, context.Network);
+                        var key = account.GetKey();
+                        var signature = context.Verifiable.Sign(key, context.Network);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                         continue;
                     }
                 }
 
                 // Try Smart contract verification
-
                 var contract = NativeContract.ContractManagement.GetContract(context.SnapshotCache, scriptHash);
-
                 if (contract != null)
                 {
                     var deployed = new DeployedContract(contract);
 
                     // Only works with verify without parameters
-
                     if (deployed.ParameterList.Length == 0)
                     {
                         fSuccess |= context.Add(deployed);
@@ -685,22 +681,25 @@ namespace Neo.Wallets
             if (privateKey is null)
                 throw new SignException("No private key found for the given public key");
 
+            if (account.Lock)
+                throw new SignException("Account is locked");
+
             return Crypto.Sign(signData, privateKey);
         }
 
         /// <summary>
-        /// Checks if the wallet contains the specified public key and the corresponding private key.
-        /// If the wallet has the public key but not the private key, it will return <see langword="false"/>.
+        /// Checks if the wallet contains an account(has private key and is not locked) with the specified public key.
+        /// If the wallet has the public key but not the private key or the account is locked, it will return false.
         /// </summary>
         /// <param name="publicKey">The public key.</param>
         /// <returns>
-        /// <see langword="true"/> if the wallet contains the specified public key and the corresponding private key;
+        /// <see langword="true"/> if the wallet contains the specified public key and the corresponding unlocked private key;
         /// otherwise, <see langword="false"/>.
         /// </returns>
-        public bool ContainsKeyPair(ECPoint publicKey)
+        public bool ContainsSignable(ECPoint publicKey)
         {
             var account = GetAccount(publicKey);
-            return account != null && account.HasKey;
+            return account != null && account.HasKey && !account.Lock;
         }
 
         /// <summary>
