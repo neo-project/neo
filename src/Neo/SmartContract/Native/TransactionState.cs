@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
@@ -25,21 +27,21 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The block containing this transaction.
         /// </summary>
-        public uint BlockIndex;
+        public uint BlockIndex { get; set; }
 
         /// <summary>
         /// The transaction, if the transaction is trimmed this value will be null
         /// </summary>
-        public Transaction Transaction;
+        public Transaction? Transaction { get; set; }
 
         /// <summary>
         /// The execution state
         /// </summary>
-        public VMState State;
+        public VMState State { get; set; }
 
         private ReadOnlyMemory<byte> _rawTransaction;
 
-        IInteroperable IInteroperable.Clone()
+        public IInteroperable Clone()
         {
             return new TransactionState
             {
@@ -52,7 +54,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TransactionState from = (TransactionState)replica;
+            var from = (TransactionState)replica;
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
@@ -62,7 +64,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             BlockIndex = (uint)@struct[0].GetInteger();
 
             // Conflict record.
@@ -84,3 +86,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#nullable disable

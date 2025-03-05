@@ -53,13 +53,7 @@ namespace Neo.SmartContract.Native
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
                 // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash),
-                    () => new StorageItem(new TransactionState()
-                    {
-                        BlockIndex = tx.BlockIndex,
-                        State = tx.State,
-                        Transaction = tx.Transaction
-                    }));
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(tx.Clone()));
 
                 // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
