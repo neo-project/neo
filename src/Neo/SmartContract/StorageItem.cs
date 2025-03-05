@@ -191,7 +191,7 @@ namespace Neo.SmartContract
             _value = null;
         }
 
-        public static void AssertValid(IInteroperable interoperable)
+        internal static void AssertIsSerializable(IInteroperable interoperable)
         {
             BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
         }

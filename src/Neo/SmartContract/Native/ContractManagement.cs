@@ -247,7 +247,7 @@ namespace Neo.SmartContract.Native
 
             if (!contract.Manifest.IsValid(engine.Limits, hash)) throw new InvalidOperationException($"Invalid Manifest: {hash}");
 
-            StorageItem.AssertValid(contract);
+            StorageItem.AssertIsSerializable(contract);
             engine.SnapshotCache.Add(key, new StorageItem(contract));
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_ContractHash, contract.Id), new StorageItem(hash.ToArray()));
 
@@ -295,7 +295,7 @@ namespace Neo.SmartContract.Native
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
 
             contract.UpdateCounter++; // Increase update counter
-            StorageItem.AssertValid(contract);
+            StorageItem.AssertIsSerializable(contract);
             return OnDeployAsync(engine, contract, data, true);
         }
 
