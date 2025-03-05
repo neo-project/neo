@@ -82,6 +82,7 @@ namespace Neo.SmartContract
         public StorageItem(IInteroperable interoperable)
         {
             _cache = interoperable;
+            AssertValid(interoperable);
         }
 
         /// <summary>
@@ -179,6 +180,11 @@ namespace Neo.SmartContract
         {
             _cache = integer;
             _value = null;
+        }
+
+        public static void AssertValid(IInteroperable interoperable)
+        {
+            BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
         }
 
         public static implicit operator BigInteger(StorageItem item)
