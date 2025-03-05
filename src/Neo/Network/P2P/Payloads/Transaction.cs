@@ -426,7 +426,7 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignature(witnesses[i].InvocationScript, out ReadOnlyMemory<byte> signature))
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out ReadOnlyMemory<byte> signature))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var pubkey = witnesses[i].VerificationScript.Span[2..35];
@@ -440,7 +440,7 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatures(m, witnesses[i].InvocationScript, out ReadOnlyMemory<byte>[] signatures))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatureInvocationScript(m, witnesses[i].InvocationScript, out ReadOnlyMemory<byte>[] signatures))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var n = points.Length;
@@ -484,18 +484,18 @@ namespace Neo.Network.P2P.Payloads
             });
         }
 
-        private static bool IsMultiSignatures(int m, ReadOnlyMemory<byte> script, out ReadOnlyMemory<byte>[] sigs)
+        private static bool IsMultiSignatureInvocationScript(int m, ReadOnlyMemory<byte> invocationScript, out ReadOnlyMemory<byte>[] sigs)
         {
             sigs = null;
-            ReadOnlySpan<byte> span = script.Span;
+            ReadOnlySpan<byte> span = invocationScript.Span;
             int i = 0;
             var signatures = new List<ReadOnlyMemory<byte>>();
-            while (i < script.Length)
+            while (i < invocationScript.Length)
             {
                 if (span[i++] != (byte)OpCode.PUSHDATA1) return false;
-                if (i + 65 > script.Length) return false;
+                if (i + 65 > invocationScript.Length) return false;
                 if (span[i++] != 64) return false;
-                signatures.Add(script[i..(i + 64)]);
+                signatures.Add(invocationScript[i..(i + 64)]);
                 i += 64;
             }
             if (signatures.Count != m) return false;
@@ -503,13 +503,13 @@ namespace Neo.Network.P2P.Payloads
             return true;
         }
 
-        private static bool IsSingleSignature(ReadOnlyMemory<byte> script, out ReadOnlyMemory<byte> sig)
+        private static bool IsSingleSignatureInvocationScript(ReadOnlyMemory<byte> invocationScript, out ReadOnlyMemory<byte> sig)
         {
             sig = null;
-            if (script.Length != 66) return false;
-            ReadOnlySpan<byte> span = script.Span;
+            if (invocationScript.Length != 66) return false;
+            ReadOnlySpan<byte> span = invocationScript.Span;
             if ((span[0] != (byte)OpCode.PUSHDATA1) || (span[1] != 64)) return false;
-            sig = script[2..66];
+            sig = invocationScript[2..66];
             return true;
         }
     }
