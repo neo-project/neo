@@ -118,7 +118,7 @@ namespace Neo
             StandbyCommittee = Array.Empty<ECPoint>(),
             ValidatorsCount = 0,
             SeedList = Array.Empty<string>(),
-            MillisecondsPerBlock = 3000,
+            MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
