@@ -215,7 +215,7 @@ namespace Neo.SmartContract.Native
             //Put the request to storage
             if (ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), new StorageItem(new OracleRequest
+            var request = new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForResponse,
@@ -224,7 +224,9 @@ namespace Neo.SmartContract.Native
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength, engine.Limits.MaxStackSize)
-            }));
+            };
+            StorageItem.AssertIsSerializable(request);
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), new StorageItem(request));
 
             //Add the id to the IdList
             var list = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
