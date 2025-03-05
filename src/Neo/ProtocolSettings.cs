@@ -58,6 +58,11 @@ namespace Neo
         public string[] SeedList { get; init; }
 
         /// <summary>
+        /// BlackList hashes
+        /// </summary>
+        public HashSet<UInt256> BlackListHashes { get; init; }
+
+        /// <summary>
         /// Indicates the time in milliseconds between two blocks.
         /// </summary>
         public uint MillisecondsPerBlock { get; init; }
@@ -111,9 +116,10 @@ namespace Neo
         {
             Network = 0u,
             AddressVersion = 0x35,
-            StandbyCommittee = Array.Empty<ECPoint>(),
+            StandbyCommittee = [],
             ValidatorsCount = 0,
-            SeedList = Array.Empty<string>(),
+            SeedList = [],
+            BlackListHashes = [],
             MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
@@ -207,6 +213,9 @@ namespace Neo
                 SeedList = section.GetSection("SeedList").Exists()
                     ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
                     : Default.SeedList,
+                BlackListHashes = section.GetSection("BlackListHashes").Exists()
+                    ? new(section.GetSection("BlackListHashes").GetChildren().Select(p => UInt256.Parse(p.Get<string>())))
+                    : Default.BlackListHashes,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
@@ -286,6 +295,16 @@ namespace Neo
 
             // If the hardfork isn't specified in the configuration, return false.
             return false;
+        }
+
+        /// <summary>
+        /// Check if the hash is blacklisted
+        /// </summary>
+        /// <param name="hash">Hash</param>
+        /// <returns>True if blacklisted</returns>
+        public bool IsBlacklisted(UInt256 hash)
+        {
+            return BlackListHashes.Contains(hash);
         }
     }
 }

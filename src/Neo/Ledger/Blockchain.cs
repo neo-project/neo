@@ -246,6 +246,11 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
+            if (ProtocolSettings.Default.IsBlacklisted(block.Hash))
+            {
+                return VerifyResult.Invalid;
+            }
+
             var snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
@@ -332,6 +337,11 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
+            if (ProtocolSettings.Default.IsBlacklisted(payload.Hash))
+            {
+                return VerifyResult.Invalid;
+            }
+
             var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
@@ -341,6 +351,11 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
+            if (ProtocolSettings.Default.IsBlacklisted(transaction.Hash))
+            {
+                return VerifyResult.Invalid;
+            }
+
             switch (system.ContainsTransaction(transaction.Hash))
             {
                 case ContainsTransactionType.ExistsInPool: return VerifyResult.AlreadyInPool;
@@ -399,6 +414,11 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
+            if (ProtocolSettings.Default.IsBlacklisted(tx.Hash))
+            {
+                return;
+            }
+
             switch (system.ContainsTransaction(tx.Hash))
             {
                 case ContainsTransactionType.ExistsInPool:

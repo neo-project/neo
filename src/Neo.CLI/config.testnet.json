@@ -72,6 +72,7 @@
       "seed3t5.neo.org:20333",
       "seed4t5.neo.org:20333",
       "seed5t5.neo.org:20333"
-    ]
+    ],
+    "BlackListHashes": []
   }
 }

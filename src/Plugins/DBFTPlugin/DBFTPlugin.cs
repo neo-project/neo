@@ -95,9 +95,12 @@ namespace Neo.Plugins.DBFTPlugin
         {
             if (message.Command == MessageCommand.Transaction)
             {
-                Transaction tx = (Transaction)message.Payload;
+                var tx = (Transaction)message.Payload;
                 if (tx.SystemFee > settings.MaxBlockSystemFee)
                     return false;
+                if (ProtocolSettings.Default.IsBlacklisted(tx.Hash))
+                    return false;
+
                 consensus?.Tell(tx);
             }
             return true;
