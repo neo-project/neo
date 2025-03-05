@@ -249,7 +249,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMaxNotValidBeforeDelta(ApplicationEngine engine, uint value)
         {
-            if (value > engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount) throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}", engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
+            if (value > engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount)
+                throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}",
+                 engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MaxNotValidBeforeDelta)).Set(value);
         }
