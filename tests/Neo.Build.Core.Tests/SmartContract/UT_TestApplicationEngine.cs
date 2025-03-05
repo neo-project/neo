@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Logging;
 using Neo.Build.Core.SmartContract;
 using Neo.Build.Core.Tests.Helpers;
 using Neo.VM;
@@ -20,24 +19,10 @@ namespace Neo.Build.Core.Tests.SmartContract
     [TestClass]
     public class UT_TestApplicationEngine
     {
-        private readonly ILoggerFactory _loggerFactory;
-
-        public UT_TestApplicationEngine()
-        {
-            _loggerFactory = LoggerFactory.Create(logging =>
-            {
-                logging.AddSimpleConsole(options =>
-                {
-                    options.SingleLine = true;
-                    options.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Disabled;
-                });
-            });
-        }
-
         [TestMethod]
-        public void TestApplciationEngine()
+        public void TestApplicationEngine()
         {
-            var engine = new TestApplicationEngine(TestNode.BuildSettings, TestNode.NeoSystem.GetSnapshotCache(), _loggerFactory);
+            var engine = new TestApplicationEngine(TestNode.BuildSettings, TestNode.NeoSystem.GetSnapshotCache(), TestNode.FactoryLogger);
 
             using var sb = new ScriptBuilder()
                 .EmitPush("Hello World!");

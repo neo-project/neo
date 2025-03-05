@@ -9,9 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
+using Neo.Build.Core.Providers;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
+using Neo.SmartContract;
 using System.Text.Json.Nodes;
 
 namespace Neo.Build.Core.Tests.Helpers
@@ -21,6 +24,14 @@ namespace Neo.Build.Core.Tests.Helpers
         public static readonly NeoSystem NeoSystem;
         public static readonly DevWallet Wallet;
         public static readonly NeoBuildSettings BuildSettings = new(JsonNode.Parse("{}")!);
+        public static readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
+        {
+            logging.AddSimpleConsole(options =>
+            {
+                options.SingleLine = true;
+                options.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Disabled;
+            });
+        });
 
         private static readonly MemoryStore s_store = new();
 
@@ -35,6 +46,7 @@ namespace Neo.Build.Core.Tests.Helpers
         {
             var walletModel = TestObjectHelper.CreateTestWalletModel();
             Wallet = new(walletModel, ((dynamic)walletModel.Extra!).ProtocolConfiguration.ToObject());
+            ApplicationEngine.Provider = new TestApplicationEngineProvider(new(), FactoryLogger);
             NeoSystem = new(Wallet.ProtocolSettings, new StoreProvider());
         }
     }

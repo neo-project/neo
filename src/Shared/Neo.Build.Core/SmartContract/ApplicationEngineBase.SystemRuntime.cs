@@ -214,7 +214,7 @@ namespace Neo.Build.Core.SmartContract
             return result;
         }
 
-        protected internal void SystemRuntimeLog(byte[] state)
+        protected virtual void SystemRuntimeLog(byte[] state)
         {
             _traceLogger.LogInformation(VMEventLog.Log,
                 "{SysCall} message={State}",
@@ -223,7 +223,7 @@ namespace Neo.Build.Core.SmartContract
             RuntimeLog(state);
         }
 
-        protected internal void SystemRuntimeNotify(byte[] eventName, Array state)
+        protected virtual void SystemRuntimeNotify(byte[] eventName, Array state)
         {
             _traceLogger.LogInformation(VMEventLog.Notify,
                 "{SysCall} event={Event}, state={State}",

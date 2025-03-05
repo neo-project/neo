@@ -10,12 +10,37 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract;
 
 namespace Neo.Build.Core.SmartContract
 {
     public class TestApplicationEngine : ApplicationEngineBase
     {
+        public TestApplicationEngine(
+            ProtocolSettings protocolSettings,
+            DataCache snapshotCache,
+            long maxGas,
+            StorageSettings? storageSettings = null,
+            ILoggerFactory? loggerFactory = null,
+            TriggerType trigger = TriggerType.Application,
+            IVerifiable? container = null,
+            Block? persistingBlock = null,
+            IDiagnostic? diagnostic = null)
+            : base(
+                  protocolSettings,
+                  snapshotCache,
+                  maxGas,
+                  storageSettings,
+                  loggerFactory,
+                  trigger,
+                  container,
+                  persistingBlock,
+                  diagnostic,
+                  null)
+        { }
+
         public TestApplicationEngine(
             NeoBuildSettings settings,
             DataCache snapshot,
