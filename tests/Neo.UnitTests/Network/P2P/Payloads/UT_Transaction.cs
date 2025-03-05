@@ -1140,19 +1140,29 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var walletA = TestUtils.GenerateTestWallet("123");
             var walletB = TestUtils.GenerateTestWallet("123");
+            var walletC = TestUtils.GenerateTestWallet("123");
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             var a = walletA.CreateAccount();
             var b = walletB.CreateAccount();
+            var c = walletC.CreateAccount();
 
             var multiSignContract = Contract.CreateMultiSigContract(2,
             [
                 a.GetKey().PublicKey,
                 b.GetKey().PublicKey
             ]);
+            var wrongMultisigContract = Contract.CreateMultiSigContract(2,
+            [
+                a.GetKey().PublicKey,
+                c.GetKey().PublicKey
+            ]);
 
             walletA.CreateAccount(multiSignContract, a.GetKey());
             var acc = walletB.CreateAccount(multiSignContract, b.GetKey());
+
+            walletA.CreateAccount(wrongMultisigContract, a.GetKey());
+            var wrongAcc = walletC.CreateAccount(wrongMultisigContract, c.GetKey());
 
             // Fake balance
 
@@ -1184,14 +1194,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.Witnesses = data.GetWitnesses();
             Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
 
-            // Different hash
+            // Different invocation script (contains signatures of A&C whereas originally signatures
+            // from A&B are required).
+            tx.Signers[0].Account = wrongAcc.ScriptHash; // temporary replace Sender's scripthash to be able to construct A&C signature.
+            var wrongData = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
+            Assert.IsTrue(walletA.Sign(wrongData));
+            Assert.IsTrue(walletC.Sign(wrongData));
+            Assert.IsTrue(wrongData.Completed);
 
-            tx.Witnesses[0] = new Witness()
-            {
-                VerificationScript = walletB.GetAccounts().First().Contract.Script,
-                InvocationScript = tx.Witnesses[0].InvocationScript.ToArray()
-            };
-            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            tx.Signers[0].Account = acc.ScriptHash; // get back the original value of Sender's scripthash.
+            tx.Witnesses[0].InvocationScript = wrongData.GetWitnesses()[0].InvocationScript.ToArray();
+            Assert.AreEqual(VerifyResult.InvalidSignature, tx.VerifyStateIndependent(TestProtocolSettings.Default));
         }
 
         [TestMethod]
