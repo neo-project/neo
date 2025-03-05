@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The default block generation time in milliseconds.
         /// </summary>
-        public const uint DefaultBlockGenTime = 15000;
+        public const uint DefaultBlockGenTime = 15_000;
 
         /// <summary>
         /// The default fee for NotaryAssisted attribute.

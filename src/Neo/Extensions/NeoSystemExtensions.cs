@@ -56,16 +56,25 @@ namespace Neo
         /// <returns>The block generation time as a TimeSpan.</returns>
         public static TimeSpan GetBlockGenTime(this NeoSystem system)
         {
-            // Get the current block height from the blockchain
-            var index = NativeContract.Ledger.CurrentIndex(system.StoreView);
+            try
+            {
+                // Get the current block height from the blockchain
+                var index = NativeContract.Ledger.CurrentIndex(system.StoreView);
 
-            // Before the Echidna hardfork, use the protocol settings
-            if (!system.Settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                // Before the Echidna hardfork, use the protocol settings
+                if (!system.Settings.IsHardforkEnabled(Hardfork.HF_Echidna, index - 1))
+                    return TimeSpan.FromMilliseconds(system.Settings.MillisecondsPerBlock);
+
+                // After the Echidna hardfork, get the current block time from the Policy contract
+                var milliseconds = NativeContract.Policy.GetBlockGenTime(system.StoreView);
+                return TimeSpan.FromMilliseconds(milliseconds);
+            }
+            // At the height of 0, the key not yet exists in the storage
+            catch (System.Collections.Generic.KeyNotFoundException)
+            {
                 return TimeSpan.FromMilliseconds(system.Settings.MillisecondsPerBlock);
 
-            // After the Echidna hardfork, get the current block time from the Policy contract
-            var milliseconds = NativeContract.Policy.GetBlockGenTime(system.StoreView);
-            return TimeSpan.FromMilliseconds(milliseconds);
+            }
         }
 
         /// <summary>
@@ -80,7 +89,7 @@ namespace Neo
             var index = NativeContract.Ledger.CurrentIndex(snapshot);
 
             // Before the Echidna hardfork, use the protocol settings
-            if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+            if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index - 1))
                 return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
 
             // After the Echidna hardfork, get the current block time from the Policy contract
