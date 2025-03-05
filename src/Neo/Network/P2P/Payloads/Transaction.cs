@@ -426,7 +426,7 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out ReadOnlyMemory<byte> signature))
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out var signature))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var pubkey = witnesses[i].VerificationScript.Span[2..35];
@@ -440,7 +440,7 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatureInvocationScript(m, witnesses[i].InvocationScript, out ReadOnlyMemory<byte>[] signatures))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatureInvocationScript(m, witnesses[i].InvocationScript, out var signatures))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var n = points.Length;
