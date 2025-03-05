@@ -58,12 +58,16 @@ namespace Neo
         public string[] SeedList { get; init; }
 
         /// <summary>
-        /// Indicates the time in milliseconds between two blocks.
+        /// The milliseconds between two block in NEO.
+        /// For code that needs the accurate block generation time based on blockchain state, 
+        /// use NeoSystemExtensions.GetBlockGenTime extension method instead.
         /// </summary>
         public uint MillisecondsPerBlock { get; init; }
 
         /// <summary>
-        /// Indicates the time between two blocks.
+        /// Indicates the time between two blocks based on the protocol settings.
+        /// This returns a fixed value from protocol settings. For dynamic block time based on blockchain state, 
+        /// use NeoSystemExtensions.GetBlockGenTime extension method instead.
         /// </summary>
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
 

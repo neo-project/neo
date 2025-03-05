@@ -70,7 +70,7 @@ namespace Neo.CLI
                 while (!cancel.Token.IsCancellationRequested)
                 {
                     NeoSystem.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView))));
-                    await Task.Delay(NeoSystem.Settings.TimePerBlock, cancel.Token);
+                    await Task.Delay(NeoSystem.GetBlockGenTime(), cancel.Token);
                 }
             });
             Task task = Task.Run(async () =>

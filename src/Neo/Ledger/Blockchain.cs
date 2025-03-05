@@ -280,8 +280,10 @@ namespace Neo.Ledger
                 }
 
                 int blocksPersisted = 0;
-                uint extraRelayingBlocks = system.Settings.MillisecondsPerBlock < ProtocolSettings.Default.MillisecondsPerBlock
-                    ? (ProtocolSettings.Default.MillisecondsPerBlock - system.Settings.MillisecondsPerBlock) / 1000
+                // Check if this system's block time is faster than the default
+                bool hasFasterBlockTime = system.GetBlockGenTime().TotalMilliseconds < ProtocolSettings.Default.MillisecondsPerBlock;
+                uint extraRelayingBlocks = hasFasterBlockTime
+                    ? (ProtocolSettings.Default.MillisecondsPerBlock - (uint)system.GetBlockGenTime().TotalMilliseconds) / 1000
                     : 0;
                 foreach (Block blockToPersist in blocksToPersistList)
                 {

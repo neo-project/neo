@@ -96,8 +96,10 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_feePerByte, new StorageItem(DefaultFeePerByte));
                 engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
                 engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
+            }
 
-                // Consensus need this right after the node is updated, can not wait for hardfork
+            if (hardfork == Hardfork.HF_Echidna)
+            {
                 engine.SnapshotCache.Add(_blockGenTime, new StorageItem(DefaultBlockGenTime));
             }
 
@@ -139,10 +141,11 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Gets the block generation time in milliseconds.
+        /// This can only be called after the HF_Echidna.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The block generation time in milliseconds.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetBlockGenTime(IReadOnlyStore snapshot)
         {
             var item = snapshot.TryGet(_blockGenTime, out var value) ? value : null;
@@ -186,11 +189,17 @@ namespace Neo.SmartContract.Native
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
+        public void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
         {
             if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
+
+            var oldTime = GetBlockGenTime(engine.SnapshotCache);
             engine.SnapshotCache.GetAndChange(_blockGenTime).Set(milliseconds);
+
+            // Emit the BlockGenTimeChanged event
+            engine.SendNotification(Hash, "BlockGenTimeChanged",
+                [new VM.Types.Integer(oldTime), new VM.Types.Integer(milliseconds)]);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

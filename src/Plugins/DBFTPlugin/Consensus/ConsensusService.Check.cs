@@ -95,7 +95,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
-                TimeSpan blockTime = GetBlockTimeFromPolicyContract();
+                TimeSpan blockTime = GetBlockGenTime();
                 ChangeTimer(blockTime);
                 CheckCommits();
             }
