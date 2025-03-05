@@ -360,7 +360,15 @@ namespace Neo.SmartContract
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (engine.Execute() == VMState.FAULT) return false;
-                if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                if (engine.ResultStack.Count == 0) return false;
+                try
+                {
+                    if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                }
+                catch
+                {
+                    return false;
+                }
                 fee = engine.FeeConsumed;
             }
             return true;
