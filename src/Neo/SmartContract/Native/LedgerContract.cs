@@ -79,13 +79,8 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
-            var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()
-            {
-                Hash = engine.PersistingBlock.Hash,
-                Index = engine.PersistingBlock.Index
-            }))
-            .GetInteroperable<HashIndexState>();
-
+            var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()))
+                .GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
             return ContractTask.CompletedTask;
