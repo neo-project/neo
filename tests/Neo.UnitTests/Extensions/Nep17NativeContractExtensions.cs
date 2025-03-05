@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Extensions
         public static bool TransferWithTransaction(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock, object data)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Transaction() { Signers = new Signer[] { new Signer() { Account = signFrom ? new UInt160(from) : null, Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() },
+                new Transaction() { Signers = [new() { Account = signFrom ? new(from) : null, Scopes = WitnessScope.Global }], Attributes = [] },
                 snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
