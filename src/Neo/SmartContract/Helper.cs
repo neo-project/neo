@@ -305,6 +305,7 @@ namespace Neo.SmartContract
             {
                 return false;
             }
+            if (verifiable.Witnesses == null) return false;
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
