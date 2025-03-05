@@ -25,6 +25,8 @@ namespace Neo.Plugins.Storage
         private readonly DB _db;
         private readonly Options _options;
 
+        public SerializedCache SerializedCache { get; } = new();
+
         public Store(string path)
         {
             _options = new Options

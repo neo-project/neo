@@ -30,8 +30,8 @@ namespace Neo.Persistence
         /// <summary>
         /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
-        /// <param name="store">An <see cref="IStore"/> to create a readonly cache.</param>
-        public StoreCache(IStore store)
+        /// <param name="store">An <see cref="IReadOnlyStore"/> to create a readonly cache.</param>
+        public StoreCache(IStore store) : base(store.SerializedCache)
         {
             _store = store;
         }
@@ -40,7 +40,7 @@ namespace Neo.Persistence
         /// Initializes a new instance of the <see cref="StoreCache"/> class.
         /// </summary>
         /// <param name="snapshot">An <see cref="IStoreSnapshot"/> to create a snapshot cache.</param>
-        public StoreCache(IStoreSnapshot snapshot)
+        public StoreCache(IStoreSnapshot snapshot) : base(snapshot.Store.SerializedCache)
         {
             _store = snapshot;
             _snapshot = snapshot;
