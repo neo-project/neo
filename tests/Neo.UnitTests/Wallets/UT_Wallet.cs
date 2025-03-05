@@ -460,32 +460,36 @@ namespace Neo.UnitTests.Wallets
 
             action = () => wallet.Sign([0xa, 0xb, 0xc, 0xd], pair.PublicKey);
             Assert.ThrowsExactly<SignException>(action); // no private key
+
+            wallet.GetAccount(scriptHash).Lock = true;
+            action = () => wallet.Sign([0xa, 0xb, 0xc, 0xd], pair.PublicKey);
+            Assert.ThrowsExactly<SignException>(action); // locked
         }
 
         [TestMethod]
         public void TestContainsKeyPair()
         {
             MyWallet wallet = new();
-            var contains = wallet.ContainsKeyPair(glkey.PublicKey);
+            var contains = wallet.ContainsSignable(glkey.PublicKey);
             Assert.IsFalse(contains);
 
             wallet.CreateAccount(glkey.PrivateKey);
 
-            contains = wallet.ContainsKeyPair(glkey.PublicKey);
+            contains = wallet.ContainsSignable(glkey.PublicKey);
             Assert.IsTrue(contains);
 
             var key = new byte[32];
             Array.Fill(key, (byte)0x01);
 
             var pair = new KeyPair(key);
-            contains = wallet.ContainsKeyPair(pair.PublicKey);
+            contains = wallet.ContainsSignable(pair.PublicKey);
             Assert.IsFalse(contains);
 
             wallet.CreateAccount(pair.PrivateKey);
-            contains = wallet.ContainsKeyPair(pair.PublicKey);
+            contains = wallet.ContainsSignable(pair.PublicKey);
             Assert.IsTrue(contains);
 
-            contains = wallet.ContainsKeyPair(glkey.PublicKey);
+            contains = wallet.ContainsSignable(glkey.PublicKey);
             Assert.IsTrue(contains);
 
             key = new byte[32];
@@ -495,8 +499,12 @@ namespace Neo.UnitTests.Wallets
             var scriptHash = Contract.CreateSignatureRedeemScript(pair.PublicKey).ToScriptHash();
             wallet.CreateAccount(scriptHash);
 
-            contains = wallet.ContainsKeyPair(pair.PublicKey);
+            contains = wallet.ContainsSignable(pair.PublicKey);
             Assert.IsFalse(contains); // no private key
+
+            wallet.GetAccount(scriptHash).Lock = true;
+            contains = wallet.ContainsSignable(pair.PublicKey);
+            Assert.IsFalse(contains); // locked
         }
     }
 }
