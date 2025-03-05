@@ -344,12 +344,10 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            UInt256 hash;
-
             try
             {
                 // Avoid serialization problems
-                hash = payload.Hash;
+                var _ = payload.Hash;
             }
             catch
             {
