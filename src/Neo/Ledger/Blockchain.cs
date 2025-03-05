@@ -416,6 +416,7 @@ namespace Neo.Ledger
         {
             if (ProtocolSettings.Default.IsBlacklisted(tx.Hash))
             {
+                SendRelayResult(tx, VerifyResult.Invalid);
                 return;
             }
 
