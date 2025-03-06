@@ -30,7 +30,6 @@ namespace Neo.Build.Core.SmartContract
             DataCache snapshotCache,
             long maxGas,
             StorageSettings? storageSettings = null,
-            ILoggerFactory? loggerFactory = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
@@ -47,8 +46,6 @@ namespace Neo.Build.Core.SmartContract
                   diagnostic,
                   DefaultJumpTable)
         {
-            _orgSysCall = DefaultJumpTable[OpCode.SYSCALL];
-            DefaultJumpTable[OpCode.SYSCALL] = OnSystemCall;
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _traceLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
@@ -59,7 +56,6 @@ namespace Neo.Build.Core.SmartContract
             ApplicationEngineSettings engineSettings,
             ProtocolSettings protocolSettings,
             DataCache snapshotCache,
-            ILoggerFactory? loggerFactory = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
@@ -71,7 +67,6 @@ namespace Neo.Build.Core.SmartContract
                 snapshotCache,
                 engineSettings.MaxGas,
                 engineSettings.Storage,
-                loggerFactory,
                 trigger,
                 container,
                 persistingBlock,
@@ -83,7 +78,6 @@ namespace Neo.Build.Core.SmartContract
         protected ApplicationEngineBase(
             NeoBuildSettings settings,
             DataCache snapshotCache,
-            ILoggerFactory? loggerFactory = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
@@ -94,7 +88,6 @@ namespace Neo.Build.Core.SmartContract
                 settings.ApplicationEngineSettings,
                 settings.ProtocolSettings,
                 snapshotCache,
-                loggerFactory,
                 trigger,
                 container,
                 persistingBlock,
@@ -105,7 +98,6 @@ namespace Neo.Build.Core.SmartContract
 
         public Transaction? CurrentTransaction => ScriptContainer as Transaction;
 
-        private readonly JumpTable.DelAction _orgSysCall;
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
 
         private readonly ILoggerFactory _loggerFactory;

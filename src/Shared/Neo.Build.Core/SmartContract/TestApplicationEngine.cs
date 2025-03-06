@@ -33,11 +33,11 @@ namespace Neo.Build.Core.SmartContract
                   snapshotCache,
                   maxGas,
                   storageSettings,
-                  loggerFactory,
                   trigger,
                   container,
                   persistingBlock,
                   diagnostic,
+                  loggerFactory,
                   null)
         { }
 
@@ -48,7 +48,7 @@ namespace Neo.Build.Core.SmartContract
             : base(
                   settings,
                   snapshot,
-                  loggerFactory)
+                  loggerFactory: loggerFactory)
         {
 
         }
