@@ -73,7 +73,6 @@ namespace Neo
             catch (System.Collections.Generic.KeyNotFoundException)
             {
                 return TimeSpan.FromMilliseconds(system.Settings.MillisecondsPerBlock);
-
             }
         }
 
