@@ -99,8 +99,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private bool Verify(ApplicationEngine engine, byte[] sig)
         {
-            Transaction tx = (Transaction)engine.ScriptContainer;
-            if (tx.GetAttribute<NotaryAssisted>() is null) return false;
+            var tx = engine.ScriptContainer as Transaction;
+            if (tx?.GetAttribute<NotaryAssisted>() is null) return false;
             foreach (var signer in tx.Signers)
             {
                 if (signer.Account == Hash)
