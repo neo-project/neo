@@ -33,6 +33,7 @@ namespace Neo.Build.Core.SmartContract
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
+            ILoggerFactory? loggerFactory = null,
             IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : base(
                   trigger,
@@ -57,6 +58,7 @@ namespace Neo.Build.Core.SmartContract
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
+            ILoggerFactory? loggerFactory = null,
             IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : this(
                 protocolSettings,
@@ -66,6 +68,7 @@ namespace Neo.Build.Core.SmartContract
                 container,
                 persistingBlock,
                 diagnostic,
+                loggerFactory,
                 systemCallMethods)
         { }
 
@@ -76,6 +79,7 @@ namespace Neo.Build.Core.SmartContract
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
+            ILoggerFactory? loggerFactory = null,
             IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : this(
                 settings.ApplicationEngineSettings,
@@ -85,6 +89,7 @@ namespace Neo.Build.Core.SmartContract
                 container,
                 persistingBlock,
                 diagnostic,
+                loggerFactory,
                 systemCallMethods)
         { }
 
