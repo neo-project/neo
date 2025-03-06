@@ -120,6 +120,27 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void CheckNoItems()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var tx = new Transaction
+            {
+                NetworkFee = 1000000,
+                SystemFee = 1000000,
+                Script = Array.Empty<byte>(),
+                Attributes = [],
+                Witnesses = [
+                    new Witness() {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript =new byte[]{ (byte)OpCode.PUSH0, (byte)OpCode.DROP }
+                    }
+                ]
+            };
+            tx.Signers = [new Signer() { Account = tx.Witnesses[0].ScriptHash }];
+            Assert.IsFalse(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
+        }
+
+        [TestMethod]
         public void FeeIsMultiSigContract()
         {
             var walletA = TestUtils.GenerateTestWallet("123");
