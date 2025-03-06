@@ -298,13 +298,13 @@ namespace Neo
         }
 
         /// <summary>
-        /// Check if the hash is blacklisted
+        /// Check if the header is blacklisted
         /// </summary>
-        /// <param name="hash">Hash</param>
+        /// <param name="header">Headeer</param>
         /// <returns>True if blacklisted</returns>
-        public bool IsBlacklisted(UInt256 hash)
+        public bool IsBlacklisted(Header header)
         {
-            return BlackListHashes.Contains(hash);
+            return BlackListHashes.Contains(header.Hash);
         }
     }
 }

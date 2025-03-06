@@ -246,7 +246,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            if (ProtocolSettings.Default.IsBlacklisted(block.Hash))
+            if (ProtocolSettings.Default.IsBlacklisted(block.Header))
             {
                 return VerifyResult.Invalid;
             }
@@ -325,7 +325,7 @@ namespace Neo.Ledger
                 var headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
                 foreach (var header in headers)
                 {
-                    if (ProtocolSettings.Default.IsBlacklisted(header.Hash)) continue;
+                    if (ProtocolSettings.Default.IsBlacklisted(header)) continue;
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
                     if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
@@ -338,11 +338,6 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            if (ProtocolSettings.Default.IsBlacklisted(payload.Hash))
-            {
-                return VerifyResult.Invalid;
-            }
-
             var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
@@ -352,11 +347,6 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            if (ProtocolSettings.Default.IsBlacklisted(transaction.Hash))
-            {
-                return VerifyResult.Invalid;
-            }
-
             switch (system.ContainsTransaction(transaction.Hash))
             {
                 case ContainsTransactionType.ExistsInPool: return VerifyResult.AlreadyInPool;
@@ -415,12 +405,6 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
-            if (ProtocolSettings.Default.IsBlacklisted(tx.Hash))
-            {
-                SendRelayResult(tx, VerifyResult.Invalid);
-                return;
-            }
-
             switch (system.ContainsTransaction(tx.Hash))
             {
                 case ContainsTransactionType.ExistsInPool:
