@@ -53,7 +53,7 @@ namespace Neo.Wallets
         {
             Span<byte> data = stackalloc byte[21];
             data[0] = version;
-            scriptHash.ToArray().CopyTo(data[1..]);
+            scriptHash.Serialize(data[1..]);
             return Base58.Base58CheckEncode(data);
         }
 
