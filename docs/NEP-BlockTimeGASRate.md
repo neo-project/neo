@@ -53,6 +53,7 @@ The `SetBlockGenTime` method includes strict permission controls to ensure that 
 public void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
 {
     if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds));
+    if (milliseconds > DefaultBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds), $"Block generation time cannot exceed {DefaultBlockGenTime} milliseconds");
     if (!CheckCommittee(engine)) throw new InvalidOperationException();
     
     uint oldTime = GetBlockGenTime(engine.SnapshotCache);
@@ -62,6 +63,14 @@ public void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
     engine.SendNotification(Hash, "BlockGenTimeChanged", new VM.Types.Array { new VM.Types.Integer(oldTime), new VM.Types.Integer(milliseconds) });
 }
 ```
+
+#### Allowed Range
+
+The block generation time must fall within the following constraints:
+- **Minimum**: `MinBlockGenTime` (1000 milliseconds or 1 second)
+- **Maximum**: `DefaultBlockGenTime` (15000 milliseconds or 15 seconds)
+
+This ensures that block generation times cannot be set too low (which could lead to network instability) or too high (which would exceed the default time of 15 seconds).
 
 ### 2. Integration with Consensus Mechanism
 

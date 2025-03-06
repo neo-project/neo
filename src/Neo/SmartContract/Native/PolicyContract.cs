@@ -216,15 +216,17 @@ namespace Neo.SmartContract.Native
         /// <summary>
         ///  Sets the block generation time in milliseconds.
         /// This can only be set by the committee after the HF_Echidna.
+        /// The value must be between MinBlockGenTime and DefaultBlockGenTime.
         /// </summary>
         /// <param name="engine">The execution engine.</param>
-        /// <param name="milliseconds">The block generation time in milliseconds.</param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="milliseconds">The block generation time in milliseconds. Must be between MinBlockGenTime and DefaultBlockGenTime.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided milliseconds are outside the allowed range.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         public void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
         {
             if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds));
+            if (milliseconds > DefaultBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds), $"Block generation time cannot exceed {DefaultBlockGenTime} milliseconds");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var oldTime = GetBlockGenTime(engine.SnapshotCache);
