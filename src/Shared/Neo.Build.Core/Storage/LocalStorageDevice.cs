@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// NullStorageDevice.cs file belongs to the neo project and is free
+// LocalStorageDevice.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,40 +11,31 @@
 
 using FASTER.core;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace Neo.Build.Core.Storage
 {
-    internal class NullStorageDevice
+    internal class LocalStorageDevice
     {
-        private static readonly LogSettings s_settings = new()
-        {
-            LogDevice = new NullDevice(),
-            ObjectLogDevice = new NullDevice(),
-            PageSizeBits = 9,
-            MemorySizeBits = 21,
-            SegmentSizeBits = 21,
-            MutableFraction = 0.3,
-        };
-
         public static FasterKV<SpanByteAndMemory, SpanByteAndMemory> Create(string basePath, ILoggerFactory? loggerFactory = null) =>
             new(
                 1L << 20,
-                s_settings,
+                new LogSettings()
+                {
+                    LogDevice = new ManagedLocalStorageDevice(Path.Combine(basePath, "LOG"), recoverDevice: true, osReadBuffering: true),
+                    ObjectLogDevice = new ManagedLocalStorageDevice(Path.Combine(basePath, "DATA"), recoverDevice: true, osReadBuffering: true),
+                    PageSizeBits = 9,
+                    MemorySizeBits = 21,
+                    SegmentSizeBits = 21,
+                    MutableFraction = 0.3,
+                },
                 new CheckpointSettings()
                 {
                     CheckpointManager = new DeviceLogCommitCheckpointManager(
                         new LocalStorageNamedDeviceFactory(),
                         new NeoCheckPointNamingScheme(basePath),
-                        removeOutdated: false)
+                        removeOutdated: false),
                 },
-                loggerFactory: loggerFactory
-            );
-
-        public static FasterKV<SpanByteAndMemory, SpanByteAndMemory> Create(CheckpointSettings checkpointSettings, ILoggerFactory? loggerFactory = null) =>
-            new(
-                1L << 20,
-                s_settings,
-                checkpointSettings,
                 loggerFactory: loggerFactory
             );
     }

@@ -11,6 +11,7 @@
 
 using FASTER.core;
 using System;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Build.Core.Storage
@@ -24,69 +25,43 @@ namespace Neo.Build.Core.Storage
         public long CommitNumber(FileDescriptor fileDescriptor) =>
             long.Parse(fileDescriptor.fileName.Split('.').Reverse().Take(2).Last());
 
-        public FileDescriptor DeltaLog(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor DeltaLog(Guid token) =>
+            new($"{LogCheckpointBasePath()}/{token}", "DELTA");
 
-        public string FasterLogCommitBasePath()
-        {
-            throw new NotImplementedException();
-        }
+        public string FasterLogCommitBasePath() =>
+            "commits";
 
-        public FileDescriptor FasterLogCommitMetadata(long commitNumber)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor FasterLogCommitMetadata(long commitNumber) =>
+            new($"{FasterLogCommitBasePath()}", $"COMMIT.{commitNumber}");
 
-        public FileDescriptor HashTable(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor HashTable(Guid token) =>
+            new($"{IndexCheckpointBasePath()}/{token}", "TABLE");
 
-        public FileDescriptor IndexCheckpointBase(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor IndexCheckpointBase(Guid token) =>
+            new($"{IndexCheckpointBasePath()}/{token}", null);
 
-        public string IndexCheckpointBasePath()
-        {
-            throw new NotImplementedException();
-        }
+        public string IndexCheckpointBasePath() =>
+            "index";
 
-        public FileDescriptor IndexCheckpointMetadata(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor IndexCheckpointMetadata(Guid token) =>
+            new($"{IndexCheckpointBasePath()}/{token}", "CHKIDX");
 
-        public FileDescriptor LogCheckpointBase(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor LogCheckpointBase(Guid token) =>
+            new($"{LogCheckpointBasePath()}/{token}", null);
 
-        public string LogCheckpointBasePath()
-        {
-            throw new NotImplementedException();
-        }
+        public string LogCheckpointBasePath() =>
+            "log";
 
-        public FileDescriptor LogCheckpointMetadata(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor LogCheckpointMetadata(Guid token) =>
+            new($"{LogCheckpointBasePath()}/{token}", "CHKMAN");
 
-        public FileDescriptor LogSnapshot(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor LogSnapshot(Guid token) =>
+            new($"{LogCheckpointBasePath()}/{token}", "SNAP");
 
-        public FileDescriptor ObjectLogSnapshot(Guid token)
-        {
-            throw new NotImplementedException();
-        }
+        public FileDescriptor ObjectLogSnapshot(Guid token) =>
+            new($"{LogCheckpointBasePath()}/{token}", "SLOG");
 
-        public Guid Token(FileDescriptor fileDescriptor)
-        {
-            throw new NotImplementedException();
-        }
+        public Guid Token(FileDescriptor fileDescriptor) =>
+            Guid.Parse(new DirectoryInfo(fileDescriptor.directoryName).Name);
     }
 }
