@@ -24,6 +24,8 @@ namespace Neo.Build.Core.Tests.SmartContract
         {
             var engine = new TestApplicationEngine(TestNode.BuildSettings, TestNode.NeoSystem.GetSnapshotCache(), TestNode.FactoryLogger);
 
+            var account = TestNode.Wallet.GetDefaultAccount();
+
             using var sb = new ScriptBuilder()
                 .EmitPush("Hello World!");
 
