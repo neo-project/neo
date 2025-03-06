@@ -76,8 +76,8 @@ namespace Neo.Build.Core.SmartContract
         {
             var systemCallBaseServices = ImmutableDictionary.CreateBuilder<uint, InteropDescriptor>();
 
-            var systemCallBaseMethods = typeof(ApplicationEngineBase).GetMethods()
-                .Where(static w => w.Name.StartsWith("System") && w.IsPrivate);
+            var systemCallBaseMethods = typeof(ApplicationEngineBase).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+                .Where(static w => w.Name.StartsWith("System"));
             var defaultSystemCallDescriptors = typeof(ApplicationEngine).GetFields()
                 .Where(static w => w.Name.StartsWith("System_") && w.IsPublic && w.IsStatic)
                 .Select(static s => KeyValuePair.Create(

@@ -33,8 +33,7 @@ namespace Neo.Build.Core.SmartContract
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
-            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null,
-            ILoggerFactory? loggerFactory = null)
+            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : base(
                   trigger,
                   container,
@@ -45,8 +44,6 @@ namespace Neo.Build.Core.SmartContract
                   diagnostic,
                   DefaultJumpTable)
         {
-            _orgSysCall = DefaultJumpTable[OpCode.SYSCALL];
-            DefaultJumpTable[OpCode.SYSCALL] = OnSystemCall;
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _traceLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
@@ -93,7 +90,6 @@ namespace Neo.Build.Core.SmartContract
 
         public Transaction? CurrentTransaction => ScriptContainer as Transaction;
 
-        private readonly JumpTable.DelAction _orgSysCall;
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
 
         private readonly ILoggerFactory _loggerFactory;
@@ -154,14 +150,12 @@ namespace Neo.Build.Core.SmartContract
             base.PreExecuteInstruction(instruction);
         }
 
-        protected virtual void OnSystemCall(ExecutionEngine engine, Instruction instruction)
+        protected override void OnSysCall(InteropDescriptor descriptor)
         {
-            var systemCallMethodPointer = instruction.TokenU32;
-
-            if (_systemCallMethods.TryGetValue(systemCallMethodPointer, out var descriptor))
-                OnSysCall(descriptor);
+            if (_systemCallMethods.TryGetValue(descriptor, out var overrideDescriptor))
+                base.OnSysCall(overrideDescriptor);
             else
-                _orgSysCall(engine, instruction);
+                base.OnSysCall(descriptor);
         }
     }
 }

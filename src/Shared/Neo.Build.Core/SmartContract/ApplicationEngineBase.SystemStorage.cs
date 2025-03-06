@@ -19,7 +19,7 @@ namespace Neo.Build.Core.SmartContract
 {
     public partial class ApplicationEngineBase
     {
-        protected internal StorageContext SystemStorageGetContext()
+        protected virtual StorageContext SystemStorageGetContext()
         {
             _traceLogger.LogInformation(VMEventLog.Call,
                 "{SysCall}",
