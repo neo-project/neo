@@ -84,12 +84,12 @@ namespace Neo.Build.Core.SmartContract
             return GetRandom();
         }
 
-        protected internal void SystemRuntimeLog(byte[] state)
+        protected virtual void SystemRuntimeLog(byte[] state)
         {
             RuntimeLog(state);
         }
 
-        protected internal void SystemRuntimeNotify(byte[] eventName, Array state)
+        protected virtual void SystemRuntimeNotify(byte[] eventName, Array state)
         {
             RuntimeNotify(eventName, state);
         }

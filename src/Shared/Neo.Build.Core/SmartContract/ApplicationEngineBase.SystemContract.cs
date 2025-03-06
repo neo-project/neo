@@ -47,7 +47,7 @@ namespace Neo.Build.Core.SmartContract
             NativeOnPersistAsync();
         }
 
-        protected internal void SystemContractNativePostPersist()
+        protected virtual void SystemContractNativePostPersist()
         {
             NativePostPersistAsync();
         }

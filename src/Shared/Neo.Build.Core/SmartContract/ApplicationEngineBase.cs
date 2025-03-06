@@ -120,15 +120,5 @@ namespace Neo.Build.Core.SmartContract
             else
                 base.OnSysCall(descriptor);
         }
-
-        protected virtual void OnLog(object? sender, LogEventArgs e)
-        {
-
-        }
-
-        protected virtual void OnNotify(object? sender, NotifyEventArgs e)
-        {
-
-        }
     }
 }

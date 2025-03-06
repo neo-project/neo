@@ -17,7 +17,7 @@ namespace Neo.Build.Core.SmartContract
 {
     public partial class ApplicationEngineBase
     {
-        protected internal StorageContext SystemStorageGetContext()
+        protected virtual StorageContext SystemStorageGetContext()
         {
             return GetStorageContext();
         }
