@@ -58,9 +58,9 @@ namespace Neo
         public string[] SeedList { get; init; }
 
         /// <summary>
-        /// BlackList hashes
+        /// Block black list
         /// </summary>
-        public HashSet<UInt256> BlackListHashes { get; init; }
+        public HashSet<UInt256> BlockBlackList { get; init; }
 
         /// <summary>
         /// Indicates the time in milliseconds between two blocks.
@@ -119,7 +119,7 @@ namespace Neo
             StandbyCommittee = [],
             ValidatorsCount = 0,
             SeedList = [],
-            BlackListHashes = [],
+            BlockBlackList = [],
             MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
@@ -213,9 +213,9 @@ namespace Neo
                 SeedList = section.GetSection("SeedList").Exists()
                     ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
                     : Default.SeedList,
-                BlackListHashes = section.GetSection("BlackListHashes").Exists()
-                    ? new(section.GetSection("BlackListHashes").GetChildren().Select(p => UInt256.Parse(p.Get<string>())))
-                    : Default.BlackListHashes,
+                BlockBlackList = section.GetSection("BlockBlackList").Exists()
+                    ? new(section.GetSection("BlockBlackList").GetChildren().Select(p => UInt256.Parse(p.Get<string>())))
+                    : Default.BlockBlackList,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
@@ -304,7 +304,7 @@ namespace Neo
         /// <returns>True if blacklisted</returns>
         public bool IsBlacklisted(Header header)
         {
-            return BlackListHashes.Contains(header.Hash);
+            return BlockBlackList.Contains(header.Hash);
         }
     }
 }

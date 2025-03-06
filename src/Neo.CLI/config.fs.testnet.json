@@ -55,6 +55,6 @@
       "morph06.testnet.fs.neo.org:50333",
       "morph07.testnet.fs.neo.org:50333"
     ],
-    "BlackListHashes": []
+    "BlockBlackList": []
   }
 }

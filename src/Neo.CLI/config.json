@@ -73,6 +73,6 @@
       "seed4.neo.org:10333",
       "seed5.neo.org:10333"
     ],
-    "BlackListHashes": []
+    "BlockBlackList": []
   }
 }

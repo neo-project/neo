@@ -61,6 +61,6 @@
       "morph6.fs.neo.org:40333",
       "morph7.fs.neo.org:40333"
     ],
-    "BlackListHashes": []
+    "BlockBlackList": []
   }
 }
