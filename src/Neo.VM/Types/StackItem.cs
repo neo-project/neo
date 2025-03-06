@@ -11,12 +11,12 @@
 
 #pragma warning disable CS0659
 
+using Neo.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Neo.Extensions;
 
 namespace Neo.VM.Types
 {

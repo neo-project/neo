@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System.Buffers.Binary;
 using System.Numerics;
-using Neo.Extensions;
 
 namespace Neo.VM.Benchmark
 {

@@ -9,11 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Neo.Extensions;
 
 namespace Neo.VM.Types
 {
