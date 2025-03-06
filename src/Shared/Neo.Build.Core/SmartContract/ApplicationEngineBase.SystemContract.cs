@@ -107,6 +107,5 @@ namespace Neo.Build.Core.SmartContract
 
             NativePostPersistAsync();
         }
-
     }
 }

@@ -35,6 +35,7 @@ namespace Neo.Build.Core.SmartContract
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
+            ILoggerFactory? loggerFactory = null,
             IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : base(
                   trigger,
@@ -63,6 +64,7 @@ namespace Neo.Build.Core.SmartContract
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
+            ILoggerFactory? loggerFactory = null,
             IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : this(
                 protocolSettings,
@@ -74,6 +76,7 @@ namespace Neo.Build.Core.SmartContract
                 container,
                 persistingBlock,
                 diagnostic,
+                loggerFactory,
                 systemCallMethods)
         { }
 
@@ -85,6 +88,7 @@ namespace Neo.Build.Core.SmartContract
             IVerifiable? container = null,
             Block? persistingBlock = null,
             IDiagnostic? diagnostic = null,
+            ILoggerFactory? loggerFactory = null,
             IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
             : this(
                 settings.ApplicationEngineSettings,
@@ -95,6 +99,7 @@ namespace Neo.Build.Core.SmartContract
                 container,
                 persistingBlock,
                 diagnostic,
+                loggerFactory,
                 systemCallMethods)
         { }
 
@@ -175,14 +180,12 @@ namespace Neo.Build.Core.SmartContract
             base.PreExecuteInstruction(instruction);
         }
 
-        protected virtual void OnSystemCall(ExecutionEngine engine, Instruction instruction)
+        protected override void OnSysCall(InteropDescriptor descriptor)
         {
-            var systemCallMethodPointer = instruction.TokenU32;
-
-            if (_systemCallMethods.TryGetValue(systemCallMethodPointer, out var descriptor))
-                OnSysCall(descriptor);
+            if (_systemCallMethods.TryGetValue(descriptor, out var overrideDescriptor))
+                base.OnSysCall(overrideDescriptor);
             else
-                _orgSysCall(engine, instruction);
+                base.OnSysCall(descriptor);
         }
     }
 }

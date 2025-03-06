@@ -9,7 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+using Microsoft.Extensions.Hosting;
+using Neo.Build.ToolSet.Extensions;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Threading.Tasks;
@@ -18,18 +19,24 @@ namespace Neo.Build.ToolSet.Commands
 {
     internal class ProgramRootCommand : RootCommand
     {
-        public ProgramRootCommand() : base("Neo Build Command-line Tool")
+        public ProgramRootCommand() : base(CommandLineStrings.Program.RootDescription)
         {
         }
 
-        public new sealed class Handler : ICommandHandler
+        public new sealed class Handler(IHostEnvironment env) : ICommandHandler
         {
+            private readonly IHostEnvironment _env = env;
+
             public int Invoke(InvocationContext context) =>
                 InvokeAsync(context).GetAwaiter().GetResult();
 
             public Task<int> InvokeAsync(InvocationContext context)
             {
-                throw new NotImplementedException();
+                context.Console.WriteLine("      Environment: {0}", _env.EnvironmentName);
+                context.Console.WriteLine("Working Directory: {0}", _env.ContentRootPath);
+                context.Console.WriteLine();
+
+                return Task.FromResult(0);
             }
         }
 
