@@ -441,7 +441,7 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (IsMultiSigContract(witness.VerificationScript.Span, out var m, out var points) && IsMultiSignatureInvocationScript(m, witness.InvocationScript, out var signatures))
+                else if (IsMultiSigContract(witness.VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatureInvocationScript(m, witness.InvocationScript, out var signatures))
                 {
                     if (hashes[i] != witness.ScriptHash) return VerifyResult.Invalid;
                     var n = points.Length;
