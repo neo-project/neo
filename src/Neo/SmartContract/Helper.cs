@@ -305,6 +305,7 @@ namespace Neo.SmartContract
             {
                 return false;
             }
+            if (verifiable.Witnesses == null) return false;
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -360,7 +361,15 @@ namespace Neo.SmartContract
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (engine.Execute() == VMState.FAULT) return false;
-                if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                if (engine.ResultStack.Count != 1) return false;
+                try
+                {
+                    if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                }
+                catch
+                {
+                    return false;
+                }
                 fee = engine.FeeConsumed;
             }
             return true;
