@@ -39,8 +39,6 @@ namespace Neo.Build.Core.SmartContract
                   diagnostic,
                   DefaultJumpTable)
         {
-            _orgSysCall = DefaultJumpTable[OpCode.SYSCALL];
-            DefaultJumpTable[OpCode.SYSCALL] = OnSystemCall;
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
         }
 
@@ -83,7 +81,6 @@ namespace Neo.Build.Core.SmartContract
                 systemCallMethods)
         { }
 
-        private readonly JumpTable.DelAction _orgSysCall;
         private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
 
         public override void Dispose()
@@ -116,14 +113,12 @@ namespace Neo.Build.Core.SmartContract
             base.PreExecuteInstruction(instruction);
         }
 
-        protected void OnSystemCall(ExecutionEngine engine, Instruction instruction)
+        protected override void OnSysCall(InteropDescriptor descriptor)
         {
-            var systemCallMethodPointer = instruction.TokenU32;
-
-            if (_systemCallMethods.TryGetValue(systemCallMethodPointer, out var descriptor))
-                OnSysCall(descriptor);
+            if (_systemCallMethods.TryGetValue(descriptor, out var overrideDescriptor))
+                base.OnSysCall(overrideDescriptor);
             else
-                _orgSysCall(engine, instruction);
+                base.OnSysCall(descriptor);
         }
 
         protected virtual void OnLog(object? sender, LogEventArgs e)
