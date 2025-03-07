@@ -86,7 +86,7 @@ namespace Neo.Extensions
         /// <param name="value">The string to convert.</param>
         /// <returns>The converted byte array.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] ToStrictUTF8Bytes(this string value) => StrictUTF8.GetBytes(value);
+        public static byte[] ToStrictUtf8Bytes(this string value) => StrictUTF8.GetBytes(value);
 
         /// <summary>
         /// Gets the size of the specified <see cref="string"/> encoded in strict UTF8.
@@ -94,7 +94,7 @@ namespace Neo.Extensions
         /// <param name="value">The specified <see cref="string"/>.</param>
         /// <returns>The size of the <see cref="string"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetStrictUTF8ByteCount(this string value) => StrictUTF8.GetByteCount(value);
+        public static int GetStrictUtf8ByteCount(this string value) => StrictUTF8.GetByteCount(value);
 
         /// <summary>
         /// Determines if the specified <see cref="string"/> is a valid hex string.
@@ -165,7 +165,7 @@ namespace Neo.Extensions
         /// <returns>The size of the <see cref="string"/>.</returns>
         public static int GetVarSize(this string value)
         {
-            var size = value.GetStrictUTF8ByteCount();
+            var size = value.GetStrictUtf8ByteCount();
             return size.GetVarSize() + size;
         }
     }

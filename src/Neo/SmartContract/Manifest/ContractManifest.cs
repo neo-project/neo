@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The JSON <see cref="string"/>.</param>
         /// <returns>The parsed manifest.</returns>
-        public static ContractManifest Parse(string json) => Parse(json.ToStrictUTF8Bytes());
+        public static ContractManifest Parse(string json) => Parse(json.ToStrictUtf8Bytes());
 
         /// <summary>
         /// Converts the manifest to a JSON object.

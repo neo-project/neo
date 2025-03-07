@@ -97,7 +97,7 @@ namespace Neo.VM.Benchmark
 
         internal Instruction Push(string s)
         {
-            return Push(s.ToStrictUTF8Bytes());
+            return Push(s.ToStrictUtf8Bytes());
         }
 
         internal Instruction Push(byte[] data)

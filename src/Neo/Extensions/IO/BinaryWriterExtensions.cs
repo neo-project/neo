@@ -57,7 +57,7 @@ namespace Neo.Extensions
             if (value.Length > length)
                 throw new ArgumentException(null, nameof(value));
 
-            var bytes = value.ToStrictUTF8Bytes();
+            var bytes = value.ToStrictUtf8Bytes();
             if (bytes.Length > length)
                 throw new ArgumentException(null, nameof(value));
             writer.Write(bytes);
@@ -132,7 +132,7 @@ namespace Neo.Extensions
         /// <param name="value">The <see cref="string"/> to be written.</param>
         public static void WriteVarString(this BinaryWriter writer, string value)
         {
-            writer.WriteVarBytes(value.ToStrictUTF8Bytes());
+            writer.WriteVarBytes(value.ToStrictUtf8Bytes());
         }
     }
 }

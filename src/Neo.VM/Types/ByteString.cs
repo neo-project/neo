@@ -119,7 +119,7 @@ namespace Neo.VM.Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator ByteString(string value)
         {
-            return new ByteString(value.ToStrictUTF8Bytes());
+            return new ByteString(value.ToStrictUtf8Bytes());
         }
 
         public override string ToString()

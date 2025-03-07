@@ -80,8 +80,8 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual("ABC", bytes.ToStrictUtf8String(0, 3));
             Assert.AreEqual("ABC", ((ReadOnlySpan<byte>)bytes.AsSpan()).ToStrictUtf8String());
 
-            Assert.AreEqual(bytes.ToHexString(), "ABC".ToStrictUTF8Bytes().ToHexString());
-            Assert.AreEqual(bytes.Length, "ABC".GetStrictUTF8ByteCount());
+            Assert.AreEqual(bytes.ToHexString(), "ABC".ToStrictUtf8Bytes().ToHexString());
+            Assert.AreEqual(bytes.Length, "ABC".GetStrictUtf8ByteCount());
         }
 
         [TestMethod]
