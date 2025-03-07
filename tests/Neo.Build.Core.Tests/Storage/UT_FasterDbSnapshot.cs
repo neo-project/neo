@@ -93,9 +93,9 @@ namespace Neo.Build.Core.Tests.Storage
             store.Put([0x02, 0x00], [0x10]);
 
             using var snapshot = store.GetSnapshot();
-            var items = snapshot.Seek([0x02], SeekDirection.Forward).ToArray();
-
             store.Put([0x02, 0x01], [0x11]);
+
+            var items = snapshot.Seek([0x02], SeekDirection.Forward).ToArray();
 
             Assert.AreEqual(2, items.Length);
             CollectionAssert.AreEqual(items[0].Key, new byte[] { 0x02, 0x00 });
