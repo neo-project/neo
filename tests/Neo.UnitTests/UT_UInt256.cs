@@ -170,6 +170,10 @@ namespace Neo.UnitTests.IO
             data = new byte[UInt256.Length];
             value.Serialize(data.AsSpan());
             CollectionAssert.AreEqual(data, value.ToArray());
+
+            data = new byte[UInt256.Length];
+            ((ISerializableSpan)value).Serialize(data.AsSpan());
+            CollectionAssert.AreEqual(data, value.ToArray());
         }
     }
 }
