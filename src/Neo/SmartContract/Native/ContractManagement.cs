@@ -21,7 +21,6 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -296,7 +295,6 @@ namespace Neo.SmartContract.Native
                 contract.Manifest = manifest_new;
             }
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
-
             contract.UpdateCounter++; // Increase update counter
             return OnDeployAsync(engine, contract, data, true);
         }
