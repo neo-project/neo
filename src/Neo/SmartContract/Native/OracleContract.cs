@@ -163,7 +163,7 @@ namespace Neo.SmartContract.Native
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request, response.Id);
-                // Don't need to seal because it's read-onle
+                // Don't need to seal because it's read-only
                 var request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.SnapshotCache.Delete(key);
