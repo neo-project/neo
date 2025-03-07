@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native
                     else
                     {
                         // Parse old contract
-                        var oldContract = state.GetInteroperable<ContractState>(false);
+                        using var sealInterop = state.GetInteroperable(out ContractState oldContract, false);
                         // Increase the update counter
                         oldContract.UpdateCounter++;
                         // Modify nef and manifest
