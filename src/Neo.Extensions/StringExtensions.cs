@@ -96,7 +96,6 @@ namespace Neo.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetStrictUTF8ByteCount(this string value) => StrictUTF8.GetByteCount(value);
 
-
         /// <summary>
         /// Determines if the specified <see cref="string"/> is a valid hex string.
         /// </summary>
