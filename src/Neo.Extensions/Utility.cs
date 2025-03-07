@@ -39,7 +39,7 @@ namespace Neo
         /// <summary>
         /// A strict UTF8 encoding used in NEO system.
         /// </summary>
-        public static Encoding StrictUTF8 { get => StringExtensions.StrictUTF8; }
+        public static Encoding StrictUTF8 => StringExtensions.StrictUTF8;
 
         /// <summary>
         /// Writes a log.
