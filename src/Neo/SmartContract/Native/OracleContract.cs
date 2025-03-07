@@ -225,14 +225,17 @@ namespace Neo.SmartContract.Native
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength, engine.Limits.MaxStackSize)
             };
-            StorageItem.AssertIsSerializable(request);
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), new StorageItem(request));
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), StorageItem.CreateSealed(request));
 
             //Add the id to the IdList
-            var list = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
-            if (list.Count >= 256)
-                throw new InvalidOperationException("There are too many pending responses for this url");
-            list.Add(id);
+            var listState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList()));
+            {
+                var list = listState.GetInteroperable<IdList>();
+                if (list.Count >= 256)
+                    throw new InvalidOperationException("There are too many pending responses for this url");
+                list.Add(id);
+                listState.Seal();
+            }
 
             engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) { id, engine.CallingScriptHash.ToArray(), url, filter ?? StackItem.Null });
         }

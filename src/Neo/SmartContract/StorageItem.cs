@@ -85,6 +85,27 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
+        /// Create a new instance from an sealed <see cref="IInteroperable"/> class. 
+        /// </summary>
+        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
+        /// <returns></returns>
+        public static StorageItem CreateSealed(IInteroperable interoperable)
+        {
+            var item = new StorageItem(interoperable);
+            item.Seal();
+            return item;
+        }
+
+        /// <summary>
+        /// Ensure that is Serializable and cache the value
+        /// </summary>
+        public void Seal()
+        {
+            // Assert is Serializable and cached
+            _ = Value;
+        }
+
+        /// <summary>
         /// Increases the integer value in the store by the specified value.
         /// </summary>
         /// <param name="integer">The integer to add.</param>
@@ -189,11 +210,6 @@ namespace Neo.SmartContract
         {
             _cache = interoperable;
             _value = null;
-        }
-
-        internal static void AssertIsSerializable(IInteroperable interoperable)
-        {
-            BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
         }
 
         public static implicit operator BigInteger(StorageItem item)
