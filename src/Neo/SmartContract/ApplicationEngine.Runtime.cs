@@ -336,7 +336,7 @@ namespace Neo.SmartContract
             if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
             try
             {
-                string message = state.GetStrictUTF8String();
+                string message = state.ToStrictUtf8String();
                 Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
             }
             catch
@@ -360,7 +360,7 @@ namespace Neo.SmartContract
             }
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
 
-            string name = eventName.GetStrictUTF8String();
+            string name = eventName.ToStrictUtf8String();
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
             if (contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
@@ -389,7 +389,7 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            SendNotification(CurrentScriptHash, eventName.GetStrictUTF8String(), state);
+            SendNotification(CurrentScriptHash, eventName.ToStrictUtf8String(), state);
         }
 
         /// <summary>
@@ -479,7 +479,7 @@ namespace Neo.SmartContract
                         {
                             try
                             {
-                                _ = item.GetSpan().GetStrictUTF8String(); // Prevent any non-UTF8 string
+                                _ = item.GetSpan().ToStrictUtf8String(); // Prevent any non-UTF8 string
                                 return true;
                             }
                             catch { }

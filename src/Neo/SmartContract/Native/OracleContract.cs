@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native
 
         private static ReadOnlySpan<byte> GetUrlHash(string url)
         {
-            return Crypto.Hash160(url.GetStrictUTF8Bytes());
+            return Crypto.Hash160(url.ToStrictUTF8Bytes());
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)

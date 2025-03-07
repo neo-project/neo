@@ -99,7 +99,7 @@ namespace Neo.Plugins.OracleService
             if (!encoding.Equals(Encoding.UTF8))
                 return (OracleResponseCode.Error, null);
 
-            return (OracleResponseCode.Success, buffer.GetStrictUTF8String(0, read));
+            return (OracleResponseCode.Success, buffer.ToStrictUtf8String(0, read));
         }
 
         private static Encoding GetEncoding(HttpContentHeaders headers)

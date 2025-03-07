@@ -76,11 +76,11 @@ namespace Neo.Extensions.Tests
         public void TestGetStrictUTF8String()
         {
             var bytes = new byte[] { (byte)'A', (byte)'B', (byte)'C' };
-            Assert.AreEqual("ABC", bytes.GetStrictUTF8String());
-            Assert.AreEqual("ABC", bytes.GetStrictUTF8String(0, 3));
-            Assert.AreEqual("ABC", ((ReadOnlySpan<byte>)bytes.AsSpan()).GetStrictUTF8String());
+            Assert.AreEqual("ABC", bytes.ToStrictUtf8String());
+            Assert.AreEqual("ABC", bytes.ToStrictUtf8String(0, 3));
+            Assert.AreEqual("ABC", ((ReadOnlySpan<byte>)bytes.AsSpan()).ToStrictUtf8String());
 
-            Assert.AreEqual(bytes.ToHexString(), "ABC".GetStrictUTF8Bytes().ToHexString());
+            Assert.AreEqual(bytes.ToHexString(), "ABC".ToStrictUTF8Bytes().ToHexString());
             Assert.AreEqual(bytes.Length, "ABC".GetStrictUTF8ByteCount());
         }
 

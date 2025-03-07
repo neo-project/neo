@@ -54,12 +54,12 @@ namespace Neo.Plugins.OracleService.Tests
   ]
 }";
 
-            Assert.AreEqual(@"[""Acme Co""]", OracleService.Filter(json, "$.Manufacturers[0].Name").GetStrictUTF8String());
-            Assert.AreEqual("[50]", OracleService.Filter(json, "$.Manufacturers[0].Products[0].Price").GetStrictUTF8String());
+            Assert.AreEqual(@"[""Acme Co""]", OracleService.Filter(json, "$.Manufacturers[0].Name").ToStrictUtf8String());
+            Assert.AreEqual("[50]", OracleService.Filter(json, "$.Manufacturers[0].Products[0].Price").ToStrictUtf8String());
             Assert.AreEqual(@"[""Elbow Grease""]",
-                OracleService.Filter(json, "$.Manufacturers[1].Products[0].Name").GetStrictUTF8String());
+                OracleService.Filter(json, "$.Manufacturers[1].Products[0].Name").ToStrictUtf8String());
             Assert.AreEqual(@"[{""Name"":""Elbow Grease"",""Price"":99.95}]",
-                OracleService.Filter(json, "$.Manufacturers[1].Products[0]").GetStrictUTF8String());
+                OracleService.Filter(json, "$.Manufacturers[1].Products[0]").ToStrictUtf8String());
         }
 
         [TestMethod]

@@ -113,7 +113,7 @@ namespace Neo.Plugins.OracleService
                 Array.Copy(chunk, 0, payload, offset, chunk.Length);
                 offset += chunk.Length;
             }
-            return (OracleResponseCode.Success, payload.GetStrictUTF8String());
+            return (OracleResponseCode.Success, payload.ToStrictUtf8String());
         }
 
         private static async Task<(OracleResponseCode, string)> GetRangeAsync(Client client, Address addr, string[] ps, CancellationToken cancellation)
@@ -122,7 +122,7 @@ namespace Neo.Plugins.OracleService
             Range range = ParseRange(ps[0]);
             if (range.Length > OracleResponse.MaxResultSize) return (OracleResponseCode.ResponseTooLarge, "");
             var res = await client.GetObjectPayloadRangeData(addr, range, options: new CallOptions { Ttl = 2 }, context: cancellation);
-            return (OracleResponseCode.Success, res.GetStrictUTF8String());
+            return (OracleResponseCode.Success, res.ToStrictUtf8String());
         }
 
         private static async Task<string> GetHeaderAsync(Client client, Address addr, CancellationToken cancellation)

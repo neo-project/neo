@@ -162,7 +162,7 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(string data)
         {
-            return EmitPush(data.GetStrictUTF8Bytes());
+            return EmitPush(data.ToStrictUTF8Bytes());
         }
 
         /// <summary>

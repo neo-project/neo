@@ -516,7 +516,7 @@ namespace Neo.Plugins.OracleService
         public static byte[] Filter(string input, string filterArgs)
         {
             if (string.IsNullOrEmpty(filterArgs))
-                return input.GetStrictUTF8Bytes();
+                return input.ToStrictUTF8Bytes();
 
             JToken beforeObject = JToken.Parse(input);
             JArray afterObjects = beforeObject.JsonPath(filterArgs);

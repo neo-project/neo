@@ -34,12 +34,12 @@ namespace Neo.Extensions
         }
 
         /// <summary>
-        /// Get a strict UTF8 string from a byte span.
+        /// Converts a byte span to a strict UTF8 string.
         /// </summary>
         /// <param name="bytes">The byte span to convert.</param>
         /// <param name="value">The converted string.</param>
         /// <returns>True if the conversion is successful, otherwise false.</returns>
-        public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
+        public static bool TryToStrictUtf8String(this ReadOnlySpan<byte> bytes, out string? value)
         {
             try
             {
@@ -54,42 +54,42 @@ namespace Neo.Extensions
         }
 
         /// <summary>
-        /// Get a strict UTF8 string from a byte span.
+        /// Converts a byte span to a strict UTF8 string.
         /// </summary>
         /// <param name="value">The byte span to convert.</param>
         /// <returns>The converted string.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string GetStrictUTF8String(this ReadOnlySpan<byte> value) => StrictUTF8.GetString(value);
+        public static string ToStrictUtf8String(this ReadOnlySpan<byte> value) => StrictUTF8.GetString(value);
 
         /// <summary>
-        /// Get a strict UTF8 string from a byte array.
+        /// Converts a byte array to a strict UTF8 string.
         /// </summary>
         /// <param name="value">The byte array to convert.</param>
         /// <returns>The converted string.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string GetStrictUTF8String(this byte[] value) => StrictUTF8.GetString(value);
+        public static string ToStrictUtf8String(this byte[] value) => StrictUTF8.GetString(value);
 
         /// <summary>
-        /// Get a strict UTF8 string from a byte array.
+        /// Converts a byte array to a strict UTF8 string.
         /// </summary>
         /// <param name="value">The byte array to convert.</param>
         /// <param name="start">The start index of the byte array.</param>
         /// <param name="count">The count of the byte array.</param>
         /// <returns>The converted string.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string GetStrictUTF8String(this byte[] value, int start, int count)
+        public static string ToStrictUtf8String(this byte[] value, int start, int count)
             => StrictUTF8.GetString(value, start, count);
 
         /// <summary>
-        /// Get a strict UTF8 byte array from a string.
+        /// Converts a string to a strict UTF8 byte array.
         /// </summary>
         /// <param name="value">The string to convert.</param>
         /// <returns>The converted byte array.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] GetStrictUTF8Bytes(this string value) => StrictUTF8.GetBytes(value);
+        public static byte[] ToStrictUTF8Bytes(this string value) => StrictUTF8.GetBytes(value);
 
         /// <summary>
-        /// Get the size of the specified <see cref="string"/> encoded in strict UTF8.
+        /// Gets the size of the specified <see cref="string"/> encoded in strict UTF8.
         /// </summary>
         /// <param name="value">The specified <see cref="string"/>.</param>
         /// <returns>The size of the <see cref="string"/>.</returns>

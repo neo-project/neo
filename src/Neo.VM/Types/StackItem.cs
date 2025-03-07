@@ -179,7 +179,7 @@ namespace Neo.VM.Types
         /// <returns>The <see cref="string"/> value represented by the VM object.</returns>
         public virtual string? GetString()
         {
-            return GetSpan().GetStrictUTF8String();
+            return GetSpan().ToStrictUtf8String();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

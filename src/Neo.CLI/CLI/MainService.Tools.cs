@@ -130,7 +130,7 @@ namespace Neo.CLI
         {
             try
             {
-                var bytes = value.GetStrictUTF8Bytes();
+                var bytes = value.ToStrictUTF8Bytes();
                 return Convert.ToBase64String(bytes.AsSpan());
             }
             catch
@@ -329,7 +329,7 @@ namespace Neo.CLI
             try
             {
                 var result = Convert.FromBase64String(bytearray);
-                var utf8String = result.GetStrictUTF8String();
+                var utf8String = result.ToStrictUtf8String();
                 return IsPrintable(utf8String) ? utf8String : null;
             }
             catch
