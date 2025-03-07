@@ -163,13 +163,14 @@ namespace Neo.SmartContract.Native
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request, response.Id);
-                OracleRequest request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
+                // Don't need to seal because it's read-onle
+                var request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.SnapshotCache.Delete(key);
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
-                IdList list = engine.SnapshotCache.GetAndChange(key).GetInteroperable<IdList>();
+                using var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list);
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.SnapshotCache.Delete(key);
 
