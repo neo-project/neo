@@ -74,6 +74,7 @@ namespace Neo.SmartContract.Native
         internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
             var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()))
+                // Don't need to seal because the size is fixed and it can't grow
                 .GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
