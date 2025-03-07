@@ -149,11 +149,22 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Gets an <see cref="IInteroperable"/> from the storage.
+        /// Gets an <see cref="IInteroperable"/> from the storage not related to this <see cref="StorageItem"/>.
         /// </summary>
-        /// <param name="verify">Verify deserialization</param>
         /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
+        public T GetInteroperableClone<T>() where T : IInteroperable, new()
+        {
+            var interop = GetInteroperable<T>();
+            return (T)interop.Clone();
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IInteroperableVerifiable"/> from the storage.
+        /// </summary>
+        /// <param name="verify">Verify deserialization</param>
+        /// <typeparam name="T">The type of the <see cref="IInteroperableVerifiable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
         public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
             if (_cache is null)
@@ -164,6 +175,18 @@ namespace Neo.SmartContract
             }
             _value = null;
             return (T)_cache;
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IInteroperableVerifiable"/> from the storage not related to this <see cref="StorageItem"/>.
+        /// </summary>
+        /// <param name="verify">Verify deserialization</param>
+        /// <typeparam name="T">The type of the <see cref="IInteroperableVerifiable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
+        public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
+        {
+            var interop = GetInteroperable<T>(verify);
+            return (T)interop.Clone();
         }
 
         public void Serialize(BinaryWriter writer)

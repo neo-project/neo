@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Native
         public ContractState GetContract(IReadOnlyStore snapshot, UInt160 hash)
         {
             var key = CreateStorageKey(Prefix_Contract, hash);
-            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<ContractState>(false) : null;
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<ContractState>(false) : null;
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace Neo.SmartContract.Native
         public IEnumerable<ContractState> ListContracts(DataCache snapshot)
         {
             byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
-            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
+            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperableClone<ContractState>(false));
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
@@ -301,7 +301,7 @@ namespace Neo.SmartContract.Native
         {
             UInt160 hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
-            ContractState contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperable<ContractState>(false);
+            ContractState contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperableClone<ContractState>(false);
             if (contract is null) return;
             engine.SnapshotCache.Delete(ckey);
             engine.SnapshotCache.Delete(CreateStorageKey(Prefix_ContractHash, contract.Id));
