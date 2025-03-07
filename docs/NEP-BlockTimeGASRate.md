@@ -34,6 +34,25 @@ The following additions have been made to the `PolicyContract` class:
   - `BlockGenTimeChanged`: Emitted when the block generation time is changed, containing:
     - `oldTime`: The previous block generation time in milliseconds
     - `newTime`: The new block generation time in milliseconds
+  - This event is declared at the contract level using the `ContractEvent` attribute, as required by the Echidna hardfork
+
+#### Event Declaration
+
+The `BlockGenTimeChanged` event is declared at the contract level using the `ContractEvent` attribute:
+
+```csharp
+
+public sealed class PolicyContract : NativeContract
+{
+    [ContractEvent(Hardfork.HF_Echidna, 0, name: "BlockGenTimeChanged",
+    "oldTime", ContractParameterType.Integer,
+    "newTime", ContractParameterType.Integer
+    )]
+    // Contract implementation
+}
+```
+
+This ensures the notification can be legally emitted as per Echidna hardfork requirements, which mandate that all notifications must be explicitly declared.
 
 #### Storage and Initialization
 
@@ -60,7 +79,9 @@ public void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
     engine.SnapshotCache.GetAndChange(_blockGenTime).Set(milliseconds);
     
     // Emit the BlockGenTimeChanged event
-    engine.SendNotification(Hash, "BlockGenTimeChanged", new VM.Types.Array { new VM.Types.Integer(oldTime), new VM.Types.Integer(milliseconds) });
+    engine.SendNotification(Hash, "BlockGenTimeChanged", 
+    new VM.Types.Integer(oldTime), 
+    new VM.Types.Integer(milliseconds));
 }
 ```
 
@@ -211,22 +232,8 @@ The block time configuration methods have been added to the `PolicyContract` nat
             "type": "Integer"
         }
     ],
-    "returntype": "Boolean",
-    "events": [
-        {
-            "name": "BlockGenTimeChanged",
-            "parameters": [
-                {
-                    "name": "oldTime",
-                    "type": "Integer"
-                },
-                {
-                    "name": "newTime", 
-                    "type": "Integer"
-                }
-            ]
-        }
-    ]
+    "returntype": "Void",
+    "offset": 0
 }
 ```
 
@@ -236,6 +243,24 @@ The block time configuration methods have been added to the `PolicyContract` nat
     "safe": true,
     "parameters": [],
     "returntype": "Integer"
+}
+```
+
+The `BlockGenTimeChanged` event is declared at the contract level:
+
+```json
+{
+    "name": "BlockGenTimeChanged",
+    "parameters": [
+        {
+            "name": "oldTime",
+            "type": "Integer"
+        },
+        {
+            "name": "newTime", 
+            "type": "Integer"
+        }
+    ]
 }
 ```
 

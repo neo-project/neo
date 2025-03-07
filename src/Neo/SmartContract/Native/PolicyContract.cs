@@ -14,6 +14,7 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -85,6 +86,12 @@ namespace Neo.SmartContract.Native
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
         private readonly StorageKey _blockGenTime;
+
+
+        [ContractEvent(Hardfork.HF_Echidna, 0, name: "BlockGenTimeChanged",
+            "oldTime", ContractParameterType.Integer,
+            "newTime", ContractParameterType.Integer
+        )]
 
         internal PolicyContract() : base()
         {
