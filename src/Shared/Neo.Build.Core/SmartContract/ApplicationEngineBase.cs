@@ -100,7 +100,11 @@ namespace Neo.Build.Core.SmartContract
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _traceLogger;
 
-        private readonly UTF8Encoding _encoding = new(false, true);
+        private readonly UTF8Encoding _encoding = new(false, true)
+        {
+            DecoderFallback = DecoderFallback.ExceptionFallback,
+            EncoderFallback = EncoderFallback.ExceptionFallback,
+        };
 
         public override void Dispose()
         {
