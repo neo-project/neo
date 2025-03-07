@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -268,9 +269,10 @@ namespace Neo.SmartContract.Native
 
             engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash));
-            if (contractState is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
-            var contract = contractState.GetInteroperable<ContractState>(false);
+            var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash))
+                ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
+
+            using var sealInterop = contractState.GetInteroperable(out ContractState contract, false);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
             if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
@@ -296,7 +298,6 @@ namespace Neo.SmartContract.Native
             Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
 
             contract.UpdateCounter++; // Increase update counter
-            contractState.Seal();
             return OnDeployAsync(engine, contract, data, true);
         }
 
