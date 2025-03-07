@@ -98,12 +98,30 @@ namespace Neo.SmartContract
         /// Create a new instance from an sealed <see cref="IInteroperable"/> class. 
         /// </summary>
         /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
-        /// <returns></returns>
+        /// <returns><see cref="StorageItem"/> class</returns>
         public static StorageItem CreateSealed(IInteroperable interoperable)
         {
             var item = new StorageItem(interoperable);
             item.Seal();
             return item;
+        }
+
+        /// <summary>
+        /// Returns true if the <see cref="IInteroperable"/> class is serializable
+        /// </summary>
+        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
+        /// <returns>True if serializable</returns>
+        public static bool IsSerializable(IInteroperable interoperable)
+        {
+            try
+            {
+                _ = CreateSealed(interoperable);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
