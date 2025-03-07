@@ -102,6 +102,8 @@ namespace Neo.Build.Core.SmartContract
 
         private readonly UTF8Encoding _encoding = new(false, true);
 
+        private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
+
         public override void Dispose()
         {
             base.Dispose();
@@ -139,7 +141,6 @@ namespace Neo.Build.Core.SmartContract
         protected override void OnFault(Exception ex)
         {
             base.OnFault(ex);
-
             _traceLogger.LogError(VMEventLog.Fault, ex,
                 "{Message}",
                 ex.InnerException?.Message ?? ex.Message);

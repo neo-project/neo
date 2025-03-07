@@ -74,7 +74,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var keyString = System.Convert.ToBase64String(key);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.StorageGet,
                 "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}",
                 nameof(System_Storage_Get), storageContext.Id, storageContext.IsReadOnly, keyString);
 
@@ -82,7 +82,7 @@ namespace Neo.Build.Core.SmartContract
 
             var resultString = System.Convert.ToBase64String(result?.Span.ToArray() ?? []);
 
-            _traceLogger.LogInformation(VMEventLog.Result,
+            _traceLogger.LogInformation(VMEventLog.StorageGet,
                 "{SysCall} result={Result}",
                 nameof(System_Storage_Get), resultString);
 
@@ -93,13 +93,13 @@ namespace Neo.Build.Core.SmartContract
         {
             var prefixString = System.Convert.ToBase64String(prefix);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.StorageFind,
                 "{SysCall} id={Id}, readonly={ReadOnly}, prefix={Prefix}, options={Options}",
                 nameof(System_Storage_Find), storageContext.Id, storageContext.IsReadOnly, prefixString, options.ToString());
 
             var result = Find(storageContext, prefix, options);
 
-            _traceLogger.LogInformation(VMEventLog.Result,
+            _traceLogger.LogInformation(VMEventLog.StorageFind,
                 "{SysCall} result={Result}",
                 nameof(System_Storage_Find), result.GetType().Name);
 
@@ -111,7 +111,7 @@ namespace Neo.Build.Core.SmartContract
             var keyString = System.Convert.ToBase64String(key);
             var valueString = System.Convert.ToBase64String(value);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.StoragePut,
                 "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}, value={Value}",
                 nameof(System_Runtime_Platform), storageContext.Id, storageContext.IsReadOnly, keyString, valueString);
 
@@ -122,7 +122,7 @@ namespace Neo.Build.Core.SmartContract
         {
             var keyString = System.Convert.ToBase64String(key);
 
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.StorageDelete,
                 "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}",
                 nameof(System_Runtime_Platform), storageContext.Id, storageContext.IsReadOnly, keyString);
 

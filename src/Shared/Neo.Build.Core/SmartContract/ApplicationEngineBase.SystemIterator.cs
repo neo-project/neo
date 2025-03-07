@@ -21,13 +21,13 @@ namespace Neo.Build.Core.SmartContract
     {
         protected virtual bool SystemIteratorNext(IIterator iterator)
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.IteratorMove,
                 "{SysCall} iterator={Iterator}",
                 nameof(System_Iterator_Next), iterator.GetType().Name);
 
             var result = IteratorNext(iterator);
 
-            _traceLogger.LogInformation(VMEventLog.Result,
+            _traceLogger.LogInformation(VMEventLog.IteratorMove,
                 "{SysCall} result={Result}",
                 nameof(System_Iterator_Next), result);
 
@@ -36,13 +36,13 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual StackItem SystemIteratorValue(IIterator iterator)
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.IteratorGet,
                 "{SysCall} iterator={Iterator}",
                 nameof(System_Iterator_Value), iterator.GetType().Name);
 
             var result = IteratorValue(iterator);
 
-            _traceLogger.LogInformation(VMEventLog.Result,
+            _traceLogger.LogInformation(VMEventLog.IteratorGet,
                 "{SysCall} result={Result}",
                 nameof(System_Iterator_Value), result.ToJson());
 

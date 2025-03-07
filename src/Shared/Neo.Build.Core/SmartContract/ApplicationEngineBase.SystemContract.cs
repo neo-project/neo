@@ -15,6 +15,8 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.SmartContract;
 using System.Linq;
+using Neo.Cryptography.ECC;
+using Neo.SmartContract;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Build.Core.SmartContract
@@ -92,7 +94,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual void SystemContractNativeOnPersist()
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.Persist,
                 "{SysCall}",
                 nameof(System_Contract_NativeOnPersist));
 
@@ -101,7 +103,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual void SystemContractNativePostPersist()
         {
-            _traceLogger.LogInformation(VMEventLog.Call,
+            _traceLogger.LogInformation(VMEventLog.PostPersist,
                 "{SysCall}",
                 nameof(System_Contract_NativePostPersist));
 
