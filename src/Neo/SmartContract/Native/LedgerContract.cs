@@ -53,16 +53,20 @@ namespace Neo.SmartContract.Native
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
                 // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(tx.Clone()));
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(tx.Clone()))
+                    .FromReplica(new StorageItem(tx));
 
                 // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    var txState = new TransactionState() { BlockIndex = engine.PersistingBlock.Index };
+                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(txState))
+                        .FromReplica(new StorageItem(txState));
                     foreach (var signer in conflictingSigners)
                     {
-                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(txState))
+                            .FromReplica(new StorageItem(txState));
                     }
                 }
             }
