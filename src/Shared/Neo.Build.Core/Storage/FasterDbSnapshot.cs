@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// FasterDbStore.cs file belongs to the neo project and is free
+// FasterDbSnapshot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,29 +14,40 @@ using Neo.Extensions;
 using Neo.Persistence;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 
 namespace Neo.Build.Core.Storage
 {
-    public class FasterDbStore : IStore, IEnumerable<KeyValuePair<byte[], byte[]>>
+    public class FasterDbSnapshot : IStoreSnapshot, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        public FasterDbStore(
-            string dirPath)
+        public FasterDbSnapshot(
+            FasterDbStore store,
+            CheckpointSettings checkpointSettings,
+            Guid snapshotId)
         {
-            _storePath = Path.GetFullPath(dirPath);
-            _store = LocalStorageDevice.Create(_storePath, out _logSettings, out _checkpointSettings);
+            _db = store;
+            _snapshotId = snapshotId;
+            _writeBatch = new(ByteArrayEqualityComparer.Default);
+
+            _snapshot = NullStorageDevice.Create(checkpointSettings, out _logSettings);
+
+            _snapshot.Recover(_snapshotId);
+
             _sessionPool = new(
                 _logSettings.LogDevice.ThrottleLimit,
-                () => _store.For(new ByteArrayFunctions()).NewSession<ByteArrayFunctions>());
+                () => _snapshot.For(new ByteArrayFunctions()).NewSession<ByteArrayFunctions>());
         }
 
-        private readonly string _storePath;
-        private readonly FasterKV<byte[], byte[]> _store;
-        private readonly CheckpointSettings _checkpointSettings;
+        private readonly FasterKV<byte[], byte[]> _snapshot;
         private readonly LogSettings _logSettings;
+        private readonly FasterDbStore _db;
+
+        private readonly Guid _snapshotId;
+        private readonly ConcurrentDictionary<byte[], byte[]?> _writeBatch;
+
         private readonly AsyncPool<
             ClientSession<
                 byte[],
@@ -46,56 +57,33 @@ namespace Neo.Build.Core.Storage
                 Empty,
                 ByteArrayFunctions>> _sessionPool;
 
+        public IStore Store => _db;
+
         public void Dispose()
         {
-            _store.CheckpointManager.PurgeAll();
-            _store.TryInitiateFullCheckpoint(out _, CheckpointType.Snapshot);
-            _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
-            _store.Log.FlushAndEvict(true);
-            _store.Dispose();
-            _sessionPool.Dispose();
+            _snapshot.Dispose();
             GC.SuppressFinalize(this);
         }
 
-        public void Reset() =>
-            _store.Reset();
+        public void Commit()
+        {
+            foreach (var kvp in _writeBatch)
+            {
+                if (kvp.Value is null)
+                    _db.Delete(kvp.Key);
+                else
+                    _db.Put(kvp.Key, kvp.Value);
+            }
+        }
 
         public bool Contains(byte[] key) =>
             TryGet(key) != null;
 
-        public void Delete(byte[] key)
-        {
-            if (_sessionPool.TryGet(out var session) == false)
-                session = _sessionPool.Get();
+        public void Delete(byte[] key) =>
+            _writeBatch[key] = null;
 
-            var status = session.Delete(key);
-
-            if (status.IsPending)
-                session.CompletePending(true, true);
-
-            _sessionPool.Return(session);
-        }
-
-        public IStoreSnapshot GetSnapshot()
-        {
-            _store.TryInitiateFullCheckpoint(out var snapshotId, CheckpointType.Snapshot);
-            _store.CompleteCheckpointAsync().AsTask().GetAwaiter().GetResult();
-            _store.Log.FlushAndEvict(true);
-            return new FasterDbSnapshot(this, _checkpointSettings, snapshotId);
-        }
-
-        public void Put(byte[] key, byte[] value)
-        {
-            if (_sessionPool.TryGet(out var session) == false)
-                session = _sessionPool.Get();
-
-            var status = session.Upsert(key, value);
-
-            if (status.IsPending)
-                session.CompletePending(true, true);
-
-            _sessionPool.Return(session);
-        }
+        public void Put(byte[] key, byte[] value) =>
+            _writeBatch[key] = value;
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[]? keyOrPrefix, SeekDirection direction)
         {
@@ -113,7 +101,7 @@ namespace Neo.Build.Core.Storage
                 items = items.Where(w => keyComparer.Compare(w.Key, keyOrPrefix) >= 0);
 
             foreach (var keyValue in items.OrderBy(o => o.Key, keyComparer))
-                yield return new(keyValue.Key, keyValue.Value);
+                yield return new(keyValue.Key, keyValue.Value ?? []);
 
             _sessionPool.Return(session);
         }
@@ -172,7 +160,9 @@ namespace Neo.Build.Core.Storage
             _sessionPool.Return(session);
         }
 
-        IEnumerator IEnumerable.GetEnumerator() =>
-            GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 }

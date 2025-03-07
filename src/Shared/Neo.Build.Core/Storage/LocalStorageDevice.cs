@@ -10,17 +10,17 @@
 // modifications are permitted.
 
 using FASTER.core;
-using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace Neo.Build.Core.Storage
 {
     internal class LocalStorageDevice
     {
-        public static FasterKV<SpanByteAndMemory, SpanByteAndMemory> Create(string basePath, ILoggerFactory? loggerFactory = null) =>
+        public static FasterKV<byte[], byte[]> Create(string basePath, [NotNull] out LogSettings logSettings, [NotNull] out CheckpointSettings checkpointSettings) =>
             new(
                 1L << 20,
-                new LogSettings()
+                logSettings = new LogSettings()
                 {
                     LogDevice = new ManagedLocalStorageDevice(Path.Combine(basePath, "LOG"), recoverDevice: true, osReadBuffering: true),
                     ObjectLogDevice = new ManagedLocalStorageDevice(Path.Combine(basePath, "DATA"), recoverDevice: true, osReadBuffering: true),
@@ -29,14 +29,19 @@ namespace Neo.Build.Core.Storage
                     SegmentSizeBits = 21,
                     MutableFraction = 0.3,
                 },
-                new CheckpointSettings()
+                checkpointSettings = new CheckpointSettings()
                 {
                     CheckpointManager = new DeviceLogCommitCheckpointManager(
                         new LocalStorageNamedDeviceFactory(),
                         new NeoCheckPointNamingScheme(basePath),
                         removeOutdated: false),
                 },
-                loggerFactory: loggerFactory
+                new SerializerSettings<byte[], byte[]>()
+                {
+                    keySerializer = () => new ByteArraySerializer(),
+                    valueSerializer = () => new ByteArraySerializer(),
+                },
+                new ByteArrayFasterEqualityComparer()
             );
     }
 }

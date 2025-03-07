@@ -10,11 +10,10 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
-using Neo.Build.Core.Providers;
+using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
-using Neo.Persistence.Providers;
-using Neo.SmartContract;
+using System.IO;
 using System.Text.Json.Nodes;
 
 namespace Neo.Build.Core.Tests.Helpers
@@ -33,7 +32,7 @@ namespace Neo.Build.Core.Tests.Helpers
             });
         });
 
-        private static readonly MemoryStore s_store = new();
+        private static readonly FasterDbStore s_store = new(Path.GetRandomFileName());
 
         private class StoreProvider : IStoreProvider
         {
@@ -46,7 +45,6 @@ namespace Neo.Build.Core.Tests.Helpers
         {
             var walletModel = TestObjectHelper.CreateTestWalletModel();
             Wallet = new(walletModel, ((dynamic)walletModel.Extra!).ProtocolConfiguration.ToObject());
-            ApplicationEngine.Provider = new TestApplicationEngineProvider(new(), FactoryLogger);
             NeoSystem = new(Wallet.ProtocolSettings, new StoreProvider());
         }
     }

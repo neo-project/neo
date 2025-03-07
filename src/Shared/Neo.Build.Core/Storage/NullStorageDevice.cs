@@ -10,42 +10,82 @@
 // modifications are permitted.
 
 using FASTER.core;
-using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Build.Core.Storage
 {
     internal class NullStorageDevice
     {
-        private static readonly LogSettings s_settings = new()
-        {
-            LogDevice = new NullDevice(),
-            ObjectLogDevice = new NullDevice(),
-            PageSizeBits = 9,
-            MemorySizeBits = 21,
-            SegmentSizeBits = 21,
-            MutableFraction = 0.3,
-        };
-
-        public static FasterKV<SpanByteAndMemory, SpanByteAndMemory> Create(string basePath, ILoggerFactory? loggerFactory = null) =>
+        public static FasterKV<byte[], byte[]> Create(string basePath, [NotNull] out LogSettings logSettings, [NotNull] out CheckpointSettings checkpointSettings) =>
             new(
                 1L << 20,
-                s_settings,
-                new CheckpointSettings()
+                logSettings = new()
+                {
+                    LogDevice = new NullDevice(),
+                    ObjectLogDevice = new NullDevice(),
+                    PageSizeBits = 9,
+                    MemorySizeBits = 21,
+                    SegmentSizeBits = 21,
+                    MutableFraction = 0.3,
+                },
+                checkpointSettings = new CheckpointSettings()
                 {
                     CheckpointManager = new DeviceLogCommitCheckpointManager(
                         new LocalStorageNamedDeviceFactory(),
                         new NeoCheckPointNamingScheme(basePath),
-                        removeOutdated: false)
+                        removeOutdated: false),
                 },
-                loggerFactory: loggerFactory
+                new SerializerSettings<byte[], byte[]>()
+                {
+                    keySerializer = () => new ByteArraySerializer(),
+                    valueSerializer = () => new ByteArraySerializer(),
+                },
+                new ByteArrayFasterEqualityComparer()
             );
 
-        public static FasterKV<SpanByteAndMemory, SpanByteAndMemory> Create(CheckpointSettings checkpointSettings, ILoggerFactory? loggerFactory = null) =>
+        public static FasterKV<byte[], byte[]> Create(CheckpointSettings checkpointSettings, [NotNull] out LogSettings logSettings) =>
             new(
                 1L << 20,
-                s_settings,
+                logSettings = new()
+                {
+                    LogDevice = new NullDevice(),
+                    ObjectLogDevice = new NullDevice(),
+                    PageSizeBits = 9,
+                    MemorySizeBits = 21,
+                    SegmentSizeBits = 21,
+                    MutableFraction = 0.3,
+                },
                 checkpointSettings,
-                loggerFactory: loggerFactory
+                new SerializerSettings<byte[], byte[]>()
+                {
+                    keySerializer = () => new ByteArraySerializer(),
+                    valueSerializer = () => new ByteArraySerializer(),
+                },
+                new ByteArrayFasterEqualityComparer()
+            );
+
+        public static FasterKV<byte[], byte[]> Create(ICheckpointManager checkpointManager, [NotNull] out LogSettings logSettings, [NotNull] out CheckpointSettings checkpointSettings) =>
+            new(
+                1L << 20,
+                logSettings = new()
+                {
+                    LogDevice = new NullDevice(),
+                    ObjectLogDevice = new NullDevice(),
+                    PageSizeBits = 9,
+                    MemorySizeBits = 21,
+                    SegmentSizeBits = 21,
+                    MutableFraction = 0.3,
+                },
+                checkpointSettings = new CheckpointSettings()
+                {
+                    CheckpointManager = checkpointManager,
+                },
+                new SerializerSettings<byte[], byte[]>()
+                {
+                    keySerializer = () => new ByteArraySerializer(),
+                    valueSerializer = () => new ByteArraySerializer(),
+                },
+                new ByteArrayFasterEqualityComparer()
             );
     }
 }
