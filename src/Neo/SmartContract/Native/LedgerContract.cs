@@ -60,13 +60,11 @@ namespace Neo.SmartContract.Native
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    var txState = new TransactionState() { BlockIndex = engine.PersistingBlock.Index };
-                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(txState))
-                        .FromReplica(new StorageItem(txState));
+                    var txState = new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index });
+                    engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => txState).FromReplica(txState);
                     foreach (var signer in conflictingSigners)
                     {
-                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(txState))
-                            .FromReplica(new StorageItem(txState));
+                        engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => txState).FromReplica(txState);
                     }
                 }
             }
