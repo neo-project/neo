@@ -42,7 +42,6 @@ namespace Neo.Build.Core.SmartContract
         /// <param name="methodName">Method name within the <typeparamref name="TEngine"/>.</param>
         /// <returns>Service description that can be used in <see cref="ApplicationEngine"/>.</returns>
         /// <exception cref="InvalidOperationException"></exception>
-
         public static InteropDescriptor CreateSystemDescriptor<TEngine>(string methodName)
             where TEngine : ApplicationEngine
         {
