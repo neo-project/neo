@@ -102,8 +102,6 @@ namespace Neo.Build.Core.SmartContract
 
         private readonly UTF8Encoding _encoding = new(false, true);
 
-        private readonly IReadOnlyDictionary<uint, InteropDescriptor> _systemCallMethods;
-
         public override void Dispose()
         {
             base.Dispose();
