@@ -74,7 +74,7 @@ namespace Neo
         /// <summary>
         /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field.
         /// </summary>
-        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock; //TODO keep the same??
+        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock;
 
         /// <summary>
         /// Indicates the maximum number of transactions that can be contained in a block.
