@@ -15,8 +15,6 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.SmartContract;
 using System.Linq;
-using Neo.Cryptography.ECC;
-using Neo.SmartContract;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Build.Core.SmartContract
