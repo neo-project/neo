@@ -10,8 +10,9 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
+using System;
+using System.Buffers.Binary;
 using System.IO;
 
 namespace Neo.Network.P2P
@@ -21,6 +22,8 @@ namespace Neo.Network.P2P
     /// </summary>
     public static class Helper
     {
+        private const int SignDataLength = sizeof(uint) + UInt256.Length;
+
         /// <summary>
         /// Calculates the hash of a <see cref="IVerifiable"/>.
         /// </summary>
@@ -43,12 +46,21 @@ namespace Neo.Network.P2P
         /// <returns>The data to hash.</returns>
         public static byte[] GetSignData(this IVerifiable verifiable, uint network)
         {
+            /* Same as:
             using MemoryStream ms = new();
             using BinaryWriter writer = new(ms);
             writer.Write(network);
             writer.Write(verifiable.Hash);
             writer.Flush();
             return ms.ToArray();
+            */
+
+            var buffer = new byte[SignDataLength];
+
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer, network);
+            verifiable.Hash.Serialize(buffer.AsSpan(sizeof(uint)));
+
+            return buffer;
         }
     }
 }
