@@ -181,6 +181,16 @@ namespace Neo.SmartContract
             _value = null;
         }
 
+        /// <summary>
+        /// Sets the interoperable value of the storage.
+        /// </summary>
+        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
+        public void Set(IInteroperable interoperable)
+        {
+            _cache = interoperable;
+            _value = null;
+        }
+
         public static implicit operator BigInteger(StorageItem item)
         {
             item._cache ??= new BigInteger(item._value.Span);
