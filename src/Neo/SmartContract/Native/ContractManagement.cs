@@ -301,7 +301,7 @@ namespace Neo.SmartContract.Native
         {
             UInt160 hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
-            ContractState contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperableClone<ContractState>(false);
+            ContractState contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperable<ContractState>(false);
             if (contract is null) return;
             engine.SnapshotCache.Delete(ckey);
             engine.SnapshotCache.Delete(CreateStorageKey(Prefix_ContractHash, contract.Id));
