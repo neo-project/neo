@@ -28,7 +28,7 @@ namespace Neo.Plugins.StateService.Verification
         public class BlockPersisted { public uint Index; }
         public const int MaxCachedVerificationProcessCount = 10;
         private class Timer { public uint Index; }
-        private static readonly uint TimeoutMilliseconds = StatePlugin._system.Settings.MillisecondsPerBlock;
+        private static readonly uint TimeoutMilliseconds = (uint)StatePlugin._system.GetBlockGenTime().TotalMilliseconds;
         private static readonly uint DelayMilliseconds = 3000;
         private readonly Wallet wallet;
         private readonly ConcurrentDictionary<uint, VerificationContext> contexts = new ConcurrentDictionary<uint, VerificationContext>();
