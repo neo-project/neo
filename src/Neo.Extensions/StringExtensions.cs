@@ -12,6 +12,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 
 #if !NET9_0_OR_GREATER
 using System.Globalization;
@@ -39,7 +40,7 @@ namespace Neo.Extensions
         /// <param name="bytes">The byte span to convert.</param>
         /// <param name="value">The converted string.</param>
         /// <returns>True if the conversion is successful, otherwise false.</returns>
-        public static bool TryToStrictUtf8String(this ReadOnlySpan<byte> bytes, out string? value)
+        public static bool TryToStrictUtf8String(this ReadOnlySpan<byte> bytes, [NotNullWhen(true)] out string? value)
         {
             try
             {
