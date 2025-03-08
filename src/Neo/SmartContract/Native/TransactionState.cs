@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Native
 
         private ReadOnlyMemory<byte> _rawTransaction;
 
-        public IInteroperable Clone()
+        IInteroperable IInteroperable.Clone()
         {
             return new TransactionState
             {
