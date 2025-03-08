@@ -67,28 +67,28 @@ namespace Neo.Build.Core.Tests.Factories
         [TestMethod]
         public void IsNextUInt32InBetweenRange()
         {
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
+            Assert.AreNotEqual(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
+            Assert.AreNotEqual(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
+            Assert.AreNotEqual(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
+            Assert.AreNotEqual(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
         }
 
         [TestMethod]
         public void IsNextInt64InBetweenRange()
         {
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
+            Assert.AreNotEqual(RandomFactory.NextInt64(), RandomFactory.NextInt64());
+            Assert.AreNotEqual(RandomFactory.NextInt64(), RandomFactory.NextInt64());
+            Assert.AreNotEqual(RandomFactory.NextInt64(), RandomFactory.NextInt64());
+            Assert.AreNotEqual(RandomFactory.NextInt64(), RandomFactory.NextInt64());
         }
 
         [TestMethod]
         public void IsNextUInt64InBetweenRange()
         {
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
+            Assert.AreNotEqual(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
+            Assert.AreNotEqual(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
+            Assert.AreNotEqual(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
+            Assert.AreNotEqual(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
         }
     }
 }

@@ -29,6 +29,7 @@ namespace Neo.Build.Core.SmartContract
             ProtocolSettings protocolSettings,
             DataCache snapshotCache,
             long maxGas,
+            StorageSettings? storageSettings = null,
             TriggerType trigger = TriggerType.Application,
             IVerifiable? container = null,
             Block? persistingBlock = null,
@@ -48,6 +49,7 @@ namespace Neo.Build.Core.SmartContract
             _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _traceLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
+            _storageSettings = storageSettings ?? new();
         }
 
         protected ApplicationEngineBase(
@@ -64,6 +66,7 @@ namespace Neo.Build.Core.SmartContract
                 protocolSettings,
                 snapshotCache,
                 engineSettings.MaxGas,
+                engineSettings.Storage,
                 trigger,
                 container,
                 persistingBlock,
@@ -106,6 +109,8 @@ namespace Neo.Build.Core.SmartContract
             EncoderFallback = EncoderFallback.ExceptionFallback,
         };
 
+        private readonly StorageSettings _storageSettings;
+
         public override void Dispose()
         {
             base.Dispose();
@@ -113,9 +118,12 @@ namespace Neo.Build.Core.SmartContract
 
         public override VMState Execute()
         {
+            ReadOnlyMemory<byte> memoryScript = CurrentContext?.Script ?? ReadOnlyMemory<byte>.Empty;
+            var scriptString = System.Convert.ToBase64String(memoryScript.Span);
+
             _traceLogger.LogInformation(VMEventLog.Execute,
                 "Executing container={TxHash}, script={Script}",
-                ScriptContainer.Hash, CurrentTransaction?.Script);
+                ScriptContainer?.Hash, scriptString);
 
             var result = base.Execute();
 
@@ -138,11 +146,21 @@ namespace Neo.Build.Core.SmartContract
                 _traceLogger.LogInformation(VMEventLog.Load,
                     "Loaded name={Name}, hash={ScriptHash}",
                     contractState.Manifest.Name, contextState.ScriptHash);
+            else
+            {
+                ReadOnlyMemory<byte> memBytes = context.Script;
+                var scriptString = System.Convert.ToBase64String(memBytes.Span);
+
+                _traceLogger.LogInformation(VMEventLog.Load,
+                    "Loaded script={Script}",
+                    scriptString);
+            }
         }
 
         protected override void OnFault(Exception ex)
         {
             base.OnFault(ex);
+
             _traceLogger.LogError(VMEventLog.Fault, ex,
                 "{Message}",
                 ex.InnerException?.Message ?? ex.Message);

@@ -16,6 +16,7 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
@@ -90,10 +91,10 @@ namespace Neo.Build.Core.Tests.Helpers
                         MemoryPoolMaxTransactions = 50_000,
                         MaxTraceableBlocks = 2_102_400u,
                         InitialGasDistribution = 5_200_000_000_000_000u,
-                        ValidatorsCount = 7,
+                        Hardforks = new Dictionary<Hardfork, uint>(),
+                        ValidatorsCount = 1,
                         StandbyCommittee = [
-                            // TODO: Change to "0xce45fca32b8cd071bfbc20389c20cd7025f85ff0" public key
-                            ECPoint.Parse("036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", ECCurve.Secp256r1),
+                            ECPoint.Parse("028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a8", ECCurve.Secp256r1),
                         ],
                         SeedList = [
                             "127.0.0.1:20037"

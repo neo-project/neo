@@ -16,9 +16,7 @@ namespace Neo.Build.Core.Factories
 {
     public static class RandomFactory
     {
-        private static readonly Func<int> s_randomSeedFactory = static () => unchecked((int)(DateTimeOffset.UtcNow.Ticks >> 28));
-
-        public static readonly Func<Random> CreateNew = static () => new(s_randomSeedFactory());
+        public static readonly Func<Random> CreateNew = static () => new();
 
         public static readonly Func<byte, byte, byte> NextByte = static (min, max) => unchecked((byte)CreateNew().Next(min, max));
 

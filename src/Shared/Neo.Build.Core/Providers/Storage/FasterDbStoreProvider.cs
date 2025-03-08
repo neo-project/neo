@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ApplicationEngineSettings.cs file belongs to the neo project and is free
+// FasterDbStoreProvider.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,12 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Build.Core.SmartContract
-{
-    public class ApplicationEngineSettings
-    {
-        public long MaxGas { get; set; } = ApplicationEngineDefaults.MaxGas;
+using Neo.Build.Core.Storage;
+using Neo.Persistence;
 
-        public StorageSettings Storage { get; set; } = new();
+namespace Neo.Build.Core.Providers.Storage
+{
+    internal class FasterDbStoreProvider : IStoreProvider
+    {
+        public string Name => nameof(FasterDbStore);
+
+        public IStore GetStore(string path) => new FasterDbStore(path);
     }
 }
