@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.Wallets
+namespace Neo.Sign
 {
     /// <summary>
     /// The exception that is thrown when `Sign` fails.
