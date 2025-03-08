@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Linq;
@@ -98,7 +99,7 @@ namespace Neo.Plugins.OracleService
             if (!encoding.Equals(Encoding.UTF8))
                 return (OracleResponseCode.Error, null);
 
-            return (OracleResponseCode.Success, Utility.StrictUTF8.GetString(buffer, 0, read));
+            return (OracleResponseCode.Success, buffer.ToStrictUtf8String(0, read));
         }
 
         private static Encoding GetEncoding(HttpContentHeaders headers)

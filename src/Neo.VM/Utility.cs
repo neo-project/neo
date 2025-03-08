@@ -13,35 +13,11 @@ using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo.VM
 {
     public static class Utility
     {
-        public static Encoding StrictUTF8 { get; }
-
-        static Utility()
-        {
-            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
-            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
-            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
-        }
-
-        public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
-        {
-            try
-            {
-                value = StrictUTF8.GetString(bytes);
-                return true;
-            }
-            catch
-            {
-                value = default;
-                return false;
-            }
-        }
-
         public static BigInteger ModInverse(this BigInteger value, BigInteger modulus)
         {
             if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
