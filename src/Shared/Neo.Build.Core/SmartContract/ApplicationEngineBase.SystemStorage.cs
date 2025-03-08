@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
+using Neo.Build.Core.Logging;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using System;
@@ -19,36 +21,111 @@ namespace Neo.Build.Core.SmartContract
     {
         protected virtual StorageContext SystemStorageGetContext()
         {
-            return GetStorageContext();
+            _traceLogger.LogInformation(VMEventLog.Call,
+                "{SysCall}",
+                nameof(System_Storage_GetContext));
+
+            var result = GetStorageContext();
+
+            string[] resultString = [result.Id.ToString(), result.IsReadOnly.ToString()];
+
+            _traceLogger.LogInformation(VMEventLog.Result,
+                "{SysCall} result={Result}",
+                nameof(System_Storage_GetContext), string.Join(';', resultString));
+
+            return result;
         }
 
         protected virtual StorageContext SystemStorageGetReadOnlyContext()
         {
-            return GetReadOnlyContext();
+            _traceLogger.LogInformation(VMEventLog.Call,
+                "{SysCall}",
+                nameof(System_Storage_GetReadOnlyContext));
+
+            var result = GetReadOnlyContext();
+
+            string[] resultString = [result.Id.ToString(), result.IsReadOnly.ToString()];
+
+            _traceLogger.LogInformation(VMEventLog.Result,
+                "{SysCall} result={Result}",
+                nameof(System_Storage_GetReadOnlyContext), string.Join(';', resultString));
+
+            return result;
         }
 
         protected virtual StorageContext SystemStorageAsReadOnly(StorageContext storageContext)
         {
-            return AsReadOnly(storageContext);
+            _traceLogger.LogInformation(VMEventLog.Call,
+                "{SysCall} id={Id}, readonly={ReadOnly}",
+                nameof(System_Storage_AsReadOnly), storageContext.Id, storageContext.IsReadOnly);
+
+            var result = AsReadOnly(storageContext);
+
+            string[] resultStrings = [result.Id.ToString(), result.IsReadOnly.ToString()];
+
+            _traceLogger.LogInformation(VMEventLog.Result,
+                "{SysCall} result={Result}",
+                nameof(System_Storage_AsReadOnly), string.Join(';', resultStrings));
+
+            return result;
         }
 
         protected virtual ReadOnlyMemory<byte>? SystemStorageGet(StorageContext storageContext, byte[] key)
         {
-            return Get(storageContext, key);
+            var keyString = System.Convert.ToBase64String(key);
+
+            _traceLogger.LogInformation(VMEventLog.StorageGet,
+                "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}",
+                nameof(System_Storage_Get), storageContext.Id, storageContext.IsReadOnly, keyString);
+
+            var result = Get(storageContext, key);
+
+            var resultString = System.Convert.ToBase64String(result?.Span.ToArray() ?? []);
+
+            _traceLogger.LogInformation(VMEventLog.StorageGet,
+                "{SysCall} result={Result}",
+                nameof(System_Storage_Get), resultString);
+
+            return result;
         }
 
         protected virtual IIterator SystemStorageFind(StorageContext storageContext, byte[] prefix, FindOptions options)
         {
-            return Find(storageContext, prefix, options);
+            var prefixString = System.Convert.ToBase64String(prefix);
+
+            _traceLogger.LogInformation(VMEventLog.StorageFind,
+                "{SysCall} id={Id}, readonly={ReadOnly}, prefix={Prefix}, options={Options}",
+                nameof(System_Storage_Find), storageContext.Id, storageContext.IsReadOnly, prefixString, options.ToString());
+
+            var result = Find(storageContext, prefix, options);
+
+            _traceLogger.LogInformation(VMEventLog.StorageFind,
+                "{SysCall} result={Result}",
+                nameof(System_Storage_Find), result.GetType().Name);
+
+            return result;
         }
 
         protected virtual void SystemStoragePut(StorageContext storageContext, byte[] key, byte[] value)
         {
+            var keyString = System.Convert.ToBase64String(key);
+            var valueString = System.Convert.ToBase64String(value);
+
+            _traceLogger.LogInformation(VMEventLog.StoragePut,
+                "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}, value={Value}",
+                nameof(System_Runtime_Platform), storageContext.Id, storageContext.IsReadOnly, keyString, valueString);
+
             Put(storageContext, key, value);
         }
 
         protected virtual void SystemStorageDelete(StorageContext storageContext, byte[] key)
         {
+            var keyString = System.Convert.ToBase64String(key);
+
+            _traceLogger.LogInformation(VMEventLog.StorageDelete,
+                "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}",
+                nameof(System_Runtime_Platform), storageContext.Id, storageContext.IsReadOnly, keyString);
+
             Delete(storageContext, key);
         }
     }

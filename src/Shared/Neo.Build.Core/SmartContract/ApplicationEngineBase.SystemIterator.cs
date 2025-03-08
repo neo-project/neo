@@ -9,6 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Logging;
+using Neo.Build.Core.Logging;
+using Neo.Extensions;
 using Neo.SmartContract.Iterators;
 using StackItem = Neo.VM.Types.StackItem;
 
@@ -18,12 +21,32 @@ namespace Neo.Build.Core.SmartContract
     {
         protected virtual bool SystemIteratorNext(IIterator iterator)
         {
-            return IteratorNext(iterator);
+            _traceLogger.LogInformation(VMEventLog.IteratorMove,
+                "{SysCall} iterator={Iterator}",
+                nameof(System_Iterator_Next), iterator.GetType().Name);
+
+            var result = IteratorNext(iterator);
+
+            _traceLogger.LogInformation(VMEventLog.IteratorMove,
+                "{SysCall} result={Result}",
+                nameof(System_Iterator_Next), result);
+
+            return result;
         }
 
         protected virtual StackItem SystemIteratorValue(IIterator iterator)
         {
-            return IteratorValue(iterator);
+            _traceLogger.LogInformation(VMEventLog.IteratorGet,
+                "{SysCall} iterator={Iterator}",
+                nameof(System_Iterator_Value), iterator.GetType().Name);
+
+            var result = IteratorValue(iterator);
+
+            _traceLogger.LogInformation(VMEventLog.IteratorGet,
+                "{SysCall} result={Result}",
+                nameof(System_Iterator_Value), result.ToJson());
+
+            return result;
         }
     }
 }

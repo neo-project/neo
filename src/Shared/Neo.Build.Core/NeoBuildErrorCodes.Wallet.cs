@@ -15,10 +15,11 @@ namespace Neo.Build.Core
     {
         public sealed class Wallet
         {
-            public const int ModuleId = 2000;
+            public const int ModuleId = 2;
             private const int ModuleBaseErrorCode = BuildModuleBaseErrorCode * ModuleId;
 
             public const int InternalException = ModuleBaseErrorCode;
+
             public const int VersionException = ModuleBaseErrorCode + 1;
             public const int AccountNotFoundException = ModuleBaseErrorCode + 2;
             public const int AccountLockedException = ModuleBaseErrorCode + 3;
