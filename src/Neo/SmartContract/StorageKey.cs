@@ -104,7 +104,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
+            hash.Serialize(data.AsSpan()[PrefixLength..]);
             return new(id, data);
         }
 
@@ -119,7 +119,7 @@ namespace Neo.SmartContract
         {
             var data = new byte[UInt256Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
+            hash.Serialize(data.AsSpan()[PrefixLength..]);
             return new(id, data);
         }
 
@@ -147,8 +147,8 @@ namespace Neo.SmartContract
         {
             var data = new byte[UInt256UInt160Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data.AsSpan()[PrefixLength..]);
-            signer.GetSpan().CopyTo(data.AsSpan()[UInt256Length..]);
+            hash.Serialize(data.AsSpan()[PrefixLength..]);
+            signer.Serialize(data.AsSpan()[UInt256Length..]);
             return new(id, data);
         }
 
