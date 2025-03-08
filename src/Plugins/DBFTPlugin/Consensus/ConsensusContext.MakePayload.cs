@@ -43,7 +43,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             var signData = EnsureHeader().GetSignData(dbftSettings.Network);
             CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = _wallet.Sign(signData, _myPublicKey)
+                Signature = _signer.Sign(signData, _myPublicKey)
             });
             return CommitPayloads[MyIndex];
         }
@@ -64,7 +64,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             try
             {
                 sc = new ContractParametersContext(neoSystem.StoreView, payload, dbftSettings.Network);
-                _wallet.Sign(sc);
+                _signer.Sign(sc);
             }
             catch (InvalidOperationException exception)
             {
