@@ -72,7 +72,7 @@ namespace Neo.Build.Core.Tests.Factories
         public void IsNextInt32InBetweenRange()
         {
             var expectedMax = 100;
-            var expectedMin = 0;
+            var expectedMin = -100;
 
             Assert.AreEqual(expectedMax, RandomFactory.NextInt32(expectedMax, expectedMax));
 
