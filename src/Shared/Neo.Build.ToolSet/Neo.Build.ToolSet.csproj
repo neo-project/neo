@@ -4,7 +4,6 @@
     <AssemblyName>nebuild</AssemblyName>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <RuntimeIdentifiers>linux-x64;linux-arm64;win-x64;win-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
     <Nullable>enable</Nullable>
     <PackageTags>NEO;Blockchain;Build;Core;CLI;NEBuild</PackageTags>
     <PackAsTool>True</PackAsTool>

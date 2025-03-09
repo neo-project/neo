@@ -14,11 +14,9 @@ using System.IO;
 
 namespace Neo.Build.ToolSet
 {
-    public static class ProgramDefaults
+    internal static class ProgramDefaults
     {
-        private static readonly string s_userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        public static readonly string HomeRootPath = Path.Combine(s_userProfilePath, ".neo");
+        public static readonly string CheckpointRootKey = "checkpointRoot";
         public static readonly string CheckpointRootPath = Path.Combine(Environment.CurrentDirectory, "checkpoints");
     }
 }
