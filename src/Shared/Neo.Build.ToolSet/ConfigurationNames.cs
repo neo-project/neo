@@ -15,10 +15,8 @@ namespace Neo.Build.ToolSet
     {
         public const string PREFIX = "NeoBuild";
 
-        public static readonly string ProjectRoot = "projectRoot";
+        public static readonly string HomeRootKey = "homeRoot";
 
-        public static readonly string CheckpointRoot = "checkpointRoot";
-
-        public static readonly string OutputRoot = "outputRoot";
+        public static readonly string CheckpointRootKey = "checkpointRoot";
     }
 }

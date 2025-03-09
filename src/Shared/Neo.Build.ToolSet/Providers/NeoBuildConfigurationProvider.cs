@@ -35,6 +35,8 @@ namespace Neo.Build.ToolSet.Providers
 
             Data.Add(HostDefaults.EnvironmentKey, HostingEnvironments.Localnet);
             Data.Add(HostDefaults.ContentRootKey, Environment.CurrentDirectory);
+            Data.Add(ConfigurationNames.HomeRootKey, ProgramDefaults.HomeRootPath);
+            Data.Add(ConfigurationNames.CheckpointRootKey, ProgramDefaults.CheckpointRootPath);
 
             // Other default configurations here
 
