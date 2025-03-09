@@ -258,6 +258,9 @@ namespace Neo.Ledger
                 return VerifyResult.Invalid;
             }
 
+            if (ProtocolSettings.Default.IsBlacklisted(block.Header))
+                return VerifyResult.Invalid;
+
             var snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
@@ -341,6 +344,7 @@ namespace Neo.Ledger
                     {
                         continue;
                     }
+                    if (ProtocolSettings.Default.IsBlacklisted(header)) continue;
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
                     if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
