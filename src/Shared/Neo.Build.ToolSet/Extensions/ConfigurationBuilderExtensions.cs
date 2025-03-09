@@ -20,6 +20,7 @@ namespace Neo.Build.ToolSet.Extensions
         public static IConfigurationBuilder AddNeoBuildConfiguration(this IConfigurationBuilder configBuilder)
         {
             configBuilder.Add(new NeoBuildConfigurationSource());
+
             return configBuilder;
         }
 
