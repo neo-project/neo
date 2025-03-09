@@ -17,78 +17,107 @@ namespace Neo.Build.Core.Tests.Factories
     public class UT_RandomFactory
     {
         [TestMethod]
-        public void IsCreateNewDifferentObjects()
+        public void IsNextSByteInBetweenRange()
         {
-            var expectedRandomObject = RandomFactory.CreateNew();
+            sbyte expectedMax = 100;
+            sbyte expectedMin = -100;
 
-            Assert.IsNotNull(expectedRandomObject);
-            Assert.AreNotSame(expectedRandomObject, RandomFactory.CreateNew());
+            Assert.AreEqual(expectedMax, RandomFactory.NextSByte(expectedMax, expectedMax));
+
+            var actualValue = RandomFactory.NextSByte(expectedMin, expectedMax);
+
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void IsNextByteInBetweenRange()
         {
-            byte expectedMax = 3;
-            byte expectedMin = 2;
+            byte expectedMax = 100;
+            byte expectedMin = 0;
 
-            Assert.AreEqual(3, RandomFactory.NextByte(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomFactory.NextByte(expectedMax, expectedMax));
 
-            var actualByte = RandomFactory.NextByte(expectedMin, expectedMax);
+            var actualValue = RandomFactory.NextByte(expectedMin, expectedMax);
 
-            Assert.IsTrue(actualByte >= expectedMin && actualByte <= expectedMax);
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void IsNextInt16InBetweenRange()
         {
-            short expectedMax = 3;
-            short expectedMin = 2;
+            short expectedMax = 100;
+            short expectedMin = -100;
 
-            Assert.AreEqual(3, RandomFactory.NextInt16(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomFactory.NextInt16(expectedMax, expectedMax));
 
-            var actualByte = RandomFactory.NextInt16(expectedMin, expectedMax);
+            var actualValue = RandomFactory.NextInt16(expectedMin, expectedMax);
 
-            Assert.IsTrue(actualByte >= expectedMin && actualByte <= expectedMax);
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void IsNextUInt16InBetweenRange()
         {
-            ushort expectedMax = 3;
-            ushort expectedMin = 2;
+            ushort expectedMax = 100;
+            ushort expectedMin = 0;
 
-            Assert.AreEqual(3, RandomFactory.NextUInt16(expectedMax, expectedMax));
+            Assert.AreEqual(expectedMax, RandomFactory.NextUInt16(expectedMax, expectedMax));
 
-            var actualByte = RandomFactory.NextUInt16(expectedMin, expectedMax);
+            var actualValue = RandomFactory.NextUInt16(expectedMin, expectedMax);
 
-            Assert.IsTrue(actualByte >= expectedMin && actualByte <= expectedMax);
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
+        }
+
+        [TestMethod]
+        public void IsNextInt32InBetweenRange()
+        {
+            var expectedMax = 100;
+            var expectedMin = -100;
+
+            Assert.AreEqual(expectedMax, RandomFactory.NextInt32(expectedMax, expectedMax));
+
+            var actualValue = RandomFactory.NextInt32(expectedMin, expectedMax);
+
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void IsNextUInt32InBetweenRange()
         {
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
-            Assert.AreNotSame(RandomFactory.NextUInt32(), RandomFactory.NextUInt32());
+            uint expectedMax = 100;
+            uint expectedMin = 0;
+
+            Assert.AreEqual(expectedMax, RandomFactory.NextUInt32(expectedMax, expectedMax));
+
+            var actualValue = RandomFactory.NextUInt32(expectedMin, expectedMax);
+
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void IsNextInt64InBetweenRange()
         {
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
-            Assert.AreNotSame(RandomFactory.NextInt64(), RandomFactory.NextInt64());
+            long expectedMax = 100;
+            long expectedMin = -100;
+
+            Assert.AreEqual(expectedMax, RandomFactory.NextInt64(expectedMax, expectedMax));
+
+            var actualValue = RandomFactory.NextInt64(expectedMin, expectedMax);
+
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
 
         [TestMethod]
         public void IsNextUInt64InBetweenRange()
         {
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
-            Assert.AreNotSame(RandomFactory.NextUInt64(), RandomFactory.NextUInt64());
+            ulong expectedMax = 100;
+            ulong expectedMin = 0;
+
+            Assert.AreEqual(expectedMax, RandomFactory.NextUInt64(expectedMax, expectedMax));
+
+            var actualValue = RandomFactory.NextUInt64(expectedMin, expectedMax);
+
+            Assert.IsTrue(actualValue >= expectedMin && actualValue <= expectedMax);
         }
     }
 }

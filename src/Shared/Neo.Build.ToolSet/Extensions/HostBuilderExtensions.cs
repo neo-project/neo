@@ -35,7 +35,11 @@ namespace Neo.Build.ToolSet.Extensions
             {
                 var environmentName = context.HostingEnvironment.EnvironmentName;
 
-                config.AddJsonFile($"config.{environmentName}.json", optional: true);
+                config.SetBasePath(AppContext.BaseDirectory);
+                config.AddJsonFile("config.json", optional: false);
+
+                config.SetBasePath(context.Configuration[HostDefaults.ContentRootKey]!);
+                config.AddJsonFile($"config.{environmentName}.json", optional: true); // App settings file
             });
 
             // Logging Configuration
