@@ -40,13 +40,7 @@ namespace Neo.Cryptography.ECC
 
         public override bool Equals(object? obj)
         {
-            if (obj == this)
-                return true;
-
-            if (obj is not ECFieldElement other)
-                return false;
-
-            return Equals(other);
+            return Equals(obj as ECFieldElement);
         }
 
         public bool Equals(ECFieldElement? other)
@@ -106,7 +100,7 @@ namespace Neo.Cryptography.ECC
 
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return HashCode.Combine(_curve.GetHashCode(), Value.GetHashCode());
         }
 
         public ECFieldElement? Sqrt()
