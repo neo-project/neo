@@ -54,7 +54,7 @@ namespace Neo.Cryptography.ECC
             this.G = ECPoint.DecodePoint(G, this);
             BouncyCastleCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(curveName);
             BouncyCastleDomainParams = new ECDomainParameters(BouncyCastleCurve.Curve, BouncyCastleCurve.G, BouncyCastleCurve.N, BouncyCastleCurve.H);
-            _hashCode = HashCode.Combine(Q.GetHashCode(), A.GetHashCode(), B.GetHashCode(), N.GetHashCode(), curveName, G.Murmur32((uint)G.Length));
+            _hashCode = HashCode.Combine(Q.GetHashCode(), A.GetHashCode(), B.GetHashCode(), N.GetHashCode(), G.Murmur32((uint)G.Length), curveName);
         }
 
         /// <summary>
