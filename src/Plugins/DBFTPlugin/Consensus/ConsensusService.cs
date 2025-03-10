@@ -16,7 +16,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
-using Neo.Wallets;
+using Neo.Sign;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,8 +56,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private readonly Settings dbftSettings;
         private readonly NeoSystem neoSystem;
 
-        public ConsensusService(NeoSystem neoSystem, Settings settings, Wallet wallet)
-            : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, wallet)) { }
+        public ConsensusService(NeoSystem neoSystem, Settings settings, ISigner signer)
+            : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, signer)) { }
 
         internal ConsensusService(NeoSystem neoSystem, Settings settings, ConsensusContext context)
         {
@@ -319,7 +319,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.MillisecondsPerBlock`
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
-            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * neoSystem.Settings.MillisecondsPerBlock / (double)context.M);
+            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started)
+                + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * neoSystem.Settings.MillisecondsPerBlock / (double)context.M);
             if (!context.WatchOnly && !context.ViewChanging && !context.CommitSent && (nextDelay > TimeSpan.Zero))
                 ChangeTimer(nextDelay);
         }
@@ -333,9 +334,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             base.PostStop();
         }
 
-        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, Wallet wallet)
+        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, ISigner signer)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, wallet));
+            return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, signer));
         }
 
         private static void Log(string message, LogLevel level = LogLevel.Info)

@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native
 
         private static ReadOnlySpan<byte> GetUrlHash(string url)
         {
-            return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
+            return Crypto.Hash160(url.ToStrictUtf8Bytes());
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -196,9 +196,9 @@ namespace Neo.SmartContract.Native
         private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
         {
             //Check the arguments
-            if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
-                || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
-                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength || callback.StartsWith('_')
+            if (url.GetStrictUtf8ByteCount() > MaxUrlLength
+                || (filter != null && filter.GetStrictUtf8ByteCount() > MaxFilterLength)
+                || callback.GetStrictUtf8ByteCount() > MaxCallbackLength || callback.StartsWith('_')
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 

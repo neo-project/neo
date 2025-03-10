@@ -22,6 +22,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.RpcServer;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -516,7 +517,7 @@ namespace Neo.Plugins.OracleService
         public static byte[] Filter(string input, string filterArgs)
         {
             if (string.IsNullOrEmpty(filterArgs))
-                return Utility.StrictUTF8.GetBytes(input);
+                return input.ToStrictUtf8Bytes();
 
             JToken beforeObject = JToken.Parse(input);
             JArray afterObjects = beforeObject.JsonPath(filterArgs);
@@ -559,12 +560,9 @@ namespace Neo.Plugins.OracleService
             return oracles.Length > 0;
         }
 
-        private static bool CheckOracleAccount(Wallet wallet, ECPoint[] oracles)
+        private static bool CheckOracleAccount(ISigner signer, ECPoint[] oracles)
         {
-            if (wallet is null) return false;
-            return oracles
-                .Select(p => wallet.GetAccount(p))
-                .Any(p => p is not null && p.HasKey && !p.Lock);
+            return signer is not null && oracles.Any(p => signer.ContainsSignable(p));
         }
 
         private static void Log(string message, LogLevel level = LogLevel.Info)
