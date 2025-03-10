@@ -10,9 +10,11 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.EventLog;
+using Neo.Build.ToolSet.Services;
 using System;
 
 namespace Neo.Build.ToolSet.Extensions
@@ -74,9 +76,22 @@ namespace Neo.Build.ToolSet.Extensions
                 options.ValidateOnBuild = isDevelopment;
             });
 
-            hostBuilder.ConfigureServices(services =>
+            hostBuilder.ConfigureServices((context, services) =>
             {
                 // Add Services Here
+            });
+
+            return hostBuilder;
+        }
+
+        public static IHostBuilder UseNeoSystem(this IHostBuilder hostBuilder)
+        {
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                var neoSystemSection = context.Configuration.GetSection("NeoSystem");   // Should always exists
+                var neoSystemOptions = neoSystemSection.Get<NeoSystemOptions>()!;       // This shouldn't be null
+
+                services.AddSingleton(neoSystemOptions);
             });
 
             return hostBuilder;

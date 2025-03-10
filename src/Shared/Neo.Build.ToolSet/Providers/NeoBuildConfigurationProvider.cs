@@ -11,7 +11,6 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Neo.Build.Core.Factories;
 using Neo.Build.ToolSet.Configuration;
 using Neo.Build.ToolSet.Services;
 using Neo.Network.P2P;
@@ -48,7 +47,7 @@ namespace Neo.Build.ToolSet.Providers
 
             // Node Network Configuration
             Data.Add(NeoSystemDefaults.ListenKey, $"{IPAddress.Loopback}");
-            Data.Add(NeoSystemDefaults.PortKey, $"{RandomFactory.NextInt16()}");
+            Data.Add(NeoSystemDefaults.PortKey, "0");
             Data.Add(NeoSystemDefaults.MinDesiredConnectionsKey, $"{Peer.DefaultMinDesiredConnections}");
             Data.Add(NeoSystemDefaults.MaxConnectionsKey, $"{Peer.DefaultMaxConnections}");
             Data.Add(NeoSystemDefaults.MaxConnectionsPerAddressKey, "3");

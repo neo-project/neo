@@ -13,11 +13,11 @@ namespace Neo.Build.ToolSet.Services
 {
     internal static class NeoSystemDefaults
     {
-        public static readonly string ListenKey = "P2P:LISTEN";
-        public static readonly string PortKey = "P2P:PORT";
-        public static readonly string MinDesiredConnectionsKey = "P2P:MINDESIREDCONNECTIONS";
-        public static readonly string MaxConnectionsKey = "P2P:MAXCONNECTIONS";
-        public static readonly string MaxConnectionsPerAddressKey = "P2P:MAXCONNECTIONSPERADDRESS";
-        public static readonly string EnableCompressionKey = "P2P:ENABLECOMPRESSION";
+        public static readonly string ListenKey = "NEOSYSTEM:NETWORK:LISTEN";
+        public static readonly string PortKey = "NEOSYSTEM:NETWORK:PORT";
+        public static readonly string MinDesiredConnectionsKey = "NEOSYSTEM:NETWORK:MINDESIREDCONNECTIONS";
+        public static readonly string MaxConnectionsKey = "NEOSYSTEM:NETWORK:MAXCONNECTIONS";
+        public static readonly string MaxConnectionsPerAddressKey = "NEOSYSTEM:NETWORK:MAXCONNECTIONSPERADDRESS";
+        public static readonly string EnableCompressionKey = "NEOSYSTEM:NETWORK:ENABLECOMPRESSION";
     }
 }
