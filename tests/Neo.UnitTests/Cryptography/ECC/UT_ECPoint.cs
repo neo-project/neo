@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -64,8 +66,6 @@ namespace Neo.UnitTests.Cryptography.ECC
             Action action = () => new ECPoint(X, null, ECCurve.Secp256k1);
             Assert.ThrowsExactly<ArgumentException>(action);
             action = () => new ECPoint(null, Y, ECCurve.Secp256k1);
-            Assert.ThrowsExactly<ArgumentException>(action);
-            action = () => new ECPoint(null, Y, null);
             Assert.ThrowsExactly<ArgumentException>(action);
         }
 
@@ -335,18 +335,10 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestOpMultiply()
         {
-            ECPoint p = null;
-            byte[] n = new byte[] { 1 };
+            var p = ECCurve.Secp256k1.G;
+
+            byte[] n = [1];
             Action action = () => p = p * n;
-            Assert.ThrowsExactly<ArgumentNullException>(action);
-
-            p = ECCurve.Secp256k1.G;
-            n = null;
-            action = () => p = p * n;
-            Assert.ThrowsExactly<ArgumentNullException>(action);
-
-            n = new byte[] { 1 };
-            action = () => p = p * n;
             Assert.ThrowsExactly<ArgumentException>(action);
 
             p = ECCurve.Secp256k1.Infinity;
@@ -370,13 +362,13 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestOpUnaryNegation()
         {
-            Assert.AreEqual(new ECPoint(ECCurve.Secp256k1.G.X, -ECCurve.Secp256k1.G.Y, ECCurve.Secp256k1), -ECCurve.Secp256k1.G);
+            Assert.AreEqual(new ECPoint(ECCurve.Secp256k1.G.X, -ECCurve.Secp256k1.G.Y!, ECCurve.Secp256k1), -ECCurve.Secp256k1.G);
         }
 
         [TestMethod]
         public void TestTryParse()
         {
-            Assert.IsFalse(ECPoint.TryParse("00", ECCurve.Secp256k1, out ECPoint result));
+            Assert.IsFalse(ECPoint.TryParse("00", ECCurve.Secp256k1, out var result));
             Assert.IsNull(result);
 
             Assert.IsTrue(ECPoint.TryParse("0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", ECCurve.Secp256k1, out result));
@@ -392,3 +384,5 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
     }
 }
+
+#nullable disable
