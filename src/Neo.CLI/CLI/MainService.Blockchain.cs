@@ -119,7 +119,7 @@ namespace Neo.CLI
             {
                 var tx = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, hash);
 
-                if (tx is null)
+                if (tx?.Transaction is null)
                 {
                     ConsoleHelper.Error($"Transaction {hash} doesn't exist.");
                     return;
@@ -127,7 +127,7 @@ namespace Neo.CLI
 
                 var block = NativeContract.Ledger.GetHeader(NeoSystem.StoreView, tx.BlockIndex);
 
-                DateTime transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                var transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 transactionDatetime = transactionDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
 
                 ConsoleHelper.Info("", "-------------", "Transaction", "-------------");
