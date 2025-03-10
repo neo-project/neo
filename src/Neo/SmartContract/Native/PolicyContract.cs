@@ -232,7 +232,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         public void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
         {
-            if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds));
+            if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds), $"Block generation time cannot be less than {MinBlockGenTime} milliseconds");
             if (milliseconds > DefaultBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds), $"Block generation time cannot exceed {DefaultBlockGenTime} milliseconds");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
