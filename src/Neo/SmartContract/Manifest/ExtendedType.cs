@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ExtendedType.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,6 +8,8 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+#nullable enable
 
 using Neo.Json;
 using Neo.VM;
@@ -31,7 +33,7 @@ namespace Neo.SmartContract.Manifest
         /// Value string MUST start with a letter and can contain alphanumeric characters and dots.
         /// It MUST NOT be longer than 64 characters.
         /// </summary>
-        public string NamedType { get; set; }
+        public string? NamedType { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -41,20 +43,21 @@ namespace Neo.SmartContract.Manifest
         internal void FromStackItem(VM.Types.Array @struct, int startIndex)
         {
             Type = (ContractParameterType)(byte)@struct[startIndex].GetInteger();
+            if (!Enum.IsDefined(typeof(ContractParameterType), Type)) throw new FormatException();
             NamedType = @struct[startIndex + 1].GetString();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        internal StackItem ToStackItem(IReferenceCounter referenceCounter, Struct @struct)
         {
-            Struct @struct = new Struct(referenceCounter);
-            ToStackItem(referenceCounter, @struct);
+            @struct.Add((byte)Type);
+            @struct.Add(NamedType ?? StackItem.Null);
             return @struct;
         }
 
-        internal StackItem ToStackItem(ReferenceCounter referenceCounter, Struct @struct)
+        StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            @struct.Add((byte)Type);
-            @struct.Add(NamedType);
+            var @struct = new Struct(referenceCounter);
+            ToStackItem(referenceCounter, @struct);
             return @struct;
         }
 
@@ -67,8 +70,8 @@ namespace Neo.SmartContract.Manifest
         {
             ExtendedType type = new()
             {
-                Type = Enum.Parse<ContractParameterType>(json["type"].GetString()),
-                NamedType = json["namedtype"].GetString(),
+                Type = Enum.Parse<ContractParameterType>(json["type"]?.GetString() ?? throw new FormatException()),
+                NamedType = json["namedtype"]?.GetString(),
             };
             if (!Enum.IsDefined(typeof(ContractParameterType), type.Type)) throw new FormatException();
             return type;
@@ -87,3 +90,5 @@ namespace Neo.SmartContract.Manifest
         }
     }
 }
+
+#nullable disable

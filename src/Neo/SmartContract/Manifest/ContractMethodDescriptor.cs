@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// NEP-25 extended return type
         /// </summary>
-        public ExtendedType? ExtendedReturnType { get; set; }
+        public ExtendedType ExtendedReturnType { get; set; }
 
         /// <summary>
         /// The position of the method in the contract script.
@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Manifest
             json["safe"] = Safe;
             if (ExtendedReturnType != null)
             {
-                json["extendedreturntype"] = ExtendedReturnType.ToString();
+                json["extendedreturntype"] = ExtendedReturnType.ToJson();
             }
             return json;
         }

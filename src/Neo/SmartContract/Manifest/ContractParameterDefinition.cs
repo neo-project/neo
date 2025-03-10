@@ -35,7 +35,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// NEP-25 extended type
         /// </summary>
-        public ExtendedType? ExtendedType { get; set; }
+        public ExtendedType ExtendedType { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -98,7 +98,7 @@ namespace Neo.SmartContract.Manifest
             json["type"] = Type.ToString();
             if (ExtendedType != null)
             {
-                json["extendedtype"] = ExtendedType.ToString();
+                json["extendedtype"] = ExtendedType.ToJson();
             }
             return json;
         }
