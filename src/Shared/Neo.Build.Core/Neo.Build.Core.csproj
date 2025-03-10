@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="9.0.*" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.*" />
+    <PackageReference Include="Microsoft.FASTER.Core" Version="2.6.*" />
   </ItemGroup>
 
   <ItemGroup>

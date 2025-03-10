@@ -25,7 +25,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
         [TestMethod]
         public void PropertiesAndSubPropertiesWithExtraProperties()
         {
-            var jsonTestString = "{\"name\":\"Unit Test Wallet\",\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NhpxKrsHrFCizcupug2pTNkM7TnhyMzwEa\",\"label\":\"Main Test Account\",\"isDefault\":false,\"lock\":false,\"key\":\"3889c6201680d433ffdccb94a6b01c09863f5dc83aa85a003ae4dfe9460cf33f\",\"contract\":{\"script\":\"0c21028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a84156e7b327\",\"parameters\":[{\"name\":\"Signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":{\"protocolConfiguration\":{\"network\":810960196,\"addressVersion\":53,\"millisecondsPerBlock\":1000,\"maxTransactionsPerBlock\":512,\"memoryPoolMaxTransactions\":50000,\"maxTraceableBlocks\":2102400,\"initialGasDistribution\":5200000000000000,\"hardforks\":null,\"standbyCommittee\":[\"036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296\"],\"validatorsCount\":7,\"seedList\":[\"127.0.0.1:20037\"]}}}";
+            var jsonTestString = "{\"name\":\"Unit Test Wallet\",\"version\":\"1.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[{\"address\":\"NhpxKrsHrFCizcupug2pTNkM7TnhyMzwEa\",\"label\":\"Main Test Account\",\"isDefault\":false,\"lock\":false,\"key\":\"3889c6201680d433ffdccb94a6b01c09863f5dc83aa85a003ae4dfe9460cf33f\",\"contract\":{\"script\":\"0c21028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a84156e7b327\",\"parameters\":[{\"name\":\"Signature\",\"type\":\"Signature\"}],\"deployed\":false},\"extra\":null}],\"extra\":{\"protocolConfiguration\":{\"network\":810960196,\"addressVersion\":53,\"millisecondsPerBlock\":1000,\"maxTransactionsPerBlock\":512,\"memoryPoolMaxTransactions\":50000,\"maxTraceableBlocks\":2102400,\"initialGasDistribution\":5200000000000000,\"hardforks\":{},\"standbyCommittee\":[\"028cd8520a4379f8bf84734fdc8063cc810932ae5f15d9d76362d7af35ca8371a8\"],\"validatorsCount\":1,\"seedList\":[\"127.0.0.1:20037\"]}}}";
 
             var expectedTestWalletModel = TestObjectHelper.CreateTestWalletModel();
             var expectedProtocolSettingsModel = ((dynamic)expectedTestWalletModel.Extra!).ProtocolConfiguration as ProtocolSettingsModel;
@@ -53,7 +53,7 @@ namespace Neo.Build.Core.Tests.Models.Wallets
             Assert.AreEqual(expectedProtocolSettingsModel!.MemoryPoolMaxTransactions, actualProtocolSettingsModel.MemoryPoolMaxTransactions);
             Assert.AreEqual(expectedProtocolSettingsModel!.MaxTraceableBlocks, actualProtocolSettingsModel.MaxTraceableBlocks);
             Assert.AreEqual(expectedProtocolSettingsModel!.InitialGasDistribution, actualProtocolSettingsModel.InitialGasDistribution);
-            Assert.AreEqual(expectedProtocolSettingsModel!.Hardforks, actualProtocolSettingsModel.Hardforks);
+            Assert.AreEqual(expectedProtocolSettingsModel!.Hardforks!.Count, actualProtocolSettingsModel.Hardforks!.Count);
             CollectionAssert.AreEqual(expectedProtocolSettingsModel!.StandbyCommittee as ICollection, actualProtocolSettingsModel.StandbyCommittee as ICollection);
             Assert.AreEqual(expectedProtocolSettingsModel!.ValidatorsCount, actualProtocolSettingsModel.ValidatorsCount);
             CollectionAssert.AreEqual(expectedProtocolSettingsModel!.SeedList as ICollection, actualProtocolSettingsModel.SeedList as ICollection);
