@@ -11,6 +11,11 @@
     <ToolCommandName>$(AssemblyName)</ToolCommandName>
     <RollForward>LatestMinor</RollForward>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Optimizations -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJitForLoops>false</TieredCompilationQuickJitForLoops>
+    <TieredPGO>true</TieredPGO>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +30,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Neo.Build.Core\Neo.Build.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
