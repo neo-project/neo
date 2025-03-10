@@ -192,6 +192,17 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
 
         [TestMethod]
+        public void TestGetHashCode()
+        {
+            var pointA = new ECPoint(ECCurve.Secp256k1.G.X, ECCurve.Secp256k1.G.Y, ECCurve.Secp256k1);
+            var pointB = new ECPoint(ECCurve.Secp256k1.G.Y, ECCurve.Secp256k1.G.X, ECCurve.Secp256k1);
+            var pointC = new ECPoint(ECCurve.Secp256k1.G.Y, ECCurve.Secp256k1.G.X, ECCurve.Secp256k1);
+
+            Assert.AreNotEqual(pointA.GetHashCode(), pointB.GetHashCode());
+            Assert.AreEqual(pointB.GetHashCode(), pointC.GetHashCode());
+        }
+
+        [TestMethod]
         public void TestEqualsObject()
         {
             object point = ECCurve.Secp256k1.G;
