@@ -228,7 +228,7 @@ namespace Neo.Cryptography.ECC
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(X?.GetHashCode() ?? 0, Y?.GetHashCode() ?? 0);
+            return HashCode.Combine(Curve.GetHashCode(), X?.GetHashCode() ?? 0, Y?.GetHashCode() ?? 0);
         }
 
         internal static ECPoint Multiply(ECPoint p, BigInteger k)
