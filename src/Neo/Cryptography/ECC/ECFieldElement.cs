@@ -100,7 +100,7 @@ namespace Neo.Cryptography.ECC
 
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return HashCode.Combine(_curve.GetHashCode(), Value.GetHashCode());
         }
 
         public ECFieldElement? Sqrt()

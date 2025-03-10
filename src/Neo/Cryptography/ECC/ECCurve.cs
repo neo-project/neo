@@ -11,6 +11,7 @@
 
 using Neo.Extensions;
 using Org.BouncyCastle.Crypto.Parameters;
+using System;
 using System.Globalization;
 using System.Numerics;
 
@@ -40,6 +41,7 @@ namespace Neo.Cryptography.ECC
         /// </summary>
         public readonly ECDomainParameters BouncyCastleDomainParams;
         internal readonly int ExpectedECPointLength;
+        private readonly int _hashCode;
 
         private ECCurve(BigInteger Q, BigInteger A, BigInteger B, BigInteger N, byte[] G, string curveName)
         {
@@ -52,6 +54,7 @@ namespace Neo.Cryptography.ECC
             this.G = ECPoint.DecodePoint(G, this);
             BouncyCastleCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(curveName);
             BouncyCastleDomainParams = new ECDomainParameters(BouncyCastleCurve.Curve, BouncyCastleCurve.G, BouncyCastleCurve.N, BouncyCastleCurve.H);
+            _hashCode = HashCode.Combine(Q.GetHashCode(), A.GetHashCode(), B.GetHashCode(), N.GetHashCode(), curveName, G.Murmur32((uint)G.Length));
         }
 
         /// <summary>
@@ -79,5 +82,10 @@ namespace Neo.Cryptography.ECC
             ("04" + "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296" + "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5").HexToBytes(),
             "secp256r1"
         );
+
+        public override int GetHashCode()
+        {
+            return _hashCode;
+        }
     }
 }
