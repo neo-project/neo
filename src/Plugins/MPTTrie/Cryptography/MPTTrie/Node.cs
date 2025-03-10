@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Node.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.IO;
@@ -31,18 +32,18 @@ namespace Neo.Cryptography.MPTTrie
                 switch (type)
                 {
                     case NodeType.BranchNode:
-                        return size + BranchSize + IO.Helper.GetVarSize(Reference);
+                        return size + BranchSize + Reference.GetVarSize();
                     case NodeType.ExtensionNode:
-                        return size + ExtensionSize + IO.Helper.GetVarSize(Reference);
+                        return size + ExtensionSize + Reference.GetVarSize();
                     case NodeType.LeafNode:
-                        return size + LeafSize + IO.Helper.GetVarSize(Reference);
+                        return size + LeafSize + Reference.GetVarSize();
                     case NodeType.HashNode:
                         return size + HashSize;
                     case NodeType.Empty:
                         return size;
                     default:
                         throw new InvalidOperationException($"{nameof(Node)} Cannt get size, unsupport type");
-                };
+                }
             }
         }
 

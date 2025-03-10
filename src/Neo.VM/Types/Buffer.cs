@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Buffer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -14,6 +14,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Neo.VM.Types
 {
@@ -111,6 +112,15 @@ namespace Neo.VM.Types
         public override string ToString()
         {
             return GetSpan().TryGetString(out var str) ? $"(\"{str}\")" : $"(\"Base64: {Convert.ToBase64String(GetSpan())}\")";
+        }
+
+        /// <summary>
+        /// Invalidate HashCode
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void InvalidateHashCode()
+        {
+            _hashCode = 0;
         }
     }
 }

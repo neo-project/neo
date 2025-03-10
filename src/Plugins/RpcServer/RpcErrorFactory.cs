@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcErrorFactory.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,7 @@
 
 using Neo.Cryptography.ECC;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public static class RpcErrorFactory
     {
@@ -33,7 +33,7 @@ namespace Neo.Plugins
         public static RpcError BadRequest(string data) => RpcError.BadRequest.WithData(data);
         public static RpcError InsufficientFundsWallet(string data) => RpcError.InsufficientFundsWallet.WithData(data);
         public static RpcError VerificationFailed(string data) => RpcError.VerificationFailed.WithData(data);
-        public static RpcError InvalidContractVerification(UInt160 contractHash) => RpcError.InvalidContractVerification.WithData($"The smart contract {contractHash} haven't got verify method.");
+        public static RpcError InvalidContractVerification(UInt160 contractHash, int pcount) => RpcError.InvalidContractVerification.WithData($"The smart contract {contractHash} haven't got verify method with {pcount} input parameters.");
         public static RpcError InvalidContractVerification(string data) => RpcError.InvalidContractVerification.WithData(data);
         public static RpcError InvalidSignature(string data) => RpcError.InvalidSignature.WithData(data);
         public static RpcError OracleNotDesignatedNode(ECPoint oraclePub) => RpcError.OracleNotDesignatedNode.WithData($"{oraclePub} isn't an oracle node.");

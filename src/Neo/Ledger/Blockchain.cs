@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Blockchain.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,6 +16,7 @@ using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -24,6 +25,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Ledger
 {
@@ -200,7 +202,7 @@ namespace Neo.Ledger
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
             system.MemPool.InvalidateAllTransactions();
 
-            DataCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
@@ -244,7 +246,19 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            DataCache snapshot = system.StoreView;
+            UInt256 blockHash;
+
+            try
+            {
+                // Avoid serialization problems
+                blockHash = block.Hash;
+            }
+            catch
+            {
+                return VerifyResult.Invalid;
+            }
+
+            var snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
@@ -261,10 +275,10 @@ namespace Neo.Ledger
             }
             else
             {
-                if (!block.Hash.Equals(system.HeaderCache[block.Index].Hash))
+                if (!blockHash.Equals(system.HeaderCache[block.Index].Hash))
                     return VerifyResult.Invalid;
             }
-            block_cache.TryAdd(block.Hash, block);
+            block_cache.TryAdd(blockHash, block);
             if (block.Index == currentHeight + 1)
             {
                 Block block_persist = block;
@@ -314,10 +328,19 @@ namespace Neo.Ledger
         {
             if (!system.HeaderCache.Full)
             {
-                DataCache snapshot = system.StoreView;
-                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-                foreach (Header header in headers)
+                var snapshot = system.StoreView;
+                var headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                foreach (var header in headers)
                 {
+                    try
+                    {
+                        // Avoid serialization problems
+                        _ = header.Hash;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
                     if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
@@ -330,7 +353,17 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            DataCache snapshot = system.StoreView;
+            try
+            {
+                // Avoid serialization problems
+                _ = payload.Hash;
+            }
+            catch
+            {
+                return VerifyResult.Invalid;
+            }
+
+            var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
@@ -339,12 +372,24 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            switch (system.ContainsTransaction(transaction.Hash))
+            UInt256 hash;
+            try
+            {
+                // Avoid serialization problems
+                hash = transaction.Hash;
+            }
+            catch
+            {
+                return VerifyResult.Invalid;
+            }
+
+            switch (system.ContainsTransaction(hash))
             {
                 case ContainsTransactionType.ExistsInPool: return VerifyResult.AlreadyInPool;
                 case ContainsTransactionType.ExistsInLedger: return VerifyResult.AlreadyExists;
             }
-            if (system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
+
+            if (system.ContainsConflictHash(hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
@@ -397,7 +442,19 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
-            switch (system.ContainsTransaction(tx.Hash))
+            UInt256 hash;
+            try
+            {
+                // Avoid serialization problems
+                hash = tx.Hash;
+            }
+            catch
+            {
+                SendRelayResult(tx, VerifyResult.Invalid);
+                return;
+            }
+
+            switch (system.ContainsTransaction(hash))
             {
                 case ContainsTransactionType.ExistsInPool:
                     SendRelayResult(tx, VerifyResult.AlreadyInPool);
@@ -407,7 +464,7 @@ namespace Neo.Ledger
                     break;
                 default:
                     {
-                        if (system.ContainsConflictHash(tx.Hash, tx.Signers.Select(s => s.Account)))
+                        if (system.ContainsConflictHash(hash, tx.Signers.Select(s => s.Account)))
                             SendRelayResult(tx, VerifyResult.HasConflicts);
                         else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
                         break;
@@ -417,7 +474,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotCache snapshot = system.GetSnapshot())
+            using (var snapshot = system.GetSnapshotCache())
             {
                 List<ApplicationExecuted> all_application_executed = new();
                 TransactionState[] transactionStates;
@@ -435,7 +492,7 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
-                DataCache clonedSnapshot = snapshot.CreateSnapshot();
+                var clonedSnapshot = snapshot.CloneCache();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
@@ -449,7 +506,7 @@ namespace Neo.Ledger
                     }
                     else
                     {
-                        clonedSnapshot = snapshot.CreateSnapshot();
+                        clonedSnapshot = snapshot.CloneCache();
                     }
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
@@ -468,16 +525,66 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                Committing?.Invoke(system, block, snapshot, all_application_executed);
+                InvokeCommitting(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
-            Committed?.Invoke(system, block);
+            InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             if (system.HeaderCache.TryRemoveFirst(out Header header))
                 Debug.Assert(header.Index == block.Index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
+        {
+            InvokeHandlers(Committing?.GetInvocationList(), h => ((CommittingHandler)h)(system, block, snapshot, applicationExecutedList));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void InvokeCommitted(NeoSystem system, Block block)
+        {
+            InvokeHandlers(Committed?.GetInvocationList(), h => ((CommittedHandler)h)(system, block));
+        }
+
+        private static void InvokeHandlers(Delegate[] handlers, Action<Delegate> handlerAction)
+        {
+            if (handlers == null) return;
+
+            foreach (var handler in handlers)
+            {
+                try
+                {
+                    // skip stopped plugin.
+                    if (handler.Target is Plugin { IsStopped: true })
+                    {
+                        continue;
+                    }
+
+                    handlerAction(handler);
+                }
+                catch (Exception ex) when (handler.Target is Plugin plugin)
+                {
+                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case UnhandledExceptionPolicy.StopNode:
+                            throw;
+                        case UnhandledExceptionPolicy.StopPlugin:
+                            //Stop plugin on exception
+                            plugin.IsStopped = true;
+                            break;
+                        case UnhandledExceptionPolicy.Ignore:
+                            // Log the exception and continue with the next handler
+                            break;
+                        default:
+                            throw new InvalidCastException(
+                                $"The exception policy {plugin.ExceptionPolicy} is not valid.");
+                    }
+                }
+            }
         }
 
         /// <summary>

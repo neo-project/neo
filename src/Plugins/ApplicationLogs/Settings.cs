@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Settings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,9 +11,9 @@
 
 using Microsoft.Extensions.Configuration;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.ApplicationLogs
 {
-    internal class Settings
+    internal class Settings : PluginSettings
     {
         public string Path { get; }
         public uint Network { get; }
@@ -23,7 +23,7 @@ namespace Neo.Plugins
 
         public static Settings Default { get; private set; }
 
-        private Settings(IConfigurationSection section)
+        private Settings(IConfigurationSection section) : base(section)
         {
             Path = section.GetValue("Path", "ApplicationLogs_{0}");
             Network = section.GetValue("Network", 5195086u);

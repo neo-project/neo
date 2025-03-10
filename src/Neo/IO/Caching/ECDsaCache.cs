@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ECDsaCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,21 +9,27 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.IO.Caching
 {
-    record ECDsaCacheItem(Cryptography.ECC.ECPoint key, ECDsa value);
-    internal class ECDsaCache : FIFOCache<Cryptography.ECC.ECPoint, ECDsaCacheItem>
+    record ECDsaCacheItem(ECPoint Key, ECDsa Value);
+
+    internal class ECDsaCache : FIFOCache<ECPoint, ECDsaCacheItem>
     {
-        public ECDsaCache(int max_capacity = 20000) : base(max_capacity, EqualityComparer<Cryptography.ECC.ECPoint>.Default)
+        public ECDsaCache(int max_capacity = 20000) : base(max_capacity, EqualityComparer<ECPoint>.Default)
         {
         }
 
-        protected override Cryptography.ECC.ECPoint GetKeyForItem(ECDsaCacheItem item)
+        protected override ECPoint GetKeyForItem(ECDsaCacheItem item)
         {
-            return item.key;
+            return item.Key;
         }
     }
 }
+
+#nullable disable

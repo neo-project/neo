@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Nep17NativeContractExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,15 +9,19 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System.IO;
 using System.Numerics;
+using Array = System.Array;
+using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.Extensions
 {
@@ -33,7 +37,7 @@ namespace Neo.UnitTests.Extensions
 
             public ManualWitness(params UInt160[] hashForVerify)
             {
-                _hashForVerify = hashForVerify ?? System.Array.Empty<UInt160>();
+                _hashForVerify = hashForVerify ?? Array.Empty<UInt160>();
             }
 
             public void Deserialize(ref MemoryReader reader) { }
@@ -62,7 +66,7 @@ namespace Neo.UnitTests.Extensions
             }
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            Assert.IsInstanceOfType(result, typeof(Boolean));
 
             return result.GetBoolean();
         }
@@ -75,10 +79,10 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(contract.Hash, "totalSupply");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(Integer));
 
             return result.GetInteger();
         }
@@ -91,10 +95,10 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(contract.Hash, "balanceOf", account);
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(Integer));
 
             return result.GetInteger();
         }
@@ -107,10 +111,10 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(contract.Hash, "decimals");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
+            Assert.IsInstanceOfType(result, typeof(Integer));
 
             return result.GetInteger();
         }
@@ -123,10 +127,10 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(contract.Hash, "symbol");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute().Should().Be(VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
+            Assert.IsInstanceOfType(result, typeof(ByteString));
 
             return result.GetString();
         }

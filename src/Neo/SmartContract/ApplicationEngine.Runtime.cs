@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ApplicationEngine.Runtime.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -35,6 +34,11 @@ namespace Neo.SmartContract
         /// The maximum size of notification objects.
         /// </summary>
         public const int MaxNotificationSize = 1024;
+
+        /// <summary>
+        /// The maximum number of notifications per application execution.
+        /// </summary>
+        public const int MaxNotificationCount = 512;
 
         private uint random_times = 0;
 
@@ -260,8 +264,8 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
-                    signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid).Signers;
+                    OracleRequest request = NativeContract.Oracle.GetRequest(SnapshotCache, response.Id);
+                    signers = NativeContract.Ledger.GetTransaction(SnapshotCache, request.OriginalTxid).Signers;
                 }
                 Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
@@ -280,7 +284,7 @@ namespace Neo.SmartContract
             ValidateCallFlags(CallFlags.ReadStates);
 
             // only for non-Transaction types (Block, etc)
-            return ScriptContainer.GetScriptHashesForVerifying(Snapshot).Contains(hash);
+            return ScriptContainer.GetScriptHashesForVerifying(SnapshotCache).Contains(hash);
         }
 
         /// <summary>
@@ -305,6 +309,7 @@ namespace Neo.SmartContract
         protected internal BigInteger GetRandom()
         {
             byte[] buffer;
+            // In the unit of datoshi, 1 datoshi = 1e-8 GAS
             long price;
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
@@ -316,7 +321,7 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddGas(price * ExecFeeFactor);
+            AddFee(price * ExecFeeFactor);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -393,9 +398,16 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
+            notifications ??= new List<NotifyEventArgs>();
+            // Restrict the number of notifications for Application executions. Do not check
+            // persisting triggers to avoid native persist failure. Do not check verification
+            // trigger since verification context is loaded with ReadOnly flag.
+            if (IsHardforkEnabled(Hardfork.HF_Echidna) && Trigger == TriggerType.Application && notifications.Count >= MaxNotificationCount)
+            {
+                throw new InvalidOperationException($"Maximum number of notifications `{MaxNotificationCount}` is reached.");
+            }
             NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
-            notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
             CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
         }
@@ -406,26 +418,31 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
-        protected internal NotifyEventArgs[] GetNotifications(UInt160 hash)
+        protected internal Array GetNotifications(UInt160 hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
                 notifications = notifications.Where(p => p.ScriptHash == hash);
-            NotifyEventArgs[] array = notifications.ToArray();
+            var array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
-            return array;
+            Array notifyArray = new(ReferenceCounter);
+            foreach (var notify in array)
+            {
+                notifyArray.Add(notify.ToStackItem(ReferenceCounter, this));
+            }
+            return notifyArray;
         }
 
         /// <summary>
         /// The implementation of System.Runtime.BurnGas.
         /// Burning GAS to benefit the NEO ecosystem.
         /// </summary>
-        /// <param name="gas">The amount of GAS to burn.</param>
-        protected internal void BurnGas(long gas)
+        /// <param name="datoshi">The amount of GAS to burn, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        protected internal void BurnGas(long datoshi)
         {
-            if (gas <= 0)
+            if (datoshi <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
-            AddGas(gas);
+            AddFee(datoshi);
         }
 
         /// <summary>

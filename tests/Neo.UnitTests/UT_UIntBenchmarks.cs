@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_UIntBenchmarks.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;
@@ -63,11 +62,11 @@ namespace Neo.UnitTests
         {
             string uint160strbig = "0x0001020304050607080900010203040506070809";
             UInt160 num1 = UInt160.Parse(uint160strbig);
-            num1.ToString().Should().Be("0x0001020304050607080900010203040506070809");
+            Assert.AreEqual("0x0001020304050607080900010203040506070809", num1.ToString());
 
             string uint160strbig2 = "0X0001020304050607080900010203040506070809";
             UInt160 num2 = UInt160.Parse(uint160strbig2);
-            num2.ToString().Should().Be("0x0001020304050607080900010203040506070809");
+            Assert.AreEqual("0x0001020304050607080900010203040506070809", num2.ToString());
         }
 
         private byte[] RandomBytes(int count)
@@ -147,9 +146,9 @@ namespace Neo.UnitTests
                 return checksum;
             }).Item2;
 
-            checksum0.Should().Be(checksum1);
-            checksum0.Should().Be(checksum2);
-            checksum0.Should().Be(checksum3);
+            Assert.AreEqual(checksum1, checksum0);
+            Assert.AreEqual(checksum2, checksum0);
+            Assert.AreEqual(checksum3, checksum0);
         }
 
         [TestMethod]
@@ -209,9 +208,9 @@ namespace Neo.UnitTests
                 return checksum;
             }).Item2;
 
-            checksum0.Should().Be(checksum1);
-            checksum0.Should().Be(checksum2);
-            checksum0.Should().Be(checksum3);
+            Assert.AreEqual(checksum1, checksum0);
+            Assert.AreEqual(checksum2, checksum0);
+            Assert.AreEqual(checksum3, checksum0);
         }
 
         [TestMethod]
@@ -219,12 +218,12 @@ namespace Neo.UnitTests
         {
             for (var i = 0; i < MAX_TESTS; i++)
             {
-                code1_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code2_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code3_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code1_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
-                code2_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
-                code3_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
+                Assert.AreEqual(0, code1_UInt160CompareTo(base_20_1[i], base_20_1[i]));
+                Assert.AreEqual(0, code2_UInt160CompareTo(base_20_1[i], base_20_1[i]));
+                Assert.AreEqual(0, code3_UInt160CompareTo(base_20_1[i], base_20_1[i]));
+                Assert.AreEqual(0, code1_UInt256CompareTo(base_32_1[i], base_32_1[i]));
+                Assert.AreEqual(0, code2_UInt256CompareTo(base_32_1[i], base_32_1[i]));
+                Assert.AreEqual(0, code3_UInt256CompareTo(base_32_1[i], base_32_1[i]));
             }
         }
 

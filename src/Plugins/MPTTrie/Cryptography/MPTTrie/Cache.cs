@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Cache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using System.Collections.Generic;
 using System.IO;
@@ -32,11 +32,11 @@ namespace Neo.Cryptography.MPTTrie
             public TrackState State;
         }
 
-        private readonly ISnapshot store;
+        private readonly IStoreSnapshot store;
         private readonly byte prefix;
         private readonly Dictionary<UInt256, Trackable> cache = new Dictionary<UInt256, Trackable>();
 
-        public Cache(ISnapshot store, byte prefix)
+        public Cache(IStoreSnapshot store, byte prefix)
         {
             this.store = store;
             this.prefix = prefix;
@@ -60,7 +60,8 @@ namespace Neo.Cryptography.MPTTrie
             {
                 return t.Node?.Clone();
             }
-            var n = store.TryGet(Key(hash))?.AsSerializable<Node>();
+
+            var n = store.TryGet(Key(hash), out var data) ? data.AsSerializable<Node>() : null;
             cache.Add(hash, new Trackable
             {
                 Node = n,

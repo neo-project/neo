@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_OracleService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,24 +9,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 
-namespace Neo.Plugins.Tests
+namespace Neo.Plugins.OracleService.Tests
 {
     [TestClass]
-    public class UT_OracleService : TestKit
+    public class UT_OracleService
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestFilter()
         {
@@ -70,11 +63,11 @@ namespace Neo.Plugins.Tests
         [TestMethod]
         public void TestCreateOracleResponseTx()
         {
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            var executionFactor = NativeContract.Policy.GetExecFeeFactor(snapshotCache);
             Assert.AreEqual(executionFactor, (uint)30);
-            var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
+            var feePerByte = NativeContract.Policy.GetFeePerByte(snapshotCache);
             Assert.AreEqual(feePerByte, 1000);
 
             OracleRequest request = new OracleRequest
@@ -85,10 +78,10 @@ namespace Neo.Plugins.Tests
                 Filter = "",
                 CallbackContract = UInt160.Zero,
                 CallbackMethod = "callback",
-                UserData = System.Array.Empty<byte>()
+                UserData = []
             };
             byte Prefix_Transaction = 11;
-            snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, request.OriginalTxid), new StorageItem(new TransactionState()
+            snapshotCache.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, request.OriginalTxid), new StorageItem(new TransactionState()
             {
                 BlockIndex = 1,
                 Transaction = new Transaction()
@@ -98,7 +91,7 @@ namespace Neo.Plugins.Tests
             }));
             OracleResponse response = new OracleResponse() { Id = 1, Code = OracleResponseCode.Success, Result = new byte[] { 0x00 } };
             ECPoint[] oracleNodes = new ECPoint[] { ECCurve.Secp256r1.G };
-            var tx = OracleService.CreateResponseTx(snapshot, request, response, oracleNodes, ProtocolSettings.Default);
+            var tx = OracleService.CreateResponseTx(snapshotCache, request, response, oracleNodes, ProtocolSettings.Default);
 
             Assert.AreEqual(166, tx.Size);
             Assert.AreEqual(2198650, tx.NetworkFee);
@@ -108,7 +101,7 @@ namespace Neo.Plugins.Tests
 
             request.GasForResponse = 0_10000000;
             response.Result = new byte[10250];
-            tx = OracleService.CreateResponseTx(snapshot, request, response, oracleNodes, ProtocolSettings.Default);
+            tx = OracleService.CreateResponseTx(snapshotCache, request, response, oracleNodes, ProtocolSettings.Default);
             Assert.AreEqual(165, tx.Size);
             Assert.AreEqual(OracleResponseCode.InsufficientFunds, response.Code);
             Assert.AreEqual(2197650, tx.NetworkFee);

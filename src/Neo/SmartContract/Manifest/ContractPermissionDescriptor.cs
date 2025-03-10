@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractPermissionDescriptor.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;
@@ -114,7 +114,8 @@ namespace Neo.SmartContract.Manifest
             if (this == other) return true;
             if (IsWildcard == other.IsWildcard) return true;
             if (IsHash) return Hash.Equals(other.Hash);
-            else return Group.Equals(other.Group);
+            if (IsGroup) return Group.Equals(other.Group);
+            return false;
         }
 
         public override int GetHashCode()

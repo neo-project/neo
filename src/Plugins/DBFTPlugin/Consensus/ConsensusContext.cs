@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusContext.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,20 +11,22 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     public partial class ConsensusContext : IDisposable, ISerializable
     {
@@ -52,12 +54,12 @@ namespace Neo.Consensus
         /// </summary>
         public TransactionVerificationContext VerificationContext = new();
 
-        public SnapshotCache Snapshot { get; private set; }
-        private KeyPair keyPair;
+        public StoreCache Snapshot { get; private set; }
+        private ECPoint _myPublicKey;
         private int _witnessSize;
         private readonly NeoSystem neoSystem;
         private readonly Settings dbftSettings;
-        private readonly Wallet wallet;
+        private readonly ISigner _signer;
         private readonly IStore store;
         private Dictionary<UInt256, ConsensusMessage> cachedMessages;
 
@@ -110,19 +112,21 @@ namespace Neo.Consensus
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(NeoSystem neoSystem, Settings settings, Wallet wallet)
+        public ConsensusContext(NeoSystem neoSystem, Settings settings, ISigner signer)
         {
-            this.wallet = wallet;
+            _signer = signer;
             this.neoSystem = neoSystem;
             dbftSettings = settings;
-            store = neoSystem.LoadStore(settings.RecoveryLogs);
+
+            if (dbftSettings.IgnoreRecoveryLogs == false)
+                store = neoSystem.LoadStore(settings.RecoveryLogs);
         }
 
         public Block CreateBlock()
         {
             EnsureHeader();
-            Contract contract = Contract.CreateMultiSigContract(M, Validators);
-            ContractParametersContext sc = new ContractParametersContext(neoSystem.StoreView, Block.Header, dbftSettings.Network);
+            var contract = Contract.CreateMultiSigContract(M, Validators);
+            var sc = new ContractParametersContext(neoSystem.StoreView, Block.Header, dbftSettings.Network);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
             {
                 if (GetMessage(CommitPayloads[i])?.ViewNumber != ViewNumber) continue;
@@ -136,7 +140,7 @@ namespace Neo.Consensus
 
         public ExtensiblePayload CreatePayload(ConsensusMessage message, ReadOnlyMemory<byte> invocationScript = default)
         {
-            ExtensiblePayload payload = new ExtensiblePayload
+            var payload = new ExtensiblePayload
             {
                 Category = "dBFT",
                 ValidBlockStart = 0,
@@ -167,8 +171,9 @@ namespace Neo.Consensus
 
         public bool Load()
         {
-            byte[] data = store.TryGet(ConsensusStateKey);
-            if (data is null || data.Length == 0) return false;
+            if (store is null || !store.TryGet(ConsensusStateKey, out var data) || data.Length == 0)
+                return false;
+
             MemoryReader reader = new(data);
             try
             {
@@ -191,7 +196,7 @@ namespace Neo.Consensus
             if (viewNumber == 0)
             {
                 Snapshot?.Dispose();
-                Snapshot = neoSystem.GetSnapshot();
+                Snapshot = neoSystem.GetSnapshotCache();
                 uint height = NativeContract.Ledger.CurrentIndex(Snapshot);
                 Block = new Block
                 {
@@ -210,11 +215,12 @@ namespace Neo.Consensus
                 if (_witnessSize == 0 || (pv != null && pv.Length != Validators.Length))
                 {
                     // Compute the expected size of the witness
-                    using (ScriptBuilder sb = new())
+                    using (ScriptBuilder sb = new(65 * M + 34 * Validators.Length + 64)) // 64 is extra space
                     {
+                        var buf = new byte[64];
                         for (int x = 0; x < M; x++)
                         {
-                            sb.EmitPush(new byte[64]);
+                            sb.EmitPush(buf);
                         }
                         _witnessSize = new Witness
                         {
@@ -239,13 +245,14 @@ namespace Neo.Consensus
                             LastSeenMessage[validator] = height;
                     }
                 }
-                keyPair = null;
+
+                _myPublicKey = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
-                    WalletAccount account = wallet?.GetAccount(Validators[i]);
-                    if (account?.HasKey != true) continue;
+                    // ContainsKeyPair may be called multiple times
+                    if (!_signer.ContainsSignable(Validators[i])) continue;
                     MyIndex = i;
-                    keyPair = account.GetKey();
+                    _myPublicKey = Validators[MyIndex];
                     break;
                 }
                 cachedMessages = new Dictionary<UInt256, ConsensusMessage>();
@@ -271,7 +278,7 @@ namespace Neo.Consensus
 
         public void Save()
         {
-            store.PutSync(ConsensusStateKey, this.ToArray());
+            store?.PutSync(ConsensusStateKey, this.ToArray());
         }
 
         public void Deserialize(ref MemoryReader reader)

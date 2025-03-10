@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,7 +12,7 @@
 using System.Linq;
 using System.Net;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService
 {
     static class Helper
     {

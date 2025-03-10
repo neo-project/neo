@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Helper.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -31,11 +32,13 @@ namespace Neo.SmartContract
     {
         /// <summary>
         /// The maximum GAS that can be consumed when <see cref="VerifyWitnesses"/> is called.
+        /// The unit is datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const long MaxVerificationGas = 1_50000000;
 
         /// <summary>
         /// Calculates the verification fee for a signature address.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         /// <returns>The calculated cost.</returns>
         public static long SignatureContractCost() =>
@@ -45,8 +48,9 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// Calculates the verification fee for a multi-signature address.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
@@ -127,7 +131,7 @@ namespace Neo.SmartContract
         /// Determines whether the specified contract is a multi-signature contract.
         /// </summary>
         /// <param name="script">The script of the contract.</param>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n)
@@ -139,7 +143,7 @@ namespace Neo.SmartContract
         /// Determines whether the specified contract is a multi-signature contract.
         /// </summary>
         /// <param name="script">The script of the contract.</param>
-        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
@@ -285,12 +289,12 @@ namespace Neo.SmartContract
         /// <param name="verifiable">The <see cref="IVerifiable"/> to be verified.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used for the verification.</param>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="gas">The maximum GAS that can be used.</param>
+        /// <param name="datoshi">The maximum GAS that can be used, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
         /// <returns><see langword="true"/> if the <see cref="IVerifiable"/> is verified as valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long datoshi)
         {
-            if (gas < 0) return false;
-            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
+            if (datoshi < 0) return false;
+            if (datoshi > MaxVerificationGas) datoshi = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -301,17 +305,18 @@ namespace Neo.SmartContract
             {
                 return false;
             }
+            if (verifiable.Witnesses == null) return false;
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
+                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], datoshi, out long fee))
                     return false;
-                gas -= fee;
+                datoshi -= fee;
             }
             return true;
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long datoshi, out long fee)
         {
             fee = 0;
             Script invocationScript;
@@ -323,13 +328,13 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, gas))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CloneCache(), null, settings, datoshi))
             {
                 if (witness.VerificationScript.Length == 0)
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
                     engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }
@@ -356,8 +361,16 @@ namespace Neo.SmartContract
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (engine.Execute() == VMState.FAULT) return false;
-                if (!engine.ResultStack.Peek().GetBoolean()) return false;
-                fee = engine.GasConsumed;
+                if (engine.ResultStack.Count != 1) return false;
+                try
+                {
+                    if (!engine.ResultStack.Peek().GetBoolean()) return false;
+                }
+                catch
+                {
+                    return false;
+                }
+                fee = engine.FeeConsumed;
             }
             return true;
         }

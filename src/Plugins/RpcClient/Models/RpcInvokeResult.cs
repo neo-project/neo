@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcInvokeResult.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
@@ -21,7 +22,7 @@ namespace Neo.Network.RPC.Models
     {
         public string Script { get; set; }
 
-        public VM.VMState State { get; set; }
+        public VMState State { get; set; }
 
         public long GasConsumed { get; set; }
 
@@ -78,7 +79,7 @@ namespace Neo.Network.RPC.Models
     {
         public string Type { get; set; }
 
-        public string Value { get; set; }
+        public JToken Value { get; set; }
 
         public JObject ToJson()
         {
@@ -93,7 +94,7 @@ namespace Neo.Network.RPC.Models
             return new RpcStack
             {
                 Type = json["type"].AsString(),
-                Value = json["value"].AsString()
+                Value = json["value"]
             };
         }
     }

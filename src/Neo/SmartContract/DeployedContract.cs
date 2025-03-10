@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // DeployedContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -32,7 +32,7 @@ namespace Neo.SmartContract
 
             Script = null;
             ScriptHash = contract.Hash;
-            ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod("verify", -1);
+            ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Verify, ContractBasicMethod.VerifyPCount);
             if (descriptor is null) throw new NotSupportedException("The smart contract haven't got verify method.");
 
             ParameterList = descriptor.Parameters.Select(u => u.Type).ToArray();

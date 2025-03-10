@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Plugin.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,6 +8,8 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+#nullable enable
 
 using Microsoft.Extensions.Configuration;
 using System;
@@ -28,19 +30,20 @@ namespace Neo.Plugins
         /// <summary>
         /// A list of all loaded plugins.
         /// </summary>
-        public static readonly List<Plugin> Plugins = new();
+        public static readonly List<Plugin> Plugins = [];
 
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
-        public static readonly string PluginsDirectory = Combine(GetDirectoryName(System.AppContext.BaseDirectory), "Plugins");
+        public static readonly string PluginsDirectory =
+            Combine(GetDirectoryName(AppContext.BaseDirectory)!, "Plugins");
 
-        private static readonly FileSystemWatcher configWatcher;
+        private static readonly FileSystemWatcher? s_configWatcher;
 
         /// <summary>
         /// Indicates the root path of the plugin.
         /// </summary>
-        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name);
+        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name!);
 
         /// <summary>
         /// Indicates the location of the plugin configuration file.
@@ -65,21 +68,34 @@ namespace Neo.Plugins
         /// <summary>
         /// Indicates the version of the plugin.
         /// </summary>
-        public virtual Version Version => GetType().Assembly.GetName().Version;
+        public virtual Version Version => GetType().Assembly.GetName().Version ?? new Version();
+
+        /// <summary>
+        /// If the plugin should be stopped when an exception is thrown.
+        /// Default is StopNode.
+        /// </summary>
+        protected internal virtual UnhandledExceptionPolicy ExceptionPolicy { get; init; } = UnhandledExceptionPolicy.StopNode;
+
+        /// <summary>
+        /// The plugin will be stopped if an exception is thrown.
+        /// But it also depends on <see cref="UnhandledExceptionPolicy"/>.
+        /// </summary>
+        internal bool IsStopped { get; set; }
 
         static Plugin()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            configWatcher = new FileSystemWatcher(PluginsDirectory)
+            s_configWatcher = new FileSystemWatcher(PluginsDirectory)
             {
                 EnableRaisingEvents = true,
                 IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime |
+                               NotifyFilters.LastWrite | NotifyFilters.Size,
             };
-            configWatcher.Changed += ConfigWatcher_Changed;
-            configWatcher.Created += ConfigWatcher_Changed;
-            configWatcher.Renamed += ConfigWatcher_Changed;
-            configWatcher.Deleted += ConfigWatcher_Changed;
+            s_configWatcher.Changed += ConfigWatcher_Changed;
+            s_configWatcher.Created += ConfigWatcher_Changed;
+            s_configWatcher.Renamed += ConfigWatcher_Changed;
+            s_configWatcher.Deleted += ConfigWatcher_Changed;
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
@@ -100,33 +116,36 @@ namespace Neo.Plugins
         {
         }
 
-        private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
+        private static void ConfigWatcher_Changed(object? sender, FileSystemEventArgs e)
         {
             switch (GetExtension(e.Name))
             {
                 case ".json":
                 case ".dll":
-                    Utility.Log(nameof(Plugin), LogLevel.Warning, $"File {e.Name} is {e.ChangeType}, please restart node.");
+                    Utility.Log(nameof(Plugin), LogLevel.Warning,
+                        $"File {e.Name} is {e.ChangeType}, please restart node.");
                     break;
             }
         }
 
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
         {
             if (args.Name.Contains(".resources"))
                 return null;
 
             AssemblyName an = new(args.Name);
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
-                                AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
+            var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
+                           AppDomain.CurrentDomain.GetAssemblies()
+                           .FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
-            string filename = an.Name + ".dll";
-            string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory), filename);
+            var filename = an.Name + ".dll";
+            var path = filename;
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(AppContext.BaseDirectory)!, filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
+            if (!File.Exists(path) && !string.IsNullOrEmpty(args.RequestingAssembly?.GetName().Name))
+                path = Combine(PluginsDirectory, args.RequestingAssembly!.GetName().Name!, filename);
             if (!File.Exists(path)) return null;
 
             try
@@ -150,20 +169,23 @@ namespace Neo.Plugins
         /// <returns>The content of the configuration file read.</returns>
         protected IConfigurationSection GetConfiguration()
         {
-            return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
+            return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build()
+                .GetSection("PluginConfiguration");
         }
 
         private static void LoadPlugin(Assembly assembly)
         {
-            foreach (Type type in assembly.ExportedTypes)
+            foreach (var type in assembly.ExportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
 
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
+                var constructor = type.GetConstructor(Type.EmptyTypes);
+                if (constructor == null) continue;
+
                 try
                 {
-                    constructor?.Invoke(null);
+                    constructor.Invoke(null);
                 }
                 catch (Exception ex)
                 {
@@ -175,8 +197,8 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = new();
-            foreach (string rootPath in Directory.GetDirectories(PluginsDirectory))
+            List<Assembly> assemblies = [];
+            foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
@@ -187,7 +209,8 @@ namespace Neo.Plugins
                     catch { }
                 }
             }
-            foreach (Assembly assembly in assemblies)
+
+            foreach (var assembly in assemblies)
             {
                 LoadPlugin(assembly);
             }
@@ -229,7 +252,48 @@ namespace Neo.Plugins
         /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
         public static bool SendMessage(object message)
         {
-            return Plugins.Any(plugin => plugin.OnMessage(message));
+            foreach (var plugin in Plugins)
+            {
+                if (plugin.IsStopped)
+                {
+                    continue;
+                }
+
+                bool result;
+                try
+                {
+                    result = plugin.OnMessage(message);
+                }
+                catch (Exception ex)
+                {
+                    Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+
+                    switch (plugin.ExceptionPolicy)
+                    {
+                        case UnhandledExceptionPolicy.StopNode:
+                            throw;
+                        case UnhandledExceptionPolicy.StopPlugin:
+                            plugin.IsStopped = true;
+                            break;
+                        case UnhandledExceptionPolicy.Ignore:
+                            break;
+                        default:
+                            throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
+                    }
+
+                    continue; // Skip to the next plugin if an exception is handled
+                }
+
+                if (result)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
+
     }
 }
+
+#nullable disable

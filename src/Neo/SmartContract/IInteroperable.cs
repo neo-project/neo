@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // IInteroperable.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -29,9 +29,9 @@ namespace Neo.SmartContract
         /// <summary>
         /// Convert the current object to a <see cref="StackItem"/>.
         /// </summary>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The converted <see cref="StackItem"/>.</returns>
-        StackItem ToStackItem(ReferenceCounter referenceCounter);
+        StackItem ToStackItem(IReferenceCounter referenceCounter);
 
         public IInteroperable Clone()
         {

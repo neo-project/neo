@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // FungibleToken.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The prefix for storing account states.
         /// </summary>
-        protected const byte Prefix_Account = 20;
+        protected internal const byte Prefix_Account = 20;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
             Factor = BigInteger.Pow(10, Decimals);
         }
 
-        protected override void OnManifestCompose(ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
             manifest.SupportedStandards = new[] { "NEP-17" };
         }
@@ -74,11 +74,11 @@ namespace Neo.SmartContract.Native
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
+            StorageItem storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
-            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
+            storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
             await PostTransferAsync(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
@@ -87,16 +87,16 @@ namespace Neo.SmartContract.Native
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageKey key = CreateStorageKey(Prefix_Account).Add(account);
-            StorageItem storage = engine.Snapshot.GetAndChange(key);
+            StorageKey key = CreateStorageKey(Prefix_Account, account);
+            StorageItem storage = engine.SnapshotCache.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
             OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
-                engine.Snapshot.Delete(key);
+                engine.SnapshotCache.Delete(key);
             else
                 state.Balance -= amount;
-            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
+            storage = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
             await PostTransferAsync(engine, account, null, amount, StackItem.Null, false);
         }
@@ -107,11 +107,10 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The total supply of the token.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public virtual BigInteger TotalSupply(DataCache snapshot)
+        public virtual BigInteger TotalSupply(IReadOnlyStore snapshot)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_TotalSupply));
-            if (storage is null) return BigInteger.Zero;
-            return storage;
+            var key = CreateStorageKey(Prefix_TotalSupply);
+            return snapshot.TryGet(key, out var item) ? item : BigInteger.Zero;
         }
 
         /// <summary>
@@ -121,11 +120,12 @@ namespace Neo.SmartContract.Native
         /// <param name="account">The owner of the account.</param>
         /// <returns>The balance of the account. Or 0 if the account doesn't exist.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
+        public virtual BigInteger BalanceOf(IReadOnlyStore snapshot, UInt160 account)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
-            if (storage is null) return BigInteger.Zero;
-            return storage.GetInteroperable<TState>().Balance;
+            var key = CreateStorageKey(Prefix_Account, account);
+            if (snapshot.TryGet(key, out var item))
+                return item.GetInteroperable<TState>().Balance;
+            return BigInteger.Zero;
         }
 
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
@@ -136,8 +136,8 @@ namespace Neo.SmartContract.Native
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
-            StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
-            StorageItem storage_from = engine.Snapshot.GetAndChange(key_from);
+            StorageKey key_from = CreateStorageKey(Prefix_Account, from);
+            StorageItem storage_from = engine.SnapshotCache.GetAndChange(key_from);
             if (amount.IsZero)
             {
                 if (storage_from != null)
@@ -159,11 +159,11 @@ namespace Neo.SmartContract.Native
                 {
                     OnBalanceChanging(engine, from, state_from, -amount);
                     if (state_from.Balance == amount)
-                        engine.Snapshot.Delete(key_from);
+                        engine.SnapshotCache.Delete(key_from);
                     else
                         state_from.Balance -= amount;
-                    StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
-                    StorageItem storage_to = engine.Snapshot.GetAndChange(key_to, () => new StorageItem(new TState()));
+                    StorageKey key_to = CreateStorageKey(Prefix_Account, to);
+                    StorageItem storage_to = engine.SnapshotCache.GetAndChange(key_to, () => new StorageItem(new TState()));
                     TState state_to = storage_to.GetInteroperable<TState>();
                     OnBalanceChanging(engine, to, state_to, amount);
                     state_to.Balance += amount;
@@ -186,7 +186,7 @@ namespace Neo.SmartContract.Native
 
             // Check if it's a wallet or smart contract
 
-            if (!callOnPayment || to is null || ContractManagement.GetContract(engine.Snapshot, to) is null) return;
+            if (!callOnPayment || to is null || ContractManagement.GetContract(engine.SnapshotCache, to) is null) return;
 
             // Call onNEP17Payment method
 

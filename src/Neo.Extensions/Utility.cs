@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -31,6 +31,8 @@ namespace Neo
             }
         }
 
+        public static LogLevel LogLevel { get; set; } = LogLevel.Info;
+
         public static event LogEventHandler? Logging;
 
         /// <summary>
@@ -53,6 +55,8 @@ namespace Neo
         /// <param name="message">The message of the log.</param>
         public static void Log(string source, LogLevel level, object message)
         {
+            if ((int)level < (int)LogLevel) return;
+
             Logging?.Invoke(source, level, message);
         }
     }

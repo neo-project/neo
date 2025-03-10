@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServerPlugin.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,7 +12,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public class RpcServerPlugin : Plugin
     {
@@ -24,6 +24,7 @@ namespace Neo.Plugins
         private static readonly Dictionary<uint, List<object>> handlers = new();
 
         public override string ConfigFile => System.IO.Path.Combine(RootPath, "RpcServer.json");
+        protected override UnhandledExceptionPolicy ExceptionPolicy => settings.ExceptionPolicy;
 
         protected override void Configure()
         {
@@ -55,18 +56,18 @@ namespace Neo.Plugins
                 $"Example: \"AllowOrigins\": [\"http://{s.BindAddress}:{s.Port}\"]", LogLevel.Info);
             }
 
-            RpcServer server = new(system, s);
+            RpcServer rpcRpcServer = new(system, s);
 
             if (handlers.Remove(s.Network, out var list))
             {
                 foreach (var handler in list)
                 {
-                    server.RegisterMethods(handler);
+                    rpcRpcServer.RegisterMethods(handler);
                 }
             }
 
-            server.StartRpcServer();
-            servers.TryAdd(s.Network, server);
+            rpcRpcServer.StartRpcServer();
+            servers.TryAdd(s.Network, rpcRpcServer);
         }
 
         public static void RegisterMethods(object handler, uint network)

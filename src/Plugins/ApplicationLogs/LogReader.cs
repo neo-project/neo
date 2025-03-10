@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // LogReader.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,27 +9,28 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using ApplicationLogs.Store;
-using ApplicationLogs.Store.Models;
 using Neo.ConsoleService;
-using Neo.IO;
+using Neo.Extensions;
+using Neo.IEventHandlers;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins.ApplicationLogs.Store;
+using Neo.Plugins.ApplicationLogs.Store.Models;
+using Neo.Plugins.RpcServer;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using System.Numerics;
 using static System.IO.Path;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.ApplicationLogs
 {
-    public class LogReader : Plugin
+    public class LogReader : Plugin, ICommittingHandler, ICommittedHandler, ILogHandler
     {
         #region Globals
 
-        private NeoStore _neostore;
+        internal NeoStore _neostore;
         private NeoSystem _neosystem;
         private readonly List<LogEventArgs> _logEvents;
 
@@ -37,14 +38,15 @@ namespace Neo.Plugins
 
         public override string Name => "ApplicationLogs";
         public override string Description => "Synchronizes smart contract VM executions and notifications (NotifyLog) on blockchain.";
+        protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default.ExceptionPolicy;
 
         #region Ctor
 
         public LogReader()
         {
             _logEvents = new();
-            Blockchain.Committing += OnCommitting;
-            Blockchain.Committed += OnCommitted;
+            Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         #endregion
@@ -55,10 +57,10 @@ namespace Neo.Plugins
 
         public override void Dispose()
         {
-            Blockchain.Committing -= OnCommitting;
-            Blockchain.Committed -= OnCommitted;
+            Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
+            Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Settings.Default.Debug)
-                ApplicationEngine.Log -= OnApplicationEngineLog;
+                ApplicationEngine.Log -= ((ILogHandler)this).ApplicationEngine_Log_Handler;
             GC.SuppressFinalize(this);
         }
 
@@ -78,7 +80,7 @@ namespace Neo.Plugins
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
 
             if (Settings.Default.Debug)
-                ApplicationEngine.Log += OnApplicationEngineLog;
+                ApplicationEngine.Log += ((ILogHandler)this).ApplicationEngine_Log_Handler;
         }
 
         #endregion
@@ -121,7 +123,7 @@ namespace Neo.Plugins
         #region Console Commands
 
         [ConsoleCommand("log block", Category = "ApplicationLog Commands")]
-        private void OnGetBlockCommand(string blockHashOrIndex, string eventName = null)
+        internal void OnGetBlockCommand(string blockHashOrIndex, string eventName = null)
         {
             UInt256 blockhash;
             if (uint.TryParse(blockHashOrIndex, out var blockIndex))
@@ -141,19 +143,18 @@ namespace Neo.Plugins
                 _neostore.GetBlockLog(blockhash, TriggerType.PostPersist) :
                 _neostore.GetBlockLog(blockhash, TriggerType.PostPersist, eventName);
 
-            if (blockOnPersist == null && blockOnPersist == null)
+            if (blockOnPersist == null)
                 ConsoleHelper.Error($"No logs.");
-            if (blockOnPersist != null)
-                PrintExecutionToConsole(blockOnPersist);
-            if (blockPostPersist != null)
+            else
             {
+                PrintExecutionToConsole(blockOnPersist);
                 ConsoleHelper.Info("--------------------------------");
                 PrintExecutionToConsole(blockPostPersist);
             }
         }
 
         [ConsoleCommand("log tx", Category = "ApplicationLog Commands")]
-        private void OnGetTransactionCommand(UInt256 txhash, string eventName = null)
+        internal void OnGetTransactionCommand(UInt256 txhash, string eventName = null)
         {
             var txApplication = string.IsNullOrEmpty(eventName) ?
                 _neostore.GetTransactionLog(txhash) :
@@ -166,7 +167,7 @@ namespace Neo.Plugins
         }
 
         [ConsoleCommand("log contract", Category = "ApplicationLog Commands")]
-        private void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string eventName = null)
+        internal void OnGetContractCommand(UInt160 scripthash, uint page = 1, uint pageSize = 1, string eventName = null)
         {
             if (page == 0)
             {
@@ -195,7 +196,7 @@ namespace Neo.Plugins
 
         #region Blockchain Events
 
-        private void OnCommitting(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
+        void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network)
                 return;
@@ -216,7 +217,7 @@ namespace Neo.Plugins
             }
         }
 
-        private void OnCommitted(NeoSystem system, Block block)
+        void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
             if (system.Settings.Network != Settings.Default.Network)
                 return;
@@ -225,7 +226,7 @@ namespace Neo.Plugins
             _neostore.CommitBlockLog();
         }
 
-        private void OnApplicationEngineLog(object sender, LogEventArgs e)
+        void ILogHandler.ApplicationEngine_Log_Handler(object sender, LogEventArgs e)
         {
             if (Settings.Default.Debug == false)
                 return;
@@ -271,8 +272,9 @@ namespace Neo.Plugins
                     ConsoleHelper.Info("  ScriptHash: ", $"{notifyItem.ScriptHash}");
                     ConsoleHelper.Info("  Event Name: ", $"{notifyItem.EventName}");
                     ConsoleHelper.Info("  State Parameters:");
-                    for (int i = 0; i < notifyItem.State.Length; i++)
-                        ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, i)}: ", $"{notifyItem.State[i].ToJson()}");
+                    var ncount = (uint)notifyItem.State.Length;
+                    for (var i = 0; i < ncount; i++)
+                        ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, ncount, i)}: ", $"{notifyItem.State[i].ToJson()}");
                 }
             }
             if (Settings.Default.Debug)
@@ -300,18 +302,21 @@ namespace Neo.Plugins
                 ConsoleHelper.Info();
                 ConsoleHelper.Info("  Event Name:  ", $"{notifyItem.EventName}");
                 ConsoleHelper.Info("  State Parameters:");
-                for (int i = 0; i < notifyItem.State.Length; i++)
-                    ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, i)}: ", $"{notifyItem.State[i].ToJson()}");
+                var ncount = (uint)notifyItem.State.Length;
+                for (var i = 0; i < ncount; i++)
+                    ConsoleHelper.Info($"    {GetMethodParameterName(notifyItem.ScriptHash, notifyItem.EventName, ncount, i)}: ", $"{notifyItem.State[i].ToJson()}");
                 ConsoleHelper.Info("--------------------------------");
             }
         }
 
-        private string GetMethodParameterName(UInt160 scriptHash, string methodName, int parameterIndex)
+        private string GetMethodParameterName(UInt160 scriptHash, string methodName, uint ncount, int parameterIndex)
         {
             var contract = NativeContract.ContractManagement.GetContract(_neosystem.StoreView, scriptHash);
             if (contract == null)
                 return $"{parameterIndex}";
-            var contractEvent = contract.Manifest.Abi.Events.SingleOrDefault(s => s.Name == methodName);
+            var contractEvent = contract.Manifest.Abi.Events.SingleOrDefault(s => s.Name == methodName && (uint)s.Parameters.Length == ncount);
+            if (contractEvent == null)
+                return $"{parameterIndex}";
             return contractEvent.Parameters[parameterIndex].Name;
         }
 

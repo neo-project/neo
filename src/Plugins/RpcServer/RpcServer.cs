@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -23,35 +23,46 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Security;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     public partial class RpcServer : IDisposable
     {
         private const int MaxParamsDepth = 32;
 
         private readonly Dictionary<string, Func<JArray, object>> methods = new();
+        private readonly Dictionary<string, Delegate> _methodsWithParams = new();
 
         private IWebHost host;
         private RpcServerSettings settings;
         private readonly NeoSystem system;
         private readonly LocalNode localNode;
 
+        // avoid GetBytes every time
+        private readonly byte[] _rpcUser;
+        private readonly byte[] _rpcPass;
+
         public RpcServer(NeoSystem system, RpcServerSettings settings)
         {
             this.system = system;
             this.settings = settings;
+
+            _rpcUser = settings.RpcUser is not null ? Encoding.UTF8.GetBytes(settings.RpcUser) : [];
+            _rpcPass = settings.RpcPass is not null ? Encoding.UTF8.GetBytes(settings.RpcPass) : [];
+
             localNode = system.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
             RegisterMethods(this);
             Initialize_SmartContract();
         }
 
-        private bool CheckAuth(HttpContext context)
+        internal bool CheckAuth(HttpContext context)
         {
             if (string.IsNullOrEmpty(settings.RpcUser)) return true;
 
@@ -63,21 +74,25 @@ namespace Neo.Plugins
                 return false;
             }
 
-            string authstring;
+            byte[] auths;
             try
             {
-                authstring = Encoding.UTF8.GetString(Convert.FromBase64String(reqauth.Replace("Basic ", "").Trim()));
+                auths = Convert.FromBase64String(reqauth.Replace("Basic ", "").Trim());
             }
             catch
             {
                 return false;
             }
 
-            string[] authvalues = authstring.Split(new string[] { ":" }, StringSplitOptions.RemoveEmptyEntries);
-            if (authvalues.Length < 2)
+            int colonIndex = Array.IndexOf(auths, (byte)':');
+            if (colonIndex == -1)
                 return false;
 
-            return authvalues[0] == settings.RpcUser && authvalues[1] == settings.RpcPass;
+            byte[] user = auths[..colonIndex];
+            byte[] pass = auths[(colonIndex + 1)..];
+
+            // Always execute both checks, but both must evaluate to true
+            return CryptographicOperations.FixedTimeEquals(user, _rpcUser) & CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
         }
 
         private static JObject CreateErrorResponse(JToken id, RpcError rpcError)
@@ -258,27 +273,89 @@ namespace Neo.Plugins
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-        private async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
+        internal async Task<JObject> ProcessRequestAsync(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
-            JToken @params = request["params"] ?? new JArray();
+            var @params = request["params"] ?? new JArray();
             if (!request.ContainsProperty("method") || @params is not JArray)
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidRequest);
             }
-            JObject response = CreateResponse(request["id"]);
+
+            var jsonParameters = (JArray)@params;
+            var response = CreateResponse(request["id"]);
             try
             {
-                string method = request["method"].AsString();
+                var method = request["method"].AsString();
                 (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
-                methods.TryGetValue(method, out var func).True_Or(RpcErrorFactory.MethodNotFound(method));
-                response["result"] = func((JArray)@params) switch
+
+                if (methods.TryGetValue(method, out var func))
                 {
-                    JToken result => result,
-                    Task<JToken> task => await task,
-                    _ => throw new NotSupportedException()
-                };
-                return response;
+                    response["result"] = func(jsonParameters) switch
+                    {
+                        JToken result => result,
+                        Task<JToken> task => await task,
+                        _ => throw new NotSupportedException()
+                    };
+                    return response;
+                }
+
+                if (_methodsWithParams.TryGetValue(method, out var func2))
+                {
+                    var paramInfos = func2.Method.GetParameters();
+                    var args = new object[paramInfos.Length];
+
+                    for (var i = 0; i < paramInfos.Length; i++)
+                    {
+                        var param = paramInfos[i];
+                        if (jsonParameters.Count > i && jsonParameters[i] != null)
+                        {
+                            try
+                            {
+                                if (param.ParameterType == typeof(UInt160))
+                                {
+                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i],
+                                        system.Settings.AddressVersion);
+                                }
+                                else
+                                {
+                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i],
+                                        param.ParameterType);
+                                }
+                            }
+                            catch (Exception e) when (e is not RpcException)
+                            {
+                                throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
+                            }
+                        }
+                        else
+                        {
+                            if (param.IsOptional)
+                            {
+                                args[i] = param.DefaultValue;
+                            }
+                            else if (param.ParameterType.IsValueType &&
+                                     Nullable.GetUnderlyingType(param.ParameterType) == null)
+                            {
+                                throw new ArgumentException($"Required parameter '{param.Name}' is missing");
+                            }
+                            else
+                            {
+                                args[i] = null;
+                            }
+                        }
+                    }
+
+                    response["result"] = func2.DynamicInvoke(args) switch
+                    {
+                        JToken result => result,
+                        Task<JToken> task => await task,
+                        _ => throw new NotSupportedException()
+                    };
+                    return response;
+                }
+
+                throw new RpcException(RpcError.MethodNotFound.WithData(method));
             }
             catch (FormatException ex)
             {
@@ -288,24 +365,52 @@ namespace Neo.Plugins
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RpcException)
             {
 #if DEBUG
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
+                return CreateErrorResponse(request["id"],
+                    RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
 #else
-                return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
+        return CreateErrorResponse(request["id"], RpcErrorFactory.NewCustomError(ex.HResult, ex.Message));
 #endif
+            }
+            catch (RpcException ex)
+            {
+
+#if DEBUG
+                return CreateErrorResponse(request["id"],
+                    RpcErrorFactory.NewCustomError(ex.HResult, ex.Message, ex.StackTrace));
+#else
+                return CreateErrorResponse(request["id"], ex.GetError());
+#endif
+
             }
         }
 
         public void RegisterMethods(object handler)
         {
-            foreach (MethodInfo method in handler.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            foreach (var method in handler.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                RpcMethodAttribute attribute = method.GetCustomAttribute<RpcMethodAttribute>();
-                if (attribute is null) continue;
-                string name = string.IsNullOrEmpty(attribute.Name) ? method.Name.ToLowerInvariant() : attribute.Name;
-                methods[name] = method.CreateDelegate<Func<JArray, object>>(handler);
+                var attribute = method.GetCustomAttribute<RpcMethodAttribute>();
+                var attributeWithParams = method.GetCustomAttribute<RpcMethodWithParamsAttribute>();
+                if (attribute is null && attributeWithParams is null) continue;
+                if (attribute is not null && attributeWithParams is not null) throw new InvalidOperationException("Method cannot have both RpcMethodAttribute and RpcMethodWithParamsAttribute");
+
+                if (attribute is not null)
+                {
+                    var name = string.IsNullOrEmpty(attribute.Name) ? method.Name.ToLowerInvariant() : attribute.Name;
+                    methods[name] = method.CreateDelegate<Func<JArray, object>>(handler);
+                }
+
+                if (attributeWithParams is not null)
+                {
+                    var name = string.IsNullOrEmpty(attributeWithParams.Name) ? method.Name.ToLowerInvariant() : attributeWithParams.Name;
+
+                    var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
+                    var delegateType = Expression.GetDelegateType(parameters.Concat([method.ReturnType]).ToArray());
+
+                    _methodsWithParams[name] = Delegate.CreateDelegate(delegateType, handler, method);
+                }
             }
         }
     }

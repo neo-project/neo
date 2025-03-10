@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Peer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,7 @@
 
 using Akka.Actor;
 using Akka.IO;
-using Neo.IO;
+using Neo.Extensions;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -57,6 +57,11 @@ namespace Neo.Network.P2P
         }
 
         private class Timer { }
+
+        /// <summary>
+        /// The default value for enable compression.
+        /// </summary>
+        public const bool DefaultEnableCompression = true;
 
         /// <summary>
         /// The default minimum number of desired connections.
@@ -113,6 +118,11 @@ namespace Neo.Network.P2P
         public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
 
         /// <summary>
+        /// Indicates if the compression is enabled.
+        /// </summary>
+        public bool EnableCompression { get; private set; } = DefaultEnableCompression;
+
+        /// <summary>
         /// Indicates the maximum number of connections.
         /// </summary>
         public int MaxConnections { get; private set; } = DefaultMaxConnections;
@@ -138,14 +148,14 @@ namespace Neo.Network.P2P
 
         static Peer()
         {
-            localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.Unmap()));
+            localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.UnMap()));
         }
 
         /// <summary>
         /// Tries to add a set of peers to the immutable ImmutableHashSet of UnconnectedPeers.
         /// </summary>
         /// <param name="peers">Peers that the method will try to add (union) to (with) UnconnectedPeers.</param>
-        protected void AddPeers(IEnumerable<IPEndPoint> peers)
+        protected internal void AddPeers(IEnumerable<IPEndPoint> peers)
         {
             if (UnconnectedPeers.Count < UnconnectedMax)
             {
@@ -163,7 +173,7 @@ namespace Neo.Network.P2P
         /// <param name="isTrusted">Indicates whether the remote node is trusted. A trusted node will always be connected.</param>
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
-            endPoint = endPoint.Unmap();
+            endPoint = endPoint.UnMap();
             // If the address is the same, the ListenerTcpPort should be different, otherwise, return
             if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
 
@@ -210,7 +220,7 @@ namespace Neo.Network.P2P
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
                 case Tcp.Connected connected:
-                    OnTcpConnected(((IPEndPoint)connected.RemoteAddress).Unmap(), ((IPEndPoint)connected.LocalAddress).Unmap());
+                    OnTcpConnected(((IPEndPoint)connected.RemoteAddress).UnMap(), ((IPEndPoint)connected.LocalAddress).UnMap());
                     break;
                 case Tcp.Bound _:
                     tcp_listener = Sender;
@@ -227,7 +237,7 @@ namespace Neo.Network.P2P
         private void OnStart(ChannelsConfig config)
         {
             ListenerTcpPort = config.Tcp?.Port ?? 0;
-
+            EnableCompression = config.EnableCompression;
             MinDesiredConnections = config.MinDesiredConnections;
             MaxConnections = config.MaxConnections;
             MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;
@@ -302,7 +312,7 @@ namespace Neo.Network.P2P
             switch (cmd)
             {
                 case Tcp.Connect connect:
-                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).Unmap()));
+                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).UnMap()));
                     break;
             }
         }
@@ -325,7 +335,7 @@ namespace Neo.Network.P2P
             // Check if the number of desired connections is already enough
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
 
-            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers 
+            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
 

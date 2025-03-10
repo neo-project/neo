@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StoreTest.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,8 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System.IO;
 using System.Linq;
 
@@ -19,141 +22,298 @@ namespace Neo.Plugins.Storage.Tests
     [TestClass]
     public class StoreTest
     {
-        private const string path_leveldb = "Data_LevelDB_UT";
-        private const string path_rocksdb = "Data_RocksDB_UT";
+        private const string Path_leveldb = "Data_LevelDB_UT";
+        private const string Path_rocksdb = "Data_RocksDB_UT";
+        private static LevelDBStore s_levelDbStore;
+        private static RocksDBStore s_rocksDBStore;
 
-        [TestInitialize]
-        public void OnStart()
+        [AssemblyInitialize]
+        public static void OnStart(TestContext testContext)
         {
-            if (Directory.Exists(path_leveldb)) Directory.Delete(path_leveldb, true);
-            if (Directory.Exists(path_rocksdb)) Directory.Delete(path_rocksdb, true);
+            OnEnd();
+            s_levelDbStore = new LevelDBStore();
+            s_rocksDBStore = new RocksDBStore();
         }
+
+        [AssemblyCleanup]
+        public static void OnEnd()
+        {
+            s_levelDbStore?.Dispose();
+            s_rocksDBStore?.Dispose();
+
+            if (Directory.Exists(Path_leveldb)) Directory.Delete(Path_leveldb, true);
+            if (Directory.Exists(Path_rocksdb)) Directory.Delete(Path_rocksdb, true);
+        }
+
+        #region Tests
 
         [TestMethod]
         public void TestMemory()
         {
             using var store = new MemoryStore();
-            TestPersistenceDelete(store);
             // Test all with the same store
 
             TestStorage(store);
 
             // Test with different storages
 
-            TestPersistenceWrite(store);
-            TestPersistenceRead(store, true);
-            TestPersistenceDelete(store);
-            TestPersistenceRead(store, false);
+            TestPersistence(store);
+
+            // Test snapshot
+
+            TestSnapshot(store);
+            TestMultiSnapshot(store);
         }
 
         [TestMethod]
         public void TestLevelDb()
         {
-            using var plugin = new LevelDBStore();
-            TestPersistenceDelete(plugin.GetStore(path_leveldb));
+            using var store = s_levelDbStore.GetStore(Path_leveldb);
+
             // Test all with the same store
 
-            TestStorage(plugin.GetStore(path_leveldb));
+            TestStorage(store);
 
             // Test with different storages
 
-            TestPersistenceWrite(plugin.GetStore(path_leveldb));
-            TestPersistenceRead(plugin.GetStore(path_leveldb), true);
-            TestPersistenceDelete(plugin.GetStore(path_leveldb));
-            TestPersistenceRead(plugin.GetStore(path_leveldb), false);
+            TestPersistence(store);
+
+            // Test snapshot
+
+            TestSnapshot(store);
+            TestMultiSnapshot(store);
         }
 
         [TestMethod]
         public void TestRocksDb()
         {
-            using var plugin = new RocksDBStore();
-            TestPersistenceDelete(plugin.GetStore(path_rocksdb));
+            using var store = s_rocksDBStore.GetStore(Path_rocksdb);
+
             // Test all with the same store
 
-            TestStorage(plugin.GetStore(path_rocksdb));
+            TestStorage(store);
 
             // Test with different storages
 
-            TestPersistenceWrite(plugin.GetStore(path_rocksdb));
-            TestPersistenceRead(plugin.GetStore(path_rocksdb), true);
-            TestPersistenceDelete(plugin.GetStore(path_rocksdb));
-            TestPersistenceRead(plugin.GetStore(path_rocksdb), false);
+            TestPersistence(store);
+
+            // Test snapshot
+
+            TestSnapshot(store);
+            TestMultiSnapshot(store);
+        }
+
+        #endregion
+
+        public static void TestSnapshot(IStore store)
+        {
+            var snapshot = store.GetSnapshot();
+
+            var testKey = new byte[] { 0x01, 0x02, 0x03 };
+            var testValue = new byte[] { 0x04, 0x05, 0x06 };
+
+            snapshot.Put(testKey, testValue);
+            // Data saved to the leveldb snapshot shall not be visible to the store
+            Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(snapshot.TryGet(testKey, out var got));
+            Assert.IsNull(got);
+
+            // Value is in the write batch, not visible to the store and snapshot
+            Assert.IsFalse(snapshot.Contains(testKey));
+            Assert.IsFalse(store.Contains(testKey));
+
+            snapshot.Commit();
+
+            // After commit, the data shall be visible to the store but not to the snapshot
+            Assert.IsNull(snapshot.TryGet(testKey));
+            Assert.IsFalse(snapshot.TryGet(testKey, out got));
+            Assert.IsNull(got);
+
+            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
+            Assert.IsTrue(store.TryGet(testKey, out got));
+            CollectionAssert.AreEqual(testValue, got);
+
+            Assert.IsFalse(snapshot.Contains(testKey));
+            Assert.IsTrue(store.Contains(testKey));
+
+            snapshot.Dispose();
+        }
+
+        public static void TestMultiSnapshot(IStore store)
+        {
+            using var snapshot = store.GetSnapshot();
+
+            var testKey = new byte[] { 0x01, 0x02, 0x03 };
+            var testValue = new byte[] { 0x04, 0x05, 0x06 };
+
+            snapshot.Put(testKey, testValue);
+            snapshot.Commit();
+            CollectionAssert.AreEqual(testValue, store.TryGet(testKey));
+
+            using var snapshot2 = store.GetSnapshot();
+
+            // Data saved to the leveldb from snapshot1 shall only be visible to snapshot2
+            Assert.IsTrue(snapshot2.TryGet(testKey, out var ret));
+            CollectionAssert.AreEqual(testValue, ret);
         }
 
         /// <summary>
         /// Test Put/Delete/TryGet/Seek
         /// </summary>
         /// <param name="store">Store</param>
-        private void TestStorage(IStore store)
+        private static void TestStorage(IStore store)
         {
-            using (store)
+            var key1 = new byte[] { 0x01, 0x02 };
+            var value1 = new byte[] { 0x03, 0x04 };
+
+            store.Delete(key1);
+            var ret = store.TryGet(key1);
+            Assert.IsNull(ret);
+
+            store.Put(key1, value1);
+            ret = store.TryGet(key1);
+            CollectionAssert.AreEqual(value1, ret);
+            Assert.IsTrue(store.Contains(key1));
+
+            ret = store.TryGet(value1);
+            Assert.IsNull(ret);
+            Assert.IsTrue(store.Contains(key1));
+
+            store.Delete(key1);
+
+            ret = store.TryGet(key1);
+            Assert.IsNull(ret);
+            Assert.IsFalse(store.Contains(key1));
+
+            // Test seek in order
+
+            store.Put([0x00, 0x00, 0x04], [0x04]);
+            store.Put([0x00, 0x00, 0x00], [0x00]);
+            store.Put([0x00, 0x00, 0x01], [0x01]);
+            store.Put([0x00, 0x00, 0x02], [0x02]);
+            store.Put([0x00, 0x00, 0x03], [0x03]);
+
+            // Seek Forward
+
+            var entries = store.Seek([0x00, 0x00, 0x02], SeekDirection.Forward).ToArray();
+            Assert.AreEqual(3, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x02 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x02 }, entries[0].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x03 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x03 }, entries[1].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x04 }, entries[2].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x04 }, entries[2].Value);
+
+            // Seek Backward
+
+            entries = store.Seek([0x00, 0x00, 0x02], SeekDirection.Backward).ToArray();
+            Assert.AreEqual(3, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x02 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x02 }, entries[0].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[1].Value);
+
+            // Seek Backward
+            store.Delete([0x00, 0x00, 0x00]);
+            store.Delete([0x00, 0x00, 0x01]);
+            store.Delete([0x00, 0x00, 0x02]);
+            store.Delete([0x00, 0x00, 0x03]);
+            store.Delete([0x00, 0x00, 0x04]);
+            store.Put([0x00, 0x00, 0x00], [0x00]);
+            store.Put([0x00, 0x00, 0x01], [0x01]);
+            store.Put([0x00, 0x01, 0x02], [0x02]);
+
+            entries = store.Seek([0x00, 0x00, 0x03], SeekDirection.Backward).ToArray();
+            Assert.AreEqual(2, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[1].Value);
+
+            // Seek null
+            entries = store.Seek(null, SeekDirection.Forward).ToArray();
+            Assert.AreEqual(3, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[2].Key);
+
+            // Seek empty
+            entries = store.Seek([], SeekDirection.Forward).ToArray();
+            Assert.AreEqual(3, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[2].Key);
+
+            // Test keys with different lengths
+            var searchKey = new byte[] { 0x00, 0x01 };
+            entries = store.Seek(searchKey, SeekDirection.Backward).ToArray();
+            Assert.AreEqual(2, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
+
+            searchKey = [0x00, 0x01, 0xff, 0xff, 0xff];
+            entries = store.Seek(searchKey, SeekDirection.Backward).ToArray();
+            Assert.AreEqual(3, entries.Length);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[0].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
+            CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[2].Key);
+
+            // Test Snapshot
+            // Note: These tests were added because of `MemorySnapshot`
+            using (var snapshot = store.GetSnapshot())
             {
-                var key1 = new byte[] { 0x01, 0x02 };
-                var value1 = new byte[] { 0x03, 0x04 };
+                // Seek null
+                entries = snapshot.Seek(null, SeekDirection.Backward).ToArray();
+                Assert.AreEqual(0, entries.Length);
 
-                store.Delete(key1);
-                var ret = store.TryGet(key1);
-                Assert.IsNull(ret);
-
-                store.Put(key1, value1);
-                ret = store.TryGet(key1);
-                CollectionAssert.AreEqual(value1, ret);
-                Assert.IsTrue(store.Contains(key1));
-
-                ret = store.TryGet(value1);
-                Assert.IsNull(ret);
-                Assert.IsTrue(store.Contains(key1));
-
-                store.Delete(key1);
-
-                ret = store.TryGet(key1);
-                Assert.IsNull(ret);
-                Assert.IsFalse(store.Contains(key1));
-
-                // Test seek in order
-
-                store.Put(new byte[] { 0x00, 0x00, 0x04 }, new byte[] { 0x04 });
-                store.Put(new byte[] { 0x00, 0x00, 0x00 }, new byte[] { 0x00 });
-                store.Put(new byte[] { 0x00, 0x00, 0x01 }, new byte[] { 0x01 });
-                store.Put(new byte[] { 0x00, 0x00, 0x02 }, new byte[] { 0x02 });
-                store.Put(new byte[] { 0x00, 0x00, 0x03 }, new byte[] { 0x03 });
-
-                // Seek Forward
-
-                var entries = store.Seek(new byte[] { 0x00, 0x00, 0x02 }, SeekDirection.Forward).ToArray();
-                Assert.AreEqual(3, entries.Length);
-                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x02 }, entries[0].Key);
-                CollectionAssert.AreEqual(new byte[] { 0x02 }, entries[0].Value);
-                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x03 }, entries[1].Key);
-                CollectionAssert.AreEqual(new byte[] { 0x03 }, entries[1].Value);
-                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x04 }, entries[2].Key);
-                CollectionAssert.AreEqual(new byte[] { 0x04 }, entries[2].Value);
+                // Seek empty
+                entries = snapshot.Seek([], SeekDirection.Backward).ToArray();
+                Assert.AreEqual(0, entries.Length);
 
                 // Seek Backward
 
-                entries = store.Seek(new byte[] { 0x00, 0x00, 0x02 }, SeekDirection.Backward).ToArray();
-                Assert.AreEqual(3, entries.Length);
-                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x02 }, entries[0].Key);
-                CollectionAssert.AreEqual(new byte[] { 0x02 }, entries[0].Value);
-                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
-                CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[1].Value);
-
-                // Seek Backward
-                store.Delete(new byte[] { 0x00, 0x00, 0x00 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x01 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x02 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x03 });
-                store.Delete(new byte[] { 0x00, 0x00, 0x04 });
-                store.Put(new byte[] { 0x00, 0x00, 0x00 }, new byte[] { 0x00 });
-                store.Put(new byte[] { 0x00, 0x00, 0x01 }, new byte[] { 0x01 });
-                store.Put(new byte[] { 0x00, 0x01, 0x02 }, new byte[] { 0x02 });
-
-                entries = store.Seek(new byte[] { 0x00, 0x00, 0x03 }, SeekDirection.Backward).ToArray();
+                entries = snapshot.Seek([0x00, 0x00, 0x02], SeekDirection.Backward).ToArray();
                 Assert.AreEqual(2, entries.Length);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
                 CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
                 CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[1].Value);
+
+                // Seek Backward
+                snapshot.Delete([0x00, 0x00, 0x00]);
+                snapshot.Delete([0x00, 0x00, 0x01]);
+                snapshot.Delete([0x00, 0x00, 0x02]);
+                snapshot.Delete([0x00, 0x00, 0x03]);
+                snapshot.Delete([0x00, 0x00, 0x04]);
+                snapshot.Put([0x00, 0x00, 0x00], [0x00]);
+                snapshot.Put([0x00, 0x00, 0x01], [0x01]);
+                snapshot.Put([0x00, 0x01, 0x02], [0x02]);
+
+                snapshot.Commit();
+            }
+
+            using (var snapshot = store.GetSnapshot())
+            {
+                entries = snapshot.Seek([0x00, 0x00, 0x03], SeekDirection.Backward).ToArray();
+                Assert.AreEqual(2, entries.Length);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x01 }, entries[0].Value);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00 }, entries[1].Value);
+
+                // Test keys with different lengths
+                searchKey = [0x00, 0x01];
+                entries = snapshot.Seek(searchKey, SeekDirection.Backward).ToArray();
+                Assert.AreEqual(2, entries.Length);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[0].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[1].Key);
+
+                searchKey = [0x00, 0x01, 0xff, 0xff, 0xff];
+                entries = snapshot.Seek(searchKey, SeekDirection.Backward).ToArray();
+                Assert.AreEqual(3, entries.Length);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x01, 0x02 }, entries[0].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x01 }, entries[1].Key);
+                CollectionAssert.AreEqual(new byte[] { 0x00, 0x00, 0x00 }, entries[2].Key);
             }
         }
 
@@ -161,40 +321,21 @@ namespace Neo.Plugins.Storage.Tests
         /// Test Put
         /// </summary>
         /// <param name="store">Store</param>
-        private void TestPersistenceWrite(IStore store)
+        private static void TestPersistence(IStore store)
         {
-            using (store)
-            {
-                store.Put(new byte[] { 0x01, 0x02, 0x03 }, new byte[] { 0x04, 0x05, 0x06 });
-            }
-        }
+            store.Put([0x01, 0x02, 0x03], [0x04, 0x05, 0x06]);
 
-        /// <summary>
-        /// Test Put
-        /// </summary>
-        /// <param name="store">Store</param>
-        private void TestPersistenceDelete(IStore store)
-        {
-            using (store)
-            {
-                store.Delete(new byte[] { 0x01, 0x02, 0x03 });
-            }
-        }
+            var ret = store.TryGet([0x01, 0x02, 0x03], out var retvalue);
+            Assert.IsTrue(ret);
+            CollectionAssert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, retvalue);
 
-        /// <summary>
-        /// Test Read
-        /// </summary>
-        /// <param name="store">Store</param>
-        /// <param name="shouldExist">Should exist</param>
-        private void TestPersistenceRead(IStore store, bool shouldExist)
-        {
-            using (store)
-            {
-                var ret = store.TryGet(new byte[] { 0x01, 0x02, 0x03 });
+            store.Delete([0x01, 0x02, 0x03]);
 
-                if (shouldExist) CollectionAssert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, ret);
-                else Assert.IsNull(ret);
-            }
+            ret = store.TryGet([0x01, 0x02, 0x03], out retvalue);
+            Assert.IsFalse(ret);
+            Assert.IsNull(retvalue);
         }
     }
 }
+
+#pragma warning restore CS0618 // Type or member is obsolete

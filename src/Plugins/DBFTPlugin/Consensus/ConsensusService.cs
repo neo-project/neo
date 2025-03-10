@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,17 +10,19 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Wallets;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
+using Neo.Sign;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Neo.Ledger.Blockchain;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusService : UntypedActor
     {
@@ -54,8 +56,8 @@ namespace Neo.Consensus
         private readonly Settings dbftSettings;
         private readonly NeoSystem neoSystem;
 
-        public ConsensusService(NeoSystem neoSystem, Settings settings, Wallet wallet)
-            : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, wallet)) { }
+        public ConsensusService(NeoSystem neoSystem, Settings settings, ISigner signer)
+            : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, signer)) { }
 
         internal ConsensusService(NeoSystem neoSystem, Settings settings, ConsensusContext context)
         {
@@ -65,8 +67,8 @@ namespace Neo.Consensus
             blockchain = neoSystem.Blockchain;
             dbftSettings = settings;
             this.context = context;
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
+            Context.System.EventStream.Subscribe(Self, typeof(PersistCompleted));
+            Context.System.EventStream.Subscribe(Self, typeof(RelayResult));
         }
 
         private void OnPersistCompleted(Block block)
@@ -127,10 +129,10 @@ namespace Neo.Consensus
                     case Transaction transaction:
                         OnTransaction(transaction);
                         break;
-                    case Blockchain.PersistCompleted completed:
+                    case PersistCompleted completed:
                         OnPersistCompleted(completed.Block);
                         break;
-                    case Blockchain.RelayResult rr:
+                    case RelayResult rr:
                         if (rr.Result == VerifyResult.Succeed && rr.Inventory is ExtensiblePayload payload && payload.Category == "dBFT")
                             OnConsensusPayload(payload);
                         break;
@@ -146,7 +148,7 @@ namespace Neo.Consensus
             {
                 if (context.Transactions != null)
                 {
-                    blockchain.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
+                    blockchain.Ask<FillCompleted>(new FillMemoryPool
                     {
                         Transactions = context.Transactions.Values
                     }).Wait();
@@ -239,7 +241,7 @@ namespace Neo.Consensus
 
         private bool ReverifyAndProcessPayload(ExtensiblePayload payload)
         {
-            RelayResult relayResult = blockchain.Ask<RelayResult>(new Blockchain.Reverify { Inventories = new IInventory[] { payload } }).Result;
+            RelayResult relayResult = blockchain.Ask<RelayResult>(new Reverify { Inventories = new IInventory[] { payload } }).Result;
             if (relayResult.Result != VerifyResult.Succeed) return false;
             OnConsensusPayload(payload);
             return true;
@@ -317,7 +319,8 @@ namespace Neo.Consensus
         // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.MillisecondsPerBlock`
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
-            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * neoSystem.Settings.MillisecondsPerBlock / (double)context.M);
+            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started)
+                + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * neoSystem.Settings.MillisecondsPerBlock / (double)context.M);
             if (!context.WatchOnly && !context.ViewChanging && !context.CommitSent && (nextDelay > TimeSpan.Zero))
                 ChangeTimer(nextDelay);
         }
@@ -331,9 +334,9 @@ namespace Neo.Consensus
             base.PostStop();
         }
 
-        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, Wallet wallet)
+        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, ISigner signer)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, wallet));
+            return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, signer));
         }
 
         private static void Log(string message, LogLevel level = LogLevel.Info)

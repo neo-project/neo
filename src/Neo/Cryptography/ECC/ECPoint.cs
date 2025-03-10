@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ECPoint.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,19 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Caching;
 using System;
 using System.IO;
 using System.Numerics;
-using static Neo.Helper;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography.ECC
 {
     /// <summary>
     /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
     /// </summary>
-    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable
+    public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable, ISerializableSpan
     {
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
@@ -37,8 +38,8 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        private static IO.Caching.ECPointCache pointCacheK1 { get; } = new(1000);
-        private static IO.Caching.ECPointCache pointCacheR1 { get; } = new(1000);
+        private static ECPointCache pointCacheK1 { get; } = new(1000);
+        private static ECPointCache pointCacheR1 { get; } = new(1000);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ECPoint"/> class with the secp256r1 curve.
@@ -187,10 +188,10 @@ namespace Neo.Cryptography.ECC
             {
                 if (_uncompressedPoint != null) return _uncompressedPoint;
                 data = new byte[65];
-                byte[] yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+                var yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
             }
-            byte[] xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
             if (commpressed) _compressedPoint = data;
@@ -224,8 +225,8 @@ namespace Neo.Cryptography.ECC
             return bytes.Length switch
             {
                 33 or 65 => DecodePoint(bytes, curve),
-                64 or 72 => DecodePoint(Concat(new byte[] { 0x04 }, bytes[^64..]), curve),
-                96 or 104 => DecodePoint(Concat(new byte[] { 0x04 }, bytes[^96..^32]), curve),
+                64 or 72 => DecodePoint([.. new byte[] { 0x04 }, .. bytes[^64..]], curve),
+                96 or 104 => DecodePoint([.. new byte[] { 0x04 }, .. bytes[^96..^32]], curve),
                 _ => throw new FormatException(),
             };
         }
@@ -348,6 +349,16 @@ namespace Neo.Cryptography.ECC
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(EncodePoint(true));
+        }
+
+        /// <summary>
+        /// Gets a ReadOnlySpan that represents the current value.
+        /// </summary>
+        /// <returns>A ReadOnlySpan that represents the current value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetSpan()
+        {
+            return EncodePoint(true).AsSpan();
         }
 
         public override string ToString()

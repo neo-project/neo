@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NeoSystem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,11 +10,13 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -80,9 +82,9 @@ namespace Neo
         /// A readonly view of the store.
         /// </summary>
         /// <remarks>
-        /// It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
+        /// It doesn't need to be disposed because the <see cref="IStoreSnapshot"/> inside it is null.
         /// </remarks>
-        public DataCache StoreView => new SnapshotCache(store);
+        public StoreCache StoreView => new(store);
 
         /// <summary>
         /// The memory pool of the <see cref="NeoSystem"/>.
@@ -220,7 +222,7 @@ namespace Neo
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
-            inbox.Receive(TimeSpan.FromMinutes(5));
+            inbox.Receive(TimeSpan.FromSeconds(30));
         }
 
         /// <summary>
@@ -275,10 +277,22 @@ namespace Neo
         /// <summary>
         /// Gets a snapshot of the blockchain storage.
         /// </summary>
-        /// <returns></returns>
-        public SnapshotCache GetSnapshot()
+        /// <returns>An instance of <see cref="StoreCache"/></returns>
+        [Obsolete("This method is obsolete, use GetSnapshotCache instead.")]
+        public StoreCache GetSnapshot()
         {
-            return new SnapshotCache(store.GetSnapshot());
+            return new StoreCache(store.GetSnapshot());
+        }
+
+        /// <summary>
+        /// Gets a snapshot of the blockchain storage with an execution cache.
+        /// With the snapshot, we have the latest state of the blockchain, with the cache,
+        /// we can run transactions in a sandboxed environment.
+        /// </summary>
+        /// <returns>An instance of <see cref="StoreCache"/></returns>
+        public StoreCache GetSnapshotCache()
+        {
+            return new StoreCache(store.GetSnapshot());
         }
 
         /// <summary>

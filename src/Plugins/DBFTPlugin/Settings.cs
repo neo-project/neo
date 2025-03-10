@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Settings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,9 +11,9 @@
 
 using Microsoft.Extensions.Configuration;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin
 {
-    public class Settings
+    public class Settings : PluginSettings
     {
         public string RecoveryLogs { get; }
         public bool IgnoreRecoveryLogs { get; }
@@ -22,7 +22,7 @@ namespace Neo.Consensus
         public uint MaxBlockSize { get; }
         public long MaxBlockSystemFee { get; }
 
-        public Settings(IConfigurationSection section)
+        public Settings(IConfigurationSection section) : base(section)
         {
             RecoveryLogs = section.GetValue("RecoveryLogs", "ConsensusState");
             IgnoreRecoveryLogs = section.GetValue("IgnoreRecoveryLogs", false);

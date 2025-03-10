@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // PriorityMessageQueue.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,6 +8,8 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+#nullable enable
 
 using Akka.Actor;
 using Akka.Dispatch;
@@ -20,22 +22,17 @@ using System.Threading;
 
 namespace Neo.IO.Actors
 {
-    internal class PriorityMessageQueue : IMessageQueue, IUnboundedMessageQueueSemantics
+    internal class PriorityMessageQueue
+        (Func<object, IEnumerable, bool> dropper, Func<object, bool> priority_generator) : IMessageQueue, IUnboundedMessageQueueSemantics
     {
-        private readonly ConcurrentQueue<Envelope> high = new();
-        private readonly ConcurrentQueue<Envelope> low = new();
-        private readonly Func<object, IEnumerable, bool> dropper;
-        private readonly Func<object, bool> priority_generator;
-        private int idle = 1;
+        private readonly ConcurrentQueue<Envelope> _high = new();
+        private readonly ConcurrentQueue<Envelope> _low = new();
+        private readonly Func<object, IEnumerable, bool> _dropper = dropper;
+        private readonly Func<object, bool> _priority_generator = priority_generator;
+        private int _idle = 1;
 
-        public bool HasMessages => !high.IsEmpty || !low.IsEmpty;
-        public int Count => high.Count + low.Count;
-
-        public PriorityMessageQueue(Func<object, IEnumerable, bool> dropper, Func<object, bool> priority_generator)
-        {
-            this.dropper = dropper;
-            this.priority_generator = priority_generator;
-        }
+        public bool HasMessages => !_high.IsEmpty || !_low.IsEmpty;
+        public int Count => _high.Count + _low.Count;
 
         public void CleanUp(IActorRef owner, IMessageQueue deadletters)
         {
@@ -43,19 +40,19 @@ namespace Neo.IO.Actors
 
         public void Enqueue(IActorRef receiver, Envelope envelope)
         {
-            Interlocked.Increment(ref idle);
+            Interlocked.Increment(ref _idle);
             if (envelope.Message is Idle) return;
-            if (dropper(envelope.Message, high.Concat(low).Select(p => p.Message)))
+            if (_dropper(envelope.Message, _high.Concat(_low).Select(p => p.Message)))
                 return;
-            ConcurrentQueue<Envelope> queue = priority_generator(envelope.Message) ? high : low;
+            var queue = _priority_generator(envelope.Message) ? _high : _low;
             queue.Enqueue(envelope);
         }
 
         public bool TryDequeue(out Envelope envelope)
         {
-            if (high.TryDequeue(out envelope)) return true;
-            if (low.TryDequeue(out envelope)) return true;
-            if (Interlocked.Exchange(ref idle, 0) > 0)
+            if (_high.TryDequeue(out envelope)) return true;
+            if (_low.TryDequeue(out envelope)) return true;
+            if (Interlocked.Exchange(ref _idle, 0) > 0)
             {
                 envelope = new Envelope(Idle.Instance, ActorRefs.NoSender);
                 return true;
@@ -64,3 +61,5 @@ namespace Neo.IO.Actors
         }
     }
 }
+
+#nullable disable

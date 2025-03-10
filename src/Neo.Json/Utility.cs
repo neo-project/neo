@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,16 +11,17 @@
 
 using System.Text;
 
-namespace Neo.Json;
-
-static class Utility
+namespace Neo.Json
 {
-    public static Encoding StrictUTF8 { get; }
-
-    static Utility()
+    static class Utility
     {
-        StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
-        StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
-        StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
+        public static Encoding StrictUTF8 { get; }
+
+        static Utility()
+        {
+            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
+            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
+            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
+        }
     }
 }

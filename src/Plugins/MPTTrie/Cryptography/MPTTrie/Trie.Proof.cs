@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Trie.Proof.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
-using Neo.Persistence;
+using Neo.Extensions;
+using Neo.Persistence.Providers;
 using System;
 using System.Collections.Generic;
-using static Neo.Helper;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -86,8 +85,8 @@ namespace Neo.Cryptography.MPTTrie
         {
             using var memoryStore = new MemoryStore();
             foreach (byte[] data in proof)
-                memoryStore.Put(Key(Crypto.Hash256(data)), Concat(data, new byte[] { 1 }));
-            using ISnapshot snapshot = memoryStore.GetSnapshot();
+                memoryStore.Put(Key(Crypto.Hash256(data)), [.. data, .. new byte[] { 1 }]);
+            using var snapshot = memoryStore.GetSnapshot();
             var trie = new Trie(snapshot, root, false);
             return trie[key];
         }

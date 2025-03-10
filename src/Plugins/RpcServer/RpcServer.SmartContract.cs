@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.SmartContract.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -26,7 +26,7 @@ using System.Linq;
 using System.Threading;
 using Array = System.Array;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.RpcServer
 {
     partial class RpcServer
     {
@@ -39,7 +39,7 @@ namespace Neo.Plugins
                 timer = new(OnTimer, null, settings.SessionExpirationTime, settings.SessionExpirationTime);
         }
 
-        private void Dispose_SmartContract()
+        internal void Dispose_SmartContract()
         {
             timer?.Dispose();
             Session[] toBeDestroyed;
@@ -52,7 +52,7 @@ namespace Neo.Plugins
                 session.Dispose();
         }
 
-        private void OnTimer(object state)
+        internal void OnTimer(object state)
         {
             List<(Guid Id, Session Session)> toBeDestroyed = new();
             lock (sessions)
@@ -75,7 +75,8 @@ namespace Neo.Plugins
             {
                 json["script"] = Convert.ToBase64String(script);
                 json["state"] = session.Engine.State;
-                json["gasconsumed"] = session.Engine.GasConsumed.ToString();
+                // Gas consumed in the unit of datoshi, 1 GAS = 10^8 datoshi
+                json["gasconsumed"] = session.Engine.FeeConsumed.ToString();
                 json["exception"] = GetExceptionMessage(session.Engine.FaultException);
                 json["notifications"] = new JArray(session.Engine.Notifications.Select(n =>
                 {
@@ -91,7 +92,7 @@ namespace Neo.Plugins
                     json["diagnostics"] = new JObject()
                     {
                         ["invokedcontracts"] = ToJson(diagnostic.InvocationTree.Root),
-                        ["storagechanges"] = ToJson(session.Engine.Snapshot.GetChangeSet())
+                        ["storagechanges"] = ToJson(session.Engine.SnapshotCache.GetChangeSet())
                     };
                 }
                 var stack = new JArray();
@@ -131,7 +132,7 @@ namespace Neo.Plugins
             return json;
         }
 
-        private static JObject ToJson(TreeNode<UInt160> node)
+        protected static JObject ToJson(TreeNode<UInt160> node)
         {
             JObject json = new();
             json["hash"] = node.Item.ToString();
@@ -142,16 +143,16 @@ namespace Neo.Plugins
             return json;
         }
 
-        private static JArray ToJson(IEnumerable<DataCache.Trackable> changes)
+        protected static JArray ToJson(IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> changes)
         {
             JArray array = new();
             foreach (var entry in changes)
             {
                 array.Add(new JObject
                 {
-                    ["state"] = entry.State.ToString(),
+                    ["state"] = entry.Value.State.ToString(),
                     ["key"] = Convert.ToBase64String(entry.Key.ToArray()),
-                    ["value"] = Convert.ToBase64String(entry.Item.Value.ToArray())
+                    ["value"] = Convert.ToBase64String(entry.Value.Item.Value.ToArray())
                 });
             }
             return array;
@@ -188,7 +189,7 @@ namespace Neo.Plugins
 
             // Validate format
 
-            _ = IO.Helper.ToByteArray(ret).AsSerializableArray<Signer>();
+            _ = ret.ToByteArray().AsSerializableArray<Signer>();
 
             return ret;
         }
@@ -212,11 +213,11 @@ namespace Neo.Plugins
         }
 
         [RpcMethod]
-        protected virtual JToken InvokeFunction(JArray _params)
+        protected internal virtual JToken InvokeFunction(JArray _params)
         {
             UInt160 script_hash = Result.Ok_Or(() => UInt160.Parse(_params[0].AsString()), RpcError.InvalidParams.WithData($"Invalid script hash {nameof(script_hash)}"));
             string operation = Result.Ok_Or(() => _params[1].AsString(), RpcError.InvalidParams);
-            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : System.Array.Empty<ContractParameter>();
+            ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray() : [];
             Signer[] signers = _params.Count >= 4 ? SignersFromJson((JArray)_params[3], system.Settings) : null;
             Witness[] witnesses = _params.Count >= 4 ? WitnessesFromJson((JArray)_params[3]) : null;
             bool useDiagnostic = _params.Count >= 5 && _params[4].GetBoolean();
@@ -230,7 +231,7 @@ namespace Neo.Plugins
         }
 
         [RpcMethod]
-        protected virtual JToken InvokeScript(JArray _params)
+        protected internal virtual JToken InvokeScript(JArray _params)
         {
             byte[] script = Result.Ok_Or(() => Convert.FromBase64String(_params[0].AsString()), RpcError.InvalidParams);
             Signer[] signers = _params.Count >= 2 ? SignersFromJson((JArray)_params[1], system.Settings) : null;
@@ -240,7 +241,7 @@ namespace Neo.Plugins
         }
 
         [RpcMethod]
-        protected virtual JToken TraverseIterator(JArray _params)
+        protected internal virtual JToken TraverseIterator(JArray _params)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
             Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData($"Invalid session id {nameof(sid)}"));
@@ -261,7 +262,7 @@ namespace Neo.Plugins
         }
 
         [RpcMethod]
-        protected virtual JToken TerminateSession(JArray _params)
+        protected internal virtual JToken TerminateSession(JArray _params)
         {
             settings.SessionEnabled.True_Or(RpcError.SessionsDisabled);
             Guid sid = Result.Ok_Or(() => Guid.Parse(_params[0].GetString()), RpcError.InvalidParams.WithData("Invalid session id"));
@@ -277,7 +278,7 @@ namespace Neo.Plugins
         }
 
         [RpcMethod]
-        protected virtual JToken GetUnclaimedGas(JArray _params)
+        protected internal virtual JToken GetUnclaimedGas(JArray _params)
         {
             string address = Result.Ok_Or(() => _params[0].AsString(), RpcError.InvalidParams.WithData($"Invalid address {nameof(address)}"));
             JObject json = new();

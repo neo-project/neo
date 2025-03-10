@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // OracleNeoFSProtocol.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
 using Neo.FileStorage.API.Client;
 using Neo.FileStorage.API.Cryptography;
 using Neo.FileStorage.API.Refs;
@@ -18,17 +17,19 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 using Object = Neo.FileStorage.API.Object.Object;
 using Range = Neo.FileStorage.API.Object.Range;
 
-namespace Neo.Plugins
+namespace Neo.Plugins.OracleService
 {
     class OracleNeoFSProtocol : IOracleProtocol
     {
-        private readonly System.Security.Cryptography.ECDsa privateKey;
+        private readonly ECDsa privateKey;
 
         public OracleNeoFSProtocol(Wallet wallet, ECPoint[] oracles)
         {

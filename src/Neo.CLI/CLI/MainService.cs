@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,8 +11,7 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
-using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -33,10 +32,13 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Array = System.Array;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.CLI
 {
@@ -107,7 +109,7 @@ namespace Neo.CLI
 
             if (input.IndexOf('.') > 0 && input.LastIndexOf('.') < input.Length)
             {
-                return ResolveNeoNameServiceAddress(input);
+                return ResolveNeoNameServiceAddress(input) ?? UInt160.Zero;
             }
 
             // Try to parse as UInt160
@@ -131,10 +133,10 @@ namespace Neo.CLI
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
 
-            var cliV = Assembly.GetAssembly(typeof(Program))!.GetVersion();
-            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetVersion();
-            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetVersion();
-            Console.WriteLine($"{ServiceName} v{cliV}  -  NEO v{neoV}  -  NEO-VM v{vmV}");
+            var cliV = Assembly.GetAssembly(typeof(Program))!.GetName().Version;
+            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetName().Version;
+            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetName().Version;
+            Console.WriteLine($"{ServiceName} v{cliV?.ToString(3)}  -  NEO v{neoV?.ToString(3)}  -  NEO-VM v{vmV?.ToString(3)}");
             Console.WriteLine();
 
             base.RunConsole();
@@ -372,10 +374,54 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
+            Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
-            NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            try
+            {
+                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
+                    string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            }
+            catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    if (File.Exists("libleveldb.dll"))
+                    {
+                        DisplayError("Dependency DLL not found, please install Microsoft Visual C++ Redistributable.",
+                            "See https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist");
+                    }
+                    else
+                    {
+                        DisplayError("DLL not found, please get libleveldb.dll.",
+                            "Download from https://github.com/neo-ngd/leveldb/releases");
+                    }
+                }
+                else if (OperatingSystem.IsLinux())
+                {
+                    DisplayError("Shared library libleveldb.so not found, please get libleveldb.so.",
+                        "Use command \"sudo apt-get install libleveldb-dev\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
+                }
+                else if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
+                {
+                    DisplayError("Shared library libleveldb.dylib not found, please get libleveldb.dylib.",
+                        "Use command \"brew install leveldb\" in terminal or download from https://github.com/neo-ngd/leveldb/releases");
+                }
+                else
+                {
+                    DisplayError("Neo CLI is broken, please reinstall it.",
+                        "Download from https://github.com/neo-project/neo/releases");
+                }
+                return;
+            }
+            catch (DllNotFoundException)
+            {
+                DisplayError("Neo CLI is broken, please reinstall it.",
+                    "Download from https://github.com/neo-project/neo/releases");
+                return;
+            }
+
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
@@ -439,7 +485,7 @@ namespace Neo.CLI
                 {
                     ConsoleHelper.Warning($"wallet file \"{Settings.Default.UnlockWallet.Path}\" not found.");
                 }
-                catch (System.Security.Cryptography.CryptographicException)
+                catch (CryptographicException)
                 {
                     ConsoleHelper.Error($"Failed to open file \"{Settings.Default.UnlockWallet.Path}\"");
                 }
@@ -447,6 +493,17 @@ namespace Neo.CLI
                 {
                     ConsoleHelper.Error(ex.GetBaseException().Message);
                 }
+            }
+
+            return;
+
+            void DisplayError(string primaryMessage, string? secondaryMessage = null)
+            {
+                ConsoleHelper.Error(primaryMessage + Environment.NewLine +
+                                    (secondaryMessage != null ? secondaryMessage + Environment.NewLine : "") +
+                                    "Press any key to exit.");
+                Console.ReadKey();
+                Environment.Exit(-1);
             }
         }
 
@@ -466,13 +523,13 @@ namespace Neo.CLI
                 if (writeStart)
                 {
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start += BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
                 }
                 else
                 {
-                    fs.Read(buffer, 0, buffer.Length);
+                    fs.ReadExactly(buffer);
                     start = BitConverter.ToUInt32(buffer, 0);
                     fs.Seek(0, SeekOrigin.Begin);
                 }
@@ -515,8 +572,8 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="script">script</param>
         /// <param name="account">sender</param>
-        /// <param name="gas">Max fee for running the script</param>
-        private void SendTransaction(byte[] script, UInt160? account = null, long gas = TestModeGas)
+        /// <param name="datoshi">Max fee for running the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        private void SendTransaction(byte[] script, UInt160? account = null, long datoshi = TestModeGas)
         {
             if (NoWallet()) return;
 
@@ -533,10 +590,10 @@ namespace Neo.CLI
 
             try
             {
-                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
+                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: datoshi);
                 ConsoleHelper.Info("Invoking script with: ", $"'{Convert.ToBase64String(tx.Script.Span)}'");
 
-                using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: gas))
+                using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: datoshi))
                 {
                     PrintExecutionOutput(engine, true);
                     if (engine.State == VMState.FAULT) return;
@@ -564,9 +621,9 @@ namespace Neo.CLI
         /// <param name="verifiable">Transaction</param>
         /// <param name="contractParameters">Contract parameters</param>
         /// <param name="showStack">Show result stack if it is true</param>
-        /// <param name="gas">Max fee for running the script</param>
+        /// <param name="datoshi">Max fee for running the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
         /// <returns>Return true if it was successful</returns>
-        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long gas = TestModeGas)
+        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long datoshi = TestModeGas)
         {
             List<ContractParameter> parameters = new();
 
@@ -612,7 +669,7 @@ namespace Neo.CLI
                 tx.Script = script;
             }
 
-            using ApplicationEngine engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: gas);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: datoshi);
             PrintExecutionOutput(engine, showStack);
             result = engine.State == VMState.FAULT ? StackItem.Null : engine.ResultStack.Peek();
             return engine.State != VMState.FAULT;
@@ -621,7 +678,7 @@ namespace Neo.CLI
         private void PrintExecutionOutput(ApplicationEngine engine, bool showStack = true)
         {
             ConsoleHelper.Info("VM State: ", engine.State.ToString());
-            ConsoleHelper.Info("Gas Consumed: ", new BigDecimal((BigInteger)engine.GasConsumed, NativeContract.GAS.Decimals).ToString());
+            ConsoleHelper.Info("Gas Consumed: ", new BigDecimal((BigInteger)engine.FeeConsumed, NativeContract.GAS.Decimals).ToString());
 
             if (showStack)
                 ConsoleHelper.Info("Result Stack: ", new JArray(engine.ResultStack.Select(p => p.ToJson())).ToString());
@@ -642,7 +699,7 @@ namespace Neo.CLI
             return exception.Message;
         }
 
-        public UInt160 ResolveNeoNameServiceAddress(string domain)
+        public UInt160? ResolveNeoNameServiceAddress(string domain)
         {
             if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
                 throw new Exception("Neo Name Service (NNS): is disabled on this network.");
@@ -662,7 +719,7 @@ namespace Neo.CLI
                         if (UInt160.TryParse(addressData, out var address))
                             return address;
                         else
-                            return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                            return addressData?.ToScriptHash(NeoSystem.Settings.AddressVersion);
                     }
                     catch { }
                 }

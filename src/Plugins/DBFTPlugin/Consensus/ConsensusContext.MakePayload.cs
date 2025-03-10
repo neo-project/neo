@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusContext.MakePayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,17 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract;
-using Neo.Wallets;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
-using static Neo.Consensus.RecoveryMessage;
+using System.Security.Cryptography;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusContext
     {
@@ -34,10 +37,15 @@ namespace Neo.Consensus
 
         public ExtensiblePayload MakeCommit()
         {
-            return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
+            if (CommitPayloads[MyIndex] is not null)
+                return CommitPayloads[MyIndex];
+
+            var signData = EnsureHeader().GetSignData(dbftSettings.Network);
+            CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = EnsureHeader().Sign(keyPair, neoSystem.Settings.Network)
-            }));
+                Signature = _signer.Sign(signData, _myPublicKey)
+            });
+            return CommitPayloads[MyIndex];
         }
 
         private ExtensiblePayload MakeSignedPayload(ConsensusMessage message)
@@ -56,7 +64,7 @@ namespace Neo.Consensus
             try
             {
                 sc = new ContractParametersContext(neoSystem.StoreView, payload, dbftSettings.Network);
-                wallet.Sign(sc);
+                _signer.Sign(sc);
             }
             catch (InvalidOperationException exception)
             {
@@ -146,14 +154,25 @@ namespace Neo.Consensus
             }
             return MakeSignedPayload(new RecoveryMessage
             {
-                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => GetChangeViewPayloadCompact(p)).Take(M).ToDictionary(p => p.ValidatorIndex),
+                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null)
+                    .Select(p => GetChangeViewPayloadCompact(p))
+                    .Take(M)
+                    .ToDictionary(p => p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => GetPreparationPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex),
+                PreparationHash = TransactionHashes == null
+                    ? PreparationPayloads.Where(p => p != null)
+                        .GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() })
+                        .OrderByDescending(p => p.Count)
+                        .Select(p => p.Hash)
+                        .FirstOrDefault()
+                    : null,
+                PreparationMessages = PreparationPayloads.Where(p => p != null)
+                    .Select(p => GetPreparationPayloadCompact(p))
+                    .ToDictionary(p => p.ValidatorIndex),
                 CommitMessages = CommitSent
                     ? CommitPayloads.Where(p => p != null).Select(p => GetCommitPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex)
-                    : new Dictionary<byte, CommitPayloadCompact>()
+                    : new Dictionary<byte, RecoveryMessage.CommitPayloadCompact>()
             });
         }
 
@@ -165,11 +184,20 @@ namespace Neo.Consensus
             });
         }
 
+        // Related to issue https://github.com/neo-project/neo/issues/3431
+        // Ref. https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator?view=net-8.0
+        //
+        //The System.Random class relies on a seed value that can be predictable,
+        //especially if the seed is based on the system clock or other low-entropy sources.
+        //RandomNumberGenerator, however, uses sources of entropy provided by the operating
+        //system, which are designed to be unpredictable.
         private static ulong GetNonce()
         {
-            Random _random = new();
             Span<byte> buffer = stackalloc byte[8];
-            _random.NextBytes(buffer);
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(buffer);
+            }
             return BinaryPrimitives.ReadUInt64LittleEndian(buffer);
         }
     }

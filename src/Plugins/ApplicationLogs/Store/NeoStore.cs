@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NeoStore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,25 +9,22 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using ApplicationLogs.Store.Models;
-using ApplicationLogs.Store.States;
-using Neo;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins.Store.Models;
-using Neo.Plugins.Store.States;
+using Neo.Plugins.ApplicationLogs.Store.Models;
+using Neo.Plugins.ApplicationLogs.Store.States;
 using Neo.SmartContract;
 using Neo.VM.Types;
 
-namespace ApplicationLogs.Store
+namespace Neo.Plugins.ApplicationLogs.Store
 {
     public sealed class NeoStore : IDisposable
     {
         #region Globals
 
         private readonly IStore _store;
-        private ISnapshot _blocklogsnapshot;
+        private IStoreSnapshot _blocklogsnapshot;
 
         #endregion
 

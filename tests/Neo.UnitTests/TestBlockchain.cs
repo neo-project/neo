@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TestBlockchain.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.Persistence.Providers;
 using System;
 
 namespace Neo.UnitTests
@@ -41,9 +42,11 @@ namespace Neo.UnitTests
             TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        internal static DataCache GetTestSnapshot()
+        internal static StoreCache GetTestSnapshotCache(bool reset = true)
         {
-            return TheNeoSystem.GetSnapshot().CreateSnapshot();
+            if (reset)
+                ResetStore();
+            return TheNeoSystem.GetSnapshotCache();
         }
     }
 }

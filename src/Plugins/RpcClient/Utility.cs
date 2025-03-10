@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -205,6 +206,10 @@ namespace Neo.Network.RPC
                 TransactionAttributeType.Conflicts => new Conflicts()
                 {
                     Hash = UInt256.Parse(json["hash"].AsString())
+                },
+                TransactionAttributeType.NotaryAssisted => new NotaryAssisted()
+                {
+                    NKeys = (byte)json["nkeys"].AsNumber()
                 },
                 _ => throw new FormatException(),
             };

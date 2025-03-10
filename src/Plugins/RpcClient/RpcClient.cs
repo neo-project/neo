@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcClient.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,12 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -579,7 +580,7 @@ namespace Neo.Network.RPC
         public async Task<BigDecimal> GetWalletUnclaimedGasAsync()
         {
             var result = await RpcSendAsync(GetRpcName()).ConfigureAwait(false);
-            return BigDecimal.Parse(result.AsString(), SmartContract.Native.NativeContract.GAS.Decimals);
+            return BigDecimal.Parse(result.AsString(), NativeContract.GAS.Decimals);
         }
 
         /// <summary>

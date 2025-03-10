@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // StorageIterator.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,6 +13,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Iterators
 {
@@ -39,7 +40,7 @@ namespace Neo.SmartContract.Iterators
             return enumerator.MoveNext();
         }
 
-        public StackItem Value(ReferenceCounter referenceCounter)
+        public StackItem Value(IReferenceCounter referenceCounter)
         {
             ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
             ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
@@ -52,9 +53,9 @@ namespace Neo.SmartContract.Iterators
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))
-                item = ((VM.Types.Array)item)[0];
+                item = ((Array)item)[0];
             else if (options.HasFlag(FindOptions.PickField1))
-                item = ((VM.Types.Array)item)[1];
+                item = ((Array)item)[1];
 
             if (options.HasFlag(FindOptions.KeysOnly))
                 return key;

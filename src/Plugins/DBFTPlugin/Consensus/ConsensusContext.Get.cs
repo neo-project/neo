@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsensusContext.Get.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,14 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.SmartContract;
-using Neo.Wallets;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using static Neo.Consensus.RecoveryMessage;
 
-namespace Neo.Consensus
+namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusContext
     {
@@ -33,10 +33,10 @@ namespace Neo.Consensus
             return (T)GetMessage(payload);
         }
 
-        private ChangeViewPayloadCompact GetChangeViewPayloadCompact(ExtensiblePayload payload)
+        private RecoveryMessage.ChangeViewPayloadCompact GetChangeViewPayloadCompact(ExtensiblePayload payload)
         {
             ChangeView message = GetMessage<ChangeView>(payload);
-            return new ChangeViewPayloadCompact
+            return new RecoveryMessage.ChangeViewPayloadCompact
             {
                 ValidatorIndex = message.ValidatorIndex,
                 OriginalViewNumber = message.ViewNumber,
@@ -45,10 +45,10 @@ namespace Neo.Consensus
             };
         }
 
-        private CommitPayloadCompact GetCommitPayloadCompact(ExtensiblePayload payload)
+        private RecoveryMessage.CommitPayloadCompact GetCommitPayloadCompact(ExtensiblePayload payload)
         {
             Commit message = GetMessage<Commit>(payload);
-            return new CommitPayloadCompact
+            return new RecoveryMessage.CommitPayloadCompact
             {
                 ViewNumber = message.ViewNumber,
                 ValidatorIndex = message.ValidatorIndex,
@@ -57,9 +57,9 @@ namespace Neo.Consensus
             };
         }
 
-        private PreparationPayloadCompact GetPreparationPayloadCompact(ExtensiblePayload payload)
+        private RecoveryMessage.PreparationPayloadCompact GetPreparationPayloadCompact(ExtensiblePayload payload)
         {
-            return new PreparationPayloadCompact
+            return new RecoveryMessage.PreparationPayloadCompact
             {
                 ValidatorIndex = GetMessage(payload).ValidatorIndex,
                 InvocationScript = payload.Witness.InvocationScript
@@ -111,7 +111,7 @@ namespace Neo.Consensus
                 sizeof(byte) +      // PrimaryIndex
                 UInt160.Length +    // NextConsensus
                 1 + _witnessSize +  // Witness
-                IO.Helper.GetVarSize(expectedTransactions);
+                expectedTransactions.GetVarSize();
         }
     }
 }

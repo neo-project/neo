@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NotifyEventArgs.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
@@ -63,14 +63,34 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State
+                };
+        }
+
+        public StackItem ToStackItem(IReferenceCounter referenceCounter, ApplicationEngine engine)
+        {
+            if (engine.IsHardforkEnabled(Hardfork.HF_Domovoi))
             {
-                ScriptHash.ToArray(),
-                EventName,
-                State
-            };
+                return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State.OnStack ? State : State.DeepCopy(true)
+                };
+            }
+
+            return new Array(referenceCounter)
+                {
+                    ScriptHash.ToArray(),
+                    EventName,
+                    State
+                };
         }
     }
 }

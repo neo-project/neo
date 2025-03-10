@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // JArray.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -67,7 +67,7 @@ namespace Neo.Json
 
         public override string AsString()
         {
-            return string.Join(",", items.Select(p => p?.AsString()));
+            return ToString();
         }
 
         public override void Clear()

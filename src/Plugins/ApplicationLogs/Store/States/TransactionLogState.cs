@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TransactionLogState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,10 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo;
+using Neo.Extensions;
 using Neo.IO;
 
-namespace ApplicationLogs.Store.States
+namespace Neo.Plugins.ApplicationLogs.Store.States
 {
     public class TransactionLogState : ISerializable, IEquatable<TransactionLogState>
     {
