@@ -59,7 +59,7 @@ namespace Neo
 
         /// <summary>
         /// The milliseconds between two blocks in Neo.
-        /// For code that needs the accurate block generation time based on blockchain state, 
+        /// For code that needs the block generation time based on blockchain state, 
         /// use NeoSystemExtensions.GetBlockGenTime extension method instead.
         /// </summary>
         public uint MillisecondsPerBlock { get; init; }
