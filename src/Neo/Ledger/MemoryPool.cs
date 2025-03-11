@@ -240,7 +240,31 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                return _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
+                return _sortedTransactions
+                    .Reverse()
+                    .Select(p => p.Tx)
+                    .ToArray();
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Gets the sorted verified transactions in the <see cref="MemoryPool"/>.
+        /// </summary>
+        /// <returns>The sorted verified transactions.</returns>
+        public Transaction[] GetSortedVerifiedTransactions(int count)
+        {
+            _txRwLock.EnterReadLock();
+            try
+            {
+                return _sortedTransactions
+                    .Reverse()
+                    .Take(count)
+                    .Select(p => p.Tx)
+                    .ToArray();
             }
             finally
             {

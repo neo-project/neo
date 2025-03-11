@@ -180,8 +180,8 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
-                    .Concat(_unit.GetSortedVerifiedTransactions().Take(5)).ToArray()
+                Transactions = _unit.GetSortedVerifiedTransactions(10)
+                    .Concat(_unit.GetSortedVerifiedTransactions(5)).ToArray()
             };
             _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
@@ -231,7 +231,7 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = _unit.GetSortedVerifiedTransactions().Take(10).ToArray()
+                Transactions = _unit.GetSortedVerifiedTransactions(10).ToArray()
             };
 
             // Simulate the transfer process in tx by burning the balance
