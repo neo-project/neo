@@ -269,8 +269,9 @@ namespace Neo.Network.P2P
         {
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView)),
-                new ArchivalNodeCapability()
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
+                // Wait for 3.9
+                // new ArchivalNodeCapability()
             };
 
             if (!EnableCompression)
