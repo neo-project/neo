@@ -252,10 +252,12 @@ namespace Neo.Ledger
         private static PoolItem? GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
             SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem>? sortedPool)
         {
-            var minItem = unverifiedTxSorted.Min;
+            // Max is Min because it's reversed
+            var minItem = unverifiedTxSorted.Max;
             sortedPool = minItem != null ? unverifiedTxSorted : null;
 
-            var verifiedMin = verifiedTxSorted.Min;
+            // Max is Min because it's reversed
+            var verifiedMin = verifiedTxSorted.Max;
             if (verifiedMin == null) return minItem;
 
             if (minItem != null && verifiedMin.CompareTo(minItem) >= 0)
