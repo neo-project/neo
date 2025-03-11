@@ -21,14 +21,14 @@ namespace Neo.Ledger
 
         public int Compare(PoolItem? x, PoolItem? y)
         {
-            if (x == null)
+            if (y == null)
             {
-                if (y == null) return 0;
-
-                return y.CompareTo(x); // Already reversed
+                if (x == null) return 0;
+                return -1;
             }
 
-            return x.CompareTo(y) * -1;
+            // Reverse value
+            return y.CompareTo(x);
         }
     }
 }
