@@ -634,11 +634,14 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            TransactionRemoved?.Invoke(this, new()
+            if (invalidItems.Count > 0)
             {
-                Transactions = invalidItems.Select(p => p.Tx).ToArray(),
-                Reason = TransactionRemovalReason.NoLongerValid
-            });
+                TransactionRemoved?.Invoke(this, new()
+                {
+                    Transactions = invalidItems.Select(p => p.Tx).ToArray(),
+                    Reason = TransactionRemovalReason.NoLongerValid
+                });
+            }
 
             return reverifiedItems.Count;
         }
