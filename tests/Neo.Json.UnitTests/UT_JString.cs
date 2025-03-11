@@ -27,7 +27,7 @@ namespace Neo.Json.UnitTests
         private static readonly JString UnicodeString = "\ud83d\ude03\ud83d\ude01";
         private static readonly JString EmojString = "ã🦆";
         private static readonly JString MixedString = "abc123!@# ";
-        private static readonly JString LongString = new String('x', 5000); // 5000
+        private static readonly JString LongString = new string('x', 5000); // 5000
         private static readonly JString MultiLangString = "Hello 你好 مرحبا";
         private static readonly JString JsonString = "{\"key\": \"value\"}";
         private static readonly JString HtmlEntityString = "&amp; &lt; &gt;";
@@ -195,7 +195,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestLongString()
         {
-            Assert.AreEqual(new String('x', 5000), LongString.Value);
+            Assert.AreEqual(new string('x', 5000), LongString.Value);
         }
 
         [TestMethod]

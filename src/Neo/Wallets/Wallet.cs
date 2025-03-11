@@ -13,6 +13,7 @@ using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -36,7 +37,7 @@ namespace Neo.Wallets
     /// <summary>
     /// The base class of wallets.
     /// </summary>
-    public abstract class Wallet
+    public abstract class Wallet : ISigner
     {
         private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance };
 
@@ -465,7 +466,10 @@ namespace Neo.Wallets
         /// <param name="outputs">The array of <see cref="TransferOutput"/> that contain the asset, amount, and targets of the transfer.</param>
         /// <param name="from">The account to transfer from.</param>
         /// <param name="cosigners">The cosigners to be added to the transaction.</param>
-        /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
+        /// <param name="persistingBlock">
+        /// The block environment to execute the transaction.
+        /// If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.
+        /// </param>
         /// <returns>The created transaction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, Block persistingBlock = null)
         {
@@ -530,7 +534,7 @@ namespace Neo.Wallets
             if (balances_gas is null)
                 balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas, persistingBlock: persistingBlock);
+            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), [], balances_gas, persistingBlock: persistingBlock);
         }
 
         /// <summary>
@@ -541,10 +545,17 @@ namespace Neo.Wallets
         /// <param name="sender">The sender of the transaction.</param>
         /// <param name="cosigners">The cosigners to be added to the transaction.</param>
         /// <param name="attributes">The attributes to be added to the transaction.</param>
-        /// <param name="maxGas">The maximum gas that can be spent to execute the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
-        /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
+        /// <param name="maxGas">
+        /// The maximum gas that can be spent to execute the script, in the unit of datoshi, 1 datoshi = 1e-8 GAS.
+        /// </param>
+        /// <param name="persistingBlock">
+        /// The block environment to execute the transaction.
+        /// If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.
+        /// </param>
         /// <returns>The created transaction.</returns>
-        public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
+        public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script,
+            UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null,
+            long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -555,14 +566,19 @@ namespace Neo.Wallets
             {
                 accounts = new[] { sender };
             }
-            var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-            return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas, persistingBlock: persistingBlock);
+
+            var balancesGas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p)))
+                .Where(p => p.Value.Sign > 0)
+                .ToList();
+            return MakeTransaction(snapshot, script, cosigners ?? [], attributes ?? [], balancesGas, maxGas, persistingBlock: persistingBlock);
         }
 
-        private Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
+        private Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners,
+            TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balancesGas,
+            long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
             Random rand = new();
-            foreach (var (account, value) in balances_gas)
+            foreach (var (account, value) in balancesGas)
             {
                 Transaction tx = new()
                 {
@@ -575,7 +591,8 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CloneCache(), tx, settings: ProtocolSettings, gas: maxGas, persistingBlock: persistingBlock))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CloneCache(), tx,
+                    settings: ProtocolSettings, gas: maxGas, persistingBlock: persistingBlock))
                 {
                     if (engine.State == VMState.FAULT)
                     {
@@ -656,18 +673,7 @@ namespace Neo.Wallets
             return fSuccess;
         }
 
-        /// <summary>
-        /// Signs the specified data with the corresponding private key of the specified public key.
-        /// </summary>
-        /// <param name="signData">The data to sign.</param>
-        /// <param name="publicKey">The public key.</param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="signData"/> or <paramref name="publicKey"/> is <see langword="null"/>.
-        /// </exception>
-        /// <exception cref="SignException">
-        /// Thrown when no account is found for the given public key or no private key is found for the given public key.
-        /// </exception>
-        /// <returns>The signature</returns>
+        /// <inheritdoc/>
         public byte[] Sign(byte[] signData, ECPoint publicKey)
         {
             if (signData is null) throw new ArgumentNullException(nameof(signData));
@@ -687,15 +693,7 @@ namespace Neo.Wallets
             return Crypto.Sign(signData, privateKey);
         }
 
-        /// <summary>
-        /// Checks if the wallet contains an account(has private key and is not locked) with the specified public key.
-        /// If the wallet has the public key but not the private key or the account is locked, it will return false.
-        /// </summary>
-        /// <param name="publicKey">The public key.</param>
-        /// <returns>
-        /// <see langword="true"/> if the wallet contains the specified public key and the corresponding unlocked private key;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
+        /// <inheritdoc/>
         public bool ContainsSignable(ECPoint publicKey)
         {
             var account = GetAccount(publicKey);
