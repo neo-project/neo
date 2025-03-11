@@ -11,7 +11,9 @@
 
 using Akka.Actor;
 using Neo.IO;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -261,6 +263,24 @@ namespace Neo.Network.P2P
             }
             else
                 SendToRemoteNodes(message);
+        }
+
+        public NodeCapability[] GetNodeCapabilities()
+        {
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView)),
+                new ArchivalNodeCapability()
+            };
+
+            if (!EnableCompression)
+            {
+                capabilities.Add(new DisableCompressionCapability());
+            }
+
+            if (ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)ListenerTcpPort));
+
+            return [.. capabilities];
         }
 
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
