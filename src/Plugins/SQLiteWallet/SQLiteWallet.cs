@@ -112,10 +112,10 @@ namespace Neo.Wallets.SQLite
                 using var ctx = new WalletDataContext(Path);
                 if (account.HasKey)
                 {
-                    var db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                    if (db_account == null)
+                    var dbAccount = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                    if (dbAccount == null)
                     {
-                        db_account = ctx.Accounts.Add(new Account
+                        dbAccount = ctx.Accounts.Add(new Account
                         {
                             Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P),
                             PublicKeyHash = account.Key.PublicKeyHash.ToArray()
@@ -123,15 +123,15 @@ namespace Neo.Wallets.SQLite
                     }
                     else
                     {
-                        db_account.Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P);
+                        dbAccount.Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P);
                     }
                 }
                 if (account.Contract != null)
                 {
-                    var db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
-                    if (db_contract != null)
+                    var dbContract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
+                    if (dbContract != null)
                     {
-                        db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
+                        dbContract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
                     }
                     else
                     {
@@ -145,8 +145,8 @@ namespace Neo.Wallets.SQLite
                 }
                 //add address
                 {
-                    var db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
-                    if (db_address == null)
+                    var dbAddress = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
+                    if (dbAddress == null)
                     {
                         ctx.Addresses.Add(new Address
                         {
@@ -266,18 +266,18 @@ namespace Neo.Wallets.SQLite
                     using var ctx = new WalletDataContext(Path);
                     if (account.HasKey)
                     {
-                        var db_account = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                        ctx.Accounts.Remove(db_account);
+                        var dbAccount = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                        ctx.Accounts.Remove(dbAccount);
                     }
                     if (account.Contract != null)
                     {
-                        var db_contract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
-                        ctx.Contracts.Remove(db_contract);
+                        var dbContract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Contracts.Remove(dbContract);
                     }
                     //delete address
                     {
-                        var db_address = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
-                        ctx.Addresses.Remove(db_address);
+                        var dbAddress = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Addresses.Remove(dbAddress);
                     }
                     ctx.SaveChanges();
                 }
@@ -308,12 +308,12 @@ namespace Neo.Wallets.SQLite
         {
             using var ctx = new WalletDataContext(Path);
             var accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new SQLiteWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
-            foreach (var db_contract in ctx.Contracts.Include(p => p.Account))
+            foreach (var dbContract in ctx.Contracts.Include(p => p.Account))
             {
-                var contract = db_contract.RawData.AsSerializable<VerificationContract>();
+                var contract = dbContract.RawData.AsSerializable<VerificationContract>();
                 var account = accounts[contract.ScriptHash];
                 account.Contract = contract;
-                account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, _masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P));
+                account.Key = new KeyPair(GetPrivateKeyFromNEP2(dbContract.Account.Nep2key, _masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P));
             }
             return accounts;
         }
