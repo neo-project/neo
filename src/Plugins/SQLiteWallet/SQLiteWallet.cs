@@ -306,7 +306,7 @@ namespace Neo.Wallets.SQLite
 
         private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts()
         {
-            using WalletDataContext ctx = new(Path);
+            using var ctx = new WalletDataContext(Path);
             var accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new SQLiteWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
             foreach (var db_contract in ctx.Contracts.Include(p => p.Account))
             {
