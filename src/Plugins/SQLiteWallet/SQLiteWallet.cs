@@ -382,7 +382,10 @@ namespace Neo.Wallets.SQLite
 
         private static byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(data);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(iv);
+
             if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
             using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
@@ -392,7 +395,10 @@ namespace Neo.Wallets.SQLite
 
         private static byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(data);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(iv);
+
             if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
             using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
@@ -402,10 +408,9 @@ namespace Neo.Wallets.SQLite
 
         private static byte[] ToAesKey(string password)
         {
-            using var sha256 = SHA256.Create();
             var passwordBytes = Encoding.UTF8.GetBytes(password);
-            var passwordHash = sha256.ComputeHash(passwordBytes);
-            var passwordHash2 = sha256.ComputeHash(passwordHash);
+            var passwordHash = SHA256.HashData(passwordBytes);
+            var passwordHash2 = SHA256.HashData(passwordHash);
             Array.Clear(passwordBytes, 0, passwordBytes.Length);
             Array.Clear(passwordHash, 0, passwordHash.Length);
             return passwordHash2;
