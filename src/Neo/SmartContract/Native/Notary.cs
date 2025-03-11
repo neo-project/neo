@@ -171,8 +171,7 @@ namespace Neo.SmartContract.Native
             if (!engine.CheckWitnessInternal(addr)) return false;
             if (till < Ledger.CurrentIndex(engine.SnapshotCache) + 2) return false; // deposit must be valid at least until the next block after persisting block.
             Deposit deposit = GetDepositFor(engine.SnapshotCache, addr);
-            if (deposit is null) return false;
-            if (till < deposit.Till) return false;
+            if (deposit is null || till < deposit.Till) return false;
             deposit.Till = till;
 
             PutDepositFor(engine, addr, deposit);
