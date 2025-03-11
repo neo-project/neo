@@ -14,6 +14,7 @@ using Moq;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -21,6 +22,31 @@ namespace Neo.UnitTests.Ledger
     public class UT_PoolItem
     {
         private static readonly Random s_testRandom = new(1337); // use fixed seed for guaranteed determinism
+        private readonly IComparer<PoolItem> _comparer;
+        private readonly int _comparerExpected = 1;
+
+        private class Comparer : IComparer<PoolItem>
+        {
+            public int Compare(PoolItem x, PoolItem y)
+            {
+                if (x == null)
+                {
+                    if (y == null) return 0;
+
+                    return y.CompareTo(x) * -1; // reversed
+                }
+
+                return x.CompareTo(y);
+            }
+        }
+
+        public UT_PoolItem() : this(new Comparer(), 1) { }
+
+        internal UT_PoolItem(IComparer<PoolItem> comparer, int comparerExpected)
+        {
+            _comparer = comparer;
+            _comparerExpected = comparerExpected;
+        }
 
         [TestInitialize]
         public void TestSetup()
@@ -57,9 +83,9 @@ namespace Neo.UnitTests.Ledger
 
             Console.WriteLine($"item1 time {pitem1.Timestamp} item2 time {pitem2.Timestamp}");
             // pitem1 < pitem2 (fee) => -1
-            Assert.AreEqual(-1, pitem1.CompareTo(pitem2));
+            Assert.AreEqual(-1, _comparer.Compare(pitem1, pitem2) * _comparerExpected);
             // pitem2 > pitem1 (fee) => 1
-            Assert.AreEqual(1, pitem2.CompareTo(pitem1));
+            Assert.AreEqual(1, _comparer.Compare(pitem2, pitem1) * _comparerExpected);
         }
 
         [TestMethod]
@@ -77,7 +103,7 @@ namespace Neo.UnitTests.Ledger
             var pitem2 = new PoolItem(tx2);
 
             // Different priority
-            Assert.AreEqual(-1, pitem2.CompareTo(pitem1));
+            Assert.AreEqual(-1, _comparer.Compare(pitem2, pitem1) * _comparerExpected);
 
             // Bulk test
             for (var testRuns = 0; testRuns < 30; testRuns++)
@@ -88,13 +114,13 @@ namespace Neo.UnitTests.Ledger
                 pitem1 = new PoolItem(tx1);
                 pitem2 = new PoolItem(tx2);
 
-                Assert.AreEqual(1, pitem2.CompareTo((Transaction)null));
+                Assert.AreEqual(1, _comparer.Compare(pitem2, null) * _comparerExpected);
 
                 // pitem2.tx.Hash < pitem1.tx.Hash => 1 descending order
-                Assert.AreEqual(1, pitem2.CompareTo(pitem1));
+                Assert.AreEqual(1, _comparer.Compare(pitem2, pitem1) * _comparerExpected);
 
                 // pitem2.tx.Hash > pitem1.tx.Hash => -1 descending order
-                Assert.AreEqual(-1, pitem1.CompareTo(pitem2));
+                Assert.AreEqual(-1, _comparer.Compare(pitem1, pitem2) * _comparerExpected);
             }
         }
 
@@ -109,9 +135,9 @@ namespace Neo.UnitTests.Ledger
             var pitem2 = new PoolItem(tx);
 
             // pitem1 == pitem2 (fee) => 0
-            Assert.AreEqual(0, pitem1.CompareTo(pitem2));
-            Assert.AreEqual(0, pitem2.CompareTo(pitem1));
-            Assert.AreEqual(1, pitem2.CompareTo((PoolItem)null));
+            Assert.AreEqual(0, _comparer.Compare(pitem1, pitem2) * _comparerExpected);
+            Assert.AreEqual(0, _comparer.Compare(pitem2, pitem1) * _comparerExpected);
+            Assert.AreEqual(1, _comparer.Compare(pitem2, null) * _comparerExpected);
         }
 
         public static Transaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, long networkFee, int size)
