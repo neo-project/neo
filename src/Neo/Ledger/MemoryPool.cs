@@ -249,21 +249,20 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static PoolItem? GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
-            SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem>? sortedPool)
+        private PoolItem? GetLowestFeeTransaction(out SortedSet<PoolItem>? sortedPool)
         {
             // Max is Min because it's reversed
-            var minItem = unverifiedTxSorted.Max;
-            sortedPool = minItem != null ? unverifiedTxSorted : null;
+            var minItem = _unverifiedSortedTransactions.Max;
+            sortedPool = minItem != null ? _unverifiedSortedTransactions : null;
 
             // Max is Min because it's reversed
-            var verifiedMin = verifiedTxSorted.Max;
+            var verifiedMin = _sortedTransactions.Max;
             if (verifiedMin == null) return minItem;
 
             if (minItem != null && verifiedMin.CompareTo(minItem) >= 0)
                 return minItem;
 
-            sortedPool = verifiedTxSorted;
+            sortedPool = _sortedTransactions;
             minItem = verifiedMin;
 
             return minItem;
@@ -275,7 +274,7 @@ namespace Neo.Ledger
 
             try
             {
-                return GetLowestFeeTransaction(_sortedTransactions, _unverifiedSortedTransactions, out sortedPool);
+                return GetLowestFeeTransaction(out sortedPool);
             }
             finally
             {
