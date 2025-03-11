@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -44,10 +46,11 @@ namespace Neo.Ledger
             LastBroadcastTimestamp = Timestamp;
         }
 
-        public int CompareTo(Transaction otherTx)
+        public int CompareTo(Transaction? otherTx)
         {
             if (otherTx == null) return 1;
-            int ret = (Tx.GetAttribute<HighPriorityAttribute>() != null).CompareTo(otherTx.GetAttribute<HighPriorityAttribute>() != null);
+            var ret = (Tx.GetAttribute<HighPriorityAttribute>() != null)
+                .CompareTo(otherTx.GetAttribute<HighPriorityAttribute>() != null);
             if (ret != 0) return ret;
             // Fees sorted ascending
             ret = Tx.FeePerByte.CompareTo(otherTx.FeePerByte);
@@ -58,10 +61,12 @@ namespace Neo.Ledger
             return otherTx.Hash.CompareTo(Tx.Hash);
         }
 
-        public int CompareTo(PoolItem otherItem)
+        public int CompareTo(PoolItem? otherItem)
         {
             if (otherItem == null) return 1;
             return CompareTo(otherItem.Tx);
         }
     }
 }
+
+#nullable disable
