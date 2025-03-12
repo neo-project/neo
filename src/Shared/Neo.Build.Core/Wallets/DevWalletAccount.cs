@@ -29,7 +29,7 @@ namespace Neo.Build.Core.Wallets
         /// Creates a new developer wallet account.
         /// </summary>
         /// <param name="walletAccountModel">Wallet account <see cref="JsonModel"/>.</param>
-        /// <param name="protocolSettings"></param>
+        /// <param name="protocolSettings"><see cref="ProtocolSettings"/> to be used with this account.</param>
         public DevWalletAccount(
             TestWalletAccountModel walletAccountModel,
             ProtocolSettings protocolSettings)

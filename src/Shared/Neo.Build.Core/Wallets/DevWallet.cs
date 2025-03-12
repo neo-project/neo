@@ -32,7 +32,7 @@ namespace Neo.Build.Core.Wallets
         /// Creates a new developer wallet.
         /// </summary>
         /// <param name="walletModel">Wallet <see cref="JsonModel"/>.</param>
-        /// <param name="protocolSettings"></param>
+        /// <param name="protocolSettings"><see cref="ProtocolSettings"/> to be used with this wallet.</param>
         /// <exception cref="NeoBuildInvalidVersionFormatException"></exception>
         public DevWallet(
             TestWalletModel walletModel,
