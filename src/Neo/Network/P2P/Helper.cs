@@ -13,6 +13,7 @@ using Neo.Cryptography;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace Neo.Network.P2P
@@ -36,6 +37,29 @@ namespace Neo.Network.P2P
             verifiable.SerializeUnsigned(writer);
             writer.Flush();
             return new UInt256(ms.ToArray().Sha256());
+        }
+
+        /// <summary>
+        /// Tries to get the hash of the transaction.
+        /// If this IVerifiable is not valid, the hash may be <see langword="null"/>.
+        /// </summary>
+        /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
+        /// <param name="hash">The hash of the transaction.</param>
+        /// <returns>
+        /// <see langword="true"/> if the hash was successfully retrieved; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool TryGetHash(this IVerifiable verifiable, [NotNullWhen(true)] out UInt256 hash)
+        {
+            try
+            {
+                hash = verifiable.Hash;
+                return true;
+            }
+            catch
+            {
+                hash = null;
+                return false;
+            }
         }
 
         /// <summary>
