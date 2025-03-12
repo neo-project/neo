@@ -59,6 +59,18 @@ namespace Neo.Build.ToolSet.Providers
             Data.Add(NeoSystemConfigurationNames.MaxConnectionsPerAddressKey, "3");
             Data.Add(NeoSystemConfigurationNames.EnableCompressionKey, $"{Peer.DefaultEnableCompression}");
 
+            // Protocol Configuration
+            Data.Add(ProtocolSettingsConfigurationNames.NetworkKey, $"{protocolNetwork}");
+            Data.Add(ProtocolSettingsConfigurationNames.AddressVersionKey, "53");
+            Data.Add(ProtocolSettingsConfigurationNames.MillisecondsPerBlockKey, "1000");
+            Data.Add(ProtocolSettingsConfigurationNames.MaxTransactionsPerBlockKey, "512");
+            Data.Add(ProtocolSettingsConfigurationNames.MemoryPoolMaxTransactionsKey, "50000");
+            Data.Add(ProtocolSettingsConfigurationNames.MaxTraceableBlocksKey, "2102400");
+            Data.Add(ProtocolSettingsConfigurationNames.InitialGasDistributionKey, "5200000000000000");
+
+            // Application Engine Configuration
+            Data.Add(AppEngineConfigurationNames.MaxGasKey, "2000000000");
+
             // Other default configurations here
 
             Load(Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User));

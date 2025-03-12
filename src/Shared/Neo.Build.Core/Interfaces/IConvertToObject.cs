@@ -11,7 +11,7 @@
 
 namespace Neo.Build.Core.Interfaces
 {
-    interface IConvertToObject<T>
+    public interface IConvertToObject<T>
         where T : notnull
     {
         public T ToObject();
