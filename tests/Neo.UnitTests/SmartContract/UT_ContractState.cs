@@ -54,6 +54,14 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestClone()
+        {
+            var clone = ((IInteroperable)contract).Clone() as ContractState;
+            clone.Nef.CheckSum++;
+            Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
+        }
+
+        [TestMethod]
         public void TestIInteroperable()
         {
             IInteroperable newContract = new ContractState();

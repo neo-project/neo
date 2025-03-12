@@ -41,17 +41,6 @@ namespace Neo.SmartContract.Native
 
         private ReadOnlyMemory<byte> _rawTransaction;
 
-        IInteroperable IInteroperable.Clone()
-        {
-            return new TransactionState
-            {
-                BlockIndex = BlockIndex,
-                Transaction = Transaction,
-                State = State,
-                _rawTransaction = _rawTransaction
-            };
-        }
-
         void IInteroperable.FromReplica(IInteroperable replica)
         {
             var from = (TransactionState)replica;
