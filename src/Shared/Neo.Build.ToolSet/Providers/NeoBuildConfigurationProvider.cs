@@ -60,7 +60,7 @@ namespace Neo.Build.ToolSet.Providers
             Data.Add(NeoSystemConfigurationNames.EnableCompressionKey, $"{Peer.DefaultEnableCompression}");
 
             // Protocol Configuration
-            Data.Add(ProtocolSettingsConfigurationNames.NetworkKey, $"{protocolNetwork:X08}");
+            Data.Add(ProtocolSettingsConfigurationNames.NetworkKey, $"{protocolNetwork}");
             Data.Add(ProtocolSettingsConfigurationNames.AddressVersionKey, "53");
             Data.Add(ProtocolSettingsConfigurationNames.MillisecondsPerBlockKey, "1000");
             Data.Add(ProtocolSettingsConfigurationNames.MaxTransactionsPerBlockKey, "512");
