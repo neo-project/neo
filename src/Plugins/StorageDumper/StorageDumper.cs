@@ -22,7 +22,8 @@ namespace Neo.Plugins.StorageDumper
 {
     public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
-        private readonly Dictionary<uint, NeoSystem> systems = new Dictionary<uint, NeoSystem>();
+        private readonly Dictionary<uint, NeoSystem> _systems = [];
+        private uint Network => _systems.Count > 0 ? _systems.First().Value.Settings.Network : Neo.ProtocolSettings.Default.Network;
 
         private StreamWriter? _writer;
         /// <summary>
@@ -55,25 +56,25 @@ namespace Neo.Plugins.StorageDumper
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            systems.Add(system.Settings.Network, system);
+            _systems.Add(system.Settings.Network, system);
         }
 
         /// <summary>
         /// Process "dump contract-storage" command
         /// </summary>
         [ConsoleCommand("dump contract-storage", Category = "Storage", Description = "You can specify the contract script hash or use null to get the corresponding information from the storage")]
-        private void OnDumpStorage(uint network, UInt160? contractHash = null)
+        private void OnDumpStorage(UInt160? contractHash = null)
         {
-            if (!systems.ContainsKey(network)) throw new InvalidOperationException("invalid network");
-            string path = $"dump_{network}.json";
+            if (!_systems.ContainsKey(Network)) throw new InvalidOperationException("invalid network");
+            string path = $"dump_{Network}.json";
             byte[]? prefix = null;
             if (contractHash is not null)
             {
-                var contract = NativeContract.ContractManagement.GetContract(systems[network].StoreView, contractHash);
+                var contract = NativeContract.ContractManagement.GetContract(_systems[Network].StoreView, contractHash);
                 if (contract is null) throw new InvalidOperationException("contract not found");
                 prefix = BitConverter.GetBytes(contract.Id);
             }
-            var states = systems[network].StoreView.Find(prefix);
+            var states = _systems[Network].StoreView.Find(prefix);
             JArray array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
@@ -107,16 +108,19 @@ namespace Neo.Plugins.StorageDumper
                     switch (trackable.Value.State)
                     {
                         case TrackState.Added:
+                            state["id"] = trackable.Key.Id;
                             state["state"] = "Added";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             state["value"] = Convert.ToBase64String(trackable.Value.Item.ToArray());
                             break;
                         case TrackState.Changed:
+                            state["id"] = trackable.Key.Id;
                             state["state"] = "Changed";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             state["value"] = Convert.ToBase64String(trackable.Value.Item.ToArray());
                             break;
                         case TrackState.Deleted:
+                            state["id"] = trackable.Key.Id;
                             state["state"] = "Deleted";
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             break;
