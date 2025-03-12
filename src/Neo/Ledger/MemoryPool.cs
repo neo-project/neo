@@ -336,7 +336,7 @@ namespace Neo.Ledger
             }
 
             TransactionAdded?.Invoke(this, poolItem.Tx);
-            if (removedTransactions.Count() > 0)
+            if (removedTransactions.Count > 0)
                 TransactionRemoved?.Invoke(this, new()
                 {
                     Transactions = removedTransactions,
@@ -527,11 +527,11 @@ namespace Neo.Ledger
             {
                 _txRwLock.ExitWriteLock();
             }
-            if (conflictingItems.Count() > 0)
+            if (conflictingItems.Count > 0)
             {
                 TransactionRemoved?.Invoke(this, new()
                 {
-                    Transactions = conflictingItems.ToArray(),
+                    Transactions = conflictingItems,
                     Reason = TransactionRemovalReason.Conflict,
                 });
             }
@@ -634,12 +634,14 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
-            TransactionRemoved?.Invoke(this, new()
+            if (invalidItems.Count > 0)
             {
-                Transactions = invalidTransactions,
-                Reason = TransactionRemovalReason.NoLongerValid
-            });
+                TransactionRemoved?.Invoke(this, new()
+                {
+                    Transactions = invalidItems.Select(p => p.Tx).ToArray(),
+                    Reason = TransactionRemovalReason.NoLongerValid
+                });
+            }
 
             return reverifiedItems.Count;
         }
