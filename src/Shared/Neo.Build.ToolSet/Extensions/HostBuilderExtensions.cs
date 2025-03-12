@@ -14,8 +14,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.EventLog;
-using Neo.Build.ToolSet.Services;
+using Neo.Build.ToolSet.Configuration.Converters;
+using Neo.Build.ToolSet.Options;
 using System;
+using System.ComponentModel;
+using System.Net;
 
 namespace Neo.Build.ToolSet.Extensions
 {
@@ -78,8 +81,11 @@ namespace Neo.Build.ToolSet.Extensions
 
             hostBuilder.ConfigureServices((context, services) =>
             {
-                // Add Services Here
+                // Add default services here
             });
+
+            // Register TypeConverters for IConfiguration.Get<T>()
+            TypeDescriptor.AddAttributes(typeof(IPAddress), new TypeConverterAttribute(typeof(IPAddressTypeConverter)));
 
             return hostBuilder;
         }
@@ -92,6 +98,8 @@ namespace Neo.Build.ToolSet.Extensions
                 var neoSystemOptions = neoSystemSection.Get<NeoSystemOptions>()!;       // This shouldn't be null
 
                 services.AddSingleton(neoSystemOptions);
+
+                // Implement NeoSystem here and inject service
             });
 
             return hostBuilder;

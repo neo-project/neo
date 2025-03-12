@@ -11,12 +11,13 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Neo.Build.Core.Factories;
 using Neo.Build.ToolSet.Configuration;
-using Neo.Build.ToolSet.Services;
 using Neo.Network.P2P;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 
 namespace Neo.Build.ToolSet.Providers
@@ -42,16 +43,21 @@ namespace Neo.Build.ToolSet.Providers
             Data.Add(HostDefaults.EnvironmentKey, HostingEnvironments.Localnet);
             Data.Add(HostDefaults.ContentRootKey, Environment.CurrentDirectory);
 
-            // Storage Environment
-            Data.Add(ProgramDefaults.CheckpointRootKey, ProgramDefaults.CheckpointRootPath);
+            // Node Storage Configuration
+            var protocolNetwork = FunctionFactory.GetDevNetwork(0);
+            var storeRoot = Path.Combine(Environment.CurrentDirectory, $"Store_{protocolNetwork:X08}");
+            var checkpointRoot = Path.Combine(Environment.CurrentDirectory, $"Checkpoints_{protocolNetwork:X08}");
+
+            Data.Add(NeoSystemConfigurationNames.StoreRootKey, storeRoot);
+            Data.Add(NeoSystemConfigurationNames.CheckpointRootKey, checkpointRoot);
 
             // Node Network Configuration
-            Data.Add(NeoSystemDefaults.ListenKey, $"{IPAddress.Loopback}");
-            Data.Add(NeoSystemDefaults.PortKey, "0");
-            Data.Add(NeoSystemDefaults.MinDesiredConnectionsKey, $"{Peer.DefaultMinDesiredConnections}");
-            Data.Add(NeoSystemDefaults.MaxConnectionsKey, $"{Peer.DefaultMaxConnections}");
-            Data.Add(NeoSystemDefaults.MaxConnectionsPerAddressKey, "3");
-            Data.Add(NeoSystemDefaults.EnableCompressionKey, $"{Peer.DefaultEnableCompression}");
+            Data.Add(NeoSystemConfigurationNames.ListenKey, $"{IPAddress.Loopback}");
+            Data.Add(NeoSystemConfigurationNames.PortKey, $"{RandomFactory.NextUInt16()}");
+            Data.Add(NeoSystemConfigurationNames.MinDesiredConnectionsKey, $"{Peer.DefaultMinDesiredConnections}");
+            Data.Add(NeoSystemConfigurationNames.MaxConnectionsKey, $"{Peer.DefaultMaxConnections}");
+            Data.Add(NeoSystemConfigurationNames.MaxConnectionsPerAddressKey, "3");
+            Data.Add(NeoSystemConfigurationNames.EnableCompressionKey, $"{Peer.DefaultEnableCompression}");
 
             // Other default configurations here
 
