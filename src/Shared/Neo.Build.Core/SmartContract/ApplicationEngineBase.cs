@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Neo.Build.Core.Factories;
 using Neo.Build.Core.Logging;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
@@ -45,7 +46,7 @@ namespace Neo.Build.Core.SmartContract
                   diagnostic,
                   DefaultJumpTable)
         {
-            _systemCallMethods = systemCallMethods ?? ApplicationEngineDefaults.SystemCallBaseServices;
+            _systemCallMethods = systemCallMethods ?? ApplicationEngineFactory.SystemCallBaseServices;
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _traceLogger = _loggerFactory.CreateLogger(nameof(ApplicationEngine));
         }
@@ -64,27 +65,6 @@ namespace Neo.Build.Core.SmartContract
                 protocolSettings,
                 snapshotCache,
                 engineSettings.MaxGas,
-                trigger,
-                container,
-                persistingBlock,
-                diagnostic,
-                loggerFactory,
-                systemCallMethods)
-        { }
-
-        protected ApplicationEngineBase(
-            NeoBuildSettings settings,
-            DataCache snapshotCache,
-            TriggerType trigger = TriggerType.Application,
-            IVerifiable? container = null,
-            Block? persistingBlock = null,
-            IDiagnostic? diagnostic = null,
-            ILoggerFactory? loggerFactory = null,
-            IReadOnlyDictionary<uint, InteropDescriptor>? systemCallMethods = null)
-            : this(
-                settings.ApplicationEngineSettings,
-                settings.ProtocolSettings,
-                snapshotCache,
                 trigger,
                 container,
                 persistingBlock,

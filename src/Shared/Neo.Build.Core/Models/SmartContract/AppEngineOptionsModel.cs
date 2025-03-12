@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ApplicationEngineSettingsModel.cs file belongs to the neo project and is free
+// AppEngineOptionsModel.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,7 +14,7 @@ using Neo.Build.Core.SmartContract;
 
 namespace Neo.Build.Core.Models.SmartContract
 {
-    public class ApplicationEngineSettingsModel : JsonModel, IConvertToObject<ApplicationEngineSettings>
+    public class AppEngineOptionsModel : JsonModel, IConvertToObject<ApplicationEngineSettings>
     {
         public long MaxGas { get; set; }
 

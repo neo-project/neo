@@ -17,7 +17,7 @@ namespace Neo.Build.Core.Tests.Factories
     public class UT_RandomFactory
     {
         [TestMethod]
-        public void IsNextSByteInBetweenRange()
+        public void CheckNextSByteInRange()
         {
             sbyte expectedMax = 100;
             sbyte expectedMin = -100;
@@ -30,7 +30,7 @@ namespace Neo.Build.Core.Tests.Factories
         }
 
         [TestMethod]
-        public void IsNextByteInBetweenRange()
+        public void CheckNextByteInRange()
         {
             byte expectedMax = 100;
             byte expectedMin = 0;
@@ -43,7 +43,7 @@ namespace Neo.Build.Core.Tests.Factories
         }
 
         [TestMethod]
-        public void IsNextInt16InBetweenRange()
+        public void CheckNextInt16InRange()
         {
             short expectedMax = 100;
             short expectedMin = -100;
@@ -56,7 +56,7 @@ namespace Neo.Build.Core.Tests.Factories
         }
 
         [TestMethod]
-        public void IsNextUInt16InBetweenRange()
+        public void CheckNextUInt16InRange()
         {
             ushort expectedMax = 100;
             ushort expectedMin = 0;
@@ -69,7 +69,7 @@ namespace Neo.Build.Core.Tests.Factories
         }
 
         [TestMethod]
-        public void IsNextInt32InBetweenRange()
+        public void CheckNextInt32InRange()
         {
             var expectedMax = 100;
             var expectedMin = -100;
@@ -82,7 +82,7 @@ namespace Neo.Build.Core.Tests.Factories
         }
 
         [TestMethod]
-        public void IsNextUInt32InBetweenRange()
+        public void CheckNextUInt32InRange()
         {
             uint expectedMax = 100;
             uint expectedMin = 0;
@@ -95,7 +95,7 @@ namespace Neo.Build.Core.Tests.Factories
         }
 
         [TestMethod]
-        public void IsNextInt64InBetweenRange()
+        public void CheckNextInt64InRange()
         {
             long expectedMax = 100;
             long expectedMin = -100;
@@ -108,7 +108,7 @@ namespace Neo.Build.Core.Tests.Factories
         }
 
         [TestMethod]
-        public void IsNextUInt64InBetweenRange()
+        public void CheckNextUInt64InRange()
         {
             ulong expectedMax = 100;
             ulong expectedMin = 0;
