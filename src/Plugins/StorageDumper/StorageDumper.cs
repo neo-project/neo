@@ -22,8 +22,7 @@ namespace Neo.Plugins.StorageDumper
 {
     public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
-        private readonly Dictionary<uint, NeoSystem> _systems = [];
-        private uint Network => _systems.Count > 0 ? _systems.First().Value.Settings.Network : Neo.ProtocolSettings.Default.Network;
+        private NeoSystem? _system;
 
         private StreamWriter? _writer;
         /// <summary>
@@ -56,25 +55,25 @@ namespace Neo.Plugins.StorageDumper
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            _systems.Add(system.Settings.Network, system);
+            _system = system;
         }
 
         /// <summary>
         /// Process "dump contract-storage" command
         /// </summary>
         [ConsoleCommand("dump contract-storage", Category = "Storage", Description = "You can specify the contract script hash or use null to get the corresponding information from the storage")]
-        private void OnDumpStorage(UInt160? contractHash = null)
+        internal void OnDumpStorage(UInt160? contractHash = null)
         {
-            if (!_systems.ContainsKey(Network)) throw new InvalidOperationException("invalid network");
-            string path = $"dump_{Network}.json";
+            if (_system == null) throw new InvalidOperationException("system doesn't exists");
+            var path = $"dump_{_system.Settings.Network}.json";
             byte[]? prefix = null;
             if (contractHash is not null)
             {
-                var contract = NativeContract.ContractManagement.GetContract(_systems[Network].StoreView, contractHash);
+                var contract = NativeContract.ContractManagement.GetContract(_system.StoreView, contractHash);
                 if (contract is null) throw new InvalidOperationException("contract not found");
                 prefix = BitConverter.GetBytes(contract.Id);
             }
-            var states = _systems[Network].StoreView.Find(prefix);
+            var states = _system.StoreView.Find(prefix);
             JArray array = new JArray(states.Where(p => !Settings.Default!.Exclude.Contains(p.Key.Id)).Select(p => new JObject
             {
                 ["key"] = Convert.ToBase64String(p.Key.ToArray()),
