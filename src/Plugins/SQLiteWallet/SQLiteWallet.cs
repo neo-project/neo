@@ -256,10 +256,13 @@ namespace Neo.Wallets.SQLite
             SQLiteWalletAccount account;
             lock (accounts)
             {
-                if (_accounts.TryGetValue(scriptHash, out var account))
+                if (accounts.TryGetValue(scriptHash, out account))
+                    accounts.Remove(scriptHash);
+            }
+            if (account != null)
+            {
+                lock (_db_lock)
                 {
-                    _accounts.Remove(scriptHash);
-
                     using var ctx = new WalletDataContext(Path);
                     if (account.HasKey)
                     {
