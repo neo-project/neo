@@ -59,6 +59,7 @@ namespace Neo.SmartContract.Native
             writer.Write(Header);
             writer.Write(Hashes);
         }
+
         IInteroperable IInteroperable.Clone()
         {
             // FromStackItem is not supported so we need to do the copy
