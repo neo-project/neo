@@ -272,7 +272,7 @@ namespace Neo.SmartContract
         /// Initializes a new instance of the <see cref="StorageKey"/> class.
         /// </summary>
         /// <param name="id">Contract Id</param>
-        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
+        /// <param name="cache">The cached byte array.</param>
         private StorageKey(int id, ReadOnlySpan<byte> cache)
         {
             // DO NOT CHANGE OR ELSE "Create" WILL HAVE PROBLEMS
@@ -284,7 +284,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageKey"/> class.
         /// </summary>
-        /// <param name="cache">The cached byte array. NOTE: It must be read-only and can be modified by the caller.</param>
+        /// <param name="cache">The cached byte array.</param>
         internal StorageKey(ReadOnlySpan<byte> cache)
         {
             // DO NOT CHANGE OR ELSE "Create" WILL HAVE PROBLEMS
