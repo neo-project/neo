@@ -324,9 +324,8 @@ namespace Neo.Wallets.SQLite
             return accounts;
         }
 
-        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts()
+        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts(WalletDataContext ctx)
         {
-            using var ctx = new WalletDataContext(Path);
             var accounts = ctx.Addresses.Select(p => new SQLiteWalletAccount(p.ScriptHash, ProtocolSettings))
                 .ToDictionary(p => p.ScriptHash);
             foreach (var dbContract in ctx.Contracts.Include(p => p.Account))
