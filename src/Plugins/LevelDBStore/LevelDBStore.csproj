@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk" InitialTargets="DownloadNativeLibs">
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="DownloadNativeLibs">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <BuildInParallel>false</BuildInParallel>
     <PackageId>Neo.Plugins.Storage.LevelDBStore</PackageId>
     <RootNamespace>Neo.Plugins.Storage</RootNamespace>
