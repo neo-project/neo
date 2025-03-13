@@ -47,8 +47,7 @@ namespace Neo.SmartContract.Native
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
-            if (_rawTransaction.IsEmpty)
-                _rawTransaction = from._rawTransaction;
+            _rawTransaction = from._rawTransaction;
         }
 
         void IInteroperable.FromStackItem(StackItem stackItem)

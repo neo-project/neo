@@ -16,6 +16,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Linq;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -58,10 +59,20 @@ namespace Neo.SmartContract.Native
             writer.Write(Header);
             writer.Write(Hashes);
         }
+        IInteroperable IInteroperable.Clone()
+        {
+            // FromStackItem is not supported so we need to do the copy
+
+            return new TrimmedBlock
+            {
+                Header = Header.ToArray().AsSerializable<Header>(),
+                Hashes = [.. Hashes]
+            };
+        }
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TrimmedBlock from = (TrimmedBlock)replica;
+            var from = (TrimmedBlock)replica;
             Header = from.Header;
             Hashes = from.Hashes;
         }
@@ -73,8 +84,8 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[]
-            {
+            return new Array(referenceCounter,
+            [
                 // Computed properties
                 Header.Hash.ToArray(),
 
@@ -90,7 +101,7 @@ namespace Neo.SmartContract.Native
 
                 // Block properties
                 Hashes.Length
-            });
+            ]);
         }
     }
 }

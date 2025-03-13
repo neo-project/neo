@@ -59,6 +59,8 @@ namespace Neo.UnitTests.SmartContract
             var clone = ((IInteroperable)contract).Clone() as ContractState;
             clone.Nef.CheckSum++;
             Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
+            clone.Manifest.Name += "X";
+            Assert.AreNotEqual(clone.Manifest.Name, contract.Manifest.Name);
         }
 
         [TestMethod]

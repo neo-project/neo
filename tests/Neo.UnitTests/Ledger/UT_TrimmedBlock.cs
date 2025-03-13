@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -40,7 +41,7 @@ namespace Neo.UnitTests.Ledger
                         VerificationScript = new[] { (byte)OpCode.PUSH1 }
                     },
                 },
-                Hashes = Array.Empty<UInt256>()
+                Hashes = []
             };
         }
 
@@ -82,6 +83,15 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(tx1.Hash, block.Transactions[0].Hash);
             Assert.AreEqual(tblock.Header.Witness.InvocationScript.Span.ToHexString(), block.Witness.InvocationScript.Span.ToHexString());
             Assert.AreEqual(tblock.Header.Witness.VerificationScript.Span.ToHexString(), block.Witness.VerificationScript.Span.ToHexString());
+        }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var block = GetTrimmedBlockWithNoTransaction();
+            var clone = ((IInteroperable)block).Clone() as TrimmedBlock;
+            clone.Header.Index++;
+            Assert.AreNotEqual(clone.Header.Index, block.Header.Index);
         }
 
         [TestMethod]
