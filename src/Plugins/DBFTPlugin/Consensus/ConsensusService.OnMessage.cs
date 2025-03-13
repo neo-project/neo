@@ -94,6 +94,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 return;
             }
 
+            // Timeout extension: prepare request has been received with success
+            // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
+            ExtendTimerByFactor(2);
+
             context.Block.Header.Timestamp = message.Timestamp;
             context.Block.Header.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
@@ -105,20 +109,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     if (!context.GetMessage<PrepareResponse>(context.PreparationPayloads[i]).PreparationHash.Equals(payload.Hash))
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[message.ValidatorIndex] = payload;
-            var block = context.EnsureHeader();
-
-            if (!StorageItem.IsSerializable(TrimmedBlock.Create(block.Header, message.TransactionHashes)))
-            {
-                Log($"Proposed block can't be serialized", LogLevel.Warning);
-                return;
-            }
-
-            // Timeout extension: prepare request has been received with success
-            // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
-            ExtendTimerByFactor(2);
-
-            var hashData = block.GetSignData(neoSystem.Settings.Network);
-            for (var i = 0; i < context.CommitPayloads.Length; i++)
+            byte[] hashData = context.EnsureHeader().GetSignData(neoSystem.Settings.Network);
+            for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.GetMessage(context.CommitPayloads[i])?.ViewNumber == context.ViewNumber)
                     if (!Crypto.VerifySignature(hashData, context.GetMessage<Commit>(context.CommitPayloads[i]).Signature.Span, context.Validators[i]))
                         context.CommitPayloads[i] = null;
