@@ -138,12 +138,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
         public T GetInteroperable<T>() where T : IInteroperable, new()
         {
-            if (_cache is null)
-            {
-                var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
-                _cache = interoperable;
-            }
+            _cache ??= GetInteroperableClone<T>();
             _value = null;
             return (T)_cache;
         }
@@ -155,8 +150,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
         public T GetInteroperableClone<T>() where T : IInteroperable, new()
         {
-            var interop = GetInteroperable<T>();
-            return (T)interop.Clone();
+            var interoperable = new T();
+            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
+            return interoperable;
         }
 
         /// <summary>
@@ -167,12 +163,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
         public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
-            if (_cache is null)
-            {
-                var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
-                _cache = interoperable;
-            }
+            _cache ??= GetInteroperableClone<T>(verify);
             _value = null;
             return (T)_cache;
         }
@@ -185,8 +176,9 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
         public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
-            var interop = GetInteroperable<T>(verify);
-            return (T)interop.Clone();
+            var interoperable = new T();
+            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
+            return interoperable;
         }
 
         public void Serialize(BinaryWriter writer)
