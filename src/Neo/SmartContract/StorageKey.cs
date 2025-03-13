@@ -137,7 +137,7 @@ namespace Neo.SmartContract
         {
             Span<byte> data = stackalloc byte[UInt256Length];
             FillHeader(data, id, prefix);
-            hash.GetSpan().CopyTo(data[PrefixLength..]);
+            hash.Serialize(data[PrefixLength..]);
             return new(id, data);
         }
 
