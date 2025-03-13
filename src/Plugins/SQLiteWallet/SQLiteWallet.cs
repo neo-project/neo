@@ -46,8 +46,12 @@ namespace Neo.Wallets.SQLite
         {
             get
             {
-                using var ctx = new WalletDataContext(Path);
-                var buffer = LoadStoredData(ctx, "Version");
+                byte[]? buffer;
+                lock (_lock)
+                {
+                    using var ctx = new WalletDataContext(Path);
+                    buffer = LoadStoredData(ctx, "Version");
+                }
                 if (buffer == null || buffer.Length < 16) return new Version(0, 0);
                 var major = BinaryPrimitives.ReadInt32LittleEndian(buffer);
                 var minor = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(4));
@@ -76,7 +80,7 @@ namespace Neo.Wallets.SQLite
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptR") ?? throw new FormatException("ScryptR was not found")),
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptP") ?? throw new FormatException("ScryptP was not found"))
                 );
-            _accounts = LoadAccounts();
+            _accounts = LoadAccounts(ctx);
         }
 
         private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
@@ -276,10 +280,8 @@ namespace Neo.Wallets.SQLite
         {
             lock (_lock)
             {
-                if (_accounts.TryGetValue(scriptHash, out var account))
+                if (_accounts.Remove(scriptHash, out var account))
                 {
-                    _accounts.Remove(scriptHash);
-
                     using var ctx = new WalletDataContext(Path);
                     if (account.HasKey)
                     {
@@ -324,9 +326,8 @@ namespace Neo.Wallets.SQLite
             return accounts;
         }
 
-        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts()
+        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts(WalletDataContext ctx)
         {
-            using var ctx = new WalletDataContext(Path);
             var accounts = ctx.Addresses.Select(p => new SQLiteWalletAccount(p.ScriptHash, ProtocolSettings))
                 .ToDictionary(p => p.ScriptHash);
             foreach (var dbContract in ctx.Contracts.Include(p => p.Account))
