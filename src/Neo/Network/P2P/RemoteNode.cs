@@ -16,9 +16,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
-using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -203,19 +201,7 @@ namespace Neo.Network.P2P
 
         private void OnStartProtocol()
         {
-            var capabilities = new List<NodeCapability>
-            {
-                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
-            };
-
-            if (!localNode.EnableCompression)
-            {
-                capabilities.Add(new DisableCompressionCapability());
-            }
-
-            if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
-
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, [.. capabilities])));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, localNode.GetNodeCapabilities())));
         }
 
         protected override void PostStop()
