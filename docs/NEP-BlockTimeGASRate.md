@@ -24,43 +24,43 @@ The following additions have been made to the `PolicyContract` class:
 - **Constants**:
   - `DefaultBlockGenTime`: Set to 15000 (15 seconds in milliseconds)
   - `MinBlockGenTime`: Set to 1000 (1 second in milliseconds)
+  - `MaxBlockGenTime`: Set to 30000 (30 seconds in milliseconds)
   - `Prefix_BlockGenTime`: Added for storage key (value: 21)
 
 - **New Methods**:
-  - `GetBlockGenTime`: Retrieves the current block generation time in milliseconds
+  - `GetBlockGenTime`: Retrieves the current block generation time in milliseconds (returns nullable uint?)
   - `SetBlockGenTime`: Allows the Neo Council to set a new block generation time (only callable after the Echidna hardfork)
 
 - **New Events**:
-  - `BlockGenTimeChanged`: Emitted when the block generation time is changed, containing:
-    - `oldTime`: The previous block generation time in milliseconds
-    - `newTime`: The new block generation time in milliseconds
+  - `MSPerBlockChanged`: Emitted when the block generation time is changed, containing:
+    - `old`: The previous block generation time in milliseconds
+    - `new`: The new block generation time in milliseconds
   - This event is declared at the contract level using the `ContractEvent` attribute, as required by the Echidna hardfork
 
 #### Event Declaration
 
-The `BlockGenTimeChanged` event is declared at the contract level using the `ContractEvent` attribute:
+The `MSPerBlockChanged` event is declared at the contract level using the `ContractEvent` attribute:
 
 ```csharp
-
-public sealed class PolicyContract : NativeContract
-{
-    [ContractEvent(Hardfork.HF_Echidna, 0, name: "BlockGenTimeChanged",
-    "oldTime", ContractParameterType.Integer,
-    "newTime", ContractParameterType.Integer
-    )]
-    // Contract implementation
-}
+/// <summary>
+/// The event for the block generation time changed.
+/// Enabled after the HF_Echidna.
+/// </summary>
+[ContractEvent(Hardfork.HF_Echidna, 0, name: MSPerBlockChangedEvent,
+    "old", ContractParameterType.Integer,
+    "new", ContractParameterType.Integer
+)]
 ```
 
 This ensures the notification can be legally emitted as per Echidna hardfork requirements, which mandate that all notifications must be explicitly declared.
 
 #### Storage and Initialization
 
-The block generation time is stored in the blockchain state using a storage key with the prefix `Prefix_BlockGenTime`. The initial value of 15000 milliseconds (15 seconds) is set during the initialization of the Echidna hardfork.
+The block generation time is stored in the blockchain state using a storage key with the prefix `Prefix_BlockGenTime`. The initial value is set during the initialization of the Echidna hardfork using the protocol settings:
 
 ```csharp
 // Initialize block generation time
-engine.SnapshotCache.Add(_blockGenTime, new StorageItem(DefaultBlockGenTime));
+engine.SnapshotCache.Add(_blockGenTime, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
 ```
 
 #### Permission Control
@@ -71,27 +71,28 @@ The `SetBlockGenTime` method includes strict permission controls to ensure that 
 [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
 public void SetBlockGenTime(ApplicationEngine engine, uint milliseconds)
 {
-    if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds));
-    if (milliseconds > DefaultBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds), $"Block generation time cannot exceed {DefaultBlockGenTime} milliseconds");
+    if (milliseconds < MinBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds), $"Block generation time cannot be less than {MinBlockGenTime} milliseconds");
+    if (milliseconds > MaxBlockGenTime) throw new ArgumentOutOfRangeException(nameof(milliseconds), $"Block generation time cannot exceed {MaxBlockGenTime} milliseconds");
     if (!CheckCommittee(engine)) throw new InvalidOperationException();
     
-    uint oldTime = GetBlockGenTime(engine.SnapshotCache);
+    var oldTime = GetBlockGenTime(engine.SnapshotCache);
     engine.SnapshotCache.GetAndChange(_blockGenTime).Set(milliseconds);
     
     // Emit the BlockGenTimeChanged event
-    engine.SendNotification(Hash, "BlockGenTimeChanged", 
-    new VM.Types.Integer(oldTime), 
-    new VM.Types.Integer(milliseconds));
+    engine.SendNotification(Hash, MSPerBlockChangedEvent,
+        [new VM.Types.Integer(oldTime ?? DefaultBlockGenTime), new VM.Types.Integer(milliseconds)]);
 }
 ```
+
+Note that the method handles the nullable return value from `GetBlockGenTime` by providing a default value when emitting the notification.
 
 #### Allowed Range
 
 The block generation time must fall within the following constraints:
 - **Minimum**: `MinBlockGenTime` (1000 milliseconds or 1 second)
-- **Maximum**: `DefaultBlockGenTime` (15000 milliseconds or 15 seconds)
+- **Maximum**: `MaxBlockGenTime` (30000 milliseconds or 30 seconds)
 
-This ensures that block generation times cannot be set too low (which could lead to network instability) or too high (which would exceed the default time of 15 seconds).
+This ensures that block generation times cannot be set too low (which could lead to network instability) or too high (which would exceed reasonable network performance).
 
 ### 2. Integration with Consensus Mechanism
 
@@ -246,18 +247,18 @@ The block time configuration methods have been added to the `PolicyContract` nat
 }
 ```
 
-The `BlockGenTimeChanged` event is declared at the contract level:
+The `MSPerBlockChanged` event is declared at the contract level:
 
 ```json
 {
-    "name": "BlockGenTimeChanged",
+    "name": "MSPerBlockChanged",
     "parameters": [
         {
-            "name": "oldTime",
+            "name": "old",
             "type": "Integer"
         },
         {
-            "name": "newTime", 
+            "name": "new", 
             "type": "Integer"
         }
     ]

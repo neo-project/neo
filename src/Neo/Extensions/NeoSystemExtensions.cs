@@ -56,24 +56,7 @@ namespace Neo
         /// <returns>The block generation time as a TimeSpan.</returns>
         public static TimeSpan GetBlockGenTime(this NeoSystem system)
         {
-            try
-            {
-                // Get the current block height from the blockchain
-                var index = NativeContract.Ledger.CurrentIndex(system.StoreView);
-
-                // Before the Echidna hardfork, use the protocol settings
-                if (!system.Settings.IsHardforkEnabled(Hardfork.HF_Echidna, index - 1))
-                    return TimeSpan.FromMilliseconds(system.Settings.MillisecondsPerBlock);
-
-                // After the Echidna hardfork, get the current block time from the Policy contract
-                var milliseconds = NativeContract.Policy.GetBlockGenTime(system.StoreView);
-                return TimeSpan.FromMilliseconds(milliseconds);
-            }
-            // At the height of 0, the key not yet exists in the storage
-            catch (System.Collections.Generic.KeyNotFoundException)
-            {
-                return TimeSpan.FromMilliseconds(system.Settings.MillisecondsPerBlock);
-            }
+            return system.StoreView.GetBlockGenTime(system.Settings);
         }
 
         /// <summary>
@@ -84,16 +67,24 @@ namespace Neo
         /// <returns>The block generation time as a TimeSpan.</returns>
         public static TimeSpan GetBlockGenTime(this IReadOnlyStore snapshot, ProtocolSettings settings)
         {
-            // Get the current block height from the blockchain
-            var index = NativeContract.Ledger.CurrentIndex(snapshot);
+            try
+            {
+                // Get the current block height from the blockchain
+                var index = NativeContract.Ledger.CurrentIndex(snapshot);
 
-            // Before the Echidna hardfork, use the protocol settings
-            if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index - 1))
+                // Before the Echidna hardfork, use the protocol settings
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                    return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
+
+                // After the Echidna hardfork, get the current block time from the Policy contract
+                var milliseconds = NativeContract.Policy.GetMSPerBlock(snapshot);
+                return TimeSpan.FromMilliseconds(milliseconds);
+            }
+            catch (System.Collections.Generic.KeyNotFoundException)
+            {
+                // At the height of 0, the key not yet exists in the storage
                 return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
-
-            // After the Echidna hardfork, get the current block time from the Policy contract
-            var milliseconds = NativeContract.Policy.GetBlockGenTime(snapshot);
-            return TimeSpan.FromMilliseconds(milliseconds);
+            }
         }
     }
 }
