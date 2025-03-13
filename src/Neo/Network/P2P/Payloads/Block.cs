@@ -36,6 +36,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public Transaction[] Transactions;
 
+        /// <inheritdoc/>
         public UInt256 Hash => Header.Hash;
 
         /// <summary>

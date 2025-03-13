@@ -83,6 +83,8 @@ namespace Neo.Network.P2P.Payloads
         public long FeePerByte => NetworkFee / Size;
 
         private UInt256 _hash = null;
+
+        /// <inheritdoc/>
         public UInt256 Hash
         {
             get

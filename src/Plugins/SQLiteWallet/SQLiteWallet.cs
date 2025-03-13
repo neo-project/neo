@@ -48,9 +48,7 @@ namespace Neo.Wallets.SQLite
             {
                 using var ctx = new WalletDataContext(Path);
                 var buffer = LoadStoredData(ctx, "Version");
-                if (buffer == null || buffer.Length < 16)
-                    return new Version(0, 0);
-
+                if (buffer == null || buffer.Length < 16) return new Version(0, 0);
                 var major = BinaryPrimitives.ReadInt32LittleEndian(buffer);
                 var minor = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(4));
                 var build = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(8));
@@ -70,14 +68,15 @@ namespace Neo.Wallets.SQLite
                 throw new CryptographicException();
             _iv = LoadStoredData(ctx, "IV")
                 ?? throw new FormatException("IV was not found");
-            _masterKey = Decrypt(LoadStoredData(ctx, "MasterKey") ?? throw new FormatException("MasterKey was not found"), passwordKey, _iv);
+            _masterKey = Decrypt(LoadStoredData(ctx, "MasterKey")
+                ?? throw new FormatException("MasterKey was not found"), passwordKey, _iv);
             _scrypt = new ScryptParameters
                 (
-                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptN")),
-                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptR")),
-                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptP"))
+                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptN") ?? throw new FormatException("ScryptN was not found")),
+                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptR") ?? throw new FormatException("ScryptR was not found")),
+                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptP") ?? throw new FormatException("ScryptP was not found"))
                 );
-            _accounts = LoadAccounts(ctx);
+            _accounts = LoadAccounts();
         }
 
         private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
@@ -99,7 +98,6 @@ namespace Neo.Wallets.SQLite
             BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(4), version.Minor);
             BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(8), version.Build);
             BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(12), version.Revision);
-
             using var ctx = BuildDatabase();
             SaveStoredData(ctx, "IV", _iv);
             SaveStoredData(ctx, "Salt", _salt);
@@ -125,10 +123,10 @@ namespace Neo.Wallets.SQLite
                 using var ctx = new WalletDataContext(Path);
                 if (account.HasKey)
                 {
-                    var db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                    if (db_account == null)
+                    var dbAccount = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                    if (dbAccount == null)
                     {
-                        db_account = ctx.Accounts.Add(new Account
+                        dbAccount = ctx.Accounts.Add(new Account
                         {
                             Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P),
                             PublicKeyHash = account.Key.PublicKeyHash.ToArray()
@@ -136,15 +134,15 @@ namespace Neo.Wallets.SQLite
                     }
                     else
                     {
-                        db_account.Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P);
+                        dbAccount.Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P);
                     }
                 }
                 if (account.Contract != null)
                 {
-                    var db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
-                    if (db_contract != null)
+                    var dbContract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
+                    if (dbContract != null)
                     {
-                        db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
+                        dbContract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
                     }
                     else
                     {
@@ -158,8 +156,8 @@ namespace Neo.Wallets.SQLite
                 }
                 //add address
                 {
-                    var db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
-                    if (db_address == null)
+                    var dbAddress = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
+                    if (dbAddress == null)
                     {
                         ctx.Addresses.Add(new Address
                         {
@@ -184,6 +182,7 @@ namespace Neo.Wallets.SQLite
             lock (_lock)
             {
                 if (!VerifyPassword(oldPassword)) return false;
+
                 var passwordKey = ToAesKey(newPassword);
                 try
                 {
@@ -278,31 +277,29 @@ namespace Neo.Wallets.SQLite
             lock (_lock)
             {
                 if (_accounts.TryGetValue(scriptHash, out var account))
+                {
                     _accounts.Remove(scriptHash);
 
-                if (account != null)
-                {
                     using var ctx = new WalletDataContext(Path);
                     if (account.HasKey)
                     {
-                        var db_account = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                        ctx.Accounts.Remove(db_account);
+                        var dbAccount = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                        ctx.Accounts.Remove(dbAccount);
                     }
                     if (account.Contract != null)
                     {
-                        var db_contract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
-                        ctx.Contracts.Remove(db_contract);
+                        var dbContract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Contracts.Remove(dbContract);
                     }
                     //delete address
                     {
-                        var db_address = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
-                        ctx.Addresses.Remove(db_address);
+                        var dbAddress = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Addresses.Remove(dbAddress);
                     }
                     ctx.SaveChanges();
                     return true;
                 }
             }
-
             return false;
         }
 
@@ -327,15 +324,17 @@ namespace Neo.Wallets.SQLite
             return accounts;
         }
 
-        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts(WalletDataContext ctx)
+        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts()
         {
-            var accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new SQLiteWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
-            foreach (var db_contract in ctx.Contracts.Include(p => p.Account))
+            using var ctx = new WalletDataContext(Path);
+            var accounts = ctx.Addresses.Select(p => new SQLiteWalletAccount(p.ScriptHash, ProtocolSettings))
+                .ToDictionary(p => p.ScriptHash);
+            foreach (var dbContract in ctx.Contracts.Include(p => p.Account))
             {
-                var contract = db_contract.RawData.AsSerializable<VerificationContract>();
+                var contract = dbContract.RawData.AsSerializable<VerificationContract>();
                 var account = accounts[contract.ScriptHash];
                 account.Contract = contract;
-                account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, _masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P));
+                account.Key = new KeyPair(GetPrivateKeyFromNEP2(dbContract.Account.Nep2key, _masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P));
             }
             return accounts;
         }
@@ -401,11 +400,12 @@ namespace Neo.Wallets.SQLite
             return ToAesKey(password).Concat(_salt).ToArray().Sha256().SequenceEqual(hash);
         }
 
-        #region Encryption
-
         private static byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(data);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(iv);
+
             if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
             using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
@@ -415,7 +415,10 @@ namespace Neo.Wallets.SQLite
 
         private static byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(data);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(iv);
+
             if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
             using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
@@ -432,8 +435,6 @@ namespace Neo.Wallets.SQLite
             Array.Clear(passwordHash, 0, passwordHash.Length);
             return passwordHash2;
         }
-
-        #endregion
     }
 }
 
