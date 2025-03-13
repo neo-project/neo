@@ -90,6 +90,10 @@ namespace Neo.UnitTests.Ledger
         {
             var block = GetTrimmedBlockWithNoTransaction();
             var clone = ((IInteroperable)block).Clone() as TrimmedBlock;
+            CollectionAssert.AreEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((block as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
             clone.Header.Index++;
             Assert.AreNotEqual(clone.Header.Index, block.Header.Index);
         }

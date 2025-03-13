@@ -16,6 +16,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Diagnostics.Contracts;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -67,6 +68,10 @@ namespace Neo.UnitTests.Ledger
         public void TestClone()
         {
             var clone = ((IInteroperable)_origin).Clone() as TransactionState;
+            CollectionAssert.AreEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
             clone.Transaction.Nonce++;
             Assert.AreNotEqual(clone.Transaction.Nonce, _origin.Transaction.Nonce);
         }
