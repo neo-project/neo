@@ -217,7 +217,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(30000000000000L, (long)new BigInteger(byteItem.ToParameter().Value as byte[]));
 
             StackItem boolItem = false;
-            Assert.AreEqual(false, (bool)boolItem.ToParameter().Value);
+            Assert.IsFalse((bool)boolItem.ToParameter().Value);
 
             StackItem intItem = new BigInteger(1000);
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
@@ -242,7 +242,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetInteger());
 
             ContractParameter boolParameter = new ContractParameter { Type = ContractParameterType.Boolean, Value = false };
-            Assert.AreEqual(false, boolParameter.ToStackItem().GetBoolean());
+            Assert.IsFalse(boolParameter.ToStackItem().GetBoolean());
 
             ContractParameter intParameter = new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) };
             Assert.AreEqual(1000, intParameter.ToStackItem().GetInteger());
@@ -658,7 +658,7 @@ namespace Neo.UnitTests.VMT
             StackItem item = StackItem.True;
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Boolean, parameter.Type);
-            Assert.AreEqual(true, parameter.Value);
+            Assert.IsTrue((bool?)parameter.Value);
         }
 
         private void TestToParameter2Map()
