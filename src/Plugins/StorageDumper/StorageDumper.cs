@@ -65,7 +65,7 @@ namespace Neo.Plugins.StorageDumper
         [ConsoleCommand("dump contract-storage", Category = "Storage", Description = "You can specify the contract script hash or use null to get the corresponding information from the storage")]
         private void OnDumpStorage(UInt160? contractHash = null)
         {
-            if (!_systems.ContainsKey(Network)) throw new InvalidOperationException("invalid network");
+            if (!_systems.ContainsKey(Network)) throw new InvalidOperationException($"invalid network: {Network}");
             string path = $"dump_{Network}.json";
             byte[]? prefix = null;
             if (contractHash is not null)
