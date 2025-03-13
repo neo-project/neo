@@ -38,7 +38,6 @@ namespace Neo.UnitTests.SmartContract
     public partial class UT_InteropService : TestKit
     {
         private DataCache _snapshotCache;
-        private static readonly string[] data = ["test"];
 
         [TestInitialize]
         public void TestSetup()
@@ -90,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
                     new ContractPermission
                     {
                         Contract = ContractPermissionDescriptor.Create(scriptHash2),
-                        Methods = WildcardContainer<string>.Create(data)
+                        Methods = WildcardContainer<string>.Create(["test"])
                     }
                 ];
                 snapshotCache.AddContract(scriptHash2, contract);
