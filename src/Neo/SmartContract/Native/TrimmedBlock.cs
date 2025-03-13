@@ -55,11 +55,7 @@ namespace Neo.SmartContract.Native
         /// <returns></returns>
         public static TrimmedBlock Create(Block block)
         {
-            return new TrimmedBlock
-            {
-                Header = block.Header,
-                Hashes = block.Transactions.Select(p => p.Hash).ToArray()
-            };
+            return Create(block.Header, block.Transactions.Select(p => p.Hash).ToArray());
         }
 
         /// <summary>
@@ -100,7 +96,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TrimmedBlock from = (TrimmedBlock)replica;
+            var from = (TrimmedBlock)replica;
             Header = from.Header;
             Hashes = from.Hashes;
         }
@@ -112,8 +108,8 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[]
-            {
+            return new Array(referenceCounter,
+            [
                 // Computed properties
                 Header.Hash.ToArray(),
 
@@ -129,7 +125,7 @@ namespace Neo.SmartContract.Native
 
                 // Block properties
                 Hashes.Length
-            });
+            ]);
         }
     }
 }
