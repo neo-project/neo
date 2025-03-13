@@ -66,6 +66,10 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
             clone.Manifest.Name += "X";
             Assert.AreNotEqual(clone.Manifest.Name, contract.Manifest.Name);
+            CollectionAssert.AreNotEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
         }
 
         [TestMethod]

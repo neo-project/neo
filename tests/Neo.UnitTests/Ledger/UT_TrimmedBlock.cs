@@ -96,6 +96,10 @@ namespace Neo.UnitTests.Ledger
                 );
             clone.Header.Index++;
             Assert.AreNotEqual(clone.Header.Index, block.Header.Index);
+            CollectionAssert.AreNotEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((block as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
         }
 
         [TestMethod]

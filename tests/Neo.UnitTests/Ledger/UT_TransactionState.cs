@@ -74,6 +74,10 @@ namespace Neo.UnitTests.Ledger
                 );
             clone.Transaction.Nonce++;
             Assert.AreNotEqual(clone.Transaction.Nonce, _origin.Transaction.Nonce);
+            CollectionAssert.AreNotEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+                );
         }
 
         [TestMethod]
