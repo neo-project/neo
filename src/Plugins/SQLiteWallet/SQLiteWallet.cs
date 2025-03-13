@@ -80,7 +80,7 @@ namespace Neo.Wallets.SQLite
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptR") ?? throw new FormatException("ScryptR was not found")),
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptP") ?? throw new FormatException("ScryptP was not found"))
                 );
-            _accounts = LoadAccounts();
+            _accounts = LoadAccounts(ctx);
         }
 
         private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
@@ -326,9 +326,8 @@ namespace Neo.Wallets.SQLite
             return accounts;
         }
 
-        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts()
+        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts(WalletDataContext ctx)
         {
-            using var ctx = new WalletDataContext(Path);
             var accounts = ctx.Addresses.Select(p => new SQLiteWalletAccount(p.ScriptHash, ProtocolSettings))
                 .ToDictionary(p => p.ScriptHash);
             foreach (var dbContract in ctx.Contracts.Include(p => p.Account))
