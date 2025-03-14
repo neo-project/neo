@@ -16,6 +16,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Linq;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -47,6 +48,31 @@ namespace Neo.SmartContract.Native
 
         public int Size => Header.Size + Hashes.GetVarSize();
 
+        /// <summary>
+        /// Create Trimmed block
+        /// </summary>
+        /// <param name="block">Block</param>
+        /// <returns></returns>
+        public static TrimmedBlock Create(Block block)
+        {
+            return Create(block.Header, block.Transactions.Select(p => p.Hash).ToArray());
+        }
+
+        /// <summary>
+        /// Create Trimmed block
+        /// </summary>
+        /// <param name="header">Block header</param>
+        /// <param name="txHashes">Transaction hashes</param>
+        /// <returns></returns>
+        public static TrimmedBlock Create(Header header, UInt256[] txHashes)
+        {
+            return new TrimmedBlock
+            {
+                Header = header,
+                Hashes = txHashes
+            };
+        }
+
         public void Deserialize(ref MemoryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
@@ -70,7 +96,7 @@ namespace Neo.SmartContract.Native
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TrimmedBlock from = (TrimmedBlock)replica;
+            var from = (TrimmedBlock)replica;
             Header = from.Header;
             Hashes = from.Hashes;
         }
@@ -82,8 +108,8 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[]
-            {
+            return new Array(referenceCounter,
+            [
                 // Computed properties
                 Header.Hash.ToArray(),
 
@@ -99,7 +125,7 @@ namespace Neo.SmartContract.Native
 
                 // Block properties
                 Hashes.Length
-            });
+            ]);
         }
     }
 }
