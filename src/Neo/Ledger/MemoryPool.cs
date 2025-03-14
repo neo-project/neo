@@ -235,12 +235,25 @@ namespace Neo.Ledger
         /// Gets the sorted verified transactions in the <see cref="MemoryPool"/>.
         /// </summary>
         /// <returns>The sorted verified transactions.</returns>
-        public IEnumerable<Transaction> GetSortedVerifiedTransactions()
+        public Transaction[] GetSortedVerifiedTransactions(int count = -1)
         {
             _txRwLock.EnterReadLock();
             try
             {
-                return _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
+                if (count < 0)
+                {
+                    // Return all results
+                    return _sortedTransactions
+                        .Reverse()
+                        .Select(p => p.Tx)
+                        .ToArray();
+                }
+
+                return _sortedTransactions
+                    .Reverse()
+                    .Take(count)
+                    .Select(p => p.Tx)
+                    .ToArray();
             }
             finally
             {

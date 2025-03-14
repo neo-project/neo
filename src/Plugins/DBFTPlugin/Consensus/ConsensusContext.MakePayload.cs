@@ -78,19 +78,14 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// Prevent that block exceed the max size
         /// </summary>
         /// <param name="txs">Ordered transactions</param>
-        internal void EnsureMaxBlockLimitation(IEnumerable<Transaction> txs)
+        internal void EnsureMaxBlockLimitation(Transaction[] txs)
         {
-            uint maxTransactionsPerBlock = neoSystem.Settings.MaxTransactionsPerBlock;
-
-            // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
-            txs = txs.Take((int)maxTransactionsPerBlock);
-
-            List<UInt256> hashes = new List<UInt256>();
+            var hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
             VerificationContext = new TransactionVerificationContext();
 
             // Expected block size
-            var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
+            var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Length);
             var blockSystemFee = 0L;
 
             // Iterate transaction until reach the size or maximum system fee
@@ -114,7 +109,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public ExtensiblePayload MakePrepareRequest()
         {
-            EnsureMaxBlockLimitation(neoSystem.MemPool.GetSortedVerifiedTransactions());
+            var maxTransactionsPerBlock = neoSystem.Settings.MaxTransactionsPerBlock;
+            // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
+            EnsureMaxBlockLimitation(neoSystem.MemPool.GetSortedVerifiedTransactions((int)maxTransactionsPerBlock));
             Block.Header.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
             Block.Header.Nonce = GetNonce();
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
