@@ -102,16 +102,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
-            uut.Signers = new Signer[0];
-            uut.Attributes = new TransactionAttribute[0];
-            uut.Witnesses = new Witness[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            uut.Signers = [];
+            uut.Attributes = [];
+            uut.Witnesses = [Witness.Empty];
 
             Assert.AreEqual(0, uut.Version);
             Assert.AreEqual(32, uut.Script.Length);
@@ -127,16 +120,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 NetworkFee = 1000000,
                 SystemFee = 1000000,
-                Script = Array.Empty<byte>(),
+                Script = ReadOnlyMemory<byte>.Empty,
                 Attributes = [],
-                Witnesses = [
-                    new Witness() {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript =new byte[]{ (byte)OpCode.PUSH0, (byte)OpCode.DROP }
+                Witnesses =
+                [
+                    new()
+                    {
+                        InvocationScript = ReadOnlyMemory<byte>.Empty,
+                        VerificationScript = new byte[]{ (byte)OpCode.PUSH0, (byte)OpCode.DROP }
                     }
                 ]
             };
-            tx.Signers = [new Signer() { Account = tx.Witnesses[0].ScriptHash }];
+            tx.Signers = [new() { Account = tx.Witnesses[0].ScriptHash }];
             Assert.IsFalse(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshotCache, tx.NetworkFee));
         }
 
@@ -798,16 +793,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new[]{
-                    new Signer
+                Attributes = [],
+                Signers = [
+                    new()
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                         Scopes = WitnessScope.Global
                     }
-                },
+                ],
                 Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = Array.Empty<Witness>()
+                Witnesses = [],
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshotCache);
             Assert.AreEqual(1, hashes.Length);
@@ -825,11 +820,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
-                Signers = [new Signer() { Account = UInt160.Zero }],
+                Signers = [new() { Account = UInt160.Zero }],
                 Attributes = [],
                 Script = new[] { (byte)OpCode.PUSH1 },
-                Witnesses = [new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
-                ]
+                Witnesses = [Witness.Empty]
             };
 
             byte[] sTx = txSimple.ToArray();
@@ -855,17 +849,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(0x0000000000000001, tx2.NetworkFee);
             Assert.AreEqual(0x01020304u, tx2.ValidUntilBlock);
             CollectionAssert.AreEqual(Array.Empty<TransactionAttribute>(), tx2.Attributes);
-            CollectionAssert.AreEqual(new[]
+            CollectionAssert.AreEqual(new Signer[]
             {
-                new Signer
+                new()
                 {
                     Account = UInt160.Zero,
-                    AllowedContracts = Array.Empty<UInt160>(),
-                    AllowedGroups = Array.Empty<ECPoint>(),
-                    Rules = Array.Empty<WitnessRule>()
+                    AllowedContracts = [],
+                    AllowedGroups = [],
+                    Rules = [],
                 }
             }, tx2.Signers);
-            Assert.IsTrue(tx2.Script.Span.SequenceEqual(new byte[] { (byte)OpCode.PUSH1 }));
+            Assert.IsTrue(tx2.Script.Span.SequenceEqual([(byte)OpCode.PUSH1]));
             Assert.IsTrue(tx2.Witnesses[0].InvocationScript.Span.IsEmpty);
             Assert.IsTrue(tx2.Witnesses[0].VerificationScript.Span.IsEmpty);
         }
@@ -885,20 +879,19 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Attributes = [],
                 Signers =
                 [
-                    new Signer
+                    new()
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"),
                         Scopes = WitnessScope.Global
                     },
-                    new Signer
+                    new()
                     {
                         Account = UInt160.Parse("0x0001020304050607080900010203040506070809"), // same account as above
                         Scopes = WitnessScope.CalledByEntry // different scope, but still, same account (cannot do that)
                     }
                 ],
                 Script = new[] { (byte)OpCode.PUSH1 },
-                Witnesses = [new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
-                ]
+                Witnesses = [Witness.Empty]
             };
 
             var sTx = txDoubleCosigners.ToArray();
@@ -947,8 +940,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Attributes = [],
                 Signers = cosigners1, // max + 1 (should fail)
                 Script = new[] { (byte)OpCode.PUSH1 },
-                Witnesses = [new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
-                ]
+                Witnesses = [Witness.Empty]
             };
 
             byte[] sTx1 = txCosigners1.ToArray();
@@ -981,8 +973,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Attributes = [],
                 Signers = cosigners, // max + 1 (should fail)
                 Script = new[] { (byte)OpCode.PUSH1 },
-                Witnesses = [new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
-                ]
+                Witnesses = [Witness.Empty]
             };
 
             byte[] sTx2 = txCosigners.ToArray();
@@ -1030,11 +1021,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             }
 
             // try to use fee only inside the smart contract
-            var signers = new[]{ new Signer
+            var signers = new Signer[]{
+                new()
                 {
                     Account = acc.ScriptHash,
-                    Scopes =  WitnessScope.None
-                } };
+                    Scopes = WitnessScope.None
+                }
+            };
 
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = wallet.MakeTransaction(snapshotCache, script, acc.ScriptHash, signers));
 
@@ -1086,16 +1079,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.SystemFee = 4200000000;
-            uut.Signers = [new Signer { Account = UInt160.Zero }];
+            uut.Signers = [new() { Account = UInt160.Zero }];
             uut.Attributes = [];
-            uut.Witnesses =
-            [
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            ];
+            uut.Witnesses = [Witness.Empty];
 
             JObject jObj = uut.ToJson(ProtocolSettings.Default);
             Assert.IsNotNull(jObj);
@@ -1142,18 +1128,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 NetworkFee = 0,
                 Nonce = (uint)Environment.TickCount,
                 Script = new byte[Transaction.MaxTransactionSize],
-                Signers = [new Signer { Account = UInt160.Zero }],
+                Signers = [new() { Account = UInt160.Zero }],
                 SystemFee = 0,
                 ValidUntilBlock = 0,
                 Version = 0,
-                Witnesses =
-                [
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    }
-                ]
+                Witnesses = [Witness.Empty],
             };
             Assert.AreEqual(VerifyResult.OverSize, tx.VerifyStateIndependent(TestProtocolSettings.Default));
             tx.Script = Array.Empty<byte>();
@@ -1245,8 +1224,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0,
                 Witnesses =
                 [
-                    new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
-                    new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = new byte[1] }
+                    Witness.Empty,
+                    new() { InvocationScript = ReadOnlyMemory<byte>.Empty, VerificationScript = new byte[1] }
                 ]
             };
 
@@ -1257,10 +1236,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             balance.GetInteroperable<AccountState>().Balance = tx.NetworkFee;
             var conflicts = new List<Transaction>();
 
-            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new TransactionVerificationContext(), conflicts));
+            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new(), conflicts));
             balance.GetInteroperable<AccountState>().Balance = 0;
             tx.SystemFee = 10;
-            Assert.AreEqual(VerifyResult.InsufficientFunds, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new TransactionVerificationContext(), conflicts));
+            Assert.AreEqual(VerifyResult.InsufficientFunds, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new(), conflicts));
 
             var walletA = TestUtils.GenerateTestWallet("123");
             var walletB = TestUtils.GenerateTestWallet("123");

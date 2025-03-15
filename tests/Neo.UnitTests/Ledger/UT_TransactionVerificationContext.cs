@@ -43,16 +43,9 @@ namespace Neo.UnitTests.Ledger
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = networkFee;
             mock.Object.SystemFee = systemFee;
-            mock.Object.Signers = new[] { new Signer { Account = UInt160.Zero } };
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            mock.Object.Signers = [new() { Account = UInt160.Zero }];
+            mock.Object.Attributes = [];
+            mock.Object.Witnesses = [Witness.Empty];
             return mock.Object;
         }
 
@@ -70,13 +63,13 @@ namespace Neo.UnitTests.Ledger
             // Test
             TransactionVerificationContext verificationContext = new();
             var tx = CreateTransactionWithFee(1, 2);
-            tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
+            tx.Attributes = [new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() }];
             var conflicts = new List<Transaction>();
             Assert.IsTrue(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
             verificationContext.AddTransaction(tx);
 
             tx = CreateTransactionWithFee(2, 1);
-            tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() } };
+            tx.Attributes = [new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = Array.Empty<byte>() }];
             Assert.IsFalse(verificationContext.CheckTransaction(tx, conflicts, snapshotCache));
         }
 

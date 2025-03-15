@@ -79,20 +79,14 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
+                .Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses = [Witness.Empty];
             return mock.Object;
         }
 
@@ -103,20 +97,14 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
+                .Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses = [Witness.Empty];
             return mock.Object;
         }
 

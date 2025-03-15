@@ -164,11 +164,11 @@ namespace Neo
                 NextConsensus = Contract.GetBFTAddress(settings.StandbyValidators),
                 Witness = new Witness
                 {
-                    InvocationScript = Array.Empty<byte>(),
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
                     VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 },
             },
-            Transactions = Array.Empty<Transaction>()
+            Transactions = [],
         };
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

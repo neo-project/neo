@@ -50,11 +50,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var val256 = UInt256.Zero;
             var snapshotCache = TestBlockchain.GetTestSnapshotCache().CloneCache();
             var uut = TestUtils.MakeHeader(null, val256);
-            uut.Witness = new Witness()
-            {
-                InvocationScript = Array.Empty<byte>(),
-                VerificationScript = Array.Empty<byte>()
-            };
+            uut.Witness = Witness.Empty;
 
             TestUtils.BlocksAdd(snapshotCache, uut.Hash, new TrimmedBlock()
             {
@@ -66,7 +62,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     NextConsensus = uut.NextConsensus,
                     Witness = uut.Witness
                 },
-                Hashes = Array.Empty<UInt256>()
+                Hashes = []
             });
 
             var trim = NativeContract.Ledger.GetTrimmedBlock(snapshotCache, uut.Hash);
@@ -131,7 +127,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Witness()
+        public void TestWitness()
         {
             IVerifiable item = new Header();
             void Actual() => item.Witnesses = null;

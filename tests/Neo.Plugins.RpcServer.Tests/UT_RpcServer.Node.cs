@@ -259,9 +259,9 @@ namespace Neo.Plugins.RpcServer.Tests
         {
             var snapshot = _neoSystem.GetSnapshotCache();
             var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 1);
-            block.Header.Witness = new Witness();
-            var blockString = Convert.ToBase64String(block.ToArray());
+            block.Header.Witness = Witness.Empty;
 
+            var blockString = Convert.ToBase64String(block.ToArray());
             var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(blockString),
                 "Should throw RpcException for invalid block");
             Assert.AreEqual(RpcError.VerificationFailed.Code, exception.HResult);

@@ -36,11 +36,11 @@ namespace Neo.UnitTests.Ledger
                     NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                     Witness = new Witness
                     {
-                        InvocationScript = Array.Empty<byte>(),
+                        InvocationScript = ReadOnlyMemory<byte>.Empty,
                         VerificationScript = new[] { (byte)OpCode.PUSH1 }
                     },
                 },
-                Hashes = Array.Empty<UInt256>()
+                Hashes = [],
             };
         }
 

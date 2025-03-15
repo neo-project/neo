@@ -81,14 +81,14 @@ namespace Neo.GUI
                 MessageBox.Show(ex.Message);
                 return;
             }
-            Transaction tx_test = tx ?? new Transaction
+            var txTest = tx ?? new Transaction
             {
-                Signers = new Signer[0],
-                Attributes = new TransactionAttribute[0],
+                Signers = [],
+                Attributes = [],
                 Script = script,
-                Witnesses = new Witness[0]
+                Witnesses = []
             };
-            using ApplicationEngine engine = ApplicationEngine.Run(tx_test.Script, Service.NeoSystem.StoreView, container: tx_test);
+            using ApplicationEngine engine = ApplicationEngine.Run(txTest.Script, Service.NeoSystem.StoreView, container: txTest);
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"VM State: {engine.State}");
             sb.AppendLine($"Gas Consumed: {engine.FeeConsumed}");
