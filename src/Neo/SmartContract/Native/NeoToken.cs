@@ -538,7 +538,7 @@ namespace Neo.SmartContract.Native
         public NeoAccountState GetAccountState(IReadOnlyStore snapshot, UInt160 account)
         {
             var key = CreateStorageKey(Prefix_Account, account);
-            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<NeoAccountState>() : null;
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<NeoAccountState>() : null;
         }
 
         /// <summary>
