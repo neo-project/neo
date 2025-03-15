@@ -55,18 +55,6 @@ namespace Neo.SmartContract
         /// </summary>
         public ReadOnlyMemory<byte> Script => Nef.Script;
 
-        IInteroperable IInteroperable.Clone()
-        {
-            return new ContractState
-            {
-                Id = Id,
-                UpdateCounter = UpdateCounter,
-                Hash = Hash,
-                Nef = Nef,
-                Manifest = Manifest
-            };
-        }
-
         void IInteroperable.FromReplica(IInteroperable replica)
         {
             var from = (ContractState)replica;
@@ -121,7 +109,7 @@ namespace Neo.SmartContract
 
         public StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter) });
+            return new Array(referenceCounter, [Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter)]);
         }
     }
 }
