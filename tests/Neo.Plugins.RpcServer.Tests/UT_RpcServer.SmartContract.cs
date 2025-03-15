@@ -66,7 +66,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
             Assert.IsTrue(resp.ContainsProperty("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
-            Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 0);
+            Assert.AreEqual(0, ((JArray)resp["diagnostics"]["storagechanges"]).Count);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["exception"], null);
             Assert.AreEqual(((JArray)resp["notifications"]).Count, 0);
@@ -96,7 +96,7 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(resp.ContainsProperty("gasconsumed"));
             Assert.IsTrue(resp.ContainsProperty("diagnostics"));
             Assert.AreEqual(resp["diagnostics"]["invokedcontracts"]["call"][0]["hash"], NeoToken.NEO.Hash.ToString());
-            Assert.IsTrue(((JArray)resp["diagnostics"]["storagechanges"]).Count == 4);
+            Assert.AreEqual(4, ((JArray)resp["diagnostics"]["storagechanges"]).Count);
             Assert.AreEqual(resp["state"], nameof(VMState.HALT));
             Assert.AreEqual(resp["exception"], $"The smart contract or address {MultisigScriptHash} ({MultisigAddress}) is not found. " +
                                 $"If this is your wallet address and you want to sign a transaction with it, make sure you have opened this wallet.");

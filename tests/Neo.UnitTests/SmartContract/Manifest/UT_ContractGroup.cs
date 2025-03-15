@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 PubKey = keyPair.PublicKey,
                 Signature = new byte[20]
             };
-            Assert.AreEqual(false, contractGroup.IsValid(UInt160.Zero));
+            Assert.IsFalse(contractGroup.IsValid(UInt160.Zero));
 
 
             var message = new byte[] {  0x01,0x01,0x01,0x01,0x01,
@@ -64,7 +64,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 PubKey = keyPair.PublicKey,
                 Signature = signature
             };
-            Assert.AreEqual(true, contractGroup.IsValid(new UInt160(message)));
+            Assert.IsTrue(contractGroup.IsValid(new UInt160(message)));
         }
     }
 }

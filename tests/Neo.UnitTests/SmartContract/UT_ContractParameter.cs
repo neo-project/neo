@@ -41,7 +41,7 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter2 = new(ContractParameterType.Boolean);
             Assert.IsNotNull(contractParameter2);
-            Assert.AreEqual(false, contractParameter2.Value);
+            Assert.IsFalse((bool?)contractParameter2.Value);
 
             ContractParameter contractParameter3 = new(ContractParameterType.Integer);
             Assert.IsNotNull(contractParameter3);
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter2 = new(ContractParameterType.Boolean);
             contractParameter2.SetValue("true");
-            Assert.AreEqual(true, contractParameter2.Value);
+            Assert.IsTrue((bool?)contractParameter2.Value);
 
             ContractParameter contractParameter3 = new(ContractParameterType.Integer);
             contractParameter3.SetValue("11");
@@ -194,7 +194,7 @@ namespace Neo.UnitTests.SmartContract
                 privateKey7[j] = (byte)random7.Next(256);
             ECPoint publicKey7 = ECCurve.Secp256r1.G * privateKey7;
             contractParameter7.SetValue(publicKey7.ToString());
-            Assert.AreEqual(true, publicKey7.Equals(contractParameter7.Value));
+            Assert.IsTrue(publicKey7.Equals(contractParameter7.Value));
 
             ContractParameter contractParameter8 = new(ContractParameterType.String);
             contractParameter8.SetValue("AAA");

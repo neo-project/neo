@@ -41,7 +41,7 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys1[i] = key1.PublicKey;
             }
             byte[] script1 = Contract.CreateMultiSigRedeemScript(20, publicKeys1);
-            Assert.AreEqual(true, Helper.IsMultiSigContract(script1, out _, out ECPoint[] p1));
+            Assert.IsTrue(Helper.IsMultiSigContract(script1, out _, out ECPoint[] p1));
             CollectionAssert.AreEqual(publicKeys1.OrderBy(p => p).ToArray(), p1);
 
             ECPoint[] publicKeys2 = new ECPoint[256];
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys2[i] = key2.PublicKey;
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(256, publicKeys2);
-            Assert.AreEqual(true, Helper.IsMultiSigContract(script2, out _, out ECPoint[] p2));
+            Assert.IsTrue(Helper.IsMultiSigContract(script2, out _, out ECPoint[] p2));
             CollectionAssert.AreEqual(publicKeys2.OrderBy(p => p).ToArray(), p2);
 
             ECPoint[] publicKeys3 = new ECPoint[3];
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys3[i] = key3.PublicKey;
             }
             byte[] script3 = Contract.CreateMultiSigRedeemScript(3, publicKeys3);
-            Assert.AreEqual(true, Helper.IsMultiSigContract(script3, out _, out ECPoint[] p3));
+            Assert.IsTrue(Helper.IsMultiSigContract(script3, out _, out ECPoint[] p3));
             CollectionAssert.AreEqual(publicKeys3.OrderBy(p => p).ToArray(), p3);
 
             ECPoint[] publicKeys4 = new ECPoint[3];
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script4 = Contract.CreateMultiSigRedeemScript(3, publicKeys4);
             script4[^1] = 0x00;
-            Assert.AreEqual(false, Helper.IsMultiSigContract(script4, out _, out ECPoint[] p4));
+            Assert.IsFalse(Helper.IsMultiSigContract(script4, out _, out ECPoint[] p4));
             Assert.IsNull(p4);
         }
 
@@ -93,9 +93,9 @@ namespace Neo.UnitTests.SmartContract
             rng.GetBytes(privateKey);
             KeyPair key = new(privateKey);
             byte[] script = Contract.CreateSignatureRedeemScript(key.PublicKey);
-            Assert.AreEqual(true, Helper.IsSignatureContract(script));
+            Assert.IsTrue(Helper.IsSignatureContract(script));
             script[0] = 0x22;
-            Assert.AreEqual(false, Helper.IsSignatureContract(script));
+            Assert.IsFalse(Helper.IsSignatureContract(script));
         }
 
         [TestMethod]
@@ -106,7 +106,7 @@ namespace Neo.UnitTests.SmartContract
             rng1.GetBytes(privateKey1);
             KeyPair key1 = new(privateKey1);
             byte[] script1 = Contract.CreateSignatureRedeemScript(key1.PublicKey);
-            Assert.AreEqual(true, Helper.IsStandardContract(script1));
+            Assert.IsTrue(Helper.IsStandardContract(script1));
 
             ECPoint[] publicKeys2 = new ECPoint[3];
             for (int i = 0; i < 3; i++)
@@ -118,7 +118,7 @@ namespace Neo.UnitTests.SmartContract
                 publicKeys2[i] = key2.PublicKey;
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(3, publicKeys2);
-            Assert.AreEqual(true, Helper.IsStandardContract(script2));
+            Assert.IsTrue(Helper.IsStandardContract(script2));
         }
 
         [TestMethod]
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.SmartContract
                 Hashes = new UInt256[1] { UInt256.Zero },
             });
             TestUtils.BlocksDelete(snapshotCache1, index1);
-            Assert.AreEqual(false, Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshotCache1, 100));
+            Assert.IsFalse(Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshotCache1, 100));
 
             var snapshotCache2 = TestBlockchain.GetTestSnapshotCache();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
@@ -160,7 +160,7 @@ namespace Neo.UnitTests.SmartContract
 
             snapshotCache2.AddContract(UInt160.Zero, new ContractState());
             snapshotCache2.DeleteContract(UInt160.Zero);
-            Assert.AreEqual(false, Helper.VerifyWitnesses(header2, TestProtocolSettings.Default, snapshotCache2, 100));
+            Assert.IsFalse(Helper.VerifyWitnesses(header2, TestProtocolSettings.Default, snapshotCache2, 100));
 
             var snapshotCache3 = TestBlockchain.GetTestSnapshotCache();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
@@ -192,7 +192,7 @@ namespace Neo.UnitTests.SmartContract
                 Hash = Array.Empty<byte>().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
-            Assert.AreEqual(false, Helper.VerifyWitnesses(header3, TestProtocolSettings.Default, snapshotCache3, 100));
+            Assert.IsFalse(Helper.VerifyWitnesses(header3, TestProtocolSettings.Default, snapshotCache3, 100));
 
             // Smart contract verification
 
@@ -208,7 +208,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
-            Assert.AreEqual(true, Helper.VerifyWitnesses(tx, TestProtocolSettings.Default, snapshotCache3, 1000));
+            Assert.IsTrue(Helper.VerifyWitnesses(tx, TestProtocolSettings.Default, snapshotCache3, 1000));
         }
     }
 }

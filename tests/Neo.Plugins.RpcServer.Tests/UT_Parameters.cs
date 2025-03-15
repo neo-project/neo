@@ -172,13 +172,13 @@ namespace Neo.Plugins.RpcServer.Tests
         public void TestBoolean()
         {
             JToken token = true;
-            Assert.AreEqual(true, ParameterConverter.ConvertParameter(token, typeof(bool)));
+            Assert.IsTrue((bool?)ParameterConverter.ConvertParameter(token, typeof(bool)));
             JToken token2 = false;
-            Assert.AreEqual(false, ParameterConverter.ConvertParameter(token2, typeof(bool)));
+            Assert.IsFalse((bool?)ParameterConverter.ConvertParameter(token2, typeof(bool)));
             JToken token6 = 1;
-            Assert.AreEqual(true, ParameterConverter.ConvertParameter(token6, typeof(bool)));
+            Assert.IsTrue((bool?)ParameterConverter.ConvertParameter(token6, typeof(bool)));
             JToken token7 = 0;
-            Assert.AreEqual(false, ParameterConverter.ConvertParameter(token7, typeof(bool)));
+            Assert.IsFalse((bool?)ParameterConverter.ConvertParameter(token7, typeof(bool)));
         }
 
         [TestMethod]

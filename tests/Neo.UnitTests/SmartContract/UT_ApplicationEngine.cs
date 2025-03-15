@@ -42,16 +42,16 @@ namespace Neo.UnitTests.SmartContract
 
             ApplicationEngine.Notify += Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
-            Assert.AreEqual(null, eventName);
+            Assert.IsNull(eventName);
 
             eventName = notifyEvent;
             ApplicationEngine.Notify -= Test_Notify1;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
-            Assert.AreEqual(null, eventName);
+            Assert.IsNull(eventName);
 
             ApplicationEngine.Notify -= Test_Notify2;
             engine.SendNotification(UInt160.Zero, notifyEvent, new Array());
-            Assert.AreEqual(null, eventName);
+            Assert.IsNull(eventName);
         }
 
         private void Test_Notify1(object sender, NotifyEventArgs e)
