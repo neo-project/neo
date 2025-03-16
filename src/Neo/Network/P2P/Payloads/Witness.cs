@@ -61,7 +61,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Creates a new <see cref="Witness"/> with empty invocation and verification scripts.
         /// </summary>
-        public static readonly Witness Empty => new()
+        public static Witness Empty => new()
         {
             InvocationScript = ReadOnlyMemory<byte>.Empty,
             VerificationScript = ReadOnlyMemory<byte>.Empty,
