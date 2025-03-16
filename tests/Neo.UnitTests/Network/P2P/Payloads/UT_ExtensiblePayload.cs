@@ -29,10 +29,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Sender = Array.Empty<byte>().ToScriptHash(),
                 Category = "123",
                 Data = new byte[] { 1, 2, 3 },
-                Witness = new Witness()
+                Witness = new()
                 {
                     InvocationScript = new byte[] { 3, 5, 6 },
-                    VerificationScript = Array.Empty<byte>()
+                    VerificationScript = ReadOnlyMemory<byte>.Empty
                 }
             };
             Assert.AreEqual(42, test.Size);
@@ -48,10 +48,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 ValidBlockEnd = 789,
                 Sender = Array.Empty<byte>().ToScriptHash(),
                 Data = new byte[] { 1, 2, 3 },
-                Witness = new Witness()
+                Witness = new()
                 {
                     InvocationScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH2, (byte)OpCode.PUSH3 },
-                    VerificationScript = Array.Empty<byte>()
+                    VerificationScript = ReadOnlyMemory<byte>.Empty
                 }
             };
             var clone = test.ToArray().AsSerializable<ExtensiblePayload>();
