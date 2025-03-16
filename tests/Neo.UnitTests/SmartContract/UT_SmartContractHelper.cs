@@ -134,9 +134,9 @@ namespace Neo.UnitTests.SmartContract
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                    Witness = Witness.Empty
                 },
-                Hashes = new UInt256[1] { UInt256.Zero },
+                Hashes = [UInt256.Zero],
             });
             TestUtils.BlocksDelete(snapshotCache1, index1);
             Assert.IsFalse(Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshotCache1, 100));
@@ -151,12 +151,12 @@ namespace Neo.UnitTests.SmartContract
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                    Witness = Witness.Empty
                 },
-                Hashes = new UInt256[1] { UInt256.Zero },
+                Hashes = [UInt256.Zero],
             };
             TestUtils.BlocksAdd(snapshotCache2, index2, block2);
-            Header header2 = new() { PrevHash = index2, Witness = new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } };
+            Header header2 = new() { PrevHash = index2, Witness = Witness.Empty };
 
             snapshotCache2.AddContract(UInt160.Zero, new ContractState());
             snapshotCache2.DeleteContract(UInt160.Zero);
@@ -172,23 +172,19 @@ namespace Neo.UnitTests.SmartContract
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                    Witness = Witness.Empty
                 },
-                Hashes = new UInt256[1] { UInt256.Zero },
+                Hashes = [UInt256.Zero],
             };
             TestUtils.BlocksAdd(snapshotCache3, index3, block3);
             Header header3 = new()
             {
                 PrevHash = index3,
-                Witness = new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
+                Witness = Witness.Empty
             };
             snapshotCache3.AddContract(UInt160.Zero, new ContractState()
             {
-                Nef = new NefFile { Script = Array.Empty<byte>() },
+                Nef = new NefFile { Script = ReadOnlyMemory<byte>.Empty },
                 Hash = Array.Empty<byte>().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
@@ -205,7 +201,7 @@ namespace Neo.UnitTests.SmartContract
             snapshotCache3.AddContract(contract.Hash, contract);
             var tx = new Nep17NativeContractExtensions.ManualWitness(contract.Hash)
             {
-                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
+                Witnesses = [Witness.Empty]
             };
 
             Assert.IsTrue(Helper.VerifyWitnesses(tx, TestProtocolSettings.Default, snapshotCache3, 1000));

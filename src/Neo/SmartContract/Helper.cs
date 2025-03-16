@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -146,7 +147,7 @@ namespace Neo.SmartContract
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[] points)
         {
             List<ECPoint> list = new();
             if (IsMultiSigContract(script, out m, out _, list))
