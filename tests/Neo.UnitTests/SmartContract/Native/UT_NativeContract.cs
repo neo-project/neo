@@ -101,7 +101,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetContract()
         {
-            Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Hash));
+            Assert.AreEqual(NativeContract.GetContract(NativeContract.NEO.Hash), NativeContract.NEO);
         }
 
         [TestMethod]

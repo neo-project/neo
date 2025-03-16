@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01", copy.Hash.ToString());
             Assert.AreEqual("myMethod", copy.Method);
             Assert.AreEqual(123, copy.ParametersCount);
-            Assert.AreEqual(true, copy.HasReturnValue);
+            Assert.IsTrue(copy.HasReturnValue);
         }
 
         [TestMethod]
