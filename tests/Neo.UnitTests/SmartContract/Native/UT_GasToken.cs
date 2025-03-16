@@ -202,7 +202,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Execute OnPersist script.
             engine.LoadScript(script.ToArray());
-            Assert.IsTrue(engine.Execute() == VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             // Check that proper amount of GAS was minted to block's Primary and the rest
             // will be minted to Notary nodes as a reward once Notary contract is implemented.
