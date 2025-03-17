@@ -15,7 +15,6 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 
 namespace Neo.SmartContract.Native
 {
@@ -32,32 +31,19 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The transaction, if the transaction is trimmed this value will be null
         /// </summary>
-        public Transaction? Transaction
-        {
-            get => _transaction;
-            set
-            {
-                // Clean raw transaction
-                _rawTransaction = ReadOnlyMemory<byte>.Empty;
-                _transaction = value;
-            }
-        }
+        public Transaction? Transaction { get; set; }
 
         /// <summary>
         /// The execution state
         /// </summary>
         public VMState State { get; set; }
 
-        private Transaction? _transaction;
-        private ReadOnlyMemory<byte> _rawTransaction = ReadOnlyMemory<byte>.Empty;
-
         void IInteroperable.FromReplica(IInteroperable replica)
         {
             var from = (TransactionState)replica;
             BlockIndex = from.BlockIndex;
-            _transaction = from.Transaction;
+            Transaction = from.Transaction;
             State = from.State;
-            _rawTransaction = from._rawTransaction;
         }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
@@ -69,8 +55,8 @@ namespace Neo.SmartContract.Native
             if (@struct.Count == 1) return;
 
             // Fully-qualified transaction.
-            _rawTransaction = ((ByteString)@struct[1]).Memory;
-            _transaction = _rawTransaction.AsSerializable<Transaction>();
+            var rawTransaction = ((ByteString)@struct[1]).Memory;
+            Transaction = rawTransaction.AsSerializable<Transaction>();
             State = (VMState)(byte)@struct[2].GetInteger();
         }
 
@@ -78,9 +64,7 @@ namespace Neo.SmartContract.Native
         {
             if (Transaction is null)
                 return new Struct(referenceCounter) { BlockIndex };
-            if (_rawTransaction.IsEmpty)
-                _rawTransaction = Transaction.ToArray();
-            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
+            return new Struct(referenceCounter) { BlockIndex, Transaction.ToArray(), (byte)State };
         }
     }
 }
