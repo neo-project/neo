@@ -183,7 +183,7 @@ namespace Neo.Network.RPC.Tests
 
             // duplicate sign should not add new witness
             await ThrowsAsync<Exception>(async () => await txManager.AddSignature(keyPair1).SignAsync());
-            Assert.AreEqual(null, txManager.Tx.Witnesses);
+            Assert.IsNull(txManager.Tx.Witnesses);
 
             // throw exception when the KeyPair is wrong
             await ThrowsAsync<Exception>(async () => await txManager.AddSignature(keyPair2).SignAsync());

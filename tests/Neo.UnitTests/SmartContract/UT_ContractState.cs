@@ -66,8 +66,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestCanCall()
         {
             var temp = new ContractState() { Manifest = TestUtils.CreateDefaultManifest() };
-
-            Assert.AreEqual(true, temp.CanCall(new ContractState() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
+            Assert.IsTrue(temp.CanCall(new() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
         }
 
         [TestMethod]

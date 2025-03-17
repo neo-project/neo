@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -280,7 +281,7 @@ namespace Neo.SmartContract.Native
         /// <param name="index">Block index</param>
         /// <param name="hardforks">Active hardforks</param>
         /// <returns>True if the native contract must be initialized</returns>
-        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork[] hardforks)
+        internal bool IsInitializeBlock(ProtocolSettings settings, uint index, [NotNullWhen(true)] out Hardfork[] hardforks)
         {
             var hfs = new List<Hardfork>();
 

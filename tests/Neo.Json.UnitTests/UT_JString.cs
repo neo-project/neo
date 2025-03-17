@@ -89,41 +89,41 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAsBoolean()
         {
-            Assert.AreEqual(true, AsicString.AsBoolean());
-            Assert.AreEqual(true, EscapeString.AsBoolean());
-            Assert.AreEqual(true, BadChar.AsBoolean());
-            Assert.AreEqual(true, IntegerString.AsBoolean());
-            Assert.AreEqual(false, EmptyString.AsBoolean());
-            Assert.AreEqual(true, SpaceString.AsBoolean());
-            Assert.AreEqual(true, DoubleString.AsBoolean());
-            Assert.AreEqual(true, UnicodeString.AsBoolean());
-            Assert.AreEqual(true, EmojString.AsBoolean());
-            Assert.AreEqual(true, MixedString.AsBoolean());
-            Assert.AreEqual(true, LongString.AsBoolean());
-            Assert.AreEqual(true, MultiLangString.AsBoolean());
-            Assert.AreEqual(true, JsonString.AsBoolean());
-            Assert.AreEqual(true, HtmlEntityString.AsBoolean());
-            Assert.AreEqual(true, ControlCharString.AsBoolean());
-            Assert.AreEqual(true, SingleCharString.AsBoolean());
-            Assert.AreEqual(true, LongWordString.AsBoolean());
-            Assert.AreEqual(true, ConcatenatedString.AsBoolean());
-            Assert.AreEqual(true, WhiteSpaceString.AsBoolean());
-            Assert.AreEqual(true, FilePathString.AsBoolean());
-            Assert.AreEqual(true, LargeNumberString.AsBoolean());
-            Assert.AreEqual(true, HexadecimalString.AsBoolean());
-            Assert.AreEqual(true, PalindromeString.AsBoolean());
-            Assert.AreEqual(true, SqlInjectionString.AsBoolean());
-            Assert.AreEqual(true, RegexString.AsBoolean());
-            Assert.AreEqual(true, DateTimeString.AsBoolean());
-            Assert.AreEqual(true, SpecialCharString.AsBoolean());
-            Assert.AreEqual(true, SubstringString.AsBoolean());
-            Assert.AreEqual(true, CaseSensitiveString1.AsBoolean());
-            Assert.AreEqual(true, CaseSensitiveString2.AsBoolean());
-            Assert.AreEqual(true, BooleanString.AsBoolean());
-            Assert.AreEqual(true, FormatSpecifierString.AsBoolean());
-            Assert.AreEqual(true, EmojiSequenceString.AsBoolean());
-            Assert.AreEqual(true, NullCharString.AsBoolean());
-            Assert.AreEqual(true, RepeatingPatternString.AsBoolean());
+            Assert.IsTrue(AsicString.AsBoolean());
+            Assert.IsTrue(EscapeString.AsBoolean());
+            Assert.IsTrue(BadChar.AsBoolean());
+            Assert.IsTrue(IntegerString.AsBoolean());
+            Assert.IsFalse(EmptyString.AsBoolean());
+            Assert.IsTrue(SpaceString.AsBoolean());
+            Assert.IsTrue(DoubleString.AsBoolean());
+            Assert.IsTrue(UnicodeString.AsBoolean());
+            Assert.IsTrue(EmojString.AsBoolean());
+            Assert.IsTrue(MixedString.AsBoolean());
+            Assert.IsTrue(LongString.AsBoolean());
+            Assert.IsTrue(MultiLangString.AsBoolean());
+            Assert.IsTrue(JsonString.AsBoolean());
+            Assert.IsTrue(HtmlEntityString.AsBoolean());
+            Assert.IsTrue(ControlCharString.AsBoolean());
+            Assert.IsTrue(SingleCharString.AsBoolean());
+            Assert.IsTrue(LongWordString.AsBoolean());
+            Assert.IsTrue(ConcatenatedString.AsBoolean());
+            Assert.IsTrue(WhiteSpaceString.AsBoolean());
+            Assert.IsTrue(FilePathString.AsBoolean());
+            Assert.IsTrue(LargeNumberString.AsBoolean());
+            Assert.IsTrue(HexadecimalString.AsBoolean());
+            Assert.IsTrue(PalindromeString.AsBoolean());
+            Assert.IsTrue(SqlInjectionString.AsBoolean());
+            Assert.IsTrue(RegexString.AsBoolean());
+            Assert.IsTrue(DateTimeString.AsBoolean());
+            Assert.IsTrue(SpecialCharString.AsBoolean());
+            Assert.IsTrue(SubstringString.AsBoolean());
+            Assert.IsTrue(CaseSensitiveString1.AsBoolean());
+            Assert.IsTrue(CaseSensitiveString2.AsBoolean());
+            Assert.IsTrue(BooleanString.AsBoolean());
+            Assert.IsTrue(FormatSpecifierString.AsBoolean());
+            Assert.IsTrue(EmojiSequenceString.AsBoolean());
+            Assert.IsTrue(NullCharString.AsBoolean());
+            Assert.IsTrue(RepeatingPatternString.AsBoolean());
         }
 
         [TestMethod]
