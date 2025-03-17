@@ -38,10 +38,7 @@ namespace Neo.UnitTests.Ledger
                     Attributes = [],
                     Script = new byte[] { (byte)OpCode.PUSH1 },
                     Signers = [new() { Account = UInt160.Zero }],
-                    Witnesses = [ new Witness() {
-                        InvocationScript=Array.Empty<byte>(),
-                        VerificationScript=Array.Empty<byte>()
-                    } ]
+                    Witnesses = [Witness.Empty]
                 }
             };
             _originTrimmed = new TransactionState
