@@ -69,10 +69,9 @@ namespace Neo.SmartContract.Native
             if (@struct.Count == 1) return;
 
             // Fully-qualified transaction.
-            var rawTransaction = ((ByteString)@struct[1]).Memory;
-            Transaction = rawTransaction.AsSerializable<Transaction>();
+            _rawTransaction = ((ByteString)@struct[1]).Memory;
+            _transaction = _rawTransaction.AsSerializable<Transaction>();
             State = (VMState)(byte)@struct[2].GetInteger();
-            _rawTransaction = rawTransaction;
         }
 
         StackItem IInteroperable.ToStackItem(IReferenceCounter referenceCounter)
