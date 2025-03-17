@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Native
 
             return new TrimmedBlock
             {
-                Header = Header.ToArray().AsSerializable<Header>(),
+                Header = Header.Clone(),
                 Hashes = [.. Hashes]
             };
         }
