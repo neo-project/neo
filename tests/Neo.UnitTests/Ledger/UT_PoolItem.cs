@@ -167,19 +167,12 @@ namespace Neo.UnitTests.Ledger
         {
             var tx = new Transaction
             {
-                Nonce = (uint)s_testRandom.Next(),
-                Script = overrideScriptBytes ?? [],
+                Nonce = (uint)TestRandom.Next(),
+                Script = overrideScriptBytes ?? ReadOnlyMemory<byte>.Empty,
                 NetworkFee = networkFee,
                 Attributes = [],
                 Signers = [],
-                Witnesses =
-                [
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    }
-                ]
+                Witnesses = [Witness.Empty]
             };
 
             Assert.AreEqual(0, tx.Attributes.Length);

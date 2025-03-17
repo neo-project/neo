@@ -174,11 +174,7 @@ namespace Neo.UnitTests
                     Timestamp = 0,
                     Index = 0,
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness
-                    {
-                        InvocationScript = ReadOnlyMemory<byte>.Empty,
-                        VerificationScript = ReadOnlyMemory<byte>.Empty
-                    }
+                    Witness = Witness.Empty,
                 },
                 Transactions = []
             };

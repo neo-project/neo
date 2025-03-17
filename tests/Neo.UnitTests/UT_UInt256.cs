@@ -73,9 +73,9 @@ namespace Neo.UnitTests.IO
             byte[] temp = new byte[32];
             temp[31] = 0x01;
             UInt256 result = new(temp);
-            Assert.AreEqual(true, UInt256.Zero.Equals(UInt256.Zero));
-            Assert.AreEqual(false, UInt256.Zero.Equals(result));
-            Assert.AreEqual(false, result.Equals(null));
+            Assert.IsTrue(UInt256.Zero.Equals(UInt256.Zero));
+            Assert.IsFalse(UInt256.Zero.Equals(result));
+            Assert.IsFalse(result.Equals(null));
         }
 
         [TestMethod]
@@ -84,10 +84,10 @@ namespace Neo.UnitTests.IO
             UInt256 temp1 = new();
             UInt256 temp2 = new();
             UInt160 temp3 = new();
-            Assert.AreEqual(false, temp1.Equals(null));
-            Assert.AreEqual(true, temp1.Equals(temp1));
-            Assert.AreEqual(true, temp1.Equals(temp2));
-            Assert.AreEqual(false, temp1.Equals(temp3));
+            Assert.IsFalse(temp1.Equals(null));
+            Assert.IsTrue(temp1.Equals(temp1));
+            Assert.IsTrue(temp1.Equals(temp2));
+            Assert.IsFalse(temp1.Equals(temp3));
         }
 
         [TestMethod]
@@ -96,8 +96,8 @@ namespace Neo.UnitTests.IO
             UInt256 temp1 = new();
             object temp2 = null;
             object temp3 = new();
-            Assert.AreEqual(false, temp1.Equals(temp2));
-            Assert.AreEqual(false, temp1.Equals(temp3));
+            Assert.IsFalse(temp1.Equals(temp2));
+            Assert.IsFalse(temp1.Equals(temp3));
         }
 
         [TestMethod]
@@ -116,13 +116,13 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestTryParse()
         {
-            Assert.AreEqual(false, UInt256.TryParse(null, out _));
-            Assert.AreEqual(true, UInt256.TryParse("0x0000000000000000000000000000000000000000000000000000000000000000", out var temp));
+            Assert.IsFalse(UInt256.TryParse(null, out _));
+            Assert.IsTrue(UInt256.TryParse("0x0000000000000000000000000000000000000000000000000000000000000000", out var temp));
             Assert.AreEqual(UInt256.Zero, temp);
-            Assert.AreEqual(true, UInt256.TryParse("0x1230000000000000000000000000000000000000000000000000000000000000", out temp));
+            Assert.IsTrue(UInt256.TryParse("0x1230000000000000000000000000000000000000000000000000000000000000", out temp));
             Assert.AreEqual("0x1230000000000000000000000000000000000000000000000000000000000000", temp.ToString());
-            Assert.AreEqual(false, UInt256.TryParse("000000000000000000000000000000000000000000000000000000000000000", out _));
-            Assert.AreEqual(false, UInt256.TryParse("0xKK00000000000000000000000000000000000000000000000000000000000000", out _));
+            Assert.IsFalse(UInt256.TryParse("000000000000000000000000000000000000000000000000000000000000000", out _));
+            Assert.IsFalse(UInt256.TryParse("0xKK00000000000000000000000000000000000000000000000000000000000000", out _));
         }
 
         [TestMethod]
@@ -135,25 +135,25 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestOperatorLarger()
         {
-            Assert.AreEqual(false, UInt256.Zero > UInt256.Zero);
+            Assert.IsFalse(UInt256.Zero > UInt256.Zero);
         }
 
         [TestMethod]
         public void TestOperatorLargerAndEqual()
         {
-            Assert.AreEqual(true, UInt256.Zero >= UInt256.Zero);
+            Assert.IsTrue(UInt256.Zero >= UInt256.Zero);
         }
 
         [TestMethod]
         public void TestOperatorSmaller()
         {
-            Assert.AreEqual(false, UInt256.Zero < UInt256.Zero);
+            Assert.IsFalse(UInt256.Zero < UInt256.Zero);
         }
 
         [TestMethod]
         public void TestOperatorSmallerAndEqual()
         {
-            Assert.AreEqual(true, UInt256.Zero <= UInt256.Zero);
+            Assert.IsTrue(UInt256.Zero <= UInt256.Zero);
         }
 
         [TestMethod]

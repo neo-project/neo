@@ -15,7 +15,6 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P;
-using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -44,10 +43,8 @@ namespace Neo.CLI
                 AddrPayload.Create(
                     NetworkAddressWithTime.Create(
                         payload, DateTime.UtcNow.ToTimestamp(),
-                        new ArchivalNodeCapability(),
-                        new FullNodeCapability(),
-                        new ServerCapability(NodeCapabilityType.TcpServer, port))
-                    ));
+                        LocalNode.GetNodeCapabilities()
+                    )));
         }
 
         /// <summary>
