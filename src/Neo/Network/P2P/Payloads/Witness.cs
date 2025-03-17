@@ -95,6 +95,7 @@ namespace Neo.Network.P2P.Payloads
         {
             return new Witness()
             {
+                _scriptHash = _scriptHash,
                 InvocationScript = InvocationScript.ToArray(),
                 VerificationScript = VerificationScript.ToArray()
             };
