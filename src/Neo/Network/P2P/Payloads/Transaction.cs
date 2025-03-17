@@ -23,6 +23,7 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using static Neo.SmartContract.Helper;
@@ -487,7 +488,8 @@ namespace Neo.Network.P2P.Payloads
             });
         }
 
-        private static bool IsMultiSignatureInvocationScript(int m, ReadOnlyMemory<byte> invocationScript, out ReadOnlyMemory<byte>[] sigs)
+        private static bool IsMultiSignatureInvocationScript(int m, ReadOnlyMemory<byte> invocationScript,
+            [NotNullWhen(true)] out ReadOnlyMemory<byte>[] sigs)
         {
             sigs = null;
             ReadOnlySpan<byte> span = invocationScript.Span;
@@ -506,7 +508,8 @@ namespace Neo.Network.P2P.Payloads
             return true;
         }
 
-        private static bool IsSingleSignatureInvocationScript(ReadOnlyMemory<byte> invocationScript, out ReadOnlyMemory<byte> sig)
+        private static bool IsSingleSignatureInvocationScript(ReadOnlyMemory<byte> invocationScript,
+            [NotNullWhen(true)] out ReadOnlyMemory<byte> sig)
         {
             sig = null;
             if (invocationScript.Length != 66) return false;

@@ -159,10 +159,10 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestContains()
         {
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.CreateAccount(testScriptHash);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -191,10 +191,10 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestCreateAccountWithPrivateKey()
         {
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.CreateAccount(keyPair.PrivateKey);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -202,26 +202,26 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             Contract contract = Contract.CreateSignatureContract(keyPair.PublicKey);
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.CreateAccount(contract);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             uut.DeleteAccount(testScriptHash);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.CreateAccount(contract, keyPair);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
         public void TestCreateAccountWithScriptHash()
         {
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.CreateAccount(testScriptHash);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -230,30 +230,30 @@ namespace Neo.UnitTests.Wallets.NEP6
             string nep2key = keyPair.Export("123", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             KeyPair key1 = uut.DecryptKey(nep2key);
             bool result = key1.Equals(keyPair);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
         public void TestDeleteAccount()
         {
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.CreateAccount(testScriptHash);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             uut.DeleteAccount(testScriptHash);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
         }
 
         [TestMethod]
         public void TestGetAccount()
         {
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.CreateAccount(keyPair.PrivateKey);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             WalletAccount account = uut.GetAccount(testScriptHash);
             Assert.AreEqual(Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToAddress(ProtocolSettings.Default.AddressVersion), account.Address);
         }
@@ -302,7 +302,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             X509Certificate2 cert = NewCertificate();
             Assert.IsNotNull(cert);
-            Assert.AreEqual(true, cert.HasPrivateKey);
+            Assert.IsTrue(cert.HasPrivateKey);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 Assert.ThrowsExactly<PlatformNotSupportedException>(() => _ = uut.Import(cert));
@@ -317,23 +317,23 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             string wif = keyPair.Export();
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.Import(wif);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
         public void TestImportNep2()
         {
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.Import(nep2key, "123", 2, 1, 1);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             uut.DeleteAccount(testScriptHash);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             JObject wallet = new();
             wallet["name"] = "name";
             wallet["version"] = new Version("1.0").ToString();
@@ -342,10 +342,10 @@ namespace Neo.UnitTests.Wallets.NEP6
             wallet["extra"] = new JObject();
             uut = new NEP6Wallet(null, "123", ProtocolSettings.Default, wallet);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(false, result);
+            Assert.IsFalse(result);
             uut.Import(nep2key, "123", 2, 1, 1);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -358,7 +358,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             string npath = GetRandomPath(".json");
             Wallet nw = Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
             bool result = nw.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             uw.Delete();
             nw.Delete();
         }
@@ -376,10 +376,10 @@ namespace Neo.UnitTests.Wallets.NEP6
             uut = new NEP6Wallet(wPath, "123", ProtocolSettings.Default);
             uut.CreateAccount(keyPair.PrivateKey);
             bool result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             uut.Save();
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -393,14 +393,14 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestVerifyPassword()
         {
             bool result = uut.VerifyPassword("123");
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             uut.CreateAccount(keyPair.PrivateKey);
             result = uut.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             result = uut.VerifyPassword("123");
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
             uut.DeleteAccount(testScriptHash);
-            Assert.AreEqual(false, uut.Contains(testScriptHash));
+            Assert.IsFalse(uut.Contains(testScriptHash));
             JObject wallet = new();
             wallet["name"] = "name";
             wallet["version"] = new Version("1.0").ToString();
