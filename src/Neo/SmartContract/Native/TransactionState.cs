@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
         {
             var from = (TransactionState)replica;
             BlockIndex = from.BlockIndex;
-            Transaction = from.Transaction;
+            _transaction = from.Transaction;
             State = from.State;
             _rawTransaction = from._rawTransaction;
         }
