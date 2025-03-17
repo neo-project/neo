@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -70,6 +71,7 @@ namespace Neo.UnitTests.Ledger
                 BinarySerializer.Serialize((_origin as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
                 );
             clone.Transaction.Nonce++;
+            clone.Transaction = clone.Transaction; // invalidate rawTransaction
             Assert.AreNotEqual(clone.Transaction.Nonce, _origin.Transaction.Nonce);
             CollectionAssert.AreNotEqual(
                 BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
