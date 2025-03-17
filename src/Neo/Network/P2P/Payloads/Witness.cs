@@ -90,5 +90,14 @@ namespace Neo.Network.P2P.Payloads
             json["verification"] = Convert.ToBase64String(VerificationScript.Span);
             return json;
         }
+
+        public Witness Clone()
+        {
+            return new Witness()
+            {
+                InvocationScript = InvocationScript.ToArray(),
+                VerificationScript = VerificationScript.ToArray()
+            };
+        }
     }
 }

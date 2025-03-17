@@ -279,7 +279,7 @@ namespace Neo.Network.P2P.Payloads
                 Index = index,
                 PrimaryIndex = primaryIndex,
                 NextConsensus = nextConsensus,
-                Witness = Witness?.ToArray().AsSerializable<Witness>(),
+                Witness = Witness?.Clone(),
                 _hash = _hash
             };
         }
