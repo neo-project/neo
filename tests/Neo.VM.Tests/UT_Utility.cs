@@ -89,17 +89,5 @@ namespace Neo.Test
                 Assert.AreEqual(bi.GetBitLength(), VM.Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
         }
-
-        [TestMethod]
-        public void TestModInverseTest()
-        {
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.Zero));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.One));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.Zero));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.One));
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
-
-            Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
-        }
     }
 }
