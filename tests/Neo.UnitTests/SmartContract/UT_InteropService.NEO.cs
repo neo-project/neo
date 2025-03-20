@@ -73,39 +73,19 @@ namespace Neo.UnitTests.SmartContract
             };
             Assert.IsTrue(engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new byte[0][];
+            pubkeys = Array.Empty<byte[]>();
             Assert.ThrowsExactly<ArgumentException>(() => _ = engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new[]
-            {
-                pubkey1.EncodePoint(false),
-                pubkey2.EncodePoint(false)
-            };
-            signatures = new byte[0][];
+            pubkeys = [pubkey1.EncodePoint(false), pubkey2.EncodePoint(false)];
+            signatures = Array.Empty<byte[]>();
             Assert.ThrowsExactly<ArgumentException>(() => _ = engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new[]
-            {
-                pubkey1.EncodePoint(false),
-                pubkey2.EncodePoint(false)
-            };
-            signatures = new[]
-            {
-                signature1,
-                new byte[64]
-            };
+            pubkeys = [pubkey1.EncodePoint(false), pubkey2.EncodePoint(false)];
+            signatures = [signature1, new byte[64]];
             Assert.IsFalse(engine.CheckMultisig(pubkeys, signatures));
 
-            pubkeys = new[]
-            {
-                pubkey1.EncodePoint(false),
-                new byte[70]
-            };
-            signatures = new[]
-            {
-                signature1,
-                signature2
-            };
+            pubkeys = [pubkey1.EncodePoint(false), new byte[70]];
+            signatures = [signature1, signature2];
             Assert.ThrowsExactly<FormatException>(() => _ = engine.CheckMultisig(pubkeys, signatures));
         }
 
@@ -168,7 +148,7 @@ namespace Neo.UnitTests.SmartContract
                 Tokens = Array.Empty<MethodToken>()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
-            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nef.ToArray(), new byte[0]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nef.ToArray(), []));
 
             var manifest = TestUtils.CreateDefaultManifest();
             byte[] privkey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
@@ -222,21 +202,21 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
-            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, null, new byte[] { 0x01 }));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, null, [0x01]));
             Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), null));
             Assert.ThrowsExactly<ArgumentException>(() => snapshotCache.UpdateContract(null, null, null));
 
             nefFile = new NefFile()
             {
-                Script = new byte[0],
+                Script = ReadOnlyMemory<byte>.Empty,
                 Source = string.Empty,
                 Compiler = "",
                 Tokens = []
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
-            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), new byte[] { 0x01 }));
-            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), new byte[0]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), [0x01]));
+            Assert.ThrowsExactly<InvalidOperationException>(() => snapshotCache.UpdateContract(null, nefFile.ToArray(), []));
         }
 
         [TestMethod]
