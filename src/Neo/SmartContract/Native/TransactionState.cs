@@ -15,7 +15,6 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 
 namespace Neo.SmartContract.Native
 {
@@ -39,27 +38,12 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public VMState State { get; set; }
 
-        private ReadOnlyMemory<byte> _rawTransaction;
-
-        IInteroperable IInteroperable.Clone()
-        {
-            return new TransactionState
-            {
-                BlockIndex = BlockIndex,
-                Transaction = Transaction,
-                State = State,
-                _rawTransaction = _rawTransaction
-            };
-        }
-
         void IInteroperable.FromReplica(IInteroperable replica)
         {
             var from = (TransactionState)replica;
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
-            if (_rawTransaction.IsEmpty)
-                _rawTransaction = from._rawTransaction;
         }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
@@ -71,8 +55,8 @@ namespace Neo.SmartContract.Native
             if (@struct.Count == 1) return;
 
             // Fully-qualified transaction.
-            _rawTransaction = ((ByteString)@struct[1]).Memory;
-            Transaction = _rawTransaction.AsSerializable<Transaction>();
+            var rawTransaction = ((ByteString)@struct[1]).Memory;
+            Transaction = rawTransaction.AsSerializable<Transaction>();
             State = (VMState)(byte)@struct[2].GetInteger();
         }
 
@@ -80,9 +64,7 @@ namespace Neo.SmartContract.Native
         {
             if (Transaction is null)
                 return new Struct(referenceCounter) { BlockIndex };
-            if (_rawTransaction.IsEmpty)
-                _rawTransaction = Transaction.ToArray();
-            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
+            return new Struct(referenceCounter) { BlockIndex, Transaction.ToArray(), (byte)State };
         }
     }
 }
