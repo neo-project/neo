@@ -135,7 +135,7 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestModInverse_EdgeCases()
         {
-            Assert.ThrowsExactly<ArithmeticException>(() => _ = BigInteger.Zero.ModInverse(11));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(11));
 
             Assert.AreEqual(1, BigInteger.One.ModInverse(2));
 
@@ -179,6 +179,17 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual(0, new List<BigInteger>().Sum());
             Assert.AreEqual(0, new List<BigInteger> { JNumber.MIN_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
             Assert.AreEqual(JNumber.MAX_SAFE_INTEGER * 2, new List<BigInteger> { JNumber.MAX_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
+        }
+
+        [TestMethod]
+        public void TestModInverseTest()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
+            Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
         }
     }
 }

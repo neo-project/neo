@@ -246,17 +246,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            UInt256 blockHash;
-
-            try
-            {
-                // Avoid serialization problems
-                blockHash = block.Hash;
-            }
-            catch
-            {
-                return VerifyResult.Invalid;
-            }
+            if (!block.TryGetHash(out var blockHash)) return VerifyResult.Invalid;
 
             if (ProtocolSettings.Default.IsBlacklisted(block.Header))
                 return VerifyResult.Invalid;
@@ -335,15 +325,7 @@ namespace Neo.Ledger
                 var headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
                 foreach (var header in headers)
                 {
-                    try
-                    {
-                        // Avoid serialization problems
-                        _ = header.Hash;
-                    }
-                    catch
-                    {
-                        continue;
-                    }
+                    if (!header.TryGetHash(out _)) continue;
                     if (ProtocolSettings.Default.IsBlacklisted(header)) continue;
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
@@ -357,15 +339,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            try
-            {
-                // Avoid serialization problems
-                _ = payload.Hash;
-            }
-            catch
-            {
-                return VerifyResult.Invalid;
-            }
+            if (!payload.TryGetHash(out _)) return VerifyResult.Invalid;
 
             var snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
@@ -376,16 +350,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            UInt256 hash;
-            try
-            {
-                // Avoid serialization problems
-                hash = transaction.Hash;
-            }
-            catch
-            {
-                return VerifyResult.Invalid;
-            }
+            if (!transaction.TryGetHash(out var hash)) return VerifyResult.Invalid;
 
             switch (system.ContainsTransaction(hash))
             {
@@ -446,13 +411,7 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
-            UInt256 hash;
-            try
-            {
-                // Avoid serialization problems
-                hash = tx.Hash;
-            }
-            catch
+            if (!tx.TryGetHash(out var hash))
             {
                 SendRelayResult(tx, VerifyResult.Invalid);
                 return;

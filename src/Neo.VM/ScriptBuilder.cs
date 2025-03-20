@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System;
 using System.IO;
 using System.Numerics;
@@ -161,7 +162,7 @@ namespace Neo.VM
         /// <returns>A reference to this instance after the emit operation has completed.</returns>
         public ScriptBuilder EmitPush(string data)
         {
-            return EmitPush(Utility.StrictUTF8.GetBytes(data));
+            return EmitPush(data.ToStrictUtf8Bytes());
         }
 
         /// <summary>

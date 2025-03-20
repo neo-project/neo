@@ -45,7 +45,7 @@ namespace Neo.Test
         {
             var result = value.GetBitLength();
             Assert.AreEqual(expected, value.GetBitLength(), "Native method has not the expected result");
-            Assert.AreEqual(result, Utility.GetBitLength(value), "Result doesn't match");
+            Assert.AreEqual(result, VM.Utility.GetBitLength(value), "Result doesn't match");
         }
 
         [TestMethod]
@@ -81,25 +81,13 @@ namespace Neo.Test
             for (uint i = 0; i < 1000; i++)
             {
                 var bi = new BigInteger(GetRandomByteArray(random));
-                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
+                Assert.AreEqual(bi.GetBitLength(), VM.Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
 
-            foreach (var bi in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new BigInteger(ulong.MaxValue), new BigInteger(long.MinValue) })
+            foreach (var bi in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new(ulong.MaxValue), new(long.MinValue) })
             {
-                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
+                Assert.AreEqual(bi.GetBitLength(), VM.Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
-        }
-
-        [TestMethod]
-        public void TestModInverseTest()
-        {
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.Zero));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.One));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.Zero));
-            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.One));
-            Assert.ThrowsExactly<InvalidOperationException>(() => _ = new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
-
-            Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
         }
     }
 }
