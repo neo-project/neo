@@ -48,6 +48,31 @@ namespace Neo.SmartContract.Native
 
         public int Size => Header.Size + Hashes.GetVarSize();
 
+        /// <summary>
+        /// Create Trimmed block
+        /// </summary>
+        /// <param name="block">Block</param>
+        /// <returns></returns>
+        public static TrimmedBlock Create(Block block)
+        {
+            return Create(block.Header, block.Transactions.Select(p => p.Hash).ToArray());
+        }
+
+        /// <summary>
+        /// Create Trimmed block
+        /// </summary>
+        /// <param name="header">Block header</param>
+        /// <param name="txHashes">Transaction hashes</param>
+        /// <returns></returns>
+        public static TrimmedBlock Create(Header header, UInt256[] txHashes)
+        {
+            return new TrimmedBlock
+            {
+                Header = header,
+                Hashes = txHashes
+            };
+        }
+
         public void Deserialize(ref MemoryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
