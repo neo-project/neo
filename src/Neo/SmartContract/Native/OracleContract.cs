@@ -163,13 +163,14 @@ namespace Neo.SmartContract.Native
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request, response.Id);
-                OracleRequest request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
+                // Don't need to seal because it's read-only
+                var request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.SnapshotCache.Delete(key);
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
-                IdList list = engine.SnapshotCache.GetAndChange(key).GetInteroperable<IdList>();
+                using var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list);
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.SnapshotCache.Delete(key);
 
@@ -215,7 +216,7 @@ namespace Neo.SmartContract.Native
             //Put the request to storage
             if (ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), new StorageItem(new OracleRequest
+            var request = new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForResponse,
@@ -224,10 +225,14 @@ namespace Neo.SmartContract.Native
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength, engine.Limits.MaxStackSize)
-            }));
+            };
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), StorageItem.CreateSealed(request));
 
             //Add the id to the IdList
-            var list = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
+            using var sealInterop = engine.SnapshotCache.GetAndChange
+                (CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList()))
+                .GetInteroperable(out IdList list);
+
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);

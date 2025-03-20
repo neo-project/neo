@@ -25,27 +25,26 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            var test = new AddrPayload() { AddressList = new NetworkAddressWithTime[0] };
+            var test = new AddrPayload() { AddressList = [] };
             Assert.AreEqual(1, test.Size);
 
-            test = AddrPayload.Create(new NetworkAddressWithTime[] { new NetworkAddressWithTime() { Address = IPAddress.Any, Capabilities = new NodeCapability[0], Timestamp = 1 } });
+            test = AddrPayload.Create([new NetworkAddressWithTime() { Address = IPAddress.Any, Capabilities = [], Timestamp = 1 }]);
             Assert.AreEqual(22, test.Size);
         }
 
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = AddrPayload.Create(new NetworkAddressWithTime[] { new NetworkAddressWithTime()
+            var test = AddrPayload.Create([new NetworkAddressWithTime()
             {
                 Address = IPAddress.Any,
-                Capabilities = new NodeCapability[0], Timestamp = 1
-            }
-            });
+                Capabilities = [],
+                Timestamp = 1
+            }]);
             var clone = test.ToArray().AsSerializable<AddrPayload>();
-
             CollectionAssert.AreEqual(test.AddressList.Select(u => u.EndPoint).ToArray(), clone.AddressList.Select(u => u.EndPoint).ToArray());
 
-            Assert.ThrowsExactly<FormatException>(() => _ = new AddrPayload() { AddressList = new NetworkAddressWithTime[0] }.ToArray().AsSerializable<AddrPayload>());
+            Assert.ThrowsExactly<FormatException>(() => _ = new AddrPayload() { AddressList = [] }.ToArray().AsSerializable<AddrPayload>());
         }
     }
 }
