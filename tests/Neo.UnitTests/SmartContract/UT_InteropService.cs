@@ -618,17 +618,17 @@ namespace Neo.UnitTests.SmartContract
 
             //key.Length > MaxStorageKeySize
             key = new byte[ApplicationEngine.MaxStorageKeySize + 1];
-            value = new byte[] { 0x02 };
+            value = [0x02];
             Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //value.Length > MaxStorageValueSize
-            key = new byte[] { 0x01 };
+            key = [0x01];
             value = new byte[ushort.MaxValue + 1];
             Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //context.IsReadOnly
-            key = new byte[] { 0x01 };
-            value = new byte[] { 0x02 };
+            key = [0x01];
+            value = [0x02];
             storageContext.IsReadOnly = true;
             Assert.ThrowsExactly<ArgumentException>(() => engine.Put(storageContext, key, value));
 
@@ -648,14 +648,14 @@ namespace Neo.UnitTests.SmartContract
             snapshotCache.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
-            key = new byte[] { 0x01 };
-            value = new byte[] { 0x02 };
+            key = [0x01];
+            value = [0x02];
             storageContext.IsReadOnly = false;
             engine.Put(storageContext, key, value);
 
             //value length == 0
-            key = new byte[] { 0x01 };
-            value = Array.Empty<byte>();
+            key = [0x01];
+            value = [];
             engine.Put(storageContext, key, value);
         }
 
@@ -800,7 +800,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result);
             result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, signatureK1, NamedCurveHash.secp256k1SHA256);
             Assert.IsTrue(result);
-            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[0], NamedCurveHash.secp256k1SHA256);
+            result = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, [], NamedCurveHash.secp256k1SHA256);
             Assert.IsFalse(result);
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = CryptoLib.VerifyWithECDsaV0(hexMessage, publicKeyK1, new byte[64], NamedCurveHash.secp256r1Keccak256));
         }

@@ -64,7 +64,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual("{\"type\":\"Array\",\"value\":[{\"type\":\"Integer\",\"value\":\"5\"},{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"},{\"type\":\"ByteString\",\"value\":\"AQID\"},{\"type\":\"Boolean\",\"value\":true}]}", item.ToJson().ToString());
 
             var item2 = new Map();
-            item2[1] = new Pointer(new Script(new byte[0]), 0);
+            item2[1] = new Pointer(new Script(ReadOnlyMemory<byte>.Empty), 0);
 
             Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString());
         }
