@@ -94,6 +94,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsFalse(uut.Equals(null));
         }
 
+        [TestMethod]
+        public void CloneTest()
+        {
+            var uut = TestUtils.MakeHeader(null, UInt256.Zero);
+            var clone = uut.Clone();
+            CollectionAssert.AreEqual(uut.ToArray(), clone.ToArray());
+            // Check not referenced
+            uut.Witness.InvocationScript = new byte[123];
+            CollectionAssert.AreNotEqual(clone.Witness.InvocationScript.ToArray(), uut.Witness.InvocationScript.ToArray());
+        }
 
         [TestMethod]
         public void Equals_SameHeader()

@@ -87,10 +87,12 @@ namespace Neo.SmartContract.Native
 
         IInteroperable IInteroperable.Clone()
         {
+            // FromStackItem is not supported so we need to do the copy
+
             return new TrimmedBlock
             {
-                Header = Header,
-                Hashes = Hashes
+                Header = Header.Clone(),
+                Hashes = [.. Hashes]
             };
         }
 
