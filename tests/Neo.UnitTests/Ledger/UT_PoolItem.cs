@@ -167,7 +167,7 @@ namespace Neo.UnitTests.Ledger
         {
             var tx = new Transaction
             {
-                Nonce = (uint)TestRandom.Next(),
+                Nonce = (uint)TestUtils.TestRandom.Next(),
                 Script = overrideScriptBytes ?? ReadOnlyMemory<byte>.Empty,
                 NetworkFee = networkFee,
                 Attributes = [],
