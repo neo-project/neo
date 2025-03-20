@@ -18,20 +18,33 @@ namespace Neo.Extensions
 {
     public static class BigIntegerExtensions
     {
-        public static int GetLowestSetBit(this BigInteger i)
+        /// <summary>
+        /// Finds the lowest set bit in the specified value.
+        /// </summary>
+        /// <param name="value">The value to find the lowest set bit in.</param>
+        /// <returns>The lowest set bit in the specified value.</returns>
+        /// <exception cref="Exception">Thrown when the value is zero.</exception>
+        public static int GetLowestSetBit(this BigInteger value)
         {
-            if (i.Sign == 0)
+            if (value.Sign == 0)
                 return -1;
-            var b = i.ToByteArray();
+            var b = value.ToByteArray();
             var w = 0;
             while (b[w] == 0)
                 w++;
             for (var x = 0; x < 8; x++)
                 if ((b[w] & 1 << x) > 0)
                     return x + w * 8;
-            throw new Exception();
+            throw new Exception("The value is zero.");
         }
 
+        /// <summary>
+        /// Computes the remainder of the division of the specified value by the modulus.
+        /// </summary>
+        /// <param name="x">The value to compute the remainder of.</param>
+        /// <param name="y">The modulus.</param>
+        /// <returns>The remainder of the division of the specified value by the modulus.</returns>
+        /// <exception cref="DivideByZeroException">Thrown when the modulus is zero.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static BigInteger Mod(this BigInteger x, BigInteger y)
         {
@@ -41,32 +54,47 @@ namespace Neo.Extensions
             return x;
         }
 
-        public static BigInteger ModInverse(this BigInteger a, BigInteger n)
+        /// <summary>
+        /// Computes the modular inverse of the specified value.
+        /// </summary>
+        /// <param name="value">The value to find the modular inverse of.</param>
+        /// <param name="modulus">The modulus.</param>
+        /// <returns>The modular inverse of the specified value.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value or modulus is out of range.</exception>
+        /// <exception cref="ArithmeticException">
+        /// Thrown when no modular inverse exists for the given inputs. i.e. when the value and modulus are not coprime.
+        /// </exception>
+        public static BigInteger ModInverse(this BigInteger value, BigInteger modulus)
         {
-            if (BigInteger.GreatestCommonDivisor(a, n) != 1)
-            {
-                throw new ArithmeticException("No modular inverse exists for the given inputs.");
-            }
+            if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (modulus < 2) throw new ArgumentOutOfRangeException(nameof(modulus));
 
-            BigInteger i = n, v = 0, d = 1;
-            while (a > 0)
+            BigInteger r = value, oldR = modulus, s = 1, oldS = 0;
+            while (r > 0)
             {
-                BigInteger t = i / a, x = a;
-                a = i % x;
-                i = x;
-                x = d;
-                d = v - t * x;
-                v = x;
+                var q = oldR / r;
+                (oldR, r) = (r, oldR % r);
+                (oldS, s) = (s, oldS - q * s);
             }
-            v %= n;
-            if (v < 0) v = (v + n) % n;
-            return v;
+            var result = oldS % modulus;
+            if (result < 0) result += modulus;
+
+            if (!(value * result % modulus).IsOne)
+                throw new ArithmeticException("No modular inverse exists for the given inputs.");
+            return result;
         }
 
+        /// <summary>
+        /// Tests whether the specified bit is set in the specified value.
+        /// </summary>
+        /// <param name="value">The value to test.</param>
+        /// <param name="index">The index of the bit to test.</param>
+        /// <returns>True if the specified bit is set in the specified value, otherwise false.</returns>
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TestBit(this BigInteger i, int index)
+        public static bool TestBit(this BigInteger value, int index)
         {
-            return (i & (BigInteger.One << index)) > BigInteger.Zero;
+            return (value & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
         /// <summary>
@@ -84,13 +112,13 @@ namespace Neo.Extensions
         /// <summary>
         /// Converts a <see cref="BigInteger"/> to byte array and eliminates all the leading zeros.
         /// </summary>
-        /// <param name="i">The <see cref="BigInteger"/> to convert.</param>
+        /// <param name="value">The <see cref="BigInteger"/> to convert.</param>
         /// <returns>The converted byte array.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] ToByteArrayStandard(this BigInteger i)
+        public static byte[] ToByteArrayStandard(this BigInteger value)
         {
-            if (i.IsZero) return Array.Empty<byte>();
-            return i.ToByteArray();
+            if (value.IsZero) return Array.Empty<byte>();
+            return value.ToByteArray();
         }
     }
 }
