@@ -236,6 +236,7 @@ namespace Neo.Cryptography
             return hashAlgorithm switch
             {
                 HashAlgorithm.SHA256 => message.Sha256(),
+                HashAlgorithm.SHA512 => message.Sha512(),
                 HashAlgorithm.Keccak256 => message.Keccak256(),
                 _ => throw new NotSupportedException(nameof(hashAlgorithm))
             };
@@ -252,6 +253,7 @@ namespace Neo.Cryptography
             return hashAlgorithm switch
             {
                 HashAlgorithm.SHA256 => message.Sha256(),
+                HashAlgorithm.SHA512 => message.Sha512(),
                 HashAlgorithm.Keccak256 => message.Keccak256(),
                 _ => throw new NotSupportedException(nameof(hashAlgorithm))
             };
