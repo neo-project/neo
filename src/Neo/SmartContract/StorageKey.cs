@@ -28,11 +28,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The id of the contract.
         /// </summary>
-        public int Id
-        {
-            get => _id;
-            init => _id = value;
-        }
+        public int Id { get; init; }
 
         /// <summary>
         /// The key of the storage entry.
@@ -52,7 +48,6 @@ namespace Neo.SmartContract
         }
 
         private ReadOnlyMemory<byte> _cache;
-        private readonly int _id;
         private readonly ReadOnlyMemory<byte> _key;
 
         // NOTE: StorageKey is readonly, so we can cache the hash code.
@@ -275,8 +270,8 @@ namespace Neo.SmartContract
         /// <param name="cache">The cached byte array.</param>
         private StorageKey(int id, ReadOnlyMemory<byte> cache)
         {
-            _cache = cache;
             Id = id;
+            _cache = cache;
             _key = _cache[sizeof(int)..]; // "Key" makes a copy, avoid it.
         }
 
