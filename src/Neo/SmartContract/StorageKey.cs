@@ -265,6 +265,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageKey"/> class.
+        /// Note: This method is private and must be called only with safe values
         /// </summary>
         /// <param name="id">Contract Id</param>
         /// <param name="cache">The cached byte array.</param>
