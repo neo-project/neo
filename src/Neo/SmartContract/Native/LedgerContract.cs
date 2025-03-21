@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
                 State = VMState.NONE
             }).ToArray();
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(TrimmedBlock.Create(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
@@ -372,15 +372,6 @@ namespace Neo.SmartContract.Native
             if (txIndex < 0 || txIndex >= block.Hashes.Length)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));
             return GetTransaction(engine.SnapshotCache, block.Hashes[txIndex]);
-        }
-
-        private static TrimmedBlock Trim(Block block)
-        {
-            return new TrimmedBlock
-            {
-                Header = block.Header,
-                Hashes = block.Transactions.Select(p => p.Hash).ToArray()
-            };
         }
     }
 }

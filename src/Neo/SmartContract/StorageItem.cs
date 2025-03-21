@@ -25,6 +25,16 @@ namespace Neo.SmartContract
     /// </summary>
     public class StorageItem : ISerializable
     {
+        private class SealInteroperable(StorageItem item) : IDisposable
+        {
+            public readonly StorageItem Item = item;
+
+            public void Dispose()
+            {
+                Item.Seal();
+            }
+        }
+
         private ReadOnlyMemory<byte> _value;
         private object? _cache;
 
@@ -82,6 +92,45 @@ namespace Neo.SmartContract
         public StorageItem(IInteroperable interoperable)
         {
             _cache = interoperable;
+        }
+
+        /// <summary>
+        /// Create a new instance from an sealed <see cref="IInteroperable"/> class. 
+        /// </summary>
+        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
+        /// <returns><see cref="StorageItem"/> class</returns>
+        public static StorageItem CreateSealed(IInteroperable interoperable)
+        {
+            var item = new StorageItem(interoperable);
+            item.Seal();
+            return item;
+        }
+
+        /// <summary>
+        /// Returns true if the <see cref="IInteroperable"/> class is serializable
+        /// </summary>
+        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
+        /// <returns>True if serializable</returns>
+        public static bool IsSerializable(IInteroperable interoperable)
+        {
+            try
+            {
+                _ = CreateSealed(interoperable);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Ensure that is Serializable and cache the value
+        /// </summary>
+        public void Seal()
+        {
+            // Assert is Serializable and cached
+            _ = Value;
         }
 
         /// <summary>
@@ -181,6 +230,30 @@ namespace Neo.SmartContract
             return interoperable;
         }
 
+        /// Gets an <see cref="IInteroperable"/> from the storage.
+        /// </summary>
+        /// <param name="interop">The <see cref="IInteroperable"/> in the storage.</param>
+        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
+        /// <returns>The <see cref="IDisposable"/> that seal the item when disposed.</returns>
+        public IDisposable GetInteroperable<T>(out T interop) where T : IInteroperable, new()
+        {
+            interop = GetInteroperable<T>();
+            return new SealInteroperable(this);
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IInteroperable"/> from the storage.
+        /// </summary>
+        /// <param name="interop">The <see cref="IInteroperable"/> in the storage.</param>
+        /// <param name="verify">Verify deserialization</param>
+        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
+        /// <returns>The <see cref="IDisposable"/> that seal the item when disposed.</returns>
+        public IDisposable GetInteroperable<T>(out T interop, bool verify = true) where T : IInteroperableVerifiable, new()
+        {
+            interop = GetInteroperable<T>(verify);
+            return new SealInteroperable(this);
+        }
+
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Value.Span);
@@ -193,16 +266,6 @@ namespace Neo.SmartContract
         public void Set(BigInteger integer)
         {
             _cache = integer;
-            _value = null;
-        }
-
-        /// <summary>
-        /// Sets the interoperable value of the storage.
-        /// </summary>
-        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
-        public void Set(IInteroperable interoperable)
-        {
-            _cache = interoperable;
             _value = null;
         }
 

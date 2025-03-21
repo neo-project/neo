@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native
                     else
                     {
                         // Parse old contract
-                        var oldContract = state.GetInteroperable<ContractState>(false);
+                        using var sealInterop = state.GetInteroperable(out ContractState oldContract, false);
                         // Increase the update counter
                         oldContract.UpdateCounter++;
                         // Modify nef and manifest
@@ -247,7 +247,7 @@ namespace Neo.SmartContract.Native
 
             if (!contract.Manifest.IsValid(engine.Limits, hash)) throw new InvalidOperationException($"Invalid Manifest: {hash}");
 
-            engine.SnapshotCache.Add(key, new StorageItem(contract));
+            engine.SnapshotCache.Add(key, StorageItem.CreateSealed(contract));
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_ContractHash, contract.Id), new StorageItem(hash.ToArray()));
 
             await OnDeployAsync(engine, contract, data, false);
@@ -268,7 +268,10 @@ namespace Neo.SmartContract.Native
 
             engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contract = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash))?.GetInteroperable<ContractState>(false);
+            var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash))
+                ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
+
+            using var sealInterop = contractState.GetInteroperable(out ContractState contract, false);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
             if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 

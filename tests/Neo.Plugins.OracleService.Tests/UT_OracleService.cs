@@ -23,37 +23,21 @@ namespace Neo.Plugins.OracleService.Tests
         [TestMethod]
         public void TestFilter()
         {
-            var json = @"{
-  ""Stores"": [
-    ""Lambton Quay"",
-    ""Willis Street""
-  ],
-  ""Manufacturers"": [
-    {
-      ""Name"": ""Acme Co"",
-      ""Products"": [
-        {
-          ""Name"": ""Anvil"",
-          ""Price"": 50
-        }
-      ]
-    },
-    {
-      ""Name"": ""Contoso"",
-      ""Products"": [
-        {
-          ""Name"": ""Elbow Grease"",
-          ""Price"": 99.95
-        },
-        {
-          ""Name"": ""Headlight Fluid"",
-          ""Price"": 4
-        }
-      ]
-    }
-  ]
-}";
-
+            var json = """
+            {
+                "Stores": ["Lambton Quay",  "Willis Street"],
+                "Manufacturers": [{
+                    "Name": "Acme Co",
+                    "Products": [{ "Name": "Anvil", "Price": 50 }]
+                },{
+                    "Name": "Contoso",
+                    "Products": [
+                        { "Name": "Elbow Grease", "Price": 99.95 },
+                        { "Name": "Headlight Fluid", "Price": 4 }
+                    ]
+                }]
+            }
+            """;
             Assert.AreEqual(@"[""Acme Co""]", OracleService.Filter(json, "$.Manufacturers[0].Name").ToStrictUtf8String());
             Assert.AreEqual("[50]", OracleService.Filter(json, "$.Manufacturers[0].Products[0].Price").ToStrictUtf8String());
             Assert.AreEqual(@"[""Elbow Grease""]",
