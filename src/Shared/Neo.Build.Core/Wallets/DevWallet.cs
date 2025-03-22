@@ -56,6 +56,8 @@ namespace Neo.Build.Core.Wallets
             }
         }
 
+        public DevWallet(TestWalletModel walletModel) : this(walletModel, ProtocolSettings.Default) { }
+
         private readonly ConcurrentDictionary<UInt160, DevWalletAccount> _walletAccounts = new();
 
         private readonly string? _walletName;
