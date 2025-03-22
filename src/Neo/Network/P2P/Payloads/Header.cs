@@ -266,5 +266,22 @@ namespace Neo.Network.P2P.Payloads
             if (prev.timestamp >= timestamp) return false;
             return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, 3_00000000L, out _);
         }
+
+        public Header Clone()
+        {
+            return new Header()
+            {
+                Version = version,
+                PrevHash = prevHash,
+                MerkleRoot = MerkleRoot,
+                Timestamp = timestamp,
+                Nonce = nonce,
+                Index = index,
+                PrimaryIndex = primaryIndex,
+                NextConsensus = nextConsensus,
+                Witness = Witness?.Clone(),
+                _hash = _hash
+            };
+        }
     }
 }
