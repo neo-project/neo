@@ -64,7 +64,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
-        private readonly SortedSet<PoolItem> _sortedTransactions = new();
+        private readonly SortedSet<PoolItem> _sortedTransactions = new(ReversePoolItemComparer.Instance);
 
         /// <summary>
         /// Store the unverified transactions currently in the pool.
@@ -74,7 +74,7 @@ namespace Neo.Ledger
         /// (_unsortedTransactions, and _sortedTransactions) after each block.
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unverifiedTransactions = new();
-        private readonly SortedSet<PoolItem> _unverifiedSortedTransactions = new();
+        private readonly SortedSet<PoolItem> _unverifiedSortedTransactions = new(ReversePoolItemComparer.Instance);
 
         // Internal methods to aid in unit testing
         internal int SortedTxCount => _sortedTransactions.Count;
@@ -222,8 +222,8 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                verifiedTransactions = _sortedTransactions.Reverse().Select(p => p.Tx).ToArray();
-                unverifiedTransactions = _unverifiedSortedTransactions.Reverse().Select(p => p.Tx).ToArray();
+                verifiedTransactions = _sortedTransactions.Select(p => p.Tx).ToArray();
+                unverifiedTransactions = _unverifiedSortedTransactions.Select(p => p.Tx).ToArray();
             }
             finally
             {
@@ -244,13 +244,11 @@ namespace Neo.Ledger
                 {
                     // Return all results
                     return _sortedTransactions
-                        .Reverse()
                         .Select(p => p.Tx)
                         .ToArray();
                 }
 
                 return _sortedTransactions
-                    .Reverse()
                     .Take(count)
                     .Select(p => p.Tx)
                     .ToArray();
@@ -264,10 +262,12 @@ namespace Neo.Ledger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private PoolItem? GetLowestFeeTransaction(out SortedSet<PoolItem>? sortedPool)
         {
-            var minItem = _unverifiedSortedTransactions.Min;
+            // Max is Min because it's reversed
+            var minItem = _unverifiedSortedTransactions.Max;
             sortedPool = minItem != null ? _unverifiedSortedTransactions : null;
 
-            var verifiedMin = _sortedTransactions.Min;
+            // Max is Min because it's reversed
+            var verifiedMin = _sortedTransactions.Max;
             if (verifiedMin == null) return minItem;
 
             if (minItem != null && verifiedMin.CompareTo(minItem) >= 0)
@@ -579,7 +579,7 @@ namespace Neo.Ledger
             try
             {
                 // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
-                foreach (PoolItem item in _unverifiedSortedTransactions.Reverse().Take(count))
+                foreach (PoolItem item in _unverifiedSortedTransactions.Take(count))
                 {
                     if (CheckConflicts(item.Tx, out List<PoolItem> conflictsToBeRemoved) &&
                         item.Tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx)) == VerifyResult.Succeed)
