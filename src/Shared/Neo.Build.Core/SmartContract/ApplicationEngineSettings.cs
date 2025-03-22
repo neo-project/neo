@@ -9,12 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.SmartContract.Native;
+using System.Numerics;
+
 namespace Neo.Build.Core.SmartContract
 {
     public class ApplicationEngineSettings
     {
-        public long MaxGas { get; set; } = ApplicationEngineDefaults.MaxGas;
-
-        public StorageSettings Storage { get; set; } = new();
+        public long MaxGas { get; internal set; } = (long)BigInteger.Pow(20L, NativeContract.GAS.Decimals);
     }
 }

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ApplicationEngineDefaults.cs file belongs to the neo project and is free
+// ApplicationEngineFactory.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,31 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Build.Core.SmartContract;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Reflection;
 
-namespace Neo.Build.Core.SmartContract
+namespace Neo.Build.Core.Factories
 {
-    public static class ApplicationEngineDefaults
+    public static class ApplicationEngineFactory
     {
-        /// <summary>
-        /// Max gas used for <see cref="ApplicationEngineSettings"/>.
-        /// </summary>
-        public static readonly long MaxGas = (long)BigInteger.Pow(20L, NativeContract.GAS.Decimals);
-
         /// <summary>
         /// Dictionary of <see cref="ApplicationEngineBase"/>'s overrides for system call methods of <see cref="ApplicationEngine"/>.
         /// </summary>
         public static IReadOnlyDictionary<uint, InteropDescriptor> SystemCallBaseServices => GetSystemCallBaseServices();
-
-        public static ApplicationEngineSettings Settings { get; } = new();
 
         /// <summary>
         /// Appends a seed to the hash.

@@ -10,10 +10,15 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.EventLog;
+using Neo.Build.ToolSet.Configuration.Converters;
+using Neo.Build.ToolSet.Options;
 using System;
+using System.ComponentModel;
+using System.Net;
 
 namespace Neo.Build.ToolSet.Extensions
 {
@@ -36,10 +41,14 @@ namespace Neo.Build.ToolSet.Extensions
                 var environmentName = context.HostingEnvironment.EnvironmentName;
 
                 config.SetBasePath(AppContext.BaseDirectory);
-                config.AddJsonFile("config.json", optional: false);
+                config.AddJsonFile("config.json", optional: false); // default app settings file
 
-                config.SetBasePath(context.Configuration[HostDefaults.ContentRootKey]!);
-                config.AddJsonFile($"config.{environmentName}.json", optional: true); // App settings file
+                var contentRoot = context.Configuration[HostDefaults.ContentRootKey]!;
+                config.SetBasePath(contentRoot);
+                config.AddJsonFile($"config.{environmentName}.json", optional: true);   // App settings file
+                config.AddJsonFile($"system.{environmentName}.json", optional: true);   // NeoSystem settings file
+                config.AddJsonFile($"protocol.{environmentName}.json", optional: true); // ProtocolSettings file
+                config.AddJsonFile($"vm.{environmentName}.json", optional: true);       // ApplicationEngine settings file
             });
 
             // Logging Configuration
@@ -74,9 +83,35 @@ namespace Neo.Build.ToolSet.Extensions
                 options.ValidateOnBuild = isDevelopment;
             });
 
-            hostBuilder.ConfigureServices(services =>
+            hostBuilder.ConfigureServices((context, services) =>
             {
-                // Add Services Here
+                var appEngineSection = context.Configuration.GetSection("VM");
+                var appEngineOptions = appEngineSection.Get<AppEngineOptions>()!;
+
+                services.AddSingleton(appEngineOptions);
+
+                // Add default services here
+            });
+
+            // Register TypeConverters for IConfiguration.Get<T>()
+            TypeDescriptor.AddAttributes(typeof(IPAddress), new TypeConverterAttribute(typeof(IPAddressTypeConverter)));
+
+            return hostBuilder;
+        }
+
+        public static IHostBuilder UseNeoSystem(this IHostBuilder hostBuilder)
+        {
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                var protocolSection = context.Configuration.GetSection("Protocol");
+                var neoSystemSection = context.Configuration.GetSection("NeoSystem");
+                var neoSystemOptions = neoSystemSection.Get<NeoSystemOptions>()!;
+                var protocolOptions = protocolSection.Get<NeoProtocolOptions>()!;
+
+                services.AddSingleton(neoSystemOptions);
+                services.AddSingleton(protocolOptions);
+
+                // Implement NeoSystem here and inject service
             });
 
             return hostBuilder;
