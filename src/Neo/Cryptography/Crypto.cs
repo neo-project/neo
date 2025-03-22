@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
-using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
@@ -32,11 +31,9 @@ namespace Neo.Cryptography
         private static readonly BigInteger s_prime = new(1,
             Hex.Decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"));
 
-        private static readonly ECDsaCache CacheECDsa = new();
-        private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-        private static readonly ECCurve secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
-        private static readonly X9ECParameters bouncySecp256k1 = SecNamedCurves.GetByName("secp256k1");
-        private static readonly X9ECParameters bouncySecp256r1 = SecNamedCurves.GetByName("secp256r1");
+        private static readonly ECDsaCache s_cacheECDsa = [];
+        private static readonly bool s_isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        private static readonly ECCurve s_secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
 
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
@@ -82,7 +79,7 @@ namespace Neo.Cryptography
         /// <returns>The ECDSA signature for the specified message.</returns>
         public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null, HashAlgorithm hashAlgorithm = HashAlgorithm.SHA256)
         {
-            if (hashAlgorithm == HashAlgorithm.Keccak256 || (IsOSX && ecCurve == ECC.ECCurve.Secp256k1))
+            if (hashAlgorithm == HashAlgorithm.Keccak256 || (s_isOSX && ecCurve == ECC.ECCurve.Secp256k1))
             {
                 var signer = new ECDsaSigner();
                 var privateKey = new BigInteger(1, priKey);
@@ -103,7 +100,7 @@ namespace Neo.Cryptography
 
             var curve =
                 ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                ecCurve == ECC.ECCurve.Secp256k1 ? secP256k1 :
+                ecCurve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
                 throw new NotSupportedException();
 
             using var ecdsa = ECDsa.Create(new ECParameters
@@ -143,7 +140,7 @@ namespace Neo.Cryptography
         {
             if (signature.Length != 64) return false;
 
-            if (hashAlgorithm == HashAlgorithm.Keccak256 || (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
+            if (hashAlgorithm == HashAlgorithm.Keccak256 || (s_isOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
                 var point = pubkey.Curve.BouncyCastleCurve.Curve.CreatePoint(
                     new BigInteger(pubkey.X.Value.ToString()),
@@ -174,13 +171,13 @@ namespace Neo.Cryptography
         /// <exception cref="NotSupportedException"></exception>
         public static ECDsa CreateECDsa(ECPoint pubkey)
         {
-            if (CacheECDsa.TryGet(pubkey, out var cache))
+            if (s_cacheECDsa.TryGet(pubkey, out var cache))
             {
                 return cache.Value;
             }
             var curve =
                 pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                pubkey.Curve == ECC.ECCurve.Secp256k1 ? secP256k1 :
+                pubkey.Curve == ECC.ECCurve.Secp256k1 ? s_secP256k1 :
                 throw new NotSupportedException();
             var buffer = pubkey.EncodePoint(false);
             var ecdsa = ECDsa.Create(new ECParameters
@@ -192,7 +189,7 @@ namespace Neo.Cryptography
                     Y = buffer[33..]
                 }
             });
-            CacheECDsa.Add(new ECDsaCacheItem(pubkey, ecdsa));
+            s_cacheECDsa.Add(new ECDsaCacheItem(pubkey, ecdsa));
             return ecdsa;
         }
 
