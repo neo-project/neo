@@ -17,5 +17,7 @@ namespace Neo.Build.Core.SmartContract
     public class ApplicationEngineSettings
     {
         public long MaxGas { get; internal set; } = (long)BigInteger.Pow(20L, NativeContract.GAS.Decimals);
+
+        public StorageSettings Storage { get; set; } = new();
     }
 }

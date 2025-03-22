@@ -14,7 +14,6 @@ using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
 using System.IO;
-using System.Text.Json.Nodes;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
@@ -22,7 +21,6 @@ namespace Neo.Build.Core.Tests.Helpers
     {
         public static readonly NeoSystem NeoSystem;
         public static readonly DevWallet Wallet;
-        public static readonly NeoBuildSettings BuildSettings = new(JsonNode.Parse("{}")!);
         public static readonly ILoggerFactory FactoryLogger = LoggerFactory.Create(logging =>
         {
             logging.AddSimpleConsole(options =>
