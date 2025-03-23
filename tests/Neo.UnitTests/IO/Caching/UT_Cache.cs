@@ -19,7 +19,7 @@ namespace Neo.UnitTests.IO.Caching
 {
     class MyCache : Cache<int, string>
     {
-        public MyCache(int max_capacity) : base(max_capacity) { }
+        public MyCache(int maxCapacity) : base(maxCapacity) { }
 
         protected override int GetKeyForItem(string item)
         {
@@ -48,7 +48,7 @@ namespace Neo.UnitTests.IO.Caching
 
     class MyDisposableCache : Cache<int, CacheDisposableEntry>
     {
-        public MyDisposableCache(int max_capacity) : base(max_capacity) { }
+        public MyDisposableCache(int maxCapacity) : base(maxCapacity) { }
 
         protected override int GetKeyForItem(CacheDisposableEntry item)
         {
@@ -68,12 +68,12 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_Cache
     {
         MyCache cache;
-        readonly int max_capacity = 4;
+        readonly int maxCapacity = 4;
 
         [TestInitialize]
         public void Init()
         {
-            cache = new MyCache(max_capacity);
+            cache = new MyCache(maxCapacity);
         }
 
         [TestMethod]
@@ -156,7 +156,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action());
 
             action = () => cache.CopyTo(temp, 1);
-            Assert.ThrowsExactly<ArgumentException>(() => action());
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action());
 
             cache.CopyTo(temp, 0);
             Assert.AreEqual("hello", temp[0]);
@@ -241,13 +241,13 @@ namespace Neo.UnitTests.IO.Caching
         public void TestOverMaxCapacity()
         {
             int i = 1;
-            for (; i <= max_capacity; i++)
+            for (; i <= maxCapacity; i++)
             {
                 cache.Add(i.ToString());
             }
             cache.Add(i.ToString());    // The first one will be deleted
-            Assert.AreEqual(max_capacity, cache.Count);
-            Assert.IsTrue(cache.Contains((max_capacity + 1).ToString()));
+            Assert.AreEqual(maxCapacity, cache.Count);
+            Assert.IsTrue(cache.Contains((maxCapacity + 1).ToString()));
         }
 
         [TestMethod]
