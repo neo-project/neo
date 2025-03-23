@@ -117,7 +117,8 @@ namespace Neo.Build.Core.Wallets
 
         public override void Delete() { }
 
-        public override void Save() { }
+        public override void Save() =>
+            throw new NotImplementedException();
 
         public override bool ChangePassword(string oldPassword, string newPassword) =>
             throw new NotImplementedException();
