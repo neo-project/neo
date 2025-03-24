@@ -11,25 +11,42 @@
 
 using BenchmarkDotNet.Attributes;
 using Neo.IO.Caching;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Neo.Benchmarks
 {
-    class BecnmarkFIFOCache : FIFOCache<long, long>
+    class BenchmarkFIFOCache : FIFOCache<long, long>
     {
-        public BecnmarkFIFOCache(int maxCapacity) : base(maxCapacity) { }
+        public BenchmarkFIFOCache(int maxCapacity) : base(maxCapacity) { }
 
         protected override long GetKeyForItem(long item) => item;
     }
 
     public class Benchmarks_Cache
     {
-        private readonly BecnmarkFIFOCache _cache = new(100);
+        private readonly BenchmarkFIFOCache _cache = new(100);
+        private readonly int _iterationCount = 1000;
+        private readonly int _cacheSize = 100;
+
+        [Params(1000, 10000)]
+        public int OperationCount { get; set; }
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            // Initialize cache with some data
+            for (int i = 0; i < _cacheSize; i++)
+            {
+                _cache.Add(i);
+            }
+        }
 
         [Benchmark]
         public void FIFOCacheAdd()
         {
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < _iterationCount; i++)
             {
                 _cache.Add(i);
             }
@@ -38,11 +55,56 @@ namespace Neo.Benchmarks
         [Benchmark]
         public void FIFOCacheContains()
         {
-            for (long i = 0; i < 1000; i++)
+            for (long i = 0; i < _iterationCount; i++)
             {
-                var ok = _cache.TryGet(i, out _);
+                var ok = _cache.TryGet(i % _cacheSize, out _);
                 Debug.Assert(ok);
             }
+        }
+
+        [Benchmark]
+        public void CachePerformanceWithoutParallel()
+        {
+            // Simulating the optimized version (current implementation)
+            var dictionary = GetSampleDictionary(OperationCount);
+            var removedCount = dictionary.Count - _cacheSize + 1;
+
+            foreach (var toDelete in dictionary.Values.OrderBy(p => p.Time).Take(removedCount))
+            {
+                // Simulate removal
+                _ = toDelete;
+            }
+        }
+
+        [Benchmark]
+        public void CachePerformanceWithParallel()
+        {
+            // Simulating the previous version with AsParallel
+            var dictionary = GetSampleDictionary(OperationCount);
+
+            foreach (var item_del in dictionary.Values.AsParallel().OrderBy(p => p.Time).Take(dictionary.Count - _cacheSize + 1))
+            {
+                // Simulate removal
+                _ = item_del;
+            }
+        }
+
+        private Dictionary<long, CacheItem> GetSampleDictionary(int count)
+        {
+            var dictionary = new Dictionary<long, CacheItem>();
+            for (long i = 0; i < count; i++)
+            {
+                dictionary[i] = new CacheItem(i, i);
+            }
+            return dictionary;
+        }
+
+        // Sample class to simulate the CacheItem for benchmarking
+        private class CacheItem(long key, long value)
+        {
+            public readonly long Key = key;
+            public readonly long Value = value;
+            public readonly System.DateTime Time = System.DateTime.UtcNow.AddMilliseconds(-key); // Staggered times
         }
     }
 }
