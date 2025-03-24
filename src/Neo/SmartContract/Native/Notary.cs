@@ -11,6 +11,7 @@
 
 #pragma warning disable IDE0051
 
+using K4os.Compression.LZ4.Encoders;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -99,6 +100,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private bool Verify(ApplicationEngine engine, byte[] sig)
         {
+            if (sig is null || sig.Length != 64) return false;
             var tx = engine.ScriptContainer as Transaction;
             if (tx?.GetAttribute<NotaryAssisted>() is null) return false;
             foreach (var signer in tx.Signers)
