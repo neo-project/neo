@@ -19,6 +19,7 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Build.Core.Wallets
@@ -56,11 +57,41 @@ namespace Neo.Build.Core.Wallets
             }
         }
 
+        public DevWallet(
+            FileInfo fileInfo,
+            ProtocolSettings protocolSettings)
+            : base(fileInfo.FullName, protocolSettings)
+        {
+            _filename = fileInfo.FullName;
+
+            var walletModel = JsonModel.FromJson<TestWalletModel>(fileInfo);
+
+            if (walletModel is null)
+                throw new IOException($"File '{fileInfo.FullName}' read error.");
+
+            if (walletModel.Version != Version)
+                throw new NeoBuildInvalidVersionFormatException();
+
+            _walletName = walletModel.Name;
+            _sCryptParameters = walletModel.Scrypt ?? SCryptModel.Default;
+
+            if (walletModel.Accounts != null)
+            {
+                foreach (var account in walletModel.Accounts)
+                {
+                    if (account is null) continue;
+                    if (account.Address is null) continue;
+                    _walletAccounts[account.Address] = new(account, ProtocolSettings);
+                }
+            }
+        }
+
         public DevWallet(TestWalletModel walletModel) : this(walletModel, ProtocolSettings.Default) { }
 
         private readonly ConcurrentDictionary<UInt160, DevWalletAccount> _walletAccounts = new();
 
         private readonly string? _walletName;
+        private readonly string? _filename;
 
         private readonly SCryptModel _sCryptParameters;
 
@@ -115,10 +146,14 @@ namespace Neo.Build.Core.Wallets
         public override IEnumerable<WalletAccount> GetAccounts() =>
             _walletAccounts.Values;
 
-        public override void Delete() { }
+        public override void Delete() =>
+            _walletAccounts.Clear();
 
-        public override void Save() =>
-            throw new NotImplementedException();
+        public override void Save()
+        {
+            if (string.IsNullOrEmpty(_filename)) return;
+            File.WriteAllText(_filename, ToString());
+        }
 
         public override bool ChangePassword(string oldPassword, string newPassword) =>
             throw new NotImplementedException();
