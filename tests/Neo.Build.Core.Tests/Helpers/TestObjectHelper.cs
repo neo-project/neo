@@ -13,6 +13,7 @@ using Neo.Build.Core.Models.Wallets;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Build.Core.Tests.Helpers
 {
