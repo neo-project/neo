@@ -73,6 +73,7 @@ namespace Neo.SmartContract.Native
                     if (tx.Sender == Hash)
                     {
                         var payer = tx.Signers[1];
+                        // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
                         var balance = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, payer.Account))?.GetInteroperable<Deposit>();
                         balance.Amount -= tx.SystemFee + tx.NetworkFee;
                         if (balance.Amount.Sign == 0) RemoveDepositFor(engine.SnapshotCache, payer.Account);
@@ -143,6 +144,7 @@ namespace Neo.SmartContract.Native
             var tx = (Transaction)engine.ScriptContainer;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.SnapshotCache);
+            // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
             Deposit deposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, to))?.GetInteroperable<Deposit>();
             if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
@@ -287,6 +289,7 @@ namespace Neo.SmartContract.Native
         /// <param name="deposit">deposit</param>
         private void PutDepositFor(ApplicationEngine engine, UInt160 acc, Deposit deposit)
         {
+            // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
             var indeposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, acc), () => new StorageItem(deposit));
             indeposit.Value = new StorageItem(deposit).Value;
         }
