@@ -89,7 +89,7 @@ namespace Neo.IO.Caching
                 if (InnerDictionary.Count >= maxCapacity)
                 {
                     var removedCount = InnerDictionary.Count - maxCapacity + 1;
-                    foreach (var toDelete in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(removedCount))
+                    foreach (var toDelete in InnerDictionary.Values.OrderBy(p => p.Time).Take(removedCount))
                     {
                         RemoveInternal(toDelete);
                     }
