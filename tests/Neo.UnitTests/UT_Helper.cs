@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -30,8 +31,15 @@ namespace Neo.UnitTests
         public void GetSignData()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
+            var res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
             Assert.AreEqual("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5", res.ToHexString());
+        }
+
+        [TestMethod]
+        public void TestTryGetHash()
+        {
+            var tx = new Transaction();
+            Assert.IsFalse(tx.TryGetHash(out _));
         }
 
         [TestMethod]
@@ -81,7 +89,7 @@ namespace Neo.UnitTests
         public void TestToHexString()
         {
             byte[] nullStr = null;
-            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString());
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString());
             byte[] empty = Array.Empty<byte>();
             Assert.AreEqual("", empty.ToHexString());
             Assert.AreEqual("", empty.ToHexString(false));
@@ -120,7 +128,7 @@ namespace Neo.UnitTests
         {
             Random ran = new();
             Action action1 = () => ran.NextBigInteger(-1);
-            Assert.ThrowsException<ArgumentException>(() => action1());
+            Assert.ThrowsExactly<ArgumentException>(() => action1());
 
             Assert.AreEqual(0, ran.NextBigInteger(0));
             Assert.IsNotNull(ran.NextBigInteger(8));

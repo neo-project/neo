@@ -472,22 +472,24 @@ namespace Neo.CLI
                 {
                     if (Settings.Default.UnlockWallet.Path is null)
                     {
-                        throw new InvalidOperationException("UnlockWallet.Path must be defined");
+                        ConsoleHelper.Error("UnlockWallet.Path must be defined");
                     }
                     else if (Settings.Default.UnlockWallet.Password is null)
                     {
-                        throw new InvalidOperationException("UnlockWallet.Password must be defined");
+                        ConsoleHelper.Error("UnlockWallet.Password must be defined");
                     }
-
-                    OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
+                    else
+                    {
+                        OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
+                    }
                 }
                 catch (FileNotFoundException)
                 {
-                    ConsoleHelper.Warning($"wallet file \"{Settings.Default.UnlockWallet.Path}\" not found.");
+                    ConsoleHelper.Warning($"wallet file \"{Path.GetFullPath(Settings.Default.UnlockWallet.Path!)}\" not found.");
                 }
                 catch (CryptographicException)
                 {
-                    ConsoleHelper.Error($"Failed to open file \"{Settings.Default.UnlockWallet.Path}\"");
+                    ConsoleHelper.Error($"Failed to open file \"{Path.GetFullPath(Settings.Default.UnlockWallet.Path!)}\"");
                 }
                 catch (Exception ex)
                 {

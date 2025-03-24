@@ -53,9 +53,9 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(1, StdLib.Atoi("+1", 10));
             Assert.AreEqual(-1, StdLib.Atoi("ff", 16));
             Assert.AreEqual(-1, StdLib.Atoi("FF", 16));
-            Assert.ThrowsException<FormatException>(() => StdLib.Atoi("a", 10));
-            Assert.ThrowsException<FormatException>(() => StdLib.Atoi("g", 16));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => StdLib.Atoi("a", 11));
+            Assert.ThrowsExactly<FormatException>(() => _ = StdLib.Atoi("a", 10));
+            Assert.ThrowsExactly<FormatException>(() => _ = StdLib.Atoi("g", 16));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = StdLib.Atoi("a", 11));
 
             Assert.AreEqual(BigInteger.One, StdLib.Atoi(StdLib.Itoa(BigInteger.One, 10)));
             Assert.AreEqual(BigInteger.MinusOne, StdLib.Atoi(StdLib.Itoa(BigInteger.MinusOne, 10)));
@@ -345,11 +345,11 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(5, engine.ResultStack.Count);
 
-                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
-                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
-                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
-                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "true");
-                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
+                Assert.AreEqual("{\"key\":\"value\"}", engine.ResultStack.Pop<ByteString>().GetString());
+                Assert.AreEqual("null", engine.ResultStack.Pop<ByteString>().GetString());
+                Assert.AreEqual("\"test\"", engine.ResultStack.Pop<ByteString>().GetString());
+                Assert.AreEqual("true", engine.ResultStack.Pop<ByteString>().GetString());
+                Assert.AreEqual("5", engine.ResultStack.Pop<ByteString>().GetString());
             }
 
             // Error

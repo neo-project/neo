@@ -84,7 +84,7 @@ namespace Neo
         /// <remarks>
         /// It doesn't need to be disposed because the <see cref="IStoreSnapshot"/> inside it is null.
         /// </remarks>
-        public DataCache StoreView => new StoreCache(store);
+        public StoreCache StoreView => new(store);
 
         /// <summary>
         /// The memory pool of the <see cref="NeoSystem"/>.
@@ -164,11 +164,11 @@ namespace Neo
                 NextConsensus = Contract.GetBFTAddress(settings.StandbyValidators),
                 Witness = new Witness
                 {
-                    InvocationScript = Array.Empty<byte>(),
+                    InvocationScript = ReadOnlyMemory<byte>.Empty,
                     VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 },
             },
-            Transactions = Array.Empty<Transaction>()
+            Transactions = [],
         };
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

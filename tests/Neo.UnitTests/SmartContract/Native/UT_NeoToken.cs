@@ -439,15 +439,15 @@ namespace Neo.UnitTests.SmartContract.Native
             //register more candidates, committee member change
             persistingBlock = new Block
             {
-                Header = new Header
+                Header = new()
                 {
                     Index = (uint)TestProtocolSettings.Default.CommitteeMembersCount,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                    Witness = Witness.Empty,
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = [],
             };
             for (int i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
@@ -518,9 +518,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Bad inputs
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(clonedCache, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(clonedCache, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = NativeContract.NEO.Transfer(clonedCache, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.NEO.Transfer(clonedCache, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsExactly<FormatException>(() => _ = NativeContract.NEO.Transfer(clonedCache, from, new byte[19], BigInteger.One, false, persistingBlock));
 
             // More than balance
 
@@ -546,15 +546,15 @@ namespace Neo.UnitTests.SmartContract.Native
             var clonedCache = _snapshotCache.CloneCache();
             var persistingBlock = new Block
             {
-                Header = new Header
+                Header = new()
                 {
                     Index = 1,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                    Witness = Witness.Empty,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = [],
             };
             Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
@@ -733,15 +733,15 @@ namespace Neo.UnitTests.SmartContract.Native
             // Pre-persist
             var persistingBlock = new Block
             {
-                Header = new Header
+                Header = new()
                 {
                     Index = 21,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                    Witness = Witness.Empty,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = [],
             };
             Assert.IsTrue(Check_OnPersist(cloneCache, persistingBlock));
 
@@ -891,12 +891,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 Header = new Header
                 {
                     Index = 0,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                    Witness = Witness.Empty,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = [],
             };
             Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
@@ -917,12 +917,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 Header = new Header
                 {
                     Index = 1,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                    Witness = Witness.Empty,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = [],
             };
             Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 
@@ -938,12 +938,12 @@ namespace Neo.UnitTests.SmartContract.Native
                 Header = new Header
                 {
                     Index = 21,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                    Witness = Witness.Empty,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = [],
             };
             Assert.IsTrue(Check_PostPersist(clonedCache, persistingBlock));
 

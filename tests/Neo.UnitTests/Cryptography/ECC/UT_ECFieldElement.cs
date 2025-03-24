@@ -38,10 +38,21 @@ namespace Neo.UnitTests.Cryptography.ECC
 
             input = ECCurve.Secp256k1.Q;
             var action = () => new ECFieldElement(input, ECCurve.Secp256k1);
-            Assert.ThrowsException<ArgumentException>(() => action());
+            Assert.ThrowsExactly<ArgumentException>(() => _ = action());
+        }
 
-            action = () => new ECFieldElement(input, null);
-            Assert.ThrowsException<ArgumentNullException>(() => action());
+        [TestMethod]
+        public void TestGetHashCode()
+        {
+            var pointA = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            var pointB = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            var pointC = new ECFieldElement(new BigInteger(100), ECCurve.Secp256r1); // different curve
+            var pointD = new ECFieldElement(new BigInteger(101), ECCurve.Secp256k1);
+
+            Assert.AreEqual(pointA.GetHashCode(), pointB.GetHashCode());
+            Assert.AreNotEqual(pointA.GetHashCode(), pointC.GetHashCode());
+            Assert.AreNotEqual(pointB.GetHashCode(), pointC.GetHashCode());
+            Assert.AreNotEqual(pointB.GetHashCode(), pointD.GetHashCode());
         }
 
         [TestMethod]
@@ -65,7 +76,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             Assert.AreEqual(1, point3.CompareTo(point1));
 
             var action = new Action(() => point3.CompareTo(point4));
-            Assert.ThrowsException<InvalidOperationException>(() => action());
+            Assert.ThrowsExactly<InvalidOperationException>(() => action());
         }
 
         [TestMethod]

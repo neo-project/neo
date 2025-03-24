@@ -23,6 +23,7 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using static Neo.SmartContract.Helper;
@@ -83,6 +84,8 @@ namespace Neo.Network.P2P.Payloads
         public long FeePerByte => NetworkFee / Size;
 
         private UInt256 _hash = null;
+
+        /// <inheritdoc/>
         public UInt256 Hash
         {
             get
@@ -376,10 +379,13 @@ namespace Neo.Network.P2P.Payloads
             if (!(context?.CheckTransaction(this, conflictsList, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             long attributesFee = 0;
             foreach (TransactionAttribute attribute in Attributes)
+            {
+                if (attribute.Type == TransactionAttributeType.NotaryAssisted && !settings.IsHardforkEnabled(Hardfork.HF_Echidna, height))
+                    return VerifyResult.InvalidAttribute;
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.InvalidAttribute;
-                else
-                    attributesFee += attribute.CalculateNetworkFee(snapshot, this);
+                attributesFee += attribute.CalculateNetworkFee(snapshot, this);
+            }
             long netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
@@ -387,9 +393,9 @@ namespace Neo.Network.P2P.Payloads
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out var _))
                     netFeeDatoshi -= execFeeFactor * SignatureContractCost();
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, witnesses[i].InvocationScript, out var _))
                 {
                     netFeeDatoshi -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
@@ -423,13 +429,14 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
+                var witness = witnesses[i];
+                if (IsSignatureContract(witness.VerificationScript.Span) && IsSingleSignatureInvocationScript(witness.InvocationScript, out var signature))
                 {
-                    if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
-                    var pubkey = witnesses[i].VerificationScript.Span[2..35];
+                    if (hashes[i] != witness.ScriptHash) return VerifyResult.Invalid;
+                    var pubkey = witness.VerificationScript.Span[2..35];
                     try
                     {
-                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.Span[2..], pubkey, ECCurve.Secp256r1))
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), signature.Span, pubkey, ECCurve.Secp256r1))
                             return VerifyResult.InvalidSignature;
                     }
                     catch
@@ -437,11 +444,9 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points))
+                else if (IsMultiSigContract(witness.VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatureInvocationScript(m, witness.InvocationScript, out var signatures))
                 {
-                    if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
-                    var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
-                    if (signatures.Length != m) return VerifyResult.Invalid;
+                    if (hashes[i] != witness.ScriptHash) return VerifyResult.Invalid;
                     var n = points.Length;
                     var message = this.GetSignData(settings.Network);
                     try
@@ -483,20 +488,35 @@ namespace Neo.Network.P2P.Payloads
             });
         }
 
-        private static ReadOnlyMemory<byte>[] GetMultiSignatures(ReadOnlyMemory<byte> script)
+        private static bool IsMultiSignatureInvocationScript(int m, ReadOnlyMemory<byte> invocationScript,
+            [NotNullWhen(true)] out ReadOnlyMemory<byte>[] sigs)
         {
-            ReadOnlySpan<byte> span = script.Span;
+            sigs = null;
+            ReadOnlySpan<byte> span = invocationScript.Span;
             int i = 0;
             var signatures = new List<ReadOnlyMemory<byte>>();
-            while (i < script.Length)
+            while (i < invocationScript.Length)
             {
-                if (span[i++] != (byte)OpCode.PUSHDATA1) return null;
-                if (i + 65 > script.Length) return null;
-                if (span[i++] != 64) return null;
-                signatures.Add(script[i..(i + 64)]);
+                if (span[i++] != (byte)OpCode.PUSHDATA1) return false;
+                if (i + 65 > invocationScript.Length) return false;
+                if (span[i++] != 64) return false;
+                signatures.Add(invocationScript[i..(i + 64)]);
                 i += 64;
             }
-            return signatures.ToArray();
+            if (signatures.Count != m) return false;
+            sigs = signatures.ToArray();
+            return true;
+        }
+
+        private static bool IsSingleSignatureInvocationScript(ReadOnlyMemory<byte> invocationScript,
+            [NotNullWhen(true)] out ReadOnlyMemory<byte> sig)
+        {
+            sig = null;
+            if (invocationScript.Length != 66) return false;
+            ReadOnlySpan<byte> span = invocationScript.Span;
+            if ((span[0] != (byte)OpCode.PUSHDATA1) || (span[1] != 64)) return false;
+            sig = invocationScript[2..66];
+            return true;
         }
     }
 }

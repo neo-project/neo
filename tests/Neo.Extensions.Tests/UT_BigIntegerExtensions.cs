@@ -129,17 +129,17 @@ namespace Neo.Extensions.Tests
 
             a = new BigInteger(6);
             n = new BigInteger(12); // 6 and 12 are not coprime
-            Assert.ThrowsException<ArithmeticException>(() => a.ModInverse(n));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = a.ModInverse(n));
         }
 
         [TestMethod]
         public void TestModInverse_EdgeCases()
         {
-            Assert.ThrowsException<ArithmeticException>(() => BigInteger.Zero.ModInverse(11));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(11));
 
             Assert.AreEqual(1, BigInteger.One.ModInverse(2));
 
-            Assert.ThrowsException<ArithmeticException>(() => new BigInteger(2).ModInverse(4));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = new BigInteger(2).ModInverse(4));
 
             Assert.AreEqual(long.MaxValue - 1, new BigInteger(long.MaxValue - 1).ModInverse(long.MaxValue));
         }
@@ -179,6 +179,17 @@ namespace Neo.Extensions.Tests
             Assert.AreEqual(0, new List<BigInteger>().Sum());
             Assert.AreEqual(0, new List<BigInteger> { JNumber.MIN_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
             Assert.AreEqual(JNumber.MAX_SAFE_INTEGER * 2, new List<BigInteger> { JNumber.MAX_SAFE_INTEGER, JNumber.MAX_SAFE_INTEGER }.Sum());
+        }
+
+        [TestMethod]
+        public void TestModInverseTest()
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.One.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.Zero));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = BigInteger.Zero.ModInverse(BigInteger.One));
+            Assert.ThrowsExactly<ArithmeticException>(() => _ = new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
+            Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
         }
     }
 }

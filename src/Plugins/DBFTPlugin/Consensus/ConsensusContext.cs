@@ -17,10 +17,10 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -55,11 +55,11 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         public TransactionVerificationContext VerificationContext = new();
 
         public StoreCache Snapshot { get; private set; }
-        private KeyPair keyPair;
+        private ECPoint _myPublicKey;
         private int _witnessSize;
         private readonly NeoSystem neoSystem;
         private readonly Settings dbftSettings;
-        private readonly Wallet wallet;
+        private readonly ISigner _signer;
         private readonly IStore store;
         private Dictionary<UInt256, ConsensusMessage> cachedMessages;
 
@@ -112,9 +112,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(NeoSystem neoSystem, Settings settings, Wallet wallet)
+        public ConsensusContext(NeoSystem neoSystem, Settings settings, ISigner signer)
         {
-            this.wallet = wallet;
+            _signer = signer;
             this.neoSystem = neoSystem;
             dbftSettings = settings;
 
@@ -125,8 +125,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         public Block CreateBlock()
         {
             EnsureHeader();
-            Contract contract = Contract.CreateMultiSigContract(M, Validators);
-            ContractParametersContext sc = new ContractParametersContext(neoSystem.StoreView, Block.Header, dbftSettings.Network);
+            var contract = Contract.CreateMultiSigContract(M, Validators);
+            var sc = new ContractParametersContext(neoSystem.StoreView, Block.Header, dbftSettings.Network);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
             {
                 if (GetMessage(CommitPayloads[i])?.ViewNumber != ViewNumber) continue;
@@ -140,7 +140,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public ExtensiblePayload CreatePayload(ConsensusMessage message, ReadOnlyMemory<byte> invocationScript = default)
         {
-            ExtensiblePayload payload = new ExtensiblePayload
+            var payload = new ExtensiblePayload
             {
                 Category = "dBFT",
                 ValidBlockStart = 0,
@@ -245,13 +245,14 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                             LastSeenMessage[validator] = height;
                     }
                 }
-                keyPair = null;
+
+                _myPublicKey = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
-                    WalletAccount account = wallet?.GetAccount(Validators[i]);
-                    if (account?.HasKey != true) continue;
+                    // ContainsKeyPair may be called multiple times
+                    if (!_signer.ContainsSignable(Validators[i])) continue;
                     MyIndex = i;
-                    keyPair = account.GetKey();
+                    _myPublicKey = Validators[MyIndex];
                     break;
                 }
                 cachedMessages = new Dictionary<UInt256, ConsensusMessage>();

@@ -350,22 +350,22 @@ namespace Neo.Plugins.RestServer
                         Value = valueProp.ToObject<string>(),
                     };
                 case ContractParameterType.Hash160:
-                    return new ContractParameter()
+                    return new ContractParameter
                     {
                         Type = ContractParameterType.Hash160,
                         Value = UInt160.Parse(valueProp.ToObject<string>()),
                     };
                 case ContractParameterType.Hash256:
-                    return new ContractParameter()
+                    return new ContractParameter
                     {
                         Type = ContractParameterType.Hash256,
                         Value = UInt256.Parse(valueProp.ToObject<string>()),
                     };
                 case ContractParameterType.PublicKey:
-                    return new ContractParameter()
+                    return new ContractParameter
                     {
                         Type = ContractParameterType.PublicKey,
-                        Value = ECPoint.Parse(valueProp.ToObject<string>(), ECCurve.Secp256r1),
+                        Value = ECPoint.Parse(valueProp.ToObject<string>() ?? throw new NullReferenceException("Contract parameter has null value."), ECCurve.Secp256r1),
                     };
                 case ContractParameterType.Array:
                     if (valueProp.Value is not JArray array)

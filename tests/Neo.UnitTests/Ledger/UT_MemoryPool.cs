@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
@@ -79,20 +79,14 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
+                .Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses = [Witness.Empty];
             return mock.Object;
         }
 
@@ -103,20 +97,14 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>()))
+                .Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
-            mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
-            mock.Object.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
-                }
-            };
+            mock.Object.Attributes = [];
+            mock.Object.Signers = [new() { Account = senderAccount, Scopes = WitnessScope.None }];
+            mock.Object.Witnesses = [Witness.Empty];
             return mock.Object;
         }
 
@@ -180,8 +168,8 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
-                    .Concat(_unit.GetSortedVerifiedTransactions().Take(5)).ToArray()
+                Transactions = _unit.GetSortedVerifiedTransactions(10)
+                    .Concat(_unit.GetSortedVerifiedTransactions(5)).ToArray()
             };
             _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
@@ -231,7 +219,7 @@ namespace Neo.UnitTests.Ledger
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = _unit.GetSortedVerifiedTransactions().Take(10).ToArray()
+                Transactions = _unit.GetSortedVerifiedTransactions(10)
             };
 
             // Simulate the transfer process in tx by burning the balance
@@ -489,9 +477,9 @@ namespace Neo.UnitTests.Ledger
         {
             AddTransactions(100);
 
-            var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions().ToList();
+            var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions();
             // verify all 100 transactions are returned in sorted order
-            Assert.AreEqual(100, sortedVerifiedTxs.Count);
+            Assert.AreEqual(100, sortedVerifiedTxs.Length);
             VerifyTransactionsSortedDescending(sortedVerifiedTxs);
 
             // move all to unverified
@@ -517,7 +505,7 @@ namespace Neo.UnitTests.Ledger
 
                 // reverify 1 high priority and 1 low priority transaction
                 _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, GetSnapshot());
-                var verifiedTxs = _unit.GetSortedVerifiedTransactions().ToArray();
+                var verifiedTxs = _unit.GetSortedVerifiedTransactions();
                 Assert.AreEqual(1, verifiedTxs.Length);
                 Assert.AreEqual(maxTransaction, verifiedTxs[0]);
                 var blockWith2Tx = new Block
@@ -535,8 +523,7 @@ namespace Neo.UnitTests.Ledger
 
         void VerifyCapacityThresholdForAttemptingToAddATransaction()
         {
-            var sortedVerified = _unit.GetSortedVerifiedTransactions().ToArray();
-
+            var sortedVerified = _unit.GetSortedVerifiedTransactions();
             var txBarelyWontFit = CreateTransactionWithFee(sortedVerified.Last().NetworkFee - 1);
             Assert.IsFalse(_unit.CanTransactionFitInPool(txBarelyWontFit));
             var txBarelyFits = CreateTransactionWithFee(sortedVerified.Last().NetworkFee + 1);
@@ -751,7 +738,7 @@ namespace Neo.UnitTests.Ledger
             AddTransactions(32);
             Assert.AreEqual(32, _unit.SortedTxCount);
 
-            var txs = _unit.GetSortedVerifiedTransactions().ToArray();
+            var txs = _unit.GetSortedVerifiedTransactions();
             _unit.InvalidateVerifiedTransactions();
 
             Assert.AreEqual(0, _unit.SortedTxCount);

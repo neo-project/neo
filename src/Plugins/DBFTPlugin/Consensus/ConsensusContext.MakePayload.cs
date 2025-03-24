@@ -11,11 +11,11 @@
 
 using Neo.Extensions;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract;
-using Neo.Wallets;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -37,10 +37,15 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public ExtensiblePayload MakeCommit()
         {
-            return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
+            if (CommitPayloads[MyIndex] is not null)
+                return CommitPayloads[MyIndex];
+
+            var signData = EnsureHeader().GetSignData(dbftSettings.Network);
+            CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = EnsureHeader().Sign(keyPair, neoSystem.Settings.Network)
-            }));
+                Signature = _signer.Sign(signData, _myPublicKey)
+            });
+            return CommitPayloads[MyIndex];
         }
 
         private ExtensiblePayload MakeSignedPayload(ConsensusMessage message)
@@ -59,7 +64,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             try
             {
                 sc = new ContractParametersContext(neoSystem.StoreView, payload, dbftSettings.Network);
-                wallet.Sign(sc);
+                _signer.Sign(sc);
             }
             catch (InvalidOperationException exception)
             {
@@ -73,19 +78,14 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         /// Prevent that block exceed the max size
         /// </summary>
         /// <param name="txs">Ordered transactions</param>
-        internal void EnsureMaxBlockLimitation(IEnumerable<Transaction> txs)
+        internal void EnsureMaxBlockLimitation(Transaction[] txs)
         {
-            uint maxTransactionsPerBlock = neoSystem.Settings.MaxTransactionsPerBlock;
-
-            // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
-            txs = txs.Take((int)maxTransactionsPerBlock);
-
-            List<UInt256> hashes = new List<UInt256>();
+            var hashes = new List<UInt256>();
             Transactions = new Dictionary<UInt256, Transaction>();
             VerificationContext = new TransactionVerificationContext();
 
             // Expected block size
-            var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Count());
+            var blockSize = GetExpectedBlockSizeWithoutTransactions(txs.Length);
             var blockSystemFee = 0L;
 
             // Iterate transaction until reach the size or maximum system fee
@@ -109,7 +109,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public ExtensiblePayload MakePrepareRequest()
         {
-            EnsureMaxBlockLimitation(neoSystem.MemPool.GetSortedVerifiedTransactions());
+            var maxTransactionsPerBlock = neoSystem.Settings.MaxTransactionsPerBlock;
+            // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
+            EnsureMaxBlockLimitation(neoSystem.MemPool.GetSortedVerifiedTransactions((int)maxTransactionsPerBlock));
             Block.Header.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
             Block.Header.Nonce = GetNonce();
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
@@ -149,11 +151,22 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             return MakeSignedPayload(new RecoveryMessage
             {
-                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => GetChangeViewPayloadCompact(p)).Take(M).ToDictionary(p => p.ValidatorIndex),
+                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null)
+                    .Select(p => GetChangeViewPayloadCompact(p))
+                    .Take(M)
+                    .ToDictionary(p => p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => GetPreparationPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex),
+                PreparationHash = TransactionHashes == null
+                    ? PreparationPayloads.Where(p => p != null)
+                        .GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() })
+                        .OrderByDescending(p => p.Count)
+                        .Select(p => p.Hash)
+                        .FirstOrDefault()
+                    : null,
+                PreparationMessages = PreparationPayloads.Where(p => p != null)
+                    .Select(p => GetPreparationPayloadCompact(p))
+                    .ToDictionary(p => p.ValidatorIndex),
                 CommitMessages = CommitSent
                     ? CommitPayloads.Where(p => p != null).Select(p => GetCommitPayloadCompact(p)).ToDictionary(p => p.ValidatorIndex)
                     : new Dictionary<byte, RecoveryMessage.CommitPayloadCompact>()

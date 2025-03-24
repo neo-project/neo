@@ -22,7 +22,7 @@ namespace Neo.Test
         [TestMethod]
         public void TestSqrtTest()
         {
-            Assert.ThrowsException<InvalidOperationException>(() => BigInteger.MinusOne.Sqrt());
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = BigInteger.MinusOne.Sqrt());
 
             Assert.AreEqual(BigInteger.Zero, BigInteger.Zero.Sqrt());
             Assert.AreEqual(new BigInteger(1), new BigInteger(1).Sqrt());
@@ -45,7 +45,7 @@ namespace Neo.Test
         {
             var result = value.GetBitLength();
             Assert.AreEqual(expected, value.GetBitLength(), "Native method has not the expected result");
-            Assert.AreEqual(result, Utility.GetBitLength(value), "Result doesn't match");
+            Assert.AreEqual(result, VM.Utility.GetBitLength(value), "Result doesn't match");
         }
 
         [TestMethod]
@@ -54,7 +54,7 @@ namespace Neo.Test
             var random = new Random();
 
             // Big Number (net standard didn't work)
-            Assert.ThrowsException<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
+            Assert.ThrowsExactly<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
 
             // Trivial cases
             //                     sign bit|shortest two's complement
@@ -81,25 +81,13 @@ namespace Neo.Test
             for (uint i = 0; i < 1000; i++)
             {
                 var bi = new BigInteger(GetRandomByteArray(random));
-                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
+                Assert.AreEqual(bi.GetBitLength(), VM.Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
 
-            foreach (var bi in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new BigInteger(ulong.MaxValue), new BigInteger(long.MinValue) })
+            foreach (var bi in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new(ulong.MaxValue), new(long.MinValue) })
             {
-                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
+                Assert.AreEqual(bi.GetBitLength(), VM.Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
-        }
-
-        [TestMethod]
-        public void TestModInverseTest()
-        {
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.One.ModInverse(BigInteger.Zero));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.One.ModInverse(BigInteger.One));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.Zero.ModInverse(BigInteger.Zero));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.Zero.ModInverse(BigInteger.One));
-            Assert.ThrowsException<InvalidOperationException>(() => new BigInteger(ushort.MaxValue).ModInverse(byte.MaxValue));
-
-            Assert.AreEqual(new BigInteger(52), new BigInteger(19).ModInverse(141));
         }
     }
 }

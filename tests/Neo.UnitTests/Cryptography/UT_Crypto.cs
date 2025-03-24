@@ -66,9 +66,9 @@ namespace Neo.UnitTests.Cryptography
 
             wrongKey[0] = 0x03;
             for (int i = 1; i < 33; i++) wrongKey[i] = byte.MaxValue;
-            Assert.ThrowsException<ArgumentException>(() => Crypto.VerifySignature(message, signature, wrongKey, ECCurve.Secp256r1));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.VerifySignature(message, signature, wrongKey, ECCurve.Secp256r1));
 
-            Assert.ThrowsException<FormatException>(() => Crypto.VerifySignature(message, signature, wrongKey2, ECCurve.Secp256r1));
+            Assert.ThrowsExactly<FormatException>(() => _ = Crypto.VerifySignature(message, signature, wrongKey2, ECCurve.Secp256r1));
         }
 
         [TestMethod]
@@ -78,7 +78,8 @@ namespace Neo.UnitTests.Cryptography
             byte[] message = "2d46a712699bae19a634563d74d04cc2da497b841456da270dccb75ac2f7c4e7".HexToBytes();
             var signature = Crypto.Sign(message, privkey, ECCurve.Secp256k1);
 
-            byte[] pubKey = "04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108".HexToBytes();
+            byte[] pubKey = ("04" + "fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5" +
+                "d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108").HexToBytes();
             Assert.IsTrue(Crypto.VerifySignature(message, signature, pubKey, ECCurve.Secp256k1));
 
             message = Encoding.Default.GetBytes("world");
@@ -87,7 +88,8 @@ namespace Neo.UnitTests.Cryptography
             Assert.IsTrue(Crypto.VerifySignature(message, signature, pubKey, ECCurve.Secp256k1));
 
             message = Encoding.Default.GetBytes("中文");
-            signature = "b8cba1ff42304d74d083e87706058f59cdd4f755b995926d2cd80a734c5a3c37e4583bfd4339ac762c1c91eee3782660a6baf62cd29e407eccd3da3e9de55a02".HexToBytes();
+            signature = ("b8cba1ff42304d74d083e87706058f59cdd4f755b995926d2cd80a734c5a3c37" +
+                "e4583bfd4339ac762c1c91eee3782660a6baf62cd29e407eccd3da3e9de55a02").HexToBytes();
             pubKey = "03661b86d54eb3a8e7ea2399e0db36ab65753f95fff661da53ae0121278b881ad0".HexToBytes();
 
             Assert.IsTrue(Crypto.VerifySignature(message, signature, pubKey, ECCurve.Secp256k1));
@@ -97,27 +99,42 @@ namespace Neo.UnitTests.Cryptography
         public void TestECRecover()
         {
             // Test case 1
-            var message1 = "5c868fedb8026979ebd26f1ba07c27eedf4ff6d10443505a96ecaf21ba8c4f0937b3cd23ffdc3dd429d4cd1905fb8dbcceeff1350020e18b58d2ba70887baa3a9b783ad30d3fbf210331cdd7df8d77defa398cdacdfc2e359c7ba4cae46bb74401deb417f8b912a1aa966aeeba9c39c7dd22479ae2b30719dca2f2206c5eb4b7".HexToBytes();
+            var message1 = ("5c868fedb8026979ebd26f1ba07c27eedf4ff6d10443505a96ecaf21ba8c4f09" +
+                "37b3cd23ffdc3dd429d4cd1905fb8dbcceeff1350020e18b58d2ba70887baa3a" +
+                "9b783ad30d3fbf210331cdd7df8d77defa398cdacdfc2e359c7ba4cae46bb744" +
+                "01deb417f8b912a1aa966aeeba9c39c7dd22479ae2b30719dca2f2206c5eb4b7").HexToBytes();
             var messageHash1 = "5ae8317d34d1e595e3fa7247db80c0af4320cce1116de187f8f7e2e099c0d8d0".HexToBytes();
-            var signature1 = "45c0b7f8c09a9e1f1cea0c25785594427b6bf8f9f878a8af0b1abbb48e16d0920d8becd0c220f67c51217eecfd7184ef0732481c843857e6bc7fc095c4f6b78801".HexToBytes();
+
+            var signature1 = ("45c0b7f8c09a9e1f1cea0c25785594427b6bf8f9f878a8af0b1abbb48e16d092" +
+                "0d8becd0c220f67c51217eecfd7184ef0732481c843857e6bc7fc095c4f6b78801").HexToBytes();
             var expectedPubKey1 = "034a071e8a6e10aada2b8cf39fa3b5fb3400b04e99ea8ae64ceea1a977dbeaf5d5".HexToBytes();
 
             var recoveredKey1 = Crypto.ECRecover(signature1, messageHash1);
             CollectionAssert.AreEqual(expectedPubKey1, recoveredKey1.EncodePoint(true));
 
             // Test case 2
-            var message2 = "17cd4a74d724d55355b6fb2b0759ca095298e3fd1856b87ca1cb2df5409058022736d21be071d820b16dfc441be97fbcea5df787edc886e759475469e2128b22f26b82ca993be6695ab190e673285d561d3b6d42fcc1edd6d12db12dcda0823e9d6079e7bc5ff54cd452dad308d52a15ce9c7edd6ef3dad6a27becd8e001e80f".HexToBytes();
+            var message2 = ("17cd4a74d724d55355b6fb2b0759ca095298e3fd1856b87ca1cb2df540905802" +
+                "2736d21be071d820b16dfc441be97fbcea5df787edc886e759475469e2128b22" +
+                "f26b82ca993be6695ab190e673285d561d3b6d42fcc1edd6d12db12dcda0823e" +
+                "9d6079e7bc5ff54cd452dad308d52a15ce9c7edd6ef3dad6a27becd8e001e80f").HexToBytes();
             var messageHash2 = "586052916fb6f746e1d417766cceffbe1baf95579bab67ad49addaaa6e798862".HexToBytes();
-            var signature2 = "4e0ea79d4a476276e4b067facdec7460d2c98c8a65326a6e5c998fd7c65061140e45aea5034af973410e65cf97651b3f2b976e3fc79c6a93065ed7cb69a2ab5a01".HexToBytes();
+
+            var signature2 = ("4e0ea79d4a476276e4b067facdec7460d2c98c8a65326a6e5c998fd7c6506114" +
+                "0e45aea5034af973410e65cf97651b3f2b976e3fc79c6a93065ed7cb69a2ab5a01").HexToBytes();
             var expectedPubKey2 = "02dbf1f4092deb3cfd4246b2011f7b24840bc5dbedae02f28471ce5b3bfbf06e71".HexToBytes();
 
             var recoveredKey2 = Crypto.ECRecover(signature2, messageHash2);
             CollectionAssert.AreEqual(expectedPubKey2, recoveredKey2.EncodePoint(true));
 
             // Test case 3 - recovery param 0
-            var message3 = "db0d31717b04802adbbae1997487da8773440923c09b869e12a57c36dda34af11b8897f266cd81c02a762c6b74ea6aaf45aaa3c52867eb8f270f5092a36b498f88b65b2ebda24afe675da6f25379d1e194d093e7a2f66e450568dbdffebff97c4597a00c96a5be9ba26deefcca8761c1354429622c8db269d6a0ec0cc7a8585c".HexToBytes();
+            var message3 = ("db0d31717b04802adbbae1997487da8773440923c09b869e12a57c36dda34af1" +
+                "1b8897f266cd81c02a762c6b74ea6aaf45aaa3c52867eb8f270f5092a36b498f" +
+                "88b65b2ebda24afe675da6f25379d1e194d093e7a2f66e450568dbdffebff97c" +
+                "4597a00c96a5be9ba26deefcca8761c1354429622c8db269d6a0ec0cc7a8585c").HexToBytes();
             var messageHash3 = "c36d0ecf4bfd178835c97aae7585f6a87de7dfa23cc927944f99a8d60feff68b".HexToBytes();
-            var signature3 = "f25b86e1d8a11d72475b3ed273b0781c7d7f6f9e1dae0dd5d3ee9b84f3fab89163d9c4e1391de077244583e9a6e3d8e8e1f236a3bf5963735353b93b1a3ba93500".HexToBytes();
+
+            var signature3 = ("f25b86e1d8a11d72475b3ed273b0781c7d7f6f9e1dae0dd5d3ee9b84f3fab891" +
+                "63d9c4e1391de077244583e9a6e3d8e8e1f236a3bf5963735353b93b1a3ba93500").HexToBytes();
             var expectedPubKey3 = "03414549fd05bfb7803ae507ff86b99becd36f8d66037a7f5ba612792841d42eb9".HexToBytes();
 
             var recoveredKey3 = Crypto.ECRecover(signature3, messageHash3);
@@ -125,12 +142,12 @@ namespace Neo.UnitTests.Cryptography
 
             // Test invalid cases
             var invalidSignature = new byte[65];
-            Assert.ThrowsException<ArgumentException>(() => Crypto.ECRecover(invalidSignature, messageHash1));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidSignature, messageHash1));
 
             // Test with invalid recovery value
             var invalidRecoverySignature = signature1.ToArray();
             invalidRecoverySignature[64] = 29; // Invalid recovery value
-            Assert.ThrowsException<ArgumentException>(() => Crypto.ECRecover(invalidRecoverySignature, messageHash1));
+            Assert.ThrowsExactly<ArgumentException>(() => _ = Crypto.ECRecover(invalidRecoverySignature, messageHash1));
 
             // Test with wrong message hash
             var recoveredWrongHash = Crypto.ECRecover(signature1, messageHash2);
@@ -154,7 +171,11 @@ namespace Neo.UnitTests.Cryptography
 
             Console.WriteLine($"Expected PubKey: {expectedPubKey1.ToArray().ToHexString()}");
             var message1 = Encoding.UTF8.GetBytes("Hello World");
-            var messageHash1 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message1.Length}")).Concat(message1).ToArray().Keccak256();
+            var messageHash1 = new byte[] { 0x19 }
+                .Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message1.Length}"))
+                .Concat(message1)
+                .ToArray()
+                .Keccak256();
             Console.WriteLine($"Message Hash: {Convert.ToHexString(messageHash1)}");
 
             // Signature values from EIP-2098 test case
@@ -191,7 +212,10 @@ namespace Neo.UnitTests.Cryptography
             // v:  28
 
             var message2Body = Encoding.UTF8.GetBytes("It's a small(er) world");
-            var message2 = new byte[] { 0x19 }.Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message2Body.Length}")).Concat(message2Body).ToArray();
+            var message2 = new byte[] { 0x19 }
+                .Concat(Encoding.UTF8.GetBytes($"Ethereum Signed Message:\n{message2Body.Length}"))
+                .Concat(message2Body)
+                .ToArray();
             var messageHash2 = message2.Keccak256();
             Console.WriteLine($"\nMessage Hash 2: {Convert.ToHexString(messageHash2)}");
 

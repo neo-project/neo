@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.FileStorage.API.Client;
 using Neo.FileStorage.API.Cryptography;
 using Neo.FileStorage.API.Refs;
@@ -112,7 +113,7 @@ namespace Neo.Plugins.OracleService
                 Array.Copy(chunk, 0, payload, offset, chunk.Length);
                 offset += chunk.Length;
             }
-            return (OracleResponseCode.Success, Utility.StrictUTF8.GetString(payload));
+            return (OracleResponseCode.Success, payload.ToStrictUtf8String());
         }
 
         private static async Task<(OracleResponseCode, string)> GetRangeAsync(Client client, Address addr, string[] ps, CancellationToken cancellation)
@@ -121,7 +122,7 @@ namespace Neo.Plugins.OracleService
             Range range = ParseRange(ps[0]);
             if (range.Length > OracleResponse.MaxResultSize) return (OracleResponseCode.ResponseTooLarge, "");
             var res = await client.GetObjectPayloadRangeData(addr, range, options: new CallOptions { Ttl = 2 }, context: cancellation);
-            return (OracleResponseCode.Success, Utility.StrictUTF8.GetString(res));
+            return (OracleResponseCode.Success, res.ToStrictUtf8String());
         }
 
         private static async Task<string> GetHeaderAsync(Client client, Address addr, CancellationToken cancellation)

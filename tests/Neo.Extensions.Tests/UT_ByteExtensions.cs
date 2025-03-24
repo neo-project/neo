@@ -23,9 +23,9 @@ namespace Neo.Extensions.Tests
         public void TestToHexString()
         {
             byte[]? nullStr = null;
-            Assert.ThrowsException<ArgumentNullException>(nullStr.ToHexString);
-            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(false));
-            Assert.ThrowsException<ArgumentNullException>(() => nullStr.ToHexString(true));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString());
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString(false));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = nullStr.ToHexString(true));
 
             byte[] empty = Array.Empty<byte>();
             Assert.AreEqual("", empty.ToHexString());
@@ -56,7 +56,7 @@ namespace Neo.Extensions.Tests
             input = Array.Empty<byte>();
             span = new ReadOnlySpan<byte>(input);
             result = span.ToHexString();
-            Assert.IsTrue(result.Length == 0);
+            Assert.AreEqual(0, result.Length);
 
             input = new byte[] { 0x5A };
             span = new ReadOnlySpan<byte>(input);

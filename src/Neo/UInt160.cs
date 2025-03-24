@@ -12,6 +12,8 @@
 using Neo.Extensions;
 using Neo.IO;
 using System;
+using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -105,7 +107,31 @@ namespace Neo
         {
             if (BitConverter.IsLittleEndian)
                 return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
-            return this.ToArray().AsSpan(); // Keep the same output as Serialize when BigEndian
+
+            Span<byte> buffer = new byte[Length];
+            Serialize(buffer);
+            return buffer; // Keep the same output as Serialize when BigEndian
+        }
+
+        /// <inheritdoc/>
+        public void Serialize(Span<byte> destination)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                var buffer = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
+                buffer.CopyTo(destination);
+            }
+            else
+            {
+                const int IxValue2 = sizeof(ulong);
+                const int IxValue3 = sizeof(ulong) * 2;
+
+                Span<byte> buffer = stackalloc byte[Length];
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer, _value1);
+                BinaryPrimitives.WriteUInt64LittleEndian(buffer[IxValue2..], _value2);
+                BinaryPrimitives.WriteUInt32LittleEndian(buffer[IxValue3..], _value3);
+                buffer.CopyTo(destination);
+            }
         }
 
         /// <summary>
@@ -138,7 +164,7 @@ namespace Neo
         /// <param name="str">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt160"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string str, out UInt160 result)
+        public static bool TryParse(string str, [NotNullWhen(true)] out UInt160 result)
         {
             result = null;
             var data = str.AsSpan(); // AsSpan is null safe

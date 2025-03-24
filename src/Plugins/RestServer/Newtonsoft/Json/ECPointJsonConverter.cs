@@ -20,7 +20,7 @@ namespace Neo.Plugins.RestServer.Newtonsoft.Json
     {
         public override ECPoint ReadJson(JsonReader reader, Type objectType, ECPoint? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            var value = reader?.Value?.ToString();
+            var value = reader?.Value?.ToString() ?? throw new UInt256FormatException($"'{reader}' is invalid.");
             try
             {
                 return ECPoint.Parse(value, ECCurve.Secp256r1);

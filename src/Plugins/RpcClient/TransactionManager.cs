@@ -169,7 +169,7 @@ namespace Neo.Network.RPC
             // Calculate NetworkFee
             Tx.Witnesses = Tx.GetScriptHashesForVerifying(null).Select(u => new Witness()
             {
-                InvocationScript = Array.Empty<byte>(),
+                InvocationScript = ReadOnlyMemory<byte>.Empty,
                 VerificationScript = GetVerificationScript(u)
             }).ToArray();
             Tx.NetworkFee = await rpcClient.CalculateNetworkFeeAsync(Tx).ConfigureAwait(false);
