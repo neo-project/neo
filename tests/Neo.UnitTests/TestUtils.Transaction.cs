@@ -90,14 +90,7 @@ namespace Neo.UnitTests
                 Script = randomBytes,
                 Attributes = [],
                 Signers = [new Signer { Account = UInt160.Zero }],
-                Witnesses =
-                [
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    }
-                ]
+                Witnesses = [Witness.Empty],
             };
         }
 
@@ -109,7 +102,7 @@ namespace Neo.UnitTests
                 Attributes = [],
                 Signers =
                 [
-                    new Signer
+                    new()
                     {
                         Account = sender,
                         Scopes = WitnessScope.CalledByEntry,
@@ -118,14 +111,7 @@ namespace Neo.UnitTests
                         Rules = [],
                     }
                 ],
-                Witnesses =
-                [
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    }
-                ]
+                Witnesses = [Witness.Empty],
             };
         }
 
@@ -262,7 +248,7 @@ namespace Neo.UnitTests
                     MerkleRoot = new UInt256(Crypto.Hash256(tx.Hash.ToArray())),
                     Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS(),
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                    Witness = Witness.Empty,
                 },
                 Transactions = [tx]
             };

@@ -21,12 +21,12 @@ namespace Neo.Wallets.SQLite
 
         public void Deserialize(ref MemoryReader reader)
         {
-            ReadOnlySpan<byte> span = reader.ReadVarMemory().Span;
+            var span = reader.ReadVarMemory().Span;
             ParameterList = new ContractParameterType[span.Length];
-            for (int i = 0; i < span.Length; i++)
+            for (var i = 0; i < span.Length; i++)
             {
                 ParameterList[i] = (ContractParameterType)span[i];
-                if (!Enum.IsDefined(typeof(ContractParameterType), ParameterList[i]))
+                if (!Enum.IsDefined(ParameterList[i]))
                     throw new FormatException();
             }
             Script = reader.ReadVarMemory().ToArray();
