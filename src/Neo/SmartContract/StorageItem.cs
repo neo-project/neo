@@ -230,6 +230,7 @@ namespace Neo.SmartContract
             return interoperable;
         }
 
+        /// <summary>
         /// Gets an <see cref="IInteroperable"/> from the storage.
         /// </summary>
         /// <param name="interop">The <see cref="IInteroperable"/> in the storage.</param>
