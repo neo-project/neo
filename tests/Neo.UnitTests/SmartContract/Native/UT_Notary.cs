@@ -296,19 +296,19 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Unwitnessed withdraw should fail.
             UInt160 sideAccount = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
-            Assert.ThrowsExactly<InvalidOperationException>(() => Call_Withdraw(snapshot, from, sideAccount.ToArray(), persistingBlock, false));
+            Call_Withdraw(snapshot, from, sideAccount.ToArray(), persistingBlock, false).Should().Be(false);
 
             // Withdraw missing (zero) deposit should fail.
-            Assert.ThrowsExactly<InvalidOperationException>(() => Call_Withdraw(snapshot, sideAccount.ToArray(), sideAccount.ToArray(), persistingBlock));
+            Call_Withdraw(snapshot, sideAccount.ToArray(), sideAccount.ToArray(), persistingBlock).Should().Be(false);
 
             // Withdraw before deposit expiration should fail.
-            Assert.ThrowsExactly<InvalidOperationException>(() => Call_Withdraw(snapshot, from, from, persistingBlock));
+            Call_Withdraw(snapshot, from, from, persistingBlock).Should().Be(false);
 
             // Good.
             persistingBlock.Header.Index = till + 1;
             var currentBlock = snapshot.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
             currentBlock.GetInteroperable<HashIndexState>().Index = till + 1;
-            Call_Withdraw(snapshot, from, from, persistingBlock);
+            Call_Withdraw(snapshot, from, from, persistingBlock).Should().Be(true);
 
             // Check that no deposit is left.
             Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(0);

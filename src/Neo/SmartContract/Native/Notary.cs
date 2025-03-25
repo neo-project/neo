@@ -221,10 +221,11 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
         {
-            if (!engine.CheckWitnessInternal(from)) throw new InvalidOperationException(string.Format("Failed to check witness for {0}", from.ToString()));
+            if (!engine.CheckWitnessInternal(from)) return false;
             var receive = to is null ? from : to;
-            var deposit = GetDepositFor(engine.SnapshotCache, from) ?? throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
-            if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
+            var deposit = GetDepositFor(engine.SnapshotCache, from);
+            if (deposit is null) return false;
+            if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) return false;
             RemoveDepositFor(engine.SnapshotCache, from);
             if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, StackItem.Null))
             {
