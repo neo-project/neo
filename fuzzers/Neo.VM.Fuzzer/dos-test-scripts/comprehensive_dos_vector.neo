@@ -1,0 +1,32 @@
+// Comprehensive DOS Vector Test Script
+// This script is designed to trigger multiple DOS detection mechanisms:
+// 1. High instruction count
+// 2. Excessive stack depth
+// 3. Long execution time
+
+// Push multiple values onto the stack to exceed our stack depth threshold
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+
+// Perform some simple operations to increase instruction count
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+
+// Return successfully
+0x40 // RET

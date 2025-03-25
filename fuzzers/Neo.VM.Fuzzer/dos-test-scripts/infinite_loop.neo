@@ -1,0 +1,32 @@
+// Potential infinite loop script
+// This script creates a loop that executes many times
+// OpCodes: PUSH1, JMP, RET
+
+// Push 1000 onto the stack (loop counter)
+0x01 0xE8 0x03 // PUSHINT16 (0x01) with value 1000 (0x03E8)
+
+// Loop start (at position 3)
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x15 // Jump to position 21 (offset from current position)
+
+// Decrement counter
+0x4A // DUP
+0x9D // DEC
+
+// Store counter back
+0x4A // DUP (keep a copy)
+
+// Jump back to loop start
+0x22 // JMP
+0xEA // Jump to position 3 (negative offset from current position)
+
+// End of script
+0x11 // PUSH1 (success value)
+0x40 // RET

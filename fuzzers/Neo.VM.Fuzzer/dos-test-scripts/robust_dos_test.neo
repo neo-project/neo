@@ -1,0 +1,29 @@
+// Robust DOS Test Script
+// This script is designed to be robust against crashes while still triggering DOS detection
+// It focuses on high instruction count and potential infinite loop detection
+
+// Push a small value onto the stack (to avoid stack overflow)
+0x01 0x88 0x13 // PUSHINT16 with value 5000 (0x1388)
+
+// Start of main loop
+// Label: MAIN_LOOP
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x06 // Jump to END (offset from current position)
+
+// Decrement counter
+0x9D // DEC - decrement by 1
+
+// Jump back to main loop start
+0x22 // JMP
+0xF8 // Jump back to MAIN_LOOP (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET

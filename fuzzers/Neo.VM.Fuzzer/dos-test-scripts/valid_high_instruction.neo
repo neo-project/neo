@@ -1,0 +1,37 @@
+// Valid High Instruction Count DOS Test Script
+// This script is designed to execute a large number of instructions
+// without causing exceptions, to trigger DOS detection
+
+// Push loop counter (10000 iterations)
+0x01 0x10 0x27 // PUSHINT16 with value 10000 (0x2710)
+
+// Loop start
+// Label: LOOP_START
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x0F // Jump to END (offset from current position)
+
+// Simple operations that won't cause exceptions
+0x11 // PUSH1
+0x11 // PUSH1
+0xAA // MUL - multiply
+0x49 // CLEAR - clear the stack
+
+// Decrement counter
+0x4A // DUP - duplicate counter
+0x11 // PUSH1
+0xA1 // SUB - subtract 1
+
+// Jump back to loop start
+0x22 // JMP
+0xF1 // Jump back to LOOP_START (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET

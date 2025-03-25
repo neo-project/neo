@@ -1,0 +1,33 @@
+// High instruction count DOS test script
+// This script is designed to exceed the 10,000 instruction threshold
+// by creating a large loop with many operations
+
+// Push loop counter (15,000 iterations)
+0x01 0xB8 0x3A // PUSHINT16 with value 15000 (0x3AB8)
+
+// Loop start
+// Label: LOOP_START
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x0F // Jump to END (offset from current position)
+
+// Simple operation to increment instruction count
+0x11 // PUSH1
+
+// Decrement counter
+0x4A // DUP - duplicate counter
+0x9D // DEC - decrement by 1
+
+// Jump back to loop start
+0x22 // JMP
+0xF2 // Jump back to LOOP_START (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET

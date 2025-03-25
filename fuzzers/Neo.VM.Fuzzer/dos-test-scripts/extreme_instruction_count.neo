@@ -1,0 +1,34 @@
+// Extreme instruction count DOS test script
+// This script is designed to exceed the instruction count threshold
+// by creating a very large loop with minimal operations
+
+// Push loop counter (50,000 iterations)
+0x01 0x50 0xC3 // PUSHINT16 with value 50000 (0xC350)
+
+// Loop start
+// Label: LOOP_START
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x0F // Jump to END (offset from current position)
+
+// Simple operation to increment instruction count
+0x11 // PUSH1
+0x49 // CLEAR - clear the stack to avoid stack overflow
+
+// Decrement counter
+0x4A // DUP - duplicate counter
+0x9D // DEC - decrement by 1
+
+// Jump back to loop start
+0x22 // JMP
+0xF1 // Jump back to LOOP_START (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET
