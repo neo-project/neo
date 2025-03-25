@@ -93,10 +93,10 @@ namespace Neo.IO.Caching
             {
                 if (InnerDictionary.Count >= _max_capacity)
                 {
-                    //TODO: Perform a performance test on the PLINQ query to determine which algorithm is better here (parallel or not)
-                    foreach (var item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(InnerDictionary.Count - _max_capacity + 1))
+                    var removedCount = InnerDictionary.Count - _max_capacity + 1;
+                    foreach (var toDelete in InnerDictionary.Values.OrderBy(p => p.Time).Take(removedCount))
                     {
-                        RemoveInternal(item_del);
+                        RemoveInternal(toDelete);
                     }
                 }
                 InnerDictionary.Add(key, new CacheItem(key, item));
