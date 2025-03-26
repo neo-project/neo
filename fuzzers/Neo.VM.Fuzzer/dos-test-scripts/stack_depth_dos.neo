@@ -1,0 +1,17 @@
+// Stack Depth DOS Vector Test Script
+// This script is designed to trigger the stack depth DOS detection threshold
+
+// Push multiple values onto the stack to exceed our stack depth threshold
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+
+// Return successfully
+0x40 // RET

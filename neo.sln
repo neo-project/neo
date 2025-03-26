@@ -1,4 +1,4 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32516.85
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -87,6 +87,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions.Benchmarks", "benchmarks\Neo.Extensions.Benchmarks\Neo.Extensions.Benchmarks.csproj", "{B6CB2559-10F9-41AC-8D58-364BFEF9688B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Json.Benchmarks", "benchmarks\Neo.Json.Benchmarks\Neo.Json.Benchmarks.csproj", "{5F984D2B-793F-4683-B53A-80050E6E0286}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fuzzers", "fuzzers", "{07F23ABD-80E4-4465-A05C-02BE4391DC43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.VM.Fuzzer", "fuzzers\Neo.VM.Fuzzer\Neo.VM.Fuzzer.csproj", "{D64D992A-12C8-48AF-96C6-3F04A6E401C5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -246,6 +250,10 @@ Global
 		{72997EAB-9B0C-4BC8-B797-955C219C2C97}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72997EAB-9B0C-4BC8-B797-955C219C2C97}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72997EAB-9B0C-4BC8-B797-955C219C2C97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D64D992A-12C8-48AF-96C6-3F04A6E401C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D64D992A-12C8-48AF-96C6-3F04A6E401C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D64D992A-12C8-48AF-96C6-3F04A6E401C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D64D992A-12C8-48AF-96C6-3F04A6E401C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -290,6 +298,7 @@ Global
 		{B6CB2559-10F9-41AC-8D58-364BFEF9688B} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
 		{5F984D2B-793F-4683-B53A-80050E6E0286} = {C25EB0B0-0CAC-4CC1-8F36-F9229EFB99EC}
 		{72997EAB-9B0C-4BC8-B797-955C219C2C97} = {7F257712-D033-47FF-B439-9D4320D06599}
+		{D64D992A-12C8-48AF-96C6-3F04A6E401C5} = {07F23ABD-80E4-4465-A05C-02BE4391DC43}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
