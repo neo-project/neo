@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
     <ProjectReference Include="..\..\src\Plugins\LevelDBStore\LevelDBStore.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageReference Include="Moq" Version="4.18.4" />
   </ItemGroup>
 
   <ItemGroup>
