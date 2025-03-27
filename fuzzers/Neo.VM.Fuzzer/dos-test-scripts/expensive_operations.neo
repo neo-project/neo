@@ -1,0 +1,38 @@
+// Expensive operations script
+// This script performs computationally expensive operations in a loop
+// OpCodes: PUSH1, DUP, MUL, DIV, MOD, JMP
+
+// Initialize counter and value
+0x15 // PUSH5 (loop counter = 50)
+0x11 // PUSH1 (initial value)
+
+// Loop start (position 2)
+0x4A // DUP (duplicate counter)
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x18 // Jump to position 24 (offset from current position)
+
+// Expensive operations
+0x4A // DUP (duplicate value)
+0x4A // DUP (duplicate value again)
+0x4A // DUP (duplicate value again)
+0xA0 // MUL (multiply)
+0xA1 // DIV (divide)
+0xA2 // MOD (modulo)
+0xA0 // MUL (multiply again)
+0xA1 // DIV (divide again)
+0xA2 // MOD (modulo again)
+
+// Decrement counter
+0x9D // DEC
+
+// Jump back to loop start
+0x22 // JMP
+0xE9 // Jump to position 2 (negative offset from current position)
+
+// End of script
+0x11 // PUSH1 (success value)
+0x40 // RET

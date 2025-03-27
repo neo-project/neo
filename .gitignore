@@ -266,3 +266,4 @@ launchSettings.json
 
 # Benchmarks
 **/BenchmarkDotNet.Artifacts/
+/fuzzers/Neo.VM.Fuzzer/fuzzer-output/

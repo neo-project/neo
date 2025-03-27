@@ -1,0 +1,23 @@
+// Minimal DOS Vector Test Script
+// This script is designed to be as simple as possible while still triggering
+// our updated DOS detection thresholds
+
+// Push a few values onto the stack to trigger stack depth threshold
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+
+// Perform some simple operations to increase instruction count
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+
+// Return successfully
+0x08 // PUSHT - push true (success value)
+0x40 // RET

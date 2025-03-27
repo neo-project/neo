@@ -1,0 +1,67 @@
+// Aggressive DOS vector test script
+// This script is designed to trigger DOS detection by performing
+// computationally expensive operations with high instruction count
+// and excessive stack usage
+
+// Initialize loop counter with a high value
+0x02 0x58 0x02 // PUSHINT16 with value 600 (0x0258)
+
+// Main loop start
+// Label: LOOP_START
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x3A // Jump to END (offset from current position)
+
+// Create a large stack (potential stack overflow)
+0x11 // PUSH1
+0x12 // PUSH2
+0x13 // PUSH3
+0x14 // PUSH4
+0x15 // PUSH5
+0x16 // PUSH6
+0x17 // PUSH7
+0x18 // PUSH8
+0x19 // PUSH9
+0x1A // PUSH10
+
+// Perform expensive operations on the stack
+// Repeated multiplication, division, and modulo operations
+0xA0 // MUL (1*2=2)
+0xA0 // MUL (2*3=6)
+0xA0 // MUL (6*4=24)
+0xA0 // MUL (24*5=120)
+0xA0 // MUL (120*6=720)
+0xA0 // MUL (720*7=5040)
+0xA0 // MUL (5040*8=40320)
+0xA0 // MUL (40320*9=362880)
+0xA0 // MUL (362880*10=3628800)
+
+// Perform expensive power operations
+0x11 // PUSH1
+0x12 // PUSH2
+0xA3 // POW (1^2)
+0x13 // PUSH3
+0xA3 // POW (1^3)
+0x14 // PUSH4
+0xA3 // POW (1^4)
+
+// Clear the stack
+0x49 // CLEAR
+
+// Decrement counter
+0x4A // DUP - duplicate counter
+0x9D // DEC - decrement by 1
+
+// Jump back to loop start
+0x22 // JMP
+0xC7 // Jump back to LOOP_START (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET
