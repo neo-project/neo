@@ -24,7 +24,7 @@ namespace Neo.Json.Fuzzer.Generators
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
         private readonly StringMutations _stringMutations;
-        
+
         /// <summary>
         /// Initializes a new instance of the StructureMutations class
         /// </summary>
@@ -34,7 +34,7 @@ namespace Neo.Json.Fuzzer.Generators
             _random = random ?? throw new ArgumentNullException(nameof(random));
             _stringMutations = new StringMutations(engine, random);
         }
-        
+
         /// <summary>
         /// Applies a random structure mutation to the JSON
         /// </summary>
@@ -47,9 +47,9 @@ namespace Neo.Json.Fuzzer.Generators
                 {
                     return json;
                 }
-                
+
                 int strategy = _random.Next(10);
-                
+
                 switch (strategy)
                 {
                     case 0:
@@ -83,7 +83,7 @@ namespace Neo.Json.Fuzzer.Generators
                         ConvertBetweenArrayAndObject(token);
                         break;
                 }
-                
+
                 return token.ToString();
             }
             catch
@@ -92,7 +92,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Adds a random property to a JSON object
         /// </summary>
@@ -100,15 +100,15 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JObject obj)
             {
                 // Generate a random property name
                 string propertyName = _engine.GenerateRandomPropertyName();
-                
+
                 // Generate a random value
                 JToken value = _engine.GenerateRandomValue();
-                
+
                 // Add the property
                 obj[propertyName] = value;
             }
@@ -126,7 +126,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Removes a random property from a JSON object
         /// </summary>
@@ -134,12 +134,12 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JObject obj)
             {
                 // Get all properties
                 var properties = obj.Properties.ToList();
-                
+
                 // Remove a random property if any exist
                 if (properties.Count > 0)
                 {
@@ -163,7 +163,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Renames a random property in a JSON object
         /// </summary>
@@ -171,21 +171,21 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JObject obj)
             {
                 // Get all properties
                 var properties = obj.Properties.ToList();
-                
+
                 // Rename a random property if any exist
                 if (properties.Count > 0)
                 {
                     int index = _random.Next(properties.Count);
                     var property = properties[index];
-                    
+
                     // Generate a new name
                     string newName = _engine.GenerateRandomPropertyName();
-                    
+
                     // Clone the value
                     JToken? value = property.Value;
                     if (value != null)
@@ -211,7 +211,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Duplicates a random property in a JSON object
         /// </summary>
@@ -219,21 +219,21 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JObject obj)
             {
                 // Get all properties
                 var properties = obj.Properties.ToList();
-                
+
                 // Duplicate a random property if any exist
                 if (properties.Count > 0)
                 {
                     int index = _random.Next(properties.Count);
                     var property = properties[index];
-                    
+
                     // Generate a new name
                     string newName = property.Key + "_copy";
-                    
+
                     // Clone the value
                     JToken? value = property.Value;
                     if (value != null)
@@ -256,7 +256,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Adds a random element to a JSON array
         /// </summary>
@@ -264,12 +264,12 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JArray array)
             {
                 // Generate a random value
                 JToken value = _engine.GenerateRandomValue();
-                
+
                 // Add to the array
                 array.Add(value);
             }
@@ -284,22 +284,22 @@ namespace Neo.Json.Fuzzer.Generators
                         arrayProperties.Add((kvp.Key, arr));
                     }
                 }
-                
+
                 // Add to a random array property if any exist
                 if (arrayProperties.Count > 0)
                 {
                     int index = _random.Next(arrayProperties.Count);
                     var (_, arrayValue) = arrayProperties[index];
-                    
+
                     // Generate a random value
                     JToken value = _engine.GenerateRandomValue();
-                    
+
                     // Add to the array
                     arrayValue.Add(value);
                 }
             }
         }
-        
+
         /// <summary>
         /// Removes a random element from a JSON array
         /// </summary>
@@ -307,7 +307,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JArray array)
             {
                 // Remove a random element if any exist
@@ -328,13 +328,13 @@ namespace Neo.Json.Fuzzer.Generators
                         arrayProperties.Add((kvp.Key, arr));
                     }
                 }
-                
+
                 // Remove from a random array property if any exist
                 if (arrayProperties.Count > 0)
                 {
                     int index = _random.Next(arrayProperties.Count);
                     var (_, arrayValue) = arrayProperties[index];
-                    
+
                     // Remove a random element if any exist
                     if (arrayValue.Count > 0)
                     {
@@ -344,7 +344,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Swaps two random elements in a JSON array
         /// </summary>
@@ -352,7 +352,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JArray array)
             {
                 // Swap two random elements if at least two exist
@@ -360,13 +360,13 @@ namespace Neo.Json.Fuzzer.Generators
                 {
                     int index1 = _random.Next(array.Count);
                     int index2 = _random.Next(array.Count);
-                    
+
                     // Make sure indices are different
                     while (index1 == index2)
                     {
                         index2 = _random.Next(array.Count);
                     }
-                    
+
                     // Swap elements
                     JToken? temp = array[index1];
                     array[index1] = array[index2];
@@ -384,25 +384,25 @@ namespace Neo.Json.Fuzzer.Generators
                         arrayProperties.Add((kvp.Key, arr));
                     }
                 }
-                
+
                 // Swap in a random array property if any exist
                 if (arrayProperties.Count > 0)
                 {
                     int index = _random.Next(arrayProperties.Count);
                     var (_, arrayValue) = arrayProperties[index];
-                    
+
                     // Swap two random elements if at least two exist
                     if (arrayValue.Count >= 2)
                     {
                         int index1 = _random.Next(arrayValue.Count);
                         int index2 = _random.Next(arrayValue.Count);
-                        
+
                         // Make sure indices are different
                         while (index1 == index2)
                         {
                             index2 = _random.Next(arrayValue.Count);
                         }
-                        
+
                         // Swap elements
                         JToken? temp = arrayValue[index1];
                         arrayValue[index1] = arrayValue[index2];
@@ -411,7 +411,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Nests a random property inside a new object
         /// </summary>
@@ -419,27 +419,27 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JObject obj)
             {
                 // Get all properties
                 var properties = obj.Properties.ToList();
-                
+
                 // Nest a random property if any exist
                 if (properties.Count > 0)
                 {
                     int index = _random.Next(properties.Count);
                     var property = properties[index];
-                    
+
                     // Create a new object
                     JObject newObj = new JObject();
-                    
+
                     // Move the property value to the new object
                     JToken? value = property.Value;
                     if (value != null)
                     {
                         newObj["nested"] = CloneToken(value);
-                        
+
                         // Replace the original property with the new object
                         JToken? removedValue;
                         ((IDictionary<string, JToken?>)obj).Remove(property.Key, out removedValue);
@@ -461,7 +461,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Unnests a random nested property
         /// </summary>
@@ -469,7 +469,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JObject obj)
             {
                 // Find properties that contain objects
@@ -481,13 +481,13 @@ namespace Neo.Json.Fuzzer.Generators
                         nestedProperties.Add((kvp.Key, nestedObj));
                     }
                 }
-                
+
                 // Unnest a random property if any exist
                 if (nestedProperties.Count > 0)
                 {
                     int index = _random.Next(nestedProperties.Count);
                     var (key, nestedObj) = nestedProperties[index];
-                    
+
                     // If the nested object has properties, unnest the first one
                     if (nestedObj.Properties.Any())
                     {
@@ -510,7 +510,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Converts between array and object representations
         /// </summary>
@@ -518,12 +518,12 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-                
+
             if (token is JObject obj)
             {
                 // Convert object to array
                 JArray newArray = new JArray();
-                
+
                 // Add each property value to the array
                 foreach (var kvp in obj.Properties)
                 {
@@ -532,7 +532,7 @@ namespace Neo.Json.Fuzzer.Generators
                         newArray.Add(CloneToken(kvp.Value));
                     }
                 }
-                
+
                 // Find the property in the parent object that contains this token
                 // and replace it with the new array
                 foreach (var property in obj.Properties)
@@ -552,7 +552,7 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 // Convert array to object
                 JObject newObj = new JObject();
-                
+
                 // Add each array element as a property
                 for (int i = 0; i < array.Count; i++)
                 {
@@ -561,7 +561,7 @@ namespace Neo.Json.Fuzzer.Generators
                         newObj[$"item{i}"] = CloneToken(array[i]);
                     }
                 }
-                
+
                 // Since we can't directly modify the parent, we'll clear the array
                 // and add a single element that is the new object
                 if (array.Count > 0)
@@ -571,7 +571,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Creates a deeply nested structure with a specified maximum nesting level
         /// </summary>
@@ -581,7 +581,7 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return new JNumber(_random.Next(100));
             }
-            
+
             if (_random.NextDouble() < 0.5)
             {
                 // Create a nested object
@@ -592,12 +592,14 @@ namespace Neo.Json.Fuzzer.Generators
             else
             {
                 // Create a nested array
-                JArray array = new JArray();
-                array.Add(CreateNestedStructure(maxNest - 1));
+                JArray array = new JArray
+                {
+                    CreateNestedStructure(maxNest - 1)
+                };
                 return array;
             }
         }
-        
+
         /// <summary>
         /// Creates a deeply nested array structure with a specified maximum nesting level
         /// </summary>
@@ -607,13 +609,15 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return new JNumber(_random.Next(100));
             }
-            
-            JArray array = new JArray();
-            array.Add(CreateNestedArrayStructure(maxNest - 1));
-            
+
+            JArray array = new JArray
+            {
+                CreateNestedArrayStructure(maxNest - 1)
+            };
+
             return array;
         }
-        
+
         /// <summary>
         /// Creates a structure with alternating object and array nesting
         /// </summary>
@@ -623,7 +627,7 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return new JNumber(_random.Next(100));
             }
-            
+
             if (startWithObject)
             {
                 JObject obj = new JObject();
@@ -632,12 +636,14 @@ namespace Neo.Json.Fuzzer.Generators
             }
             else
             {
-                JArray array = new JArray();
-                array.Add(CreateAlternatingStructure(maxNest - 1, true));
+                JArray array = new JArray
+                {
+                    CreateAlternatingStructure(maxNest - 1, true)
+                };
                 return array;
             }
         }
-        
+
         /// <summary>
         /// Creates a structure with multiple properties at each level
         /// </summary>
@@ -647,17 +653,17 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return new JNumber(_random.Next(100));
             }
-            
+
             JObject obj = new JObject();
-            
+
             for (int i = 0; i < branchFactor; i++)
             {
                 obj["branch" + i] = CreateBranchingStructure(maxNest - 1, branchFactor);
             }
-            
+
             return obj;
         }
-        
+
         /// <summary>
         /// Creates a deep clone of a JToken since Neo.Json doesn't have a DeepClone method
         /// </summary>
@@ -665,7 +671,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return null;
-                
+
             if (token is JObject obj)
             {
                 JObject newObj = new JObject();
@@ -703,7 +709,7 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return new JBoolean(boolean.Value);
             }
-            
+
             // Default fallback - only reached for null or unknown token types
             try
             {

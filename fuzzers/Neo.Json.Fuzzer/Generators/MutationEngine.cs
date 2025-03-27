@@ -31,13 +31,13 @@ namespace Neo.Json.Fuzzer.Generators
         private const int NEO_DEFAULT_MAX_NEST = 64;
         private const int NEO_LOW_MAX_NEST = 10;
         private const int NEO_HIGH_MAX_NEST = 128;
-        
+
         // Reasonable limits for values
         private const int MAX_STRING_LENGTH = 10000;
         private const double MAX_NUMBER_VALUE = 1e15;
         private const int MAX_ARRAY_SIZE = 100;
         private const int MAX_OBJECT_SIZE = 100;
-        
+
         // Component classes
         private readonly BaseMutationEngine _baseEngine;
         private readonly StringMutations _stringMutations;
@@ -47,7 +47,7 @@ namespace Neo.Json.Fuzzer.Generators
         private readonly NeoJsonSpecificMutations _neoJsonMutations;
         private readonly DOSVectorMutations _dosVectorMutations;
         private readonly CharacterMutations _characterMutations;
-        
+
         // New specialized mutation components
         private readonly JPathMutations _jpathMutations;
         private readonly UnicodeMutations _unicodeMutations;
@@ -66,7 +66,7 @@ namespace Neo.Json.Fuzzer.Generators
             _random = random ?? throw new ArgumentNullException(nameof(random));
             _minMutations = Math.Max(1, minMutations);
             _maxMutations = Math.Max(_minMutations, maxMutations);
-            
+
             // Initialize components
             _baseEngine = new BaseMutationEngine(random);
             _stringMutations = new StringMutations(_baseEngine, random);
@@ -76,7 +76,7 @@ namespace Neo.Json.Fuzzer.Generators
             _neoJsonMutations = new NeoJsonSpecificMutations(_baseEngine, random);
             _dosVectorMutations = new DOSVectorMutations(_baseEngine, random);
             _characterMutations = new CharacterMutations(_baseEngine, random);
-            
+
             // Initialize new specialized mutation components
             _jpathMutations = new JPathMutations(_baseEngine, random);
             _unicodeMutations = new UnicodeMutations(_baseEngine, random);
@@ -99,15 +99,15 @@ namespace Neo.Json.Fuzzer.Generators
 
             // Determine number of mutations to apply
             int mutationCount = _random.Next(_minMutations, _maxMutations + 1);
-            
+
             string mutatedJson = json;
-            
+
             for (int i = 0; i < mutationCount; i++)
             {
                 // Select a mutation strategy
                 mutatedJson = SelectAndApplyMutation(mutatedJson);
             }
-            
+
             return mutatedJson;
         }
 
@@ -120,13 +120,13 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 // Try to parse the JSON first to determine if it's valid
                 bool isValidJson = _baseEngine.IsValidJson(json);
-                
+
                 // Different mutation strategies based on whether the JSON is valid
                 if (isValidJson)
                 {
                     // For valid JSON, apply structured mutations with weighted probabilities
                     int probability = _random.Next(100);
-                    
+
                     return probability switch
                     {
                         < 30 => _structureMutations.ApplyRandomMutation(json),
@@ -159,7 +159,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             return _baseEngine.IsValidJson(json);
         }
-        
+
         /// <summary>
         /// Generates a JSON structure specifically designed for testing a particular aspect
         /// </summary>
@@ -171,9 +171,9 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return "{}";
             }
-            
+
             testType = testType.ToLowerInvariant();
-            
+
             return testType switch
             {
                 // JPath testing
@@ -184,12 +184,12 @@ namespace Neo.Json.Fuzzer.Generators
                 "jpath_union" => _jpathMutations.GenerateSpecializedTestJson("union"),
                 "jpath_recursive" => _jpathMutations.GenerateSpecializedTestJson("recursive"),
                 "jpath_slice" => _jpathMutations.GenerateSpecializedTestJson("slice"),
-                
+
                 // Unicode testing
                 "unicode" => _unicodeMutations.GenerateSpecializedTestJson(),
                 "unicode_bmp" => _unicodeMutations.GenerateSpecializedTestJson("ASCII"),
                 "unicode_supplementary" => _unicodeMutations.GenerateSpecializedTestJson("CJK Unified Ideographs"),
-                
+
                 // Numeric precision testing
                 "numeric" => _numericPrecisionMutations.GenerateSpecializedTestJson(),
                 "numeric_integer" => _numericPrecisionMutations.GenerateSpecializedTestJson("integer"),
@@ -197,18 +197,18 @@ namespace Neo.Json.Fuzzer.Generators
                 "numeric_boundary" => _numericPrecisionMutations.GenerateSpecializedTestJson("boundary"),
                 "numeric_scientific" => _numericPrecisionMutations.GenerateSpecializedTestJson("scientific"),
                 "numeric_precision" => _numericPrecisionMutations.GenerateSpecializedTestJson("precision"),
-                
+
                 // Streaming testing
                 "streaming" => _streamingMutations.GenerateSpecializedTestJson(),
                 "streaming_large" => _streamingMutations.GenerateSpecializedTestJson("large"),
                 "streaming_nested" => _streamingMutations.GenerateSpecializedTestJson("nested"),
                 "streaming_chunked" => _streamingMutations.GenerateSpecializedTestJson("chunked"),
-                
+
                 // Concurrent access testing
                 "concurrent" => _concurrentAccessMutations.GenerateSpecializedTestJson(),
                 "concurrent_shared" => _concurrentAccessMutations.GenerateSpecializedTestJson("shared"),
                 "concurrent_race" => _concurrentAccessMutations.GenerateSpecializedTestJson("race"),
-                
+
                 // Default to a simple object
                 _ => "{}"
             };

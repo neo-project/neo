@@ -161,25 +161,25 @@ namespace Neo.Json.Fuzzer.Generators
         private string GenerateJPathTestJson()
         {
             string template = _jPathTestTemplates[_random.Next(_jPathTestTemplates.Length)];
-            
+
             if (template.Contains("{0}") && template.Contains("{1}") && template.Contains("{2}"))
             {
-                return string.Format(template, 
-                    GenerateSimpleJson(), 
-                    GenerateSimpleJson(), 
+                return string.Format(template,
+                    GenerateSimpleJson(),
+                    GenerateSimpleJson(),
                     GenerateSimpleJson());
             }
             else if (template.Contains("{0}") && template.Contains("{1}"))
             {
-                return string.Format(template, 
-                    GenerateSimpleJson(), 
+                return string.Format(template,
+                    GenerateSimpleJson(),
                     GenerateSimpleJson());
             }
             else if (template.Contains("{0}"))
             {
                 return string.Format(template, GenerateSimpleJson());
             }
-            
+
             return template;
         }
 
@@ -195,7 +195,7 @@ namespace Neo.Json.Fuzzer.Generators
                 1 => NEO_DEFAULT_MAX_NEST - _random.Next(5), // Just below default limit
                 _ => NEO_HIGH_MAX_NEST - _random.Next(10) // Just below high limit
             };
-            
+
             // Generate nested structure
             string json = "null";
             for (int i = 0; i < nestingTarget; i++)
@@ -209,7 +209,7 @@ namespace Neo.Json.Fuzzer.Generators
                     json = $"[{json}]";
                 }
             }
-            
+
             return json;
         }
 
@@ -219,7 +219,7 @@ namespace Neo.Json.Fuzzer.Generators
         private string GenerateTypeConversionJson()
         {
             int type = _random.Next(6);
-            
+
             return type switch
             {
                 0 => $"{{\"boolean\": {(_random.Next(2) == 0 ? "true" : "false")}}}",
@@ -239,11 +239,11 @@ namespace Neo.Json.Fuzzer.Generators
             // Create a complex but valid JSON structure for serialization testing
             var properties = new List<string>();
             int propertyCount = _random.Next(3, 8);
-            
+
             for (int i = 0; i < propertyCount; i++)
             {
                 string key = $"prop{i}";
-                
+
                 // Mix of different value types
                 string value = (i % 5) switch
                 {
@@ -253,10 +253,10 @@ namespace Neo.Json.Fuzzer.Generators
                     3 => GenerateJsonArray(1),
                     _ => GenerateJsonObject(1)
                 };
-                
+
                 properties.Add($"\"{key}\": {value}");
             }
-            
+
             return $"{{{string.Join(", ", properties)}}}";
         }
 
@@ -266,7 +266,7 @@ namespace Neo.Json.Fuzzer.Generators
         private string GenerateNeoJsonEdgeCaseJson()
         {
             int edgeCase = _random.Next(5);
-            
+
             return edgeCase switch
             {
                 0 => $"{{\"unicode\": \"{GenerateUnicodeString(20, 50)}\"}}",
@@ -327,7 +327,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             // Choose a template
             string template = _jsonTemplates[_random.Next(_jsonTemplates.Length)];
-            
+
             // Fill in the template with random values
             if (template.Contains("{0}") && template.Contains("{1}"))
             {
@@ -355,7 +355,7 @@ namespace Neo.Json.Fuzzer.Generators
                 1 => NEO_DEFAULT_MAX_NEST - 1, // Test default limit
                 _ => NEO_HIGH_MAX_NEST - 1 // Test high limit
             };
-            
+
             string json = "null";
 
             for (int i = 0; i < targetDepth; i++)
@@ -446,12 +446,12 @@ namespace Neo.Json.Fuzzer.Generators
         private string GenerateUnicodeHeavyJson()
         {
             var unicodeStrings = new List<string>();
-            
+
             for (int i = 0; i < 3; i++) // Reduced from 5 to 3 for efficiency
             {
                 unicodeStrings.Add($"\"{GenerateUnicodeString(10, 30)}\"");
             }
-            
+
             return $"{{\"unicodeStrings\": [{string.Join(", ", unicodeStrings)}]}}";
         }
 
@@ -462,7 +462,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             int length = _random.Next(minLength, maxLength + 1);
             StringBuilder sb = new();
-            
+
             for (int j = 0; j < length; j++)
             {
                 // Generate a random Unicode character, avoiding surrogate pairs
@@ -471,10 +471,10 @@ namespace Neo.Json.Fuzzer.Generators
                 {
                     c = (char)_random.Next(0x20, 0xFFFF);
                 } while (c >= 0xD800 && c <= 0xDFFF);
-                
+
                 sb.Append(c);
             }
-            
+
             return sb.ToString();
         }
 
@@ -484,12 +484,12 @@ namespace Neo.Json.Fuzzer.Generators
         private string GenerateSpecialCharJson()
         {
             var specialStrings = new List<string>();
-            
+
             for (int i = 0; i < 3; i++) // Reduced from 5 to 3 for efficiency
             {
                 StringBuilder sb = new();
                 int length = _random.Next(10, 30);
-                
+
                 for (int j = 0; j < length; j++)
                 {
                     // Mix normal and special characters
@@ -503,10 +503,10 @@ namespace Neo.Json.Fuzzer.Generators
                         sb.Append((char)_random.Next(32, 127));
                     }
                 }
-                
+
                 specialStrings.Add($"\"{sb}\"");
             }
-            
+
             return $"{{\"specialStrings\": [{string.Join(", ", specialStrings)}]}}";
         }
 
@@ -518,7 +518,7 @@ namespace Neo.Json.Fuzzer.Generators
             string key = GenerateRandomString(1, 10);
             string value1 = GenerateSimpleJson();
             string value2 = GenerateSimpleJson();
-            
+
             return $"{{\"{key}\": {value1}, \"{key}\": {value2}}}";
         }
 

@@ -24,7 +24,7 @@ namespace Neo.Json.Fuzzer.Generators
     {
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
-        
+
         // Unicode plane ranges
         private static readonly (int Start, int End)[] _unicodePlanes = new[]
         {
@@ -34,7 +34,7 @@ namespace Neo.Json.Fuzzer.Generators
             (0xE0000, 0xEFFFF),    // Supplementary Special-purpose Plane (SSP)
             (0xF0000, 0x10FFFF)    // Private Use Areas (PUA)
         };
-        
+
         // Specific Unicode blocks of interest
         private static readonly (int Start, int End, string Name)[] _unicodeBlocks = new[]
         {
@@ -59,7 +59,7 @@ namespace Neo.Json.Fuzzer.Generators
             (0xFE00, 0xFE0F, "Variation Selectors"),
             (0xFFF0, 0xFFFF, "Specials")
         };
-        
+
         // Special character sets
         private static readonly int[] _controlCharacters = Enumerable.Range(0x0000, 0x0020).ToArray();
         private static readonly int[] _whitespaceCharacters = new[] { 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x0020, 0x00A0, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000 };
@@ -67,7 +67,7 @@ namespace Neo.Json.Fuzzer.Generators
         private static readonly int[] _bidirectionalControls = new[] { 0x061C, 0x200E, 0x200F, 0x202A, 0x202B, 0x202C, 0x202D, 0x202E, 0x2066, 0x2067, 0x2068, 0x2069 };
         private static readonly int[] _combiningCharacters = Enumerable.Range(0x0300, 0x036F - 0x0300 + 1).ToArray();
         private static readonly int[] _invalidUnicodeCharacters = new[] { 0xFFFE, 0xFFFF };
-        
+
         /// <summary>
         /// Initializes a new instance of the UnicodeMutations class
         /// </summary>
@@ -76,7 +76,7 @@ namespace Neo.Json.Fuzzer.Generators
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _random = random ?? throw new ArgumentNullException(nameof(random));
         }
-        
+
         /// <summary>
         /// Applies a Unicode-specific mutation to the JSON
         /// </summary>
@@ -85,10 +85,10 @@ namespace Neo.Json.Fuzzer.Generators
             try
             {
                 var token = JToken.Parse(json);
-                
+
                 // Select a mutation strategy
                 int strategy = _random.Next(7);
-                
+
                 return strategy switch
                 {
                     0 => token != null ? AddUnicodeToStrings(token) : json,
@@ -106,7 +106,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Adds Unicode characters to string values
         /// </summary>
@@ -116,34 +116,34 @@ namespace Neo.Json.Fuzzer.Generators
             ModifyStrings(token, (s) => InsertUnicodeCharacters(s, 1, 5));
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Adds Unicode characters to property names
         /// </summary>
         private string AddUnicodeToPropertyNames(JToken token)
         {
             if (token == null) return "{}";
-            
+
             if (token is JObject obj)
             {
                 // Create a new object with Unicode property names
                 JObject newObj = new JObject();
-                
+
                 // Get all properties
                 var properties = obj.Properties.ToList();
-                
+
                 foreach (var property in properties)
                 {
                     string newKey = InsertUnicodeCharacters(property.Key, 1, 2);
                     newObj[newKey] = property.Value;
                 }
-                
+
                 return newObj.ToString();
             }
-            
+
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Adds control characters to string values
         /// </summary>
@@ -153,7 +153,7 @@ namespace Neo.Json.Fuzzer.Generators
             ModifyStrings(token, (s) => InsertCharactersFromSet(s, _controlCharacters, 1, 3));
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Adds zero-width characters to string values
         /// </summary>
@@ -163,7 +163,7 @@ namespace Neo.Json.Fuzzer.Generators
             ModifyStrings(token, (s) => InsertCharactersFromSet(s, _zeroWidthCharacters, 1, 5));
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Adds bidirectional control characters to string values
         /// </summary>
@@ -173,7 +173,7 @@ namespace Neo.Json.Fuzzer.Generators
             ModifyStrings(token, (s) => InsertCharactersFromSet(s, _bidirectionalControls, 1, 3));
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Adds combining characters to string values
         /// </summary>
@@ -183,7 +183,7 @@ namespace Neo.Json.Fuzzer.Generators
             ModifyStrings(token, (s) => InsertCharactersFromSet(s, _combiningCharacters, 1, 5));
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Adds surrogate pair characters to string values
         /// </summary>
@@ -193,19 +193,19 @@ namespace Neo.Json.Fuzzer.Generators
             ModifyStrings(token, (s) => InsertSurrogatePairs(s, 1, 3));
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Modifies all string values in a token
         /// </summary>
         private void ModifyStrings(JToken token, Func<string, string> modifier)
         {
             if (token == null) return;
-            
+
             if (token is JString str)
             {
                 // Modify the string value
                 string modified = modifier(str.Value);
-                
+
                 // In Neo.Json, we can't directly access the Parent property
                 // We'll need to handle this differently by traversing the structure
                 // and updating the parent objects/arrays directly
@@ -247,7 +247,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Inserts random Unicode characters into a string
         /// </summary>
@@ -257,21 +257,21 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return input;
             }
-            
+
             StringBuilder sb = new StringBuilder(input);
             int count = _random.Next(minCount, maxCount + 1);
-            
+
             for (int i = 0; i < count; i++)
             {
                 // Select a Unicode block
                 var block = _unicodeBlocks[_random.Next(_unicodeBlocks.Length)];
-                
+
                 // Generate a character from that block
                 int codePoint = _random.Next(block.Start, block.End + 1);
-                
+
                 // Insert at a random position
                 int position = _random.Next(sb.Length + 1);
-                
+
                 // Convert code point to string and insert
                 if (codePoint <= 0xFFFF)
                 {
@@ -287,10 +287,10 @@ namespace Neo.Json.Fuzzer.Generators
                     sb.Insert(position + 1, lowSurrogate);
                 }
             }
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Inserts characters from a specific set into a string
         /// </summary>
@@ -300,25 +300,25 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return input;
             }
-            
+
             StringBuilder sb = new StringBuilder(input);
             int count = _random.Next(minCount, maxCount + 1);
-            
+
             for (int i = 0; i < count; i++)
             {
                 // Select a character from the set
                 int codePoint = characterSet[_random.Next(characterSet.Length)];
-                
+
                 // Insert at a random position
                 int position = _random.Next(sb.Length + 1);
-                
+
                 // Convert code point to string and insert
                 sb.Insert(position, (char)codePoint);
             }
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Inserts surrogate pairs into a string
         /// </summary>
@@ -328,21 +328,21 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return input;
             }
-            
+
             StringBuilder sb = new StringBuilder(input);
             int count = _random.Next(minCount, maxCount + 1);
-            
+
             for (int i = 0; i < count; i++)
             {
                 // Select a plane beyond BMP
                 var plane = _unicodePlanes[_random.Next(1, _unicodePlanes.Length)];
-                
+
                 // Generate a character from that plane
                 int codePoint = _random.Next(plane.Start, plane.End + 1);
-                
+
                 // Insert at a random position
                 int position = _random.Next(sb.Length + 1);
-                
+
                 // Convert to surrogate pair and insert
                 codePoint -= 0x10000;
                 char highSurrogate = (char)(0xD800 + (codePoint >> 10));
@@ -350,10 +350,10 @@ namespace Neo.Json.Fuzzer.Generators
                 sb.Insert(position, highSurrogate);
                 sb.Insert(position + 1, lowSurrogate);
             }
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Generates a string with characters from a specific Unicode plane
         /// </summary>
@@ -363,14 +363,14 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 planeIndex = 0; // Default to BMP if invalid plane index
             }
-            
+
             var plane = _unicodePlanes[planeIndex];
             StringBuilder sb = new StringBuilder(length);
-            
+
             for (int i = 0; i < length; i++)
             {
                 int codePoint = _random.Next(plane.Start, plane.End + 1);
-                
+
                 if (codePoint <= 0xFFFF)
                 {
                     sb.Append((char)codePoint);
@@ -381,10 +381,10 @@ namespace Neo.Json.Fuzzer.Generators
                     sb.Append(char.ConvertFromUtf32(codePoint));
                 }
             }
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Generates a single Unicode character from a specific plane
         /// </summary>
@@ -394,12 +394,12 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 planeIndex = 0; // Default to BMP if invalid plane index
             }
-            
+
             var plane = _unicodePlanes[planeIndex];
             int codePoint = _random.Next(plane.Start, Math.Min(plane.End, 0xFFFF) + 1);
             return (char)codePoint;
         }
-        
+
         /// <summary>
         /// Generates a specialized test JSON for Unicode testing
         /// </summary>
@@ -408,41 +408,41 @@ namespace Neo.Json.Fuzzer.Generators
         public string GenerateSpecializedTestJson(string? testType = null)
         {
             JObject obj = new JObject();
-            
+
             switch (testType?.ToLowerInvariant())
             {
                 case "bmp":
                     // Basic Multilingual Plane characters
                     return GenerateUnicodePlaneTest(0);
-                
+
                 case "supplementary":
                     // Supplementary Multilingual Plane characters
                     return GenerateUnicodePlaneTest(1);
-                
+
                 case "ideographic":
                     // Supplementary Ideographic Plane characters
                     return GenerateUnicodePlaneTest(2);
-                
+
                 case "special":
                     // Supplementary Special-purpose Plane characters
                     return GenerateUnicodePlaneTest(3);
-                
+
                 case "private":
                     // Private Use Areas
                     return GenerateUnicodePlaneTest(4);
-                
+
                 case "mixed":
                     // Mix of characters from different planes
                     return GenerateMixedUnicodeTest();
-                
+
                 case "surrogate":
                     // Test surrogate pairs
                     return GenerateSurrogatePairsTest();
-                
+
                 case "control":
                     // Test control characters
                     return GenerateControlCharactersTest();
-                
+
                 default:
                     // Default Unicode test with various characters
                     obj["type"] = "unicode_test";
@@ -455,7 +455,7 @@ namespace Neo.Json.Fuzzer.Generators
                     return obj.ToString();
             }
         }
-        
+
         /// <summary>
         /// Generates a test with characters from a specific Unicode plane
         /// </summary>
@@ -463,7 +463,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (planeIndex < 0 || planeIndex >= _unicodePlanes.Length)
                 planeIndex = 0;
-                
+
             JObject obj = new JObject();
             obj["type"] = "unicode_plane_test";
             obj["plane_index"] = planeIndex;
@@ -476,7 +476,7 @@ namespace Neo.Json.Fuzzer.Generators
                 4 => "Private Use Areas (PUA)",
                 _ => "Unknown Plane"
             };
-            
+
             // Generate strings with characters from this plane
             JObject samples = new JObject();
             for (int i = 0; i < 10; i++)
@@ -484,7 +484,7 @@ namespace Neo.Json.Fuzzer.Generators
                 samples[$"sample_{i}"] = GenerateUnicodeString(planeIndex, 10);
             }
             obj["samples"] = samples;
-            
+
             // Generate a nested structure with Unicode characters
             JObject nested = new JObject();
             for (int i = 0; i < 5; i++)
@@ -493,10 +493,10 @@ namespace Neo.Json.Fuzzer.Generators
                 nested[key] = GenerateUnicodeString(planeIndex, 5);
             }
             obj["nested"] = nested;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a test with mixed Unicode characters from different planes
         /// </summary>
@@ -504,7 +504,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "mixed_unicode_test";
-            
+
             // Create an array of mixed Unicode strings
             JArray mixedStrings = new JArray();
             for (int i = 0; i < 10; i++)
@@ -519,7 +519,7 @@ namespace Neo.Json.Fuzzer.Generators
                 mixedStrings.Add(sb.ToString());
             }
             obj["mixed_strings"] = mixedStrings;
-            
+
             // Create an object with mixed Unicode keys and values
             JObject mixedObject = new JObject();
             for (int i = 0; i < 5; i++)
@@ -531,7 +531,7 @@ namespace Neo.Json.Fuzzer.Generators
                     int planeIndex = _random.Next(2); // Limit to BMP and SMP for keys
                     keyBuilder.Append(GenerateUnicodeChar(planeIndex));
                 }
-                
+
                 // Generate a value with mixed Unicode characters
                 StringBuilder valueBuilder = new StringBuilder();
                 for (int j = 0; j < 5; j++)
@@ -539,14 +539,14 @@ namespace Neo.Json.Fuzzer.Generators
                     int planeIndex = _random.Next(_unicodePlanes.Length);
                     valueBuilder.Append(GenerateUnicodeChar(planeIndex));
                 }
-                
+
                 mixedObject[keyBuilder.ToString()] = valueBuilder.ToString();
             }
             obj["mixed_object"] = mixedObject;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a test focused on surrogate pairs
         /// </summary>
@@ -554,7 +554,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "surrogate_pairs_test";
-            
+
             // Generate strings with surrogate pairs
             JArray samples = new JArray();
             for (int i = 0; i < 10; i++)
@@ -562,10 +562,10 @@ namespace Neo.Json.Fuzzer.Generators
                 samples.Add(GenerateSurrogatePairsString(10));
             }
             obj["surrogate_samples"] = samples;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a test focused on control characters
         /// </summary>
@@ -573,7 +573,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "control_characters_test";
-            
+
             // Generate strings with control characters
             JArray samples = new JArray();
             for (int i = 0; i < 10; i++)
@@ -581,10 +581,10 @@ namespace Neo.Json.Fuzzer.Generators
                 samples.Add(GenerateControlCharactersString(10));
             }
             obj["control_samples"] = samples;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a string with surrogate pairs
         /// </summary>
@@ -599,7 +599,7 @@ namespace Neo.Json.Fuzzer.Generators
             }
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Generates a string with control characters
         /// </summary>
@@ -609,8 +609,8 @@ namespace Neo.Json.Fuzzer.Generators
             for (int i = 0; i < length; i++)
             {
                 // Generate a control character (0x00-0x1F, 0x7F-0x9F)
-                int codePoint = _random.Next(2) == 0 
-                    ? _random.Next(0x00, 0x20) 
+                int codePoint = _random.Next(2) == 0
+                    ? _random.Next(0x00, 0x20)
                     : _random.Next(0x7F, 0xA0);
                 sb.Append((char)codePoint);
             }

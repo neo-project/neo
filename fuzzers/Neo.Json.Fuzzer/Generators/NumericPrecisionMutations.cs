@@ -25,7 +25,7 @@ namespace Neo.Json.Fuzzer.Generators
     {
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
-        
+
         // Special numeric values
         private static readonly double[] _specialValues = new[]
         {
@@ -39,7 +39,7 @@ namespace Neo.Json.Fuzzer.Generators
             -1.0 / 0.0,
             0.0 / 0.0
         };
-        
+
         // Boundary values
         private static readonly double[] _boundaryValues = new[]
         {
@@ -58,7 +58,7 @@ namespace Neo.Json.Fuzzer.Generators
             2.2250738585072014e-308,  // Min normal double
             -2.2250738585072014e-308  // Max negative normal double
         };
-        
+
         /// <summary>
         /// Initializes a new instance of the NumericPrecisionMutations class
         /// </summary>
@@ -67,7 +67,7 @@ namespace Neo.Json.Fuzzer.Generators
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _random = random ?? throw new ArgumentNullException(nameof(random));
         }
-        
+
         /// <summary>
         /// Applies a numeric precision-specific mutation to the JSON
         /// </summary>
@@ -76,10 +76,10 @@ namespace Neo.Json.Fuzzer.Generators
             try
             {
                 var token = JToken.Parse(json);
-                
+
                 // Select a mutation strategy
                 int strategy = _random.Next(5);
-                
+
                 return strategy switch
                 {
                     0 => token != null ? ReplaceWithBoundaryValues(token) : json,
@@ -95,14 +95,14 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Replaces numeric values with boundary values
         /// </summary>
         private string ReplaceWithBoundaryValues(JToken token)
         {
             if (token == null) return "{}";
-            ModifyNumbers(token, (num) => 
+            ModifyNumbers(token, (num) =>
             {
                 // Select a random boundary value
                 double boundaryValue = _boundaryValues[_random.Next(_boundaryValues.Length)];
@@ -110,14 +110,14 @@ namespace Neo.Json.Fuzzer.Generators
             });
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Replaces numeric values with special values
         /// </summary>
         private string ReplaceWithSpecialValues(JToken token)
         {
             if (token == null) return "{}";
-            ModifyNumbers(token, (num) => 
+            ModifyNumbers(token, (num) =>
             {
                 // Select a random special value
                 double specialValue = _specialValues[_random.Next(_specialValues.Length)];
@@ -125,14 +125,14 @@ namespace Neo.Json.Fuzzer.Generators
             });
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Replaces numeric values with values having large exponents
         /// </summary>
         private string ReplaceWithLargeExponent(JToken token)
         {
             if (token == null) return "{}";
-            ModifyNumbers(token, (num) => 
+            ModifyNumbers(token, (num) =>
             {
                 // Generate a value with a large exponent
                 int exponent = _random.Next(100, 308); // Max exponent for double is 308
@@ -143,94 +143,94 @@ namespace Neo.Json.Fuzzer.Generators
             });
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Replaces numeric values with repeating decimal values
         /// </summary>
         private string ReplaceWithRepeatingDecimal(JToken token)
         {
             if (token == null) return "{}";
-            ModifyNumbers(token, (num) => 
+            ModifyNumbers(token, (num) =>
             {
                 // Generate a repeating decimal
                 int integerPart = _random.Next(-100, 100);
-                
+
                 // Create a repeating pattern
                 StringBuilder sb = new StringBuilder();
                 sb.Append(integerPart);
                 sb.Append('.');
-                
+
                 // Generate a repeating pattern (1-5 digits)
                 int patternLength = _random.Next(1, 6);
                 for (int i = 0; i < patternLength; i++)
                 {
                     sb.Append(_random.Next(10));
                 }
-                
+
                 // Repeat the pattern to create a long decimal
                 string pattern = sb.ToString().Substring(sb.ToString().IndexOf('.') + 1);
                 sb.Clear();
                 sb.Append(integerPart);
                 sb.Append('.');
-                
+
                 // Repeat the pattern 5-10 times
                 int repetitions = _random.Next(5, 11);
                 for (int i = 0; i < repetitions; i++)
                 {
                     sb.Append(pattern);
                 }
-                
+
                 // Parse the resulting string as a double
                 if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
                 {
                     return new JNumber(result);
                 }
-                
+
                 // Fallback to a simple value if parsing fails
                 return new JNumber(integerPart + _random.NextDouble());
             });
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Replaces numeric values with high precision values
         /// </summary>
         private string ReplaceWithHighPrecisionValue(JToken token)
         {
             if (token == null) return "{}";
-            ModifyNumbers(token, (num) => 
+            ModifyNumbers(token, (num) =>
             {
                 // Generate a high precision value
                 StringBuilder sb = new StringBuilder();
-                
+
                 // Integer part (1-10 digits)
                 int integerDigits = _random.Next(1, 11);
                 for (int i = 0; i < integerDigits; i++)
                 {
                     sb.Append(i == 0 ? _random.Next(1, 10) : _random.Next(10));
                 }
-                
+
                 sb.Append('.');
-                
+
                 // Fractional part (10-15 digits)
                 int fractionalDigits = _random.Next(10, 16);
                 for (int i = 0; i < fractionalDigits; i++)
                 {
                     sb.Append(_random.Next(10));
                 }
-                
+
                 // Parse the resulting string as a double
                 if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
                 {
                     return new JNumber(result);
                 }
-                
+
                 // Fallback to a simple value if parsing fails
                 return new JNumber(_random.NextDouble() * 1000);
             });
             return token.ToString();
         }
-        
+
         /// <summary>
         /// Modifies all numeric values in a token
         /// </summary>
@@ -238,7 +238,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-            
+
             if (token is JNumber num)
             {
                 // Modify the numeric value directly
@@ -278,7 +278,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Generates a numeric value with specific precision characteristics
         /// </summary>
@@ -294,7 +294,7 @@ namespace Neo.Json.Fuzzer.Generators
                 _ => _random.NextDouble() * 1000 - 500 // Random value between -500 and 500
             };
         }
-        
+
         /// <summary>
         /// Generates a value with a large exponent
         /// </summary>
@@ -305,72 +305,72 @@ namespace Neo.Json.Fuzzer.Generators
             double mantissa = _random.NextDouble() * 9.0 + 1.0;
             return sign * mantissa * Math.Pow(10, exponent);
         }
-        
+
         /// <summary>
         /// Generates a repeating decimal value
         /// </summary>
         private double GenerateRepeatingDecimalValue()
         {
             int integerPart = _random.Next(-100, 100);
-            
+
             StringBuilder sb = new StringBuilder();
             sb.Append(integerPart);
             sb.Append('.');
-            
+
             int patternLength = _random.Next(1, 6);
             for (int i = 0; i < patternLength; i++)
             {
                 sb.Append(_random.Next(10));
             }
-            
+
             string pattern = sb.ToString().Substring(sb.ToString().IndexOf('.') + 1);
             sb.Clear();
             sb.Append(integerPart);
             sb.Append('.');
-            
+
             int repetitions = _random.Next(5, 11);
             for (int i = 0; i < repetitions; i++)
             {
                 sb.Append(pattern);
             }
-            
+
             if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
             {
                 return result;
             }
-            
+
             return integerPart + _random.NextDouble();
         }
-        
+
         /// <summary>
         /// Generates a high precision value
         /// </summary>
         private double GenerateHighPrecisionValue()
         {
             StringBuilder sb = new StringBuilder();
-            
+
             int integerDigits = _random.Next(1, 11);
             for (int i = 0; i < integerDigits; i++)
             {
                 sb.Append(i == 0 ? _random.Next(1, 10) : _random.Next(10));
             }
-            
+
             sb.Append('.');
-            
+
             int fractionalDigits = _random.Next(10, 16);
             for (int i = 0; i < fractionalDigits; i++)
             {
                 sb.Append(_random.Next(10));
             }
-            
+
             if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
             {
                 return result;
             }
-            
+
             return _random.NextDouble() * 1000;
         }
-        
+
         /// <summary>
         /// Generates a specialized test JSON for numeric precision testing
         /// </summary>
@@ -379,52 +379,52 @@ namespace Neo.Json.Fuzzer.Generators
         public string GenerateSpecializedTestJson(string? testType = null)
         {
             JObject obj = new JObject();
-            
+
             switch (testType?.ToLowerInvariant())
             {
                 case "boundary":
                     // Test boundary values
                     return GenerateBoundaryValuesTest();
-                
+
                 case "special":
                     // Test special values (NaN, Infinity, etc.)
                     return GenerateSpecialValuesTest();
-                
+
                 case "precision":
                     // Test precision issues
                     return GeneratePrecisionTest();
-                
+
                 case "exponent":
                     // Test exponent notation
                     return GenerateExponentTest();
-                
+
                 case "decimal":
                     // Test decimal precision
                     return GenerateDecimalPrecisionTest();
-                
+
                 case "integer":
                     // Test integer boundaries
                     return GenerateIntegerBoundariesTest();
-                
+
                 case "mixed":
                     // Mix of different numeric formats
                     return GenerateMixedNumericTest();
-                
+
                 default:
                     // Default numeric test with various values
                     obj["type"] = "numeric_precision_test";
                     obj["timestamp"] = DateTime.UtcNow.ToString("o");
-                    
+
                     // Add various numeric test cases
                     obj["boundary_samples"] = CreateNumericArray(_boundaryValues.Take(5).ToArray());
                     obj["special_samples"] = CreateNumericArray(_specialValues.Take(3).ToArray());
                     obj["precision_samples"] = CreateNumericArray(GeneratePrecisionTestValues(5));
                     obj["exponent_samples"] = CreateNumericArray(GenerateExponentTestValues(5));
-                    
+
                     return obj.ToString();
             }
         }
-        
+
         /// <summary>
         /// Creates a JArray from an array of double values
         /// </summary>
@@ -437,7 +437,7 @@ namespace Neo.Json.Fuzzer.Generators
             }
             return array;
         }
-        
+
         /// <summary>
         /// Generates a test focused on boundary values
         /// </summary>
@@ -445,7 +445,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "boundary_values_test";
-            
+
             // Add all boundary values
             JArray values = new JArray();
             foreach (var value in _boundaryValues)
@@ -453,7 +453,7 @@ namespace Neo.Json.Fuzzer.Generators
                 values.Add(new JNumber(value));
             }
             obj["boundary_values"] = values;
-            
+
             // Add nested objects with boundary values
             JObject nested = new JObject();
             for (int i = 0; i < Math.Min(5, _boundaryValues.Length); i++)
@@ -461,10 +461,10 @@ namespace Neo.Json.Fuzzer.Generators
                 nested[$"value_{i}"] = new JNumber(_boundaryValues[i]);
             }
             obj["nested_values"] = nested;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a test focused on special values
         /// </summary>
@@ -472,7 +472,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "special_values_test";
-            
+
             // Add all special values
             JArray values = new JArray();
             foreach (var value in _specialValues)
@@ -482,10 +482,10 @@ namespace Neo.Json.Fuzzer.Generators
                 values.Add(new JNumber(value));
             }
             obj["special_values"] = values;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a test focused on precision issues
         /// </summary>
@@ -493,10 +493,10 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "precision_test";
-            
+
             // Generate precision test values
             double[] precisionValues = GeneratePrecisionTestValues(20);
-            
+
             // Add precision test values
             JArray values = new JArray();
             foreach (var value in precisionValues)
@@ -504,7 +504,7 @@ namespace Neo.Json.Fuzzer.Generators
                 values.Add(new JNumber(value));
             }
             obj["precision_values"] = values;
-            
+
             // Add string representations for comparison
             JArray stringReps = new JArray();
             foreach (var value in precisionValues)
@@ -512,23 +512,24 @@ namespace Neo.Json.Fuzzer.Generators
                 stringReps.Add(value.ToString(CultureInfo.InvariantCulture));
             }
             obj["string_representations"] = stringReps;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates values designed to test precision issues
         /// </summary>
         private double[] GeneratePrecisionTestValues(int count)
         {
-            List<double> values = new List<double>();
-            
-            // Add some known problematic values
-            values.Add(0.1);
-            values.Add(0.2);
-            values.Add(0.1 + 0.2);
-            values.Add(0.3);
-            
+            List<double> values = new List<double>
+            {
+                // Add some known problematic values
+                0.1,
+                0.2,
+                0.1 + 0.2,
+                0.3
+            };
+
             // Generate additional values
             for (int i = values.Count; i < count; i++)
             {
@@ -538,10 +539,10 @@ namespace Neo.Json.Fuzzer.Generators
                 double value = Math.Round(mantissa, decimalPlaces);
                 values.Add(value);
             }
-            
+
             return values.ToArray();
         }
-        
+
         /// <summary>
         /// Generates a test focused on exponent notation
         /// </summary>
@@ -549,10 +550,10 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "exponent_test";
-            
+
             // Generate exponent test values
             double[] exponentValues = GenerateExponentTestValues(20);
-            
+
             // Add exponent test values
             JArray values = new JArray();
             foreach (var value in exponentValues)
@@ -560,7 +561,7 @@ namespace Neo.Json.Fuzzer.Generators
                 values.Add(new JNumber(value));
             }
             obj["exponent_values"] = values;
-            
+
             // Add string representations for comparison
             JArray stringReps = new JArray();
             foreach (var value in exponentValues)
@@ -568,23 +569,24 @@ namespace Neo.Json.Fuzzer.Generators
                 stringReps.Add(value.ToString("E", CultureInfo.InvariantCulture));
             }
             obj["string_representations"] = stringReps;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates values designed to test exponent notation
         /// </summary>
         private double[] GenerateExponentTestValues(int count)
         {
-            List<double> values = new List<double>();
-            
-            // Add some known values with exponents
-            values.Add(1e-10);
-            values.Add(1e10);
-            values.Add(1.23456e20);
-            values.Add(9.87654e-15);
-            
+            List<double> values = new List<double>
+            {
+                // Add some known values with exponents
+                1e-10,
+                1e10,
+                1.23456e20,
+                9.87654e-15
+            };
+
             // Generate additional values
             for (int i = values.Count; i < count; i++)
             {
@@ -594,10 +596,10 @@ namespace Neo.Json.Fuzzer.Generators
                 double value = mantissa * Math.Pow(10, exponent);
                 values.Add(value);
             }
-            
+
             return values.ToArray();
         }
-        
+
         /// <summary>
         /// Generates a test focused on decimal precision
         /// </summary>
@@ -605,7 +607,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "decimal_precision_test";
-            
+
             // Generate values with specific decimal places
             JObject decimalTests = new JObject();
             for (int places = 1; places <= 15; places++)
@@ -619,17 +621,17 @@ namespace Neo.Json.Fuzzer.Generators
                 decimalTests[$"decimal_places_{places}"] = values;
             }
             obj["decimal_tests"] = decimalTests;
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a test focused on integer boundaries
         /// </summary>
         private string GenerateIntegerBoundariesTest()
         {
             JObject root = new JObject();
-            
+
             // Integer boundary values
             root["max_int32"] = int.MaxValue;
             root["min_int32"] = int.MinValue;
@@ -637,76 +639,78 @@ namespace Neo.Json.Fuzzer.Generators
             root["min_int64"] = long.MinValue;
             root["max_uint32"] = uint.MaxValue;
             root["max_uint64"] = ulong.MaxValue;
-            
+
             // Integer boundary +/- 1
             root["max_int32_plus_1"] = (long)int.MaxValue + 1;
             root["min_int32_minus_1"] = (long)int.MinValue - 1;
             root["max_int64_plus_1"] = $"{long.MaxValue}1"; // String representation to exceed long.MaxValue
             root["min_int64_minus_1"] = $"-{long.MinValue}1"; // String representation to exceed long.MinValue
-            
+
             // Large integer values that might cause overflow
             root["large_integer_20_digits"] = "12345678901234567890";
             root["large_integer_30_digits"] = "123456789012345678901234567890";
             root["large_integer_50_digits"] = "12345678901234567890123456789012345678901234567890";
             root["large_integer_100_digits"] = new string('9', 100);
-            
+
             // Negative large integer values
             root["negative_large_integer_20_digits"] = "-12345678901234567890";
             root["negative_large_integer_30_digits"] = "-123456789012345678901234567890";
             root["negative_large_integer_50_digits"] = "-12345678901234567890123456789012345678901234567890";
             root["negative_large_integer_100_digits"] = "-" + new string('9', 100);
-            
+
             // Integer with leading zeros (should be treated as decimal, not octal)
             root["leading_zeros"] = "00012345";
             root["negative_leading_zeros"] = "-00012345";
-            
+
             // Integer with plus sign
             root["plus_sign"] = "+12345";
-            
+
             // Integer with underscore separators (not standard JSON but sometimes accepted)
             root["with_underscores"] = "1_000_000";
-            
+
             // Integer with commas (not standard JSON but sometimes accepted)
             root["with_commas"] = "1,000,000";
-            
+
             // Integer with spaces (not standard JSON)
             root["with_spaces"] = "1 000 000";
-            
+
             // Integer with trailing decimal point
             root["trailing_decimal"] = "12345.";
-            
+
             // Integer with scientific notation
             root["scientific_positive_exp"] = "1e10";
             root["scientific_negative_exp"] = "1e-10";
-            
+
             // Integer with hex notation (not standard JSON)
             root["hex_notation"] = "0x1234";
-            
+
             // Integer with binary notation (not standard JSON)
             root["binary_notation"] = "0b1010";
-            
+
             // Integer with octal notation (not standard JSON)
             root["octal_notation"] = "0o1234";
-            
+
             // Edge case: very close to integer boundary
             root["almost_max_int64"] = long.MaxValue - 1;
             root["almost_min_int64"] = long.MinValue + 1;
-            
+
             // Edge case: integers that look like other types
             root["looks_like_boolean_true"] = "true1";
             root["looks_like_boolean_false"] = "false0";
             root["looks_like_null"] = "null0";
-            
+
             // Array of mixed integer representations
-            JArray mixedArray = new JArray();
-            mixedArray.Add(123);
-            mixedArray.Add("456");
-            mixedArray.Add(789.0);
-            mixedArray.Add("1e3");
-            mixedArray.Add("0123");
-            mixedArray.Add("+987");
+            JArray mixedArray = new JArray
+            {
+                123,
+                "456",
+                789.0,
+                "1e3",
+                "0123",
+                "+987"
+            };
             root["mixed_integer_array"] = mixedArray;
-            
+
             // Nested objects with integer values
             JObject nestedObj = new JObject();
             nestedObj["level1"] = 12345;
@@ -717,10 +721,10 @@ namespace Neo.Json.Fuzzer.Generators
             level2["nested"] = level3;
             nestedObj["nested"] = level2;
             root["nested_integers"] = nestedObj;
-            
+
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Generates a test with mixed numeric formats
         /// </summary>
@@ -728,45 +732,48 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject obj = new JObject();
             obj["type"] = "mixed_numeric_test";
-            
+
             // Create an array with mixed numeric values
-            JArray mixedValues = new JArray();
-            
-            // Add some integers
-            mixedValues.Add(new JNumber(0));
-            mixedValues.Add(new JNumber(42));
-            mixedValues.Add(new JNumber(-100));
-            
-            // Add some decimals
-            mixedValues.Add(new JNumber(3.14159));
-            mixedValues.Add(new JNumber(-2.71828));
-            mixedValues.Add(new JNumber(0.1 + 0.2)); // Precision issue
-            
-            // Add some exponents
-            mixedValues.Add(new JNumber(1e10));
-            mixedValues.Add(new JNumber(1.23e-15));
-            
-            // Add some boundary values
-            mixedValues.Add(new JNumber(double.Epsilon));
-            mixedValues.Add(new JNumber(double.MaxValue / 2));
-            
+            JArray mixedValues = new JArray
+            {
+                // Add some integers
+                new JNumber(0),
+                new JNumber(42),
+                new JNumber(-100),
+
+                // Add some decimals
+                new JNumber(3.14159),
+                new JNumber(-2.71828),
+                new JNumber(0.1 + 0.2), // Precision issue
+
+                // Add some exponents
+                new JNumber(1e10),
+                new JNumber(1.23e-15),
+
+                // Add some boundary values
+                new JNumber(double.Epsilon),
+                new JNumber(double.MaxValue / 2)
+            };
+
             obj["mixed_values"] = mixedValues;
-            
+
             // Create a nested structure with different numeric formats
             JObject nested = new JObject();
             nested["integer"] = new JNumber(123456789);
             nested["decimal"] = new JNumber(0.123456789);
             nested["exponent"] = new JNumber(1.23456789e20);
             nested["negative"] = new JNumber(-987654321);
-            
-            JArray nestedArray = new JArray();
-            nestedArray.Add(new JNumber(1));
-            nestedArray.Add(new JNumber(2.5));
-            nestedArray.Add(new JNumber(3e10));
+
+            JArray nestedArray = new JArray
+            {
+                new JNumber(1),
+                new JNumber(2.5),
+                new JNumber(3e10)
+            };
             nested["array"] = nestedArray;
-            
+
             obj["nested"] = nested;
-            
+
             return obj.ToString();
         }
     }

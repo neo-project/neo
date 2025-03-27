@@ -22,7 +22,7 @@ namespace Neo.Json.Fuzzer.Generators
     {
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
-        
+
         /// <summary>
         /// Initializes a new instance of the CharacterMutations class
         /// </summary>
@@ -31,7 +31,7 @@ namespace Neo.Json.Fuzzer.Generators
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _random = random ?? throw new ArgumentNullException(nameof(random));
         }
-        
+
         /// <summary>
         /// Applies a character-level mutation to the JSON
         /// </summary>
@@ -41,9 +41,9 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return "{}";
             }
-            
+
             int strategy = _random.Next(5);
-            
+
             return strategy switch
             {
                 0 => InsertRandomCharacter(json),
@@ -53,7 +53,7 @@ namespace Neo.Json.Fuzzer.Generators
                 _ => RemoveRandomSection(json)
             };
         }
-        
+
         /// <summary>
         /// Inserts a random character into the JSON string
         /// </summary>
@@ -63,10 +63,10 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return json;
             }
-            
+
             int position = _random.Next(json.Length);
             char character = GetRandomJsonCharacter();
-            
+
             return json.Insert(position, character.ToString());
         }
 
@@ -79,9 +79,9 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return json;
             }
-            
+
             int position = _random.Next(json.Length);
-            
+
             return json.Remove(position, 1);
         }
 
@@ -94,13 +94,13 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return json;
             }
-            
+
             int position = _random.Next(json.Length);
             char character = GetRandomJsonCharacter();
-            
+
             StringBuilder sb = new(json);
             sb[position] = character;
-            
+
             return sb.ToString();
         }
 
@@ -113,13 +113,13 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return json;
             }
-            
+
             int length = Math.Min(10, json.Length / 2);
             int start = _random.Next(json.Length - length);
             int insertPosition = _random.Next(json.Length);
-            
+
             string section = json.Substring(start, length);
-            
+
             return json.Insert(insertPosition, section);
         }
 
@@ -132,13 +132,13 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return json;
             }
-            
+
             int length = Math.Min(3, json.Length / 3);
             int start = _random.Next(json.Length - length);
-            
+
             return json.Remove(start, length);
         }
-        
+
         /// <summary>
         /// Gets a random character that might appear in JSON
         /// </summary>

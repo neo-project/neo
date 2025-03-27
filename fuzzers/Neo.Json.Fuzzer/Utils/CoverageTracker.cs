@@ -59,10 +59,10 @@ namespace Neo.Json.Fuzzer.Utils
         {
             _outputDir = outputDir ?? throw new ArgumentNullException(nameof(outputDir));
             _verbose = verbose;
-            
+
             // Initialize coverage percentage
             CoveragePercentage = 0.0;
-            
+
             if (estimatedTotalPoints > 0)
             {
                 // Create coverage directory
@@ -97,7 +97,7 @@ namespace Neo.Json.Fuzzer.Utils
                 if (_coveredPoints.Add(point))
                 {
                     foundNewCoverage = true;
-                    
+
                     if (_verbose)
                     {
                         Console.WriteLine($"New coverage point: {point}");
@@ -135,9 +135,9 @@ namespace Neo.Json.Fuzzer.Utils
             {
                 string coverageDir = Path.Combine(_outputDir, "coverage");
                 Directory.CreateDirectory(coverageDir);
-                
+
                 string reportPath = Path.Combine(coverageDir, $"coverage_report_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
-                
+
                 using (StreamWriter writer = new(reportPath))
                 {
                     writer.WriteLine("Neo.Json.Fuzzer Coverage Report");
@@ -147,34 +147,34 @@ namespace Neo.Json.Fuzzer.Utils
                     writer.WriteLine($"Unique Coverage Points: {_coveredPoints.Count}");
                     writer.WriteLine($"Coverage Percentage: {CoveragePercentage:F2}%");
                     writer.WriteLine();
-                    
+
                     writer.WriteLine("Coverage Points by Category:");
-                    
+
                     // Group coverage points by category
                     var categories = _coveredPoints
                         .GroupBy(p => p.Split(':')[0])
                         .OrderBy(g => g.Key);
-                    
+
                     foreach (var category in categories)
                     {
                         writer.WriteLine($"  {category.Key}: {category.Count()} points");
-                        
+
                         // List all points in this category with hit counts
                         foreach (var point in category.OrderBy(p => p))
                         {
                             int hitCount = _hitCounts.TryGetValue(point, out int count) ? count : 0;
                             writer.WriteLine($"    {point} - {hitCount} hits");
                         }
-                        
+
                         writer.WriteLine();
                     }
-                    
+
                     writer.WriteLine("Top 20 Most Hit Coverage Points:");
                     foreach (var point in _hitCounts.OrderByDescending(kv => kv.Value).Take(20))
                     {
                         writer.WriteLine($"  {point.Key}: {point.Value} hits");
                     }
-                    
+
                     writer.WriteLine();
                     writer.WriteLine("Least Hit Coverage Points (1 hit):");
                     foreach (var point in _hitCounts.Where(kv => kv.Value == 1).OrderBy(kv => kv.Key).Take(20))
@@ -182,7 +182,7 @@ namespace Neo.Json.Fuzzer.Utils
                         writer.WriteLine($"  {point.Key}: {point.Value} hit");
                     }
                 }
-                
+
                 // Save coverage points to a CSV file for further analysis
                 string csvPath = Path.Combine(coverageDir, $"coverage_data_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
                 using (StreamWriter writer = new(csvPath))
@@ -211,12 +211,12 @@ namespace Neo.Json.Fuzzer.Utils
             Console.WriteLine($"  Unique Coverage Points: {_coveredPoints.Count}");
             Console.WriteLine($"  Coverage Percentage: {CoveragePercentage:F2}%");
             Console.WriteLine($"  Runs with New Coverage: {_newCoverageRuns} ({(double)_newCoverageRuns / _totalRuns * 100:F2}%)");
-            
+
             // Print coverage by category
             var categories = _coveredPoints
                 .GroupBy(p => p.Split(':')[0])
                 .OrderBy(g => g.Key);
-            
+
             Console.WriteLine();
             Console.WriteLine("Coverage by Category:");
             foreach (var category in categories)

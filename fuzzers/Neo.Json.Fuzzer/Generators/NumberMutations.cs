@@ -23,7 +23,7 @@ namespace Neo.Json.Fuzzer.Generators
     {
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
-        
+
         // Special numeric values for testing
         private static readonly double[] _specialDoubles = new double[]
         {
@@ -38,7 +38,7 @@ namespace Neo.Json.Fuzzer.Generators
             1.0,
             -1.0
         };
-        
+
         // Integer boundary values for testing
         private static readonly long[] _specialIntegers = new long[]
         {
@@ -53,7 +53,7 @@ namespace Neo.Json.Fuzzer.Generators
             1,
             -1
         };
-        
+
         /// <summary>
         /// Initializes a new instance of the NumberMutations class
         /// </summary>
@@ -62,7 +62,7 @@ namespace Neo.Json.Fuzzer.Generators
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _random = random ?? throw new ArgumentNullException(nameof(random));
         }
-        
+
         /// <summary>
         /// Modifies a numeric value in the JSON
         /// </summary>
@@ -71,13 +71,13 @@ namespace Neo.Json.Fuzzer.Generators
             try
             {
                 var token = JToken.Parse(json);
-                
+
                 // Add null check before using token
                 if (token == null)
                 {
                     return json;
                 }
-                
+
                 ModifyNumberValuesRecursive(token);
                 return token.ToString();
             }
@@ -87,7 +87,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Recursively modifies numeric values in a JToken
         /// </summary>
@@ -98,7 +98,7 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return;
             }
-            
+
             if (token is JObject obj)
             {
                 // Collect all numeric properties
@@ -110,7 +110,7 @@ namespace Neo.Json.Fuzzer.Generators
                         numberProperties.Add((kvp.Key, kvp.Value));
                     }
                 }
-                
+
                 // Modify a random numeric property if any exist
                 if (numberProperties.Count > 0 && _random.NextDouble() < 0.3)
                 {
@@ -120,7 +120,7 @@ namespace Neo.Json.Fuzzer.Generators
                     bool isInteger = Math.Abs(numValue - Math.Round(numValue)) < double.Epsilon;
                     obj[key] = GenerateRandomNumber(isInteger);
                 }
-                
+
                 // Recursively process all properties
                 foreach (var kvp in obj.Properties)
                 {
@@ -136,14 +136,14 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Generates a random number (integer or double)
         /// </summary>
         public JToken GenerateRandomNumber(bool integerOnly = false)
         {
             int strategy = _random.Next(integerOnly ? 3 : 5);
-            
+
             return strategy switch
             {
                 0 => GenerateRandomInteger(),
@@ -153,14 +153,14 @@ namespace Neo.Json.Fuzzer.Generators
                 _ => GenerateSpecialDouble()
             };
         }
-        
+
         /// <summary>
         /// Generates a random integer
         /// </summary>
         public long GenerateRandomInteger()
         {
             int magnitude = _random.Next(10);
-            
+
             return magnitude switch
             {
                 0 => _random.Next(10),                                // 0-9
@@ -175,7 +175,7 @@ namespace Neo.Json.Fuzzer.Generators
                 _ => _random.Next(int.MinValue, int.MaxValue)         // Full int range
             };
         }
-        
+
         /// <summary>
         /// Generates a special integer value
         /// </summary>
@@ -183,7 +183,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             return _specialIntegers[_random.Next(_specialIntegers.Length)];
         }
-        
+
         /// <summary>
         /// Generates an integer near a boundary value
         /// </summary>
@@ -191,7 +191,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             long baseValue = GenerateSpecialInteger();
             int offset = _random.Next(-10, 11);
-            
+
             try
             {
                 checked
@@ -205,7 +205,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return baseValue;
             }
         }
-        
+
         /// <summary>
         /// Generates a random double value
         /// </summary>
@@ -213,7 +213,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             int magnitude = _random.Next(10);
             double baseValue = _random.NextDouble();
-            
+
             return magnitude switch
             {
                 0 => baseValue,                                       // 0.0-1.0
@@ -228,7 +228,7 @@ namespace Neo.Json.Fuzzer.Generators
                 _ => baseValue * 1000000000                           // 0.0-1000000000.0
             };
         }
-        
+
         /// <summary>
         /// Generates a special double value
         /// </summary>
@@ -236,22 +236,22 @@ namespace Neo.Json.Fuzzer.Generators
         {
             return _specialDoubles[_random.Next(_specialDoubles.Length)];
         }
-        
+
         /// <summary>
         /// Generates a double near a boundary value
         /// </summary>
         public double GenerateBoundaryDouble()
         {
             double baseValue = GenerateSpecialDouble();
-            
+
             // Skip NaN and infinities
             if (double.IsNaN(baseValue) || double.IsInfinity(baseValue))
             {
                 return baseValue;
             }
-            
+
             double offset = _random.NextDouble() * 10 - 5; // -5.0 to 5.0
-            
+
             try
             {
                 return baseValue + offset;
@@ -262,7 +262,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return baseValue;
             }
         }
-        
+
         /// <summary>
         /// Generates a very small double value
         /// </summary>
@@ -270,7 +270,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             return double.Epsilon * (_random.NextDouble() * 100 + 1);
         }
-        
+
         /// <summary>
         /// Generates a very large double value
         /// </summary>
@@ -278,7 +278,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             return double.MaxValue / (_random.NextDouble() * 100 + 1);
         }
-        
+
         /// <summary>
         /// Generates a double with a specific number of decimal places
         /// </summary>
@@ -286,10 +286,10 @@ namespace Neo.Json.Fuzzer.Generators
         {
             double value = _random.NextDouble() * 1000;
             double multiplier = Math.Pow(10, decimalPlaces);
-            
+
             return Math.Round(value * multiplier) / multiplier;
         }
-        
+
         /// <summary>
         /// Generates a number with scientific notation
         /// </summary>
@@ -297,7 +297,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             double mantissa = _random.NextDouble() * 10;
             int exponent = _random.Next(-10, 11);
-            
+
             return mantissa * Math.Pow(10, exponent);
         }
     }

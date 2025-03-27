@@ -73,16 +73,16 @@ namespace Neo.Json.Fuzzer.Utils
             };
 
             // Calculate derived metrics
-            if (metrics.TryGetValue("ExecutionTimeMs", out double executionTime) && 
-                metrics.TryGetValue("InputLength", out double inputLength) && 
+            if (metrics.TryGetValue("ExecutionTimeMs", out double executionTime) &&
+                metrics.TryGetValue("InputLength", out double inputLength) &&
                 inputLength > 0)
             {
                 metrics["TimePerCharRatio"] = executionTime / inputLength;
             }
 
-            if (_trackMemory && 
-                metrics.TryGetValue("MemoryUsageBytes", out double memoryUsage) && 
-                metrics.TryGetValue("InputLength", out double inputLen) && 
+            if (_trackMemory &&
+                metrics.TryGetValue("MemoryUsageBytes", out double memoryUsage) &&
+                metrics.TryGetValue("InputLength", out double inputLen) &&
                 inputLen > 0)
             {
                 metrics["MemoryPerCharRatio"] = memoryUsage / inputLen;
@@ -191,55 +191,55 @@ namespace Neo.Json.Fuzzer.Utils
             // Find the highest scoring component
             if (timeScore >= memoryScore && timeScore >= complexityScore && timeScore > 0.5)
             {
-                if (metrics.TryGetValue("ExecutionTimeMs", out double executionTime) && 
+                if (metrics.TryGetValue("ExecutionTimeMs", out double executionTime) &&
                     executionTime > _thresholds["ExecutionTimeMs"])
                 {
                     return $"High execution time: {executionTime:F2}ms (threshold: {_thresholds["ExecutionTimeMs"]:F2}ms)";
                 }
-                
-                if (metrics.TryGetValue("TimePerCharRatio", out double timePerChar) && 
+
+                if (metrics.TryGetValue("TimePerCharRatio", out double timePerChar) &&
                     timePerChar > _thresholds["TimePerCharRatio"])
                 {
                     return $"High time per character ratio: {timePerChar:F4}ms (threshold: {_thresholds["TimePerCharRatio"]:F4}ms)";
                 }
-                
+
                 return "Excessive processing time";
             }
-            
+
             if (_trackMemory && memoryScore >= timeScore && memoryScore >= complexityScore && memoryScore > 0.5)
             {
-                if (metrics.TryGetValue("MemoryUsageBytes", out double memoryUsage) && 
+                if (metrics.TryGetValue("MemoryUsageBytes", out double memoryUsage) &&
                     memoryUsage > _thresholds["MemoryUsageBytes"])
                 {
                     return $"High memory usage: {memoryUsage / (1024 * 1024):F2}MB (threshold: {_thresholds["MemoryUsageBytes"] / (1024 * 1024):F2}MB)";
                 }
-                
-                if (metrics.TryGetValue("MemoryPerCharRatio", out double memoryPerChar) && 
+
+                if (metrics.TryGetValue("MemoryPerCharRatio", out double memoryPerChar) &&
                     memoryPerChar > _thresholds["MemoryPerCharRatio"])
                 {
                     return $"High memory per character ratio: {memoryPerChar:F2} bytes (threshold: {_thresholds["MemoryPerCharRatio"]:F2} bytes)";
                 }
-                
+
                 return "Excessive memory consumption";
             }
-            
+
             if (complexityScore > 0.5)
             {
-                if (metrics.TryGetValue("NestingDepth", out double nestingDepth) && 
+                if (metrics.TryGetValue("NestingDepth", out double nestingDepth) &&
                     nestingDepth > _thresholds["NestingDepth"])
                 {
                     return $"Deep nesting: {nestingDepth:F0} levels (threshold: {_thresholds["NestingDepth"]:F0} levels)";
                 }
-                
-                if (metrics.TryGetValue("InputLength", out double inputLength) && 
+
+                if (metrics.TryGetValue("InputLength", out double inputLength) &&
                     inputLength > _thresholds["InputLength"])
                 {
                     return $"Large input: {inputLength:F0} characters (threshold: {_thresholds["InputLength"]:F0} characters)";
                 }
-                
+
                 return "Excessive structural complexity";
             }
-            
+
             return "Multiple factors combined";
         }
     }

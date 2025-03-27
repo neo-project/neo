@@ -24,12 +24,12 @@ namespace Neo.Json.Fuzzer.Generators
     {
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
-        
+
         // Constants for streaming mutations
         private const int MAX_CHUNK_SIZE = 1024;
         private const int MAX_ARRAY_ELEMENTS = 100;
         private const int MAX_OBJECT_PROPERTIES = 50;
-        
+
         /// <summary>
         /// Initializes a new instance of the StreamingMutations class
         /// </summary>
@@ -38,7 +38,7 @@ namespace Neo.Json.Fuzzer.Generators
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _random = random ?? throw new ArgumentNullException(nameof(random));
         }
-        
+
         /// <summary>
         /// Applies a streaming-specific mutation to the JSON
         /// </summary>
@@ -47,10 +47,10 @@ namespace Neo.Json.Fuzzer.Generators
             try
             {
                 var token = JToken.Parse(json);
-                
+
                 // Select a mutation strategy
                 int strategy = _random.Next(5);
-                
+
                 return strategy switch
                 {
                     0 => GenerateLargeArray(token),
@@ -66,21 +66,21 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Generates a large array structure for streaming testing
         /// </summary>
         private string GenerateLargeArray(JToken? token)
         {
             if (token == null) return "[]";
-            
+
             // Create a large array with many elements
             int elementCount = _random.Next(10, MAX_ARRAY_ELEMENTS);
             JArray array = new JArray();
-            
+
             // Determine element type
             int elementType = _random.Next(3);
-            
+
             for (int i = 0; i < elementCount; i++)
             {
                 JToken element = elementType switch
@@ -89,28 +89,28 @@ namespace Neo.Json.Fuzzer.Generators
                     1 => new JNumber(_random.Next(-1000, 1000)),
                     _ => i % 5 == 0 ? CreateNestedObject(3) : new JBoolean(_random.Next(2) == 0)
                 };
-                
+
                 array.Add(element);
             }
-            
+
             return array.ToString();
         }
-        
+
         /// <summary>
         /// Generates a large object structure for streaming testing
         /// </summary>
         private string GenerateLargeObject(JToken? token)
         {
             if (token == null) return "{}";
-            
+
             // Create a large object with many properties
             int propertyCount = _random.Next(10, MAX_OBJECT_PROPERTIES);
             JObject obj = new JObject();
-            
+
             for (int i = 0; i < propertyCount; i++)
             {
                 string key = $"property_{i}_{GenerateRandomString(5)}";
-                
+
                 JToken value = (i % 4) switch
                 {
                     0 => new JString(GenerateRandomString(_random.Next(10, 100))),
@@ -118,13 +118,13 @@ namespace Neo.Json.Fuzzer.Generators
                     2 => new JBoolean(_random.Next(2) == 0),
                     _ => i % 8 == 0 ? CreateNestedArray(2) : JToken.Null
                 };
-                
+
                 obj[key] = value;
             }
-            
+
             return obj.ToString();
         }
-        
+
         /// <summary>
         /// Generates a deeply nested structure for streaming testing
         /// </summary>
@@ -133,21 +133,21 @@ namespace Neo.Json.Fuzzer.Generators
             // Create a deeply nested structure (alternating objects and arrays)
             int depth = _random.Next(5, 15);
             JToken result = CreateNestedStructure(depth);
-            
+
             return result?.ToString() ?? "{}";
         }
-        
+
         /// <summary>
         /// Generates a structure with multiple chunks for streaming testing
         /// </summary>
         private string GenerateChunkedStructure(JToken? token)
         {
             if (token == null) return "[]";
-            
+
             // Create a structure that would likely be processed in chunks
             int chunkCount = _random.Next(3, 8);
             JArray array = new JArray();
-            
+
             for (int i = 0; i < chunkCount; i++)
             {
                 // Each chunk is either a large string or a complex object
@@ -162,7 +162,7 @@ namespace Neo.Json.Fuzzer.Generators
                     // Complex object chunk
                     JObject obj = new JObject();
                     int propertyCount = _random.Next(5, 20);
-                    
+
                     for (int j = 0; j < propertyCount; j++)
                     {
                         string key = $"chunk_{i}_prop_{j}";
@@ -172,48 +172,48 @@ namespace Neo.Json.Fuzzer.Generators
                             1 => new JNumber(_random.Next(-100, 100)),
                             _ => new JBoolean(_random.Next(2) == 0)
                         };
-                        
+
                         obj[key] = value;
                     }
-                    
+
                     array.Add(obj);
                 }
             }
-            
+
             return array.ToString();
         }
-        
+
         /// <summary>
         /// Generates a structure specifically designed to test streaming parsers
         /// </summary>
         private string GenerateStreamingFriendlyStructure(JToken? token)
         {
             if (token == null) return "{}";
-            
+
             // Create a structure with characteristics that test streaming parsers
             JObject root = new JObject();
-            
+
             // 1. Add a property with a very long string value
             root["longString"] = new JString(GenerateRandomString(_random.Next(500, 1000)));
-            
+
             // 2. Add a large array of simple values
             JArray simpleArray = new JArray();
             int arraySize = _random.Next(50, 200);
-            
+
             for (int i = 0; i < arraySize; i++)
             {
                 simpleArray.Add(new JNumber(i));
             }
-            
+
             root["simpleArray"] = simpleArray;
-            
+
             // 3. Add a property with a deeply nested structure
             root["nestedStructure"] = CreateNestedStructure(_random.Next(5, 10));
-            
+
             // 4. Add a property with a mixed-type array
             JArray mixedArray = new JArray();
             int mixedSize = _random.Next(20, 50);
-            
+
             for (int i = 0; i < mixedSize; i++)
             {
                 JToken element = (i % 5) switch
@@ -224,29 +224,29 @@ namespace Neo.Json.Fuzzer.Generators
                     3 => JToken.Null,
                     _ => new JObject { ["index"] = new JNumber(i) }
                 };
-                
+
                 mixedArray.Add(element);
             }
-            
+
             root["mixedArray"] = mixedArray;
-            
+
             // 5. Add a property with whitespace-heavy content
             StringBuilder whitespaceBuilder = new StringBuilder();
             whitespaceBuilder.Append("\"");
-            
+
             for (int i = 0; i < 100; i++)
             {
                 whitespaceBuilder.Append(i % 10);
                 whitespaceBuilder.Append("    \t\r\n");
             }
-            
+
             whitespaceBuilder.Append("\"");
-            
+
             root["whitespaceHeavy"] = JToken.Parse(whitespaceBuilder.ToString());
-            
+
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Creates a nested structure with alternating objects and arrays
         /// </summary>
@@ -256,7 +256,7 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 // Base case: return a simple value
                 int valueType = _random.Next(3);
-                
+
                 return valueType switch
                 {
                     0 => new JString(GenerateRandomString(_random.Next(5, 20))),
@@ -264,20 +264,20 @@ namespace Neo.Json.Fuzzer.Generators
                     _ => new JBoolean(_random.Next(2) == 0)
                 };
             }
-            
+
             // Alternate between objects and arrays
             if (depth % 2 == 0)
             {
                 // Create a nested object
                 JObject obj = new JObject();
                 int propertyCount = _random.Next(2, 5);
-                
+
                 for (int i = 0; i < propertyCount; i++)
                 {
                     string key = $"level_{depth}_prop_{i}";
                     obj[key] = CreateNestedStructure(depth - 1);
                 }
-                
+
                 return obj;
             }
             else
@@ -285,40 +285,40 @@ namespace Neo.Json.Fuzzer.Generators
                 // Create a nested array
                 JArray array = new JArray();
                 int elementCount = _random.Next(2, 5);
-                
+
                 for (int i = 0; i < elementCount; i++)
                 {
                     array.Add(CreateNestedStructure(depth - 1));
                 }
-                
+
                 return array;
             }
         }
-        
+
         /// <summary>
         /// Creates a nested object with the specified depth
         /// </summary>
         private JObject CreateNestedObject(int depth)
         {
             JObject obj = new JObject();
-            
+
             if (depth <= 0)
             {
                 // Base case: add a few simple properties
                 obj["name"] = new JString(GenerateRandomString(_random.Next(5, 10)));
                 obj["value"] = new JNumber(_random.Next(100));
                 obj["active"] = new JBoolean(_random.Next(2) == 0);
-                
+
                 return obj;
             }
-            
+
             // Add some properties at this level
             int propertyCount = _random.Next(2, 5);
-            
+
             for (int i = 0; i < propertyCount; i++)
             {
                 string key = $"prop_{i}";
-                
+
                 if (i == 0 && depth > 1)
                 {
                     // Add a nested object
@@ -333,53 +333,53 @@ namespace Neo.Json.Fuzzer.Generators
                 {
                     // Add a simple value
                     int valueType = _random.Next(3);
-                    
+
                     JToken value = valueType switch
                     {
                         0 => new JString(GenerateRandomString(_random.Next(5, 10))),
                         1 => new JNumber(_random.Next(-100, 100)),
                         _ => new JBoolean(_random.Next(2) == 0)
                     };
-                    
+
                     obj[key] = value;
                 }
             }
-            
+
             return obj;
         }
-        
+
         /// <summary>
         /// Creates a nested array with the specified depth
         /// </summary>
         private JArray CreateNestedArray(int depth)
         {
             JArray array = new JArray();
-            
+
             if (depth <= 0)
             {
                 // Base case: add a few simple elements
                 int elementCount = _random.Next(2, 5);
-                
+
                 for (int i = 0; i < elementCount; i++)
                 {
                     int valueType = _random.Next(3);
-                    
+
                     JToken value = valueType switch
                     {
                         0 => new JString(GenerateRandomString(_random.Next(5, 10))),
                         1 => new JNumber(_random.Next(-100, 100)),
                         _ => new JBoolean(_random.Next(2) == 0)
                     };
-                    
+
                     array.Add(value);
                 }
-                
+
                 return array;
             }
-            
+
             // Add some elements at this level
             int count = _random.Next(2, 5);
-            
+
             for (int i = 0; i < count; i++)
             {
                 if (i == 0 && depth > 1)
@@ -396,45 +396,45 @@ namespace Neo.Json.Fuzzer.Generators
                 {
                     // Add a simple value
                     int valueType = _random.Next(3);
-                    
+
                     JToken value = valueType switch
                     {
                         0 => new JString(GenerateRandomString(_random.Next(5, 10))),
                         1 => new JNumber(_random.Next(-100, 100)),
                         _ => new JBoolean(_random.Next(2) == 0)
                     };
-                    
+
                     array.Add(value);
                 }
             }
-            
+
             return array;
         }
-        
+
         /// <summary>
         /// Generates a random string of the specified length
         /// </summary>
         private string GenerateRandomString(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            
+
             char[] stringChars = new char[length];
-            
+
             for (int i = 0; i < length; i++)
             {
                 stringChars[i] = chars[_random.Next(chars.Length)];
             }
-            
+
             return new string(stringChars);
         }
-        
+
         /// <summary>
         /// Generates a JSON structure specifically designed for streaming parser testing
         /// </summary>
         public string GenerateStreamingTestJson(string? type = null)
         {
             type = type?.ToLowerInvariant();
-            
+
             return type switch
             {
                 "large_array" => GenerateLargeArray(null),
@@ -445,28 +445,28 @@ namespace Neo.Json.Fuzzer.Generators
                 _ => GenerateStreamingFriendlyStructure(null)
             };
         }
-        
+
         /// <summary>
         /// Generates a specialized test JSON for streaming testing
         /// </summary>
         public string GenerateSpecializedTestJson(string? testType = null)
         {
             JObject obj = new JObject();
-            
+
             switch (testType?.ToLowerInvariant())
             {
                 case "large":
                     // Generate a large JSON object for streaming tests
                     return GenerateLargeStreamingJson();
-                
+
                 case "nested":
                     // Generate a deeply nested JSON structure for streaming tests
                     return GenerateNestedStreamingJson();
-                
+
                 case "chunked":
                     // Generate a JSON structure with many small chunks
                     return GenerateChunkedStreamingJson();
-                
+
                 default:
                     // Generate a standard streaming test JSON
                     obj["type"] = "streaming_test";
@@ -475,7 +475,7 @@ namespace Neo.Json.Fuzzer.Generators
                     return obj.ToString();
             }
         }
-        
+
         /// <summary>
         /// Generates streaming test data
         /// </summary>
@@ -483,7 +483,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JArray array = new JArray();
             int count = _random.Next(5, 20);
-            
+
             for (int i = 0; i < count; i++)
             {
                 JObject item = new JObject();
@@ -492,10 +492,10 @@ namespace Neo.Json.Fuzzer.Generators
                 item["name"] = $"Item_{i}";
                 array.Add(item);
             }
-            
+
             return array;
         }
-        
+
         /// <summary>
         /// Generates a large JSON object for streaming tests
         /// </summary>
@@ -503,10 +503,10 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject root = new JObject();
             root["type"] = "large_streaming_test";
-            
+
             JArray items = new JArray();
             int count = _random.Next(100, 500);
-            
+
             for (int i = 0; i < count; i++)
             {
                 JObject item = new JObject();
@@ -521,7 +521,7 @@ namespace Neo.Json.Fuzzer.Generators
                 item["email"] = $"person{i}@example.com";
                 item["phone"] = $"+1 ({_random.Next(100, 999)}) {_random.Next(100, 999)}-{_random.Next(1000, 9999)}";
                 item["address"] = $"{_random.Next(1000)} Main St, City {_random.Next(100)}, State {_random.Next(50)}";
-                
+
                 JArray tags = new JArray();
                 int tagCount = _random.Next(1, 8);
                 for (int t = 0; t < tagCount; t++)
@@ -529,14 +529,14 @@ namespace Neo.Json.Fuzzer.Generators
                     tags.Add($"tag{_random.Next(100)}");
                 }
                 item["tags"] = tags;
-                
+
                 items.Add(item);
             }
-            
+
             root["items"] = items;
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Generates a deeply nested JSON structure for streaming tests
         /// </summary>
@@ -544,27 +544,27 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JObject root = new JObject();
             root["type"] = "nested_streaming_test";
-            
+
             // Create a nested structure
             JObject current = root;
             int depth = _random.Next(10, 30);
-            
+
             for (int i = 0; i < depth; i++)
             {
                 JObject next = new JObject();
                 next["level"] = i + 1;
                 next["value"] = _random.Next(1000);
-                
+
                 current["next"] = next;
                 current = next;
             }
-            
+
             // Add a final value
             current["final"] = true;
-            
+
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Generates a JSON structure with many small chunks
         /// </summary>
@@ -572,7 +572,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             JArray root = new JArray();
             int chunkCount = _random.Next(50, 200);
-            
+
             for (int i = 0; i < chunkCount; i++)
             {
                 JObject chunk = new JObject();
@@ -580,7 +580,7 @@ namespace Neo.Json.Fuzzer.Generators
                 chunk["data"] = new string('X', _random.Next(10, 100));
                 root.Add(chunk);
             }
-            
+
             return root.ToString();
         }
     }

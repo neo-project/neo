@@ -86,7 +86,7 @@ namespace Neo.Json.Fuzzer.Utils
             _outputDir = outputDir ?? throw new ArgumentNullException(nameof(outputDir));
             _verbose = verbose;
             _totalStopwatch.Start();
-            
+
             // Create statistics directory
             Directory.CreateDirectory(Path.Combine(_outputDir, "stats"));
         }
@@ -109,7 +109,7 @@ namespace Neo.Json.Fuzzer.Utils
                 if (result.Crashed)
                 {
                     _crashedRuns++;
-                    
+
                     // Record exception type
                     if (!string.IsNullOrEmpty(result.ExceptionType))
                     {
@@ -159,7 +159,7 @@ namespace Neo.Json.Fuzzer.Utils
             double elapsedSeconds = _totalStopwatch.Elapsed.TotalSeconds;
             double currentRunsPerSecond = (_totalRuns - _lastReportRuns) / Math.Max(0.001, elapsedSeconds - _lastReportTime);
             double overallRunsPerSecond = _totalRuns / Math.Max(0.001, elapsedSeconds);
-            
+
             Console.WriteLine();
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Fuzzing Progress:");
             Console.WriteLine($"  Total Runs: {_totalRuns:N0}");
@@ -170,12 +170,12 @@ namespace Neo.Json.Fuzzer.Utils
             Console.WriteLine($"  Elapsed Time: {_totalStopwatch.Elapsed:hh\\:mm\\:ss}");
             Console.WriteLine($"  Current Speed: {currentRunsPerSecond:F2} runs/sec");
             Console.WriteLine($"  Overall Speed: {overallRunsPerSecond:F2} runs/sec");
-            
+
             if (_executionTimes.Count > 0)
             {
                 Console.WriteLine($"  Avg Execution Time: {_executionTimes.Average():F2} ms");
             }
-            
+
             if (_exceptionCounts.Count > 0)
             {
                 Console.WriteLine("  Top Exceptions:");
@@ -195,9 +195,9 @@ namespace Neo.Json.Fuzzer.Utils
             {
                 string statsDir = Path.Combine(_outputDir, "stats");
                 Directory.CreateDirectory(statsDir);
-                
+
                 string reportPath = Path.Combine(statsDir, $"fuzzing_stats_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
-                
+
                 using (StreamWriter writer = new(reportPath))
                 {
                     writer.WriteLine("Neo.Json.Fuzzer Statistics Report");
@@ -210,7 +210,7 @@ namespace Neo.Json.Fuzzer.Utils
                     writer.WriteLine($"Total Elapsed Time: {_totalStopwatch.Elapsed:hh\\:mm\\:ss}");
                     writer.WriteLine($"Runs Per Second: {RunsPerSecond:F2}");
                     writer.WriteLine();
-                    
+
                     if (_executionTimes.Count > 0)
                     {
                         writer.WriteLine("Execution Time Statistics:");
@@ -221,7 +221,7 @@ namespace Neo.Json.Fuzzer.Utils
                         writer.WriteLine($"  95th Percentile: {GetPercentile(_executionTimes, 95):F2} ms");
                         writer.WriteLine();
                     }
-                    
+
                     if (_memoryUsages.Count > 0)
                     {
                         writer.WriteLine("Memory Usage Statistics:");
@@ -232,7 +232,7 @@ namespace Neo.Json.Fuzzer.Utils
                         writer.WriteLine($"  95th Percentile: {GetPercentile(_memoryUsages, 95) / 1024:F2} KB");
                         writer.WriteLine();
                     }
-                    
+
                     if (_exceptionCounts.Count > 0)
                     {
                         writer.WriteLine("Exception Statistics:");
@@ -242,19 +242,19 @@ namespace Neo.Json.Fuzzer.Utils
                         }
                         writer.WriteLine();
                     }
-                    
+
                     if (_dosVectors.Count > 0)
                     {
                         writer.WriteLine("DOS Vector Statistics:");
                         writer.WriteLine($"  Total DOS Vectors: {_dosVectors.Count:N0}");
                         writer.WriteLine($"  Average DOS Score: {_dosVectors.Average(d => d.DOSScore):F4}");
                         writer.WriteLine($"  Maximum DOS Score: {_dosVectors.Max(d => d.DOSScore):F4}");
-                        
+
                         // Group by detection reason
                         var reasonGroups = _dosVectors
                             .GroupBy(d => d.DetectionReason)
                             .OrderByDescending(g => g.Count());
-                        
+
                         writer.WriteLine("  Detection Reasons:");
                         foreach (var group in reasonGroups.Take(10))
                         {
@@ -263,7 +263,7 @@ namespace Neo.Json.Fuzzer.Utils
                         writer.WriteLine();
                     }
                 }
-                
+
                 // Save raw data for further analysis
                 SaveRawData(statsDir);
             }
@@ -288,7 +288,7 @@ namespace Neo.Json.Fuzzer.Utils
                     writer.WriteLine(time.ToString("F2"));
                 }
             }
-            
+
             // Save memory usages
             string memoryUsagesPath = Path.Combine(statsDir, $"memory_usages_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             using (StreamWriter writer = new(memoryUsagesPath))
@@ -299,7 +299,7 @@ namespace Neo.Json.Fuzzer.Utils
                     writer.WriteLine(memory);
                 }
             }
-            
+
             // Save DOS vector data
             if (_dosVectors.Count > 0)
             {
@@ -314,7 +314,7 @@ namespace Neo.Json.Fuzzer.Utils
                         sb.Append(",\"");
                         sb.Append(dos.DetectionReason?.Replace("\"", "\"\"") ?? "");
                         sb.Append("\"");
-                        
+
                         // Add metrics
                         foreach (string metricName in new[] { "ExecutionTimeMs", "MemoryUsageBytes", "InputLength", "NestingDepth", "TimePerCharRatio", "MemoryPerCharRatio" })
                         {
@@ -324,7 +324,7 @@ namespace Neo.Json.Fuzzer.Utils
                                 sb.Append(value.ToString("F4"));
                             }
                         }
-                        
+
                         writer.WriteLine(sb.ToString());
                     }
                 }
@@ -341,7 +341,7 @@ namespace Neo.Json.Fuzzer.Utils
 
             var sortedValues = values.OrderBy(v => v).ToList();
             int count = sortedValues.Count;
-            
+
             if (count % 2 == 0)
             {
                 // Even count, average the two middle values
@@ -366,20 +366,20 @@ namespace Neo.Json.Fuzzer.Utils
 
             var sortedValues = values.OrderBy(v => v).ToList();
             int count = sortedValues.Count;
-            
+
             double rank = percentile / 100.0 * (count - 1);
             int lowerIndex = (int)Math.Floor(rank);
             int upperIndex = (int)Math.Ceiling(rank);
-            
+
             if (lowerIndex == upperIndex)
             {
                 return Convert.ToDouble(sortedValues[lowerIndex]);
             }
-            
+
             dynamic lowerValue = sortedValues[lowerIndex];
             dynamic upperValue = sortedValues[upperIndex];
             double fraction = rank - lowerIndex;
-            
+
             return lowerValue + fraction * (upperValue - lowerValue);
         }
     }

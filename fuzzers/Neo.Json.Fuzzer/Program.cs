@@ -83,38 +83,38 @@ namespace Neo.Json.Fuzzer
 
             [Option("targeted-dos-tests", Required = false, Default = false, HelpText = "Run targeted DOS vector tests")]
             public bool TargetedDOSTests { get; set; }
-            
+
             [Option("mutation-engine-tests", Required = false, Default = false, HelpText = "Run MutationEngine refactoring tests")]
             public bool MutationEngineTests { get; set; }
-            
+
             [Option("custom-dos-tests", Required = false, Default = false, HelpText = "Run custom DOS tests to find vectors taking over 1 second")]
             public bool CustomDOSTests { get; set; }
-            
+
             [Option("array-nesting-benchmark", Required = false, Default = false, HelpText = "Run detailed benchmark tests on array size and nesting depth combinations")]
             public bool ArrayNestingBenchmark { get; set; }
-            
+
             [Option("object-structure-benchmark", Required = false, Default = false, HelpText = "Run detailed benchmark tests on different object structures and their performance impact")]
             public bool ObjectStructureBenchmark { get; set; }
-            
+
             // New specialized testing options
             [Option("jpath-tests", Required = false, Default = false, HelpText = "Run specialized JPath query testing")]
             public bool JPathTests { get; set; }
-            
+
             [Option("unicode-tests", Required = false, Default = false, HelpText = "Run specialized Unicode handling tests")]
             public bool UnicodeTests { get; set; }
-            
+
             [Option("numeric-precision-tests", Required = false, Default = false, HelpText = "Run specialized numeric precision tests")]
             public bool NumericPrecisionTests { get; set; }
-            
+
             [Option("streaming-tests", Required = false, Default = false, HelpText = "Run specialized streaming JSON tests")]
             public bool StreamingTests { get; set; }
-            
+
             [Option("concurrent-access-tests", Required = false, Default = false, HelpText = "Run specialized concurrent access tests")]
             public bool ConcurrentAccessTests { get; set; }
-            
+
             [Option("specialized-test-type", Required = false, HelpText = "Specific type of specialized test to run (e.g., 'jpath_filter', 'unicode_bmp', etc.)")]
             public string? SpecializedTestType { get; set; }
-            
+
             [Option("specialized-test-count", Required = false, Default = 100, HelpText = "Number of specialized test cases to generate")]
             public int SpecializedTestCount { get; set; }
         }
@@ -174,14 +174,14 @@ namespace Neo.Json.Fuzzer
 
                     Console.WriteLine("Continuing with next tests...");
                 }
-                
+
                 // Run custom DOS tests if requested
                 if (options.CustomDOSTests)
                 {
                     Console.WriteLine("Running custom DOS tests to find vectors taking over 1 second...");
                     var customDOSTest = new CustomDOSTest(options.OutputDir, seed);
                     customDOSTest.RunTests();
-                    
+
                     // If we're only running DOS tests, exit
                     if (options.Runs == 0 && !options.ArrayNestingBenchmark && !options.ObjectStructureBenchmark &&
                         !options.JPathTests && !options.UnicodeTests && !options.NumericPrecisionTests && !options.StreamingTests && !options.ConcurrentAccessTests)
@@ -189,17 +189,17 @@ namespace Neo.Json.Fuzzer
                         Console.WriteLine("Custom DOS tests completed successfully");
                         return;
                     }
-                    
+
                     Console.WriteLine("Continuing with next tests...");
                 }
-                
+
                 // Run array nesting benchmark if requested
                 if (options.ArrayNestingBenchmark)
                 {
                     Console.WriteLine("Running array nesting benchmark tests...");
                     var arrayNestingBenchmark = new ArrayNestingBenchmark(options.OutputDir, random);
                     arrayNestingBenchmark.RunBenchmarks();
-                    
+
                     // If we're only running benchmark tests, exit
                     if (options.Runs == 0 && !options.ObjectStructureBenchmark &&
                         !options.JPathTests && !options.UnicodeTests && !options.NumericPrecisionTests && !options.StreamingTests && !options.ConcurrentAccessTests)
@@ -207,27 +207,27 @@ namespace Neo.Json.Fuzzer
                         Console.WriteLine("Array nesting benchmark tests completed successfully");
                         return;
                     }
-                    
+
                     Console.WriteLine("Continuing with next tests...");
                 }
-                
+
                 // Run object structure benchmark if requested
                 if (options.ObjectStructureBenchmark)
                 {
                     Console.WriteLine("Running object structure benchmark tests...");
                     var objectStructureBenchmark = new ObjectStructureBenchmark(options.OutputDir, random);
                     objectStructureBenchmark.RunBenchmarks();
-                    
+
                     // If we're only running benchmark tests, exit
                     if (options.Runs == 0 && !options.JPathTests && !options.UnicodeTests && !options.NumericPrecisionTests && !options.StreamingTests && !options.ConcurrentAccessTests)
                     {
                         Console.WriteLine("Object structure benchmark tests completed successfully");
                         return;
                     }
-                    
+
                     Console.WriteLine("Continuing with next tests...");
                 }
-                
+
                 // Run MutationEngine refactoring tests if requested
                 if (options.MutationEngineTests)
                 {
@@ -235,7 +235,7 @@ namespace Neo.Json.Fuzzer
                     TestRunner.RunTests();
                     return;
                 }
-                
+
                 // Initialize components
                 var corpusManager = new CorpusManager(options.OutputDir, options.CorpusDir);
                 var coverageTracker = new CoverageTracker(options.OutputDir, options.Verbose);
@@ -249,7 +249,7 @@ namespace Neo.Json.Fuzzer
                     random,
                     options.MinMutations,
                     options.MaxMutations);
-                
+
                 // Run specialized tests if requested
                 if (RunSpecializedTests(options, mutationEngine, corpusManager, coverageTracker, statistics, random))
                 {
@@ -259,7 +259,7 @@ namespace Neo.Json.Fuzzer
                         Console.WriteLine("Specialized tests completed successfully");
                         return;
                     }
-                    
+
                     Console.WriteLine("Continuing with regular fuzzing...");
                 }
 
@@ -320,7 +320,7 @@ namespace Neo.Json.Fuzzer
                 Console.WriteLine(ex.StackTrace);
             }
         }
-        
+
         /// <summary>
         /// Runs specialized tests based on command line options
         /// </summary>
@@ -334,315 +334,315 @@ namespace Neo.Json.Fuzzer
             Random random)
         {
             bool ranTests = false;
-            
+
             // Create specialized test output directories
             string specializedTestsDir = Path.Combine(options.OutputDir, "specialized_tests");
             Directory.CreateDirectory(specializedTestsDir);
-            
+
             // Create JSON runner for testing
             var jsonRunner = new JsonRunner(
                 options.TimeoutMs,
                 options.DetectDOS,
                 options.DOSThreshold,
                 options.TrackMemory);
-            
+
             // Run JPath tests if requested
             if (options.JPathTests)
             {
                 ranTests = true;
                 string jpathTestsDir = Path.Combine(specializedTestsDir, "jpath_tests");
                 Directory.CreateDirectory(jpathTestsDir);
-                
+
                 Console.WriteLine("Running specialized JPath tests...");
-                
+
                 // Determine test types to run
                 string[] testTypes = options.SpecializedTestType != null && options.SpecializedTestType.StartsWith("jpath_")
                     ? new[] { options.SpecializedTestType }
                     : new[] { "jpath", "jpath_simple", "jpath_wildcard", "jpath_filter", "jpath_union", "jpath_recursive", "jpath_slice" };
-                
+
                 foreach (string testType in testTypes)
                 {
                     string testTypeDir = Path.Combine(jpathTestsDir, testType);
                     Directory.CreateDirectory(testTypeDir);
-                    
+
                     Console.WriteLine($"  Generating {options.SpecializedTestCount} {testType} test cases...");
-                    
+
                     for (int i = 0; i < options.SpecializedTestCount; i++)
                     {
                         // Generate specialized test JSON
                         string json = mutationEngine.GenerateSpecializedTestJson(testType);
-                        
+
                         // Execute test
                         var result = jsonRunner.Execute(json);
-                        
+
                         // Record statistics and coverage
                         statistics.RecordResult(result);
                         bool foundNewCoverage = coverageTracker.RecordCoverage(result.Coverage);
-                        
+
                         // Save test case
                         string filename = Path.Combine(testTypeDir, $"test_{i:D4}.json");
                         File.WriteAllText(filename, json);
-                        
+
                         // Save to corpus if it found new coverage
                         if (foundNewCoverage)
                         {
                             corpusManager.SaveInteresting(json);
                         }
-                        
+
                         // Save crashes and DOS vectors
                         if (result.Crashed)
                         {
                             corpusManager.SaveCrash(json, result.ExceptionType);
                         }
-                        
+
                         if (result.DOSAnalysis?.IsPotentialDOSVector == true)
                         {
                             corpusManager.SaveDOSVector(json, result.DOSAnalysis);
                         }
                     }
                 }
-                
+
                 Console.WriteLine("JPath tests completed successfully");
             }
-            
+
             // Run Unicode tests if requested
             if (options.UnicodeTests)
             {
                 ranTests = true;
                 string unicodeTestsDir = Path.Combine(specializedTestsDir, "unicode_tests");
                 Directory.CreateDirectory(unicodeTestsDir);
-                
+
                 Console.WriteLine("Running specialized Unicode tests...");
-                
+
                 // Determine test types to run
                 string[] testTypes = options.SpecializedTestType != null && options.SpecializedTestType.StartsWith("unicode_")
                     ? new[] { options.SpecializedTestType }
                     : new[] { "unicode", "unicode_bmp", "unicode_supplementary" };
-                
+
                 foreach (string testType in testTypes)
                 {
                     string testTypeDir = Path.Combine(unicodeTestsDir, testType);
                     Directory.CreateDirectory(testTypeDir);
-                    
+
                     Console.WriteLine($"  Generating {options.SpecializedTestCount} {testType} test cases...");
-                    
+
                     for (int i = 0; i < options.SpecializedTestCount; i++)
                     {
                         // Generate specialized test JSON
                         string unicodeString = mutationEngine.GenerateSpecializedTestJson(testType);
                         string json = $"{{\"value\":\"{unicodeString.Replace("\"", "\\\"")}\",\"type\":\"{testType}\"}}";
-                        
+
                         // Execute test
                         var result = jsonRunner.Execute(json);
-                        
+
                         // Record statistics and coverage
                         statistics.RecordResult(result);
                         bool foundNewCoverage = coverageTracker.RecordCoverage(result.Coverage);
-                        
+
                         // Save test case
                         string filename = Path.Combine(testTypeDir, $"test_{i:D4}.json");
                         File.WriteAllText(filename, json);
-                        
+
                         // Save to corpus if it found new coverage
                         if (foundNewCoverage)
                         {
                             corpusManager.SaveInteresting(json);
                         }
-                        
+
                         // Save crashes and DOS vectors
                         if (result.Crashed)
                         {
                             corpusManager.SaveCrash(json, result.ExceptionType);
                         }
-                        
+
                         if (result.DOSAnalysis?.IsPotentialDOSVector == true)
                         {
                             corpusManager.SaveDOSVector(json, result.DOSAnalysis);
                         }
                     }
                 }
-                
+
                 Console.WriteLine("Unicode tests completed successfully");
             }
-            
+
             // Run numeric precision tests if requested
             if (options.NumericPrecisionTests)
             {
                 ranTests = true;
                 string numericTestsDir = Path.Combine(specializedTestsDir, "numeric_tests");
                 Directory.CreateDirectory(numericTestsDir);
-                
+
                 Console.WriteLine("Running specialized numeric precision tests...");
-                
+
                 // Determine test types to run
                 string[] testTypes = options.SpecializedTestType != null && options.SpecializedTestType.StartsWith("numeric_")
                     ? new[] { options.SpecializedTestType }
                     : new[] { "numeric", "numeric_integer", "numeric_float", "numeric_boundary", "numeric_scientific", "numeric_precision" };
-                
+
                 foreach (string testType in testTypes)
                 {
                     string testTypeDir = Path.Combine(numericTestsDir, testType);
                     Directory.CreateDirectory(testTypeDir);
-                    
+
                     Console.WriteLine($"  Generating {options.SpecializedTestCount} {testType} test cases...");
-                    
+
                     for (int i = 0; i < options.SpecializedTestCount; i++)
                     {
                         // Generate specialized test JSON
                         string numericValue = mutationEngine.GenerateSpecializedTestJson(testType);
                         string json = $"{{\"value\":{numericValue},\"type\":\"{testType}\"}}";
-                        
+
                         // Execute test
                         var result = jsonRunner.Execute(json);
-                        
+
                         // Record statistics and coverage
                         statistics.RecordResult(result);
                         bool foundNewCoverage = coverageTracker.RecordCoverage(result.Coverage);
-                        
+
                         // Save test case
                         string filename = Path.Combine(testTypeDir, $"test_{i:D4}.json");
                         File.WriteAllText(filename, json);
-                        
+
                         // Save to corpus if it found new coverage
                         if (foundNewCoverage)
                         {
                             corpusManager.SaveInteresting(json);
                         }
-                        
+
                         // Save crashes and DOS vectors
                         if (result.Crashed)
                         {
                             corpusManager.SaveCrash(json, result.ExceptionType);
                         }
-                        
+
                         if (result.DOSAnalysis?.IsPotentialDOSVector == true)
                         {
                             corpusManager.SaveDOSVector(json, result.DOSAnalysis);
                         }
                     }
                 }
-                
+
                 Console.WriteLine("Numeric precision tests completed successfully");
             }
-            
+
             // Run streaming tests if requested
             if (options.StreamingTests)
             {
                 ranTests = true;
                 string streamingTestsDir = Path.Combine(specializedTestsDir, "streaming_tests");
                 Directory.CreateDirectory(streamingTestsDir);
-                
+
                 Console.WriteLine("Running specialized streaming tests...");
-                
+
                 // Determine test types to run
                 string[] testTypes = options.SpecializedTestType != null && options.SpecializedTestType.StartsWith("streaming_")
                     ? new[] { options.SpecializedTestType }
                     : new[] { "streaming", "streaming_large_array", "streaming_large_object", "streaming_deep_nesting", "streaming_chunked" };
-                
+
                 foreach (string testType in testTypes)
                 {
                     string testTypeDir = Path.Combine(streamingTestsDir, testType);
                     Directory.CreateDirectory(testTypeDir);
-                    
+
                     Console.WriteLine($"  Generating {options.SpecializedTestCount} {testType} test cases...");
-                    
+
                     for (int i = 0; i < options.SpecializedTestCount; i++)
                     {
                         // Generate specialized test JSON
                         string json = mutationEngine.GenerateSpecializedTestJson(testType);
-                        
+
                         // Execute test
                         var result = jsonRunner.Execute(json);
-                        
+
                         // Record statistics and coverage
                         statistics.RecordResult(result);
                         bool foundNewCoverage = coverageTracker.RecordCoverage(result.Coverage);
-                        
+
                         // Save test case
                         string filename = Path.Combine(testTypeDir, $"test_{i:D4}.json");
                         File.WriteAllText(filename, json);
-                        
+
                         // Save to corpus if it found new coverage
                         if (foundNewCoverage)
                         {
                             corpusManager.SaveInteresting(json);
                         }
-                        
+
                         // Save crashes and DOS vectors
                         if (result.Crashed)
                         {
                             corpusManager.SaveCrash(json, result.ExceptionType);
                         }
-                        
+
                         if (result.DOSAnalysis?.IsPotentialDOSVector == true)
                         {
                             corpusManager.SaveDOSVector(json, result.DOSAnalysis);
                         }
                     }
                 }
-                
+
                 Console.WriteLine("Streaming tests completed successfully");
             }
-            
+
             // Run concurrent access tests if requested
             if (options.ConcurrentAccessTests)
             {
                 ranTests = true;
                 string concurrentTestsDir = Path.Combine(specializedTestsDir, "concurrent_tests");
                 Directory.CreateDirectory(concurrentTestsDir);
-                
+
                 Console.WriteLine("Running specialized concurrent access tests...");
-                
+
                 // Determine test types to run
                 string[] testTypes = options.SpecializedTestType != null && options.SpecializedTestType.StartsWith("concurrent_")
                     ? new[] { options.SpecializedTestType }
                     : new[] { "concurrent", "concurrent_shared_objects", "concurrent_parallel_operations", "concurrent_race_conditions", "concurrent_thread_safety" };
-                
+
                 foreach (string testType in testTypes)
                 {
                     string testTypeDir = Path.Combine(concurrentTestsDir, testType);
                     Directory.CreateDirectory(testTypeDir);
-                    
+
                     Console.WriteLine($"  Generating {options.SpecializedTestCount} {testType} test cases...");
-                    
+
                     for (int i = 0; i < options.SpecializedTestCount; i++)
                     {
                         // Generate specialized test JSON
                         string json = mutationEngine.GenerateSpecializedTestJson(testType);
-                        
+
                         // Execute test
                         var result = jsonRunner.Execute(json);
-                        
+
                         // Record statistics and coverage
                         statistics.RecordResult(result);
                         bool foundNewCoverage = coverageTracker.RecordCoverage(result.Coverage);
-                        
+
                         // Save test case
                         string filename = Path.Combine(testTypeDir, $"test_{i:D4}.json");
                         File.WriteAllText(filename, json);
-                        
+
                         // Save to corpus if it found new coverage
                         if (foundNewCoverage)
                         {
                             corpusManager.SaveInteresting(json);
                         }
-                        
+
                         // Save crashes and DOS vectors
                         if (result.Crashed)
                         {
                             corpusManager.SaveCrash(json, result.ExceptionType);
                         }
-                        
+
                         if (result.DOSAnalysis?.IsPotentialDOSVector == true)
                         {
                             corpusManager.SaveDOSVector(json, result.DOSAnalysis);
                         }
                     }
                 }
-                
+
                 Console.WriteLine("Concurrent access tests completed successfully");
             }
-            
+
             return ranTests;
         }
 

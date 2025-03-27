@@ -23,7 +23,7 @@ namespace Neo.Json.Fuzzer.Generators
     {
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
-        
+
         /// <summary>
         /// Initializes a new instance of the BooleanMutations class
         /// </summary>
@@ -32,7 +32,7 @@ namespace Neo.Json.Fuzzer.Generators
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _random = random ?? throw new ArgumentNullException(nameof(random));
         }
-        
+
         /// <summary>
         /// Modifies a boolean value in the JSON
         /// </summary>
@@ -53,7 +53,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Recursively modifies boolean values in a JToken
         /// </summary>
@@ -61,7 +61,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-            
+
             if (token is JObject obj)
             {
                 // Collect boolean properties
@@ -73,14 +73,14 @@ namespace Neo.Json.Fuzzer.Generators
                         boolProperties.Add((kvp.Key, kvp.Value));
                     }
                 }
-                
+
                 // Modify a random boolean property if any exist
                 if (boolProperties.Count > 0 && _random.NextDouble() < 0.5)
                 {
                     var (key, value) = boolProperties[_random.Next(boolProperties.Count)];
                     obj[key] = GenerateBooleanValue(value.AsBoolean());
                 }
-                
+
                 // Recursively process all properties
                 foreach (var kvp in obj.Properties)
                 {
@@ -102,7 +102,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Generates a boolean value, potentially inverting the input
         /// </summary>
@@ -113,11 +113,11 @@ namespace Neo.Json.Fuzzer.Generators
             {
                 return !currentValue.Value;
             }
-            
+
             // Otherwise, generate a random boolean
             return _random.Next(2) == 0;
         }
-        
+
         /// <summary>
         /// Converts a non-boolean value to a boolean
         /// </summary>
@@ -125,37 +125,37 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return false;
-            
+
             switch (token)
             {
                 case JBoolean boolToken:
                     return boolToken.Value;
-                
+
                 case JNumber number:
                     // Convert numbers to boolean (0 = false, non-0 = true)
                     double numberValue = number.Value;
                     return Math.Abs(numberValue) > double.Epsilon;
-                
+
                 case JString str:
                     // Convert strings to boolean
                     string stringValue = str.Value;
-                    return !string.IsNullOrEmpty(stringValue) && 
+                    return !string.IsNullOrEmpty(stringValue) &&
                            !string.Equals(stringValue, "false", StringComparison.OrdinalIgnoreCase) &&
                            !string.Equals(stringValue, "0", StringComparison.OrdinalIgnoreCase);
-                
+
                 case JArray array:
                     // Arrays are true if they have elements
                     return array.Count > 0;
-                
+
                 case JObject obj:
                     // Objects are true if they have properties
                     return obj.Properties.Count() > 0;
-                
+
                 default:
                     return false;
             }
         }
-        
+
         /// <summary>
         /// Replaces a value with its boolean equivalent
         /// </summary>
@@ -176,7 +176,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Recursively replaces values with their boolean equivalents
         /// </summary>
@@ -184,7 +184,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-            
+
             if (token is JObject obj)
             {
                 // Collect non-boolean properties
@@ -196,14 +196,14 @@ namespace Neo.Json.Fuzzer.Generators
                         nonBoolProperties.Add((kvp.Key, kvp.Value));
                     }
                 }
-                
+
                 // Replace a random non-boolean property with its boolean equivalent
                 if (nonBoolProperties.Count > 0 && _random.NextDouble() < 0.2)
                 {
                     var (key, value) = nonBoolProperties[_random.Next(nonBoolProperties.Count)];
                     obj[key] = ConvertToBooleanValue(value);
                 }
-                
+
                 // Recursively process all properties
                 foreach (var kvp in obj.Properties)
                 {
@@ -220,13 +220,13 @@ namespace Neo.Json.Fuzzer.Generators
                 {
                     int index = _random.Next(array.Count);
                     JToken value = array[index];
-                    
+
                     if (value != null && !(value is JBoolean))
                     {
                         array[index] = ConvertToBooleanValue(value);
                     }
                 }
-                
+
                 // Recursively process all array elements
                 foreach (var item in array)
                 {
@@ -237,7 +237,7 @@ namespace Neo.Json.Fuzzer.Generators
                 }
             }
         }
-        
+
         /// <summary>
         /// Replaces a boolean value with a string representation
         /// </summary>
@@ -258,7 +258,7 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Recursively replaces boolean values with string representations
         /// </summary>
@@ -266,7 +266,7 @@ namespace Neo.Json.Fuzzer.Generators
         {
             if (token == null)
                 return;
-            
+
             if (token is JObject obj)
             {
                 // Collect boolean properties
@@ -278,13 +278,13 @@ namespace Neo.Json.Fuzzer.Generators
                         boolProperties.Add((kvp.Key, kvp.Value));
                     }
                 }
-                
+
                 // Replace a random boolean property with its string representation
                 if (boolProperties.Count > 0 && _random.NextDouble() < 0.3)
                 {
                     var (key, value) = boolProperties[_random.Next(boolProperties.Count)];
                     bool boolValue = value.AsBoolean();
-                    
+
                     // Choose a string representation
                     int strategy = _random.Next(3);
                     string stringValue = strategy switch
@@ -293,10 +293,10 @@ namespace Neo.Json.Fuzzer.Generators
                         1 => boolValue ? "True" : "False",
                         _ => boolValue ? "1" : "0"
                     };
-                    
+
                     obj[key] = stringValue;
                 }
-                
+
                 // Recursively process all properties
                 foreach (var kvp in obj.Properties)
                 {

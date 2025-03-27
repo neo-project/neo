@@ -26,13 +26,13 @@ namespace Neo.Json.Fuzzer.Tests
             Console.WriteLine("=== Neo.Json.Fuzzer Test Runner ===");
             Console.WriteLine("Testing the refactored MutationEngine components");
             Console.WriteLine();
-            
+
             try
             {
                 // Run the MutationEngine tests
                 var mutationEngineTests = new MutationEngineTests();
                 mutationEngineTests.RunTests();
-                
+
                 Console.WriteLine();
                 Console.WriteLine("All tests completed successfully!");
             }

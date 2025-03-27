@@ -42,12 +42,12 @@ namespace Neo.Json.Fuzzer.Tests
         public void RunTests()
         {
             Console.WriteLine("Starting MutationEngine tests...");
-            
+
             TestBasicMutation();
             TestMultipleMutations();
             TestInvalidJsonMutation();
             TestEdgeCases();
-            
+
             Console.WriteLine("All tests completed successfully!");
         }
 
@@ -57,10 +57,10 @@ namespace Neo.Json.Fuzzer.Tests
         private void TestBasicMutation()
         {
             Console.WriteLine("Testing basic mutation...");
-            
+
             string json = "{\"name\":\"test\",\"value\":123,\"active\":true}";
             string mutated = _mutationEngine.MutateJson(json);
-            
+
             // Verify the mutation produced a different string
             if (json == mutated)
             {
@@ -70,7 +70,7 @@ namespace Neo.Json.Fuzzer.Tests
             {
                 Console.WriteLine("Basic mutation successful");
             }
-            
+
             // Try to parse the mutated JSON to verify it's valid
             try
             {
@@ -91,17 +91,17 @@ namespace Neo.Json.Fuzzer.Tests
         private void TestMultipleMutations()
         {
             Console.WriteLine("Testing multiple mutations...");
-            
+
             string json = "{\"array\":[1,2,3],\"object\":{\"a\":1,\"b\":2},\"string\":\"test\"}";
             HashSet<string> mutations = new HashSet<string>();
-            
+
             // Apply multiple mutations and verify they produce different results
             for (int i = 0; i < 10; i++)
             {
                 string mutated = _mutationEngine.MutateJson(json);
                 mutations.Add(mutated);
             }
-            
+
             Console.WriteLine($"Generated {mutations.Count} unique mutations from 10 attempts");
         }
 
@@ -111,7 +111,7 @@ namespace Neo.Json.Fuzzer.Tests
         private void TestInvalidJsonMutation()
         {
             Console.WriteLine("Testing invalid JSON mutation...");
-            
+
             string[] invalidJsons = new[]
             {
                 "{\"name\":\"test\",", // Incomplete JSON
@@ -119,13 +119,13 @@ namespace Neo.Json.Fuzzer.Tests
                 "[1,2,3,]", // Extra comma
                 "{\"a\":1,\"a\":2}" // Duplicate key
             };
-            
+
             foreach (string invalidJson in invalidJsons)
             {
                 string mutated = _mutationEngine.MutateJson(invalidJson);
                 Console.WriteLine($"Original invalid JSON: {invalidJson}");
                 Console.WriteLine($"Mutated: {mutated}");
-                
+
                 // Try to parse the mutated JSON
                 try
                 {
@@ -136,7 +136,7 @@ namespace Neo.Json.Fuzzer.Tests
                 {
                     Console.WriteLine("Mutation still produced invalid JSON");
                 }
-                
+
                 Console.WriteLine();
             }
         }
@@ -147,11 +147,11 @@ namespace Neo.Json.Fuzzer.Tests
         private void TestEdgeCases()
         {
             Console.WriteLine("Testing edge cases...");
-            
+
             // Empty JSON
             string mutated = _mutationEngine.MutateJson("");
             Console.WriteLine($"Empty JSON mutation: {mutated}");
-            
+
             // Very large JSON
             StringBuilder largeJson = new StringBuilder("{\"items\":[");
             for (int i = 0; i < 100; i++)
@@ -160,10 +160,10 @@ namespace Neo.Json.Fuzzer.Tests
                 largeJson.Append($"{{\"id\":{i},\"value\":\"test{i}\"}}");
             }
             largeJson.Append("]}");
-            
+
             mutated = _mutationEngine.MutateJson(largeJson.ToString());
             Console.WriteLine($"Large JSON mutation length: {mutated.Length}");
-            
+
             // Deeply nested JSON
             string nestedJson = "{\"level1\":{\"level2\":{\"level3\":{\"level4\":{\"level5\":0}}}}}";
             mutated = _mutationEngine.MutateJson(nestedJson);

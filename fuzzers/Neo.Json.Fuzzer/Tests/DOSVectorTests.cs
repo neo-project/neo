@@ -1,9 +1,20 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// DOSVectorTests.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using Neo.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Neo.Json;
 
 namespace Neo.Json.Fuzzer.Tests
 {
@@ -31,26 +42,26 @@ namespace Neo.Json.Fuzzer.Tests
         public void RunAllTests()
         {
             Console.WriteLine("Running DOS Vector Tests...");
-            
+
             // Create the DOS vectors directory if it doesn't exist
             string dosVectorsDir = Path.Combine(_outputDirectory, "targeted-dos-vectors");
             Directory.CreateDirectory(dosVectorsDir);
-            
+
             // Run tests for minimal inputs
             TestMinimalInputs(dosVectorsDir);
-            
+
             // Run tests for deeply nested structures
             TestDeeplyNestedStructures(dosVectorsDir);
-            
+
             // Run tests for alternating types
             TestAlternatingTypes(dosVectorsDir);
-            
+
             // Run tests for repeated patterns
             TestRepeatedPatterns(dosVectorsDir);
-            
+
             // Run tests for exact nesting limits
             TestExactNestingLimits(dosVectorsDir);
-            
+
             Console.WriteLine("DOS Vector Tests completed.");
         }
 
@@ -73,7 +84,7 @@ namespace Neo.Json.Fuzzer.Tests
                 "[\"\u0000\"]",         // Array with null character
                 "[\"\u0001\"]"          // Array with control character
             };
-            
+
             foreach (var input in minimalInputs)
             {
                 TestInput(input, "minimal", outputDir);
@@ -108,7 +119,7 @@ namespace Neo.Json.Fuzzer.Tests
                 CreateAlternatingTypesJson(5),
                 CreateAlternatingTypesJson(10)
             };
-            
+
             foreach (var input in alternatingInputs)
             {
                 TestInput(input, "alternating", outputDir);
@@ -129,7 +140,7 @@ namespace Neo.Json.Fuzzer.Tests
                 CreateRepeatedPatternJson(10, 2),
                 CreateRepeatedPatternJson(15, 2)
             };
-            
+
             foreach (var input in repeatedInputs)
             {
                 TestInput(input, "repeated", outputDir);
@@ -142,12 +153,12 @@ namespace Neo.Json.Fuzzer.Tests
         private void TestExactNestingLimits(string outputDir)
         {
             int[] nestingLimits = new int[] { 10, 64, 128 };
-            
+
             foreach (var limit in nestingLimits)
             {
                 string exactLimitJson = CreateExactLimitJson(limit);
                 TestInput(exactLimitJson, $"exact_limit_{limit}", outputDir);
-                
+
                 // Also test one level above the limit
                 string aboveLimitJson = CreateExactLimitJson(limit + 1);
                 TestInput(aboveLimitJson, $"above_limit_{limit}", outputDir);
@@ -165,54 +176,54 @@ namespace Neo.Json.Fuzzer.Tests
                 Stopwatch sw = new Stopwatch();
                 long memoryBefore = 0;
                 long memoryAfter = 0;
-                
+
                 if (_trackMemory)
                 {
                     GC.Collect();
                     memoryBefore = GC.GetTotalMemory(true);
                 }
-                
+
                 sw.Start();
                 JToken? result = JToken.Parse(input);
                 sw.Stop();
-                
+
                 if (_trackMemory)
                 {
                     memoryAfter = GC.GetTotalMemory(false);
                 }
-                
+
                 // Calculate metrics
                 double executionTimeMs = sw.Elapsed.TotalMilliseconds;
                 int inputLength = input.Length;
                 int nestingDepth = result != null ? CalculateNestingDepth(result) : 0;
                 long memoryUsageBytes = memoryAfter - memoryBefore;
-                
+
                 // Calculate DOS score
                 double timePerCharRatio = inputLength > 0 ? executionTimeMs / inputLength : 0;
                 double timePerCharThreshold = 0.01; // 0.01ms per character
-                
+
                 double memoryPerCharRatio = inputLength > 0 ? memoryUsageBytes / inputLength : 0;
                 double memoryPerCharThreshold = 100; // 100 bytes per character
-                
+
                 double timeScore = timePerCharRatio / timePerCharThreshold;
                 double memoryScore = _trackMemory ? memoryPerCharRatio / memoryPerCharThreshold : 0;
-                
+
                 double dosScore = Math.Max(timeScore, memoryScore);
-                
+
                 // If DOS score exceeds threshold, save as a DOS vector
                 if (dosScore >= _dosThreshold)
                 {
                     string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                     string hash = Math.Abs(input.GetHashCode()).ToString("X8");
                     string filename = $"targeted_dos_{timestamp}_{hash}_{category}_{dosScore:F2}";
-                    
+
                     // Save the input
                     File.WriteAllText(Path.Combine(outputDir, $"{filename}.json"), input);
-                    
+
                     // Save the analysis
                     StringBuilder analysis = new StringBuilder();
                     analysis.AppendLine($"DOS Score: {dosScore:F2}");
-                    
+
                     if (timeScore >= _dosThreshold)
                     {
                         analysis.AppendLine($"Detection Reason: High time per character ratio: {timePerCharRatio:F4}ms (threshold: {timePerCharThreshold:F4}ms)");
@@ -221,21 +232,21 @@ namespace Neo.Json.Fuzzer.Tests
                     {
                         analysis.AppendLine($"Detection Reason: High memory per character ratio: {memoryPerCharRatio:F1} bytes (threshold: {memoryPerCharThreshold:F1} bytes)");
                     }
-                    
+
                     analysis.AppendLine();
                     analysis.AppendLine("Metrics:");
                     analysis.AppendLine($"  ExecutionTimeMs: {executionTimeMs:F4}");
                     analysis.AppendLine($"  InputLength: {inputLength}");
-                    
+
                     if (_trackMemory)
                     {
                         analysis.AppendLine($"  MemoryUsageBytes: {memoryUsageBytes}");
                     }
-                    
+
                     analysis.AppendLine($"  NestingDepth: {nestingDepth}");
-                    
+
                     File.WriteAllText(Path.Combine(outputDir, $"{filename}.analysis.txt"), analysis.ToString());
-                    
+
                     if (_verbose)
                     {
                         Console.WriteLine($"DOS Vector detected: {filename}");
@@ -267,7 +278,7 @@ namespace Neo.Json.Fuzzer.Tests
             {
                 return 0;
             }
-            
+
             if (token is JObject obj)
             {
                 int maxDepth = 0;
@@ -300,10 +311,10 @@ namespace Neo.Json.Fuzzer.Tests
         private string CreateNestedStructure(int nestingLevel)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // Start with an object
             sb.Append("{\"nested\":");
-            
+
             // Create nesting
             for (int i = 0; i < nestingLevel; i++)
             {
@@ -316,10 +327,10 @@ namespace Neo.Json.Fuzzer.Tests
                     sb.Append("[");
                 }
             }
-            
+
             // Add a value at the deepest level
             sb.Append("0");
-            
+
             // Close the nesting
             for (int i = nestingLevel - 1; i >= 0; i--)
             {
@@ -332,10 +343,10 @@ namespace Neo.Json.Fuzzer.Tests
                     sb.Append("]");
                 }
             }
-            
+
             // Close the root object
             sb.Append("}");
-            
+
             return sb.ToString();
         }
 
@@ -345,19 +356,19 @@ namespace Neo.Json.Fuzzer.Tests
         private string CreateAlternatingTypesJson(int depth)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // Start with an object
             sb.Append("{");
-            
+
             for (int i = 0; i < depth; i++)
             {
                 string key = $"level{i}";
-                
+
                 if (i > 0)
                 {
                     sb.Append(",");
                 }
-                
+
                 switch (i % 4)
                 {
                     case 0:
@@ -374,17 +385,17 @@ namespace Neo.Json.Fuzzer.Tests
                         break;
                 }
             }
-            
+
             // Add a nested structure
             sb.Append(",\"nested\":[");
-            
+
             for (int i = 0; i < depth; i++)
             {
                 if (i > 0)
                 {
                     sb.Append(",");
                 }
-                
+
                 switch (i % 4)
                 {
                     case 0:
@@ -401,9 +412,9 @@ namespace Neo.Json.Fuzzer.Tests
                         break;
                 }
             }
-            
+
             sb.Append("]}");
-            
+
             return sb.ToString();
         }
 
@@ -413,13 +424,13 @@ namespace Neo.Json.Fuzzer.Tests
         private string CreateRepeatedPatternJson(int depth, int repetitions)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // Create a pattern
             string pattern = CreatePattern(depth);
-            
+
             // Start with an object
             sb.Append("{");
-            
+
             // Add the pattern multiple times
             for (int i = 0; i < repetitions; i++)
             {
@@ -427,13 +438,13 @@ namespace Neo.Json.Fuzzer.Tests
                 {
                     sb.Append(",");
                 }
-                
+
                 sb.Append($"\"pattern{i}\":{pattern}");
             }
-            
+
             // Close the object
             sb.Append("}");
-            
+
             return sb.ToString();
         }
 
@@ -446,7 +457,7 @@ namespace Neo.Json.Fuzzer.Tests
             {
                 return "0";
             }
-            
+
             if (depth % 3 == 0)
             {
                 return $"{{\"id\":{depth},\"value\":\"test\",\"nested\":{CreatePattern(depth - 1)}}}";
@@ -468,13 +479,13 @@ namespace Neo.Json.Fuzzer.Tests
         private string CreateExactLimitJson(int limit)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // Start with an object
             sb.Append($"{{\"maxDepth\":{limit},\"structure\":");
-            
+
             // Create the nested structure
             JToken? current = null;
-            
+
             for (int i = 0; i < limit; i++)
             {
                 if (i == 0)
@@ -482,9 +493,9 @@ namespace Neo.Json.Fuzzer.Tests
                     // Start with an object at the root
                     current = new JObject();
                 }
-                
+
                 string levelName = $"level{limit - i}";
-                
+
                 if (current is JObject obj)
                 {
                     // Create a new array and add it to the object
@@ -500,7 +511,7 @@ namespace Neo.Json.Fuzzer.Tests
                     current = newObj;
                 }
             }
-            
+
             // Add a value at the deepest level
             if (current is JObject finalObj)
             {
@@ -510,16 +521,16 @@ namespace Neo.Json.Fuzzer.Tests
             {
                 finalArr.Add(new JNumber(0));
             }
-            
+
             // Append the structure to the string
             if (current != null)
             {
                 sb.Append(current.ToString());
             }
-            
+
             // Close the root object
             sb.Append("}");
-            
+
             return sb.ToString();
         }
     }

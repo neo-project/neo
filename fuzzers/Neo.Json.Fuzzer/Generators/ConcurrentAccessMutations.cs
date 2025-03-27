@@ -26,11 +26,11 @@ namespace Neo.Json.Fuzzer.Generators
     {
         private readonly BaseMutationEngine _engine;
         private readonly Random _random;
-        
+
         // Constants for concurrent access testing
         private const int MAX_CONCURRENT_OPERATIONS = 10;
         private const int MAX_SHARED_OBJECTS = 5;
-        
+
         /// <summary>
         /// Initializes a new instance of the ConcurrentAccessMutations class
         /// </summary>
@@ -39,7 +39,7 @@ namespace Neo.Json.Fuzzer.Generators
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _random = random ?? throw new ArgumentNullException(nameof(random));
         }
-        
+
         /// <summary>
         /// Applies a concurrent access-specific mutation to the JSON
         /// </summary>
@@ -48,10 +48,10 @@ namespace Neo.Json.Fuzzer.Generators
             try
             {
                 var token = JToken.Parse(json);
-                
+
                 // Select a mutation strategy
                 int strategy = _random.Next(4);
-                
+
                 return strategy switch
                 {
                     0 => GenerateSharedObjectStructure(token),
@@ -66,21 +66,21 @@ namespace Neo.Json.Fuzzer.Generators
                 return json;
             }
         }
-        
+
         /// <summary>
         /// Generates a structure with shared objects for concurrent access testing
         /// </summary>
         private string GenerateSharedObjectStructure(JToken? token)
         {
             if (token == null) return "{}";
-            
+
             // Create a structure with shared references
             JObject root = new JObject();
-            
+
             // Create a set of shared objects
             int sharedCount = _random.Next(2, MAX_SHARED_OBJECTS + 1);
             List<JObject> sharedObjects = new List<JObject>();
-            
+
             for (int i = 0; i < sharedCount; i++)
             {
                 JObject shared = new JObject
@@ -89,44 +89,44 @@ namespace Neo.Json.Fuzzer.Generators
                     ["value"] = new JNumber(_random.Next(1000)),
                     ["timestamp"] = new JString(DateTime.UtcNow.ToString("o"))
                 };
-                
+
                 sharedObjects.Add(shared);
             }
-            
+
             // Create references to these shared objects
             JArray references = new JArray();
-            
+
             for (int i = 0; i < _random.Next(5, 15); i++)
             {
                 // Select a random shared object
                 JObject shared = sharedObjects[_random.Next(sharedObjects.Count)];
-                
+
                 // Create a reference wrapper
                 JObject reference = new JObject
                 {
                     ["refId"] = new JString($"ref_{i}"),
                     ["target"] = shared
                 };
-                
+
                 references.Add(reference);
             }
-            
+
             root["sharedObjects"] = new JArray(sharedObjects);
             root["references"] = references;
-            
+
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Generates a structure designed to test for race conditions
         /// </summary>
         private string GenerateRaceConditionTest(JToken? token)
         {
             if (token == null) return "{}";
-            
+
             // Create a structure that might trigger race conditions
             JObject root = new JObject();
-            
+
             // Add a counter object that might be accessed concurrently
             root["counter"] = new JObject
             {
@@ -134,10 +134,10 @@ namespace Neo.Json.Fuzzer.Generators
                 ["lastUpdated"] = new JString(DateTime.UtcNow.ToString("o")),
                 ["updates"] = new JArray()
             };
-            
+
             // Add a collection of operations
             JArray operations = new JArray();
-            
+
             for (int i = 0; i < _random.Next(5, 20); i++)
             {
                 operations.Add(new JObject
@@ -148,25 +148,25 @@ namespace Neo.Json.Fuzzer.Generators
                     ["delay"] = new JNumber(_random.Next(10, 100))
                 });
             }
-            
+
             root["operations"] = operations;
-            
+
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Generates a structure designed to test parallel processing
         /// </summary>
         private string GenerateParallelProcessingTest(JToken? token)
         {
             if (token == null) return "{}";
-            
+
             // Create a structure for parallel processing tests
             JObject root = new JObject();
-            
+
             // Create a set of independent tasks
             JArray tasks = new JArray();
-            
+
             for (int i = 0; i < _random.Next(5, 20); i++)
             {
                 tasks.Add(new JObject
@@ -177,9 +177,9 @@ namespace Neo.Json.Fuzzer.Generators
                     ["processingTime"] = new JNumber(_random.Next(10, 500))
                 });
             }
-            
+
             root["tasks"] = tasks;
-            
+
             // Add configuration for parallel processing
             root["parallelConfig"] = new JObject
             {
@@ -187,34 +187,34 @@ namespace Neo.Json.Fuzzer.Generators
                 ["timeout"] = new JNumber(_random.Next(1000, 5000)),
                 ["retryCount"] = new JNumber(_random.Next(0, 3))
             };
-            
+
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Generates a structure designed to test concurrent modifications
         /// </summary>
         private string GenerateConcurrentModificationTest(JToken? token)
         {
             if (token == null) return "{}";
-            
+
             // Create a structure for testing concurrent modifications
             JObject root = new JObject();
-            
+
             // Create a shared data structure
             JObject sharedData = new JObject();
-            
+
             // Add some initial properties
             for (int i = 0; i < _random.Next(5, 15); i++)
             {
                 sharedData[$"prop_{i}"] = new JString(GenerateRandomString(_random.Next(5, 20)));
             }
-            
+
             root["sharedData"] = sharedData;
-            
+
             // Create a set of modification operations
             JArray modifications = new JArray();
-            
+
             for (int i = 0; i < _random.Next(10, 30); i++)
             {
                 // Randomly select an operation type
@@ -224,7 +224,7 @@ namespace Neo.Json.Fuzzer.Generators
                     1 => "update",
                     _ => "remove"
                 };
-                
+
                 // Create the modification operation
                 JObject operation = new JObject
                 {
@@ -233,20 +233,20 @@ namespace Neo.Json.Fuzzer.Generators
                     ["key"] = new JString($"prop_{_random.Next(20)}"), // Might conflict with existing or other operations
                     ["delay"] = new JNumber(_random.Next(10, 100))
                 };
-                
+
                 if (opType != "remove")
                 {
                     operation["value"] = new JString(GenerateRandomString(_random.Next(5, 20)));
                 }
-                
+
                 modifications.Add(operation);
             }
-            
+
             root["modifications"] = modifications;
-            
+
             return root.ToString();
         }
-        
+
         /// <summary>
         /// Simulates concurrent access to a JSON structure
         /// </summary>
@@ -255,16 +255,16 @@ namespace Neo.Json.Fuzzer.Generators
             try
             {
                 var token = JToken.Parse(json);
-                
+
                 if (token is JObject rootObj)
                 {
                     // Create a set of concurrent operations
                     int operationCount = _random.Next(2, MAX_CONCURRENT_OPERATIONS + 1);
                     List<Task> tasks = new List<Task>();
-                    
+
                     // Shared result to track modifications
                     JArray results = new JArray();
-                    
+
                     // Create and start concurrent tasks
                     for (int i = 0; i < operationCount; i++)
                     {
@@ -273,7 +273,7 @@ namespace Neo.Json.Fuzzer.Generators
                         {
                             // Simulate some processing time
                             await Task.Delay(_random.Next(10, 100));
-                            
+
                             // Perform a modification
                             string operationType = _random.Next(3) switch
                             {
@@ -281,7 +281,7 @@ namespace Neo.Json.Fuzzer.Generators
                                 1 => "update",
                                 _ => "add"
                             };
-                            
+
                             // Track the operation
                             JObject result = new JObject
                             {
@@ -289,7 +289,7 @@ namespace Neo.Json.Fuzzer.Generators
                                 ["operation"] = new JString(operationType),
                                 ["timestamp"] = new JString(DateTime.UtcNow.ToString("o"))
                             };
-                            
+
                             // Thread-safe add to results
                             lock (results)
                             {
@@ -297,16 +297,16 @@ namespace Neo.Json.Fuzzer.Generators
                             }
                         }));
                     }
-                    
+
                     // Wait for all tasks to complete
                     await Task.WhenAll(tasks);
-                    
+
                     // Add the results to the original object
                     rootObj["concurrentResults"] = results;
-                    
+
                     return rootObj.ToString();
                 }
-                
+
                 return json;
             }
             catch (Exception ex)
@@ -314,24 +314,24 @@ namespace Neo.Json.Fuzzer.Generators
                 return $"{{\"error\": \"{ex.Message}\"}}";
             }
         }
-        
+
         /// <summary>
         /// Generates a random string of specified length
         /// </summary>
         private string GenerateRandomString(int length)
         {
             StringBuilder sb = new StringBuilder(length);
-            
+
             for (int i = 0; i < length; i++)
             {
                 // Use ASCII printable characters
                 char c = (char)_random.Next(32, 127);
                 sb.Append(c);
             }
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Generates a specialized test JSON for concurrent access scenarios
         /// </summary>

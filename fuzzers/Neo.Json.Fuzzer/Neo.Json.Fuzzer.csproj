@@ -17,4 +17,8 @@
     <ProjectReference Include="..\..\src\Neo.Json\Neo.Json.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="output\" />
+  </ItemGroup>
+
 </Project>
