@@ -21,9 +21,8 @@ namespace Neo.IO.Caching
 
     internal class ECDsaCache : FIFOCache<ECPoint, ECDsaCacheItem>
     {
-        public ECDsaCache(int max_capacity = 20000) : base(max_capacity, EqualityComparer<ECPoint>.Default)
-        {
-        }
+        public ECDsaCache(int maxCapacity = 20000)
+            : base(maxCapacity, EqualityComparer<ECPoint>.Default) { }
 
         protected override ECPoint GetKeyForItem(ECDsaCacheItem item)
         {

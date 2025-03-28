@@ -18,6 +18,7 @@ using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
+using Neo.Sign;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,8 +61,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private readonly Settings dbftSettings;
         private readonly NeoSystem neoSystem;
 
-        public ConsensusService(NeoSystem neoSystem, Settings settings, Wallet wallet)
-            : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, wallet)) { }
+        public ConsensusService(NeoSystem neoSystem, Settings settings, ISigner signer)
+            : this(neoSystem, settings, new ConsensusContext(neoSystem, settings, signer)) { }
 
         internal ConsensusService(NeoSystem neoSystem, Settings settings, ConsensusContext context)
         {
@@ -338,9 +339,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             base.PostStop();
         }
 
-        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, Wallet wallet)
+        public static Props Props(NeoSystem neoSystem, Settings dbftSettings, ISigner signer)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, wallet));
+            return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, signer));
         }
 
         private static void Log(string message, LogLevel level = LogLevel.Info)
