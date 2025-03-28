@@ -9,9 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Akka.Actor;
 using Neo.Extensions;
 using Neo.Ledger;
@@ -22,6 +19,9 @@ using Neo.Plugins.DBFTPlugin.Types;
 using Neo.Sign;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
