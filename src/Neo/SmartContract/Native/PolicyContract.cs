@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The minimum block generation time that the committee can set in milliseconds.
         /// </summary>
-        public const uint MinBlockGenTime = 1000;
+        public const uint MinBlockGenTime = 100;
 
         /// <summary>
         /// The maximum block generation time that the committee can set in milliseconds.
@@ -179,7 +179,6 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for attribute.
         /// Gets the fee for attribute before Echidna hardfork.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -244,8 +243,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         public void SetMSPerBlock(ApplicationEngine engine, uint milliseconds)
         {
-            if (milliseconds is <= 0 or > MaxBlockGenTime)
-                throw new ArgumentOutOfRangeException(nameof(milliseconds), $"MSPerBlock should be positive and not greater than {MaxBlockGenTime}, got {milliseconds}");
+            if (milliseconds is <= MinBlockGenTime or > MaxBlockGenTime)
+                throw new ArgumentOutOfRangeException(nameof(milliseconds), $"MSPerBlock should be between {MinBlockGenTime} and {MaxBlockGenTime}, got {milliseconds}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException("invalid committee signature");
 
             // Since this method is only available after the HF_Echidna,
