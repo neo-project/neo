@@ -186,9 +186,9 @@ namespace Neo.UnitTests.SmartContract.Native
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                    Witness = Witness.Empty
                 },
-                Transactions = new Transaction[] { tx1, tx2 }
+                Transactions = [tx1, tx2],
             };
             var snapshot = _snapshotCache.CloneCache();
             var script = new ScriptBuilder();
@@ -202,7 +202,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Execute OnPersist script.
             engine.LoadScript(script.ToArray());
-            Assert.IsTrue(engine.Execute() == VMState.HALT);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
 
             // Check that proper amount of GAS was minted to block's Primary and the rest
             // will be minted to Notary nodes as a reward once Notary contract is implemented.

@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Microsoft.EntityFrameworkCore;
 using Neo.Cryptography;
 using Neo.Extensions;
@@ -27,12 +29,16 @@ namespace Neo.Wallets.SQLite
     /// </summary>
     class SQLiteWallet : Wallet
     {
-        private readonly object db_lock = new();
-        private readonly byte[] iv;
-        private readonly byte[] salt;
-        private readonly byte[] masterKey;
-        private readonly ScryptParameters scrypt;
-        private readonly Dictionary<UInt160, SQLiteWalletAccount> accounts;
+#if NET9_0_OR_GREATER
+        private readonly Lock _lock = new();
+#else
+        private readonly object _lock = new();
+#endif
+        private readonly byte[] _iv;
+        private readonly byte[] _salt;
+        private readonly byte[] _masterKey;
+        private readonly ScryptParameters _scrypt;
+        private readonly Dictionary<UInt160, SQLiteWalletAccount> _accounts;
 
         public override string Name => GetFileNameWithoutExtension(Path);
 
@@ -40,101 +46,107 @@ namespace Neo.Wallets.SQLite
         {
             get
             {
-                byte[] buffer = LoadStoredData("Version");
+                byte[]? buffer;
+                lock (_lock)
+                {
+                    using var ctx = new WalletDataContext(Path);
+                    buffer = LoadStoredData(ctx, "Version");
+                }
                 if (buffer == null || buffer.Length < 16) return new Version(0, 0);
-                int major = BinaryPrimitives.ReadInt32LittleEndian(buffer);
-                int minor = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(4));
-                int build = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(8));
-                int revision = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(12));
+                var major = BinaryPrimitives.ReadInt32LittleEndian(buffer);
+                var minor = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(4));
+                var build = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(8));
+                var revision = BinaryPrimitives.ReadInt32LittleEndian(buffer.AsSpan(12));
                 return new Version(major, minor, build, revision);
             }
         }
 
         private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings) : base(path, settings)
         {
-            salt = LoadStoredData("Salt");
-            byte[] passwordHash = LoadStoredData("PasswordHash");
-            if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
+            using var ctx = new WalletDataContext(Path);
+            _salt = LoadStoredData(ctx, "Salt")
+                ?? throw new FormatException("Salt was not found");
+            var passwordHash = LoadStoredData(ctx, "PasswordHash")
+                ?? throw new FormatException("PasswordHash was not found");
+            if (!passwordHash.SequenceEqual(passwordKey.Concat(_salt).ToArray().Sha256()))
                 throw new CryptographicException();
-            iv = LoadStoredData("IV");
-            masterKey = Decrypt(LoadStoredData("MasterKey"), passwordKey, iv);
-            scrypt = new ScryptParameters
+            _iv = LoadStoredData(ctx, "IV")
+                ?? throw new FormatException("IV was not found");
+            _masterKey = Decrypt(LoadStoredData(ctx, "MasterKey")
+                ?? throw new FormatException("MasterKey was not found"), passwordKey, _iv);
+            _scrypt = new ScryptParameters
                 (
-                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptN")),
-                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptR")),
-                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptP"))
+                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptN") ?? throw new FormatException("ScryptN was not found")),
+                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptR") ?? throw new FormatException("ScryptR was not found")),
+                BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData(ctx, "ScryptP") ?? throw new FormatException("ScryptP was not found"))
                 );
-            accounts = LoadAccounts();
+            _accounts = LoadAccounts(ctx);
         }
 
         private SQLiteWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
         {
-            iv = new byte[16];
-            salt = new byte[20];
-            masterKey = new byte[32];
-            this.scrypt = scrypt;
-            accounts = new Dictionary<UInt160, SQLiteWalletAccount>();
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            _iv = new byte[16];
+            _salt = new byte[20];
+            _masterKey = new byte[32];
+            _scrypt = scrypt;
+            _accounts = [];
+            using (var rng = RandomNumberGenerator.Create())
             {
-                rng.GetBytes(iv);
-                rng.GetBytes(salt);
-                rng.GetBytes(masterKey);
+                rng.GetBytes(_iv);
+                rng.GetBytes(_salt);
+                rng.GetBytes(_masterKey);
             }
-            Version version = Assembly.GetExecutingAssembly().GetName().Version;
-            byte[] versionBuffer = new byte[sizeof(int) * 4];
+            var version = Assembly.GetExecutingAssembly().GetName().Version!;
+            var versionBuffer = new byte[sizeof(int) * 4];
             BinaryPrimitives.WriteInt32LittleEndian(versionBuffer, version.Major);
             BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(4), version.Minor);
             BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(8), version.Build);
             BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(12), version.Revision);
-            BuildDatabase();
-            SaveStoredData("IV", iv);
-            SaveStoredData("Salt", salt);
-            SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
-            SaveStoredData("MasterKey", Encrypt(masterKey, passwordKey, iv));
-            SaveStoredData("Version", versionBuffer);
-            SaveStoredData("ScryptN", this.scrypt.N);
-            SaveStoredData("ScryptR", this.scrypt.R);
-            SaveStoredData("ScryptP", this.scrypt.P);
+            using var ctx = BuildDatabase();
+            SaveStoredData(ctx, "IV", _iv);
+            SaveStoredData(ctx, "Salt", _salt);
+            SaveStoredData(ctx, "PasswordHash", passwordKey.Concat(_salt).ToArray().Sha256());
+            SaveStoredData(ctx, "MasterKey", Encrypt(_masterKey, passwordKey, _iv));
+            SaveStoredData(ctx, "Version", versionBuffer);
+            SaveStoredData(ctx, "ScryptN", _scrypt.N);
+            SaveStoredData(ctx, "ScryptR", _scrypt.R);
+            SaveStoredData(ctx, "ScryptP", _scrypt.P);
+            ctx.SaveChanges();
         }
 
         private void AddAccount(SQLiteWalletAccount account)
         {
-            lock (accounts)
+            lock (_lock)
             {
-                if (accounts.TryGetValue(account.ScriptHash, out SQLiteWalletAccount account_old))
+                if (_accounts.TryGetValue(account.ScriptHash, out var account_old))
                 {
-                    if (account.Contract == null)
-                    {
-                        account.Contract = account_old.Contract;
-                    }
+                    account.Contract ??= account_old.Contract;
                 }
-                accounts[account.ScriptHash] = account;
-            }
-            lock (db_lock)
-            {
-                using WalletDataContext ctx = new(Path);
+                _accounts[account.ScriptHash] = account;
+
+                using var ctx = new WalletDataContext(Path);
                 if (account.HasKey)
                 {
-                    Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                    if (db_account == null)
+                    var dbAccount = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                    if (dbAccount == null)
                     {
-                        db_account = ctx.Accounts.Add(new Account
+                        dbAccount = ctx.Accounts.Add(new Account
                         {
-                            Nep2key = account.Key.Export(masterKey, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P),
+                            Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P),
                             PublicKeyHash = account.Key.PublicKeyHash.ToArray()
                         }).Entity;
                     }
                     else
                     {
-                        db_account.Nep2key = account.Key.Export(masterKey, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P);
+                        dbAccount.Nep2key = account.Key.Export(_masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P);
                     }
                 }
                 if (account.Contract != null)
                 {
-                    Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
-                    if (db_contract != null)
+                    var dbContract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
+                    if (dbContract != null)
                     {
-                        db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
+                        dbContract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
                     }
                     else
                     {
@@ -148,8 +160,8 @@ namespace Neo.Wallets.SQLite
                 }
                 //add address
                 {
-                    Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
-                    if (db_address == null)
+                    var dbAddress = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
+                    if (dbAddress == null)
                     {
                         ctx.Addresses.Add(new Address
                         {
@@ -161,34 +173,41 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        private void BuildDatabase()
+        private WalletDataContext BuildDatabase()
         {
-            using WalletDataContext ctx = new(Path);
+            var ctx = new WalletDataContext(Path);
             ctx.Database.EnsureDeleted();
             ctx.Database.EnsureCreated();
+            return ctx;
         }
 
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
-            if (!VerifyPassword(oldPassword)) return false;
-            byte[] passwordKey = ToAesKey(newPassword);
-            try
+            lock (_lock)
             {
-                SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
-                SaveStoredData("MasterKey", Encrypt(masterKey, passwordKey, iv));
-                return true;
-            }
-            finally
-            {
-                Array.Clear(passwordKey, 0, passwordKey.Length);
+                if (!VerifyPassword(oldPassword)) return false;
+
+                var passwordKey = ToAesKey(newPassword);
+                try
+                {
+                    using var ctx = new WalletDataContext(Path);
+                    SaveStoredData(ctx, "PasswordHash", passwordKey.Concat(_salt).ToArray().Sha256());
+                    SaveStoredData(ctx, "MasterKey", Encrypt(_masterKey, passwordKey, _iv));
+                    ctx.SaveChanges();
+                    return true;
+                }
+                finally
+                {
+                    Array.Clear(passwordKey, 0, passwordKey.Length);
+                }
             }
         }
 
         public override bool Contains(UInt160 scriptHash)
         {
-            lock (accounts)
+            lock (_lock)
             {
-                return accounts.ContainsKey(scriptHash);
+                return _accounts.ContainsKey(scriptHash);
             }
         }
 
@@ -200,20 +219,20 @@ namespace Neo.Wallets.SQLite
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="scrypt">The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.</param>
         /// <returns>The created wallet.</returns>
-        public static SQLiteWallet Create(string path, string password, ProtocolSettings settings, ScryptParameters scrypt = null)
+        public static SQLiteWallet Create(string path, string password, ProtocolSettings settings, ScryptParameters? scrypt = null)
         {
             return new SQLiteWallet(path, ToAesKey(password), settings, scrypt ?? ScryptParameters.Default);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            KeyPair key = new(privateKey);
-            VerificationContract contract = new()
+            var key = new KeyPair(privateKey);
+            var contract = new VerificationContract()
             {
                 Script = SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
-                ParameterList = new[] { ContractParameterType.Signature }
+                ParameterList = [ContractParameterType.Signature]
             };
-            SQLiteWalletAccount account = new(contract.ScriptHash, ProtocolSettings)
+            var account = new SQLiteWalletAccount(contract.ScriptHash, ProtocolSettings)
             {
                 Key = key,
                 Contract = contract
@@ -222,7 +241,7 @@ namespace Neo.Wallets.SQLite
             return account;
         }
 
-        public override WalletAccount CreateAccount(SmartContract.Contract contract, KeyPair key = null)
+        public override WalletAccount CreateAccount(SmartContract.Contract contract, KeyPair? key = null)
         {
             if (contract is not VerificationContract verification_contract)
             {
@@ -232,7 +251,7 @@ namespace Neo.Wallets.SQLite
                     ParameterList = contract.ParameterList
                 };
             }
-            SQLiteWalletAccount account = new(verification_contract.ScriptHash, ProtocolSettings)
+            var account = new SQLiteWalletAccount(verification_contract.ScriptHash, ProtocolSettings)
             {
                 Key = key,
                 Contract = verification_contract
@@ -243,87 +262,86 @@ namespace Neo.Wallets.SQLite
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
-            SQLiteWalletAccount account = new(scriptHash, ProtocolSettings);
+            var account = new SQLiteWalletAccount(scriptHash, ProtocolSettings);
             AddAccount(account);
             return account;
         }
 
         public override void Delete()
         {
-            using WalletDataContext ctx = new(Path);
-            ctx.Database.EnsureDeleted();
+            lock (_lock)
+            {
+                using var ctx = new WalletDataContext(Path);
+                ctx.Database.EnsureDeleted();
+            }
         }
 
         public override bool DeleteAccount(UInt160 scriptHash)
         {
-            SQLiteWalletAccount account;
-            lock (accounts)
+            lock (_lock)
             {
-                if (accounts.TryGetValue(scriptHash, out account))
-                    accounts.Remove(scriptHash);
-            }
-            if (account != null)
-            {
-                lock (db_lock)
+                if (_accounts.Remove(scriptHash, out var account))
                 {
-                    using WalletDataContext ctx = new(Path);
+                    using var ctx = new WalletDataContext(Path);
                     if (account.HasKey)
                     {
-                        Account db_account = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                        ctx.Accounts.Remove(db_account);
+                        var dbAccount = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                        ctx.Accounts.Remove(dbAccount);
                     }
                     if (account.Contract != null)
                     {
-                        Contract db_contract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
-                        ctx.Contracts.Remove(db_contract);
+                        var dbContract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Contracts.Remove(dbContract);
                     }
                     //delete address
                     {
-                        Address db_address = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
-                        ctx.Addresses.Remove(db_address);
+                        var dbAddress = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Addresses.Remove(dbAddress);
                     }
                     ctx.SaveChanges();
+                    return true;
                 }
-                return true;
             }
             return false;
         }
 
-        public override WalletAccount GetAccount(UInt160 scriptHash)
+        public override WalletAccount? GetAccount(UInt160 scriptHash)
         {
-            lock (accounts)
+            lock (_lock)
             {
-                accounts.TryGetValue(scriptHash, out SQLiteWalletAccount account);
+                _accounts.TryGetValue(scriptHash, out var account);
                 return account;
             }
         }
 
         public override IEnumerable<WalletAccount> GetAccounts()
         {
-            lock (accounts)
+            SQLiteWalletAccount[] accounts;
+
+            lock (_lock)
             {
-                foreach (SQLiteWalletAccount account in accounts.Values)
-                    yield return account;
+                accounts = [.. _accounts.Values];
             }
+
+            return accounts;
         }
 
-        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts()
+        private Dictionary<UInt160, SQLiteWalletAccount> LoadAccounts(WalletDataContext ctx)
         {
-            using WalletDataContext ctx = new(Path);
-            Dictionary<UInt160, SQLiteWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new SQLiteWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
-            foreach (Contract db_contract in ctx.Contracts.Include(p => p.Account))
+            var accounts = ctx.Addresses.Select(p => new SQLiteWalletAccount(p.ScriptHash, ProtocolSettings))
+                .ToDictionary(p => p.ScriptHash);
+            foreach (var dbContract in ctx.Contracts.Include(p => p.Account))
             {
-                VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
-                SQLiteWalletAccount account = accounts[contract.ScriptHash];
+                var contract = dbContract.RawData.AsSerializable<VerificationContract>();
+                var account = accounts[contract.ScriptHash];
                 account.Contract = contract;
-                account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, masterKey, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P));
+                account.Key = new KeyPair(GetPrivateKeyFromNEP2(dbContract.Account.Nep2key, _masterKey, ProtocolSettings.AddressVersion, _scrypt.N, _scrypt.R, _scrypt.P));
             }
             return accounts;
         }
 
-        private byte[] LoadStoredData(string name)
+        private static byte[]? LoadStoredData(WalletDataContext ctx, string name)
         {
-            using WalletDataContext ctx = new(Path);
             return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
         }
 
@@ -344,26 +362,16 @@ namespace Neo.Wallets.SQLite
             // Do nothing
         }
 
-        private void SaveStoredData(string name, int value)
+        private static void SaveStoredData(WalletDataContext ctx, string name, int value)
         {
-            byte[] data = new byte[sizeof(int)];
+            var data = new byte[sizeof(int)];
             BinaryPrimitives.WriteInt32LittleEndian(data, value);
-            SaveStoredData(name, data);
-        }
-
-        private void SaveStoredData(string name, byte[] value)
-        {
-            lock (db_lock)
-            {
-                using WalletDataContext ctx = new(Path);
-                SaveStoredData(ctx, name, value);
-                ctx.SaveChanges();
-            }
+            SaveStoredData(ctx, name, data);
         }
 
         private static void SaveStoredData(WalletDataContext ctx, string name, byte[] value)
         {
-            Key key = ctx.Keys.FirstOrDefault(p => p.Name == name);
+            var key = ctx.Keys.FirstOrDefault(p => p.Name == name);
             if (key == null)
             {
                 ctx.Keys.Add(new Key
@@ -380,38 +388,55 @@ namespace Neo.Wallets.SQLite
 
         public override bool VerifyPassword(string password)
         {
-            return ToAesKey(password).Concat(salt).ToArray().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+            byte[]? hash;
+
+            lock (_lock)
+            {
+                using var ctx = new WalletDataContext(Path);
+                hash = LoadStoredData(ctx, "PasswordHash");
+            }
+
+            if (hash == null) return false;
+
+            return ToAesKey(password).Concat(_salt).ToArray().Sha256().SequenceEqual(hash);
         }
 
         private static byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(data);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(iv);
+
             if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using Aes aes = Aes.Create();
+            using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
-            using ICryptoTransform encryptor = aes.CreateEncryptor(key, iv);
+            using var encryptor = aes.CreateEncryptor(key, iv);
             return encryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
         private static byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(data);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(iv);
+
             if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using Aes aes = Aes.Create();
+            using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
-            using ICryptoTransform decryptor = aes.CreateDecryptor(key, iv);
+            using var decryptor = aes.CreateDecryptor(key, iv);
             return decryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
         private static byte[] ToAesKey(string password)
         {
-            using SHA256 sha256 = SHA256.Create();
-            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-            byte[] passwordHash = sha256.ComputeHash(passwordBytes);
-            byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
+            var passwordBytes = Encoding.UTF8.GetBytes(password);
+            var passwordHash = SHA256.HashData(passwordBytes);
+            var passwordHash2 = SHA256.HashData(passwordHash);
             Array.Clear(passwordBytes, 0, passwordBytes.Length);
             Array.Clear(passwordHash, 0, passwordHash.Length);
             return passwordHash2;
         }
     }
 }
+
+#nullable disable

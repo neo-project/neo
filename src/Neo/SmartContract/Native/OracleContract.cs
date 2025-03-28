@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native
 
         private static ReadOnlySpan<byte> GetUrlHash(string url)
         {
-            return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
+            return Crypto.Hash160(url.ToStrictUtf8Bytes());
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -163,13 +163,14 @@ namespace Neo.SmartContract.Native
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request, response.Id);
-                OracleRequest request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
+                // Don't need to seal because it's read-only
+                var request = engine.SnapshotCache.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.SnapshotCache.Delete(key);
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
-                IdList list = engine.SnapshotCache.GetAndChange(key).GetInteroperable<IdList>();
+                using var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list);
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.SnapshotCache.Delete(key);
 
@@ -195,9 +196,9 @@ namespace Neo.SmartContract.Native
         private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
         {
             //Check the arguments
-            if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
-                || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
-                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength || callback.StartsWith('_')
+            if (url.GetStrictUtf8ByteCount() > MaxUrlLength
+                || (filter != null && filter.GetStrictUtf8ByteCount() > MaxFilterLength)
+                || callback.GetStrictUtf8ByteCount() > MaxCallbackLength || callback.StartsWith('_')
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 
@@ -215,7 +216,7 @@ namespace Neo.SmartContract.Native
             //Put the request to storage
             if (ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), new StorageItem(new OracleRequest
+            var request = new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForResponse,
@@ -224,10 +225,14 @@ namespace Neo.SmartContract.Native
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength, engine.Limits.MaxStackSize)
-            }));
+            };
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), StorageItem.CreateSealed(request));
 
             //Add the id to the IdList
-            var list = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
+            using var sealInterop = engine.SnapshotCache.GetAndChange
+                (CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList()))
+                .GetInteroperable(out IdList list);
+
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);

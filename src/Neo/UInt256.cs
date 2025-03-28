@@ -13,6 +13,7 @@ using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -167,7 +168,7 @@ namespace Neo
         /// <param name="s">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt256"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string s, out UInt256 result)
+        public static bool TryParse(string s, [NotNullWhen(true)] out UInt256 result)
         {
             result = null;
             var data = s.AsSpan(); // AsSpan is null safe

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.RegularExpressions;
 using Array = System.Array;
 
 namespace Neo.UnitTests.VMT
@@ -41,7 +42,7 @@ namespace Neo.UnitTests.VMT
         public void TestEmit()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.Emit(new OpCode[] { OpCode.PUSH0 });
+            sb.Emit([OpCode.PUSH0]);
             CollectionAssert.AreEqual(new[] { (byte)OpCode.PUSH0 }, sb.ToArray());
         }
 
@@ -63,7 +64,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual("{\"type\":\"Array\",\"value\":[{\"type\":\"Integer\",\"value\":\"5\"},{\"type\":\"ByteString\",\"value\":\"aGVsbG8gd29ybGQ=\"},{\"type\":\"ByteString\",\"value\":\"AQID\"},{\"type\":\"Boolean\",\"value\":true}]}", item.ToJson().ToString());
 
             var item2 = new Map();
-            item2[1] = new Pointer(new Script(new byte[0]), 0);
+            item2[1] = new Pointer(new Script(ReadOnlyMemory<byte>.Empty), 0);
 
             Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString());
         }
@@ -102,7 +103,7 @@ namespace Neo.UnitTests.VMT
 
             CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<VM.Types.Array>().Select(u => u.GetInteger()).ToArray());
 
-            expected = new BigInteger[] { };
+            expected = [];
             sb = new ScriptBuilder();
             sb.CreateArray(expected);
 
@@ -127,7 +128,7 @@ namespace Neo.UnitTests.VMT
 
             CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<Struct>().Select(u => u.GetInteger()).ToArray());
 
-            expected = new BigInteger[] { };
+            expected = [];
             sb = new ScriptBuilder();
             sb.CreateStruct(expected);
 
@@ -161,7 +162,7 @@ namespace Neo.UnitTests.VMT
         public void TestEmitAppCall2()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
+            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", [new ContractParameter(ContractParameterType.Integer)]);
             byte[] tempArray = new byte[38];
             tempArray[0] = (byte)OpCode.PUSH0;
             tempArray[1] = (byte)OpCode.PUSH1;
@@ -217,7 +218,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(30000000000000L, (long)new BigInteger(byteItem.ToParameter().Value as byte[]));
 
             StackItem boolItem = false;
-            Assert.AreEqual(false, (bool)boolItem.ToParameter().Value);
+            Assert.IsFalse((bool)boolItem.ToParameter().Value);
 
             StackItem intItem = new BigInteger(1000);
             Assert.AreEqual(1000, (BigInteger)intItem.ToParameter().Value);
@@ -242,7 +243,7 @@ namespace Neo.UnitTests.VMT
             Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetInteger());
 
             ContractParameter boolParameter = new ContractParameter { Type = ContractParameterType.Boolean, Value = false };
-            Assert.AreEqual(false, boolParameter.ToStackItem().GetBoolean());
+            Assert.IsFalse(boolParameter.ToStackItem().GetBoolean());
 
             ContractParameter intParameter = new ContractParameter { Type = ContractParameterType.Integer, Value = new BigInteger(1000) };
             Assert.AreEqual(1000, intParameter.ToStackItem().GetInteger());
@@ -253,7 +254,11 @@ namespace Neo.UnitTests.VMT
             ContractParameter h256Parameter = new ContractParameter { Type = ContractParameterType.Hash256, Value = UInt256.Zero };
             Assert.AreEqual(0, h256Parameter.ToStackItem().GetInteger());
 
-            ContractParameter pkParameter = new ContractParameter { Type = ContractParameterType.PublicKey, Value = ECPoint.Parse("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", ECCurve.Secp256r1) };
+            ContractParameter pkParameter = new ContractParameter
+            {
+                Type = ContractParameterType.PublicKey,
+                Value = ECPoint.Parse("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", ECCurve.Secp256r1)
+            };
             Assert.IsInstanceOfType(pkParameter.ToStackItem(), typeof(ByteString));
             Assert.AreEqual("02f9ec1fd0a98796cf75b586772a4ddd41a0af07a1dbdf86a7238f74fb72503575", pkParameter.ToStackItem().GetSpan().ToHexString());
 
@@ -266,10 +271,18 @@ namespace Neo.UnitTests.VMT
             ContractParameter interopParameter2 = new ContractParameter { Type = ContractParameterType.InteropInterface };
             Assert.AreEqual(StackItem.Null, interopParameter2.ToStackItem());
 
-            ContractParameter arrayParameter = new ContractParameter { Type = ContractParameterType.Array, Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter }.ToList() };
+            ContractParameter arrayParameter = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new[] { byteParameter, boolParameter, intParameter, h160Parameter, h256Parameter, pkParameter, strParameter }.ToList()
+            };
             Assert.AreEqual(1000, ((VM.Types.Array)arrayParameter.ToStackItem())[2].GetInteger());
 
-            ContractParameter mapParameter = new ContractParameter { Type = ContractParameterType.Map, Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) } };
+            ContractParameter mapParameter = new ContractParameter
+            {
+                Type = ContractParameterType.Map,
+                Value = new[] { new KeyValuePair<ContractParameter, ContractParameter>(byteParameter, pkParameter) }
+            };
             Assert.AreEqual(30000000000000L, (long)((Map)mapParameter.ToStackItem()).Keys.First().GetInteger());
         }
 
@@ -318,11 +331,13 @@ namespace Neo.UnitTests.VMT
             };
             parameter.Value = values;
             sb.EmitPush(parameter);
-            byte[] tempArray = new byte[4];
-            tempArray[0] = (byte)OpCode.PUSH0;
-            tempArray[1] = (byte)OpCode.PUSH0;
-            tempArray[2] = (byte)OpCode.PUSH2;
-            tempArray[3] = (byte)OpCode.PACK;
+            byte[] tempArray =
+            [
+                (byte)OpCode.PUSH0,
+                (byte)OpCode.PUSH0,
+                (byte)OpCode.PUSH2,
+                (byte)OpCode.PACK,
+            ];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -330,9 +345,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(new ContractParameter(ContractParameterType.String));
-            byte[] tempArray = new byte[2];
-            tempArray[0] = (byte)OpCode.PUSHDATA1;
-            tempArray[1] = 0x00;
+            byte[] tempArray = [(byte)OpCode.PUSHDATA1, 0x00];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -375,8 +388,7 @@ namespace Neo.UnitTests.VMT
                 Value = BigInteger.Zero
             };
             sb.EmitPush(parameter);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -385,8 +397,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             ContractParameter parameter = new ContractParameter(ContractParameterType.Integer);
             sb.EmitPush(parameter);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -394,8 +405,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(new ContractParameter(ContractParameterType.Boolean));
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSHF;
+            byte[] tempArray = [(byte)OpCode.PUSHF];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -403,9 +413,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(new ContractParameter(ContractParameterType.ByteArray));
-            byte[] tempArray = new byte[2];
-            tempArray[0] = (byte)OpCode.PUSHDATA1;
-            tempArray[1] = 0x00;
+            byte[] tempArray = [(byte)OpCode.PUSHDATA1, 0x00];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -453,8 +461,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(TestEnum.case1);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -463,8 +470,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             ulong temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -473,8 +479,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             long temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -483,8 +488,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             uint temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -493,8 +497,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             int temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -503,8 +506,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             ushort temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -513,8 +515,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             char temp = char.MinValue;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -523,8 +524,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             short temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -533,8 +533,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             byte temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -543,8 +542,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sbyte temp = 0;
             sb.EmitPush(temp);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -552,7 +550,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(UInt160.Zero);
-            byte[] tempArray = new byte[22];
+            var tempArray = new byte[22];
             tempArray[0] = (byte)OpCode.PUSHDATA1;
             tempArray[1] = 0x14;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -562,8 +560,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(BigInteger.Zero);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            byte[] tempArray = [(byte)OpCode.PUSH0];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -571,20 +568,15 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush("");
-            byte[] tempArray = new byte[2];
-            tempArray[0] = (byte)OpCode.PUSHDATA1;
-            tempArray[1] = 0x00;
+            byte[] tempArray = [(byte)OpCode.PUSHDATA1, 0x00];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
         private void TestEmitPush3ByteArray()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitPush(new byte[] { 0x01 });
-            byte[] tempArray = new byte[3];
-            tempArray[0] = (byte)OpCode.PUSHDATA1;
-            tempArray[1] = 0x01;
-            tempArray[2] = 0x01;
+            sb.EmitPush([0x01]);
+            byte[] tempArray = [(byte)OpCode.PUSHDATA1, 0x01, 0x01];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -592,8 +584,7 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(true);
-            byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSHT;
+            byte[] tempArray = [(byte)OpCode.PUSHT];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -602,13 +593,15 @@ namespace Neo.UnitTests.VMT
         {
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitSysCall(0, true);
-            byte[] tempArray = new byte[6];
-            tempArray[0] = (byte)OpCode.PUSHT;
-            tempArray[1] = (byte)OpCode.SYSCALL;
-            tempArray[2] = 0x00;
-            tempArray[3] = 0x00;
-            tempArray[4] = 0x00;
-            tempArray[5] = 0x00;
+            byte[] tempArray =
+            [
+                (byte)OpCode.PUSHT,
+                (byte)OpCode.SYSCALL,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+            ];
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -650,7 +643,7 @@ namespace Neo.UnitTests.VMT
             StackItem item = new ByteString(new byte[] { 0x00 });
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.ByteArray, parameter.Type);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00 }), Encoding.Default.GetString((byte[])parameter.Value));
+            Assert.AreEqual(Encoding.Default.GetString([0x00]), Encoding.Default.GetString((byte[])parameter.Value));
         }
 
         private void TestToParameter2VMBoolean()
@@ -658,7 +651,7 @@ namespace Neo.UnitTests.VMT
             StackItem item = StackItem.True;
             ContractParameter parameter = item.ToParameter();
             Assert.AreEqual(ContractParameterType.Boolean, parameter.Type);
-            Assert.AreEqual(true, parameter.Value);
+            Assert.IsTrue((bool?)parameter.Value);
         }
 
         private void TestToParameter2Map()
@@ -703,21 +696,32 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestCyclicReference()
         {
-            var map = new Map
-            {
-                [1] = 2,
-            };
-
-            var item = new VM.Types.Array
-            {
-                   map,
-                   map
-            };
+            var map = new Map { [1] = 2 };
+            var item = new VM.Types.Array { map, map };
 
             // just check there is no exception
-            var json = item.ToJson();
-            Assert.AreEqual(json.ToString(), @"{""type"":""Array"",""value"":[{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]},{""type"":""Map"",""value"":[{""key"":{""type"":""Integer"",""value"":""1""},""value"":{""type"":""Integer"",""value"":""2""}}]}]}");
+            var expected = """
+            {
+                "type":"Array",
+                "value":[
+                {
+                    "type":"Map",
+                    "value":[{
+                        "key":{"type":"Integer","value":"1"},
+                        "value":{"type":"Integer","value":"2"}
+                    }]
+                },{
+                    "type":"Map",
+                    "value":[{
+                        "key":{"type":"Integer","value":"1"},
+                        "value":{"type":"Integer","value":"2"}
+                    }]
+                }]
+            }
+            """;
 
+            var json = item.ToJson();
+            Assert.AreEqual(Regex.Replace(expected, @"\s+", ""), json.ToString());
             // check cyclic reference
             map[2] = item;
             var action = () => item.ToJson();
