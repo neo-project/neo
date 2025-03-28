@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
         public OracleRequest GetRequest(IReadOnlyStore snapshot, ulong id)
         {
             var key = CreateStorageKey(Prefix_Request, id);
-            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<OracleRequest>() : null;
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<OracleRequest>() : null;
         }
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
         {
             var key = CreateStorageKey(Prefix_Request);
             return snapshot.Find(key.ToArray())
-                .Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.Span[1..]), p.Value.GetInteroperable<OracleRequest>()));
+                .Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.Span[1..]), p.Value.GetInteroperableClone<OracleRequest>()));
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native
             foreach (ulong id in list)
             {
                 var key = CreateStorageKey(Prefix_Request, id);
-                yield return (id, snapshot[key].GetInteroperable<OracleRequest>());
+                yield return (id, snapshot[key].GetInteroperableClone<OracleRequest>());
             }
         }
 
