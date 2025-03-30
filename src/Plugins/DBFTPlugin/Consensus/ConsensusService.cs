@@ -27,7 +27,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
     partial class ConsensusService : UntypedActor
     {
         public class Start { }
-        private class Timer { public uint Height; public byte ViewNumber; }
+        internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context;
         private readonly IActorRef localNode;
