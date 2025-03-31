@@ -237,7 +237,7 @@ namespace Neo.SmartContract.Native
         /// The value must be between MinBlockGenTime and DefaultBlockGenTime.
         /// </summary>
         /// <param name="engine">The execution engine.</param>
-        /// <param name="milliseconds">The block generation time in milliseconds. Must be between MinBlockGenTime and DefaultBlockGenTime.</param>
+        /// <param name="milliseconds">The block generation time in milliseconds. Must be between MinBlockGenTime and MaxBlockGenTime.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided milliseconds are outside the allowed range.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
