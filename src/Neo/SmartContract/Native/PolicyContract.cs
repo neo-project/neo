@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The minimum block generation time that the committee can set in milliseconds.
         /// </summary>
-        public const uint MinBlockGenTime = 100;
+        public const uint MinBlockGenTime = 0;
 
         /// <summary>
         /// The maximum block generation time that the committee can set in milliseconds.
