@@ -148,8 +148,8 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
+        public uint GetAttributeFeeV1(IReadOnlyStore snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, true);
         }
