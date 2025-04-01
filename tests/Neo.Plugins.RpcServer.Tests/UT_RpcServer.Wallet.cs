@@ -14,14 +14,17 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 
 namespace Neo.Plugins.RpcServer.Tests
 {
@@ -82,6 +85,30 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestDumpPrivKey_AddressNotInWallet()
+        {
+            TestUtilOpenWallet();
+            // Generate a valid address not in the wallet
+            var key = new KeyPair(RandomNumberGenerator.GetBytes(32));
+            // Correct way to get ScriptHash from PublicKey
+            var scriptHashNotInWallet = Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash();
+            var addressNotInWallet = scriptHashNotInWallet.ToAddress(ProtocolSettings.Default.AddressVersion);
+
+            var ex = Assert.ThrowsExactly<NullReferenceException>(() => _rpcServer.DumpPrivKey(new JArray(addressNotInWallet)));
+            // Expects NullReferenceException because wallet.GetAccount(scriptHash) returns null, and then .GetKey() is called.
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestDumpPrivKey_InvalidAddressFormat()
+        {
+            TestUtilOpenWallet();
+            var invalidAddress = "NotAValidAddress";
+            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.DumpPrivKey(new JArray(invalidAddress)));
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
         public void TestGetNewAddress()
         {
             TestUtilOpenWallet();
@@ -118,6 +145,19 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestGetWalletBalance_InvalidAssetIdFormat()
+        {
+            TestUtilOpenWallet();
+            var invalidAssetId = "NotAValidAssetID";
+            var paramsArray = new JArray(invalidAssetId);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetWalletBalance(paramsArray));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid asset id");
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
         public void TestGetWalletUnclaimedGas()
         {
             TestUtilOpenWallet();
@@ -149,6 +189,43 @@ namespace Neo.Plugins.RpcServer.Tests
             var paramsArray = new JArray(privKey);
             var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.ImportPrivKey(paramsArray));
             Assert.AreEqual(exception.HResult, RpcError.NoOpenedWallet.Code);
+        }
+
+        [TestMethod]
+        public void TestImportPrivKey_InvalidWIF()
+        {
+            TestUtilOpenWallet();
+            var invalidWif = "ThisIsAnInvalidWIFString";
+            var paramsArray = new JArray(invalidWif);
+
+            // Expect FormatException during WIF decoding
+            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.ImportPrivKey(paramsArray));
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestImportPrivKey_KeyAlreadyExists()
+        {
+            TestUtilOpenWallet();
+            // Get a key already in the default test wallet
+            var existingAccount = _rpcServer.wallet.GetAccounts().First(a => a.HasKey);
+            var existingWif = existingAccount.GetKey().Export();
+            var paramsArray = new JArray(existingWif);
+
+            // Import the existing key
+            var result = (JObject)_rpcServer.ImportPrivKey(paramsArray);
+
+            // Verify the returned account details match the existing one
+            Assert.AreEqual(existingAccount.Address, result["address"].AsString());
+            Assert.AreEqual(existingAccount.HasKey, result["haskey"].AsBoolean());
+            Assert.AreEqual(existingAccount.Label, result["label"]?.AsString());
+            Assert.AreEqual(existingAccount.WatchOnly, result["watchonly"].AsBoolean());
+
+            // Ensure no duplicate account was created (check count remains same)
+            var initialCount = _rpcServer.wallet.GetAccounts().Count();
+            Assert.AreEqual(initialCount, _rpcServer.wallet.GetAccounts().Count(), "Account count should not change when importing existing key.");
+
+            TestUtilCloseWallet();
         }
 
         [TestMethod]
@@ -264,6 +341,105 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(signers[0]["account"], ValidatorScriptHash.ToString());
             Assert.AreEqual(signers[0]["scopes"], nameof(WitnessScope.CalledByEntry));
             _rpcServer.wallet = null;
+        }
+
+        [TestMethod]
+        public void TestSendToAddress_InvalidAssetId()
+        {
+            TestUtilOpenWallet();
+            var invalidAssetId = "NotAnAssetId";
+            var to = _walletAccount.Address;
+            var amount = "1";
+            var paramsArray = new JArray(invalidAssetId, to, amount);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(paramsArray));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid asset hash");
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestSendToAddress_InvalidToAddress()
+        {
+            TestUtilOpenWallet();
+            var assetId = NativeContract.GAS.Hash;
+            var invalidToAddress = "NotAnAddress";
+            var amount = "1";
+            var paramsArray = new JArray(assetId.ToString(), invalidToAddress, amount);
+
+            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.SendToAddress(paramsArray));
+            // Expect FormatException from AddressToScriptHash
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestSendToAddress_NegativeAmount()
+        {
+            TestUtilOpenWallet();
+            var assetId = NativeContract.GAS.Hash;
+            var to = _walletAccount.Address;
+            var amount = "-1";
+            var paramsArray = new JArray(assetId.ToString(), to, amount);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(paramsArray));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            // Implementation checks amount.Sign > 0
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestSendToAddress_ZeroAmount()
+        {
+            TestUtilOpenWallet();
+            var assetId = NativeContract.GAS.Hash;
+            var to = _walletAccount.Address;
+            var amount = "0";
+            var paramsArray = new JArray(assetId.ToString(), to, amount);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(paramsArray));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            // Implementation checks amount.Sign > 0
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestSendToAddress_InsufficientFunds()
+        {
+            TestUtilOpenWallet();
+            var assetId = NativeContract.GAS.Hash;
+            var to = _walletAccount.Address;
+            var hugeAmount = "100000000000000000"; // Exceeds likely balance
+            var paramsArray = new JArray(assetId.ToString(), to, hugeAmount);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(paramsArray));
+            Assert.AreEqual(RpcError.InsufficientFunds.Code, ex.HResult);
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestSendMany_InvalidFromAddress()
+        {
+            TestUtilOpenWallet();
+            var invalidFrom = "NotAnAddress";
+            var to = new JArray { new JObject { ["asset"] = NativeContract.GAS.Hash.ToString(), ["value"] = "1", ["address"] = _walletAccount.Address } };
+            var paramsArray = new JArray(invalidFrom, to);
+
+            var ex = Assert.ThrowsExactly<FormatException>(() => _rpcServer.SendMany(paramsArray));
+            TestUtilCloseWallet();
+        }
+
+        [TestMethod]
+        public void TestSendMany_EmptyOutputs()
+        {
+            TestUtilOpenWallet();
+            var from = _walletAccount.Address;
+            var emptyTo = new JArray(); // Empty output array
+            var paramsArray = new JArray(from, emptyTo);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendMany(paramsArray));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Argument 'to' can't be empty");
+            TestUtilCloseWallet();
         }
 
         [TestMethod]
@@ -406,7 +582,7 @@ namespace Neo.Plugins.RpcServer.Tests
             var snapshot = _neoSystem.GetSnapshotCache();
             var tx = new Transaction
             {
-                Nonce = 233,
+                Nonce = 233, // Restore original nonce
                 ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + _neoSystem.Settings.MaxValidUntilBlockIncrement,
                 Signers = [new Signer() { Account = ValidatorScriptHash, Scopes = WitnessScope.CalledByEntry }],
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -436,7 +612,6 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.InvokeContractVerify([deployedScriptHash.ToString(), new JArray([new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }, new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "32" }]), validatorSigner]),
                 $"Invalid contract verification function - The smart contract {deployedScriptHash} haven't got verify method with 2 input parameters.");
         }
-
 
         private void TestUtilOpenWallet([CallerMemberName] string callerMemberName = "")
         {

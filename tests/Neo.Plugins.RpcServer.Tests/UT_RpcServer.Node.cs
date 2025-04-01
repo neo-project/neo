@@ -13,12 +13,15 @@ using Akka.Actor;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Json;
+using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence.Providers;
 using Neo.SmartContract.Native;
 using Neo.UnitTests;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace Neo.Plugins.RpcServer.Tests
@@ -53,6 +56,45 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestGetPeers_NoUnconnected()
+        {
+            // Setup a new system to ensure clean peer state
+            var settings = TestProtocolSettings.SoleNode;
+            var memoryStoreProvider = new TestMemoryStoreProvider(new MemoryStore());
+            var neoSystem = new NeoSystem(settings, memoryStoreProvider);
+            var rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
+
+            // Get peers immediately (should have no unconnected)
+            var result = rpcServer.GetPeers();
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            var json = (JObject)result;
+            Assert.IsTrue(json.ContainsProperty("unconnected"));
+            Assert.AreEqual(0, (json["unconnected"] as JArray).Count);
+            Assert.IsTrue(json.ContainsProperty("bad"));
+            Assert.IsTrue(json.ContainsProperty("connected"));
+            // Cannot guarantee no connected peers easily in test, but check unconnected
+        }
+
+        [TestMethod]
+        public void TestGetPeers_NoConnected()
+        {
+            // Setup a new system to ensure clean peer state
+            var settings = TestProtocolSettings.SoleNode;
+            var memoryStoreProvider = new TestMemoryStoreProvider(new MemoryStore());
+            var neoSystem = new NeoSystem(settings, memoryStoreProvider);
+            var rpcServer = new RpcServer(neoSystem, RpcServerSettings.Default);
+
+            // Get peers immediately (should have no connected)
+            var result = rpcServer.GetPeers();
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            var json = (JObject)result;
+            Assert.IsTrue(json.ContainsProperty("unconnected"));
+            Assert.IsTrue(json.ContainsProperty("bad"));
+            Assert.IsTrue(json.ContainsProperty("connected"));
+            Assert.AreEqual(0, (json["connected"] as JArray).Count); // Directly check connected count
+        }
+
+        [TestMethod]
         public void TestGetVersion()
         {
             var result = _rpcServer.GetVersion();
@@ -75,6 +117,38 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.IsTrue(protocol.ContainsProperty("memorypoolmaxtransactions"));
             Assert.IsTrue(protocol.ContainsProperty("standbycommittee"));
             Assert.IsTrue(protocol.ContainsProperty("seedlist"));
+        }
+
+        [TestMethod]
+        public void TestGetVersion_HardforksStructure()
+        {
+            var result = _rpcServer.GetVersion();
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            var json = (JObject)result;
+
+            Assert.IsTrue(json.ContainsProperty("protocol"));
+            var protocol = (JObject)json["protocol"];
+            Assert.IsTrue(protocol.ContainsProperty("hardforks"));
+            var hardforks = (JArray)protocol["hardforks"];
+
+            // Check if there are any hardforks defined in settings
+            if (hardforks.Count > 0)
+            {
+                Assert.IsTrue(hardforks.All(hf => hf is JObject)); // Each item should be an object
+                foreach (JObject hfJson in hardforks)
+                {
+                    Assert.IsTrue(hfJson.ContainsProperty("name"));
+                    Assert.IsTrue(hfJson.ContainsProperty("blockheight"));
+                    Assert.IsInstanceOfType(hfJson["name"], typeof(JString));
+                    Assert.IsInstanceOfType(hfJson["blockheight"], typeof(JNumber));
+                    Assert.IsFalse(hfJson["name"].AsString().StartsWith("HF_")); // Check if prefix was stripped
+                }
+            }
+            // If no hardforks are defined, the array should be empty
+            else
+            {
+                Assert.AreEqual(0, _neoSystem.Settings.Hardforks.Count);
+            }
         }
 
         #region SendRawTransaction Tests
@@ -212,6 +286,36 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(RpcError.AlreadyExists.Code, exception.HResult);
         }
 
+        [TestMethod]
+        public void TestSendRawTransaction_MempoolFull()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            _neoSystem.MemPool.Clear(); // Start with an empty mempool
+
+            // Fill the mempool
+            var maxTransactions = (int)_neoSystem.Settings.MemoryPoolMaxTransactions;
+            for (int i = 0; i < maxTransactions; i++)
+            {
+                // Create unique, valid transactions
+                var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount.ScriptHash, nonce: (uint)(1000 + i));
+                var addResult = _neoSystem.MemPool.TryAdd(tx, snapshot);
+                // Check if the transaction was successfully added
+                Assert.AreEqual(VerifyResult.Succeed, addResult, $"Failed to add transaction {i + 1} to fill mempool. Result: {addResult}");
+            }
+            snapshot.Commit();
+
+            Assert.AreEqual(maxTransactions, _neoSystem.MemPool.VerifiedCount, "Mempool did not fill as expected");
+
+            // Create one more transaction that should fail due to full pool
+            var extraTx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount.ScriptHash, nonce: (uint)(1000 + maxTransactions));
+            var txString = Convert.ToBase64String(extraTx.ToArray());
+
+            // Send the transaction and expect OutOfMemory error
+            var exception = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendRawTransaction(txString),
+                "Should throw RpcException for mempool full");
+            Assert.AreEqual(RpcError.MempoolCapReached.Code, exception.HResult);
+        }
+
         #endregion
 
         #region SubmitBlock Tests
@@ -264,6 +368,36 @@ namespace Neo.Plugins.RpcServer.Tests
             var blockString = Convert.ToBase64String(block.ToArray());
             var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(blockString),
                 "Should throw RpcException for invalid block");
+            Assert.AreEqual(RpcError.VerificationFailed.Code, exception.HResult);
+        }
+
+        [TestMethod]
+        public void TestSubmitBlock_InvalidPrevHash()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 1);
+            // Intentionally set wrong PrevHash
+            block.Header.PrevHash = TestUtils.RandomUInt256();
+
+            var blockString = Convert.ToBase64String(block.ToArray());
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(blockString),
+                "Should throw RpcException for invalid previous hash");
+            // The specific error might depend on where verification fails, VerificationFailed is a likely candidate
+            Assert.AreEqual(RpcError.VerificationFailed.Code, exception.HResult);
+        }
+
+        [TestMethod]
+        public void TestSubmitBlock_InvalidIndex()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 1);
+            // Intentionally set wrong Index
+            block.Header.Index = NativeContract.Ledger.CurrentIndex(snapshot) + 10;
+
+            var blockString = Convert.ToBase64String(block.ToArray());
+            var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SubmitBlock(blockString),
+                "Should throw RpcException for invalid block index");
+            // The specific error might depend on where verification fails, VerificationFailed is likely
             Assert.AreEqual(RpcError.VerificationFailed.Code, exception.HResult);
         }
 

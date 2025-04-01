@@ -22,6 +22,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Array = System.Array;
@@ -156,6 +157,193 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestInvokeFunction_FaultState()
+        {
+            // Attempt to call a non-existent method
+            var functionName = "nonExistentMethod";
+            var resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), functionName, new JArray([])));
+
+            Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
+            Assert.IsNotNull(resp["exception"].AsString());
+            // The specific exception might vary, but it should indicate method not found or similar
+            StringAssert.Contains(resp["exception"].AsString(), "Method not found");
+        }
+
+        [TestMethod]
+        public void TestInvokeScript_FaultState()
+        {
+            // Use a script that explicitly ABORTs
+            byte[] abortScript;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.ABORT);
+                abortScript = sb.ToArray();
+            }
+            var scriptBase64 = Convert.ToBase64String(abortScript);
+
+            var resp = (JObject)_rpcServer.InvokeScript(new JArray(scriptBase64));
+
+            Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
+            Assert.IsNotNull(resp["exception"].AsString());
+            StringAssert.Contains(resp["exception"].AsString(), "ABORT is executed"); // Check for specific ABORT message
+        }
+
+        [TestMethod]
+        public void TestInvokeScript_GasLimitExceeded()
+        {
+            // Simple infinite loop script: JMP back to itself
+            byte[] loopScript;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.EmitJump(OpCode.JMP_L, 0); // JMP_L offset 0 jumps to the start of the JMP instruction
+                loopScript = sb.ToArray();
+            }
+            var scriptBase64 = Convert.ToBase64String(loopScript);
+
+            // Use a temporary RpcServer with a very low MaxGasInvoke setting
+            var lowGasSettings = RpcServerSettings.Default with
+            {
+                MaxGasInvoke = 1_000_000 // Low gas limit (1 GAS = 100,000,000 datoshi)
+            };
+            var tempRpcServer = new RpcServer(_neoSystem, lowGasSettings);
+
+            var resp = (JObject)tempRpcServer.InvokeScript(new JArray(scriptBase64));
+
+            Assert.AreEqual(nameof(VMState.FAULT), resp["state"].AsString());
+            Assert.IsNotNull(resp["exception"].AsString());
+            StringAssert.Contains(resp["exception"].AsString(), "Insufficient GAS");
+            Assert.IsTrue(long.Parse(resp["gasconsumed"].AsString()) > lowGasSettings.MaxGasInvoke);
+        }
+
+        [TestMethod]
+        public void TestInvokeFunction_InvalidSignerScope()
+        {
+            var invalidSigner = new JArray(new JObject()
+            {
+                ["account"] = ValidatorScriptHash.ToString(),
+                ["scopes"] = "InvalidScopeValue", // Invalid enum value
+            });
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "symbol", new JArray([]), invalidSigner)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid WitnessScope"); // Or similar parsing error message
+        }
+
+        [TestMethod]
+        public void TestInvokeFunction_InvalidSignerAccount()
+        {
+            var invalidSigner = new JArray(new JObject()
+            {
+                ["account"] = "NotAValidHash160",
+                ["scopes"] = nameof(WitnessScope.CalledByEntry),
+            });
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "symbol", new JArray([]), invalidSigner)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid address format"); // Or similar parsing error
+        }
+
+        [TestMethod]
+        public void TestInvokeFunction_InvalidWitnessInvocation()
+        {
+            // Construct signer/witness JSON manually with invalid base64
+            var invalidWitnessSigner = new JArray(new JObject()
+            {
+                ["account"] = ValidatorScriptHash.ToString(),
+                ["scopes"] = nameof(WitnessScope.CalledByEntry),
+                ["invocation"] = "!@#$", // Not valid Base64
+                ["verification"] = Convert.ToBase64String(ValidatorScriptHash.ToArray()) // Valid verification for contrast
+            });
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "symbol", new JArray([]), invalidWitnessSigner)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid Base64 string");
+        }
+
+        [TestMethod]
+        public void TestInvokeFunction_InvalidWitnessVerification()
+        {
+            var invalidWitnessSigner = new JArray(new JObject()
+            {
+                ["account"] = ValidatorScriptHash.ToString(),
+                ["scopes"] = nameof(WitnessScope.CalledByEntry),
+                ["invocation"] = Convert.ToBase64String(new byte[] { 0x01 }), // Valid invocation
+                ["verification"] = "!@#$" // Not valid Base64
+            });
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "symbol", new JArray([]), invalidWitnessSigner)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid Base64 string");
+        }
+
+        [TestMethod]
+        public void TestInvokeFunction_InvalidContractParameter()
+        {
+            // Call transfer which expects Hash160, Hash160, Integer, Any
+            // Provide an invalid value for the Integer parameter
+            var invalidParams = new JArray([
+                new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = MultisigScriptHash.ToString() },
+                new JObject() { ["type"] = nameof(ContractParameterType.Hash160), ["value"] = ValidatorScriptHash.ToString() },
+                new JObject() { ["type"] = nameof(ContractParameterType.Integer), ["value"] = "NotAnInteger" }, // Invalid value
+                new JObject() { ["type"] = nameof(ContractParameterType.Any) },
+            ]);
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "transfer", invalidParams, multisigSigner)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Cannot convert NotAnInteger to type Integer"); // Or similar conversion error
+        }
+
+        [TestMethod]
+        public void TestInvokeScript_InvalidBase64()
+        {
+            var invalidBase64Script = "ThisIsNotValidBase64***";
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.InvokeScript(new JArray(invalidBase64Script)));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid Base64 string");
+        }
+
+        [TestMethod]
+        public void TestInvokeScript_WithDiagnostics()
+        {
+            // Use the NeoTransferScript which modifies NEO and GAS balances
+            // Need valid signers for the transfer to simulate correctly (even though wallet isn't signing here)
+            var transferSigners = new JArray(new JObject()
+            {
+                // Use Multisig as sender, which has initial balance
+                ["account"] = MultisigScriptHash.ToString(),
+                ["scopes"] = nameof(WitnessScope.CalledByEntry),
+            });
+
+            // Invoke with diagnostics enabled
+            var resp = (JObject)_rpcServer.InvokeScript(new JArray(NeoTransferScript, transferSigners, true));
+
+            Assert.IsTrue(resp.ContainsProperty("diagnostics"));
+            var diagnostics = (JObject)resp["diagnostics"];
+
+            // Verify Invoked Contracts structure
+            Assert.IsTrue(diagnostics.ContainsProperty("invokedcontracts"));
+            var invokedContracts = (JObject)diagnostics["invokedcontracts"];
+            Assert.IsTrue(invokedContracts.ContainsProperty("hash")); // Root call
+            Assert.AreEqual(NeoToken.NEO.Hash.ToString(), invokedContracts["hash"].AsString());
+            Assert.IsTrue(invokedContracts.ContainsProperty("call")); // Nested calls
+            var calls = (JArray)invokedContracts["call"];
+            Assert.IsTrue(calls.Count >= 1); // Should call at least GAS contract for claim
+            Assert.IsTrue(calls.Any(c => c["hash"].AsString() == GasToken.GAS.Hash.ToString()));
+
+            // Verify Storage Changes
+            Assert.IsTrue(diagnostics.ContainsProperty("storagechanges"));
+            var storageChanges = (JArray)diagnostics["storagechanges"];
+            Assert.IsTrue(storageChanges.Count > 0, "Expected storage changes for transfer");
+            // Check structure of a storage change item
+            var firstChange = (JObject)storageChanges[0];
+            Assert.IsTrue(firstChange.ContainsProperty("state"));
+            Assert.IsTrue(firstChange.ContainsProperty("key"));
+            Assert.IsTrue(firstChange.ContainsProperty("value"));
+            Assert.IsTrue(new[] { "Added", "Changed", "Deleted" }.Contains(firstChange["state"].AsString()));
+        }
+
+        [TestMethod]
         public void TestTraverseIterator()
         {
             // GetAllCandidates that should return 0 candidates
@@ -241,6 +429,52 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestIteratorMethods_SessionsDisabled()
+        {
+            // Use a temporary RpcServer with sessions disabled
+            var sessionsDisabledSettings = RpcServerSettings.Default with { SessionEnabled = false };
+            var tempRpcServer = new RpcServer(_neoSystem, sessionsDisabledSettings);
+
+            var randomSessionId = Guid.NewGuid().ToString();
+            var randomIteratorId = Guid.NewGuid().ToString();
+
+            // Test TraverseIterator
+            var exTraverse = Assert.ThrowsExactly<RpcException>(() => tempRpcServer.TraverseIterator([randomSessionId, randomIteratorId, 10]));
+            Assert.AreEqual(RpcError.SessionsDisabled.Code, exTraverse.HResult);
+
+            // Test TerminateSession
+            var exTerminate = Assert.ThrowsExactly<RpcException>(() => tempRpcServer.TerminateSession([randomSessionId]));
+            Assert.AreEqual(RpcError.SessionsDisabled.Code, exTerminate.HResult);
+        }
+
+        [TestMethod]
+        public void TestTraverseIterator_CountLimitExceeded()
+        {
+            // Need an active session and iterator first
+            JObject resp = (JObject)_rpcServer.InvokeFunction(new JArray(NeoToken.NEO.Hash.ToString(), "getAllCandidates", new JArray([]), validatorSigner, true));
+            string sessionId = resp["session"].AsString();
+            string iteratorId = resp["stack"][0]["id"].AsString();
+
+            // Request more items than allowed
+            int requestedCount = (int)_rpcServerSettings.MaxIteratorResultItems + 1;
+
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.TraverseIterator([sessionId, iteratorId, requestedCount]));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            StringAssert.Contains(ex.Message, "Invalid iterator items count");
+
+            // Clean up the session
+            _rpcServer.TerminateSession([sessionId]);
+        }
+
+        [TestMethod]
+        public void TestTerminateSession_UnknownSession()
+        {
+            var unknownSessionId = Guid.NewGuid().ToString();
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.TerminateSession([unknownSessionId]));
+            Assert.AreEqual(RpcError.UnknownSession.Code, ex.HResult);
+        }
+
+        [TestMethod]
         public void TestGetUnclaimedGas()
         {
             JObject resp = (JObject)_rpcServer.GetUnclaimedGas([MultisigAddress]);
@@ -249,6 +483,16 @@ namespace Neo.Plugins.RpcServer.Tests
             resp = (JObject)_rpcServer.GetUnclaimedGas([ValidatorAddress]);
             Assert.AreEqual(resp["unclaimed"], "0");
             Assert.AreEqual(resp["address"], ValidatorAddress);
+        }
+
+        [TestMethod]
+        public void TestGetUnclaimedGas_InvalidAddress()
+        {
+            var invalidAddress = "ThisIsNotAValidNeoAddress";
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetUnclaimedGas([invalidAddress]));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            // The underlying error is likely FormatException during AddressToScriptHash
+            StringAssert.Contains(ex.Message, "Invalid address format");
         }
     }
 }

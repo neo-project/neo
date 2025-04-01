@@ -93,6 +93,69 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestGetBlock_Genesis()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var genesisBlock = NativeContract.Ledger.GetBlock(snapshot, 0);
+
+            // Test non-verbose
+            var resultNonVerbose = _rpcServer.GetBlock(new BlockHashOrIndex(0), false);
+            var blockArr = Convert.FromBase64String(resultNonVerbose.AsString());
+            var deserializedBlock = blockArr.AsSerializable<Block>();
+            Assert.AreEqual(genesisBlock.Hash, deserializedBlock.Hash);
+
+            // Test verbose
+            var resultVerbose = _rpcServer.GetBlock(new BlockHashOrIndex(0), true);
+            var expectedJson = genesisBlock.ToJson(TestProtocolSettings.Default);
+            expectedJson["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - genesisBlock.Index + 1;
+            Assert.AreEqual(expectedJson["hash"].AsString(), resultVerbose["hash"].AsString());
+            Assert.AreEqual(expectedJson["size"].AsNumber(), resultVerbose["size"].AsNumber());
+            Assert.AreEqual(expectedJson["version"].AsNumber(), resultVerbose["version"].AsNumber());
+            Assert.AreEqual(expectedJson["merkleroot"].AsString(), resultVerbose["merkleroot"].AsString());
+            Assert.AreEqual(expectedJson["confirmations"].AsNumber(), resultVerbose["confirmations"].AsNumber());
+            // Genesis block should have 0 transactions
+            Assert.AreEqual(0, ((JArray)resultVerbose["tx"]).Count);
+        }
+
+        [TestMethod]
+        public void TestGetBlock_NoTransactions()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            // Create a block with index 1 (after genesis) with no transactions
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Version = 0,
+                    PrevHash = NativeContract.Ledger.CurrentHash(snapshot),
+                    MerkleRoot = UInt256.Zero, // No transactions
+                    Timestamp = DateTime.UtcNow.ToTimestampMS(),
+                    Index = NativeContract.Ledger.CurrentIndex(snapshot) + 1,
+                    NextConsensus = UInt160.Zero, // Simplified for test
+                    Witness = new Witness { InvocationScript = System.Array.Empty<byte>(), VerificationScript = System.Array.Empty<byte>() }
+                },
+                Transactions = System.Array.Empty<Transaction>()
+            };
+
+            TestUtils.BlocksAdd(snapshot, block.Hash, block);
+            snapshot.Commit();
+
+            // Test non-verbose
+            var resultNonVerbose = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), false);
+            var blockArr = Convert.FromBase64String(resultNonVerbose.AsString());
+            var deserializedBlock = blockArr.AsSerializable<Block>();
+            Assert.AreEqual(block.Hash, deserializedBlock.Hash);
+            Assert.AreEqual(0, deserializedBlock.Transactions.Length);
+
+            // Test verbose
+            var resultVerbose = _rpcServer.GetBlock(new BlockHashOrIndex(block.Index), true);
+            var expectedJson = block.ToJson(TestProtocolSettings.Default);
+            expectedJson["confirmations"] = NativeContract.Ledger.CurrentIndex(snapshot) - block.Index + 1;
+            Assert.AreEqual(expectedJson["hash"].AsString(), resultVerbose["hash"].AsString());
+            Assert.AreEqual(0, ((JArray)resultVerbose["tx"]).Count);
+        }
+
+        [TestMethod]
         public void TestGetBlockCount()
         {
             var expectedCount = 1;
@@ -167,6 +230,31 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestGetContractState_Native_CaseInsensitive()
+        {
+            var gasTokenHash = NativeContract.GAS.Hash;
+            var resultLower = _rpcServer.GetContractState(new ContractNameOrHashOrId("gastoken"));
+            var resultUpper = _rpcServer.GetContractState(new ContractNameOrHashOrId("GASTOKEN"));
+            var resultMixed = _rpcServer.GetContractState(new ContractNameOrHashOrId("GasToken"));
+
+            Assert.AreEqual(gasTokenHash.ToString(), ((JObject)resultLower)["hash"].AsString());
+            Assert.AreEqual(gasTokenHash.ToString(), ((JObject)resultUpper)["hash"].AsString());
+            Assert.AreEqual(gasTokenHash.ToString(), ((JObject)resultMixed)["hash"].AsString());
+        }
+
+        [TestMethod]
+        public void TestGetContractState_InvalidFormat()
+        {
+            // Invalid Hash format (not hex)
+            var exHash = Assert.ThrowsExactly<FormatException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId("0xInvalidHashString")));
+
+            // Invalid ID format (not integer - although ContractNameOrHashOrId constructor might catch this)
+            // Assuming the input could come as a JValue string that fails parsing later
+            // For now, let's test with an invalid name that doesn't match natives or parse as hash/id
+            var exName = Assert.ThrowsExactly<FormatException>(() => _ = _rpcServer.GetContractState(new ContractNameOrHashOrId("InvalidContractName")));
+        }
+
+        [TestMethod]
         public void TestGetRawMemPool()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
@@ -179,6 +267,60 @@ namespace Neo.Plugins.RpcServer.Tests
 
             result = _rpcServer.GetRawMemPool(true);
             Assert.IsTrue(((JArray)result["verified"]).Any(p => p.AsString() == tx.Hash.ToString()));
+        }
+
+        [TestMethod]
+        public void TestGetRawMemPool_Empty()
+        {
+            // Ensure mempool is clear (redundant with TestCleanup but good for clarity)
+            _neoSystem.MemPool.Clear();
+
+            // Test without unverified
+            var result = _rpcServer.GetRawMemPool();
+            Assert.IsInstanceOfType(result, typeof(JArray));
+            Assert.AreEqual(0, ((JArray)result).Count);
+
+            // Test with unverified
+            result = _rpcServer.GetRawMemPool(true);
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            Assert.AreEqual(0, ((JArray)((JObject)result)["verified"]).Count);
+            Assert.AreEqual(0, ((JArray)((JObject)result)["unverified"]).Count);
+            Assert.IsTrue(((JObject)result).ContainsProperty("height"));
+        }
+
+        [TestMethod]
+        public void TestGetRawMemPool_MixedVerifiedUnverified()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            _neoSystem.MemPool.Clear();
+
+            // Add two distinct transactions
+            var tx1 = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount.ScriptHash, nonce: 1);
+            var tx2 = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount.ScriptHash, nonce: 2);
+            _neoSystem.MemPool.TryAdd(tx1, snapshot);
+            _neoSystem.MemPool.TryAdd(tx2, snapshot);
+            snapshot.Commit();
+
+            // Get the expected state directly from the mempool
+            _neoSystem.MemPool.GetVerifiedAndUnverifiedTransactions(out var verified, out var unverified);
+            int expectedVerifiedCount = verified.Count();
+            int expectedUnverifiedCount = unverified.Count();
+            var expectedVerifiedHashes = verified.Select(tx => tx.Hash.ToString()).ToHashSet();
+            var expectedUnverifiedHashes = unverified.Select(tx => tx.Hash.ToString()).ToHashSet();
+
+            Assert.IsTrue(expectedVerifiedCount + expectedUnverifiedCount > 0, "Test setup failed: No transactions in mempool");
+
+            // Call the RPC method
+            var result = _rpcServer.GetRawMemPool(true);
+            Assert.IsInstanceOfType(result, typeof(JObject));
+            var actualVerifiedHashes = ((JArray)((JObject)result)["verified"]).Select(p => p.AsString()).ToHashSet();
+            var actualUnverifiedHashes = ((JArray)((JObject)result)["unverified"]).Select(p => p.AsString()).ToHashSet();
+
+            // Assert counts and contents match the pool's state
+            Assert.AreEqual(expectedVerifiedCount, actualVerifiedHashes.Count);
+            Assert.AreEqual(expectedUnverifiedCount, actualUnverifiedHashes.Count);
+            CollectionAssert.AreEquivalent(expectedVerifiedHashes.ToList(), actualVerifiedHashes.ToList());
+            CollectionAssert.AreEquivalent(expectedUnverifiedHashes.ToList(), actualUnverifiedHashes.ToList());
         }
 
         [TestMethod]
@@ -196,6 +338,36 @@ namespace Neo.Plugins.RpcServer.Tests
             result = _rpcServer.GetRawTransaction(tx.Hash, false);
             var tx2 = Convert.FromBase64String(result.AsString()).AsSerializable<Transaction>();
             Assert.AreEqual(tx.ToJson(_neoSystem.Settings).ToString(), tx2.ToJson(_neoSystem.Settings).ToString());
+        }
+
+        [TestMethod]
+        public void TestGetRawTransaction_Confirmed()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var block = TestUtils.CreateBlockWithValidTransactions(snapshot, _wallet, _walletAccount, 1);
+            TestUtils.BlocksAdd(snapshot, block.Hash, block);
+            snapshot.Commit();
+            var tx = block.Transactions[0];
+
+            // Test non-verbose
+            var resultNonVerbose = _rpcServer.GetRawTransaction(tx.Hash, false);
+            var txArr = Convert.FromBase64String(resultNonVerbose.AsString());
+            var deserializedTx = txArr.AsSerializable<Transaction>();
+            Assert.AreEqual(tx.Hash, deserializedTx.Hash);
+
+            // Test verbose
+            var resultVerbose = _rpcServer.GetRawTransaction(tx.Hash, true);
+            var expectedJson = Utility.TransactionToJson(tx, _neoSystem.Settings);
+            // Add expected block-related fields
+            expectedJson["blockhash"] = block.Hash.ToString();
+            expectedJson["confirmations"] = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView) - block.Index + 1;
+            expectedJson["blocktime"] = block.Header.Timestamp;
+
+            Assert.IsInstanceOfType(resultVerbose, typeof(JObject));
+            Assert.AreEqual(expectedJson.ToString(), resultVerbose.ToString()); // Compare full JSON for simplicity here
+            Assert.AreEqual(block.Hash.ToString(), ((JObject)resultVerbose)["blockhash"].AsString());
+            Assert.AreEqual(expectedJson["confirmations"].AsNumber(), ((JObject)resultVerbose)["confirmations"].AsNumber());
+            Assert.AreEqual(block.Header.Timestamp, ((JObject)resultVerbose)["blocktime"].AsNumber());
         }
 
         [TestMethod]
@@ -247,6 +419,81 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestFindStorage_Pagination()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var contractState = TestUtils.GetContract();
+            snapshot.AddContract(contractState.Hash, contractState);
+            var prefix = new byte[] { 0xAA };
+            int totalItems = RpcServerSettings.Default.FindStoragePageSize + 5;
+
+            for (int i = 0; i < totalItems; i++)
+            {
+                var key = prefix.Concat(BitConverter.GetBytes(i)).ToArray();
+                var value = BitConverter.GetBytes(i);
+                TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
+            }
+            snapshot.Commit();
+
+            // Get first page
+            var resultPage1 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), 0);
+            Assert.IsTrue(resultPage1["truncated"].AsBoolean());
+            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, ((JArray)resultPage1["results"]).Count);
+            int nextIndex = (int)resultPage1["next"].AsNumber();
+            Assert.AreEqual(RpcServerSettings.Default.FindStoragePageSize, nextIndex);
+
+            // Get second page
+            var resultPage2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
+            Assert.IsFalse(resultPage2["truncated"].AsBoolean());
+            Assert.AreEqual(5, ((JArray)resultPage2["results"]).Count);
+            Assert.AreEqual(totalItems, (int)resultPage2["next"].AsNumber()); // Next should be total count
+        }
+
+        [TestMethod]
+        public void TestFindStorage_Pagination_End()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var contractState = TestUtils.GetContract();
+            snapshot.AddContract(contractState.Hash, contractState);
+            var prefix = new byte[] { 0xBB };
+            int totalItems = 3;
+
+            for (int i = 0; i < totalItems; i++)
+            {
+                var key = prefix.Concat(BitConverter.GetBytes(i)).ToArray();
+                var value = BitConverter.GetBytes(i);
+                TestUtils.StorageItemAdd(snapshot, contractState.Id, key, value);
+            }
+            snapshot.Commit();
+
+            // Get all items (assuming page size is larger than 3)
+            var resultPage1 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), 0);
+            Assert.IsFalse(resultPage1["truncated"].AsBoolean());
+            Assert.AreEqual(totalItems, ((JArray)resultPage1["results"]).Count);
+            int nextIndex = (int)resultPage1["next"].AsNumber();
+            Assert.AreEqual(totalItems, nextIndex);
+
+            // Try to get next page (should be empty)
+            var resultPage2 = _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), Convert.ToBase64String(prefix), nextIndex);
+            Assert.IsFalse(resultPage2["truncated"].AsBoolean());
+            Assert.AreEqual(0, ((JArray)resultPage2["results"]).Count);
+            Assert.AreEqual(nextIndex, (int)resultPage2["next"].AsNumber()); // Next index should remain the same
+        }
+
+        [TestMethod]
+        public void TestFindStorage_InvalidPrefix()
+        {
+            var contractState = TestUtils.GetContract(); // Need a valid contract hash
+            _neoSystem.GetSnapshotCache().AddContract(contractState.Hash, contractState);
+            _neoSystem.GetSnapshotCache().Commit();
+
+            var invalidBase64Prefix = "ThisIsNotBase64*";
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), invalidBase64Prefix, 0));
+            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
+            Assert.IsTrue(ex.GetError().Message.Contains("Invalid Base64"));
+        }
+
+        [TestMethod]
         public void TestGetTransactionHeight()
         {
             var snapshot = _neoSystem.GetSnapshotCache();
@@ -256,6 +503,19 @@ namespace Neo.Plugins.RpcServer.Tests
             var tx = block.Transactions[0];
             var result = _rpcServer.GetTransactionHeight(tx.Hash);
             Assert.AreEqual(block.Index, result.AsNumber());
+        }
+
+        [TestMethod]
+        public void TestGetTransactionHeight_MempoolOnly()
+        {
+            var snapshot = _neoSystem.GetSnapshotCache();
+            var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount.ScriptHash, nonce: 100);
+            _neoSystem.MemPool.TryAdd(tx, snapshot);
+            snapshot.Commit();
+
+            // Transaction is in mempool but not ledger, should throw UnknownTransaction
+            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.GetTransactionHeight(tx.Hash));
+            Assert.AreEqual(RpcError.UnknownTransaction.Code, ex.HResult);
         }
 
         [TestMethod]
