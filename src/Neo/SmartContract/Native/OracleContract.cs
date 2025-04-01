@@ -175,7 +175,9 @@ namespace Neo.SmartContract.Native
                 if (list.Count == 0) engine.SnapshotCache.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.PersistingBlock.Index)
+                    .Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero))
+                    .ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
@@ -193,14 +195,26 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
+        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback,
+            StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
         {
-            //Check the arguments
-            if (url.GetStrictUtf8ByteCount() > MaxUrlLength
-                || (filter != null && filter.GetStrictUtf8ByteCount() > MaxFilterLength)
-                || callback.GetStrictUtf8ByteCount() > MaxCallbackLength || callback.StartsWith('_')
-                || gasForResponse < 0_10000000)
-                throw new ArgumentException();
+            var urlSize = url.GetStrictUtf8ByteCount();
+            if (urlSize > MaxUrlLength)
+                throw new ArgumentException($"The url bytes size({urlSize}) cannot be greater than {MaxUrlLength}.");
+
+            var filterSize = filter.GetStrictUtf8ByteCount();
+            if (filterSize > MaxFilterLength)
+                throw new ArgumentException($"The filter bytes size({filterSize}) cannot be greater than {MaxFilterLength}.");
+
+            var callbackSize = callback is null ? 0 : callback.GetStrictUtf8ByteCount();
+            if (callbackSize > MaxCallbackLength)
+                throw new ArgumentException($"The callback bytes size({callbackSize}) cannot be greater than {MaxCallbackLength}.");
+
+            if (callback.StartsWith('_'))
+                throw new ArgumentException($"The callback cannot start with '_'.");
+
+            if (gasForResponse < 0_10000000)
+                throw new ArgumentException($"The gasForResponse({gasForResponse}) must be greater than or equal to 0.1 datoshi.");
 
             engine.AddFee(GetPrice(engine.SnapshotCache));
 
@@ -237,7 +251,12 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);
 
-            engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) { id, engine.CallingScriptHash.ToArray(), url, filter ?? StackItem.Null });
+            engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) {
+                id,
+                engine.CallingScriptHash.ToArray(),
+                url,
+                filter ?? StackItem.Null
+            });
         }
 
         [ContractMethod(CpuFee = 1 << 15)]
