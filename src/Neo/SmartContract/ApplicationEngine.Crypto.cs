@@ -64,9 +64,12 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the signatures are valid; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckMultisig(byte[][] pubkeys, byte[][] signatures)
         {
-            byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
+            var message = ScriptContainer.GetSignData(ProtocolSettings.Network);
             int m = signatures.Length, n = pubkeys.Length;
-            if (n == 0 || m == 0 || m > n) throw new ArgumentException();
+            if (n == 0) throw new ArgumentException("The pubkeys.Length cannot be zero.");
+            if (m == 0) throw new ArgumentException("The signatures.Length cannot be zero.");
+            if (m > n) throw new ArgumentException($"The signatures.Length({m}) cannot greater than the pubkeys.Length({n}).");
+
             AddFee(CheckSigPrice * n * ExecFeeFactor);
             try
             {
