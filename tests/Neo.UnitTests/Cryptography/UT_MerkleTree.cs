@@ -21,10 +21,11 @@ namespace Neo.UnitTests.Cryptography
     [TestClass]
     public class UT_MerkleTree
     {
-        public UInt256 GetByteArrayHash(byte[] byteArray)
+        public UInt256 GetByteArrayHash(byte[] bytes)
         {
-            if (byteArray == null || byteArray.Length == 0) throw new ArgumentNullException();
-            var hash = new UInt256(Crypto.Hash256(byteArray));
+            ArgumentNullException.ThrowIfNull(bytes, nameof(bytes));
+
+            var hash = new UInt256(Crypto.Hash256(bytes));
             return hash;
         }
 

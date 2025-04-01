@@ -153,9 +153,8 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(0, tx.Signers.Length);
 
             int diff = size - tx.Size;
-            if (diff < 0) throw new ArgumentException();
-            if (diff > 0)
-                tx.Witnesses[0].VerificationScript = new byte[diff];
+            if (diff < 0) throw new ArgumentException($"The size({size}) cannot be less than the Transaction.Size({tx.Size}).");
+            if (diff > 0) tx.Witnesses[0].VerificationScript = new byte[diff];
             return tx;
         }
     }
