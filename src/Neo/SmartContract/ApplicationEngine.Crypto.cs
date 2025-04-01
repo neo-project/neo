@@ -68,8 +68,7 @@ namespace Neo.SmartContract
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0) throw new ArgumentException("The pubkeys.Length cannot be zero.");
             if (m == 0) throw new ArgumentException("The signatures.Length cannot be zero.");
-            if (m > n) throw new ArgumentException($"The signatures.Length({m}) cannot greater than the pubkeys.Length({n}).");
-
+            if (m > n) throw new ArgumentException($"The signatures.Length({m}) cannot be greater than the pubkeys.Length({n}).");
             AddFee(CheckSigPrice * n * ExecFeeFactor);
             try
             {
