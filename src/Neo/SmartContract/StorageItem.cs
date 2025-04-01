@@ -95,7 +95,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Create a new instance from an sealed <see cref="IInteroperable"/> class. 
+        /// Create a new instance from an sealed <see cref="IInteroperable"/> class.
         /// </summary>
         /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
         /// <returns><see cref="StorageItem"/> class</returns>
@@ -199,9 +199,19 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
         public T GetInteroperableClone<T>() where T : IInteroperable, new()
         {
-            var interoperable = new T();
+            if (_cache is IInteroperable interoperable and T)
+            {
+                return (T)interoperable.Clone();
+            }
+
+            if (_value.IsEmpty)
+            {
+                return new T();
+            }
+
+            interoperable = new T();
             interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
-            return interoperable;
+            return (T)interoperable;
         }
 
         /// <summary>
@@ -225,9 +235,19 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
         public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
-            var interoperable = new T();
+            if (_cache is IInteroperableVerifiable interoperable and T)
+            {
+                return (T)interoperable.Clone();
+            }
+
+            if (_value.IsEmpty)
+            {
+                return new T();
+            }
+
+            interoperable = new T();
             interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
-            return interoperable;
+            return (T)interoperable;
         }
 
         /// <summary>
