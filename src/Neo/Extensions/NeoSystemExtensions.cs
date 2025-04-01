@@ -11,6 +11,7 @@
 
 using Neo.Persistence;
 using Neo.SmartContract.Native;
+using System.Collections.Generic;
 
 namespace Neo
 {
@@ -51,7 +52,7 @@ namespace Neo
                 // After the Echidna hardfork, get the current block time from the Policy contract.
                 return NativeContract.Policy.GetMaxValidUntilBlockIncrement(snapshot);
             }
-            catch (System.Collections.Generic.KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
                 // At the height of 0, the key not yet exists in the storage.
                 return settings.MaxValidUntilBlockIncrement;
