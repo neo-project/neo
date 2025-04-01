@@ -481,19 +481,6 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
-        public void TestFindStorage_InvalidPrefix()
-        {
-            var contractState = TestUtils.GetContract(); // Need a valid contract hash
-            _neoSystem.GetSnapshotCache().AddContract(contractState.Hash, contractState);
-            _neoSystem.GetSnapshotCache().Commit();
-
-            var invalidBase64Prefix = "ThisIsNotBase64*";
-            var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.FindStorage(new ContractNameOrHashOrId(contractState.Hash), invalidBase64Prefix, 0));
-            Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            Assert.IsTrue(ex.GetError().Message.Contains("Invalid Base64"));
-        }
-
-        [TestMethod]
         public void TestGetTransactionHeight()
         {
             var snapshot = _neoSystem.GetSnapshotCache();

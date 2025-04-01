@@ -95,7 +95,6 @@ namespace Neo.Plugins.RpcServer.Tests
             var addressNotInWallet = scriptHashNotInWallet.ToAddress(ProtocolSettings.Default.AddressVersion);
 
             var ex = Assert.ThrowsExactly<NullReferenceException>(() => _rpcServer.DumpPrivKey(new JArray(addressNotInWallet)));
-            // Expects NullReferenceException because wallet.GetAccount(scriptHash) returns null, and then .GetKey() is called.
             TestUtilCloseWallet();
         }
 
@@ -383,7 +382,6 @@ namespace Neo.Plugins.RpcServer.Tests
 
             var ex = Assert.ThrowsExactly<RpcException>(() => _rpcServer.SendToAddress(paramsArray));
             Assert.AreEqual(RpcError.InvalidParams.Code, ex.HResult);
-            // Implementation checks amount.Sign > 0
             TestUtilCloseWallet();
         }
 

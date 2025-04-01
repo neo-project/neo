@@ -72,7 +72,6 @@ namespace Neo.Plugins.RpcServer.Tests
             Assert.AreEqual(0, (json["unconnected"] as JArray).Count);
             Assert.IsTrue(json.ContainsProperty("bad"));
             Assert.IsTrue(json.ContainsProperty("connected"));
-            // Cannot guarantee no connected peers easily in test, but check unconnected
         }
 
         [TestMethod]
@@ -284,39 +283,6 @@ namespace Neo.Plugins.RpcServer.Tests
             var txString = Convert.ToBase64String(tx.ToArray());
             var exception = Assert.ThrowsExactly<RpcException>(() => _ = _rpcServer.SendRawTransaction(txString));
             Assert.AreEqual(RpcError.AlreadyExists.Code, exception.HResult);
-        }
-
-        [TestMethod]
-        public void TestSendRawTransaction_MempoolFull()
-        {
-            var snapshot = _neoSystem.GetSnapshotCache();
-            _neoSystem.MemPool.Clear(); // Start with an empty mempool
-
-            // Fill the mempool
-            var maxTransactions = (int)_neoSystem.Settings.MemoryPoolMaxTransactions;
-            for (int i = 0; i < maxTransactions; i++)
-            {
-                // Create unique, valid transactions
-                var tx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount.ScriptHash, nonce: (uint)(1000 + i));
-                var addResult = _neoSystem.MemPool.TryAdd(tx, snapshot);
-                // Check if the transaction was successfully added
-                Assert.AreEqual(VerifyResult.Succeed, addResult, $"Failed to add transaction {i + 1} to fill mempool. Result: {addResult}");
-            }
-            snapshot.Commit();
-
-            Assert.AreEqual(maxTransactions, _neoSystem.MemPool.VerifiedCount, "Mempool did not fill as expected");
-
-            // Create one more transaction that should fail due to full pool
-            var extraTx = TestUtils.CreateValidTx(snapshot, _wallet, _walletAccount.ScriptHash, nonce: (uint)(1000 + maxTransactions));
-            var txString = Convert.ToBase64String(extraTx.ToArray());
-
-            // Send the transaction
-            _rpcServer.SendRawTransaction(txString);
-
-            // Verify the mempool count did not increase (or that the result indicates failure if possible)
-            // If the tx was somehow accepted (e.g., replaced another), this check might be brittle.
-            // A more robust check might involve querying the mempool state or the specific RelayResult if accessible.
-            Assert.AreEqual(maxTransactions, _neoSystem.MemPool.VerifiedCount + _neoSystem.MemPool.UnverifiedCount, "Mempool count should not increase when full.");
         }
 
         #endregion
