@@ -132,9 +132,9 @@ namespace Neo.Plugins.RpcServer.Tests
                     Timestamp = DateTime.UtcNow.ToTimestampMS(),
                     Index = NativeContract.Ledger.CurrentIndex(snapshot) + 1,
                     NextConsensus = UInt160.Zero, // Simplified for test
-                    Witness = new Witness { InvocationScript = System.Array.Empty<byte>(), VerificationScript = System.Array.Empty<byte>() }
+                    Witness = Witness.Empty
                 },
-                Transactions = System.Array.Empty<Transaction>()
+                Transactions = []
             };
 
             TestUtils.BlocksAdd(snapshot, block.Hash, block);
