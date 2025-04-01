@@ -30,8 +30,10 @@ namespace Neo.Plugins.Trackers.NEP_11
 
         public Nep11BalanceKey(UInt160 userScriptHash, UInt160 assetScriptHash, ByteString tokenId)
         {
-            if (userScriptHash == null || assetScriptHash == null || tokenId == null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(userScriptHash, nameof(userScriptHash));
+            ArgumentNullException.ThrowIfNull(assetScriptHash, nameof(assetScriptHash));
+            ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
+
             UserScriptHash = userScriptHash;
             AssetScriptHash = assetScriptHash;
             Token = tokenId;
