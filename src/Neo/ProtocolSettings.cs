@@ -74,7 +74,7 @@ namespace Neo
         /// <summary>
         /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field.
         /// </summary>
-        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock;
+        public uint MaxValidUntilBlockIncrement { get; init; }
 
         /// <summary>
         /// Indicates the maximum number of transactions that can be contained in a block.
@@ -120,6 +120,7 @@ namespace Neo
             SeedList = Array.Empty<string>(),
             MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
+            MaxValidUntilBlockIncrement = 86400000 / 15000,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
@@ -215,6 +216,7 @@ namespace Neo
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
+                MaxValidUntilBlockIncrement = section.GetValue("MaxValidUntilBlockIncrement", Default.MaxValidUntilBlockIncrement),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key, true), p => uint.Parse(p.Value))).ToImmutableDictionary()
