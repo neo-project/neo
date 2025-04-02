@@ -210,6 +210,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                             NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount))
                     }
                 };
+                blockGenTime = neoSystem.GetBlockGenTime();
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount);
                 if (_witnessSize == 0 || (pv != null && pv.Length != Validators.Length))

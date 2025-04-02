@@ -90,7 +90,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
             if (context.WatchOnly) return;
-            blockGenTime = neoSystem.GetBlockGenTime();
             if (context.IsPrimary)
             {
                 if (isRecovering)
