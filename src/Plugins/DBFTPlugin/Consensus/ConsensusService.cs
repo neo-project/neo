@@ -184,7 +184,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"Sending {nameof(RecoveryMessage)} to resend {nameof(Commit)}");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                    ChangeTimer(context.BlockGenTime);
+                    ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << 1));
                 }
                 else
                 {
@@ -213,7 +213,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
-            ChangeTimer(context.BlockGenTime);
+            ChangeTimer(TimeSpan.FromMilliseconds(((int)context.BlockGenTime.TotalMilliseconds << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? context.BlockGenTime.TotalMilliseconds : 0)));
         }
 
         private void RequestRecovery()
@@ -230,7 +230,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // The latter may happen by nodes in higher views with, at least, `M` proofs
             byte expectedView = context.ViewNumber;
             expectedView++;
-            ChangeTimer(context.BlockGenTime);
+            ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << (expectedView + 1)));
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
                 RequestRecovery();
