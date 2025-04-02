@@ -9,38 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-/* Unmerged change from project 'Neo(net9.0)'
-Before:
-using System;
-After:
-// Copyright (C) 2015-2025 The Neo Project.
-//
-// NeoSystemExtensions.cs file belongs to the neo project and is free
-// software distributed under the MIT software license, see the
-// accompanying file LICENSE in the main directory of the
-// repository or http://www.opensource.org/licenses/mit-license.php
-// for more details.
-//
-// Redistribution and use in source and binary forms with or without
-// modifications are permitted.
-
-using System;
-*/
-// Copyright (C) 2015-2025 The Neo Project.
-//
-// NeoSystemExtensions.cs file belongs to the neo project and is free
-// software distributed under the MIT software license, see the
-// accompanying file LICENSE in the main directory of the
-// repository or http://www.opensource.org/licenses/mit-license.php
-// for more details.
-//
-// Redistribution and use in source and binary forms with or without
-// modifications are permitted.
-
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
+using System.Collections.Generic;
 
 namespace Neo
 {
@@ -80,7 +53,7 @@ namespace Neo
                 var milliseconds = NativeContract.Policy.GetMSPerBlock(snapshot);
                 return TimeSpan.FromMilliseconds(milliseconds);
             }
-            catch (System.Collections.Generic.KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
                 // At the height of 0, the key not yet exists in the storage
                 return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
