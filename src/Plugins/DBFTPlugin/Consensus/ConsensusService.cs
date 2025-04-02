@@ -41,7 +41,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private uint onPrepareBlockIndex;
         private uint block_received_index;
         private bool started = false;
-        private TimeSpan blockGenTime;
 
         /// <summary>
         /// This will record the information from last scheduled timer
@@ -90,30 +89,30 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
             if (context.WatchOnly) return;
-            blockGenTime = neoSystem.GetBlockGenTime();
             if (context.IsPrimary)
             {
                 if (isRecovering)
                 {
-                    ChangeTimer(TimeSpan.FromMilliseconds((int)blockGenTime.TotalMilliseconds << (viewNumber + 1)));
+                    ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << (viewNumber + 1)));
                 }
                 else
                 {
+                    TimeSpan span = context.BlockGenTime;
                     if (block_received_index + 1 == context.Block.Index && onPrepareBlockIndex + 1 == context.Block.Index)
                     {
                         // Include the consensus time into the consensus intervals.
                         var diff = TimeProvider.Current.UtcNow - onPrepareReceivedTime;
-                        if (diff >= blockGenTime)
-                            blockGenTime = TimeSpan.Zero;
+                        if (diff >= span)
+                            span = TimeSpan.Zero;
                         else
-                            blockGenTime -= diff;
+                            span -= diff;
                     }
-                    ChangeTimer(blockGenTime);
+                    ChangeTimer(span);
                 }
             }
             else
             {
-                ChangeTimer(TimeSpan.FromMilliseconds((int)blockGenTime.TotalMilliseconds << (viewNumber + 1)));
+                ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << (viewNumber + 1)));
             }
         }
 
@@ -186,7 +185,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"Sending {nameof(RecoveryMessage)} to resend {nameof(Commit)}");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                    ChangeTimer(blockGenTime);
+                    ChangeTimer(context.BlockGenTime);
                 }
                 else
                 {
@@ -215,7 +214,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
-            ChangeTimer(blockGenTime);
+            ChangeTimer(context.BlockGenTime);
         }
 
         private void RequestRecovery()
@@ -232,7 +231,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // The latter may happen by nodes in higher views with, at least, `M` proofs
             byte expectedView = context.ViewNumber;
             expectedView++;
-            ChangeTimer(blockGenTime);
+            ChangeTimer(context.BlockGenTime);
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
                 RequestRecovery();
@@ -325,7 +324,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.MillisecondsPerBlock`
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
-            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * blockGenTime.TotalMilliseconds / (double)context.M);
+            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * context.BlockGenTime.TotalMilliseconds / (double)context.M);
             if (!context.WatchOnly && !context.ViewChanging && !context.CommitSent && (nextDelay > TimeSpan.Zero))
                 ChangeTimer(nextDelay);
         }
