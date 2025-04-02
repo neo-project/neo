@@ -155,11 +155,20 @@ namespace Neo.IO.Caching
         {
             if (array == null) throw new ArgumentNullException(nameof(array));
             if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
-            if (startIndex + InnerDictionary.Count > array.Length)
-                throw new ArgumentOutOfRangeException(nameof(startIndex));
-            foreach (var item in this)
+
+            RwSyncRootLock.EnterReadLock();
+            try
             {
-                array[startIndex++] = item;
+                if (startIndex + InnerDictionary.Count > array.Length)
+                    throw new ArgumentOutOfRangeException(nameof(startIndex));
+                foreach (var item in InnerDictionary.Values)
+                {
+                    array[startIndex++] = item.Value;
+                }
+            }
+            finally
+            {
+                RwSyncRootLock.ExitReadLock();
             }
         }
 

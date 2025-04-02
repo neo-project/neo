@@ -184,7 +184,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
         public uint GetAttributeFeeV0(IReadOnlyStore snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, false);
@@ -196,8 +196,8 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetAttributeFee(IReadOnlyStore snapshot, byte attributeType)
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getAttributeFee")]
+        public uint GetAttributeFeeV1(IReadOnlyStore snapshot, byte attributeType)
         {
             return GetAttributeFee(snapshot, attributeType, true);
         }
@@ -264,7 +264,7 @@ namespace Neo.SmartContract.Native
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
         private void SetAttributeFeeV0(ApplicationEngine engine, byte attributeType, uint value)
         {
             SetAttributeFee(engine, attributeType, value, false);
@@ -277,7 +277,7 @@ namespace Neo.SmartContract.Native
         /// <param name="attributeType">Attribute type excluding <see cref="TransactionAttributeType.NotaryAssisted"/></param>
         /// <param name="value">Attribute fee value</param>
         /// <returns>The fee for attribute.</returns>
-        [ContractMethod(true, Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States, Name = "setAttributeFee")]
         private void SetAttributeFeeV1(ApplicationEngine engine, byte attributeType, uint value)
         {
             SetAttributeFee(engine, attributeType, value, true);
