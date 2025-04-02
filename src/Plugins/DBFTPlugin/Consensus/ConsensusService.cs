@@ -36,7 +36,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private readonly IActorRef taskManager;
         private readonly IActorRef blockchain;
         private ICancelable timer_token;
-        private DateTime block_received_time;
         private DateTime onPrepareReceivedTime;
         private uint onPrepareBlockIndex;
         private uint block_received_index;
