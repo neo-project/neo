@@ -75,7 +75,8 @@ namespace Neo.Wallets
 
         internal static byte[] XOR(byte[] x, byte[] y)
         {
-            if (x.Length != y.Length) throw new ArgumentException();
+            if (x.Length != y.Length)
+                throw new ArgumentException($"The x.Length({x.Length}) and y.Length({y.Length}) must be equal.");
             var r = new byte[x.Length];
             for (var i = 0; i < r.Length; i++)
                 r[i] = (byte)(x[i] ^ y[i]);

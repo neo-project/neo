@@ -81,7 +81,7 @@ namespace Neo.ConsoleService
                                     }
                                     else
                                     {
-                                        throw new ArgumentException(arg.Name);
+                                        throw new ArgumentException($"Missing argument: {arg.Name}");
                                     }
                                 }
                             }
@@ -121,7 +121,7 @@ namespace Neo.ConsoleService
                     {
                         // Show Ambiguous call
 
-                        throw new ArgumentException("Ambiguous calls for: " + string.Join(',', availableCommands.Select(u => u.Command.Key).Distinct()));
+                        throw new ArgumentException($"Ambiguous calls for: {string.Join(',', availableCommands.Select(u => u.Command.Key).Distinct())}");
                     }
             }
         }
@@ -157,12 +157,11 @@ namespace Neo.ConsoleService
         /// Process "help" command
         /// </summary>
         [ConsoleCommand("help", Category = "Base Commands")]
-        protected void OnHelpCommand(string key)
+        protected void OnHelpCommand(string key = "")
         {
             var withHelp = new List<ConsoleCommandMethod>();
 
             // Try to find a plugin with this name
-
             if (_instances.TryGetValue(key.Trim().ToLowerInvariant(), out var instance))
             {
                 // Filter only the help of this plugin
@@ -170,10 +169,9 @@ namespace Neo.ConsoleService
                 key = "";
                 foreach (var commands in _verbs.Values.Select(u => u))
                 {
-                    withHelp.AddRange
-                        (
+                    withHelp.AddRange(
                         commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory) && u.Instance == instance)
-                        );
+                    );
                 }
             }
             else
@@ -213,7 +211,7 @@ namespace Neo.ConsoleService
                     Console.WriteLine(" " + string.Join(' ',
                         command.Method.GetParameters()
                         .Select(u => u.HasDefaultValue ? $"[{u.Name}={(u.DefaultValue == null ? "null" : u.DefaultValue.ToString())}]" : $"<{u.Name}>"))
-                        );
+                    );
                 }
             }
             else
@@ -244,7 +242,7 @@ namespace Neo.ConsoleService
                     Console.WriteLine(" " + string.Join(' ',
                         command.Method.GetParameters()
                         .Select(u => u.HasDefaultValue ? $"[{u.Name}={u.DefaultValue?.ToString() ?? "null"}]" : $"<{u.Name}>"))
-                        );
+                    );
                 }
 
                 if (!found)
@@ -332,7 +330,7 @@ namespace Neo.ConsoleService
                 {
                     var ret = CommandToken.ToString(args);
                     args.Clear();
-                    return ret.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    return ret.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
                 }
 
                 return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? Array.Empty<string>();
@@ -406,7 +404,7 @@ namespace Neo.ConsoleService
 
                     if (!method.GetParameters().All(u => u.ParameterType.IsEnum || _handlers.ContainsKey(u.ParameterType)))
                     {
-                        throw new ArgumentException("Handler not found for the command: " + method);
+                        throw new ArgumentException($"Handler not found for the command: {method}");
                     }
 
                     // Add command
