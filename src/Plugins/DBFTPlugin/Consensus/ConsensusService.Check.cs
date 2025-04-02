@@ -60,7 +60,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (context.CommitPayloads.Count(p => context.GetMessage(p)?.ViewNumber == context.ViewNumber) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 block_received_index = context.Block.Index;
-                block_received_time = TimeProvider.Current.UtcNow;
                 Block block = context.CreateBlock();
                 Log($"Sending {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 blockchain.Tell(block);
