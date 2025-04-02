@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native
                 var notaryAssisted = tx.GetAttribute<NotaryAssisted>();
                 if (notaryAssisted is not null)
                 {
-                    totalNetworkFee -= (notaryAssisted.NKeys + 1) * Policy.GetAttributeFee(engine.SnapshotCache, (byte)notaryAssisted.Type);
+                    totalNetworkFee -= (notaryAssisted.NKeys + 1) * Policy.GetAttributeFeeV1(engine.SnapshotCache, (byte)notaryAssisted.Type);
                 }
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
