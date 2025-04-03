@@ -115,7 +115,7 @@ namespace Neo.SmartContract.Native
         public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
         {
             var key = CreateStorageKey(Prefix_Request);
-            return snapshot.Find(key.ToArray())
+            return snapshot.Find(key)
                 .Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.Span[1..]), p.Value.GetInteroperable<OracleRequest>()));
         }
 

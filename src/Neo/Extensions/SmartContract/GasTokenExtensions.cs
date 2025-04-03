@@ -20,7 +20,7 @@ namespace Neo.Extensions
 {
     public static class GasTokenExtensions
     {
-        public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this GasToken gasToken, DataCache snapshot)
+        public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this GasToken gasToken, IReadOnlyStore snapshot)
         {
             if (gasToken is null)
                 throw new ArgumentNullException(nameof(gasToken));
@@ -28,10 +28,10 @@ namespace Neo.Extensions
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            var kb = new KeyBuilder(gasToken.Id, GasToken.Prefix_Account);
+            var kb = StorageKey.Create(gasToken.Id, GasToken.Prefix_Account);
             var prefixKey = kb.ToArray();
 
-            foreach (var (key, value) in snapshot.Find(prefixKey, SeekDirection.Forward))
+            foreach (var (key, value) in snapshot.Find(kb, SeekDirection.Forward))
             {
                 var keyBytes = key.ToArray();
                 var addressHash = new UInt160(keyBytes.AsSpan(prefixKey.Length));

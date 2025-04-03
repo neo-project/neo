@@ -389,7 +389,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value3.ToArray());
 
-            var items = myDataCache.Find().GetEnumerator();
+            var items = myDataCache.Find(SeekDirection.Forward).GetEnumerator();
             items.MoveNext();
             Assert.AreEqual(key1, items.Current.Key);
 
