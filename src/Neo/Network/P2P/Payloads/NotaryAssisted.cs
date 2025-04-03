@@ -14,7 +14,6 @@ using Neo.Json;
 using Neo.Persistence;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 
 namespace Neo.Network.P2P.Payloads
 {
