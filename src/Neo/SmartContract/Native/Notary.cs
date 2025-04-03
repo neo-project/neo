@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
             if (deposit is null)
             {
-                var feePerKey = Policy.GetAttributeFee(engine.SnapshotCache, (byte)TransactionAttributeType.NotaryAssisted);
+                var feePerKey = Policy.GetAttributeFeeV1(engine.SnapshotCache, (byte)TransactionAttributeType.NotaryAssisted);
                 if ((long)amount < 2 * feePerKey) throw new ArgumentOutOfRangeException(string.Format("first deposit can not be less than {0}, got {1}", 2 * feePerKey, amount));
                 deposit = new Deposit() { Amount = 0, Till = 0 };
                 if (!allowedChangeTill) till = currentHeight + DefaultDepositDeltaTill;
@@ -314,7 +314,7 @@ namespace Neo.SmartContract.Native
         /// <returns>result</returns>
         private long CalculateNotaryReward(DataCache snapshot, long nFees, int notariesCount)
         {
-            return (nFees * Policy.GetAttributeFee(snapshot, (byte)TransactionAttributeType.NotaryAssisted)) / notariesCount;
+            return (nFees * Policy.GetAttributeFeeV1(snapshot, (byte)TransactionAttributeType.NotaryAssisted)) / notariesCount;
         }
 
         public class Deposit : IInteroperable
