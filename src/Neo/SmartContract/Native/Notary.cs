@@ -73,6 +73,7 @@ namespace Neo.SmartContract.Native
                     if (tx.Sender == Hash)
                     {
                         var payer = tx.Signers[1];
+                        // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
                         var balance = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, payer.Account))?.GetInteroperable<Deposit>();
                         if (balance != null)
                         {
@@ -104,8 +105,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private bool Verify(ApplicationEngine engine, byte[] sig)
         {
-            var tx = (Transaction)engine.ScriptContainer;
-            if (tx.GetAttribute<NotaryAssisted>() is null) return false;
+            if (sig is null || sig.Length != 64) return false;
+            var tx = engine.ScriptContainer as Transaction;
+            if (tx?.GetAttribute<NotaryAssisted>() is null) return false;
             foreach (var signer in tx.Signers)
             {
                 if (signer.Account == Hash)
@@ -145,6 +147,7 @@ namespace Neo.SmartContract.Native
             var tx = (Transaction)engine.ScriptContainer;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.SnapshotCache);
+            // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
             var deposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, to))?.GetInteroperable<Deposit>();
             if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
