@@ -76,7 +76,7 @@ namespace Neo.Json
 
         internal override void Write(Utf8JsonWriter writer)
         {
-            writer.WriteStringValue(Value);
+            writer.WriteRawValue($"\"{DefaultEncoder.Encode(Value).Replace("\\u002B", "+")}\"");
         }
 
         public override JToken Clone()
