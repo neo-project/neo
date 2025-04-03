@@ -271,6 +271,20 @@ namespace Neo.SmartContract
             return Create(id, prefix, content.GetSpan());
         }
 
+        /// <summary>
+        /// Creates a search prefix for a contract.
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the keys to search.</param>
+        /// <returns>The created search prefix.</returns>
+        public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
+        {
+            var buffer = new byte[sizeof(int) + prefix.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
+            prefix.CopyTo(buffer.AsSpan(sizeof(int)..));
+            return buffer;
+        }
+
         #endregion
 
         public StorageKey()
@@ -301,20 +315,6 @@ namespace Neo.SmartContract
             _cache = cache.ToArray(); // Make a copy
             Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
             Key = _cache[sizeof(int)..]; // "Key" init makes a copy already.
-        }
-
-        /// <summary>
-        /// Creates a search prefix for a contract.
-        /// </summary>
-        /// <param name="id">The id of the contract.</param>
-        /// <param name="prefix">The prefix of the keys to search.</param>
-        /// <returns>The created search prefix.</returns>
-        public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
-        {
-            var buffer = new byte[sizeof(int) + prefix.Length];
-            BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
-            prefix.CopyTo(buffer.AsSpan(sizeof(int)..));
-            return buffer;
         }
 
         public bool Equals(StorageKey? other)

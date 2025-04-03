@@ -215,7 +215,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(key1, items.ElementAt(3).Key);
             Assert.AreEqual(value1, items.ElementAt(3).Value);
 
-            items = myDataCache.Find(key5.ToArray());
+            items = myDataCache.Find(key5);
             Assert.AreEqual(0, items.Count());
         }
 
