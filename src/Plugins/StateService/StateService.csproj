@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
-    <ProjectReference Include="..\MPTTrie\MPTTrie.csproj" />
+    <ProjectReference Include="..\..\Neo.Cryptography.MPTTrie\Neo.Cryptography.MPTTrie.csproj" />
     <ProjectReference Include="..\RpcServer\RpcServer.csproj" />
   </ItemGroup>
 
