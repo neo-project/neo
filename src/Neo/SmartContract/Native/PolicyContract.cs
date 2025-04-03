@@ -67,8 +67,9 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// The maximum MaxValidUntilBlockIncrement value that the committee can set.
+        /// It is set to be a day of 1-second blocks.
         /// </summary>
-        public const uint MaxMaxValidUntilBlockIncrement = 100500; // TODO
+        public const uint MaxMaxValidUntilBlockIncrement = 86400;
 
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
