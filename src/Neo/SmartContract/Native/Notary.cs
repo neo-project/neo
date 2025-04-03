@@ -80,7 +80,6 @@ namespace Neo.SmartContract.Native
                             balance.Amount -= tx.SystemFee + tx.NetworkFee;
                             if (balance.Amount.Sign == 0) RemoveDepositFor(engine.SnapshotCache, payer.Account);
                         }
-                        // TODO: Else?
                     }
                 }
             }
