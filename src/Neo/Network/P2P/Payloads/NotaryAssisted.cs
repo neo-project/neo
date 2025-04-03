@@ -14,6 +14,7 @@ using Neo.Json;
 using Neo.Persistence;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -54,7 +55,11 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            if (tx.Signers.Length < 2) return false;
+            if (tx.Sender == _notaryHash)
+            {
+                // Payer is in the second position
+                if (tx.Signers.Length != 2) return false;
+            }
             return tx.Signers.Any(p => p.Account.Equals(_notaryHash));
         }
 
