@@ -213,7 +213,7 @@ namespace Neo.SmartContract
         public T GetInteroperableClone<T>() where T : IInteroperable, new()
         {
             // If it's interoperable and not sealed
-            if (!_value.IsEmpty && _cache is T interoperable)
+            if (_value.IsEmpty && _cache is T interoperable)
             {
                 // Refresh data without change _value
                 return (T)interoperable.Clone();
@@ -234,7 +234,7 @@ namespace Neo.SmartContract
         public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
             // If it's interoperable and not sealed
-            if (!_value.IsEmpty && _cache is T interoperable)
+            if (_value.IsEmpty && _cache is T interoperable)
             {
                 return (T)interoperable.Clone();
             }
