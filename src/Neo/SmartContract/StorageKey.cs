@@ -47,6 +47,21 @@ namespace Neo.SmartContract
             init => _key = value.ToArray(); // make new region of memory (a copy).
         }
 
+        /// <summary>
+        /// Get key length
+        /// </summary>
+        public int Length
+        {
+            get
+            {
+                if (_cache is { IsEmpty: true })
+                {
+                    _cache = Build();
+                }
+                return _cache.Length;
+            }
+        }
+
         private ReadOnlyMemory<byte> _cache;
         private readonly ReadOnlyMemory<byte> _key;
 
@@ -322,12 +337,17 @@ namespace Neo.SmartContract
         {
             if (_cache is { IsEmpty: true })
             {
-                var buffer = new byte[sizeof(int) + Key.Length];
-                BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(), Id);
-                Key.CopyTo(buffer.AsMemory(sizeof(int)..));
-                _cache = buffer;
+                _cache = Build();
             }
             return _cache.ToArray(); // Make a copy
+        }
+
+        private byte[] Build()
+        {
+            var buffer = new byte[sizeof(int) + Key.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(), Id);
+            Key.CopyTo(buffer.AsMemory(sizeof(int)..));
+            return buffer;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

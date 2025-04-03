@@ -29,12 +29,12 @@ namespace Neo.Extensions
                 throw new ArgumentNullException(nameof(snapshot));
 
             var kb = StorageKey.Create(gasToken.Id, GasToken.Prefix_Account);
-            var prefixKey = kb.ToArray();
+            var kbLength = kb.Length;
 
             foreach (var (key, value) in snapshot.Find(kb, SeekDirection.Forward))
             {
                 var keyBytes = key.ToArray();
-                var addressHash = new UInt160(keyBytes.AsSpan(prefixKey.Length));
+                var addressHash = new UInt160(keyBytes.AsSpan(kbLength));
                 yield return new(addressHash, value.GetInteroperable<AccountState>().Balance);
             }
         }
