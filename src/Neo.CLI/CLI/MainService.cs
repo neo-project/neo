@@ -142,9 +142,9 @@ namespace Neo.CLI
             base.RunConsole();
         }
 
-        public void CreateWallet(string path, string password, bool createDefaultAccount = true)
+        public void CreateWallet(string path, string password, bool createDefaultAccount = true, string? walletName = null)
         {
-            Wallet wallet = Wallet.Create(null, path, password, NeoSystem.Settings);
+            Wallet wallet = Wallet.Create(walletName, path, password, NeoSystem.Settings);
             if (wallet == null)
             {
                 ConsoleHelper.Warning("Wallet files in that format are not supported, please use a .json or .db3 file extension.");
