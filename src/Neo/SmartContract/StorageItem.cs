@@ -214,7 +214,8 @@ namespace Neo.SmartContract
         {
             var data = _value;
 
-            if (_cache is T interoperable)
+            // If it's interoperable and not sealed
+            if (data.IsEmpty && _cache is T interoperable)
             {
                 // Refresh data without change _value
                 data = BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
@@ -236,7 +237,8 @@ namespace Neo.SmartContract
         {
             var data = _value;
 
-            if (_cache is T interoperable)
+            // If it's interoperable and not sealed
+            if (data.IsEmpty && _cache is T interoperable)
             {
                 // Refresh data without change _value
                 data = BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
