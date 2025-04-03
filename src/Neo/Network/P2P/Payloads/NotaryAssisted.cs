@@ -12,7 +12,6 @@
 using Neo.IO;
 using Neo.Json;
 using Neo.Persistence;
-using Neo.SmartContract.Native;
 using System.IO;
 using System.Linq;
 
@@ -23,7 +22,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Native Notary contract hash stub used until native Notary contract is properly implemented.
         /// </summary>
-        private static readonly UInt160 notaryHash = Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, 0, "Notary");
+        private static readonly UInt160 _notaryHash = SmartContract.Helper.GetContractHash(UInt160.Zero, 0, "Notary");
 
         /// <summary>
         /// Indicates the number of keys participating in the transaction (main or fallback) signing process.
@@ -55,7 +54,8 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            return tx.Signers.Any(p => p.Account.Equals(notaryHash));
+            if (tx.Signers.Length < 2) return false;
+            return tx.Signers.Any(p => p.Account.Equals(_notaryHash));
         }
 
         /// <summary>
