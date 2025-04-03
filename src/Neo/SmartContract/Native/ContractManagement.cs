@@ -198,7 +198,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The deployed contracts.</returns>
-        public IEnumerable<ContractState> ListContracts(DataCache snapshot)
+        public IEnumerable<ContractState> ListContracts(IReadOnlyStore snapshot)
         {
             var listContractsPrefix = CreateStorageKey(Prefix_Contract);
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
