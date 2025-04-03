@@ -515,11 +515,13 @@ namespace Neo.ConsoleService
         {
             _running = true;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
                 try
                 {
                     Console.Title = ServiceName;
                 }
                 catch { }
+            }
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.SetIn(new StreamReader(Console.OpenStandardInput(), Console.InputEncoding, false, ushort.MaxValue));
