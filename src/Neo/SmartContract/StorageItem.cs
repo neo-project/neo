@@ -221,7 +221,6 @@ namespace Neo.SmartContract
 
             interoperable = new T();
             interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
-
             return interoperable;
         }
 
@@ -241,7 +240,6 @@ namespace Neo.SmartContract
 
             interoperable = new T();
             interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
-
             return interoperable;
         }
 
