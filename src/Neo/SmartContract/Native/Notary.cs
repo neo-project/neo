@@ -138,9 +138,8 @@ namespace Neo.SmartContract.Native
         private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
         {
             if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash.ToString()));
+            if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
             var to = from;
-            var additionalParams = (Array)data;
-            if (additionalParams is null || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
             if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
             var till = (uint)additionalParams[1].GetInteger();
             var tx = (Transaction)engine.ScriptContainer;
