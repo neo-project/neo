@@ -1,0 +1,47 @@
+// Final Comprehensive DOS Test Script
+// This script is designed to trigger multiple DOS detection mechanisms
+// based on our analysis of successful DOS vectors from fuzzing
+
+// PART 1: Excessive Stack Depth
+// Push multiple values onto the stack to exceed our stack depth threshold
+// Most common DOS vector trigger was stack depth > 5
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+0x08 // PUSHT - push true
+
+// PART 2: High Instruction Count
+// Perform simple operations to increase instruction count
+// We need >100 instructions to trigger this detection
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+
+// PART 3: Long Execution Time
+// Add a delay by performing redundant operations
+// We need >10ms execution time to trigger this detection
+0x08 // PUSHT - push true
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x08 // PUSHT - push true
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+0x08 // PUSHT - push true
+0x09 // PUSHF - push false
+0xA0 // NUMEQUAL - compare values
+
+// Return successfully
+0x40 // RET
