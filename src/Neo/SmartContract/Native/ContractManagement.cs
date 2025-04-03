@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Native
         public ContractState GetContract(IReadOnlyStore snapshot, UInt160 hash)
         {
             var key = CreateStorageKey(Prefix_Contract, hash);
-            return snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<ContractState>(false) : null;
+            return snapshot.TryGet(key, out var item) ? item.GetInteroperable<ContractState>(false) : null;
         }
 
         /// <summary>

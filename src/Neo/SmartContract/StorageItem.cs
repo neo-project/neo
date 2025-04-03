@@ -193,28 +193,6 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Gets an <see cref="IInteroperable"/> from the storage not related to this <see cref="StorageItem"/>.
-        /// </summary>
-        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
-        /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
-        public T GetInteroperableClone<T>() where T : IInteroperable, new()
-        {
-            if (_cache is IInteroperable interoperable and T)
-            {
-                return (T)interoperable.Clone();
-            }
-
-            if (_value.IsEmpty)
-            {
-                return new T();
-            }
-
-            interoperable = new T();
-            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
-            return (T)interoperable;
-        }
-
-        /// <summary>
         /// Gets an <see cref="IInteroperableVerifiable"/> from the storage.
         /// </summary>
         /// <param name="verify">Verify deserialization</param>
@@ -228,6 +206,27 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
+        /// Gets an <see cref="IInteroperable"/> from the storage not related to this <see cref="StorageItem"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
+        public T GetInteroperableClone<T>() where T : IInteroperable, new()
+        {
+            var data = _value;
+
+            if (_cache is T interoperable)
+            {
+                // Refresh data without change _value
+                data = BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
+            }
+
+            interoperable = new T();
+            interoperable.FromStackItem(BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default));
+
+            return interoperable;
+        }
+
+        /// <summary>
         /// Gets an <see cref="IInteroperableVerifiable"/> from the storage not related to this <see cref="StorageItem"/>.
         /// </summary>
         /// <param name="verify">Verify deserialization</param>
@@ -235,19 +234,18 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
         public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
-            if (_cache is IInteroperableVerifiable interoperable and T)
-            {
-                return (T)interoperable.Clone();
-            }
+            var data = _value;
 
-            if (_value.IsEmpty)
+            if (_cache is T interoperable)
             {
-                return new T();
+                // Refresh data without change _value
+                data = BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
             }
 
             interoperable = new T();
-            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
-            return (T)interoperable;
+            interoperable.FromStackItem(BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default), verify);
+
+            return interoperable;
         }
 
         /// <summary>

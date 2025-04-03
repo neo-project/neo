@@ -309,7 +309,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentNullException(nameof(snapshot));
 
             var key = CreateStorageKey(Prefix_Transaction, hash);
-            var state = snapshot.TryGet(key, out var item) ? item.GetInteroperableClone<TransactionState>() : null;
+            var state = snapshot.TryGet(key, out var item) ? item.GetInteroperable<TransactionState>() : null;
             return state?.Transaction is null ? null : state;
         }
 
