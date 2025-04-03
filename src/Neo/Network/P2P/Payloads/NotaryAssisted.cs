@@ -58,7 +58,7 @@ namespace Neo.Network.P2P.Payloads
             if (tx.Sender == _notaryHash)
             {
                 // Payer is in the second position
-                if (tx.Signers.Length != 2) return false;
+                return tx.Signers.Length == 2;
             }
             return tx.Signers.Any(p => p.Account.Equals(_notaryHash));
         }
