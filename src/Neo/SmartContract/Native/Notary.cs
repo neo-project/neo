@@ -147,9 +147,9 @@ namespace Neo.SmartContract.Native
             var tx = (Transaction)engine.ScriptContainer;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.SnapshotCache);
+            if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
             // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
             var deposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, to))?.GetInteroperable<Deposit>();
-            if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
             if (deposit is null)
             {
@@ -178,8 +178,7 @@ namespace Neo.SmartContract.Native
             if (!engine.CheckWitnessInternal(addr)) return false;
             if (till < Ledger.CurrentIndex(engine.SnapshotCache) + 2) return false; // deposit must be valid at least until the next block after persisting block.
             var deposit = GetDepositFor(engine.SnapshotCache, addr);
-            if (deposit is null) return false;
-            if (till < deposit.Till) return false;
+            if (deposit is null || till < deposit.Till) return false;
             deposit.Till = till;
 
             PutDepositFor(engine, addr, deposit);
@@ -294,6 +293,7 @@ namespace Neo.SmartContract.Native
         /// <param name="deposit">deposit</param>
         private void PutDepositFor(ApplicationEngine engine, UInt160 acc, Deposit deposit)
         {
+            // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
             var indeposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, acc), () => new StorageItem(deposit));
             indeposit!.Value = new StorageItem(deposit).Value;
         }
