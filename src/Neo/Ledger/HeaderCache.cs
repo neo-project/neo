@@ -23,8 +23,8 @@ namespace Neo.Ledger
     /// </summary>
     public sealed class HeaderCache : IDisposable, IEnumerable<Header>
     {
-        private readonly IndexedQueue<Header> headers = new();
-        private readonly ReaderWriterLockSlim readerWriterLock = new();
+        private readonly IndexedQueue<Header> _headers = new();
+        private readonly ReaderWriterLockSlim _readerWriterLock = new();
 
         /// <summary>
         /// Gets the <see cref="Header"/> at the specified index in the cache.
@@ -35,19 +35,19 @@ namespace Neo.Ledger
         {
             get
             {
-                readerWriterLock.EnterReadLock();
+                _readerWriterLock.EnterReadLock();
                 try
                 {
-                    if (headers.Count == 0) return null;
-                    uint firstIndex = headers[0].Index;
+                    if (_headers.Count == 0) return null;
+                    var firstIndex = _headers[0].Index;
                     if (index < firstIndex) return null;
                     index -= firstIndex;
-                    if (index >= headers.Count) return null;
-                    return headers[(int)index];
+                    if (index >= _headers.Count) return null;
+                    return _headers[(int)index];
                 }
                 finally
                 {
-                    readerWriterLock.ExitReadLock();
+                    _readerWriterLock.ExitReadLock();
                 }
             }
         }
@@ -59,14 +59,14 @@ namespace Neo.Ledger
         {
             get
             {
-                readerWriterLock.EnterReadLock();
+                _readerWriterLock.EnterReadLock();
                 try
                 {
-                    return headers.Count;
+                    return _headers.Count;
                 }
                 finally
                 {
-                    readerWriterLock.ExitReadLock();
+                    _readerWriterLock.ExitReadLock();
                 }
             }
         }
@@ -83,61 +83,61 @@ namespace Neo.Ledger
         {
             get
             {
-                readerWriterLock.EnterReadLock();
+                _readerWriterLock.EnterReadLock();
                 try
                 {
-                    if (headers.Count == 0) return null;
-                    return headers[^1];
+                    if (_headers.Count == 0) return null;
+                    return _headers[^1];
                 }
                 finally
                 {
-                    readerWriterLock.ExitReadLock();
+                    _readerWriterLock.ExitReadLock();
                 }
             }
         }
 
         public void Dispose()
         {
-            readerWriterLock.Dispose();
+            _readerWriterLock.Dispose();
         }
 
         internal void Add(Header header)
         {
-            readerWriterLock.EnterWriteLock();
+            _readerWriterLock.EnterWriteLock();
             try
             {
-                headers.Enqueue(header);
+                _headers.Enqueue(header);
             }
             finally
             {
-                readerWriterLock.ExitWriteLock();
+                _readerWriterLock.ExitWriteLock();
             }
         }
 
         internal bool TryRemoveFirst(out Header header)
         {
-            readerWriterLock.EnterWriteLock();
+            _readerWriterLock.EnterWriteLock();
             try
             {
-                return headers.TryDequeue(out header);
+                return _headers.TryDequeue(out header);
             }
             finally
             {
-                readerWriterLock.ExitWriteLock();
+                _readerWriterLock.ExitWriteLock();
             }
         }
 
         public IEnumerator<Header> GetEnumerator()
         {
-            readerWriterLock.EnterReadLock();
+            _readerWriterLock.EnterReadLock();
             try
             {
-                foreach (Header header in headers)
+                foreach (var header in _headers)
                     yield return header;
             }
             finally
             {
-                readerWriterLock.ExitReadLock();
+                _readerWriterLock.ExitReadLock();
             }
         }
 
