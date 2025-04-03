@@ -59,12 +59,26 @@ namespace Neo.Plugins.Trackers
             _levelDbSnapshot?.Commit();
         }
 
-        public virtual void Dispose()
+        public void Dispose()
         {
-            _levelDbSnapshot?.Dispose();
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // Dispose managed resources
+                _levelDbSnapshot?.Dispose();
+            }
+            // Dispose unmanaged resources (if any) here.
+        }
+
+        ~TrackerBase()
+        {
+            Dispose(false);
+        }
         public IEnumerable<(TKey key, TValue val)> QueryTransfers<TKey, TValue>(byte dbPrefix, UInt160 userScriptHash, ulong startTime, ulong endTime)
                 where TKey : ISerializable, new()
                 where TValue : class, ISerializable, new()
