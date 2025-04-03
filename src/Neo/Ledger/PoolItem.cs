@@ -35,7 +35,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Timestamp when this transaction was last broadcast to other nodes
         /// </summary>
-        public DateTime LastBroadcastTimestamp { get; }
+        public DateTime LastBroadcastTimestamp { get; set; }
 
         internal PoolItem(Transaction tx)
         {
