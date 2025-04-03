@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
             if (deposit is null)
             {
-                var feePerKey = Policy.GetAttributeFee(engine.SnapshotCache, (byte)TransactionAttributeType.NotaryAssisted);
+                var feePerKey = Policy.GetAttributeFeeV1(engine.SnapshotCache, (byte)TransactionAttributeType.NotaryAssisted);
                 if ((long)amount < 2 * feePerKey) throw new ArgumentOutOfRangeException(string.Format("first deposit can not be less than {0}, got {1}", 2 * feePerKey, amount));
                 deposit = new Deposit() { Amount = 0, Till = 0 };
                 if (!allowedChangeTill) till = currentHeight + DefaultDepositDeltaTill;
@@ -223,10 +223,11 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
         {
-            if (!engine.CheckWitnessInternal(from)) throw new InvalidOperationException(string.Format("Failed to check witness for {0}", from.ToString()));
+            if (!engine.CheckWitnessInternal(from)) return false;
             var receive = to is null ? from : to;
-            var deposit = GetDepositFor(engine.SnapshotCache, from) ?? throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
-            if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
+            var deposit = GetDepositFor(engine.SnapshotCache, from);
+            if (deposit is null) return false;
+            if (Ledger.CurrentIndex(engine.SnapshotCache) < deposit.Till) return false;
             RemoveDepositFor(engine.SnapshotCache, from);
             if (!await engine.CallFromNativeContractAsync<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, StackItem.Null))
             {
@@ -254,7 +255,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMaxNotValidBeforeDelta(ApplicationEngine engine, uint value)
         {
-            if (value > engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount) throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}", engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
+            if (value > engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2 || value < ProtocolSettings.Default.ValidatorsCount)
+                throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}",
+                 engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MaxNotValidBeforeDelta))!.Set(value);
         }
@@ -312,7 +315,7 @@ namespace Neo.SmartContract.Native
         /// <returns>result</returns>
         private static long CalculateNotaryReward(IReadOnlyStore snapshot, long nFees, int notariesCount)
         {
-            return nFees * Policy.GetAttributeFee(snapshot, (byte)TransactionAttributeType.NotaryAssisted) / notariesCount;
+            return nFees * Policy.GetAttributeFeeV1(snapshot, (byte)TransactionAttributeType.NotaryAssisted) / notariesCount;
         }
 
         public class Deposit : IInteroperable
