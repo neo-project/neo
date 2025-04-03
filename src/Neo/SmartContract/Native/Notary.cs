@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
 #pragma warning disable IDE0051
 
-using K4os.Compression.LZ4.Encoders;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
@@ -61,8 +61,8 @@ namespace Neo.SmartContract.Native
         internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             long nFees = 0;
-            ECPoint[] notaries = null;
-            foreach (Transaction tx in engine.PersistingBlock.Transactions)
+            ECPoint[]? notaries = null;
+            foreach (var tx in engine.PersistingBlock.Transactions)
             {
                 var attr = tx.GetAttribute<NotaryAssisted>();
                 if (attr is not null)
@@ -75,20 +75,23 @@ namespace Neo.SmartContract.Native
                         var payer = tx.Signers[1];
                         // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
                         var balance = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, payer.Account))?.GetInteroperable<Deposit>();
-                        balance.Amount -= tx.SystemFee + tx.NetworkFee;
-                        if (balance.Amount.Sign == 0) RemoveDepositFor(engine.SnapshotCache, payer.Account);
+                        if (balance != null)
+                        {
+                            balance.Amount -= tx.SystemFee + tx.NetworkFee;
+                            if (balance.Amount.Sign == 0) RemoveDepositFor(engine.SnapshotCache, payer.Account);
+                        }
                     }
                 }
             }
             if (nFees == 0) return;
+            if (notaries == null) return;
             var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
-
             foreach (var notary in notaries) await GAS.Mint(engine, notary.EncodePoint(true).ToScriptHash(), singleReward, false);
         }
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
         {
-            manifest.SupportedStandards = new[] { "NEP-27" };
+            manifest.SupportedStandards = ["NEP-27"];
         }
 
         /// <summary>
@@ -119,7 +122,7 @@ namespace Neo.SmartContract.Native
                 var balance = GetDepositFor(engine.SnapshotCache, payer);
                 if (balance is null || balance.Amount.CompareTo(tx.NetworkFee + tx.SystemFee) < 0) return false;
             }
-            ECPoint[] notaries = GetNotaryNodes(engine.SnapshotCache);
+            var notaries = GetNotaryNodes(engine.SnapshotCache);
             var hash = tx.GetSignData(engine.GetNetwork());
             return notaries.Any(n => Crypto.VerifySignature(hash, sig, n));
         }
@@ -136,17 +139,16 @@ namespace Neo.SmartContract.Native
         private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
         {
             if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash.ToString()));
-            var additionalParams = data as Array;
-            if (additionalParams is null || additionalParams.Count() != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
+            if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
             var to = from;
             if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
             var till = (uint)additionalParams[1].GetInteger();
             var tx = (Transaction)engine.ScriptContainer;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.SnapshotCache);
-            // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
-            Deposit deposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, to))?.GetInteroperable<Deposit>();
             if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
+            // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
+            var deposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, to))?.GetInteroperable<Deposit>();
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
             if (deposit is null)
             {
@@ -174,7 +176,7 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CheckWitnessInternal(addr)) return false;
             if (till < Ledger.CurrentIndex(engine.SnapshotCache) + 2) return false; // deposit must be valid at least until the next block after persisting block.
-            Deposit deposit = GetDepositFor(engine.SnapshotCache, addr);
+            var deposit = GetDepositFor(engine.SnapshotCache, addr);
             if (deposit is null || till < deposit.Till) return false;
             deposit.Till = till;
 
@@ -191,7 +193,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint ExpirationOf(DataCache snapshot, UInt160 acc)
         {
-            Deposit deposit = GetDepositFor(snapshot, acc);
+            var deposit = GetDepositFor(snapshot, acc);
             if (deposit is null) return 0;
             return deposit.Till;
         }
@@ -205,7 +207,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger BalanceOf(DataCache snapshot, UInt160 acc)
         {
-            Deposit deposit = GetDepositFor(snapshot, acc);
+            var deposit = GetDepositFor(snapshot, acc);
             if (deposit is null) return 0;
             return deposit.Amount;
         }
@@ -240,7 +242,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">DataCache</param>
         /// <returns>NotValidBefore</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetMaxNotValidBeforeDelta(DataCache snapshot)
+        public uint GetMaxNotValidBeforeDelta(IReadOnlyStore snapshot)
         {
             return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_MaxNotValidBeforeDelta)];
         }
@@ -257,7 +259,7 @@ namespace Neo.SmartContract.Native
                 throw new FormatException(string.Format("MaxNotValidBeforeDelta cannot be more than {0} or less than {1}",
                  engine.ProtocolSettings.MaxValidUntilBlockIncrement / 2, ProtocolSettings.Default.ValidatorsCount));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MaxNotValidBeforeDelta)).Set(value);
+            engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_MaxNotValidBeforeDelta))!.Set(value);
         }
 
         /// <summary>
@@ -265,7 +267,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">DataCache</param>
         /// <returns>Public keys of notary nodes.</returns>
-        private ECPoint[] GetNotaryNodes(DataCache snapshot)
+        private static ECPoint[] GetNotaryNodes(DataCache snapshot)
         {
             return RoleManagement.GetDesignatedByRole(snapshot, Role.P2PNotary, Ledger.CurrentIndex(snapshot) + 1);
         }
@@ -277,7 +279,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot"></param>
         /// <param name="acc"></param>
         /// <returns>Deposit for the specified account.</returns>
-        private Deposit GetDepositFor(DataCache snapshot, UInt160 acc)
+        private Deposit? GetDepositFor(DataCache snapshot, UInt160 acc)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Deposit, acc))?.GetInteroperable<Deposit>();
         }
@@ -292,7 +294,7 @@ namespace Neo.SmartContract.Native
         {
             // Don't need to seal because Deposit is a fixed-sized interoperable, hence always can be serialized.
             var indeposit = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Deposit, acc), () => new StorageItem(deposit));
-            indeposit.Value = new StorageItem(deposit).Value;
+            indeposit!.Value = new StorageItem(deposit).Value;
         }
 
         /// <summary>
@@ -312,19 +314,19 @@ namespace Neo.SmartContract.Native
         /// <param name="nFees"></param>
         /// <param name="notariesCount"></param>
         /// <returns>result</returns>
-        private long CalculateNotaryReward(DataCache snapshot, long nFees, int notariesCount)
+        private static long CalculateNotaryReward(IReadOnlyStore snapshot, long nFees, int notariesCount)
         {
-            return (nFees * Policy.GetAttributeFeeV1(snapshot, (byte)TransactionAttributeType.NotaryAssisted)) / notariesCount;
+            return nFees * Policy.GetAttributeFeeV1(snapshot, (byte)TransactionAttributeType.NotaryAssisted) / notariesCount;
         }
 
         public class Deposit : IInteroperable
         {
-            public BigInteger Amount;
-            public uint Till;
+            public BigInteger Amount { get; set; }
+            public uint Till { get; set; }
 
             public void FromStackItem(StackItem stackItem)
             {
-                Struct @struct = (Struct)stackItem;
+                var @struct = (Struct)stackItem;
                 Amount = @struct[0].GetInteger();
                 Till = (uint)@struct[1].GetInteger();
             }
@@ -336,3 +338,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#nullable disable
