@@ -212,17 +212,15 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
         public T GetInteroperableClone<T>() where T : IInteroperable, new()
         {
-            var data = _value;
-
             // If it's interoperable and not sealed
-            if (data.IsEmpty && _cache is T interoperable)
+            if (!_value.IsEmpty && _cache is T interoperable)
             {
                 // Refresh data without change _value
-                data = BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
+                return (T)interoperable.Clone();
             }
 
             interoperable = new T();
-            interoperable.FromStackItem(BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default));
+            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
 
             return interoperable;
         }
@@ -235,17 +233,14 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
         public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
-            var data = _value;
-
             // If it's interoperable and not sealed
-            if (data.IsEmpty && _cache is T interoperable)
+            if (!_value.IsEmpty && _cache is T interoperable)
             {
-                // Refresh data without change _value
-                data = BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default);
+                return (T)interoperable.Clone();
             }
 
             interoperable = new T();
-            interoperable.FromStackItem(BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default), verify);
+            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
 
             return interoperable;
         }
