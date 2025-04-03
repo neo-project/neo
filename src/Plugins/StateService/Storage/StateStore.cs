@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Akka.Actor;
 using Neo.Extensions;
 using Neo.Ledger;
@@ -28,31 +30,31 @@ namespace Neo.Plugins.StateService.Storage
         private readonly StatePlugin system;
         private readonly IStore store;
         private const int MaxCacheCount = 100;
-        private readonly Dictionary<uint, StateRoot> cache = new Dictionary<uint, StateRoot>();
+        private readonly Dictionary<uint, StateRoot> cache = [];
         private StateSnapshot currentSnapshot;
-        private StateSnapshot _state_snapshot;
+        private StateSnapshot? _state_snapshot;
         public UInt256 CurrentLocalRootHash => currentSnapshot.CurrentLocalRootHash();
         public uint? LocalRootIndex => currentSnapshot.CurrentLocalRootIndex();
         public uint? ValidatedRootIndex => currentSnapshot.CurrentValidatedRootIndex();
 
-        private static StateStore singleton;
+        private static StateStore? _singleton;
         public static StateStore Singleton
         {
             get
             {
-                while (singleton is null) Thread.Sleep(10);
-                return singleton;
+                while (_singleton is null) Thread.Sleep(10);
+                return _singleton;
             }
         }
 
         public StateStore(StatePlugin system, string path)
         {
-            if (singleton != null) throw new InvalidOperationException(nameof(StateStore));
+            if (_singleton != null) throw new InvalidOperationException(nameof(StateStore));
             this.system = system;
             store = StatePlugin._system.LoadStore(path);
-            singleton = this;
+            _singleton = this;
             StatePlugin._system.ActorSystem.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
-            UpdateCurrentSnapshot();
+            currentSnapshot = GetSnapshot();
         }
 
         public void Dispose()
@@ -113,7 +115,7 @@ namespace Neo.Plugins.StateService.Storage
                 return true;
             }
             using var state_snapshot = Singleton.GetSnapshot();
-            StateRoot local_root = state_snapshot.GetStateRoot(state_root.Index);
+            var local_root = state_snapshot.GetStateRoot(state_root.Index);
             if (local_root is null || local_root.Witness != null) return false;
             if (!state_root.Verify(StatePlugin._system.Settings, StatePlugin._system.StoreView)) return false;
             if (local_root.RootHash != state_root.RootHash) return false;
@@ -126,6 +128,7 @@ namespace Neo.Plugins.StateService.Storage
 
         public void UpdateLocalStateRootSnapshot(uint height, IEnumerable<KeyValuePair<StorageKey, DataCache.Trackable>> change_set)
         {
+            _state_snapshot?.Dispose();
             _state_snapshot = Singleton.GetSnapshot();
             foreach (var item in change_set)
             {
@@ -142,8 +145,8 @@ namespace Neo.Plugins.StateService.Storage
                         break;
                 }
             }
-            UInt256 root_hash = _state_snapshot.Trie.Root.Hash;
-            StateRoot state_root = new StateRoot
+            var root_hash = _state_snapshot.Trie.Root.Hash;
+            var state_root = new StateRoot
             {
                 Version = StateRoot.CurrentVersion,
                 Index = height,
@@ -165,7 +168,7 @@ namespace Neo.Plugins.StateService.Storage
 
         private void CheckValidatedStateRoot(uint index)
         {
-            if (cache.TryGetValue(index, out StateRoot state_root))
+            if (cache.TryGetValue(index, out var state_root))
             {
                 cache.Remove(index);
                 Self.Tell(state_root);
@@ -190,3 +193,5 @@ namespace Neo.Plugins.StateService.Storage
         }
     }
 }
+
+#nullable disable
