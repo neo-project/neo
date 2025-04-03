@@ -217,6 +217,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestMaxValidUntilBlockIncrement()
+        {
+            Assert.IsTrue(TestProtocolSettings.Default.MaxValidUntilBlockIncrement > 0);
+        }
+
+        [TestMethod]
         public void TestInitialGasDistribution()
         {
             Assert.IsTrue(TestProtocolSettings.Default.InitialGasDistribution > 0);
@@ -311,6 +317,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void TestDefaultMaxValidUntilBlockIncrementValue()
+        {
+            Assert.AreEqual(ProtocolSettings.Default.MaxValidUntilBlockIncrement, TestProtocolSettings.Default.MaxValidUntilBlockIncrement);
+        }
+
+        [TestMethod]
         public void TestDefaultInitialGasDistributionValue()
         {
             Assert.AreEqual(ProtocolSettings.Default.InitialGasDistribution, TestProtocolSettings.Default.InitialGasDistribution);
@@ -344,6 +356,7 @@ namespace Neo.UnitTests
             Assert.AreEqual(TestProtocolSettings.Default.MaxTransactionsPerBlock, loadedSetting.MaxTransactionsPerBlock);
             Assert.AreEqual(TestProtocolSettings.Default.MemoryPoolMaxTransactions, loadedSetting.MemoryPoolMaxTransactions);
             Assert.AreEqual(TestProtocolSettings.Default.MaxTraceableBlocks, loadedSetting.MaxTraceableBlocks);
+            Assert.AreEqual(TestProtocolSettings.Default.MaxValidUntilBlockIncrement, loadedSetting.MaxValidUntilBlockIncrement);
             Assert.AreEqual(TestProtocolSettings.Default.InitialGasDistribution, loadedSetting.InitialGasDistribution);
             CollectionAssert.AreEqual(TestProtocolSettings.Default.Hardforks, loadedSetting.Hardforks);
 
