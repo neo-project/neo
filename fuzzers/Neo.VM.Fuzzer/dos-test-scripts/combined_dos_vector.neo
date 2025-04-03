@@ -1,0 +1,82 @@
+// Combined DOS Vector Test Script
+// This script is designed to trigger multiple DOS detection mechanisms:
+// 1. High instruction count (>5000)
+// 2. Excessive stack depth (>50)
+// 3. Potential infinite loop patterns
+// 4. Long execution time (>500ms)
+
+// Push initial counter for main loop (10000 iterations)
+0x01 0x10 0x27 // PUSHINT16 with value 10000 (0x2710)
+
+// Start of main loop
+// Label: MAIN_LOOP
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x3A // Jump to END (offset from current position)
+
+// Push another counter for nested loop (100 iterations)
+0x01 0x64 0x00 // PUSHINT16 with value 100 (0x0064)
+
+// Start of nested loop
+// Label: NESTED_LOOP
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end of nested loop
+0x24 // JMPIF
+0x1A // Jump to NESTED_LOOP_END (offset from current position)
+
+// Build up stack to exceed stack depth threshold
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+0x11 // PUSH1
+
+// Perform some expensive operations
+0x01 0x0A 0x00 // PUSHINT16 with value 10 (0x000A)
+0x02 // PUSHBYTES1 (1 byte)
+0x0A // 10 in decimal
+0xAA // MUL (multiply)
+0xAA // MUL (multiply)
+0xAA // MUL (multiply)
+
+// Clear most of the stack to avoid overflow
+0x49 // CLEAR - clear the stack
+
+// Decrement nested loop counter
+0x4A // DUP - duplicate counter
+0x9D // DEC - decrement by 1
+
+// Jump back to nested loop start
+0x22 // JMP
+0xE5 // Jump back to NESTED_LOOP (negative offset)
+
+// Label: NESTED_LOOP_END
+0x49 // CLEAR - clear the stack
+
+// Decrement main loop counter
+0x4A // DUP - duplicate counter
+0x9D // DEC - decrement by 1
+
+// Jump back to main loop start
+0x22 // JMP
+0xC5 // Jump back to MAIN_LOOP (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET

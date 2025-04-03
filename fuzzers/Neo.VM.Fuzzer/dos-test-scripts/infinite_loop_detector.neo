@@ -1,0 +1,58 @@
+// Infinite loop detection test script
+// This script is designed to trigger the infinite loop detection
+// by repeating the same state more than 10 times with >30% repetition ratio
+
+// Initialize counter for outer loop (small to ensure high repetition ratio)
+0x14 // PUSH4 (outer loop counter = 4)
+
+// Outer loop start
+// Label: OUTER_LOOP
+0x4A // DUP - duplicate outer counter
+
+// Check if outer counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If outer counter is 0, jump to end
+0x24 // JMPIF
+0x1A // Jump to END (offset from current position)
+
+// Initialize counter for inner loop (large to create many repetitions)
+0x01 0x64 0x00 // PUSHINT16 with value 100 (0x0064)
+
+// Inner loop start
+// Label: INNER_LOOP
+0x4A // DUP - duplicate inner counter
+
+// Check if inner counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If inner counter is 0, jump to inner end
+0x24 // JMPIF
+0x0F // Jump to INNER_END (offset from current position)
+
+// Simple operation that will be repeated many times
+0x11 // PUSH1
+0x49 // CLEAR - clear the stack
+
+// Decrement inner counter
+0x4A // DUP - duplicate inner counter
+0x9D // DEC - decrement by 1
+
+// Jump back to inner loop start
+0x22 // JMP
+0xF2 // Jump back to INNER_LOOP (negative offset)
+
+// Label: INNER_END
+// Decrement outer counter
+0x4A // DUP - duplicate outer counter
+0x9D // DEC - decrement by 1
+
+// Jump back to outer loop start
+0x22 // JMP
+0xE7 // Jump back to OUTER_LOOP (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET

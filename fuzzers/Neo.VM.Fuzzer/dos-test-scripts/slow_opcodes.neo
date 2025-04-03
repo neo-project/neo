@@ -1,0 +1,47 @@
+// Slow opcodes DOS test script
+// This script is designed to trigger slow opcodes detection
+// by using computationally expensive operations repeatedly
+
+// Push loop counter (500 iterations)
+0x01 0xF4 0x01 // PUSHINT16 with value 500 (0x01F4)
+
+// Loop start
+// Label: LOOP_START
+0x4A // DUP - duplicate counter
+
+// Check if counter is 0
+0x10 // PUSH0
+0xA0 // NUMEQUAL
+
+// If counter is 0, jump to end
+0x24 // JMPIF
+0x22 // Jump to END (offset from current position)
+
+// Expensive operations that are likely to be slow
+// Push large numbers for calculations
+0x01 0xFF 0xFF // PUSHINT16 with large value 0xFFFF
+0x01 0xFF 0xFF // PUSHINT16 with large value 0xFFFF
+
+// Perform expensive power operation (a^b)
+0xA3 // POW
+
+// More expensive operations
+0x01 0xFF 0xFF // PUSHINT16 with large value 0xFFFF
+0x01 0xFE 0xFF // PUSHINT16 with large value 0xFFFE
+0xA0 // MUL (multiply large numbers)
+0x01 0x01 0x00 // PUSHINT16 with value 0x0001
+0xA1 // DIV (division is typically slow)
+0x01 0xFF 0x00 // PUSHINT16 with value 0x00FF
+0xA2 // MOD (modulo is typically slow)
+
+// Decrement counter
+0x4A // DUP - duplicate counter
+0x9D // DEC - decrement by 1
+
+// Jump back to loop start
+0x22 // JMP
+0xDF // Jump back to LOOP_START (negative offset)
+
+// Label: END
+0x11 // PUSH1 (success value)
+0x40 // RET

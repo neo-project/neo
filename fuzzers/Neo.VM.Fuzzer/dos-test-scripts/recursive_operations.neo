@@ -1,0 +1,29 @@
+// Recursive operations script
+// This script creates a pattern that could lead to excessive stack usage
+// OpCodes: PUSH1, DUP, ADD, CALL, RET
+
+// Initialize counter
+0x11 // PUSH1 (initial value)
+
+// Start of recursive function (position 1)
+0x4A // DUP (duplicate value on stack)
+0x4A // DUP (duplicate again)
+
+// Check if counter is high enough
+0x14 // PUSH4 (threshold)
+0xB4 // GE (greater than or equal)
+
+// If counter is high enough, jump to end
+0x24 // JMPIF
+0x10 // Jump to position 16 (offset from current position)
+
+// Increment counter
+0x11 // PUSH1
+0x9E // ADD
+
+// Call recursive function
+0x34 // CALL
+0xEF // Call position 1 (negative offset from current position)
+
+// End of recursive function
+0x40 // RET
