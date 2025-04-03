@@ -156,6 +156,7 @@ namespace Neo.Plugins.StateService.Storage
         public void UpdateLocalStateRoot(uint height)
         {
             _state_snapshot?.Commit();
+            _state_snapshot?.Dispose();
             _state_snapshot = null;
             UpdateCurrentSnapshot();
             system.Verifier?.Tell(new VerificationService.BlockPersisted { Index = height });
@@ -178,6 +179,8 @@ namespace Neo.Plugins.StateService.Storage
 
         protected override void PostStop()
         {
+            currentSnapshot?.Dispose();
+            store?.Dispose();
             base.PostStop();
         }
 

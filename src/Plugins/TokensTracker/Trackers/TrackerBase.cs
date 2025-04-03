@@ -29,7 +29,7 @@ namespace Neo.Plugins.Trackers
 {
     record TransferRecord(UInt160 asset, UInt160 from, UInt160 to, byte[] tokenId, BigInteger amount);
 
-    abstract class TrackerBase
+    abstract class TrackerBase : IDisposable
     {
         protected bool _shouldTrackHistory;
         protected uint _maxResults;
@@ -57,6 +57,12 @@ namespace Neo.Plugins.Trackers
         public void Commit()
         {
             _levelDbSnapshot?.Commit();
+        }
+
+        public virtual void Dispose()
+        {
+            _levelDbSnapshot?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public IEnumerable<(TKey key, TValue val)> QueryTransfers<TKey, TValue>(byte dbPrefix, UInt160 userScriptHash, ulong startTime, ulong endTime)

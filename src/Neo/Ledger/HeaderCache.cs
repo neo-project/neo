@@ -106,6 +106,10 @@ namespace Neo.Ledger
             readerWriterLock.EnterWriteLock();
             try
             {
+                // Enforce the cache limit
+                if (headers.Count >= 10000)
+                    return;
+
                 headers.Enqueue(header);
             }
             finally
