@@ -25,12 +25,12 @@ namespace Neo.IO.Caching
         /// <summary>
         /// Maximum capacity of each bucket inside each HashSet of <see cref="_sets"/>.
         /// </summary>
-        private readonly int _bucketCapacity;
+        internal readonly int _bucketCapacity;
 
         /// <summary>
         /// Maximum number of buckets for the LinkedList, meaning its maximum cardinality.
         /// </summary>
-        private readonly int _maxBucketCount;
+        internal readonly int _maxBucketCount;
 
         /// <summary>
         /// Entry count
