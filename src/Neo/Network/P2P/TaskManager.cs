@@ -75,7 +75,7 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             // Exactly the same as mempool
-            _knownHashes = new HashSetCache<UInt256>(Math.Min(100, system.MemPool.Capacity / 10), 10);
+            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, system.MemPool.Capacity / 10), 10);
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
