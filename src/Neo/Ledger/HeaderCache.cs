@@ -26,6 +26,8 @@ namespace Neo.Ledger
         private readonly IndexedQueue<Header> _headers = new();
         private readonly ReaderWriterLockSlim _readerWriterLock = new();
 
+        public const int MaxHeaders = 10_000;
+
         /// <summary>
         /// Gets the <see cref="Header"/> at the specified index in the cache.
         /// </summary>
@@ -74,7 +76,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Indicates whether the cache is full.
         /// </summary>
-        public bool Full => Count >= 10000;
+        public bool Full => Count >= MaxHeaders;
 
         /// <summary>
         /// Gets the last <see cref="Header"/> in the cache. Or <see langword="null"/> if the cache is empty.
@@ -101,17 +103,22 @@ namespace Neo.Ledger
             _readerWriterLock.Dispose();
         }
 
-        internal void Add(Header header)
+        internal bool Add(Header header)
         {
             _readerWriterLock.EnterWriteLock();
             try
             {
+                // Enforce the cache limit when Full
+                if (_headers.Count >= MaxHeaders)
+                    return false;
+
                 _headers.Enqueue(header);
             }
             finally
             {
                 _readerWriterLock.ExitWriteLock();
             }
+            return true;
         }
 
         internal bool TryRemoveFirst(out Header header)
