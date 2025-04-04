@@ -728,7 +728,7 @@ namespace Neo.UnitTests.SmartContract.Native
             cloneCache.Add(storageKey, new StorageItem(new CandidateState { Registered = true, Votes = BigInteger.One }));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.AreEqual(1, cloneCache.Find(storageKey.ToArray()).ToArray().Length);
+            Assert.AreEqual(1, cloneCache.Find(storageKey).ToArray().Length);
 
             // Pre-persist
             var persistingBlock = new Block
@@ -755,13 +755,13 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(ret.Result);
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.AreEqual(0, cloneCache.Find(storageKey.ToArray()).ToArray().Length);
+            Assert.AreEqual(0, cloneCache.Find(storageKey).ToArray().Length);
 
             // Post-persist
             Assert.IsTrue(Check_PostPersist(cloneCache, persistingBlock));
 
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[0]);
-            Assert.AreEqual(1, cloneCache.Find(storageKey.ToArray()).ToArray().Length);
+            Assert.AreEqual(1, cloneCache.Find(storageKey).ToArray().Length);
         }
 
         [TestMethod]
