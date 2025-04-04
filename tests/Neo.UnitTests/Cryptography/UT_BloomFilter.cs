@@ -32,6 +32,19 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
+        public void TestReset()
+        {
+            int m = 7, n = 10;
+            uint nTweak = 123456;
+            byte[] elements = { 0, 1, 2, 3, 4 };
+            var filter = new BloomFilter(m, n, nTweak);
+            filter.Add(elements);
+            Assert.IsTrue(filter.Check(elements));
+            filter.Reset();
+            Assert.IsFalse(filter.Check(elements));
+        }
+
+        [TestMethod]
         public void TestBloomFIlterConstructorGetKMTweak()
         {
             int m = -7, n = 10;

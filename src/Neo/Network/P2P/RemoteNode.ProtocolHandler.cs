@@ -240,7 +240,7 @@ namespace Neo.Network.P2P
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             var notFound = new List<UInt256>();
-            foreach (UInt256 hash in payload.Hashes.Where(p => _sentHashes.Add(p)))
+            foreach (var hash in payload.Hashes.Where(_sentHashes.Add))
             {
                 switch (payload.Type)
                 {
