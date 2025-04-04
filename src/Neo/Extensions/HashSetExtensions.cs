@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
-using System;
 using System.Collections.Generic;
 
 namespace Neo.Extensions
@@ -20,19 +19,6 @@ namespace Neo.Extensions
     /// </summary>
     public static class HashSetExtensions
     {
-        internal static void Remove<T>(this HashSet<T> set, HashSetCache<T> other)
-            where T : IEquatable<T>
-        {
-            if (set.Count > other.Count)
-            {
-                set.ExceptWith(other);
-            }
-            else
-            {
-                set.RemoveWhere(other.Contains);
-            }
-        }
-
         internal static void Remove(this HashSet<UInt256> set, HashSetUInt256Cache other)
         {
             if (set.Count > other.Count)
