@@ -59,9 +59,9 @@ namespace Neo.UnitTests.Persistence
             CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, store.TryGet([1]));
 
             store.Put([2], [4, 5, 6]);
-            CollectionAssert.AreEqual(new byte[] { 1 }, store.Seek([]).Select(u => u.Key).First());
-            CollectionAssert.AreEqual(new byte[] { 2 }, store.Seek([2], SeekDirection.Backward).Select(u => u.Key).First());
-            CollectionAssert.AreEqual(new byte[] { 1 }, store.Seek([1], SeekDirection.Backward).Select(u => u.Key).First());
+            CollectionAssert.AreEqual(new byte[] { 1 }, store.Find([]).Select(u => u.Key).First());
+            CollectionAssert.AreEqual(new byte[] { 2 }, store.Find([2], SeekDirection.Backward).Select(u => u.Key).First());
+            CollectionAssert.AreEqual(new byte[] { 1 }, store.Find([1], SeekDirection.Backward).Select(u => u.Key).First());
 
             store.Delete([1]);
             store.Delete([2]);
@@ -72,7 +72,7 @@ namespace Neo.UnitTests.Persistence
             store.Put([0x00, 0x00, 0x03], [0x03]);
             store.Put([0x00, 0x00, 0x04], [0x04]);
 
-            var entries = store.Seek([], SeekDirection.Backward).ToArray();
+            var entries = store.Find([], SeekDirection.Backward).ToArray();
             Assert.AreEqual(0, entries.Length);
         }
 

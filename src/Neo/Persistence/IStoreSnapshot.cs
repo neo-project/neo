@@ -19,7 +19,7 @@ namespace Neo.Persistence
     /// This interface provides methods for reading, writing, and committing from/to snapshot.
     /// </summary>
     public interface IStoreSnapshot :
-        IRawReadOnlyStore,
+        IReadOnlyStore<byte[], byte[]>,
         IWriteStore<byte[], byte[]>,
         IDisposable
     {
