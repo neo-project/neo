@@ -80,22 +80,22 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(s_key2, s_value2);
             _store.Put(s_key3.ToArray(), s_value3.ToArray());
 
-            var items = clonedCache.Find(s_key1.ToArray());
+            var items = clonedCache.Find(s_key1);
             Assert.AreEqual(s_key1, items.ElementAt(0).Key);
             Assert.AreEqual(s_value1, items.ElementAt(0).Value);
             Assert.AreEqual(1, items.Count());
 
-            items = clonedCache.Find(s_key2.ToArray());
+            items = clonedCache.Find(s_key2);
             Assert.AreEqual(s_key2, items.ElementAt(0).Key);
             Assert.IsTrue(s_value2.EqualsTo(items.ElementAt(0).Value));
             Assert.AreEqual(1, items.Count());
 
-            items = clonedCache.Find(s_key3.ToArray());
+            items = clonedCache.Find(s_key3);
             Assert.AreEqual(s_key3, items.ElementAt(0).Key);
             Assert.IsTrue(s_value3.EqualsTo(items.ElementAt(0).Value));
             Assert.AreEqual(1, items.Count());
 
-            items = clonedCache.Find(s_key4.ToArray());
+            items = clonedCache.Find(s_key4);
             Assert.AreEqual(0, items.Count());
         }
 
