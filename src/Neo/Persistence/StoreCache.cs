@@ -26,8 +26,7 @@ namespace Neo.Persistence
     public class StoreCache : DataCache, IDisposable
     {
         private readonly ILogger _log = Log.ForContext<StoreCache>();
-
-        private readonly IRawReadOnlyStore _store;
+        private readonly IReadOnlyStore<byte[], byte[]> _store;
         private readonly IStoreSnapshot? _snapshot;
 
         /// <summary>
@@ -114,7 +113,7 @@ namespace Neo.Persistence
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
             _log.Verbose("SeekInternal with prefix {PrefixHex}, Direction: {Direction}", keyOrPrefix != null ? keyOrPrefix.ToHexString() : "<null>", direction);
-            return _store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
+            return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
         /// <inheritdoc/>
