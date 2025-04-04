@@ -39,6 +39,13 @@ namespace Neo.IO.Caching
         /// </summary>
         public int Count { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the HashSetCache class with the specified bucket capacity and maximum number of buckets.
+        /// The total entries will be bucketCapacity * maxBucketCount
+        /// </summary>
+        /// <param name="bucketCapacity">The maximum number of items each HashSet bucket can hold. Must be greater than 0.</param>
+        /// <param name="maxBucketCount">The maximum number of HashSet buckets the cache can maintain. Must be greater than 0.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when either bucketCapacity or maxBucketCount is less than or equal to 0.</exception>
         public HashSetCache(int bucketCapacity, int maxBucketCount = 10)
         {
             if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCapacity)} should be greater than 0");
