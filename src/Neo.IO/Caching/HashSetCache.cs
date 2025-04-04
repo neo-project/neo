@@ -81,6 +81,16 @@ namespace Neo.IO.Caching
             return false;
         }
 
+        public void Clear()
+        {
+            foreach (var set in _sets)
+            {
+                set.Clear();
+            }
+
+            _sets.Clear();
+        }
+
         public void ExceptWith(IEnumerable<T> items)
         {
             List<HashSet<T>> removeList = [];

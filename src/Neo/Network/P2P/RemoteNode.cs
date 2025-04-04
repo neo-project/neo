@@ -207,7 +207,11 @@ namespace Neo.Network.P2P
         protected override void PostStop()
         {
             timer.CancelIfNotNull();
-            localNode.RemoteNodes.TryRemove(Self, out _);
+            if (localNode.RemoteNodes.TryRemove(Self, out _))
+            {
+                _knownHashes.Clear();
+                _sentHashes.Clear();
+            }
             base.PostStop();
         }
 
