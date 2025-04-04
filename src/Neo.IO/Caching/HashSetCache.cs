@@ -89,6 +89,7 @@ namespace Neo.IO.Caching
             }
 
             _sets.Clear();
+            Count = 0;
         }
 
         public void ExceptWith(IEnumerable<T> items)
