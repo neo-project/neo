@@ -32,6 +32,7 @@
     <ProjectReference Include="..\Neo\Neo.csproj" />
     <ProjectReference Include="..\Plugins\LevelDBStore\LevelDBStore.csproj" />
     <ProjectReference Include="..\Plugins\RocksDBStore\RocksDBStore.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography.MPTTrie\Neo.Cryptography.MPTTrie.csproj" />
   </ItemGroup>
 
   <ItemGroup>
