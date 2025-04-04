@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            return snapshot.Find(CreateStorageKey(Prefix_Block).ToArray()).Any();
+            return snapshot.Find(CreateStorageKey(Prefix_Block)).Any();
         }
 
         private bool IsTraceableBlock(IReadOnlyStore snapshot, uint index, uint maxTraceableBlocks)

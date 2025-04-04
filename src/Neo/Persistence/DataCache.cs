@@ -235,6 +235,23 @@ namespace Neo.Persistence
         /// <summary>
         /// Finds the entries starting with the specified prefix.
         /// </summary>
+        /// <param name="direction">The search direction.</param>
+        /// <returns>The entries found with the desired prefix.</returns>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(SeekDirection direction = SeekDirection.Forward)
+        {
+            return Find((byte[]?)null, direction);
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(StorageKey? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        {
+            var key = key_prefix?.ToArray();
+            return Find(key, direction);
+        }
+
+        /// <summary>
+        /// Finds the entries starting with the specified prefix.
+        /// </summary>
         /// <param name="key_prefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>

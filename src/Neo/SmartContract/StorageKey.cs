@@ -47,6 +47,21 @@ namespace Neo.SmartContract
             init => _key = value.ToArray(); // make new region of memory (a copy).
         }
 
+        /// <summary>
+        /// Get key length
+        /// </summary>
+        public int Length
+        {
+            get
+            {
+                if (_cache is { IsEmpty: true })
+                {
+                    _cache = Build();
+                }
+                return _cache.Length;
+            }
+        }
+
         private ReadOnlyMemory<byte> _cache;
         private readonly ReadOnlyMemory<byte> _key;
 
@@ -256,6 +271,20 @@ namespace Neo.SmartContract
             return Create(id, prefix, content.GetSpan());
         }
 
+        /// <summary>
+        /// Creates a search prefix for a contract.
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the keys to search.</param>
+        /// <returns>The created search prefix.</returns>
+        public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
+        {
+            var buffer = new byte[sizeof(int) + prefix.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
+            prefix.CopyTo(buffer.AsSpan(sizeof(int)..));
+            return buffer;
+        }
+
         #endregion
 
         public StorageKey()
@@ -288,20 +317,6 @@ namespace Neo.SmartContract
             Key = _cache[sizeof(int)..]; // "Key" init makes a copy already.
         }
 
-        /// <summary>
-        /// Creates a search prefix for a contract.
-        /// </summary>
-        /// <param name="id">The id of the contract.</param>
-        /// <param name="prefix">The prefix of the keys to search.</param>
-        /// <returns>The created search prefix.</returns>
-        public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
-        {
-            var buffer = new byte[sizeof(int) + prefix.Length];
-            BinaryPrimitives.WriteInt32LittleEndian(buffer, id);
-            prefix.CopyTo(buffer.AsSpan(sizeof(int)..));
-            return buffer;
-        }
-
         public bool Equals(StorageKey? other)
         {
             if (other is null)
@@ -322,12 +337,17 @@ namespace Neo.SmartContract
         {
             if (_cache is { IsEmpty: true })
             {
-                var buffer = new byte[sizeof(int) + Key.Length];
-                BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(), Id);
-                Key.CopyTo(buffer.AsMemory(sizeof(int)..));
-                _cache = buffer;
+                _cache = Build();
             }
             return _cache.ToArray(); // Make a copy
+        }
+
+        private byte[] Build()
+        {
+            var buffer = new byte[sizeof(int) + Key.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(), Id);
+            Key.CopyTo(buffer.AsMemory(sizeof(int)..));
+            return buffer;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
