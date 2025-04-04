@@ -46,8 +46,8 @@ namespace Neo.Network.P2P
 
         private static readonly List<MessageReceivedHandler> handlers = new();
         private readonly PendingKnownHashesCollection pendingKnownHashes = new();
-        private readonly HashSetCache<UInt256> knownHashes;
-        private readonly HashSetCache<UInt256> sentHashes;
+        private readonly HashSetUInt256Cache _knownHashes;
+        private readonly HashSetUInt256Cache _sentHashes;
         private bool verack = false;
         private BloomFilter bloom_filter;
 
@@ -240,7 +240,7 @@ namespace Neo.Network.P2P
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             var notFound = new List<UInt256>();
-            foreach (UInt256 hash in payload.Hashes.Where(p => sentHashes.Add(p)))
+            foreach (UInt256 hash in payload.Hashes.Where(p => _sentHashes.Add(p)))
             {
                 switch (payload.Type)
                 {
@@ -313,7 +313,7 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            if (!knownHashes.Add(inventory.Hash)) return;
+            if (!_knownHashes.Add(inventory.Hash)) return;
             pendingKnownHashes.Remove(inventory.Hash);
             system.TaskManager.Tell(inventory);
             switch (inventory)
@@ -335,7 +335,7 @@ namespace Neo.Network.P2P
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            UInt256[] hashes = payload.Hashes.Where(p => !pendingKnownHashes.Contains(p) && !knownHashes.Contains(p) && !sentHashes.Contains(p)).ToArray();
+            UInt256[] hashes = payload.Hashes.Where(p => !pendingKnownHashes.Contains(p) && !_knownHashes.Contains(p) && !_sentHashes.Contains(p)).ToArray();
             if (hashes.Length == 0) return;
             switch (payload.Type)
             {

@@ -61,6 +61,14 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Reset bit array
+        /// </summary>
+        public void Reset()
+        {
+            _bits.SetAll(false);
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="BloomFilter"/> class.
         /// </summary>
         /// <param name="m">The size of the bit array used by the bloom filter, and must be greater than 0.</param>

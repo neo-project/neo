@@ -29,7 +29,19 @@ namespace Neo.Extensions
             }
             else
             {
-                set.RemoveWhere(u => other.Contains(u));
+                set.RemoveWhere(other.Contains);
+            }
+        }
+
+        internal static void Remove(this HashSet<UInt256> set, HashSetUInt256Cache other)
+        {
+            if (set.Count > other.Count)
+            {
+                set.ExceptWith(other);
+            }
+            else
+            {
+                set.RemoveWhere(other.Contains);
             }
         }
     }
