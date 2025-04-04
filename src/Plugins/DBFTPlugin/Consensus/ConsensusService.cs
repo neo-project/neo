@@ -17,6 +17,8 @@ using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
 using Neo.Sign;
+using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +36,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private readonly IActorRef taskManager;
         private readonly IActorRef blockchain;
         private ICancelable timer_token;
-        private DateTime block_received_time;
+        private DateTime onPrepareReceivedTime;
+        private uint onPrepareBlockIndex;
         private uint block_received_index;
         private bool started = false;
 
@@ -89,14 +92,15 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             {
                 if (isRecovering)
                 {
-                    ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << (viewNumber + 1)));
+                    ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << (viewNumber + 1)));
                 }
                 else
                 {
-                    TimeSpan span = neoSystem.Settings.TimePerBlock;
-                    if (block_received_index + 1 == context.Block.Index)
+                    TimeSpan span = context.BlockGenTime;
+                    if (block_received_index + 1 == context.Block.Index && onPrepareBlockIndex + 1 == context.Block.Index)
                     {
-                        var diff = TimeProvider.Current.UtcNow - block_received_time;
+                        // Include the consensus time into the consensus intervals.
+                        var diff = TimeProvider.Current.UtcNow - onPrepareReceivedTime;
                         if (diff >= span)
                             span = TimeSpan.Zero;
                         else
@@ -107,7 +111,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             else
             {
-                ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << (viewNumber + 1)));
+                ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << (viewNumber + 1)));
             }
         }
 
@@ -180,7 +184,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"Sending {nameof(RecoveryMessage)} to resend {nameof(Commit)}");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                    ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << 1));
+                    ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << 1));
                 }
                 else
                 {
@@ -209,7 +213,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
-            ChangeTimer(TimeSpan.FromMilliseconds((neoSystem.Settings.MillisecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? neoSystem.Settings.MillisecondsPerBlock : 0)));
+            ChangeTimer(TimeSpan.FromMilliseconds(((int)context.BlockGenTime.TotalMilliseconds << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? context.BlockGenTime.TotalMilliseconds : 0)));
         }
 
         private void RequestRecovery()
@@ -226,7 +230,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // The latter may happen by nodes in higher views with, at least, `M` proofs
             byte expectedView = context.ViewNumber;
             expectedView++;
-            ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << (expectedView + 1)));
+            ChangeTimer(TimeSpan.FromMilliseconds((int)context.BlockGenTime.TotalMilliseconds << (expectedView + 1)));
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
                 RequestRecovery();
@@ -319,8 +323,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.MillisecondsPerBlock`
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
-            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started)
-                + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * neoSystem.Settings.MillisecondsPerBlock / (double)context.M);
+            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * context.BlockGenTime.TotalMilliseconds / (double)context.M);
             if (!context.WatchOnly && !context.ViewChanging && !context.CommitSent && (nextDelay > TimeSpan.Zero))
                 ChangeTimer(nextDelay);
         }

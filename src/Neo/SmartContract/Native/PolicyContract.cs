@@ -14,6 +14,7 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -64,22 +65,52 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxStoragePrice = 10000000;
 
+        /// <summary>
+        /// The minimum block generation time that the committee can set in milliseconds.
+        /// </summary>
+        public const uint MinBlockGenTime = 0;
+
+        /// <summary>
+        /// The maximum block generation time that the committee can set in milliseconds.
+        /// </summary>
+        public const uint MaxBlockGenTime = 30_000;
+
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
+        private const byte Prefix_BlockGenTime = 21;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
 
+        /// <summary>
+        /// The storage key for the block generation time.
+        /// </summary>
+        private readonly StorageKey _blockGenTime;
+
+        /// <summary>
+        /// The event name for the block generation time changed.
+        /// </summary>
+        private const string MSPerBlockChangedEvent = "MSPerBlockChanged";
+
+        /// <summary>
+        /// The event for the block generation time changed.
+        /// Enabled after the HF_Echidna.
+        /// </summary>
+        [ContractEvent(Hardfork.HF_Echidna, 0, name: MSPerBlockChangedEvent,
+            "old", ContractParameterType.Integer,
+            "new", ContractParameterType.Integer
+        )]
 
         internal PolicyContract() : base()
         {
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
             _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
             _storagePrice = CreateStorageKey(Prefix_StoragePrice);
+            _blockGenTime = CreateStorageKey(Prefix_BlockGenTime);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -90,10 +121,13 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
                 engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
             }
+
             if (hardfork == Hardfork.HF_Echidna)
             {
+                engine.SnapshotCache.Add(_blockGenTime, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
             }
+
             return ContractTask.CompletedTask;
         }
 
@@ -128,6 +162,20 @@ namespace Neo.SmartContract.Native
         public uint GetStoragePrice(IReadOnlyStore snapshot)
         {
             return (uint)(BigInteger)snapshot[_storagePrice];
+        }
+
+        /// <summary>
+        /// Gets the block generation time in milliseconds.
+        /// This can only be called after the HF_Echidna.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The block generation time in milliseconds.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMSPerBlock(IReadOnlyStore snapshot)
+        {
+            // this should not be null since this method is only available after the HF_Echidna
+            snapshot.TryGet(_blockGenTime, out var item);
+            return (uint)(BigInteger)item;
         }
 
         /// <summary>
@@ -181,6 +229,32 @@ namespace Neo.SmartContract.Native
         public bool IsBlocked(IReadOnlyStore snapshot, UInt160 account)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount, account));
+        }
+
+        /// <summary>
+        ///  Sets the block generation time in milliseconds.
+        /// This can only be set by the committee after the HF_Echidna.
+        /// The value must be between MinBlockGenTime and DefaultBlockGenTime.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="milliseconds">The block generation time in milliseconds. Must be between MinBlockGenTime and MaxBlockGenTime.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided milliseconds are outside the allowed range.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        public void SetMSPerBlock(ApplicationEngine engine, uint milliseconds)
+        {
+            if (milliseconds is <= MinBlockGenTime or > MaxBlockGenTime)
+                throw new ArgumentOutOfRangeException(nameof(milliseconds), $"MSPerBlock should be between {MinBlockGenTime} and {MaxBlockGenTime}, got {milliseconds}");
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("invalid committee signature");
+
+            // Since this method is only available after the HF_Echidna,
+            // we can safely assume that the block generation time is not null.
+            var oldTime = GetMSPerBlock(engine.SnapshotCache);
+            engine.SnapshotCache.GetAndChange(_blockGenTime).Set(milliseconds);
+
+            // Emit the BlockGenTimeChanged event
+            engine.SendNotification(Hash, MSPerBlockChangedEvent,
+                [new VM.Types.Integer(oldTime), new VM.Types.Integer(milliseconds)]);
         }
 
         /// <summary>

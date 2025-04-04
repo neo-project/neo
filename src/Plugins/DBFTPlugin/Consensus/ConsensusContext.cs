@@ -37,6 +37,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         public Block Block;
         public byte ViewNumber;
+        public TimeSpan BlockGenTime;
         public ECPoint[] Validators;
         public int MyIndex;
         public UInt256[] TransactionHashes;
@@ -210,6 +211,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                             NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount))
                     }
                 };
+                BlockGenTime = neoSystem.GetBlockGenTime();
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot, neoSystem.Settings.ValidatorsCount);
                 if (_witnessSize == 0 || (pv != null && pv.Length != Validators.Length))
