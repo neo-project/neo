@@ -57,7 +57,7 @@ namespace Neo
                 throw new FormatException($"Invalid length: {value.Length}");
 
             var span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref _value1), Length);
-            value[..Length].CopyTo(span);
+            value.CopyTo(span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -182,7 +182,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Block)
                 .Add(hash)
                 .ToArray();
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Forward))
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Forward))
             {
                 if (key.AsSpan().StartsWith(prefixKey))
                     yield return (value.AsSerializable<BlockLogState>(), (TriggerType)key.AsSpan(Prefix_Block_Trigger_Size)[0]);
@@ -201,7 +201,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
             uint index = 1;
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Backward)) // Get newest to oldest
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Backward)) // Get newest to oldest
             {
                 if (key.AsSpan().StartsWith(prefix))
                 {
@@ -224,7 +224,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
             uint index = 1;
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Backward)) // Get newest to oldest
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Backward)) // Get newest to oldest
             {
                 if (key.AsSpan().StartsWith(prefix))
                 {
@@ -251,7 +251,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
                 .AddBigEndian(ulong.MaxValue) // Get newest to oldest (timestamp)
                 .ToArray();
             uint index = 1;
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Backward)) // Get newest to oldest
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Backward)) // Get newest to oldest
             {
                 if (key.AsSpan().StartsWith(prefix))
                 {
@@ -273,7 +273,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
             var prefixKey = new KeyBuilder(Prefix_Id, Prefix_Execution_Block)
                 .Add(hash)
                 .ToArray();
-            foreach (var (key, value) in _snapshot.Seek(prefixKey, SeekDirection.Forward))
+            foreach (var (key, value) in _snapshot.Find(prefixKey, SeekDirection.Forward))
             {
                 if (key.AsSpan().StartsWith(prefixKey))
                     yield return (new Guid(value), (TriggerType)key.AsSpan(Prefix_Execution_Block_Trigger_Size)[0]);
