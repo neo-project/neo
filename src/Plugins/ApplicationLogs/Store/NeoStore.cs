@@ -42,6 +42,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void Dispose()
         {
+            _blocklogsnapshot?.Dispose();
             _store?.Dispose();
             GC.SuppressFinalize(this);
         }
