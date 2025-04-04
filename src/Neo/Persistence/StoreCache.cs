@@ -24,7 +24,7 @@ namespace Neo.Persistence
     /// </summary>
     public class StoreCache : DataCache, IDisposable
     {
-        private readonly IRawReadOnlyStore _store;
+        private readonly IReadOnlyStore<byte[], byte[]> _store;
         private readonly IStoreSnapshot? _snapshot;
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Neo.Persistence
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            return _store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
+            return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
         /// <inheritdoc/>

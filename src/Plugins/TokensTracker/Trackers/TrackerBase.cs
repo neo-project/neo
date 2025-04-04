@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -27,14 +29,14 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.Plugins.Trackers
 {
-    record TransferRecord(UInt160 asset, UInt160 from, UInt160 to, byte[] tokenId, BigInteger amount);
+    record TransferRecord(UInt160 asset, UInt160 from, UInt160 to, byte[]? tokenId, BigInteger amount);
 
-    abstract class TrackerBase
+    abstract class TrackerBase : IDisposable
     {
         protected bool _shouldTrackHistory;
         protected uint _maxResults;
         protected IStore _db;
-        private IStoreSnapshot _levelDbSnapshot;
+        private IStoreSnapshot? _levelDbSnapshot;
         protected NeoSystem _neoSystem;
         public abstract string TrackName { get; }
 
@@ -81,7 +83,7 @@ namespace Neo.Plugins.Trackers
 
         protected static byte[] Key(byte prefix, ISerializable key)
         {
-            byte[] buffer = new byte[key.Size + 1];
+            var buffer = new byte[key.Size + 1];
             using (MemoryStream ms = new(buffer, true))
             using (BinaryWriter writer = new(ms))
             {
@@ -93,15 +95,15 @@ namespace Neo.Plugins.Trackers
 
         protected void Put(byte prefix, ISerializable key, ISerializable value)
         {
-            _levelDbSnapshot.Put(Key(prefix, key), value.ToArray());
+            _levelDbSnapshot!.Put(Key(prefix, key), value.ToArray());
         }
 
         protected void Delete(byte prefix, ISerializable key)
         {
-            _levelDbSnapshot.Delete(Key(prefix, key));
+            _levelDbSnapshot!.Delete(Key(prefix, key));
         }
 
-        protected TransferRecord GetTransferRecord(UInt160 asset, Array stateItems)
+        protected static TransferRecord? GetTransferRecord(UInt160 asset, Array stateItems)
         {
             if (stateItems.Count < 3)
             {
@@ -117,10 +119,10 @@ namespace Neo.Plugins.Trackers
             if (amountItem is not ByteString && amountItem is not Integer)
                 return null;
 
-            byte[] fromBytes = fromItem.IsNull ? null : fromItem.GetSpan().ToArray();
+            var fromBytes = fromItem.IsNull ? null : fromItem.GetSpan().ToArray();
             if (fromBytes != null && fromBytes.Length != UInt160.Length)
                 return null;
-            byte[] toBytes = toItem.IsNull ? null : toItem.GetSpan().ToArray();
+            var toBytes = toItem.IsNull ? null : toItem.GetSpan().ToArray();
             if (toBytes != null && toBytes.Length != UInt160.Length)
                 return null;
             if (fromBytes == null && toBytes == null)
@@ -131,7 +133,7 @@ namespace Neo.Plugins.Trackers
             return stateItems.Count switch
             {
                 3 => new TransferRecord(asset, @from, to, null, amountItem.GetInteger()),
-                4 when (stateItems[3] is ByteString tokenId) => new TransferRecord(asset, @from, to, tokenId.Memory.ToArray(), amountItem.GetInteger()),
+                4 when stateItems[3] is ByteString tokenId => new TransferRecord(asset, @from, to, tokenId.Memory.ToArray(), amountItem.GetInteger()),
                 _ => null
             };
         }
@@ -159,5 +161,29 @@ namespace Neo.Plugins.Trackers
         {
             Utility.Log(TrackName, level, message);
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing && _levelDbSnapshot != null)
+            {
+                // Dispose managed resources
+                _levelDbSnapshot.Dispose();
+                _levelDbSnapshot = null;
+            }
+            // Dispose unmanaged resources (if any) here.
+        }
+
+        ~TrackerBase()
+        {
+            Dispose(false);
+        }
     }
 }
+
+#nullable disable
