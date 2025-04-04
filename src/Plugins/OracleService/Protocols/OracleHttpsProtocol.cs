@@ -49,7 +49,7 @@ namespace Neo.Plugins.OracleService
 
         public async Task<(OracleResponseCode, string)> ProcessAsync(Uri uri, CancellationToken cancellation)
         {
-            Utility.Log(nameof(OracleHttpsProtocol), LogLevel.Debug, $"Request: {uri.AbsoluteUri}");
+            Serilog.Log.Logger.ForContext<OracleHttpsProtocol>().Debug("Request: {Uri}", uri.AbsoluteUri);
 
             HttpResponseMessage message;
             try

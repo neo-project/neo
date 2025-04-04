@@ -49,16 +49,16 @@ namespace Neo.Plugins.OracleService
 
         public async Task<(OracleResponseCode, string)> ProcessAsync(Uri uri, CancellationToken cancellation)
         {
-            Utility.Log(nameof(OracleNeoFSProtocol), LogLevel.Debug, $"Request: {uri.AbsoluteUri}");
+            Serilog.Log.Logger.ForContext<OracleNeoFSProtocol>().Debug("Request: {Uri}", uri.AbsoluteUri);
             try
             {
                 (OracleResponseCode code, string data) = await GetAsync(uri, Settings.Default.NeoFS.EndPoint, cancellation);
-                Utility.Log(nameof(OracleNeoFSProtocol), LogLevel.Debug, $"NeoFS result, code: {code}, data: {data}");
+                Serilog.Log.Logger.ForContext<OracleNeoFSProtocol>().Debug("NeoFS result, code: {Code}, data: {Data}", code, data);
                 return (code, data);
             }
             catch (Exception e)
             {
-                Utility.Log(nameof(OracleNeoFSProtocol), LogLevel.Debug, $"NeoFS result: error,{e.Message}");
+                Serilog.Log.Logger.ForContext<OracleNeoFSProtocol>().Debug("NeoFS result: error,{e.Message}", e.Message);
                 return (OracleResponseCode.Error, null);
             }
         }

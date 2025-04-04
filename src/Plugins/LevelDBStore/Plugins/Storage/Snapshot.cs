@@ -51,7 +51,9 @@ namespace Neo.Plugins.Storage
         public void Commit()
         {
             lock (_lock)
+            {
                 _db.Write(WriteOptions.Default, _batch);
+            }
         }
 
         /// <inheritdoc/>
@@ -70,8 +72,9 @@ namespace Neo.Plugins.Storage
 
         public void Dispose()
         {
-            _snapshot.Dispose();
-            _readOptions.Dispose();
+            _snapshot?.Dispose();
+            _readOptions?.Dispose();
+            _batch?.Dispose();
         }
 
         /// <inheritdoc/>
@@ -92,7 +95,7 @@ namespace Neo.Plugins.Storage
 
         public bool TryGet(byte[] key, [NotNullWhen(true)] out byte[]? value)
         {
-            value = _db.Get(_readOptions, key);
+            value = TryGet(key);
             return value != null;
         }
 
@@ -103,7 +106,6 @@ namespace Neo.Plugins.Storage
                 yield return new KeyValuePair<byte[], byte[]>(iterator.Key()!, iterator.Value()!);
         }
 
-        IEnumerator IEnumerable.GetEnumerator() =>
-            GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

@@ -28,9 +28,11 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -60,6 +62,9 @@ namespace Neo.Plugins.OracleService
         private NeoSystem _system;
 
         private readonly Dictionary<string, IOracleProtocol> protocols = new Dictionary<string, IOracleProtocol>();
+
+        // Serilog logger instance
+        private static readonly ILogger _log = Log.ForContext<OracleService>();
 
         public override string Description => "Built-in oracle plugin";
 
@@ -125,30 +130,39 @@ namespace Neo.Plugins.OracleService
 
         public Task Start(Wallet wallet)
         {
-            if (status == OracleStatus.Running) return Task.CompletedTask;
+            if (status == OracleStatus.Running)
+            {
+                _log.Information("Oracle service already running.");
+                return Task.CompletedTask;
+            }
 
             if (wallet is null)
             {
+                _log.Warning("Oracle start failed: Wallet not open.");
                 ConsoleHelper.Warning("Please open wallet first!");
                 return Task.CompletedTask;
             }
 
             if (!CheckOracleAvailable(_system.StoreView, out ECPoint[] oracles))
             {
+                _log.Warning("Oracle start failed: Service is unavailable (no designated oracle nodes?).");
                 ConsoleHelper.Warning("The oracle service is unavailable");
                 return Task.CompletedTask;
             }
             if (!CheckOracleAccount(wallet, oracles))
             {
+                _log.Warning("Oracle start failed: Wallet does not contain any designated oracle account.");
                 ConsoleHelper.Warning("There is no oracle account in wallet");
                 return Task.CompletedTask;
             }
 
             this.wallet = wallet;
+            _log.Information("Initializing Oracle protocols...");
             protocols["https"] = new OracleHttpsProtocol();
             protocols["neofs"] = new OracleNeoFSProtocol(wallet, oracles);
             status = OracleStatus.Running;
             timer = new Timer(OnTimer, null, RefreshIntervalMilliSeconds, Timeout.Infinite);
+            _log.Information("Oracle service started.");
             ConsoleHelper.Info($"Oracle started");
             return ProcessRequestsAsync();
         }
@@ -156,6 +170,7 @@ namespace Neo.Plugins.OracleService
         [ConsoleCommand("stop oracle", Category = "Oracle", Description = "Stop oracle service")]
         private void OnStop()
         {
+            _log.Information("Stopping Oracle service...");
             cancelSource.Cancel();
             if (timer != null)
             {
@@ -163,6 +178,7 @@ namespace Neo.Plugins.OracleService
                 timer = null;
             }
             status = OracleStatus.Stopped;
+            _log.Information("Oracle service stop requested.");
         }
 
         [ConsoleCommand("oracle status", Category = "Oracle", Description = "Show oracle status")]
@@ -177,33 +193,48 @@ namespace Neo.Plugins.OracleService
 
             if (Settings.Default.AutoStart && status == OracleStatus.Unstarted)
             {
+                _log.Information("Auto-starting Oracle service due to block commit.");
                 OnStart();
             }
             if (status != OracleStatus.Running) return;
+
+            // Check if still eligible to be an oracle
             if (!CheckOracleAvailable(snapshot, out ECPoint[] oracles) || !CheckOracleAccount(wallet, oracles))
+            {
+                _log.Warning("Oracle service stopping: No longer an available/designated oracle node.");
                 OnStop();
+            }
         }
 
         private async void OnTimer(object state)
         {
+            _log.Verbose("Oracle timer tick: Checking pending/finished tasks.");
             try
             {
                 List<ulong> outOfDate = new();
                 List<Task> tasks = new();
+                int pendingCount = pendingQueue.Count;
+                int finishedCount = finishedCache.Count;
+
                 foreach (var (id, task) in pendingQueue)
                 {
                     var span = TimeProvider.Current.UtcNow - task.Timestamp;
                     if (span > Settings.Default.MaxTaskTimeout)
                     {
+                        _log.Warning("Oracle request {RequestId} timed out after {ElapsedSeconds}s, removing from pending queue.", id, span.TotalSeconds);
                         outOfDate.Add(id);
                         continue;
                     }
 
+                    // Resend signatures periodically
                     if (span > TimeSpan.FromMilliseconds(RefreshIntervalMilliSeconds))
                     {
+                        _log.Debug("Resending signatures for oracle request {RequestId}", id);
                         foreach (var account in wallet.GetAccounts())
+                        {
                             if (task.BackupSigns.TryGetValue(account.GetKey().PublicKey, out byte[] sign))
                                 tasks.Add(SendResponseSignatureAsync(id, sign, account.GetKey()));
+                        }
                     }
                 }
 
@@ -211,18 +242,36 @@ namespace Neo.Plugins.OracleService
 
                 foreach (ulong requestId in outOfDate)
                     pendingQueue.TryRemove(requestId, out _);
+
+                // Clean finished cache
+                int removedFinished = 0;
                 foreach (var (key, value) in finishedCache)
+                {
                     if (TimeProvider.Current.UtcNow - value > TimeSpan.FromDays(3))
-                        finishedCache.TryRemove(key, out _);
+                    {
+                        if (finishedCache.TryRemove(key, out _))
+                            removedFinished++;
+                    }
+                }
+                if (removedFinished > 0) _log.Debug("Removed {RemovedCount} entries older than 3 days from finished cache.", removedFinished);
+                _log.Debug("Oracle timer finished. PendingTasks={PendingCount}, FinishedTasks={FinishedCount}", pendingQueue.Count, finishedCache.Count);
             }
             catch (Exception e)
             {
-                Log(e, LogLevel.Error);
+                // Replace Log(e, LogLevel.Error)
+                _log.Error(e, "Error occurred during Oracle timer execution.");
             }
             finally
             {
                 if (!cancelSource.IsCancellationRequested)
+                {
+                    _log.Verbose("Rescheduling Oracle timer for {IntervalMs} ms", RefreshIntervalMilliSeconds);
                     timer?.Change(RefreshIntervalMilliSeconds, Timeout.Infinite);
+                }
+                else
+                {
+                    _log.Information("Oracle timer not rescheduled as service is stopping.");
+                }
             }
         }
 
@@ -252,14 +301,20 @@ namespace Neo.Plugins.OracleService
 
         private static async Task SendContentAsync(Uri url, string content)
         {
+            _log.Verbose("Sending oracle response signature to {Url}", url);
             try
             {
                 using HttpResponseMessage response = await httpClient.PostAsync(url, new StringContent(content, Encoding.UTF8, "application/json"));
-                response.EnsureSuccessStatusCode();
+                if (!response.IsSuccessStatusCode)
+                    _log.Warning("Failed to send oracle response signature to {Url}: StatusCode={StatusCode}", url, response.StatusCode);
+                else
+                    _log.Verbose("Successfully sent oracle response signature to {Url}", url);
+                // EnsureSuccessStatusCode(); // Don't throw, just log warning
             }
             catch (Exception e)
             {
-                Log($"Failed to send the response signature to {url}, as {e.Message}", LogLevel.Warning);
+                // Replace Log(..., LogLevel.Warning)
+                _log.Warning(e, "Exception while sending oracle response signature to {Url}", url);
             }
         }
 
@@ -276,50 +331,85 @@ namespace Neo.Plugins.OracleService
 
         private async Task ProcessRequestAsync(DataCache snapshot, OracleRequest req)
         {
-            Log($"[{req.OriginalTxid}] Process oracle request start:<{req.Url}>");
+            // Replace Log(...) calls
+            _log.Information("[TxId={TxId}] Processing oracle request: Url=<{Url}>, Filter=<{Filter}>", req.OriginalTxid, req.Url, req.Filter);
+            var sw = Stopwatch.StartNew();
 
             uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
-
             (OracleResponseCode code, string data) = await ProcessUrlAsync(req.Url);
+            sw.Stop();
 
-            Log($"[{req.OriginalTxid}] Process oracle request end:<{req.Url}>, responseCode:{code}, response:{data}");
+            _log.Information("[TxId={TxId}] URL processing finished in {DurationMs} ms: Url=<{Url}>, Code={ResponseCode}", req.OriginalTxid, sw.ElapsedMilliseconds, req.Url, code);
+            // Potentially log 'data' at Verbose level if needed, be careful with large responses
+            // _log.Verbose("[TxId={TxId}] URL Response Data: {Data}", req.OriginalTxid, data);
 
             var oracleNodes = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
-            foreach (var (requestId, request) in NativeContract.Oracle.GetRequestsByUrl(snapshot, req.Url))
+            var requestsToProcess = NativeContract.Oracle.GetRequestsByUrl(snapshot, req.Url).ToList();
+            _log.Debug("[TxId={TxId}] Found {RequestCount} pending requests matching URL <{Url}>", req.OriginalTxid, requestsToProcess.Count, req.Url);
+
+            foreach (var (requestId, request) in requestsToProcess)
             {
+                _log.Information("[TxId={TxId}]-[ReqId={RequestId}] Processing specific request...", req.OriginalTxid, requestId);
                 var result = Array.Empty<byte>();
                 if (code == OracleResponseCode.Success)
                 {
                     try
                     {
+                        _log.Verbose("[TxId={TxId}]-[ReqId={RequestId}] Applying filter '{Filter}'", req.OriginalTxid, requestId, request.Filter);
+                        sw.Restart();
                         result = Filter(data, request.Filter);
+                        sw.Stop();
+                        _log.Verbose("[TxId={TxId}]-[ReqId={RequestId}] Filtering finished in {DurationMs} ms. Result size: {ResultSize}", req.OriginalTxid, requestId, sw.ElapsedMilliseconds, result.Length);
                     }
                     catch (Exception ex)
                     {
                         code = OracleResponseCode.Error;
-                        Log($"[{req.OriginalTxid}] Filter '{request.Filter}' error:{ex.Message}");
+                        // Replace Log(...)
+                        _log.Warning(ex, "[TxId={TxId}]-[ReqId={RequestId}] Filter '{Filter}' failed", req.OriginalTxid, requestId, request.Filter);
                     }
                 }
                 var response = new OracleResponse() { Id = requestId, Code = code, Result = result };
-                var responseTx = CreateResponseTx(snapshot, request, response, oracleNodes, _system.Settings);
-                var backupTx = CreateResponseTx(snapshot, request, new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = requestId, Result = Array.Empty<byte>() }, oracleNodes, _system.Settings, true);
+                Transaction responseTx = null;
+                Transaction backupTx = null;
+                try
+                {
+                    sw.Restart();
+                    responseTx = CreateResponseTx(snapshot, request, response, oracleNodes, _system.Settings);
+                    backupTx = CreateResponseTx(snapshot, request, new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = requestId, Result = Array.Empty<byte>() }, oracleNodes, _system.Settings, true);
+                    sw.Stop();
+                    if (responseTx == null || backupTx == null)
+                        _log.Error("[TxId={TxId}]-[ReqId={RequestId}] Failed to create response transaction(s) after {DurationMs} ms", req.OriginalTxid, requestId, sw.ElapsedMilliseconds);
+                    else
+                        _log.Debug("[TxId={TxId}]-[ReqId={RequestId}] Created response tx {TxHash} and backup tx {BackupTxHash} in {DurationMs} ms",
+                            req.OriginalTxid, requestId, responseTx.Hash, backupTx.Hash, sw.ElapsedMilliseconds);
+                }
+                catch (Exception ex)
+                {
+                    sw.Stop();
+                    _log.Error(ex, "[TxId={TxId}]-[ReqId={RequestId}] Exception during response tx creation after {DurationMs} ms", req.OriginalTxid, requestId, sw.ElapsedMilliseconds);
+                    continue; // Skip signing/sending if creation failed
+                }
 
-                Log($"[{req.OriginalTxid}]-({requestId}) Built response tx[[{responseTx.Hash}]], responseCode:{code}, result:{result.ToHexString()}, validUntilBlock:{responseTx.ValidUntilBlock}, backupTx:{backupTx.Hash}-{backupTx.ValidUntilBlock}");
+                if (responseTx == null || backupTx == null) continue; // Don't proceed if creation failed
+
+                _log.Information("[TxId={TxId}]-[ReqId={RequestId}] Built response tx {TxHash} (Code={ResponseCode}, ResultSize={ResultSize}, VUB={ValidUntilBlock}), Backup tx {BackupTxHash} (VUB={BackupVUB})",
+                    req.OriginalTxid, requestId, responseTx.Hash, code, result.Length, responseTx.ValidUntilBlock, backupTx.Hash, backupTx.ValidUntilBlock);
 
                 List<Task> tasks = new List<Task>();
-                ECPoint[] oraclePublicKeys = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
+                ECPoint[] oraclePublicKeys = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height); // Reuse? Already have oracleNodes
                 foreach (var account in wallet.GetAccounts())
                 {
-                    var oraclePub = account.GetKey()?.PublicKey;
-                    if (!account.HasKey || account.Lock || !oraclePublicKeys.Contains(oraclePub)) continue;
+                    var keyPair = account.GetKey();
+                    if (keyPair is null || !account.HasKey || account.Lock || !oraclePublicKeys.Contains(keyPair.PublicKey)) continue;
 
-                    var txSign = responseTx.Sign(account.GetKey(), _system.Settings.Network);
-                    var backTxSign = backupTx.Sign(account.GetKey(), _system.Settings.Network);
+                    byte[] txSign = responseTx.Sign(keyPair, _system.Settings.Network);
+                    byte[] backTxSign = backupTx.Sign(keyPair, _system.Settings.Network);
 
-                    AddResponseTxSign(snapshot, requestId, oraclePub, txSign, responseTx, backupTx, backTxSign);
-                    tasks.Add(SendResponseSignatureAsync(requestId, txSign, account.GetKey()));
+                    AddResponseTxSign(snapshot, requestId, keyPair.PublicKey, txSign, responseTx, backupTx, backTxSign);
+                    tasks.Add(SendResponseSignatureAsync(requestId, txSign, keyPair));
 
-                    Log($"[{request.OriginalTxid}]-[[{responseTx.Hash}]] Send oracle sign data, Oracle node: {oraclePub}, Sign: {txSign.ToHexString()}");
+                    _log.Debug("[TxId={TxId}]-[ReqId={RequestId}]-[Tx={TxHash}] Oracle node {OraclePub} signed response, submitting signature",
+                        req.OriginalTxid, requestId, responseTx.Hash, keyPair.PublicKey);
                 }
                 await Task.WhenAll(tasks);
             }
@@ -327,52 +417,105 @@ namespace Neo.Plugins.OracleService
 
         private async Task ProcessRequestsAsync()
         {
+            _log.Information("Oracle request processing loop started.");
             while (!cancelSource.IsCancellationRequested)
             {
-                using (var snapshot = _system.GetSnapshotCache())
+                try
                 {
-                    SyncPendingQueue(snapshot);
-                    foreach (var (id, request) in NativeContract.Oracle.GetRequests(snapshot))
+                    using (var snapshot = _system.GetSnapshotCache())
                     {
-                        if (cancelSource.IsCancellationRequested) break;
-                        if (!finishedCache.ContainsKey(id) && (!pendingQueue.TryGetValue(id, out OracleTask task) || task.Tx is null))
-                            await ProcessRequestAsync(snapshot, request);
+                        _log.Verbose("Checking for pending oracle requests...");
+                        SyncPendingQueue(snapshot);
+                        var pendingRequests = NativeContract.Oracle.GetRequests(snapshot).ToList();
+                        _log.Verbose("Found {RequestCount} total pending oracle requests in ledger", pendingRequests.Count);
+                        int processedCount = 0;
+                        foreach (var (id, request) in pendingRequests)
+                        {
+                            if (cancelSource.IsCancellationRequested) break;
+                            if (!finishedCache.ContainsKey(id) && (!pendingQueue.TryGetValue(id, out OracleTask task) || task.Tx is null))
+                            {
+                                _log.Debug("Found new/unprocessed oracle request {RequestId} for URL <{Url}>", id, request.Url);
+                                await ProcessRequestAsync(snapshot, request);
+                                processedCount++;
+                            }
+                            // else: Request is finished or already being processed (has Tx)
+                        }
+                        if (processedCount == 0) _log.Verbose("No new oracle requests to process this iteration.");
                     }
                 }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unhandled exception in Oracle request processing loop.");
+                    // Avoid tight loop on persistent errors
+                    await Task.Delay(5000, cancelSource.Token);
+                }
+
                 if (cancelSource.IsCancellationRequested) break;
-                await Task.Delay(500);
+                _log.Verbose("Oracle processing loop delay...");
+                await Task.Delay(500, cancelSource.Token);
             }
 
             status = OracleStatus.Stopped;
+            _log.Information("Oracle request processing loop stopped.");
         }
-
 
         private void SyncPendingQueue(DataCache snapshot)
         {
-            var offChainRequests = NativeContract.Oracle.GetRequests(snapshot).ToDictionary(r => r.Item1, r => r.Item2);
-            var onChainRequests = pendingQueue.Keys.Except(offChainRequests.Keys);
-            foreach (var onChainRequest in onChainRequests)
+            var onChainRequests = NativeContract.Oracle.GetRequests(snapshot).Select(r => r.Item1).ToHashSet();
+            var requestsToRemove = pendingQueue.Keys.Where(k => !onChainRequests.Contains(k)).ToList();
+
+            if (requestsToRemove.Count > 0)
             {
-                pendingQueue.TryRemove(onChainRequest, out _);
+                _log.Information("Syncing pending queue: Removing {Count} requests not found on-chain", requestsToRemove.Count);
+                foreach (var reqId in requestsToRemove)
+                {
+                    if (pendingQueue.TryRemove(reqId, out _))
+                        _log.Debug("Removed orphaned pending request {RequestId}", reqId);
+                }
+            }
+            else
+            {
+                _log.Verbose("Syncing pending queue: No orphaned requests found.");
             }
         }
 
         private async Task<(OracleResponseCode, string)> ProcessUrlAsync(string url)
         {
+            _log.Debug("Processing URL <{Url}>", url);
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                _log.Warning("Invalid URL format: <{Url}>", url);
                 return (OracleResponseCode.Error, $"Invalid url:<{url}>");
+            }
             if (!protocols.TryGetValue(uri.Scheme, out IOracleProtocol protocol))
+            {
+                _log.Warning("Protocol not supported for URL <{Url}> (Scheme: {Scheme})", url, uri.Scheme);
                 return (OracleResponseCode.ProtocolNotSupported, $"Invalid Protocol:<{url}>");
+            }
 
             using CancellationTokenSource ctsTimeout = new(Settings.Default.MaxOracleTimeout);
             using CancellationTokenSource ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(cancelSource.Token, ctsTimeout.Token);
 
             try
             {
-                return await protocol.ProcessAsync(uri, ctsLinked.Token);
+                _log.Verbose("Calling protocol handler {ProtocolType} for URL <{Url}>", protocol.GetType().Name, url);
+                var result = await protocol.ProcessAsync(uri, ctsLinked.Token);
+                _log.Verbose("Protocol handler for URL <{Url}> returned code {ResponseCode}", url, result.Item1);
+                return result;
+            }
+            catch (OperationCanceledException) when (ctsTimeout.IsCancellationRequested)
+            {
+                _log.Warning("Timeout processing URL <{Url}> after {TimeoutMs} ms", url, Settings.Default.MaxOracleTimeout);
+                return (OracleResponseCode.Timeout, "Timeout");
+            }
+            catch (OperationCanceledException) when (cancelSource.IsCancellationRequested)
+            {
+                _log.Information("Processing cancelled for URL <{Url}>", url);
+                return (OracleResponseCode.Error, "Cancelled");
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "Exception processing URL <{Url}>", url);
                 return (OracleResponseCode.Error, $"Request <{url}> Error:{ex.Message}");
             }
         }
@@ -460,12 +603,17 @@ namespace Neo.Plugins.OracleService
 
         private void AddResponseTxSign(DataCache snapshot, ulong requestId, ECPoint oraclePub, byte[] sign, Transaction responseTx = null, Transaction backupTx = null, byte[] backupSign = null)
         {
-            var task = pendingQueue.GetOrAdd(requestId, _ => new OracleTask
+            _log.Debug("Adding response signature for RequestId={RequestId}, Oracle={OraclePub}", requestId, oraclePub);
+            var task = pendingQueue.GetOrAdd(requestId, _ =>
             {
-                Id = requestId,
-                Request = NativeContract.Oracle.GetRequest(snapshot, requestId),
-                Signs = new ConcurrentDictionary<ECPoint, byte[]>(),
-                BackupSigns = new ConcurrentDictionary<ECPoint, byte[]>()
+                _log.Debug("Creating new OracleTask for RequestId={RequestId}", requestId);
+                return new OracleTask
+                {
+                    Id = requestId,
+                    Request = NativeContract.Oracle.GetRequest(snapshot, requestId),
+                    Signs = new ConcurrentDictionary<ECPoint, byte[]>(),
+                    BackupSigns = new ConcurrentDictionary<ECPoint, byte[]>()
+                };
             });
 
             if (responseTx != null)
@@ -489,16 +637,31 @@ namespace Neo.Plugins.OracleService
             }
 
             if (Crypto.VerifySignature(task.Tx.GetSignData(_system.Settings.Network), sign, oraclePub))
-                task.Signs.TryAdd(oraclePub, sign);
-            else if (Crypto.VerifySignature(task.BackupTx.GetSignData(_system.Settings.Network), sign, oraclePub))
-                task.BackupSigns.TryAdd(oraclePub, sign);
-            else
-                throw new RpcException(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
-
-            if (CheckTxSign(snapshot, task.Tx, task.Signs) || CheckTxSign(snapshot, task.BackupTx, task.BackupSigns))
             {
-                finishedCache.TryAdd(requestId, new DateTime());
+                _log.Verbose("Signature verified for main response tx {TxHash}, adding to task {RequestId}", task.Tx.Hash, requestId);
+                task.Signs.TryAdd(oraclePub, sign);
+            }
+            else if (task.BackupTx != null && Crypto.VerifySignature(task.BackupTx.GetSignData(_system.Settings.Network), sign, oraclePub))
+            {
+                _log.Verbose("Signature verified for backup response tx {TxHash}, adding to task {RequestId}", task.BackupTx.Hash, requestId);
+                task.BackupSigns.TryAdd(oraclePub, sign);
+            }
+            else
+            {
+                _log.Error("Invalid signature provided by {OraclePub} for request {RequestId} (neither main nor backup tx matched)", oraclePub, requestId);
+                throw new RpcException(RpcErrorFactory.InvalidSignature($"Invalid oracle response transaction signature from '{oraclePub}'."));
+            }
+
+            if (CheckTxSign(snapshot, task.Tx, task.Signs) || (task.BackupTx != null && CheckTxSign(snapshot, task.BackupTx, task.BackupSigns)))
+            {
+                _log.Information("Threshold met for RequestId={RequestId}, marking as finished and removing from pending queue.", requestId);
+                finishedCache.TryAdd(requestId, TimeProvider.Current.UtcNow);
                 pendingQueue.TryRemove(requestId, out _);
+            }
+            else
+            {
+                _log.Debug("Signature threshold not yet met for RequestId={RequestId} (MainSigns={MainCount}, BackupSigns={BackupCount})",
+                    requestId, task.Signs.Count, task.BackupSigns.Count);
             }
         }
 
@@ -517,10 +680,12 @@ namespace Neo.Plugins.OracleService
             uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
             if (tx.ValidUntilBlock <= height)
             {
+                _log.Warning("Cannot submit oracle response tx {TxHash}: Expired (VUB={VUB}, CurrentHeight={Height})", tx.Hash, tx.ValidUntilBlock, height);
                 return false;
             }
             ECPoint[] oraclesNodes = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, height);
             int neededThreshold = oraclesNodes.Length - (oraclesNodes.Length - 1) / 3;
+            _log.Debug("Checking signature threshold for tx {TxHash}: Have={HaveCount}, Need={NeedCount}", tx.Hash, OracleSigns.Count, neededThreshold);
             if (OracleSigns.Count >= neededThreshold)
             {
                 var contract = Contract.CreateMultiSigContract(neededThreshold, oraclesNodes);
@@ -533,8 +698,8 @@ namespace Neo.Plugins.OracleService
                 var idx = tx.GetScriptHashesForVerifying(snapshot)[0] == contract.ScriptHash ? 0 : 1;
                 tx.Witnesses[idx].InvocationScript = sb.ToArray();
 
-                Log($"Send response tx: responseTx={tx.Hash}");
-
+                // Replace Log(...)
+                _log.Information("Signature threshold met for tx {TxHash}, relaying transaction.", tx.Hash);
                 _system.Blockchain.Tell(tx);
                 return true;
             }
@@ -551,11 +716,6 @@ namespace Neo.Plugins.OracleService
         private static bool CheckOracleAccount(ISigner signer, ECPoint[] oracles)
         {
             return signer is not null && oracles.Any(p => signer.ContainsSignable(p));
-        }
-
-        private static void Log(string message, LogLevel level = LogLevel.Info)
-        {
-            Utility.Log(nameof(OracleService), level, message);
         }
 
         class OracleTask
@@ -577,3 +737,4 @@ namespace Neo.Plugins.OracleService
         }
     }
 }
+

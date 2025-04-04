@@ -15,8 +15,10 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
+using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 
@@ -27,6 +29,9 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class LedgerContract : NativeContract
     {
+        // Serilog logger instance
+        private static readonly ILogger _log = Log.ForContext<LedgerContract>();
+
         private const byte Prefix_BlockHash = 9;
         private const byte Prefix_CurrentBlock = 12;
         private const byte Prefix_Block = 5;
@@ -41,46 +46,72 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
-            TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
+            var block = engine.PersistingBlock;
+            _log.Debug("Ledger OnPersist: Processing Block {BlockIndex} ({BlockHash}) with {TxCount} transactions...",
+                block.Index, block.Hash, block.Transactions.Length);
+            var sw = Stopwatch.StartNew();
+
+            TransactionState[] transactions = block.Transactions.Select(p => new TransactionState
             {
-                BlockIndex = engine.PersistingBlock.Index,
+                BlockIndex = block.Index,
                 Transaction = p,
                 State = VMState.NONE
             }).ToArray();
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
-            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, engine.PersistingBlock.Hash), new StorageItem(TrimmedBlock.Create(engine.PersistingBlock).ToArray()));
-            foreach (TransactionState tx in transactions)
-            {
-                // It's possible that there are previously saved malicious conflict records for this transaction.
-                // If so, then remove it and store the relevant transaction itself.
-                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), () => new StorageItem(new TransactionState()))
-                    .FromReplica(new StorageItem(tx));
 
-                // Store transaction's conflicits.
-                var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
-                foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
+            // Add BlockHash mapping
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_BlockHash, block.Index), new StorageItem(block.Hash.ToArray()));
+            _log.Verbose("Added BlockHash mapping: Index={BlockIndex} -> Hash={BlockHash}", block.Index, block.Hash);
+
+            // Add TrimmedBlock
+            engine.SnapshotCache.Add(CreateStorageKey(Prefix_Block, block.Hash), new StorageItem(TrimmedBlock.Create(block).ToArray()));
+            _log.Verbose("Added TrimmedBlock: Hash={BlockHash}", block.Hash);
+
+            int txIndex = 0;
+            foreach (TransactionState txState in transactions)
+            {
+                var tx = txState.Transaction;
+                _log.Verbose("Processing Tx {TxIndex}/{TotalTxCount}: Hash={TxHash}", txIndex + 1, transactions.Length, tx.Hash);
+                // Store TransactionState
+                engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, tx.Hash), () => new StorageItem(new TransactionState()))
+                    .FromReplica(new StorageItem(txState));
+
+                // Store transaction's conflicts
+                var conflictingSigners = tx.Signers.Select(s => s.Account);
+                foreach (var attr in tx.GetAttributes<Conflicts>())
                 {
+                    _log.Verbose("Storing conflict marker for Tx {TxHash} due to Conflicts attribute {ConflictHash}", tx.Hash, attr.Hash);
+                    // Store dummy stub for the conflicting hash
                     engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash), () => new StorageItem(new TransactionState()))
-                        .FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                        .FromReplica(new StorageItem(new TransactionState() { BlockIndex = block.Index }));
+                    // Store signer-specific conflict markers
                     foreach (var signer in conflictingSigners)
                     {
                         engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Transaction, attr.Hash, signer), () => new StorageItem(new TransactionState()))
-                            .FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                            .FromReplica(new StorageItem(new TransactionState() { BlockIndex = block.Index }));
                     }
                 }
+                txIndex++;
             }
 
             engine.SetState(transactions);
+            sw.Stop();
+            _log.Debug("Ledger OnPersist finished for Block {BlockIndex} in {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
             return ContractTask.CompletedTask;
         }
 
         internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
+            var block = engine.PersistingBlock;
+            _log.Debug("Ledger PostPersist: Updating current block hash/index to Block {BlockIndex} ({BlockHash})", block.Index, block.Hash);
+            var sw = Stopwatch.StartNew();
+
             var state = engine.SnapshotCache.GetAndChange(_currentBlock, () => new StorageItem(new HashIndexState()))
-                // Don't need to seal because the size is fixed and it can't grow
                 .GetInteroperable<HashIndexState>();
-            state.Hash = engine.PersistingBlock.Hash;
-            state.Index = engine.PersistingBlock.Index;
+            state.Hash = block.Hash;
+            state.Index = block.Index;
+
+            sw.Stop();
+            _log.Debug("Ledger PostPersist finished for Block {BlockIndex} in {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
             return ContractTask.CompletedTask;
         }
 

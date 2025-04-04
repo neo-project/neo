@@ -10,12 +10,15 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <OverwriteReadOnlyFiles>true</OverwriteReadOnlyFiles>
   </PropertyGroup>
- 
+
   <ItemGroup>
     <ProjectReference Include="../../Neo/Neo.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <None Remove="../../.neo/neo.png" />
     <None Remove="../../.neo/README.md" />
     <None Include="../../../.neo/neo.png" Pack="true" Visible="false" PackagePath=""/>

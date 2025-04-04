@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
+using Serilog;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -146,6 +147,9 @@ namespace Neo.Network.P2P
             }
         }
 
+        // Serilog logger instance
+        private readonly ILogger _log = Log.ForContext<Peer>(); // Note: Derived classes might want their own specific logger
+
         static Peer()
         {
             localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.UnMap()));
@@ -161,8 +165,21 @@ namespace Neo.Network.P2P
             {
                 // Do not select peers to be added that are already on the ConnectedPeers
                 // If the address is the same, the ListenerTcpPort should be different
+                var originalCount = peers.Count(); // Materialize for logging
                 peers = peers.Where(p => (p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address)) && !ConnectedPeers.Values.Contains(p));
-                ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
+                var filteredCount = peers.Count(); // Materialize again after filtering
+                if (originalCount != filteredCount)
+                    _log.Verbose("Filtered incoming peer list: {FilteredCount}/{OriginalCount} added (duplicates/self/connected ignored)", filteredCount, originalCount);
+
+                if (filteredCount > 0)
+                {
+                    ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
+                    _log.Debug("Added {PeerCount} peers to unconnected list. Total unconnected: {TotalUnconnectedCount}", filteredCount, UnconnectedPeers.Count);
+                }
+            }
+            else
+            {
+                _log.Debug("Unconnected peer list full ({Count}/{Max}), ignoring new peers", UnconnectedPeers.Count, UnconnectedMax);
             }
         }
 
@@ -174,17 +191,39 @@ namespace Neo.Network.P2P
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
             endPoint = endPoint.UnMap();
-            // If the address is the same, the ListenerTcpPort should be different, otherwise, return
-            if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
+            _log.Debug("Attempting connection to {EndPoint} (Trusted: {IsTrusted})", endPoint, isTrusted);
+
+            if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address))
+            {
+                _log.Debug("Skipping connection to {EndPoint}: Cannot connect to self", endPoint);
+                return;
+            }
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
-            // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
+
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
+            {
+                _log.Debug("Skipping connection to {EndPoint}: Max connections per address ({Count}/{Max}) reached", endPoint, count, MaxConnectionsPerAddress);
                 return;
-            if (ConnectedPeers.Values.Contains(endPoint)) return;
+            }
+            if (ConnectedPeers.Values.Contains(endPoint))
+            {
+                _log.Debug("Skipping connection to {EndPoint}: Already connected", endPoint);
+                return;
+            }
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
             {
-                if ((p.Count >= ConnectingMax && !isTrusted) || p.Contains(endPoint)) return p;
+                if (p.Contains(endPoint))
+                {
+                    _log.Verbose("Skipping connection to {EndPoint}: Already connecting", endPoint);
+                    return p;
+                }
+                if (p.Count >= ConnectingMax && !isTrusted)
+                {
+                    _log.Warning("Cannot connect to {EndPoint}: Max pending connections ({Count}/{Max}) reached", endPoint, p.Count, ConnectingMax);
+                    return p;
+                }
+                _log.Information("Initiating TCP connection to {EndPoint}", endPoint);
                 tcp_manager.Tell(new Tcp.Connect(endPoint));
                 return p.Add(endPoint);
             });
@@ -205,31 +244,48 @@ namespace Neo.Network.P2P
 
         protected override void OnReceive(object message)
         {
+            // Base OnReceive does not log, logging specific messages
             switch (message)
             {
                 case ChannelsConfig config:
+                    _log.Information("Received ChannelsConfig, starting peer...");
                     OnStart(config);
                     break;
                 case Timer _:
+                    // Timer event might be frequent, log inside OnTimer if needed
                     OnTimer();
                     break;
                 case Peers peers:
-                    AddPeers(peers.EndPoints);
+                    var peerCount = peers.EndPoints?.Count() ?? 0;
+                    _log.Debug("Received Peers message with {PeerCount} endpoints", peerCount);
+                    if (peerCount > 0) AddPeers(peers.EndPoints);
                     break;
                 case Connect connect:
+                    _log.Debug("Received Connect message for {EndPoint} (Trusted: {IsTrusted})", connect.EndPoint, connect.IsTrusted);
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
                 case Tcp.Connected connected:
-                    OnTcpConnected(((IPEndPoint)connected.RemoteAddress).UnMap(), ((IPEndPoint)connected.LocalAddress).UnMap());
+                    var remote = ((IPEndPoint)connected.RemoteAddress).UnMap();
+                    var local = ((IPEndPoint)connected.LocalAddress).UnMap();
+                    _log.Information("TCP connection received: Remote={RemoteEndPoint}, Local={LocalEndPoint}", remote, local);
+                    OnTcpConnected(remote, local);
                     break;
-                case Tcp.Bound _:
+                case Tcp.Bound bound:
+                    _log.Information("TCP listener bound to {LocalAddress}", bound.LocalAddress);
                     tcp_listener = Sender;
                     break;
                 case Tcp.CommandFailed commandFailed:
+                    _log.Warning("TCP command failed: {Command}", commandFailed.Cmd);
                     OnTcpCommandFailed(commandFailed.Cmd);
                     break;
                 case Terminated terminated:
+                    _log.Information("Actor terminated: {ActorRef}", terminated.ActorRef);
                     OnTerminated(terminated.ActorRef);
+                    break;
+                default:
+                    // Log unhandled messages if necessary, might indicate an issue
+                    _log.Warning("Received unknown message type: {MessageType}", message.GetType().Name);
+                    Unhandled(message);
                     break;
             }
         }
@@ -241,23 +297,51 @@ namespace Neo.Network.P2P
             MinDesiredConnections = config.MinDesiredConnections;
             MaxConnections = config.MaxConnections;
             MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;
+            _log.Information("Peer started. Settings: [ListenerPort={Port}] [Compression={Compression}] [MinConn={Min}] [MaxConn={Max}] [MaxPerIP={MaxIP}]",
+                ListenerTcpPort, EnableCompression, MinDesiredConnections, MaxConnections, MaxConnectionsPerAddress);
 
             // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
-            timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((ListenerTcpPort > 0)
-                && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
-                && UPnP.Discover())
+            timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimeSpan.Zero, TimeSpan.FromSeconds(5), Context.Self, new Timer(), ActorRefs.NoSender);
+            // UPnP logging
+            bool upnpEnabled = (ListenerTcpPort > 0)
+                && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p));
+            if (upnpEnabled)
             {
-                try
+                _log.Information("Attempting UPnP discovery...");
+                if (UPnP.Discover())
                 {
-                    localAddresses.Add(UPnP.GetExternalIP());
+                    _log.Information("UPnP discovery successful.");
+                    try
+                    {
+                        var externalIp = UPnP.GetExternalIP();
+                        _log.Information("UPnP external IP: {ExternalIP}", externalIp);
+                        localAddresses.Add(externalIp);
 
-                    if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
+                        if (ListenerTcpPort > 0)
+                        {
+                            _log.Information("Attempting UPnP port forwarding for TCP port {Port}...", ListenerTcpPort);
+                            UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
+                            _log.Information("UPnP port forwarding successful for TCP port {Port}", ListenerTcpPort);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning(ex, "UPnP operation failed");
+                    }
                 }
-                catch { }
+                else
+                {
+                    _log.Warning("UPnP discovery failed.");
+                }
             }
+            else
+            {
+                _log.Information("UPnP skipped (Not listening or local address configuration)");
+            }
+
             if (ListenerTcpPort > 0)
             {
+                _log.Information("Attempting to bind TCP listener to {BindAddress}", config.Tcp);
                 tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp, options: new[] { new Inet.SO.ReuseAddress(true) }));
             }
         }
@@ -272,8 +356,10 @@ namespace Neo.Network.P2P
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
+            _log.Debug("Processing incoming TCP connection from {RemoteEndPoint}", remote);
             if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
+                _log.Warning("Rejecting connection from {RemoteEndPoint}: Max connections ({Count}/{Max}) reached", remote, ConnectedPeers.Count, MaxConnections);
                 Sender.Tell(Tcp.Abort.Instance);
                 return;
             }
@@ -281,15 +367,18 @@ namespace Neo.Network.P2P
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
+                _log.Warning("Rejecting connection from {RemoteEndPoint}: Max connections per address ({Count}/{Max}) reached", remote, count, MaxConnectionsPerAddress);
                 Sender.Tell(Tcp.Abort.Instance);
             }
             else
             {
+                _log.Information("Accepting connection from {RemoteEndPoint}", remote);
                 ConnectedAddresses[remote.Address] = count + 1;
                 IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
+                _log.Debug("Connection added. Total connected: {ConnectedCount}, Connecting: {ConnectingCount}, Unconnected: {UnconnectedCount}", ConnectedPeers.Count, ConnectingPeers.Count, UnconnectedPeers.Count);
                 OnTcpConnected(connection);
             }
         }
@@ -312,7 +401,17 @@ namespace Neo.Network.P2P
             switch (cmd)
             {
                 case Tcp.Connect connect:
-                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).UnMap()));
+                    var remoteEp = ((IPEndPoint)connect.RemoteAddress).UnMap();
+                    _log.Warning("TCP connect command failed for {RemoteEndPoint}", remoteEp);
+                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remoteEp));
+                    break;
+                case Tcp.Bind bind:
+                    _log.Error("TCP bind command failed for {LocalAddress}. Shutting down node.", bind.LocalAddress);
+                    // Consider more graceful shutdown? Context.Stop(Self);
+                    Context.System.Terminate(); // Terminate the entire actor system
+                    break;
+                default:
+                    _log.Warning("TCP command failed: {CommandType}", cmd.GetType().Name);
                     break;
             }
         }
@@ -321,26 +420,55 @@ namespace Neo.Network.P2P
         {
             if (ConnectedPeers.TryRemove(actorRef, out IPEndPoint endPoint))
             {
+                _log.Information("Connection closed: {RemoteEndPoint}", endPoint);
                 ConnectedAddresses.TryGetValue(endPoint.Address, out int count);
                 if (count > 0) count--;
                 if (count == 0)
+                {
+                    _log.Debug("Removing address {Address} from connected address count", endPoint.Address);
                     ConnectedAddresses.Remove(endPoint.Address);
+                }
                 else
+                {
+                    _log.Debug("Decremented connection count for address {Address} to {Count}", endPoint.Address, count);
                     ConnectedAddresses[endPoint.Address] = count;
+                }
+                _log.Debug("Connection removed. Total connected: {ConnectedCount}, Connecting: {ConnectingCount}, Unconnected: {UnconnectedCount}", ConnectedPeers.Count, ConnectingPeers.Count, UnconnectedPeers.Count);
             }
         }
 
         private void OnTimer()
         {
+            _log.Verbose("Peer timer tick");
             // Check if the number of desired connections is already enough
-            if (ConnectedPeers.Count >= MinDesiredConnections) return;
+            if (ConnectedPeers.Count >= MinDesiredConnections)
+            {
+                _log.Verbose("Skipping timer logic: Sufficient connections ({ConnectedCount}/{MinDesiredConnections})", ConnectedPeers.Count, MinDesiredConnections);
+                return;
+            }
 
+            int needed = MinDesiredConnections - ConnectedPeers.Count;
             // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers
             if (UnconnectedPeers.Count == 0)
-                NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
+            {
+                _log.Information("No unconnected peers available, requesting more ({NeededCount} needed)", needed);
+                NeedMorePeers(needed);
+                return; // Wait for NeedMorePeers to provide candidates
+            }
 
-            Random rand = new();
-            IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
+            // Use new Random() for netstandard2.1
+            Random rand = new Random();
+            int connectCount = Math.Min(UnconnectedPeers.Count, needed);
+            connectCount = Math.Min(connectCount, ConnectingMax - ConnectingPeers.Count);
+            if (connectCount <= 0)
+            {
+                _log.Debug("Skipping timer connections: Either enough connections ({ConnectedCount}/{MinDesiredConnections}) or max connecting ({ConnectingCount}/{ConnectingMax})",
+                    ConnectedPeers.Count, MinDesiredConnections, ConnectingPeers.Count, ConnectingMax);
+                return;
+            }
+
+            IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(connectCount).ToArray();
+            _log.Information("Attempting to connect to {ConnectCount} peers from unconnected list (Needed: {NeededCount}, Available: {UnconnectedCount})", endpoints.Length, needed, UnconnectedPeers.Count);
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (IPEndPoint endpoint in endpoints)
             {
@@ -350,8 +478,10 @@ namespace Neo.Network.P2P
 
         protected override void PostStop()
         {
-            timer.CancelIfNotNull();
+            _log.Information("Peer stopping...");
+            timer?.Cancel(); // Use safe cancel
             tcp_listener?.Tell(Tcp.Unbind.Instance);
+            _log.Information("Peer stopped.");
             base.PostStop();
         }
 

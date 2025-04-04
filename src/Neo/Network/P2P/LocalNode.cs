@@ -14,6 +14,7 @@ using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -76,6 +77,9 @@ namespace Neo.Network.P2P
         /// </summary>
         public static string UserAgent { get; set; }
 
+        // Serilog logger instance
+        private readonly ILogger _log = Log.ForContext<LocalNode>();
+
         static LocalNode()
         {
             Random rand = new();
@@ -90,14 +94,23 @@ namespace Neo.Network.P2P
         public LocalNode(NeoSystem system)
         {
             this.system = system;
+            _log.Information("LocalNode created (Nonce={Nonce}, UserAgent='{UserAgent}')", Nonce, UserAgent);
             SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
             // Start dns resolution in parallel
             string[] seedList = system.Settings.SeedList;
+            _log.Information("Starting DNS resolution for {SeedCount} seed nodes...", seedList.Length);
             for (int i = 0; i < seedList.Length; i++)
             {
                 int index = i;
-                Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
+                Task.Run(() =>
+                {
+                    SeedList[index] = GetIpEndPoint(seedList[index]);
+                    if (SeedList[index] != null)
+                        _log.Debug("Resolved seed node {Host} to {EndPoint}", seedList[index], SeedList[index]);
+                    else
+                        _log.Warning("Failed to resolve seed node {Host}", seedList[index]);
+                });
             }
         }
 
@@ -123,6 +136,8 @@ namespace Neo.Network.P2P
         /// </summary>
         private void SendToRemoteNodes(object message)
         {
+            // Logging every message sent might be too verbose, consider logging only specific message types if needed
+            _log.Verbose("Broadcasting message {MessageType} to {NodeCount} remote nodes", message.GetType().Name, RemoteNodes.Count);
             foreach (var connection in RemoteNodes.Keys)
             {
                 connection.Tell(message);
@@ -171,17 +186,35 @@ namespace Neo.Network.P2P
         /// <returns><see langword="true"/> if the new connection is allowed; otherwise, <see langword="false"/>.</returns>
         public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
-            if (node.Version.Network != system.Settings.Network) return false;
-            if (node.Version.Nonce == Nonce) return false;
+            if (node.Version.Network != system.Settings.Network)
+            {
+                _log.Warning("Connection denied from {RemoteEndPoint}: Incorrect network {Network}, expected {ExpectedNetwork}",
+                    node.Remote, node.Version.Network, system.Settings.Network);
+                return false;
+            }
+            if (node.Version.Nonce == Nonce)
+            {
+                _log.Warning("Connection denied from {RemoteEndPoint}: Connected to self (Nonce={Nonce})", node.Remote, Nonce);
+                return false;
+            }
 
             // filter duplicate connections
             foreach (var other in RemoteNodes.Values)
+            {
                 if (other != node && other.Remote.Address.Equals(node.Remote.Address) && other.Version?.Nonce == node.Version.Nonce)
+                {
+                    _log.Warning("Connection denied from {RemoteEndPoint}: Duplicate connection detected (Nonce={Nonce})", node.Remote, node.Version.Nonce);
                     return false;
+                }
+            }
 
             if (node.Remote.Port != node.ListenerTcpPort && node.ListenerTcpPort != 0)
+            {
+                _log.Debug("Updating connected peer record for {ActorRef}: Listener={Listener}, Remote={Remote}", actor, node.Listener, node.Remote);
                 ConnectedPeers.TryUpdate(actor, node.Listener, node.Remote);
+            }
 
+            _log.Information("Allowed new connection from {RemoteEndPoint} (UserAgent='{UserAgent}')", node.Remote, node.Version?.UserAgent);
             return true;
         }
 
@@ -213,17 +246,18 @@ namespace Neo.Network.P2P
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, MaxCountFromSeedList);
+            _log.Debug("Need more peers (requesting {Count})", count);
             if (!ConnectedPeers.IsEmpty)
             {
+                _log.Debug("Broadcasting GetAddr message");
                 BroadcastMessage(MessageCommand.GetAddr);
             }
             else
             {
-                // Will call AddPeers with default SeedList set cached on <see cref="ProtocolSettings"/>.
-                // It will try to add those, sequentially, to the list of currently unconnected ones.
-
-                Random rand = new();
-                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
+                var rand = new Random();
+                var seeds = SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count).ToArray();
+                _log.Information("No connected peers, attempting to connect to {SeedCount} seed nodes", seeds.Length);
+                AddPeers(seeds);
             }
         }
 
@@ -233,12 +267,15 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Message msg:
+                    // Avoid logging potentially high-frequency broadcast messages here
                     BroadcastMessage(msg);
                     break;
                 case RelayDirectly relay:
+                    _log.Debug("Received RelayDirectly for {InvType} {InvHash}", relay.Inventory.InventoryType, relay.Inventory.Hash);
                     OnRelayDirectly(relay.Inventory);
                     break;
                 case SendDirectly send:
+                    _log.Debug("Received SendDirectly for {InvType} {InvHash}", send.Inventory.InventoryType, send.Inventory.Hash);
                     OnSendDirectly(send.Inventory);
                     break;
                 case GetInstance _:
@@ -249,20 +286,24 @@ namespace Neo.Network.P2P
 
         private void OnRelayDirectly(IInventory inventory)
         {
+            // Logging inside the loop might be too verbose if many nodes
+            _log.Verbose("Relaying inventory {InvType} {InvHash} directly...", inventory.InventoryType, inventory.Hash);
             var message = new RemoteNode.Relay { Inventory = inventory };
-            // When relaying a block, if the block's index is greater than
-            // 'LastBlockIndex' of the RemoteNode, relay the block;
-            // otherwise, don't relay.
             if (inventory is Block block)
             {
                 foreach (KeyValuePair<IActorRef, RemoteNode> kvp in RemoteNodes)
                 {
                     if (block.Index > kvp.Value.LastBlockIndex)
+                    {
+                        _log.Verbose("Relaying block {BlockIndex} to {RemoteEndPoint}", block.Index, kvp.Value.Remote);
                         kvp.Key.Tell(message);
+                    }
                 }
             }
             else
-                SendToRemoteNodes(message);
+            {
+                SendToRemoteNodes(message); // SendToRemoteNodes already logs verbosely
+            }
         }
 
         public NodeCapability[] GetNodeCapabilities()
@@ -284,10 +325,15 @@ namespace Neo.Network.P2P
             return [.. capabilities];
         }
 
-        private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
+        private void OnSendDirectly(IInventory inventory)
+        {
+            _log.Verbose("Sending inventory {InvType} {InvHash} directly...", inventory.InventoryType, inventory.Hash);
+            SendToRemoteNodes(inventory); // SendToRemoteNodes already logs verbosely
+        }
 
         protected override void OnTcpConnected(IActorRef connection)
         {
+            _log.Information("TCP connection established: {Connection}", connection);
             connection.Tell(new RemoteNode.StartProtocol());
         }
 

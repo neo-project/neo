@@ -17,6 +17,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
 using Neo.Sign;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusService : UntypedActor
     {
+        // Serilog logger instance
+        private readonly ILogger _log = Log.ForContext<ConsensusService>();
+
         public class Start { }
         private class Timer { public uint Height; public byte ViewNumber; }
 
@@ -73,7 +77,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void OnPersistCompleted(Block block)
         {
-            Log($"Persisted {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length} nonce={block.Nonce}");
+            // Log($"Persisted {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length} nonce={block.Nonce}");
+            _log.Information("Persisted block: Height={BlockIndex} Hash={BlockHash} TxCount={TxCount} Nonce={Nonce}",
+                block.Index, block.Hash, block.Transactions.Length, block.Nonce);
             knownHashes.Clear();
             InitializeConsensus(0);
         }
@@ -81,9 +87,13 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void InitializeConsensus(byte viewNumber)
         {
             context.Reset(viewNumber);
+            string role = context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup";
             if (viewNumber > 0)
-                Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
-            Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
+                // Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
+                _log.Warning("View changed: NewView={ViewNumber} Primary={PrimaryValidator}", viewNumber, context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]);
+            // Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
+            _log.Information("Initialize: Height={BlockIndex} View={ViewNumber} Index={MyIndex} Role={Role}",
+                context.Block.Index, viewNumber, context.MyIndex, role);
             if (context.WatchOnly) return;
             if (context.IsPrimary)
             {
@@ -142,7 +152,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void OnStart()
         {
-            Log("OnStart");
+            // Log("OnStart");
+            _log.Information("Consensus service started");
             started = true;
             if (!dbftSettings.IgnoreRecoveryLogs && context.Load())
             {
@@ -178,7 +189,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 if (context.CommitSent)
                 {
                     // Re-send commit periodically by sending recover message in case of a network issue.
-                    Log($"Sending {nameof(RecoveryMessage)} to resend {nameof(Commit)}");
+                    // Log($"Sending {nameof(RecoveryMessage)} to resend {nameof(Commit)}");
+                    _log.Debug("Sending {MessageType} to resend {CommitType}", nameof(RecoveryMessage), nameof(Commit));
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
                     ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << 1));
                 }
@@ -198,7 +210,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void SendPrepareRequest()
         {
-            Log($"Sending {nameof(PrepareRequest)}: height={context.Block.Index} view={context.ViewNumber}");
+            // Log($"Sending {nameof(PrepareRequest)}: height={context.Block.Index} view={context.ViewNumber}");
+            _log.Debug("Sending {MessageType}: Height={BlockIndex} View={ViewNumber}", nameof(PrepareRequest), context.Block.Index, context.ViewNumber);
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
 
             if (context.Validators.Length == 1)
@@ -214,7 +227,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void RequestRecovery()
         {
-            Log($"Sending {nameof(RecoveryRequest)}: height={context.Block.Index} view={context.ViewNumber} nc={context.CountCommitted} nf={context.CountFailed}");
+            // Log($"Sending {nameof(RecoveryRequest)}: height={context.Block.Index} view={context.ViewNumber} nc={context.CountCommitted} nf={context.CountFailed}");
+            _log.Debug("Sending {MessageType}: Height={BlockIndex} View={ViewNumber} Committed={CommittedCount} Failed={FailedCount}",
+                nameof(RecoveryRequest), context.Block.Index, context.ViewNumber, context.CountCommitted, context.CountFailed);
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryRequest() });
         }
 
@@ -233,7 +248,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             else
             {
-                Log($"Sending {nameof(ChangeView)}: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
+                // Log($"Sending {nameof(ChangeView)}: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
+                _log.Warning("Sending {MessageType}: Height={BlockIndex} View={ViewNumber} NewView={NewView} Committed={CommittedCount} Failed={FailedCount} Reason={Reason}",
+                    nameof(ChangeView), context.Block.Index, context.ViewNumber, expectedView, context.CountCommitted, context.CountFailed, reason);
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(reason) });
                 CheckExpectedView(expectedView);
             }
@@ -271,7 +288,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     if (context.TransactionHashes.Contains(h))
                     {
                         result = VerifyResult.HasConflicts;
-                        Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                        // Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                        _log.Warning("Rejected tx {TxHash} due to conflict with existing context transaction {ConflictingHash}", tx.Hash, h);
                         RequestChangeView(ChangeViewReason.TxInvalid);
                         return false;
                     }
@@ -282,7 +300,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     if (pooledTx.GetAttributes<Conflicts>().Select(attr => attr.Hash).Contains(tx.Hash))
                     {
                         result = VerifyResult.HasConflicts;
-                        Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                        // Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                        _log.Warning("Rejected tx {TxHash} due to conflict with pooled tx {ConflictingHash}", tx.Hash, pooledTx.Hash);
                         RequestChangeView(ChangeViewReason.TxInvalid);
                         return false;
                     }
@@ -294,7 +313,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 result = tx.Verify(neoSystem.Settings, context.Snapshot, context.VerificationContext, conflictingTxs);
                 if (result != VerifyResult.Succeed)
                 {
-                    Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                    // Log($"Rejected tx: {tx.Hash}, {result}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                    _log.Warning("Rejected tx {TxHash}: Verification failed with {VerificationResult}", tx.Hash, result);
                     RequestChangeView(result == VerifyResult.PolicyFail ? ChangeViewReason.TxRejectedByPolicy : ChangeViewReason.TxInvalid);
                     return false;
                 }
@@ -327,7 +347,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         protected override void PostStop()
         {
-            Log("OnStop");
+            // Log("OnStop");
+            _log.Information("Consensus service stopped");
             started = false;
             Context.System.EventStream.Unsubscribe(Self);
             context.Dispose();
@@ -337,11 +358,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         public static Props Props(NeoSystem neoSystem, Settings dbftSettings, ISigner signer)
         {
             return Akka.Actor.Props.Create(() => new ConsensusService(neoSystem, dbftSettings, signer));
-        }
-
-        private static void Log(string message, LogLevel level = LogLevel.Info)
-        {
-            Utility.Log(nameof(ConsensusService), level, message);
         }
     }
 }

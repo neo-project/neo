@@ -20,6 +20,7 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -129,6 +130,9 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new();
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
+        // Serilog logger instance
+        private readonly ILogger _log = Log.ForContext<Blockchain>();
+
         static Blockchain()
         {
             using (ScriptBuilder sb = new())
@@ -155,16 +159,28 @@ namespace Neo.Ledger
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
             uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+            _log.Information("Importing blocks starting from Height={StartHeight}", currentHeight + 1);
+            uint count = 0;
+            var sw = Stopwatch.StartNew();
             foreach (Block block in blocks)
             {
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
-                    throw new InvalidOperationException();
+                {
+                    _log.Error("Import failed: Block {BlockIndex} out of order, expected {ExpectedHeight}", block.Index, currentHeight + 1);
+                    throw new InvalidOperationException("Block index out of order");
+                }
                 if (verify && !block.Verify(system.Settings, system.StoreView))
-                    throw new InvalidOperationException();
+                {
+                    _log.Error("Import failed: Block {BlockIndex} failed verification.", block.Index);
+                    throw new InvalidOperationException("Block verification failed");
+                }
                 Persist(block);
                 ++currentHeight;
+                count++;
             }
+            sw.Stop();
+            _log.Information("Import finished: Imported {BlockCount} blocks in {DurationMs} ms, CurrentHeight={CurrentHeight}", count, sw.ElapsedMilliseconds, currentHeight);
             Sender.Tell(new ImportCompleted());
         }
 
@@ -526,7 +542,9 @@ namespace Neo.Ledger
                 }
                 catch (Exception ex) when (handler.Target is Plugin plugin)
                 {
-                    Utility.Log(nameof(plugin), LogLevel.Error, ex);
+                    // Replace Utility.Log
+                    // Utility.Log(nameof(plugin), LogLevel.Error, ex);
+                    Log.ForContext(plugin.GetType()).Error(ex, "Unhandled exception in plugin handler");
                     switch (plugin.ExceptionPolicy)
                     {
                         case UnhandledExceptionPolicy.StopNode:
@@ -539,8 +557,7 @@ namespace Neo.Ledger
                             // Log the exception and continue with the next handler
                             break;
                         default:
-                            throw new InvalidCastException(
-                                $"The exception policy {plugin.ExceptionPolicy} is not valid.");
+                            throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
                     }
                 }
             }

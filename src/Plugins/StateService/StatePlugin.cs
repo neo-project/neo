@@ -24,9 +24,11 @@ using Neo.Plugins.StateService.Verification;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
+using Serilog;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using static Neo.Ledger.Blockchain;
@@ -35,6 +37,9 @@ namespace Neo.Plugins.StateService
 {
     public class StatePlugin : Plugin, ICommittingHandler, ICommittedHandler, IWalletChangedHandler, IServiceAddedHandler
     {
+        // Serilog logger instance
+        private static readonly ILogger _log = Log.ForContext<StatePlugin>();
+
         public const string StatePayloadCategory = "StateService";
         public override string Name => "StateService";
         public override string Description => "Enables MPT for the node";
@@ -50,32 +55,47 @@ namespace Neo.Plugins.StateService
 
         public StatePlugin()
         {
+            _log.Debug("StatePlugin instance created");
             Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
         }
 
         protected override void Configure()
         {
+            _log.Information("Configuring StatePlugin...");
             Settings.Load(GetConfiguration());
+            _log.Information("StatePlugin configured: Network={Network}, Path={Path}, AutoVerify={AutoVerify}, FullState={FullState}, MaxResultItems={MaxFindResultItems}",
+                Settings.Default.Network, Settings.Default.Path, Settings.Default.AutoVerify, Settings.Default.FullState, Settings.Default.MaxFindResultItems);
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
-            if (system.Settings.Network != Settings.Default.Network) return;
+            if (system.Settings.Network != Settings.Default.Network)
+            {
+                _log.Warning("StatePlugin not loaded: Network mismatch (Expected={ExpectedNetwork}, System={SystemNetwork})",
+                    Settings.Default.Network, system.Settings.Network);
+                return;
+            }
+            _log.Information("StatePlugin loading for network {Network}...", Settings.Default.Network);
             _system = system;
-            Store = _system.ActorSystem.ActorOf(StateStore.Props(this, string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"))));
+            string path = string.Format(Settings.Default.Path, system.Settings.Network.ToString("X8"));
+            _log.Information("Creating StateStore actor with path: {Path}", path);
+            Store = _system.ActorSystem.ActorOf(StateStore.Props(this, path));
             _system.ServiceAdded += ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
+            _log.Information("StatePlugin loaded successfully");
         }
 
         void IServiceAddedHandler.NeoSystem_ServiceAdded_Handler(object sender, object service)
         {
             if (service is IWalletProvider)
             {
+                _log.Information("IWalletProvider service detected");
                 walletProvider = service as IWalletProvider;
                 _system.ServiceAdded -= ((IServiceAddedHandler)this).NeoSystem_ServiceAdded_Handler;
                 if (Settings.Default.AutoVerify)
                 {
+                    _log.Information("AutoVerify enabled, subscribing to WalletChanged event");
                     walletProvider.WalletChanged += ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
                 }
             }
@@ -83,51 +103,77 @@ namespace Neo.Plugins.StateService
 
         void IWalletChangedHandler.IWalletProvider_WalletChanged_Handler(object sender, Wallet wallet)
         {
+            _log.Information("Wallet changed, unsubscribing from event and attempting AutoVerify start");
             walletProvider.WalletChanged -= ((IWalletChangedHandler)this).IWalletProvider_WalletChanged_Handler;
-            Start(wallet);
+            Start(wallet); // Attempt to start verification
         }
 
         public override void Dispose()
         {
+            _log.Information("Disposing StatePlugin");
             base.Dispose();
             Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
-            if (Store is not null) _system.EnsureStopped(Store);
-            if (Verifier is not null) _system.EnsureStopped(Verifier);
+            if (Store is not null)
+            {
+                _log.Information("Stopping StateStore actor");
+                _system.EnsureStopped(Store);
+            }
+            if (Verifier is not null)
+            {
+                _log.Information("Stopping VerificationService actor");
+                _system.EnsureStopped(Verifier);
+            }
+            _log.Debug("StatePlugin disposed");
         }
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
-            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, snapshot.GetChangeSet().Where(p => p.Value.State != TrackState.None).Where(p => p.Key.Id != NativeContract.Ledger.Id).ToList());
+            _log.Debug("Blockchain Committing: Updating local state root snapshot for Block {BlockIndex}", block.Index);
+            var sw = Stopwatch.StartNew();
+            var changes = snapshot.GetChangeSet().Where(p => p.Value.State != TrackState.None && p.Key.Id != NativeContract.Ledger.Id).ToList();
+            _log.Verbose("Found {ChangeCount} relevant state changes for Block {BlockIndex}", changes.Count, block.Index);
+            StateStore.Singleton.UpdateLocalStateRootSnapshot(block.Index, changes);
+            sw.Stop();
+            _log.Debug("Local state root snapshot updated in {DurationMs} ms for Block {BlockIndex}", sw.ElapsedMilliseconds, block.Index);
         }
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
+            _log.Debug("Blockchain Committed: Finalizing local state root for Block {BlockIndex}", block.Index);
+            var sw = Stopwatch.StartNew();
             StateStore.Singleton.UpdateLocalStateRoot(block.Index);
+            sw.Stop();
+            _log.Debug("Local state root finalized in {DurationMs} ms for Block {BlockIndex}", sw.ElapsedMilliseconds, block.Index);
         }
 
         [ConsoleCommand("start states", Category = "StateService", Description = "Start as a state verifier if wallet is open")]
         private void OnStartVerifyingState()
         {
             if (_system is null || _system.Settings.Network != Settings.Default.Network) throw new InvalidOperationException("Network doesn't match");
-            Start(walletProvider.GetWallet());
+            Start(walletProvider?.GetWallet()); // Start logs internally
         }
 
         public void Start(Wallet wallet)
         {
+            _log.Information("Attempting to start state verification...");
             if (Verifier is not null)
             {
+                _log.Warning("Verification service already started.");
                 ConsoleHelper.Warning("Already started!");
                 return;
             }
             if (wallet is null)
             {
+                _log.Warning("Verification start failed: Wallet not open.");
                 ConsoleHelper.Warning("Please open wallet first!");
                 return;
             }
+            _log.Information("Creating VerificationService actor");
             Verifier = _system.ActorSystem.ActorOf(VerificationService.Props(wallet));
+            _log.Information("Verification service started.");
         }
 
         [ConsoleCommand("state root", Category = "StateService", Description = "Get state root by index")]

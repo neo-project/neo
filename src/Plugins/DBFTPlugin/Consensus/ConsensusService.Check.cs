@@ -32,14 +32,14 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 // Check maximum block size via Native Contract policy
                 if (context.GetExpectedBlockSize() > dbftSettings.MaxBlockSize)
                 {
-                    Log($"Rejected block: {context.Block.Index} The size exceed the policy", LogLevel.Warning);
+                    _log.Warning("Rejected block {BlockIndex}: Size exceeds policy ({BlockSize}/{MaxSize})", context.Block.Index, context.GetExpectedBlockSize(), dbftSettings.MaxBlockSize);
                     RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
                     return false;
                 }
                 // Check maximum block system fee via Native Contract policy
                 if (context.GetExpectedBlockSystemFee() > dbftSettings.MaxBlockSystemFee)
                 {
-                    Log($"Rejected block: {context.Block.Index} The system fee exceed the policy", LogLevel.Warning);
+                    _log.Warning("Rejected block {BlockIndex}: SystemFee exceeds policy ({BlockSystemFee}/{MaxSystemFee})", context.Block.Index, context.GetExpectedBlockSystemFee(), dbftSettings.MaxBlockSystemFee);
                     RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
                     return false;
                 }
@@ -48,7 +48,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
                 ExtendTimerByFactor(2);
 
-                Log($"Sending {nameof(PrepareResponse)}");
+                _log.Debug("Sending PrepareResponse for block {BlockIndex}", context.Block.Index);
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
                 CheckPreparations();
             }
@@ -62,7 +62,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 block_received_index = context.Block.Index;
                 block_received_time = TimeProvider.Current.UtcNow;
                 Block block = context.CreateBlock();
-                Log($"Sending {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
+                _log.Information("Sending block {BlockIndex} to Blockchain actor: Hash={BlockHash}, TxCount={TxCount}", block.Index, block.Hash, block.Transactions.Length);
                 blockchain.Tell(block);
             }
         }
@@ -83,6 +83,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                         localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(ChangeViewReason.ChangeAgreement) });
                 }
                 InitializeConsensus(viewNumber);
+                _log.Information("Changing view to {ViewNumber}: M ChangeView samples received", viewNumber);
             }
         }
 
@@ -91,7 +92,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (context.PreparationPayloads.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 ExtensiblePayload payload = context.MakeCommit();
-                Log($"Sending {nameof(Commit)}");
+                _log.Information("Sending Commit for block {BlockIndex}: M Preparation messages received", context.Block.Index);
                 context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue

@@ -16,6 +16,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
+using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
@@ -29,49 +30,65 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void OnConsensusPayload(ExtensiblePayload payload)
         {
             if (context.BlockSent) return;
+
             ConsensusMessage message;
             try
             {
                 message = context.GetMessage(payload);
             }
+            catch (FormatException ex)
+            {
+                _log.Warning(ex, "Failed to deserialize consensus message from {Sender}", Sender);
+                return;
+            }
             catch (Exception ex)
             {
-                Utility.Log(nameof(ConsensusService), LogLevel.Debug, ex.ToString());
+                _log.Error(ex, "Exception deserializing consensus message from {Sender}", Sender);
                 return;
             }
 
-            if (!message.Verify(neoSystem.Settings)) return;
-            if (message.BlockIndex != context.Block.Index)
+            if (message.ValidatorIndex >= context.Validators.Length)
             {
-                if (context.Block.Index < message.BlockIndex)
-                {
-                    Log($"Chain is behind: expected={message.BlockIndex} current={context.Block.Index - 1}", LogLevel.Warning);
-                }
+                _log.Warning("Received consensus message with invalid ValidatorIndex {ValidatorIndex} from {Sender}", message.ValidatorIndex, Sender);
                 return;
             }
-            if (message.ValidatorIndex >= context.Validators.Length) return;
-            if (payload.Sender != Contract.CreateSignatureRedeemScript(context.Validators[message.ValidatorIndex]).ToScriptHash()) return;
-            context.LastSeenMessage[context.Validators[message.ValidatorIndex]] = message.BlockIndex;
-            switch (message)
+
+            if (message.BlockIndex == context.Block.Index)
             {
-                case PrepareRequest request:
-                    OnPrepareRequestReceived(payload, request);
-                    break;
-                case PrepareResponse response:
-                    OnPrepareResponseReceived(payload, response);
-                    break;
-                case ChangeView view:
-                    OnChangeViewReceived(payload, view);
-                    break;
-                case Commit commit:
-                    OnCommitReceived(payload, commit);
-                    break;
-                case RecoveryRequest request:
-                    OnRecoveryRequestReceived(payload, request);
-                    break;
-                case RecoveryMessage recovery:
-                    OnRecoveryMessageReceived(recovery);
-                    break;
+                if (!message.Verify(neoSystem.Settings)) return;
+                if (payload.Sender != Contract.CreateSignatureRedeemScript(context.Validators[message.ValidatorIndex]).ToScriptHash()) return;
+                context.LastSeenMessage[context.Validators[message.ValidatorIndex]] = message.BlockIndex;
+                switch (message)
+                {
+                    case PrepareRequest request:
+                        OnPrepareRequestReceived(payload, request);
+                        break;
+                    case PrepareResponse response:
+                        OnPrepareResponseReceived(payload, response);
+                        break;
+                    case ChangeView view:
+                        OnChangeViewReceived(payload, view);
+                        break;
+                    case Commit commit:
+                        OnCommitReceived(payload, commit);
+                        break;
+                    case RecoveryRequest request:
+                        OnRecoveryRequestReceived(payload, request);
+                        break;
+                    case RecoveryMessage recovery:
+                        OnRecoveryMessageReceived(recovery);
+                        break;
+                }
+            }
+            else if (message.BlockIndex > context.Block.Index)
+            {
+                _log.Debug("Received consensus message for future block {BlockIndex} from {Sender}", message.BlockIndex, Sender);
+                // handle future message
+            }
+            else
+            {
+                _log.Debug("Received consensus message for past block {BlockIndex} from {Sender}", message.BlockIndex, Sender);
+                // handle past message
             }
         }
 
@@ -81,16 +98,17 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (message.ValidatorIndex != context.Block.PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
             if (message.Version != context.Block.Version || message.PrevHash != context.Block.PrevHash) return;
             if (message.TransactionHashes.Length > neoSystem.Settings.MaxTransactionsPerBlock) return;
-            Log($"{nameof(OnPrepareRequestReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} tx={message.TransactionHashes.Length}");
+            _log.Information("PrepareRequest received: Height={Height}, View={View}, SenderIndex={Index}, TxCount={TxCount}",
+                message.BlockIndex, message.ViewNumber, message.ValidatorIndex, message.TransactionHashes.Length);
             if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * neoSystem.Settings.MillisecondsPerBlock).ToTimestampMS())
             {
-                Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
+                _log.Warning("Timestamp incorrect: {Timestamp}", message.Timestamp);
                 return;
             }
 
             if (message.TransactionHashes.Any(p => NativeContract.Ledger.ContainsTransaction(context.Snapshot, p)))
             {
-                Log($"Invalid request: transaction already exists", LogLevel.Warning);
+                _log.Warning("Invalid request: transaction already exists");
                 return;
             }
 
@@ -130,7 +148,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 {
                     if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), neoSystem.Settings.MaxTraceableBlocks))
                     {
-                        Log($"Invalid request: transaction has on-chain conflict", LogLevel.Warning);
+                        _log.Warning("Invalid request: transaction has on-chain conflict");
                         return;
                     }
 
@@ -143,7 +161,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     {
                         if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), neoSystem.Settings.MaxTraceableBlocks))
                         {
-                            Log($"Invalid request: transaction has on-chain conflict", LogLevel.Warning);
+                            _log.Warning("Invalid request: transaction has on-chain conflict");
                             return;
                         }
                         unverified.Add(tx);
@@ -174,7 +192,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
-            Log($"{nameof(OnPrepareResponseReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex}");
+            _log.Information("PrepareResponse received: Height={Height}, View={View}, SenderIndex={Index}",
+                message.BlockIndex, message.ViewNumber, message.ValidatorIndex);
             context.PreparationPayloads[message.ValidatorIndex] = payload;
             if (context.WatchOnly || context.CommitSent) return;
             if (context.RequestSentOrReceived)
@@ -192,7 +211,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (message.NewViewNumber <= expectedView)
                 return;
 
-            Log($"{nameof(OnChangeViewReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} nv={message.NewViewNumber} reason={message.Reason}");
+            _log.Warning("ChangeView received: Height={Height}, View={View}, SenderIndex={Index}, NewView={NewView}, Reason={Reason}",
+                message.BlockIndex, message.ViewNumber, message.ValidatorIndex, message.NewViewNumber, message.Reason);
             context.ChangeViewPayloads[message.ValidatorIndex] = payload;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -203,7 +223,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (existingCommitPayload != null)
             {
                 if (existingCommitPayload.Hash != payload.Hash)
-                    Log($"Rejected {nameof(Commit)}: height={commit.BlockIndex} index={commit.ValidatorIndex} view={commit.ViewNumber} existingView={context.GetMessage(existingCommitPayload).ViewNumber}", LogLevel.Warning);
+                    _log.Warning("Rejected {Commit}: height={Height} index={Index} view={View} existingView={ExistingView}", commit.BlockIndex, commit.ValidatorIndex, commit.ViewNumber, context.GetMessage(existingCommitPayload).ViewNumber);
                 return;
             }
 
@@ -213,7 +233,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 // around 4*15s/M=60.0s/5=12.0s ~ 80% block time (for M=5)
                 ExtendTimerByFactor(4);
 
-                Log($"{nameof(OnCommitReceived)}: height={commit.BlockIndex} view={commit.ViewNumber} index={commit.ValidatorIndex} nc={context.CountCommitted} nf={context.CountFailed}");
+                _log.Information("Commit received: Height={Height}, View={View}, SenderIndex={Index}",
+                    commit.BlockIndex, commit.ViewNumber, commit.ValidatorIndex);
 
                 byte[] hashData = context.EnsureHeader()?.GetSignData(neoSystem.Settings.Network);
                 if (hashData == null)
@@ -241,7 +262,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             int validChangeViews = 0, totalChangeViews = 0, validPrepReq = 0, totalPrepReq = 0;
             int validPrepResponses = 0, totalPrepResponses = 0, validCommits = 0, totalCommits = 0;
 
-            Log($"{nameof(OnRecoveryMessageReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex}");
+            _log.Information("Processing Recovery message for Height={Height}", context.Block.Index);
             try
             {
                 if (message.ViewNumber > context.ViewNumber)
@@ -279,7 +300,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             finally
             {
-                Log($"Recovery finished: (valid/total) ChgView: {validChangeViews}/{totalChangeViews} PrepReq: {validPrepReq}/{totalPrepReq} PrepResp: {validPrepResponses}/{totalPrepResponses} Commits: {validCommits}/{totalCommits}");
+                _log.Information("Recovery finished: (valid/total) ChgView: {ValidChangeViews}/{TotalChangeViews} PrepReq: {ValidPrepReq}/{TotalPrepReq} PrepResp: {ValidPrepResponses}/{TotalPrepResponses} Commits: {ValidCommits}/{TotalCommits}",
+                    validChangeViews, totalChangeViews, validPrepReq, totalPrepReq, validPrepResponses, totalPrepResponses, validCommits, totalCommits);
                 isRecovering = false;
             }
         }
@@ -294,7 +316,17 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
 
-            Log($"{nameof(OnRecoveryRequestReceived)}: height={message.BlockIndex} index={message.ValidatorIndex} view={message.ViewNumber}");
+            if (message is RecoveryRequest recoveryRequest)
+            {
+                _log.Information("RecoveryRequest received: Height={Height}, View={View}, SenderIndex={Index}, Timestamp={Timestamp}",
+                    message.BlockIndex, message.ViewNumber, message.ValidatorIndex, recoveryRequest.Timestamp);
+            }
+            else
+            {
+                _log.Information("Consensus message received triggering recovery logic: Type={MsgType}, Height={Height}, View={View}, SenderIndex={Index}",
+                    message.GetType().Name, message.BlockIndex, message.ViewNumber, message.ValidatorIndex);
+            }
+
             if (context.WatchOnly) return;
             if (!context.CommitSent)
             {

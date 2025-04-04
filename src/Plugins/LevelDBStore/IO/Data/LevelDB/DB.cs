@@ -22,7 +22,9 @@ namespace Neo.IO.Storage.LevelDB
     /// </summary>
     public class DB : LevelDBHandle, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        private DB(nint handle) : base(handle) { }
+        private DB(nint handle) : base(handle)
+        {
+        }
 
         protected override void FreeUnManagedObjects()
         {
@@ -93,7 +95,7 @@ namespace Neo.IO.Storage.LevelDB
         public static DB Open(string name, Options options)
         {
             var handle = Native.leveldb_open(options.Handle, Path.GetFullPath(name), out var error);
-            NativeHelper.CheckError(error);
+            NativeHelper.CheckError(error); // Throws on error
             return new DB(handle);
         }
 
@@ -116,13 +118,13 @@ namespace Neo.IO.Storage.LevelDB
         public static void Repair(string name, Options options)
         {
             Native.leveldb_repair_db(options.Handle, Path.GetFullPath(name), out var error);
-            NativeHelper.CheckError(error);
+            NativeHelper.CheckError(error); // Throws on error
         }
 
         public void Write(WriteOptions options, WriteBatch write_batch)
         {
             Native.leveldb_write(Handle, options.Handle, write_batch.Handle, out var error);
-            NativeHelper.CheckError(error);
+            NativeHelper.CheckError(error); // Throws on error
         }
 
         public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
@@ -132,7 +134,6 @@ namespace Neo.IO.Storage.LevelDB
                 yield return new KeyValuePair<byte[], byte[]>(iterator.Key()!, iterator.Value()!);
         }
 
-        IEnumerator IEnumerable.GetEnumerator() =>
-            GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
