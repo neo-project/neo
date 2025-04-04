@@ -20,7 +20,7 @@ namespace Neo.Extensions
 {
     public static class NeoTokenExtensions
     {
-        public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this NeoToken neoToken, DataCache snapshot)
+        public static IEnumerable<(UInt160 Address, BigInteger Balance)> GetAccounts(this NeoToken neoToken, IReadOnlyStore snapshot)
         {
             if (neoToken is null)
                 throw new ArgumentNullException(nameof(neoToken));
@@ -28,13 +28,13 @@ namespace Neo.Extensions
             if (snapshot is null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            var kb = new KeyBuilder(neoToken.Id, NeoToken.Prefix_Account);
-            var prefixKey = kb.ToArray();
+            var kb = StorageKey.Create(neoToken.Id, NeoToken.Prefix_Account);
+            var kbLength = kb.Length;
 
-            foreach (var (key, value) in snapshot.Find(prefixKey, SeekDirection.Forward))
+            foreach (var (key, value) in snapshot.Find(kb, SeekDirection.Forward))
             {
                 var keyBytes = key.ToArray();
-                var addressHash = new UInt160(keyBytes.AsSpan(prefixKey.Length));
+                var addressHash = new UInt160(keyBytes.AsSpan(kbLength));
                 yield return new(addressHash, value.GetInteroperable<AccountState>().Balance);
             }
         }
