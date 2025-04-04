@@ -117,7 +117,11 @@ namespace Neo.Ledger
         }
 
         internal class Initialize { }
-        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
+        private class UnverifiedBlocksList
+        {
+            public List<Block> Blocks { get; } = [];
+            public HashSet<IActorRef> Nodes { get; } = [];
+        }
 
         public static event CommittingHandler Committing;
         public static event CommittedHandler Committed;
@@ -194,7 +198,7 @@ namespace Neo.Ledger
                 }
             }
 
-            list.Blocks.AddLast(block);
+            list.Blocks.Add(block);
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
