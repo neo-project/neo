@@ -78,10 +78,17 @@ namespace Neo.Plugins.DBFTPlugin
             Start(wallet);
         }
 
+        /// <summary>
+        /// Starts the consensus service.
+        /// If the signer name is provided, it will start with the specified signer.
+        /// Otherwise, it will start with the WalletProvider's wallet.
+        /// </summary>
+        /// <param name="signerName">The name of the signer to use.</param>
         [ConsoleCommand("start consensus", Category = "Consensus", Description = "Start consensus service (dBFT)")]
-        private void OnStart()
+        private void OnStart(string signerName = "")
         {
-            Start(walletProvider.GetWallet());
+            var signer = SignerFactory.GetSignerOrDefault(signerName);
+            Start(signer ?? walletProvider.GetWallet());
         }
 
         public void Start(ISigner signer)
