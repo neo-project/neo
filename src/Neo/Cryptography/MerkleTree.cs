@@ -114,7 +114,7 @@ namespace Neo.Cryptography
         /// <returns>All nodes of the hash tree.</returns>
         public UInt256[] ToHashArray()
         {
-            if (_root is null) return Array.Empty<UInt256>();
+            if (_root is null) return [];
             var hashes = new List<UInt256>();
             DepthFirstSearch(_root, hashes);
             return [.. hashes];

@@ -16,14 +16,9 @@ using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
-    class ClonedCache : DataCache
+    class ClonedCache(DataCache innerCache) : DataCache(false)
     {
-        private readonly DataCache _innerCache;
-
-        public ClonedCache(DataCache innerCache) : base(false)
-        {
-            _innerCache = innerCache;
-        }
+        private readonly DataCache _innerCache = innerCache;
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {

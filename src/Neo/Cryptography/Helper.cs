@@ -30,7 +30,7 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Helper
     {
-        private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        private static readonly bool s_isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
@@ -100,7 +100,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Murmur128(this ReadOnlySpan<byte> value, uint seed)
         {
-            byte[] buffer = new byte[16];
+            var buffer = new byte[16];
             using Murmur128 murmur = new(seed);
             murmur.TryComputeHash(value, buffer, out _);
             return buffer;
@@ -237,9 +237,9 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Keccak256(this byte[] value)
         {
-            KeccakDigest keccak = new(256);
+            var keccak = new KeccakDigest(256);
             keccak.BlockUpdate(value, 0, value.Length);
-            byte[] result = new byte[keccak.GetDigestSize()];
+            var result = new byte[keccak.GetDigestSize()];
             keccak.DoFinal(result, 0);
             return result;
         }
@@ -269,7 +269,7 @@ namespace Neo.Cryptography
             if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
             var tag = new byte[16];
             var cipherBytes = new byte[plainData.Length];
-            if (!IsOSX)
+            if (!s_isOSX)
             {
 #pragma warning disable SYSLIB0053 // Type or member is obsolete
                 using var cipher = new AesGcm(key);
@@ -299,7 +299,7 @@ namespace Neo.Cryptography
             var cipherBytes = encrypted[12..^16];
             var tag = encrypted[^16..];
             var decryptedData = new byte[cipherBytes.Length];
-            if (!IsOSX)
+            if (!s_isOSX)
             {
 #pragma warning disable SYSLIB0053 // Type or member is obsolete
                 using var cipher = new AesGcm(key);
@@ -326,7 +326,7 @@ namespace Neo.Cryptography
         {
             ReadOnlySpan<byte> pubkey_local = local.PublicKey.EncodePoint(false);
             ReadOnlySpan<byte> pubkey_remote = remote.EncodePoint(false);
-            using ECDiffieHellman ecdh1 = ECDiffieHellman.Create(new ECParameters
+            using var ecdh1 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = local.PrivateKey,
@@ -336,7 +336,7 @@ namespace Neo.Cryptography
                     Y = pubkey_local[1..][32..].ToArray()
                 }
             });
-            using ECDiffieHellman ecdh2 = ECDiffieHellman.Create(new ECParameters
+            using var ecdh2 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 Q = new System.Security.Cryptography.ECPoint
