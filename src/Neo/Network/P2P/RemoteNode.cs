@@ -81,8 +81,9 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.localNode = localNode;
-            knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
-            sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
+            // At least 100, max 1000 (per bucket)
+            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, Math.Min(1_000, system.MemPool.Capacity * 2 / 5)));
+            _sentHashes = new HashSetCache<UInt256>(Math.Max(100, Math.Min(1_000, system.MemPool.Capacity * 2 / 5)));
             localNode.RemoteNodes.TryAdd(Self, this);
         }
 
@@ -207,7 +208,11 @@ namespace Neo.Network.P2P
         protected override void PostStop()
         {
             timer.CancelIfNotNull();
-            localNode.RemoteNodes.TryRemove(Self, out _);
+            if (localNode.RemoteNodes.TryRemove(Self, out _))
+            {
+                _knownHashes.Clear();
+                _sentHashes.Clear();
+            }
             base.PostStop();
         }
 

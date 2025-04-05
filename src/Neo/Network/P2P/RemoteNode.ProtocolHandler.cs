@@ -15,7 +15,6 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -45,9 +44,9 @@ namespace Neo.Network.P2P
         }
 
         private static readonly List<MessageReceivedHandler> handlers = new();
-        private readonly PendingKnownHashesCollection pendingKnownHashes = new();
-        private readonly HashSetCache<UInt256> knownHashes;
-        private readonly HashSetCache<UInt256> sentHashes;
+        private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
+        private readonly HashSetCache<UInt256> _knownHashes;
+        private readonly HashSetCache<UInt256> _sentHashes;
         private bool verack = false;
         private BloomFilter bloom_filter;
 
@@ -240,7 +239,7 @@ namespace Neo.Network.P2P
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             var notFound = new List<UInt256>();
-            foreach (UInt256 hash in payload.Hashes.Where(p => sentHashes.Add(p)))
+            foreach (UInt256 hash in payload.Hashes.Where(_sentHashes.Add))
             {
                 switch (payload.Type)
                 {
@@ -313,8 +312,8 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            if (!knownHashes.Add(inventory.Hash)) return;
-            pendingKnownHashes.Remove(inventory.Hash);
+            if (!_knownHashes.Add(inventory.Hash)) return;
+            _pendingKnownHashes.Remove(inventory.Hash);
             system.TaskManager.Tell(inventory);
             switch (inventory)
             {
@@ -335,7 +334,9 @@ namespace Neo.Network.P2P
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            UInt256[] hashes = payload.Hashes.Where(p => !pendingKnownHashes.Contains(p) && !knownHashes.Contains(p) && !sentHashes.Contains(p)).ToArray();
+            var hashes = payload.Hashes
+                .Where(p => !_pendingKnownHashes.Contains(p) && !_knownHashes.Contains(p) && !_sentHashes.Contains(p))
+                .ToArray();
             if (hashes.Length == 0) return;
             switch (payload.Type)
             {
@@ -354,7 +355,7 @@ namespace Neo.Network.P2P
             }
             if (hashes.Length == 0) return;
             foreach (UInt256 hash in hashes)
-                pendingKnownHashes.Add(Tuple.Create(hash, TimeProvider.Current.UtcNow));
+                _pendingKnownHashes.Add(Tuple.Create(hash, TimeProvider.Current.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
 
@@ -410,11 +411,11 @@ namespace Neo.Network.P2P
         private void OnTimer()
         {
             DateTime oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
-            while (pendingKnownHashes.Count > 0)
+            while (_pendingKnownHashes.Count > 0)
             {
-                var (_, time) = pendingKnownHashes.First;
+                var (_, time) = _pendingKnownHashes.First;
                 if (oneMinuteAgo <= time) break;
-                pendingKnownHashes.RemoveFirst();
+                _pendingKnownHashes.RemoveFirst();
             }
             if (oneMinuteAgo > lastSent)
                 EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView))));
