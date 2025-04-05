@@ -9,11 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace Neo.Ledger
@@ -33,7 +36,7 @@ namespace Neo.Ledger
         /// </summary>
         /// <param name="index">The zero-based index of the <see cref="Header"/> to get.</param>
         /// <returns>The <see cref="Header"/> at the specified index in the cache.</returns>
-        public Header this[uint index]
+        public Header? this[uint index]
         {
             get
             {
@@ -81,7 +84,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Gets the last <see cref="Header"/> in the cache. Or <see langword="null"/> if the cache is empty.
         /// </summary>
-        public Header Last
+        public Header? Last
         {
             get
             {
@@ -121,7 +124,7 @@ namespace Neo.Ledger
             return true;
         }
 
-        internal bool TryRemoveFirst(out Header header)
+        internal bool TryRemoveFirst([NotNullWhen(true)] out Header? header)
         {
             _readerWriterLock.EnterWriteLock();
             try
@@ -151,3 +154,5 @@ namespace Neo.Ledger
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
+
+#nullable disable
