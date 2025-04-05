@@ -25,7 +25,7 @@ namespace Neo.IO.Caching
         public int Count => _dict.Count;
         public TItem? First => _items.First?.Value;
 
-        protected abstract TKey GetKeyForItem(TItem? item);
+        protected abstract TKey GetKeyForItem(TItem item);
 
         public void Add(TItem item)
         {
@@ -46,11 +46,15 @@ namespace Neo.IO.Caching
                 _items.Remove(node);
         }
 
-        public void RemoveFirst()
+        public bool RemoveFirst()
         {
-            var key = GetKeyForItem(_items.First?.Value);
+            if (_items.First is null) return false;
+
+            var key = GetKeyForItem(_items.First.Value);
             _dict.Remove(key);
             _items.RemoveFirst();
+
+            return true;
         }
     }
 }

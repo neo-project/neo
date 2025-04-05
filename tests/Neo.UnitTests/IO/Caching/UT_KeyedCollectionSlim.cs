@@ -77,7 +77,7 @@ namespace Neo.UnitTests.IO.Caching
             collection.Add(item2);
 
             // Act
-            collection.RemoveFirst();
+            Assert.IsTrue(collection.RemoveFirst());
 
             // Assert
             Assert.AreEqual(1, collection.Count);
