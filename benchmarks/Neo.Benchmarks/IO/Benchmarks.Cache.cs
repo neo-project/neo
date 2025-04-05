@@ -11,9 +11,8 @@
 
 using BenchmarkDotNet.Attributes;
 using Neo.IO.Caching;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+
 
 namespace Neo.Benchmarks
 {
@@ -60,51 +59,6 @@ namespace Neo.Benchmarks
                 var ok = _cache.TryGet(i % _cacheSize, out _);
                 Debug.Assert(ok);
             }
-        }
-
-        [Benchmark]
-        public void CachePerformanceWithoutParallel()
-        {
-            // Simulating the optimized version (current implementation)
-            var dictionary = GetSampleDictionary(OperationCount);
-            var removedCount = dictionary.Count - _cacheSize + 1;
-
-            foreach (var toDelete in dictionary.Values.OrderBy(p => p.Time).Take(removedCount))
-            {
-                // Simulate removal
-                _ = toDelete;
-            }
-        }
-
-        [Benchmark]
-        public void CachePerformanceWithParallel()
-        {
-            // Simulating the previous version with AsParallel
-            var dictionary = GetSampleDictionary(OperationCount);
-
-            foreach (var item_del in dictionary.Values.AsParallel().OrderBy(p => p.Time).Take(dictionary.Count - _cacheSize + 1))
-            {
-                // Simulate removal
-                _ = item_del;
-            }
-        }
-
-        private Dictionary<long, CacheItem> GetSampleDictionary(int count)
-        {
-            var dictionary = new Dictionary<long, CacheItem>();
-            for (long i = 0; i < count; i++)
-            {
-                dictionary[i] = new CacheItem(i, i);
-            }
-            return dictionary;
-        }
-
-        // Sample class to simulate the CacheItem for benchmarking
-        private class CacheItem(long key, long value)
-        {
-            public readonly long Key = key;
-            public readonly long Value = value;
-            public readonly System.DateTime Time = System.DateTime.UtcNow.AddMilliseconds(-key); // Staggered times
         }
     }
 }
