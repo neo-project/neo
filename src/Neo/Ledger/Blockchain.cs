@@ -285,20 +285,22 @@ namespace Neo.Ledger
             }
             else
             {
-                if (!blockHash.Equals(system.HeaderCache[block.Index].Hash))
+                var header = system.HeaderCache[block.Index];
+                if (header == null || !blockHash.Equals(header.Hash))
                     return VerifyResult.Invalid;
             }
             block_cache.TryAdd(blockHash, block);
             if (block.Index == currentHeight + 1)
             {
-                Block block_persist = block;
-                List<Block> blocksToPersistList = new();
+                var block_persist = block;
+                var blocksToPersistList = new List<Block>();
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
                     if (block_persist.Index + 1 > headerHeight) break;
-                    UInt256 hash = system.HeaderCache[block_persist.Index + 1].Hash;
-                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
+                    var header = system.HeaderCache[block_persist.Index + 1];
+                    if (header == null) break;
+                    if (!block_cache.TryGetValue(header.Hash, out block_persist)) break;
                 }
 
                 int blocksPersisted = 0;
