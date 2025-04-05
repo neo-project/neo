@@ -125,7 +125,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestVerifyWitnesses()
         {
             var snapshotCache1 = TestBlockchain.GetTestSnapshotCache().CloneCache();
-            UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
+            var index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TestUtils.BlocksAdd(snapshotCache1, index1, new TrimmedBlock()
             {
                 Header = new Header
@@ -142,7 +142,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshotCache1, 100));
 
             var snapshotCache2 = TestBlockchain.GetTestSnapshotCache();
-            UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
+            var index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new()
             {
                 Header = new Header
@@ -163,7 +163,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(Helper.VerifyWitnesses(header2, TestProtocolSettings.Default, snapshotCache2, 100));
 
             var snapshotCache3 = TestBlockchain.GetTestSnapshotCache();
-            UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
+            var index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block3 = new()
             {
                 Header = new Header
@@ -180,6 +180,8 @@ namespace Neo.UnitTests.SmartContract
             Header header3 = new()
             {
                 PrevHash = index3,
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
                 Witness = Witness.Empty
             };
             snapshotCache3.AddContract(UInt160.Zero, new ContractState()
