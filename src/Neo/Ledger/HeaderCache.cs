@@ -26,10 +26,10 @@ namespace Neo.Ledger
     /// </summary>
     public sealed class HeaderCache : IDisposable, IEnumerable<Header>
     {
+        public const int MaxHeaders = 10_000;
+
         private readonly IndexedQueue<Header> _headers = new();
         private readonly ReaderWriterLockSlim _readerWriterLock = new();
-
-        public const int MaxHeaders = 10_000;
 
         /// <summary>
         /// Gets the <see cref="Header"/> at the specified index in the cache.
