@@ -16,6 +16,7 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Neo.UnitTests.SmartContract
@@ -31,10 +32,7 @@ namespace Neo.UnitTests.SmartContract
         {
             if (contract == null)
             {
-                byte[] privateKey = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                byte[] privateKey = Enumerable.Repeat((byte)0x01, 32).ToArray();
                 key = new KeyPair(privateKey);
                 contract = Contract.CreateSignatureContract(key.PublicKey);
             }
@@ -174,11 +172,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.ThrowsExactly<NotSupportedException>(action1);
 
             //multiSign
-
-            byte[] privateKey2 = [0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02];
+            byte[] privateKey2 = Enumerable.Repeat((byte)0x01, 31).Append((byte)0x02).ToArray();
             var key2 = new KeyPair(privateKey2);
             var multiSignContract = Contract.CreateMultiSigContract(2, [key.PublicKey, key2.PublicKey]);
             var multiSender = UInt160.Parse("0xf76b51bc6605ac3cfcd188173af0930507f51210");
@@ -194,10 +188,7 @@ namespace Neo.UnitTests.SmartContract
 
             tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
-            byte[] privateKey3 = [0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x03];
+            byte[] privateKey3 = Enumerable.Repeat((byte)0x01, 31).Append((byte)0x03).ToArray();
             var key3 = new KeyPair(privateKey3);
             Assert.IsFalse(context.AddSignature(multiSignContract, key3.PublicKey, [0x01]));
         }
