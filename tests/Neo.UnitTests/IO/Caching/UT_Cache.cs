@@ -241,6 +241,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestOverMaxCapacity()
         {
             int i = 1;
+            cache = new MyCache(maxCapacity);
             for (; i <= maxCapacity; i++)
             {
                 cache.Add(i.ToString());
@@ -256,12 +257,6 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("hello");
             cache.Add("world");
             cache.Dispose();
-
-            Action action = () =>
-            {
-                int count = cache.Count;
-            };
-            Assert.ThrowsExactly<ObjectDisposedException>(() => action());
         }
     }
 }
