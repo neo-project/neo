@@ -13,7 +13,9 @@
 
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Serilog;
 using System;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -23,6 +25,11 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class PolicyContract : NativeContract
     {
+        /// <summary>
+        /// Serilog logger instance
+        /// </summary>
+        private static readonly ILogger _log = Log.ForContext<PolicyContract>();
+
         /// <summary>
         /// The default execution fee factor.
         /// </summary>
@@ -86,13 +93,21 @@ namespace Neo.SmartContract.Native
         {
             if (hardfork == ActiveIn)
             {
+                _log.Information("Initializing PolicyContract state...");
+                var sw = Stopwatch.StartNew();
                 engine.SnapshotCache.Add(_feePerByte, new StorageItem(DefaultFeePerByte));
                 engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
                 engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
+                sw.Stop();
+                _log.Information("PolicyContract initial state (FeePerByte, ExecFeeFactor, StoragePrice) set in {DurationMs} ms", sw.ElapsedMilliseconds);
             }
             if (hardfork == Hardfork.HF_Echidna)
             {
+                _log.Information("Initializing PolicyContract state for HF_Echidna (NotaryAssistedFee)...");
+                var sw = Stopwatch.StartNew();
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
+                sw.Stop();
+                _log.Information("PolicyContract HF_Echidna state set in {DurationMs} ms", sw.ElapsedMilliseconds);
             }
             return ContractTask.CompletedTask;
         }
@@ -224,7 +239,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException($"Unsupported value {attributeType} of {nameof(attributeType)}");
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-
+            _log.Information("Setting attribute fee: Type={AttributeType}, Value={Value}", (TransactionAttributeType)attributeType, value);
             engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_AttributeFee, attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
 
@@ -233,6 +248,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            _log.Information("Setting fee per byte to {FeePerByte}", value);
             engine.SnapshotCache.GetAndChange(_feePerByte).Set(value);
         }
 
@@ -241,6 +257,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            _log.Information("Setting execution fee factor to {ExecFeeFactor}", value);
             engine.SnapshotCache.GetAndChange(_execFeeFactor).Set(value);
         }
 
@@ -249,6 +266,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            _log.Information("Setting storage price to {StoragePrice}", value);
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
         }
 
@@ -256,16 +274,31 @@ namespace Neo.SmartContract.Native
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            return BlockAccount(engine.SnapshotCache, account);
+            _log.Warning("Attempting to block account {Account}", account);
+            bool result = BlockAccount(engine.SnapshotCache, account);
+            if (result)
+                _log.Warning("Account {Account} blocked successfully", account);
+            else
+                _log.Warning("Account {Account} was already blocked or is native", account);
+            return result;
         }
 
         internal bool BlockAccount(DataCache snapshot, UInt160 account)
         {
-            if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
+            if (IsNative(account))
+            {
+                _log.Warning("Attempt to block native contract {Account} denied", account);
+                throw new InvalidOperationException("It's impossible to block a native contract.");
+            }
 
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
-            if (snapshot.Contains(key)) return false;
+            if (snapshot.Contains(key))
+            {
+                _log.Verbose("Account {Account} is already in the blocked list", account);
+                return false;
+            }
 
+            _log.Verbose("Adding account {Account} to the blocked list", account);
             snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
             return true;
         }
@@ -274,11 +307,16 @@ namespace Neo.SmartContract.Native
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-
+            _log.Warning("Attempting to unblock account {Account}", account);
             var key = CreateStorageKey(Prefix_BlockedAccount, account);
-            if (!engine.SnapshotCache.Contains(key)) return false;
+            if (!engine.SnapshotCache.Contains(key))
+            {
+                _log.Warning("Account {Account} is not currently blocked", account);
+                return false;
+            }
 
             engine.SnapshotCache.Delete(key);
+            _log.Warning("Account {Account} unblocked successfully", account);
             return true;
         }
     }

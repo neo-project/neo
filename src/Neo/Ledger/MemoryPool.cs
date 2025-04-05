@@ -14,6 +14,7 @@
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Serilog;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,6 +30,9 @@ namespace Neo.Ledger
     /// </summary>
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
+        // Serilog logger instance
+        private readonly ILogger _log = Log.ForContext<MemoryPool>();
+
         public event EventHandler<Transaction>? TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs>? TransactionRemoved;
 
@@ -310,23 +314,46 @@ namespace Neo.Ledger
         {
             var poolItem = new PoolItem(tx);
 
-            if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
+            if (_unsortedTransactions.ContainsKey(tx.Hash))
+            {
+                _log.Debug("Tx {TxHash} already in verified pool", tx.Hash);
+                return VerifyResult.AlreadyInPool;
+            }
 
             List<Transaction>? removedTransactions = null;
             _txRwLock.EnterWriteLock();
             try
             {
-                if (!CheckConflicts(tx, out List<PoolItem> conflictsToBeRemoved)) return VerifyResult.HasConflicts;
+                if (!CheckConflicts(tx, out List<PoolItem> conflictsToBeRemoved))
+                {
+                    _log.Warning("Tx {TxHash} conflicts with existing pool transaction(s)", tx.Hash);
+                    return VerifyResult.HasConflicts;
+                }
                 VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx));
-                if (result != VerifyResult.Succeed) return result;
+                if (result != VerifyResult.Succeed)
+                {
+                    _log.Warning("Tx {TxHash} failed state-dependent verification: {Result}", tx.Hash, result);
+                    return result;
+                }
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
                 VerificationContext.AddTransaction(tx);
                 _sortedTransactions.Add(poolItem);
+                _log.Debug("Added verified tx {TxHash} to pool. Verified={VerifiedCount}, Unverified={UnverifiedCount}, Capacity={Capacity}",
+                    tx.Hash, VerifiedCount, UnVerifiedCount, Capacity);
+
                 foreach (var conflict in conflictsToBeRemoved)
                 {
-                    if (TryRemoveVerified(conflict.Tx.Hash, out var _))
+                    if (TryRemoveVerified(conflict.Tx.Hash, out var itemRemoved))
+                    {
+                        _log.Debug("Removed conflicting verified tx {TxHash} for new tx {NewTxHash}", conflict.Tx.Hash, tx.Hash);
                         VerificationContext.RemoveTransaction(conflict.Tx);
+                    }
+                    else
+                    {
+                        // Should not happen if CheckConflicts passed, but log just in case
+                        _log.Warning("Failed to remove conflicting verified tx {TxHash} listed by CheckConflicts for new tx {NewTxHash}", conflict.Tx.Hash, tx.Hash);
+                    }
                 }
                 removedTransactions = conflictsToBeRemoved.Select(itm => itm.Tx).ToList();
                 foreach (var attr in tx.GetAttributes<Conflicts>())
@@ -340,7 +367,10 @@ namespace Neo.Ledger
                 }
 
                 if (Count > Capacity)
+                {
+                    _log.Debug("Pool over capacity ({Count}/{Capacity}), removing lowest fee txs...", Count, Capacity);
                     removedTransactions.AddRange(RemoveOverCapacity());
+                }
             }
             finally
             {
@@ -349,13 +379,21 @@ namespace Neo.Ledger
 
             TransactionAdded?.Invoke(this, poolItem.Tx);
             if (removedTransactions.Count > 0)
+            {
+                _log.Debug("Invoking TransactionRemoved event for {RemovedCount} transaction(s) due to capacity/conflict", removedTransactions.Count);
                 TransactionRemoved?.Invoke(this, new()
                 {
                     Transactions = removedTransactions,
-                    Reason = TransactionRemovalReason.CapacityExceeded
+                    Reason = TransactionRemovalReason.CapacityExceeded // Revisit: Might need better reason区分
                 });
+            }
 
-            if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
+            if (!_unsortedTransactions.ContainsKey(tx.Hash))
+            {
+                // This could happen if added tx was immediately removed due to capacity
+                _log.Debug("Tx {TxHash} added but no longer present (likely removed for capacity)", tx.Hash);
+                return VerifyResult.OutOfMemory;
+            }
             return VerifyResult.Succeed;
         }
 
@@ -409,6 +447,10 @@ namespace Neo.Ledger
             {
                 var minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
                 if (minItem == null || sortedPool == null) break;
+
+                _log.Verbose("Removing tx {TxHash} (Fee: {NetworkFee}) due to capacity limit. SourcePool={PoolName}",
+                    minItem.Tx.Hash, minItem.Tx.NetworkFee,
+                    ReferenceEquals(sortedPool, _sortedTransactions) ? "Verified" : "Unverified");
 
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);

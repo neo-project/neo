@@ -67,7 +67,7 @@ namespace Neo.UnitTests.Plugins
 
         public void LogMessage(string message)
         {
-            Log(message);
+            Console.WriteLine($"[TestPlugin Log] {message}");
         }
 
         public bool TestOnMessage(object message)
@@ -90,6 +90,12 @@ namespace Neo.UnitTests.Plugins
         private void OnCommitted(NeoSystem system, Block block)
         {
             throw new NotImplementedException();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Console.WriteLine($"Dispose {nameof(TestPlugin)}");
         }
     }
 }

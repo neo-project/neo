@@ -21,8 +21,10 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
+using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -192,6 +194,9 @@ namespace Neo.Network.P2P.Payloads
             set { witnesses = value; _size = 0; }
         }
 
+        // Serilog logger instance
+        private static readonly ILogger _log = Log.ForContext<Transaction>();
+
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
             int startPosition = reader.Position;
@@ -354,9 +359,18 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
         {
+            var sw = Stopwatch.StartNew();
             VerifyResult result = VerifyStateIndependent(settings);
-            if (result != VerifyResult.Succeed) return result;
-            return VerifyStateDependent(settings, snapshot, context, conflictsList);
+            if (result != VerifyResult.Succeed)
+            {
+                sw.Stop();
+                _log.Verbose("Independent verification failed for tx {TxHash} in {DurationMs} ms: {Result}", Hash, sw.ElapsedMilliseconds, result);
+                return result;
+            }
+            result = VerifyStateDependent(settings, snapshot, context, conflictsList);
+            sw.Stop();
+            _log.Verbose("Full verification finished for tx {TxHash} in {DurationMs} ms: {Result}", Hash, sw.ElapsedMilliseconds, result);
+            return result;
         }
 
         /// <summary>
@@ -369,43 +383,94 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
         {
+            // Add logging at start if desired
+            // _log.Verbose("Verifying tx {TxHash} state dependent...", Hash);
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
+            {
+                _log.Verbose("Tx {TxHash} verification failed: Expired (ValidUntil={VUB}, CurrentHeight={Height})", Hash, ValidUntilBlock, height);
                 return VerifyResult.Expired;
+            }
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             foreach (UInt160 hash in hashes)
+            {
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
+                {
+                    _log.Verbose("Tx {TxHash} verification failed: Signer {SignerHash} is blocked by policy", Hash, hash);
                     return VerifyResult.PolicyFail;
-            if (!(context?.CheckTransaction(this, conflictsList, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
+                }
+            }
+            if (!(context?.CheckTransaction(this, conflictsList, snapshot) ?? true))
+            {
+                _log.Verbose("Tx {TxHash} verification failed: Insufficient funds (checked via VerificationContext)", Hash);
+                return VerifyResult.InsufficientFunds;
+            }
             long attributesFee = 0;
             foreach (TransactionAttribute attribute in Attributes)
             {
                 if (attribute.Type == TransactionAttributeType.NotaryAssisted && !settings.IsHardforkEnabled(Hardfork.HF_Echidna, height))
+                {
+                    _log.Verbose("Tx {TxHash} verification failed: NotaryAssisted attribute used before hardfork HF_Echidna (Height={Height})", Hash, height);
                     return VerifyResult.InvalidAttribute;
+                }
                 if (!attribute.Verify(snapshot, this))
+                {
+                    _log.Verbose("Tx {TxHash} verification failed: Attribute {AttributeType} failed verification", Hash, attribute.Type);
                     return VerifyResult.InvalidAttribute;
+                }
                 attributesFee += attribute.CalculateNetworkFee(snapshot, this);
             }
-            long netFeeDatoshi = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
-            if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
+            long feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
+            long networkFeeCoveringSize = (long)Size * feePerByte;
+            long networkFeeCoveringAttributes = attributesFee;
+            long netFeeDatoshi = NetworkFee - networkFeeCoveringSize - networkFeeCoveringAttributes;
+            if (netFeeDatoshi < 0)
+            {
+                _log.Verbose("Tx {TxHash} verification failed: Insufficient NetworkFee ({NetworkFee}) < SizeCost ({SizeCost}) + AttributeCost ({AttributeCost})",
+                    Hash, NetworkFee, networkFeeCoveringSize, networkFeeCoveringAttributes);
+                return VerifyResult.InsufficientFunds;
+            }
+
+            _log.Verbose("Tx {TxHash} NetworkFee balance for witness verification: {NetFeeRemaining} (NetworkFee={NetworkFee}, SizeCost={SizeCost}, AttributeCost={AttributeCost})",
+                Hash, netFeeDatoshi, NetworkFee, networkFeeCoveringSize, networkFeeCoveringAttributes);
 
             if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
+                // Store initial fee for witness logging
+                long initialNetFeeForWitness = netFeeDatoshi;
+                long fee;
+
                 if (IsSignatureContract(witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(witnesses[i].InvocationScript, out var _))
-                    netFeeDatoshi -= execFeeFactor * SignatureContractCost();
+                {
+                    fee = execFeeFactor * SignatureContractCost();
+                    netFeeDatoshi -= fee;
+                    _log.Verbose("Tx {TxHash} Witness {Index} (SingleSig): System Cost={Fee}, Remaining NetFee={NetFeeRemaining}", Hash, i, fee, netFeeDatoshi);
+                }
                 else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, witnesses[i].InvocationScript, out var _))
                 {
-                    netFeeDatoshi -= execFeeFactor * MultiSignatureContractCost(m, n);
+                    fee = execFeeFactor * MultiSignatureContractCost(m, n);
+                    netFeeDatoshi -= fee;
+                    _log.Verbose("Tx {TxHash} Witness {Index} (MultiSig {M}/{N}): System Cost={Fee}, Remaining NetFee={NetFeeRemaining}", Hash, i, m, n, fee, netFeeDatoshi);
                 }
                 else
                 {
-                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], netFeeDatoshi, out long fee))
+                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], initialNetFeeForWitness, out fee))
+                    {
+                        _log.Verbose("Tx {TxHash} Witness {Index} (ScriptHash={ScriptHash}): Verification failed (Initial NetFee={InitialNetFee}, FeeConsumed={FeeConsumed})",
+                            Hash, i, hashes[i], initialNetFeeForWitness, fee);
                         return VerifyResult.Invalid;
+                    }
                     netFeeDatoshi -= fee;
+                    _log.Verbose("Tx {TxHash} Witness {Index} (ScriptHash={ScriptHash}): Verification success (Initial NetFee={InitialNetFee}, FeeConsumed={FeeConsumed}, Remaining NetFee={NetFeeRemaining})",
+                        Hash, i, hashes[i], initialNetFeeForWitness, fee, netFeeDatoshi);
                 }
-                if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
+                if (netFeeDatoshi < 0)
+                {
+                    _log.Verbose("Tx {TxHash} verification failed: Insufficient funds after witness {Index} verification (Needed={Fee}, Remaining={NetFeeRemaining})", Hash, i, fee, netFeeDatoshi + fee);
+                    return VerifyResult.InsufficientFunds;
+                }
             }
             return VerifyResult.Succeed;
         }
@@ -417,54 +482,88 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
-            if (Size > MaxTransactionSize) return VerifyResult.OverSize;
+            // Add logging at start if desired
+            // _log.Verbose("Verifying tx {TxHash} state independent...", Hash);
+
+            if (Size > MaxTransactionSize)
+            {
+                _log.Verbose("Tx {TxHash} verification failed: OverSize ({Size}/{MaxSize})", Hash, Size, MaxTransactionSize);
+                return VerifyResult.OverSize;
+            }
             try
             {
-                _ = new Script(Script, true);
+                // Check script basic validity
+                var scriptCheck = new Script(Script, true);
             }
-            catch (BadScriptException)
+            catch (BadScriptException ex)
             {
+                _log.Verbose(ex, "Tx {TxHash} verification failed: Invalid Script", Hash);
                 return VerifyResult.InvalidScript;
             }
             UInt160[] hashes = GetScriptHashesForVerifying(null);
+            if (Witnesses is null || Witnesses.Length != hashes.Length)
+            {
+                _log.Verbose("Tx {TxHash} verification failed: Witness count ({WitnessCount}) mismatch with signer count ({SignerCount})", Hash, Witnesses?.Length ?? -1, hashes.Length);
+                return VerifyResult.Invalid;
+            }
             for (int i = 0; i < hashes.Length; i++)
             {
                 var witness = witnesses[i];
                 if (IsSignatureContract(witness.VerificationScript.Span) && IsSingleSignatureInvocationScript(witness.InvocationScript, out var signature))
                 {
-                    if (hashes[i] != witness.ScriptHash) return VerifyResult.Invalid;
+                    if (hashes[i] != witness.ScriptHash)
+                    {
+                        _log.Verbose("Tx {TxHash} Witness {Index}: ScriptHash mismatch (Expected={ExpectedHash}, Actual={ActualHash})", Hash, i, hashes[i], witness.ScriptHash);
+                        return VerifyResult.Invalid;
+                    }
                     var pubkey = witness.VerificationScript.Span[2..35];
                     try
                     {
                         if (!Crypto.VerifySignature(this.GetSignData(settings.Network), signature.Span, pubkey, ECCurve.Secp256r1))
+                        {
+                            _log.Verbose("Tx {TxHash} Witness {Index} (SingleSig): Invalid signature", Hash, i);
                             return VerifyResult.InvalidSignature;
+                        }
+                        _log.Verbose("Tx {TxHash} Witness {Index} (SingleSig): Signature verified", Hash, i);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _log.Verbose(ex, "Tx {TxHash} Witness {Index} (SingleSig): Signature verification threw exception", Hash, i);
                         return VerifyResult.Invalid;
                     }
                 }
                 else if (IsMultiSigContract(witness.VerificationScript.Span, out var m, out ECPoint[] points) && IsMultiSignatureInvocationScript(m, witness.InvocationScript, out var signatures))
                 {
-                    if (hashes[i] != witness.ScriptHash) return VerifyResult.Invalid;
+                    if (hashes[i] != witness.ScriptHash)
+                    {
+                        _log.Verbose("Tx {TxHash} Witness {Index}: ScriptHash mismatch (Expected={ExpectedHash}, Actual={ActualHash})", Hash, i, hashes[i], witness.ScriptHash);
+                        return VerifyResult.Invalid;
+                    }
                     var n = points.Length;
                     var message = this.GetSignData(settings.Network);
                     try
                     {
-                        for (int x = 0, y = 0; x < m && y < n;)
+                        int x = 0, y = 0;
+                        while (x < m && y < n)
                         {
                             if (Crypto.VerifySignature(message, signatures[x].Span, points[y]))
                                 x++;
                             y++;
-                            if (m - x > n - y)
-                                return VerifyResult.InvalidSignature;
                         }
+                        if (x != m) // Check if enough valid signatures were found
+                        {
+                            _log.Verbose("Tx {TxHash} Witness {Index} (MultiSig {M}/{N}): Invalid signature(s) (Found {ValidCount})", Hash, i, m, n, x);
+                            return VerifyResult.InvalidSignature;
+                        }
+                        _log.Verbose("Tx {TxHash} Witness {Index} (MultiSig {M}/{N}): Signatures verified ({ValidCount})", Hash, i, m, n, x);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _log.Verbose(ex, "Tx {TxHash} Witness {Index} (MultiSig {M}/{N}): Signature verification threw exception", Hash, i, m, n);
                         return VerifyResult.Invalid;
                     }
                 }
+                // Note: Custom script verification happens in VerifyStateDependent
             }
             return VerifyResult.Succeed;
         }

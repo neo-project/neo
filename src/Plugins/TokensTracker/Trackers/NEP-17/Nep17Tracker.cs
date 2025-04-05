@@ -20,8 +20,10 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
+using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -37,59 +39,75 @@ namespace Neo.Plugins.Trackers.NEP_17
         private const byte Nep17TransferReceivedPrefix = 0xea;
         private uint _currentHeight;
         private Block _currentBlock;
+        private readonly ILogger _log;
 
         public override string TrackName => nameof(Nep17Tracker);
 
         public Nep17Tracker(IStore db, uint maxResult, bool shouldRecordHistory, NeoSystem system) : base(db, maxResult, shouldRecordHistory, system)
         {
+            _log = Serilog.Log.ForContext<Nep17Tracker>();
+            _log.Information("Nep17Tracker initialized (TrackHistory={TrackHistory}, MaxResults={MaxResults})", shouldRecordHistory, maxResult);
         }
 
         public override void OnPersist(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
+            _log.Debug("Nep17Tracker OnPersist for block {BlockIndex}", block.Index);
+            var sw = Stopwatch.StartNew();
             _currentBlock = block;
             _currentHeight = block.Index;
             uint nep17TransferIndex = 0;
             var balanceChangeRecords = new HashSet<BalanceChangeRecord>();
+            int notificationCount = 0;
 
             foreach (Blockchain.ApplicationExecuted appExecuted in applicationExecutedList)
             {
-                // Executions that fault won't modify storage, so we can skip them.
                 if (appExecuted.VMState.HasFlag(VMState.FAULT)) continue;
                 foreach (var notifyEventArgs in appExecuted.Notifications)
                 {
+                    notificationCount++;
                     if (notifyEventArgs.EventName != "Transfer" || notifyEventArgs?.State is not Array stateItems || stateItems.Count == 0)
                         continue;
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, notifyEventArgs.ScriptHash);
                     if (contract?.Manifest.SupportedStandards.Contains("NEP-17") == true)
                     {
+                        _log.Verbose("Found potential NEP-17 Transfer event: Contract={ContractHash}, Tx={TxHash}",
+                            notifyEventArgs.ScriptHash, appExecuted.Transaction?.Hash ?? UInt256.Zero);
                         try
                         {
                             HandleNotificationNep17(notifyEventArgs.ScriptContainer, notifyEventArgs.ScriptHash, stateItems, balanceChangeRecords, ref nep17TransferIndex);
                         }
                         catch (Exception e)
                         {
-                            Log(e.ToString(), LogLevel.Error);
+                            _log.Error(e, "Error handling NEP-17 notification for contract {ContractHash}, Tx {TxHash}",
+                                notifyEventArgs.ScriptHash, appExecuted.Transaction?.Hash ?? UInt256.Zero);
                             throw;
                         }
                     }
                 }
             }
+            _log.Debug("Scanned {NotificationCount} notifications, found {BalanceChangeCount} addresses with potential NEP-17 balance changes for block {BlockIndex}",
+                notificationCount, balanceChangeRecords.Count, block.Index);
 
             //update nep17 balance
+            int balanceUpdates = 0;
             foreach (var balanceChangeRecord in balanceChangeRecords)
             {
                 try
                 {
+                    _log.Verbose("Updating NEP-17 balance: Account={Account}, Asset={Asset}", balanceChangeRecord.User, balanceChangeRecord.Asset);
                     SaveNep17Balance(balanceChangeRecord, snapshot);
+                    balanceUpdates++;
                 }
                 catch (Exception e)
                 {
-                    Log(e.ToString(), LogLevel.Error);
+                    _log.Error(e, "Error saving NEP-17 balance for Account={Account}, Asset={Asset}", balanceChangeRecord.User, balanceChangeRecord.Asset);
                     throw;
                 }
             }
+            sw.Stop();
+            _log.Debug("Nep17Tracker OnPersist finished for block {BlockIndex} in {DurationMs} ms. Updated {BalanceUpdateCount} balances.",
+                block.Index, sw.ElapsedMilliseconds, balanceUpdates);
         }
-
 
         private void HandleNotificationNep17(IVerifiable scriptContainer, UInt160 asset, Array stateItems, HashSet<BalanceChangeRecord> balanceChangeRecords, ref uint transferIndex)
         {
@@ -110,7 +128,6 @@ namespace Neo.Plugins.Trackers.NEP_17
             }
         }
 
-
         private void SaveNep17Balance(BalanceChangeRecord balanceChanged, DataCache snapshot)
         {
             var key = new Nep17BalanceKey(balanceChanged.User, balanceChanged.Asset);
@@ -120,14 +137,16 @@ namespace Neo.Plugins.Trackers.NEP_17
 
             if (engine.State.HasFlag(VMState.FAULT) || engine.ResultStack.Count == 0)
             {
-                Log($"Fault:{balanceChanged.User} get {balanceChanged.Asset} balance fault", LogLevel.Warning);
+                _log.Warning("Failed to get NEP-17 balance via ApplicationEngine: Account={Account}, Asset={Asset}, VMState={VMState}",
+                    balanceChanged.User, balanceChanged.Asset, engine.State);
                 return;
             }
 
             var balanceItem = engine.ResultStack.Pop();
             if (balanceItem is not Integer)
             {
-                Log($"Fault:{balanceChanged.User} get {balanceChanged.Asset} balance not number", LogLevel.Warning);
+                _log.Warning("Failed to get NEP-17 balance: Returned type is not Integer. Account={Account}, Asset={Asset}, ReturnType={ReturnType}",
+                    balanceChanged.User, balanceChanged.Asset, balanceItem.GetType().Name);
                 return;
             }
 
@@ -135,13 +154,15 @@ namespace Neo.Plugins.Trackers.NEP_17
 
             if (balance.IsZero)
             {
+                _log.Verbose("Balance is zero, deleting balance storage: Account={Account}, Asset={Asset}", balanceChanged.User, balanceChanged.Asset);
                 Delete(Nep17BalancePrefix, key);
                 return;
             }
 
+            _log.Verbose("Putting NEP-17 balance storage: Account={Account}, Asset={Asset}, Balance={Balance}",
+                balanceChanged.User, balanceChanged.Asset, balance);
             Put(Nep17BalancePrefix, key, new TokenBalance { Balance = balance, LastUpdatedBlock = _currentHeight });
         }
-
 
         [RpcMethod]
         public JToken GetNep17Transfers(JArray _params)
@@ -223,10 +244,11 @@ namespace Neo.Plugins.Trackers.NEP_17
             }
         }
 
-
         private void RecordTransferHistoryNep17(UInt160 scriptHash, UInt160 from, UInt160 to, BigInteger amount, UInt256 txHash, ref uint transferIndex)
         {
             if (!_shouldTrackHistory) return;
+            _log.Verbose("Recording NEP-17 transfer history: Asset={Asset}, From={From}, To={To}, Amount={Amount}, Tx={TxHash}, Index={TransferIndex}",
+                scriptHash, from, to, amount, txHash, transferIndex);
             if (from != UInt160.Zero)
             {
                 Put(Nep17TransferSentPrefix,

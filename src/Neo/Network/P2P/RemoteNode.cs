@@ -17,6 +17,7 @@ using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
+using Serilog;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -42,6 +43,7 @@ namespace Neo.Network.P2P
         private ByteString msg_buffer = ByteString.Empty;
         private bool ack = true;
         private uint lastHeightSent = 0;
+        private readonly ILogger _log;
 
         /// <summary>
         /// The address of the remote Tcp server.
@@ -81,9 +83,12 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.localNode = localNode;
+            _log = Log.ForContext<RemoteNode>().ForContext("Remote", remote).ForContext("Local", local);
+
             knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             localNode.RemoteNodes.TryAdd(Self, this);
+            _log.Debug("RemoteNode created");
         }
 
         /// <summary>
@@ -115,6 +120,12 @@ namespace Neo.Network.P2P
         /// <param name="message">The message to be added.</param>
         private void EnqueueMessage(Message message)
         {
+            _log.Verbose("Enqueuing {Command} ({Priority} priority). Queue sizes: High={HighCount}, Low={LowCount}",
+                message.Command,
+                message.Command switch { MessageCommand.Alert or MessageCommand.Extensible or MessageCommand.FilterAdd or MessageCommand.FilterClear or MessageCommand.FilterLoad or MessageCommand.GetAddr or MessageCommand.Mempool => "High", _ => "Low" },
+                message_queue_high.Count,
+                message_queue_low.Count);
+
             bool is_single = message.Command switch
             {
                 MessageCommand.Addr or MessageCommand.GetAddr or MessageCommand.GetBlocks or MessageCommand.GetHeaders or MessageCommand.Mempool or MessageCommand.Ping or MessageCommand.Pong => true,
@@ -135,16 +146,24 @@ namespace Neo.Network.P2P
 
         protected override void OnAck()
         {
+            _log.Verbose("Ack received");
             ack = true;
             CheckMessageQueue();
         }
 
         protected override void OnData(ByteString data)
         {
+            _log.Verbose("Received {DataLength} bytes", data.Count);
             msg_buffer = msg_buffer.Concat(data);
 
+            int count = 0;
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            {
+                _log.Debug("Parsed message {Command} (Length: {Length})", message.Command, message.Size);
+                count++;
                 OnMessage(message);
+            }
+            if (count > 1) _log.Debug("Processed {MessageCount} messages from buffer", count);
         }
 
         protected override void OnReceive(object message)
@@ -179,33 +198,51 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            if (!IsFullNode) return;
+            _log.Verbose("Preparing to relay inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
+            if (!IsFullNode)
+            {
+                _log.Verbose("Relay skipped: Not a full node.");
+                return;
+            }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
+                {
+                    _log.Verbose("Relay skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
                     return;
+                }
             }
             EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }
 
         private void OnSend(IInventory inventory)
         {
-            if (!IsFullNode) return;
+            _log.Verbose("Preparing direct send of inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
+            if (!IsFullNode)
+            {
+                _log.Verbose("Direct send skipped: Not a full node.");
+                return;
+            }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
+                {
+                    _log.Verbose("Direct send skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
                     return;
+                }
             }
             EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
         private void OnStartProtocol()
         {
+            _log.Debug("Starting protocol, sending Version message.");
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, localNode.GetNodeCapabilities())));
         }
 
         protected override void PostStop()
         {
+            _log.Debug("RemoteNode stopped");
             timer.CancelIfNotNull();
             localNode.RemoteNodes.TryRemove(Self, out _);
             base.PostStop();
@@ -218,6 +255,8 @@ namespace Neo.Network.P2P
 
         private void SendMessage(Message message)
         {
+            _log.Debug("Sending message {Command} (Length: {Length}, Compressed: {Compressed})",
+                message.Command, message.Size, Version?.AllowCompression ?? false);
             ack = false;
             // Here it is possible that we dont have the Version message yet,
             // so we need to send the message uncompressed

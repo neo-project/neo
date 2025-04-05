@@ -21,6 +21,10 @@ using Neo.Plugins.ApplicationLogs.Store.Models;
 using Neo.Plugins.RpcServer;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Serilog;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using static System.IO.Path;
 
@@ -28,6 +32,8 @@ namespace Neo.Plugins.ApplicationLogs
 {
     public class LogReader : Plugin, ICommittingHandler, ICommittedHandler, ILogHandler
     {
+        private static readonly ILogger _log = Log.ForContext<LogReader>();
+
         #region Globals
 
         internal NeoStore _neostore;
@@ -44,6 +50,7 @@ namespace Neo.Plugins.ApplicationLogs
 
         public LogReader()
         {
+            _log.Debug("LogReader instance created");
             _logEvents = new();
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
@@ -57,30 +64,60 @@ namespace Neo.Plugins.ApplicationLogs
 
         public override void Dispose()
         {
+            _log.Information("Disposing LogReader plugin");
             Blockchain.Committing -= ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed -= ((ICommittedHandler)this).Blockchain_Committed_Handler;
             if (Settings.Default.Debug)
                 ApplicationEngine.Log -= ((ILogHandler)this).ApplicationEngine_Log_Handler;
+            _neostore?.Dispose();
+            _log.Debug("LogReader disposed");
             GC.SuppressFinalize(this);
         }
 
         protected override void Configure()
         {
+            _log.Information("Configuring LogReader plugin...");
             Settings.Load(GetConfiguration());
+            _log.Information("LogReader configured: Network={Network}, Path={Path}, Debug={Debug}",
+                Settings.Default.Network, Settings.Default.Path, Settings.Default.Debug);
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
             if (system.Settings.Network != Settings.Default.Network)
+            {
+                _log.Warning("LogReader not loaded: Network mismatch (Expected={ExpectedNetwork}, System={SystemNetwork})",
+                    Settings.Default.Network, system.Settings.Network);
                 return;
+            }
+            _log.Information("LogReader loading for network {Network}...", Settings.Default.Network);
             string path = string.Format(Settings.Default.Path, Settings.Default.Network.ToString("X8"));
-            var store = system.LoadStore(GetFullPath(path));
-            _neostore = new NeoStore(store);
+            var fullPath = GetFullPath(path);
+            _log.Information("Loading LogReader store from {Path}", fullPath);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                var store = system.LoadStore(fullPath);
+                _neostore = new NeoStore(store);
+                sw.Stop();
+                _log.Information("LogReader store loaded in {DurationMs} ms", sw.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _log.Fatal(ex, "Failed to load LogReader store from {Path} after {DurationMs} ms", fullPath, sw.ElapsedMilliseconds);
+                return;
+            }
+
             _neosystem = system;
             RpcServerPlugin.RegisterMethods(this, Settings.Default.Network);
 
             if (Settings.Default.Debug)
+            {
+                _log.Information("Debug logging enabled, subscribing to ApplicationEngine.Log");
                 ApplicationEngine.Log += ((ILogHandler)this).ApplicationEngine_Log_Handler;
+            }
+            _log.Information("LogReader loaded successfully");
         }
 
         #endregion
@@ -191,51 +228,86 @@ namespace Neo.Plugins.ApplicationLogs
                 PrintEventModelToConsole(txContract);
         }
 
-
         #endregion
 
         #region Blockchain Events
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
-            if (system.Settings.Network != Settings.Default.Network)
-                return;
-
+            if (system.Settings.Network != Settings.Default.Network) return;
             if (_neostore is null)
-                return;
-            _neostore.StartBlockLogBatch();
-            _neostore.PutBlockLog(block, applicationExecutedList);
-            if (Settings.Default.Debug)
             {
-                foreach (var appEng in applicationExecutedList.Where(w => w.Transaction != null))
+                _log.Warning("Blockchain_Committing skipped: NeoStore not initialized (Block {BlockIndex})", block.Index);
+                return;
+            }
+
+            _log.Debug("Blockchain Committing: Starting batch for Block {BlockIndex} ({BlockHash})", block.Index, block.Hash);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _neostore.StartBlockLogBatch();
+                _neostore.PutBlockLog(block, applicationExecutedList);
+                if (Settings.Default.Debug)
                 {
-                    var logs = _logEvents.Where(w => w.ScriptContainer.Hash == appEng.Transaction.Hash).ToList();
-                    if (logs.Any())
-                        _neostore.PutTransactionEngineLogState(appEng.Transaction.Hash, logs);
+                    int logCount = _logEvents.Count;
+                    if (logCount > 0)
+                        _log.Debug("Processing {LogCount} debug ApplicationEngine logs for block {BlockIndex}", logCount, block.Index);
+
+                    foreach (var appEng in applicationExecutedList.Where(w => w.Transaction != null))
+                    {
+                        var logs = _logEvents.Where(w => w.ScriptContainer.Hash == appEng.Transaction.Hash).ToList();
+                        if (logs.Any())
+                        {
+                            _log.Verbose("Storing {LogCount} debug logs for Tx {TxHash}", logs.Count, appEng.Transaction.Hash);
+                            _neostore.PutTransactionEngineLogState(appEng.Transaction.Hash, logs);
+                        }
+                    }
+                    _logEvents.Clear();
                 }
-                _logEvents.Clear();
+                sw.Stop();
+                _log.Debug("Blockchain Committing: Batch processing finished for Block {BlockIndex} in {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _log.Error(ex, "Error during Blockchain_Committing for Block {BlockIndex} after {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
             }
         }
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            if (system.Settings.Network != Settings.Default.Network)
-                return;
+            if (system.Settings.Network != Settings.Default.Network) return;
             if (_neostore is null)
+            {
+                _log.Warning("Blockchain_Committed skipped: NeoStore not initialized (Block {BlockIndex})", block.Index);
                 return;
-            _neostore.CommitBlockLog();
+            }
+            _log.Debug("Blockchain Committed: Committing batch for Block {BlockIndex} ({BlockHash})", block.Index, block.Hash);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _neostore.CommitBlockLog();
+                sw.Stop();
+                _log.Information("Blockchain Committed: Batch committed for Block {BlockIndex} in {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _log.Error(ex, "Error during Blockchain_Committed for Block {BlockIndex} after {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
+            }
         }
 
         void ILogHandler.ApplicationEngine_Log_Handler(object sender, LogEventArgs e)
         {
-            if (Settings.Default.Debug == false)
-                return;
-
-            if (_neosystem.Settings.Network != Settings.Default.Network)
-                return;
-
+            if (_neosystem.Settings.Network != Settings.Default.Network) return;
             if (e.ScriptContainer == null)
+            {
+                _log.Verbose("ApplicationEngine Log ignored: No ScriptContainer");
                 return;
+            }
+
+            _log.Verbose("[AE Log] Contract={ContractHash} Message='{LogMessage}' Container={ContainerHash}",
+                e.ScriptHash, e.Message, e.ScriptContainer.Hash);
 
             _logEvents.Add(e);
         }

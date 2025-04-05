@@ -95,8 +95,6 @@ namespace Neo.CLI
             RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj);
 
             RegisterCommand(this);
-
-            Initialize_Logger();
         }
 
         internal UInt160 StringToAddress(string input, byte version)
@@ -374,7 +372,6 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
-            Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
@@ -511,7 +508,6 @@ namespace Neo.CLI
 
         public void Stop()
         {
-            Dispose_Logger();
             Interlocked.Exchange(ref _neoSystem, null)?.Dispose();
         }
 

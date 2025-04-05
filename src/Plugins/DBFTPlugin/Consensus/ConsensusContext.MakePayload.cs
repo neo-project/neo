@@ -9,16 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography;
 using Neo.Extensions;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.VM.Types;
+using Serilog;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 
@@ -26,6 +33,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 {
     partial class ConsensusContext
     {
+        private static readonly ILogger _log = Log.ForContext<ConsensusContext>();
+
         public ExtensiblePayload MakeChangeView(ChangeViewReason reason)
         {
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
@@ -48,6 +57,65 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             return CommitPayloads[MyIndex];
         }
 
+        private ulong GetNonce()
+        {
+            byte[] nonce = new byte[sizeof(ulong)];
+            try
+            {
+                RandomNumberGenerator.Fill(nonce);
+            }
+            catch (InvalidOperationException exception)
+            {
+                _log.Debug(exception, "Exception during RandomNumberGenerator.Fill");
+                return 0;
+            }
+            return BinaryPrimitives.ReadUInt64LittleEndian(nonce);
+        }
+
+        private Block PrepareBlock()
+        {
+            var header = Block.Header;
+            var block = Block;
+            var snapshot = Snapshot;
+            var settings = neoSystem.Settings;
+            var memPool = neoSystem.MemPool;
+
+            var policy = NativeContract.Policy;
+            var maxBlockSize = dbftSettings.MaxBlockSize;
+            var maxBlockSystemFee = dbftSettings.MaxBlockSystemFee;
+            var feePerByte = policy.GetFeePerByte(snapshot);
+            var txHashes = new List<UInt256>();
+            long blockSize = block.Header.Size;
+            long blockSystemFee = 0;
+
+            Transactions = new Dictionary<UInt256, Transaction>();
+
+            foreach (var tx in memPool.GetSortedVerifiedTransactions().Reverse())
+            {
+                long currentTxFee = tx.SystemFee + tx.NetworkFee;
+                if (blockSystemFee + currentTxFee > maxBlockSystemFee) continue;
+                if (blockSize + tx.Size > maxBlockSize) continue;
+                if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
+                    continue;
+                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), settings.MaxTraceableBlocks))
+                    continue;
+
+                blockSize += tx.Size;
+                blockSystemFee += tx.SystemFee;
+                txHashes.Add(tx.Hash);
+                Transactions.Add(tx.Hash, tx);
+            }
+
+            header.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
+            header.Nonce = GetNonce();
+            block.Transactions = txHashes.Select(hash => Transactions[hash]).ToArray();
+            header.MerkleRoot = MerkleTree.ComputeRoot(block.Transactions.Select(tx => tx.Hash).ToArray());
+
+            _log.Information("Primary prepared block {BlockIndex} with {TxCount} transactions.", block.Index, block.Transactions.Length);
+
+            return block;
+        }
+
         private ExtensiblePayload MakeSignedPayload(ConsensusMessage message)
         {
             message.BlockIndex = Block.Index;
@@ -68,7 +136,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             catch (InvalidOperationException exception)
             {
-                Utility.Log(nameof(ConsensusContext), LogLevel.Debug, exception.ToString());
+                _log.Debug(exception, "Failed to sign payload");
                 return;
             }
             payload.Witness = sc.GetWitnesses()[0];
@@ -179,23 +247,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             {
                 PreparationHash = PreparationPayloads[Block.PrimaryIndex].Hash
             });
-        }
-
-        // Related to issue https://github.com/neo-project/neo/issues/3431
-        // Ref. https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator?view=net-8.0
-        //
-        //The System.Random class relies on a seed value that can be predictable,
-        //especially if the seed is based on the system clock or other low-entropy sources.
-        //RandomNumberGenerator, however, uses sources of entropy provided by the operating
-        //system, which are designed to be unpredictable.
-        private static ulong GetNonce()
-        {
-            Span<byte> buffer = stackalloc byte[8];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(buffer);
-            }
-            return BinaryPrimitives.ReadUInt64LittleEndian(buffer);
         }
     }
 }

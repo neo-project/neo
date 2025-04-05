@@ -9,6 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Json;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.Plugins.RpcServer;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,6 +23,8 @@ namespace Neo.Plugins.RpcServer
 {
     public class RpcServerPlugin : Plugin
     {
+        private static readonly ILogger _log = Log.ForContext<RpcServerPlugin>();
+
         public override string Name => "RpcServer";
         public override string Description => "Enables RPC for the node";
 
@@ -30,14 +39,27 @@ namespace Neo.Plugins.RpcServer
         {
             settings = new Settings(GetConfiguration());
             foreach (RpcServerSettings s in settings.Servers)
+            {
+                if (s.EnableCors && string.IsNullOrEmpty(s.RpcUser) == false && s.AllowOrigins.Length == 0)
+                {
+                    _log.Warning("RpcServer CORS misconfiguration: Basic Auth enabled but AllowOrigins is empty for Network {Network}", s.Network);
+                    _log.Information("CORS with Basic Authentication requires specifying origins in AllowOrigins. Example: \"AllowOrigins\": [\"http://{BindAddress}:{Port}\"]", s.BindAddress, s.Port);
+                }
                 if (servers.TryGetValue(s.Network, out RpcServer server))
+                {
+                    _log.Information("Updating settings for existing RpcServer on network {Network}", s.Network);
                     server.UpdateSettings(s);
+                }
+            }
         }
 
         public override void Dispose()
         {
-            foreach (var (_, server) in servers)
-                server.Dispose();
+            foreach (var server in servers)
+            {
+                Serilog.Log.Information("Disposing RpcServer for network {Network}", server.Key);
+                server.Value.Dispose();
+            }
             base.Dispose();
         }
 
@@ -48,8 +70,8 @@ namespace Neo.Plugins.RpcServer
 
             if (s.EnableCors && string.IsNullOrEmpty(s.RpcUser) == false && s.AllowOrigins.Length == 0)
             {
-                Log("RcpServer: CORS is misconfigured!", LogLevel.Warning);
-                Log($"You have {nameof(s.EnableCors)} and Basic Authentication enabled but " +
+                _log.Warning("RcpServer: CORS is misconfigured!");
+                _log.Information($"You have {nameof(s.EnableCors)} and Basic Authentication enabled but " +
                 $"{nameof(s.AllowOrigins)} is empty in config.json for RcpServer. " +
                 "You must add url origins to the list to have CORS work from " +
                 $"browser with basic authentication enabled. " +
@@ -72,16 +94,18 @@ namespace Neo.Plugins.RpcServer
 
         public static void RegisterMethods(object handler, uint network)
         {
-            if (servers.TryGetValue(network, out RpcServer server))
-            {
-                server.RegisterMethods(handler);
-                return;
-            }
             if (!handlers.TryGetValue(network, out var list))
             {
                 list = new List<object>();
                 handlers.Add(network, list);
             }
+
+            if (servers.TryGetValue(network, out var server))
+            {
+                Serilog.Log.Information("RpcServer for network {Network} loading RpcMethods from {HandlerType}", network, handler.GetType().FullName);
+                server.RegisterMethods(handler);
+            }
+
             list.Add(handler);
         }
     }

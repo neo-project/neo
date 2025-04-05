@@ -20,6 +20,8 @@ namespace Neo.CLI
 {
     partial class MainService
     {
+        private readonly object _consoleLock = new();
+
         /// <summary>
         /// Process "export blocks" command
         /// </summary>
@@ -49,7 +51,7 @@ namespace Neo.CLI
         [ConsoleCommand("show block", Category = "Blockchain Commands")]
         private void OnShowBlockCommand(string indexOrHash)
         {
-            lock (syncRoot)
+            lock (_consoleLock)
             {
                 Block? block = null;
 
@@ -115,7 +117,7 @@ namespace Neo.CLI
         [ConsoleCommand("show tx", Category = "Blockchain Commands")]
         public void OnShowTransactionCommand(UInt256 hash)
         {
-            lock (syncRoot)
+            lock (_consoleLock)
             {
                 var tx = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, hash);
 
@@ -231,7 +233,7 @@ namespace Neo.CLI
         [ConsoleCommand("show contract", Category = "Blockchain Commands")]
         public void OnShowContractCommand(string nameOrHash)
         {
-            lock (syncRoot)
+            lock (_consoleLock)
             {
                 ContractState? contract = null;
 

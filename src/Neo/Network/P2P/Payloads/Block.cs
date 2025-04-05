@@ -15,7 +15,9 @@ using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Persistence;
+using Serilog;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -26,6 +28,9 @@ namespace Neo.Network.P2P.Payloads
     /// </summary>
     public sealed class Block : IEquatable<Block>, IInventory
     {
+        // Serilog logger instance
+        private static readonly ILogger _log = Log.ForContext<Block>();
+
         /// <summary>
         /// The header of the block.
         /// </summary>
@@ -148,12 +153,25 @@ namespace Neo.Network.P2P.Payloads
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
-            return Header.Verify(settings, snapshot);
+            var sw = Stopwatch.StartNew();
+            bool result = Header.Verify(settings, snapshot);
+            sw.Stop();
+            _log.Verbose("Block {BlockHash} ({BlockIndex}) header verification finished in {DurationMs} ms: {Result}",
+                Header.Hash, Header.Index, sw.ElapsedMilliseconds, result);
+            return result;
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
-            return Header.Verify(settings, snapshot, headerCache);
+            var sw = Stopwatch.StartNew();
+            // Currently, Header.Verify doesn't use the HeaderCache directly in its logic
+            // It's passed to block.Verify which calls Header.Verify. Let's assume the header verify is the main part.
+            bool result = Header.Verify(settings, snapshot);
+            sw.Stop();
+            _log.Verbose("Block {BlockHash} ({BlockIndex}) header verification (with HeaderCache) finished in {DurationMs} ms: {Result}",
+                Header.Hash, Header.Index, sw.ElapsedMilliseconds, result);
+            // If block body verification (like MerkleRoot check moved from Deserialize) were added here, log its timing too.
+            return result;
         }
     }
 }
