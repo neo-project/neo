@@ -13,7 +13,6 @@ using BenchmarkDotNet.Attributes;
 using Neo.IO.Caching;
 using System.Diagnostics;
 
-
 namespace Neo.Benchmarks
 {
     class BenchmarkFIFOCache : FIFOCache<long, long>
