@@ -121,8 +121,7 @@ namespace Neo.Network.P2P.Payloads
             }
 
             if (MerkleTree.ComputeRoot(hashes) != merkleRoot)
-                throw new FormatException();
-
+                throw new FormatException("The computed Merkle root does not match the expected value.");
             return txs;
         }
 
