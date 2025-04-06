@@ -21,6 +21,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using Neo.Monitoring;
 
 namespace Neo.Network.P2P
 {
@@ -289,7 +290,11 @@ namespace Neo.Network.P2P
                 IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
-                ConnectedPeers.TryAdd(connection, remote);
+                if (ConnectedPeers.TryAdd(connection, remote))
+                {
+                    // Update P2P connection gauge AFTER successfully adding
+                    PrometheusService.Instance.SetP2PConnections(ConnectedPeers.Count);
+                }
                 OnTcpConnected(connection);
             }
         }
@@ -327,6 +332,9 @@ namespace Neo.Network.P2P
                     ConnectedAddresses.Remove(endPoint.Address);
                 else
                     ConnectedAddresses[endPoint.Address] = count;
+
+                // Update P2P connection gauge AFTER successfully removing
+                PrometheusService.Instance.SetP2PConnections(ConnectedPeers.Count);
             }
         }
 

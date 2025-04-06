@@ -39,6 +39,7 @@ using System.Threading.Tasks;
 using Array = System.Array;
 using ECCurve = Neo.Cryptography.ECC.ECCurve;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using Neo.Monitoring;
 
 namespace Neo.CLI
 {
@@ -374,6 +375,34 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
+            // Initialize Prometheus Settings (before NeoSystem initialization if possible, or right after)
+            PrometheusSettings? prometheusSettings = null;
+            if (!string.IsNullOrEmpty(options.Prometheus))
+            {
+                try
+                {
+                    var parts = options.Prometheus.Split(':');
+                    if (parts.Length == 2 && int.TryParse(parts[1], out int port))
+                    {
+                         // Consider adding IPAddress.TryParse for stricter host validation
+                        prometheusSettings = new PrometheusSettings
+                        {
+                            Enabled = true,
+                            Host = parts[0], // Use the provided host
+                            Port = port
+                        };
+                    }
+                    else
+                    {
+                         ConsoleHelper.Warning($"Invalid format for --prometheus option: '{options.Prometheus}'. Expected 'host:port'. Prometheus disabled.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ConsoleHelper.Error($"Error parsing --prometheus option: {ex.Message}. Prometheus disabled.");
+                }
+            }
+
             Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
@@ -421,6 +450,10 @@ namespace Neo.CLI
                     "Download from https://github.com/neo-project/neo/releases");
                 return;
             }
+
+            // Start Prometheus Service (after NeoSystem is initialized)
+            // It needs Log access which might be configured within NeoSystem/Settings
+            PrometheusService.Instance.Start(prometheusSettings);
 
             NeoSystem.AddService(this);
 
@@ -512,6 +545,8 @@ namespace Neo.CLI
         public void Stop()
         {
             Dispose_Logger();
+            // Stop Prometheus Service before disposing NeoSystem
+            PrometheusService.Instance.Dispose();
             Interlocked.Exchange(ref _neoSystem, null)?.Dispose();
         }
 

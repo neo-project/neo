@@ -21,6 +21,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Neo.Monitoring;
 
 namespace Neo.Ledger
 {
@@ -90,6 +91,8 @@ namespace Neo.Ledger
         /// </summary>
         private TransactionVerificationContext VerificationContext = new();
 
+        private long _verifiedTxSizeBytes = 0;
+
         /// <summary>
         /// Total count of transactions in the pool.
         /// </summary>
@@ -129,6 +132,7 @@ namespace Neo.Ledger
             Capacity = system.Settings.MemoryPoolMaxTransactions;
             MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
             MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
+            UpdateMempoolMetrics();
         }
 
         /// <summary>
@@ -309,45 +313,81 @@ namespace Neo.Ledger
         internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
             var poolItem = new PoolItem(tx);
+            string rejectReason = VerifyResult.Unknown.ToString();
 
-            if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
+            if (_unsortedTransactions.ContainsKey(tx.Hash))
+            {
+                rejectReason = VerifyResult.AlreadyInPool.ToString();
+                PrometheusService.Instance.IncMempoolTransactionsRejected(rejectReason);
+                return VerifyResult.AlreadyInPool;
+            }
 
             List<Transaction>? removedTransactions = null;
+            VerifyResult result;
             _txRwLock.EnterWriteLock();
             try
             {
-                if (!CheckConflicts(tx, out List<PoolItem> conflictsToBeRemoved)) return VerifyResult.HasConflicts;
-                VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx));
-                if (result != VerifyResult.Succeed) return result;
+                if (!CheckConflicts(tx, out List<PoolItem> conflictsToBeRemoved))
+                {
+                    result = VerifyResult.HasConflicts;
+                    rejectReason = result.ToString();
+                    PrometheusService.Instance.IncMempoolTransactionsRejected(rejectReason);
+                    return result;
+                }
+
+                result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx));
+                if (result != VerifyResult.Succeed)
+                {
+                    rejectReason = result.ToString();
+                    PrometheusService.Instance.IncMempoolTransactionsRejected(rejectReason);
+                    return result;
+                }
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
                 VerificationContext.AddTransaction(tx);
                 _sortedTransactions.Add(poolItem);
+                _verifiedTxSizeBytes += tx.Size;
+
                 foreach (var conflict in conflictsToBeRemoved)
                 {
-                    if (TryRemoveVerified(conflict.Tx.Hash, out var _))
+                    if (TryRemoveVerified(conflict.Tx.Hash, out var removedItem))
+                    {
                         VerificationContext.RemoveTransaction(conflict.Tx);
+                    }
                 }
                 removedTransactions = conflictsToBeRemoved.Select(itm => itm.Tx).ToList();
+
                 foreach (var attr in tx.GetAttributes<Conflicts>())
                 {
-                    if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
-                    {
-                        pooled = new HashSet<UInt256>();
-                    }
+                    if (!_conflicts.TryGetValue(attr.Hash, out var pooled)) { pooled = new HashSet<UInt256>(); }
                     pooled.Add(tx.Hash);
                     _conflicts[attr.Hash] = pooled;
                 }
 
                 if (Count > Capacity)
-                    removedTransactions.AddRange(RemoveOverCapacity());
+                {
+                    var removedOverCapacity = RemoveOverCapacity();
+                    removedTransactions.AddRange(removedOverCapacity);
+                }
             }
             finally
             {
                 _txRwLock.ExitWriteLock();
+                UpdateMempoolMetrics();
             }
 
-            TransactionAdded?.Invoke(this, poolItem.Tx);
+            if (_unsortedTransactions.ContainsKey(tx.Hash))
+            {
+                PrometheusService.Instance.IncMempoolTransactionsAdded();
+                TransactionAdded?.Invoke(this, poolItem.Tx);
+            }
+            else
+            {
+                result = VerifyResult.OutOfMemory;
+                rejectReason = result.ToString();
+                PrometheusService.Instance.IncMempoolTransactionsRejected(rejectReason);
+            }
+
             if (removedTransactions.Count > 0)
                 TransactionRemoved?.Invoke(this, new()
                 {
@@ -355,8 +395,7 @@ namespace Neo.Ledger
                     Reason = TransactionRemovalReason.CapacityExceeded
                 });
 
-            if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
-            return VerifyResult.Succeed;
+            return result;
         }
 
         /// <summary>
@@ -405,21 +444,30 @@ namespace Neo.Ledger
         private List<Transaction> RemoveOverCapacity()
         {
             List<Transaction> removedTransactions = new();
-            do
+            while (Count > Capacity)
             {
                 var minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
                 if (minItem == null || sortedPool == null) break;
 
-                unsortedPool.Remove(minItem.Tx.Hash);
-                sortedPool.Remove(minItem);
-                removedTransactions.Add(minItem.Tx);
-
+                bool removed = false;
                 if (ReferenceEquals(sortedPool, _sortedTransactions))
                 {
-                    RemoveConflictsOfVerified(minItem);
-                    VerificationContext.RemoveTransaction(minItem.Tx);
+                    if (TryRemoveVerified(minItem.Tx.Hash, out _))
+                    {
+                        VerificationContext.RemoveTransaction(minItem.Tx);
+                        removed = true;
+                    }
                 }
-            } while (Count > Capacity);
+                else
+                {
+                    if (TryRemoveUnVerified(minItem.Tx.Hash, out _))
+                    {
+                        removed = true;
+                    }
+                }
+
+                if (removed) removedTransactions.Add(minItem.Tx);
+            }
 
             return removedTransactions;
         }
@@ -432,6 +480,7 @@ namespace Neo.Ledger
 
             _unsortedTransactions.Remove(hash);
             _sortedTransactions.Remove(item);
+            _verifiedTxSizeBytes -= item.Tx.Size;
 
             RemoveConflictsOfVerified(item);
 
@@ -457,6 +506,7 @@ namespace Neo.Ledger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool TryRemoveUnVerified(UInt256 hash, [MaybeNullWhen(false)] out PoolItem? item)
         {
+            bool removed = false;
             _txRwLock.EnterWriteLock();
             try
             {
@@ -465,12 +515,17 @@ namespace Neo.Ledger
 
                 _unverifiedTransactions.Remove(hash);
                 _unverifiedSortedTransactions.Remove(item);
-                return true;
+                removed = true;
             }
             finally
             {
                 _txRwLock.ExitWriteLock();
+                if (removed)
+                {
+                    UpdateMempoolMetrics();
+                }
             }
+            return removed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -482,26 +537,39 @@ namespace Neo.Ledger
                     _unverifiedSortedTransactions.Add(item);
             }
 
-            // Clear the verified transactions now, since they all must be reverified.
             _unsortedTransactions.Clear();
             VerificationContext = new TransactionVerificationContext();
             _sortedTransactions.Clear();
             _conflicts.Clear();
+            _verifiedTxSizeBytes = 0;
+            UpdateMempoolMetrics();
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
         internal void UpdatePoolForBlockPersisted(Block block, DataCache snapshot)
         {
             var conflictingItems = new List<Transaction>();
+            List<Transaction> removedItems = new();
+            bool metricsNeedUpdate = false;
+
             _txRwLock.EnterWriteLock();
             try
             {
                 Dictionary<UInt256, List<UInt160>> conflicts = new Dictionary<UInt256, List<UInt160>>();
                 // First remove the transactions verified in the block.
-                // No need to modify VerificationContext as it will be reset afterwards.
                 foreach (Transaction tx in block.Transactions)
                 {
-                    if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
+                    bool removedVerified = TryRemoveVerified(tx.Hash, out _);
+                    bool removedUnverified = false;
+                    if (!removedVerified)
+                    {
+                        removedUnverified = TryRemoveUnVerifiedInternal(tx.Hash, out _);
+                    }
+                    if (removedVerified || removedUnverified)
+                    {
+                        removedItems.Add(tx);
+                        metricsNeedUpdate = true;
+                    }
                     var conflictingSigners = tx.Signers.Select(s => s.Account);
                     foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
                     {
@@ -516,7 +584,6 @@ namespace Neo.Ledger
                 }
 
                 // Then remove the transactions conflicting with the accepted ones.
-                // No need to modify VerificationContext as it will be reset afterwards.
                 var persisted = block.Transactions.Select(t => t.Hash);
                 var stale = new List<UInt256>();
                 foreach (var item in _sortedTransactions)
@@ -529,22 +596,42 @@ namespace Neo.Ledger
                 }
                 foreach (var h in stale)
                 {
-                    if (!TryRemoveVerified(h, out _)) TryRemoveUnVerified(h, out _);
+                    bool removedVerified = TryRemoveVerified(h, out PoolItem? item);
+                    bool removedUnverified = false;
+                    if (!removedVerified)
+                    {
+                        removedUnverified = TryRemoveUnVerifiedInternal(h, out item);
+                    }
+
+                    if (removedVerified || removedUnverified)
+                    {
+                        if (item != null) conflictingItems.Add(item.Tx);
+                        metricsNeedUpdate = true;
+                    }
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions and clear mempool conflicts list.
-                InvalidateVerifiedTransactions();
+                if (_sortedTransactions.Count > 0)
+                {
+                    InvalidateVerifiedTransactions();
+                    metricsNeedUpdate = true;
+                }
             }
             finally
             {
                 _txRwLock.ExitWriteLock();
+                if (metricsNeedUpdate)
+                {
+                    UpdateMempoolMetrics();
+                }
             }
-            if (conflictingItems.Count > 0)
+
+            if (removedItems.Count > 0 || conflictingItems.Count > 0)
             {
                 TransactionRemoved?.Invoke(this, new()
                 {
-                    Transactions = conflictingItems,
-                    Reason = TransactionRemovalReason.Conflict,
+                    Transactions = removedItems.Concat(conflictingItems).ToArray(),
+                    Reason = TransactionRemovalReason.Conflict
                 });
             }
 
@@ -574,6 +661,7 @@ namespace Neo.Ledger
             DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new(count);
             List<PoolItem> invalidItems = new();
+            bool metricsNeedUpdate = false;
 
             _txRwLock.EnterWriteLock();
             try
@@ -588,23 +676,17 @@ namespace Neo.Ledger
                         if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                         {
                             _sortedTransactions.Add(item);
-                            foreach (var attr in item.Tx.GetAttributes<Conflicts>())
-                            {
-                                if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
-                                {
-                                    pooled = [];
-                                }
-                                pooled.Add(item.Tx.Hash);
-                                _conflicts[attr.Hash] = pooled;
-                            }
-                            VerificationContext.AddTransaction(item.Tx);
+                            _verifiedTxSizeBytes += item.Tx.Size;
+                            metricsNeedUpdate = true;
                             foreach (var conflict in conflictsToBeRemoved)
                             {
                                 if (TryRemoveVerified(conflict.Tx.Hash, out var _))
+                                {
                                     VerificationContext.RemoveTransaction(conflict.Tx);
-                                invalidItems.Add(conflict);
+                                    invalidItems.Add(conflict);
+                                    metricsNeedUpdate = true;
+                                }
                             }
-
                         }
                     }
                     else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
@@ -643,6 +725,10 @@ namespace Neo.Ledger
             finally
             {
                 _txRwLock.ExitWriteLock();
+                if (metricsNeedUpdate)
+                {
+                    UpdateMempoolMetrics();
+                }
             }
 
             if (invalidItems.Count > 0)
@@ -684,7 +770,7 @@ namespace Neo.Ledger
         // Do not use this method outside of unit tests
         internal void Clear()
         {
-            _txRwLock.EnterReadLock();
+            _txRwLock.EnterWriteLock();
             try
             {
                 _unsortedTransactions.Clear();
@@ -692,11 +778,40 @@ namespace Neo.Ledger
                 _sortedTransactions.Clear();
                 _unverifiedTransactions.Clear();
                 _unverifiedSortedTransactions.Clear();
+                VerificationContext = new();
+                _verifiedTxSizeBytes = 0;
             }
             finally
             {
-                _txRwLock.ExitReadLock();
+                _txRwLock.ExitWriteLock();
+                UpdateMempoolMetrics();
             }
+        }
+
+        // Internal helper for removing from unverified pool without taking lock again or updating metrics individually
+        private bool TryRemoveUnVerifiedInternal(UInt256 hash, [MaybeNullWhen(false)] out PoolItem? item)
+        {
+            if (!_unverifiedTransactions.TryGetValue(hash, out item))
+                return false;
+
+            _unverifiedTransactions.Remove(hash);
+            _unverifiedSortedTransactions.Remove(item);
+            return true;
+        }
+
+        // Helper method to update Prometheus gauges
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void UpdateMempoolMetrics()
+        {
+            if (!PrometheusService.Instance.IsEnabled) return;
+
+            int currentVerifiedCount = _unsortedTransactions.Count;
+            int currentUnverifiedCount = _unverifiedTransactions.Count;
+            long currentVerifiedSize = _verifiedTxSizeBytes;
+            long currentTotalSize = currentVerifiedSize;
+
+            PrometheusService.Instance.SetMempoolTransactions(currentVerifiedCount + currentUnverifiedCount);
+            PrometheusService.Instance.SetMempoolSize(currentTotalSize);
         }
     }
 }

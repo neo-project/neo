@@ -26,6 +26,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Neo.Monitoring;
 
 namespace Neo.Ledger
 {
@@ -439,6 +440,9 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
+            // Start measuring block processing time
+            using var blockProcessingTimer = PrometheusService.Instance.MeasureBlockProcessing();
+
             using (var snapshot = system.GetSnapshotCache())
             {
                 List<ApplicationExecuted> all_application_executed = new();
@@ -462,6 +466,9 @@ namespace Neo.Ledger
                 foreach (TransactionState transactionState in transactionStates)
                 {
                     Transaction tx = transactionState.Transaction;
+                    // Start measuring transaction execution time
+                    var txSw = Stopwatch.StartNew();
+
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
@@ -473,6 +480,10 @@ namespace Neo.Ledger
                     {
                         clonedSnapshot = snapshot.CloneCache();
                     }
+                    // Record transaction execution time
+                    txSw.Stop();
+                    PrometheusService.Instance.RecordTransactionExecutionTime(txSw.Elapsed.TotalSeconds);
+
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
@@ -493,6 +504,9 @@ namespace Neo.Ledger
                 InvokeCommitting(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
+            // Set block details for Prometheus (count and size) before timer disposal
+            blockProcessingTimer.SetBlockDetails(block.Transactions.Length, block.Size);
+
             InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;

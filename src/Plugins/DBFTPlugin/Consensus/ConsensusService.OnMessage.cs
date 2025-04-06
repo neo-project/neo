@@ -21,6 +21,7 @@ using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Neo.Monitoring;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
@@ -33,6 +34,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             try
             {
                 message = context.GetMessage(payload);
+                PrometheusService.Instance.IncConsensusMessagesReceived(message.GetType().Name);
             }
             catch (Exception ex)
             {

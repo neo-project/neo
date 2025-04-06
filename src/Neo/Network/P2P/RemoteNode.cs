@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Neo.Monitoring;
 
 namespace Neo.Network.P2P
 {
@@ -144,7 +145,13 @@ namespace Neo.Network.P2P
             msg_buffer = msg_buffer.Concat(data);
 
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            {
+                if (PrometheusService.Instance.IsEnabled)
+                {
+                    PrometheusService.Instance.IncP2PMessagesReceived(message.Command.ToString());
+                }
                 OnMessage(message);
+            }
         }
 
         protected override void OnReceive(object message)

@@ -17,7 +17,9 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.Json;
+using Neo.Monitoring;
 using Neo.Network.P2P;
+using Prometheus;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -158,7 +160,13 @@ namespace Neo.Plugins.RpcServer
                 if (settings.EnableCors)
                     app.UseCors("All");
 
+                app.UseHttpMetrics();
+
                 app.UseResponseCompression();
+                app.Map("/metrics", metricsApp =>
+                {
+                    metricsApp.UseMetricServer();
+                });
                 app.Run(ProcessAsync);
             })
             .ConfigureServices(services =>

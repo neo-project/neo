@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Neo.Ledger.Blockchain;
+using Neo.Monitoring;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
@@ -74,6 +75,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"Persisted {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length} nonce={block.Nonce}");
+            PrometheusService.Instance.IncConsensusNewBlockPersisted();
+
             knownHashes.Clear();
             InitializeConsensus(0);
         }
@@ -81,6 +84,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void InitializeConsensus(byte viewNumber)
         {
             context.Reset(viewNumber);
+            PrometheusService.Instance.SetConsensusHeight(context.Block.Index);
+            PrometheusService.Instance.SetConsensusView(context.ViewNumber);
+
             if (viewNumber > 0)
                 Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
@@ -199,7 +205,11 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void SendPrepareRequest()
         {
             Log($"Sending {nameof(PrepareRequest)}: height={context.Block.Index} view={context.ViewNumber}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+
+            using (PrometheusService.Instance.MeasureConsensusBlockGeneration())
+            {
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+            }
 
             if (context.Validators.Length == 1)
                 CheckPreparations();

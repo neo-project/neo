@@ -31,6 +31,7 @@ namespace Neo.CLI
                 new Option<string>(["--noverify","/noverify"], "Indicates whether the blocks need to be verified when importing."),
                 new Option<string[]>(["--plugins","/plugins"], "The list of plugins, if not present, will be installed [plugin1 plugin2]."),
                 new Option<LogLevel>(["--verbose","/verbose"], "The verbose log level, if not present, will be info."),
+                new Option<string?>(["--prometheus"], "Enable Prometheus exporter and specify the listen address (e.g., '0.0.0.0:9100'). Disabled if not provided.") { Arity = ArgumentArity.ZeroOrOne },
             };
 
             rootCommand.Handler = CommandHandler.Create<RootCommand, CommandLineOptions, InvocationContext>(Handle);

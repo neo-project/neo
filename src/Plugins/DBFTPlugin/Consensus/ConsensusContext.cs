@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.Monitoring;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
@@ -62,6 +63,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private readonly ISigner _signer;
         private readonly IStore store;
         private Dictionary<UInt256, ConsensusMessage> cachedMessages;
+        private IDisposable _blockGenerationTimer = null;
 
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
@@ -135,6 +137,11 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             Block.Header.Witness = sc.GetWitnesses()[0];
             Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
+
+            // Stop block generation timer
+            _blockGenerationTimer?.Dispose();
+            _blockGenerationTimer = null;
+
             return Block;
         }
 
@@ -256,6 +263,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     break;
                 }
                 cachedMessages = new Dictionary<UInt256, ConsensusMessage>();
+                PrometheusService.Instance.SetConsensusHeight(Block.Index);
+                PrometheusService.Instance.SetConsensusView(viewNumber);
             }
             else
             {
@@ -274,6 +283,15 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             TransactionHashes = null;
             PreparationPayloads = new ExtensiblePayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[Validators[MyIndex]] = Block.Index;
+            // Start block generation timer (if we are Primary)
+            _blockGenerationTimer?.Dispose();
+            if (IsPrimary)
+            { _blockGenerationTimer = PrometheusService.Instance.MeasureConsensusBlockGeneration(); }
+            else
+            { _blockGenerationTimer = null; }
+
+            // Update view gauge
+            PrometheusService.Instance.SetConsensusView(viewNumber);
         }
 
         public void Save()
