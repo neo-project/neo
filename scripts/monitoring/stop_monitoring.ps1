@@ -4,7 +4,7 @@ Write-Host "Attempting to stop monitoring services (Prometheus, Grafana, Alertma
 
 # --- Setup Paths ---
 $PSScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$monitoringDir = Resolve-Path -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath "..") # Assuming script is in monitoring/scripts
+$monitoringDir = Resolve-Path -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath "..") # One level up from scripts dir
 $pidFilePath = Join-Path $monitoringDir "running_pids.json"
 
 $processesStopped = $false

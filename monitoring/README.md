@@ -189,7 +189,7 @@ This is the actual dashboard definition file in JSON format. It contains panels 
 ## 5. Running the Local Stack
 
 1.  **Fulfill Prerequisites**: Ensure `neo-cli` is built and Prometheus, Grafana, and Alertmanager are installed and findable (see Section 2).
-2.  **Navigate to Scripts**: Open your terminal/PowerShell in the `monitoring/scripts` directory.
+2.  **Navigate to Scripts**: Open your terminal/PowerShell and navigate into the `scripts/monitoring` directory.
 3.  **Run the Start Script**:
     *   **Windows (PowerShell)**:
         ```powershell
@@ -232,20 +232,18 @@ Once the script is running `neo-cli`:
 
 1.  **Stop `neo-cli`**: Press `Ctrl+C` in the terminal where it is running.
 2.  **Stop Background Monitoring Stack**: `prometheus`, `grafana-server`, and `alertmanager` continue running.
-    *   The script saves their Process IDs (PIDs) into `monitoring/running_pids.json` before `neo-cli` starts.
-    *   **Windows**: Use Task Manager to find and end the processes, or use PowerShell:
-        ```powershell
-        Stop-Process -Id (Get-Content ../running_pids.json | ConvertFrom-Json).Prometheus -ErrorAction SilentlyContinue
-        Stop-Process -Id (Get-Content ../running_pids.json | ConvertFrom-Json).Grafana -ErrorAction SilentlyContinue
-        Stop-Process -Id (Get-Content ../running_pids.json | ConvertFrom-Json).Alertmanager -ErrorAction SilentlyContinue
-        Remove-Item ../running_pids.json -ErrorAction SilentlyContinue
-        ```
-    *   **Linux/macOS**: Use the command printed by the script, or manually:
-        ```bash
-        kill $(cat ../running_pids.json | jq -r .Prometheus,.Alertmanager,.Grafana | paste -sd ' ')
-        rm ../running_pids.json
-        # Alternative: pkill prometheus; pkill grafana-server; pkill alertmanager
-        ```
+    *   Navigate to the `scripts/monitoring` directory if you are not already there.
+    *   Run the appropriate stop script:
+        *   **Windows (PowerShell)**:
+            ```powershell
+            .\stop_monitoring.ps1
+            ```
+        *   **Linux/macOS (Bash)**:
+            ```bash
+            chmod +x stop_monitoring.sh
+            ./stop_monitoring.sh
+            ```
+    *   The stop script will attempt to use the `monitoring/running_pids.json` file (if it exists) or fallback to stopping processes by name/pattern.
 
 ## 8. Customization
 
@@ -257,15 +255,13 @@ Once the script is running `neo-cli`:
 
 ## 9. Debugging
 
--   Carefully read the console output of the start scripts for error messages.
+-   Carefully read the console output of the start/stop scripts for error messages.
 -   Check the log files:
     *   `monitoring/prometheus/prometheus.log`
     *   `monitoring/grafana/grafana.log`
     *   `monitoring/alertmanager/alertmanager.log`
     *   `monitoring/neo-data_<timestamp>/Logs/cli.log` (Neo-CLI logs)
 -   **Prometheus UI**: Check `Status` -> `Targets`. Are the `neo`, `prometheus`, `alertmanager` jobs 'UP'? If not, check addresses, ports, and if the target process is running.
--   **Windows**: Use the `monitoring/scripts/debug-prometheus.ps1` script:
-    ```powershell
-    .\debug-prometheus.ps1 # Checks default 127.0.0.1:9101
-    .\debug-prometheus.ps1 -NeoMetricsAddress <other_host:port> # Checks a different endpoint
-    ```
+-   Use the query utility scripts:
+    *   **Windows**: `.\scripts\monitoring\query_metrics.ps1`
+    *   **Linux/macOS**: `./scripts/monitoring/query_metrics.sh`

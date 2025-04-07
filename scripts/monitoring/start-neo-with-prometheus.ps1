@@ -50,13 +50,13 @@ Write-Host @"
 
 # --- Setup Paths ---
 $PSScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$neoRepoRoot = Resolve-Path -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath "..\\..") # Assuming script is in monitoring/scripts
+$neoRepoRoot = Resolve-Path -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath "..\..") # Back to repo root
 $neoCLIBinDir = Join-Path -Path $neoRepoRoot -ChildPath "bin\\Neo.CLI\\net9.0" # Adjust net9.0 if needed
 $neoCLIPath = Join-Path -Path $neoCLIBinDir -ChildPath "neo-cli.dll"
 $sourceConfigPath = Join-Path -Path $neoRepoRoot -ChildPath "src\\Neo.CLI\\config.json"
 $targetConfigPath = Join-Path -Path $neoCLIBinDir -ChildPath "config.json"
 
-# Monitoring Base Directory
+# Monitoring Base Directory (one level up from scripts dir)
 $monitoringDir = Resolve-Path -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath "..")
 
 # --- Expected Local Binary Paths (Relative to monitoring dir) ---

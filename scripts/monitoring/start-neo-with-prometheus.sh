@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Script to start Neo-CLI and setup monitoring with a local Prometheus, Grafana, and Alertmanager stack
 
@@ -102,7 +102,13 @@ done
 check_dependency "dotnet" "dotnet-sdk"
 check_dependency "jq" "jq"
 
-MONITORING_DIR=$(realpath "$SCRIPT_DIR/..")
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+MONITORING_DIR=$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd) # One level up
+NEO_REPO_ROOT=$(cd "$MONITORING_DIR/.." &> /dev/null && pwd) # Another level up to repo root
+NEO_CLI_BIN_DIR="$NEO_REPO_ROOT/bin/Neo.CLI/net9.0" # Adjust net9.0 if needed
+NEO_CLI_DLL_PATH="$NEO_CLI_BIN_DIR/neo-cli.dll"
+SOURCE_CONFIG_PATH="$NEO_REPO_ROOT/src/Neo.CLI/config.json"
+TARGET_CONFIG_PATH="$NEO_CLI_BIN_DIR/config.json"
 
 # --- Expected Local Binary Paths (Relative to monitoring dir) ---
 # Users should place binaries here OR ensure they are in PATH
