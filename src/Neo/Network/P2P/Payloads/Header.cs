@@ -196,10 +196,10 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
-            if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
-            if (prev is null) throw new InvalidOperationException();
-            return new[] { prev.Header.nextConsensus };
+            if (prevHash == UInt256.Zero) return [Witness.ScriptHash];
+            var prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash)
+                ?? throw new InvalidOperationException($"Block {prevHash} was not found");
+            return [prev.Header.nextConsensus];
         }
 
         public void Serialize(BinaryWriter writer)
