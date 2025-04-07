@@ -342,15 +342,17 @@ namespace Neo.Network.P2P
             {
                 case InventoryType.Block:
                     {
+                        var snapshot = system.StoreView;
                         hashes = source
-                            .Where(p => !NativeContract.Ledger.ContainsBlock(system.StoreView, p))
+                            .Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p))
                             .ToArray();
                         break;
                     }
                 case InventoryType.TX:
                     {
+                        var snapshot = system.StoreView;
                         hashes = source
-                            .Where(p => !NativeContract.Ledger.ContainsTransaction(system.StoreView, p))
+                            .Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p))
                             .ToArray();
                         break;
                     }
