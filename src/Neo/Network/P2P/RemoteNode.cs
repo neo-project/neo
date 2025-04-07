@@ -82,8 +82,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.localNode = localNode;
-            _knownHashes = new HashSetCache<UInt256>(config.MaxKnownHashes);
-            _sentHashes = new HashSetCache<UInt256>(config.MaxKnownHashes);
+            _knownHashes = new HashSetCache<UInt256>(config.MaxKnownHashes / 10, 10);
+            _sentHashes = new HashSetCache<UInt256>(config.MaxKnownHashes / 10, 10);
             localNode.RemoteNodes.TryAdd(Self, this);
         }
 
