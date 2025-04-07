@@ -76,14 +76,14 @@ namespace Neo.Network.P2P
         /// <param name="connection">The underlying connection object.</param>
         /// <param name="remote">The address of the remote node.</param>
         /// <param name="local">The address of the local node.</param>
-        public RemoteNode(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local)
+        /// <param name="config">P2P settings.</param>
+        public RemoteNode(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local, ChannelsConfig config)
             : base(connection, remote, local)
         {
             this.system = system;
             this.localNode = localNode;
-            // At least 100, max 1000 (per bucket)
-            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, Math.Min(1_000, system.MemPool.Capacity * 2 / 5)));
-            _sentHashes = new HashSetCache<UInt256>(Math.Max(100, Math.Min(1_000, system.MemPool.Capacity * 2 / 5)));
+            _knownHashes = new HashSetCache<UInt256>(config.MaxKnownHashes);
+            _sentHashes = new HashSetCache<UInt256>(config.MaxKnownHashes);
             localNode.RemoteNodes.TryAdd(Self, this);
         }
 
@@ -216,9 +216,9 @@ namespace Neo.Network.P2P
             base.PostStop();
         }
 
-        internal static Props Props(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local)
+        internal static Props Props(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local, ChannelsConfig config)
         {
-            return Akka.Actor.Props.Create(() => new RemoteNode(system, localNode, connection, remote, local)).WithMailbox("remote-node-mailbox");
+            return Akka.Actor.Props.Create(() => new RemoteNode(system, localNode, connection, remote, local, config)).WithMailbox("remote-node-mailbox");
         }
 
         private void SendMessage(Message message)
