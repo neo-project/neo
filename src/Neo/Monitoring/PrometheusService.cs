@@ -11,13 +11,14 @@
 
 #nullable enable
 
+using Neo.Plugins; // Added for Log
+using Prometheus;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Neo.Plugins; // Added for Log
-using Prometheus;
+using System.Diagnostics; // Added for Process metrics
 // using Prometheus.SystemMetrics; // Required for system metrics collection - Commented out due to compatibility issues with netstandard2.1
 using static Neo.Utility; // Added for Log
 
@@ -32,6 +33,8 @@ namespace Neo.Monitoring
     {
         private MetricServer? _metricServer;
         // private IDisposable? _systemMetricsCollector; // Commented out due to compatibility issues
+        private Timer? _processMetricsTimer; // Timer for manual process metrics
+        private readonly TimeSpan _processMetricsInterval = TimeSpan.FromSeconds(15); // Update interval
         private bool _enabled = false;
 
         // Use Lazy<T> for thread-safe lazy initialization
@@ -82,6 +85,10 @@ namespace Neo.Monitoring
         public readonly Lazy<Gauge> NodeBlockHeight = NonCapturingLazyInitializer.CreateGauge(
             "neo_node_block_height", "Current validated block height of the node.");
         // Removed NodeBlockTransactions and NodeBlockSize as these are better tracked per block during processing/consensus
+        public readonly Lazy<Gauge> ProcessWorkingSet = NonCapturingLazyInitializer.CreateGauge(
+            "neo_process_working_set_bytes", "Process working set memory in bytes.");
+        public readonly Lazy<Gauge> ProcessCpuTotal = NonCapturingLazyInitializer.CreateGauge(
+            "neo_process_cpu_seconds_total", "Total process CPU time consumed in seconds since process start.");
 
         // --- Consensus Metrics ---
         public readonly Lazy<Gauge> ConsensusHeight = NonCapturingLazyInitializer.CreateGauge(
@@ -107,6 +114,12 @@ namespace Neo.Monitoring
              "neo_block_processing_transactions_total", "Number of transactions in the last processed block.");
         public readonly Lazy<Gauge> BlockProcessingSizeBytes = NonCapturingLazyInitializer.CreateGauge(
             "neo_block_processing_size_bytes", "Size of the last processed block in bytes.");
+        public readonly Lazy<Gauge> BlockGasGenerated = NonCapturingLazyInitializer.CreateGauge(
+            "neo_block_gas_generated_total", "GAS generated in the last processed block (in 10^-8 units).");
+        public readonly Lazy<Gauge> BlockSystemFee = NonCapturingLazyInitializer.CreateGauge(
+            "neo_block_system_fee_total", "System fee collected in the last processed block (in 10^-8 units).");
+        public readonly Lazy<Gauge> BlockNetworkFee = NonCapturingLazyInitializer.CreateGauge(
+            "neo_block_network_fee_total", "Network fee collected in the last processed block (in 10^-8 units).");
 
         /// <summary>
         /// Private constructor for singleton pattern. Use Instance property.
@@ -136,6 +149,10 @@ namespace Neo.Monitoring
                     _metricServer = new MetricServer(hostname: settings.Host, port: settings.Port);
                     _metricServer.Start();
 
+                    // Start manual process metrics collection
+                    _processMetricsTimer = new Timer(UpdateProcessMetrics, null, _processMetricsInterval, _processMetricsInterval);
+                    Log(nameof(PrometheusService), LogLevel.Info, $"Started manual process metrics collection (Update interval: {_processMetricsInterval.TotalSeconds}s).");
+
                     _enabled = true;
                     Log(nameof(PrometheusService), LogLevel.Info, $"Prometheus metrics server started at http://{settings.Host}:{settings.Port}/metrics");
                 }
@@ -144,9 +161,11 @@ namespace Neo.Monitoring
                     _enabled = false;
                     Log(nameof(PrometheusService), LogLevel.Error, $"Failed to start Prometheus service: {ex.GetBaseException().Message}");
                     _metricServer?.Stop();
+                    _processMetricsTimer?.Dispose(); // Dispose timer on startup failure
                     // _metricServer?.Dispose(); // Dispose not available in prometheus-net v6.0.0
                     // _systemMetricsCollector?.Dispose(); // Commented out due to compatibility issues
                     _metricServer = null; // Clear refs on failure
+                    _processMetricsTimer = null;
                     // _systemMetricsCollector = null; // Commented out
                 }
             }
@@ -259,17 +278,32 @@ namespace Neo.Monitoring
             TransactionExecutionDuration.Value.Observe(seconds);
         }
 
-        // Use: using (PrometheusService.Instance.MeasureBlockProcessing()) { ... return result; }
+        // Use: using (var timer = PrometheusService.Instance.MeasureBlockProcessing()) { ... timer.SetBlockDetails(...); ... return result; }
         public IBlockProcessingTimer MeasureBlockProcessing()
         {
             // Returns a timer that also allows setting block-specific gauges upon disposal
-            return _enabled ? new BlockProcessingTimerImpl(BlockProcessingDuration.Value, BlockProcessingTransactions.Value, BlockProcessingSizeBytes.Value) : NullBlockProcessingTimer.Instance;
+            return _enabled ? new BlockProcessingTimerImpl(
+                                BlockProcessingDuration.Value,
+                                BlockProcessingTransactions.Value,
+                                BlockProcessingSizeBytes.Value,
+                                BlockGasGenerated.Value,
+                                BlockSystemFee.Value,
+                                BlockNetworkFee.Value)
+                            : NullBlockProcessingTimer.Instance;
         }
 
         // Interface for the block processing timer to allow setting details
         public interface IBlockProcessingTimer : IDisposable
         {
-            void SetBlockDetails(int transactionCount, long sizeBytes);
+            /// <summary>
+            /// Sets the details for the block being processed. Call this before the timer is disposed.
+            /// </summary>
+            /// <param name="transactionCount">Number of transactions in the block.</param>
+            /// <param name="sizeBytes">Size of the block in bytes.</param>
+            /// <param name="gasGenerated">Total GAS generated in the block (10^-8 units).</param>
+            /// <param name="systemFee">Total system fee collected (10^-8 units).</param>
+            /// <param name="networkFee">Total network fee collected (10^-8 units).</param>
+            void SetBlockDetails(int transactionCount, long sizeBytes, long gasGenerated, long systemFee, long networkFee);
         }
 
         // Implementation of the block processing timer
@@ -278,22 +312,36 @@ namespace Neo.Monitoring
             private readonly IDisposable _histogramTimer; // Store the IDisposable timer
             private readonly Gauge _txGauge;
             private readonly Gauge _sizeGauge;
+            private readonly Gauge _gasGeneratedGauge;
+            private readonly Gauge _systemFeeGauge;
+            private readonly Gauge _networkFeeGauge;
             private bool _disposed = false;
             private int _txCount = 0;
             private long _sizeBytes = 0;
+            private long _gasGenerated = 0;
+            private long _systemFee = 0;
+            private long _networkFee = 0;
 
-            public BlockProcessingTimerImpl(Histogram histogram, Gauge txGauge, Gauge sizeGauge)
+            public BlockProcessingTimerImpl(Histogram histogram,
+                                          Gauge txGauge, Gauge sizeGauge,
+                                          Gauge gasGeneratedGauge, Gauge systemFeeGauge, Gauge networkFeeGauge)
             {
-                _histogramTimer = histogram.NewTimer(); // Correctly store IDisposable
+                _histogramTimer = histogram.NewTimer();
                 _txGauge = txGauge;
                 _sizeGauge = sizeGauge;
+                _gasGeneratedGauge = gasGeneratedGauge;
+                _systemFeeGauge = systemFeeGauge;
+                _networkFeeGauge = networkFeeGauge;
             }
 
-            public void SetBlockDetails(int transactionCount, long sizeBytes)
+            public void SetBlockDetails(int transactionCount, long sizeBytes, long gasGenerated, long systemFee, long networkFee)
             {
                 if (_disposed) return;
                 _txCount = transactionCount;
                 _sizeBytes = sizeBytes;
+                _gasGenerated = gasGenerated;
+                _systemFee = systemFee;
+                _networkFee = networkFee;
             }
 
             public void Dispose()
@@ -301,6 +349,9 @@ namespace Neo.Monitoring
                 if (_disposed) return;
                 _txGauge.Set(_txCount);
                 _sizeGauge.Set(_sizeBytes);
+                _gasGeneratedGauge.Set(_gasGenerated);
+                _systemFeeGauge.Set(_systemFee);
+                _networkFeeGauge.Set(_networkFee);
                 _histogramTimer.Dispose(); // Dispose the stored timer
                 _disposed = true;
             }
@@ -311,11 +362,39 @@ namespace Neo.Monitoring
         {
             public static readonly NullBlockProcessingTimer Instance = new NullBlockProcessingTimer();
             private NullBlockProcessingTimer() { }
-            public void SetBlockDetails(int transactionCount, long sizeBytes) { /* No-op */ }
+            // Updated signature to match interface
+            public void SetBlockDetails(int transactionCount, long sizeBytes, long gasGenerated, long systemFee, long networkFee) { /* No-op */ }
             public void Dispose() { /* No-op */ }
         }
 
         #endregion // Metric Recording Methods
+
+        #region Process Metrics Update
+
+        /// <summary>
+        /// Callback method for the process metrics timer. Updates process-related gauges.
+        /// </summary>
+        private void UpdateProcessMetrics(object? state)
+        {
+            if (!_enabled) return; // Don't update if service is stopping/stopped
+
+            try
+            {
+                using var currentProcess = Process.GetCurrentProcess();
+                currentProcess.Refresh(); // Refresh process stats
+
+                // Update metrics - Accessing Lazy<T>.Value is thread-safe, .Set() is thread-safe
+                ProcessWorkingSet.Value.Set(currentProcess.WorkingSet64);
+                ProcessCpuTotal.Value.Set(currentProcess.TotalProcessorTime.TotalSeconds);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't crash the timer thread
+                Log(nameof(PrometheusService), LogLevel.Error, $"Failed to update process metrics: {ex.Message}");
+            }
+        }
+
+        #endregion // Process Metrics Update
 
         /// <summary>
         /// Stops the metrics server and disposes resources.
@@ -324,9 +403,14 @@ namespace Neo.Monitoring
         {
             lock (LazyInstance) // Lock for mutation safety
             {
-                if (!_enabled && _metricServer == null /* && _systemMetricsCollector == null */) return; // SystemMetrics part commented out
+                if (!_enabled && _metricServer == null && _processMetricsTimer == null /* && _systemMetricsCollector == null */) return; // SystemMetrics part commented out
 
                 Log(nameof(PrometheusService), LogLevel.Info, "Stopping Prometheus service...");
+
+                // Stop and dispose the process metrics timer first
+                _processMetricsTimer?.Dispose();
+                _processMetricsTimer = null;
+
                 _metricServer?.Stop();
                 // _metricServer?.Dispose(); // Dispose not available in prometheus-net v6.0.0
                 // _systemMetricsCollector?.Dispose(); // Commented out due to compatibility issues
@@ -392,4 +476,4 @@ namespace Neo.Monitoring
             return new Lazy<Histogram>(() => Metrics.CreateHistogram(name, help, configuration), Mode);
         }
     }
-} 
+}

@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+- name: 'default' # A uniquely identifiable name for the provider
+  orgId: 1
+  folder: 'Neo'   # Optional: dashboards will be placed in this folder
+  type: file
+  disableDeletion: false # Allow deleting dashboards from the UI
+  editable: true         # Allow editing dashboards from the UI
+  options:
+    path: monitoring/grafana/dashboards # Path inside the container where dashboard JSONs are 

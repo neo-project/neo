@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
+using Neo.Monitoring;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -21,7 +22,6 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using Neo.Monitoring;
 
 namespace Neo.Network.P2P
 {

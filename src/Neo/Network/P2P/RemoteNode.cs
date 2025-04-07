@@ -16,13 +16,13 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
+using Neo.Monitoring;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using Neo.Monitoring;
 
 namespace Neo.Network.P2P
 {

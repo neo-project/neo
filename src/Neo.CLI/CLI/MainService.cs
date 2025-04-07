@@ -14,6 +14,7 @@ using Neo.ConsoleService;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
+using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
@@ -39,7 +40,6 @@ using System.Threading.Tasks;
 using Array = System.Array;
 using ECCurve = Neo.Cryptography.ECC.ECCurve;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
-using Neo.Monitoring;
 
 namespace Neo.CLI
 {
@@ -375,6 +375,11 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
+            Utility.LogLevel = options.Verbose;
+            ProtocolSettings protocol = ProtocolSettings.Load("config.json");
+            CustomProtocolSettings(options, protocol);
+            CustomApplicationSettings(options, Settings.Default);
+
             // Initialize Prometheus Settings (before NeoSystem initialization if possible, or right after)
             PrometheusSettings? prometheusSettings = null;
             if (!string.IsNullOrEmpty(options.Prometheus))
@@ -384,17 +389,17 @@ namespace Neo.CLI
                     var parts = options.Prometheus.Split(':');
                     if (parts.Length == 2 && int.TryParse(parts[1], out int port))
                     {
-                         // Consider adding IPAddress.TryParse for stricter host validation
+                        // Bind to all interfaces (0.0.0.0) to allow both IPv4 and IPv6 connections
                         prometheusSettings = new PrometheusSettings
                         {
                             Enabled = true,
-                            Host = parts[0], // Use the provided host
+                            Host = "0.0.0.0", // Bind to all interfaces to allow connections from any source
                             Port = port
                         };
                     }
                     else
                     {
-                         ConsoleHelper.Warning($"Invalid format for --prometheus option: '{options.Prometheus}'. Expected 'host:port'. Prometheus disabled.");
+                        ConsoleHelper.Warning($"Invalid format for --prometheus option: '{options.Prometheus}'. Expected 'host:port'. Prometheus disabled.");
                     }
                 }
                 catch (Exception ex)
@@ -403,14 +408,25 @@ namespace Neo.CLI
                 }
             }
 
-            Utility.LogLevel = options.Verbose;
-            ProtocolSettings protocol = ProtocolSettings.Load("config.json");
-            CustomProtocolSettings(options, protocol);
-            CustomApplicationSettings(options, Settings.Default);
             try
             {
-                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
-                    string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+                // Get the configured storage path for NeoSystem and ensure it's absolute
+                string formattedStoragePath = string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8"));
+                if (!Path.IsPathRooted(formattedStoragePath))
+                    formattedStoragePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, formattedStoragePath));
+                ConsoleHelper.Info($"Using storage path: {formattedStoragePath}");
+                
+                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, formattedStoragePath);
+                // Start Prometheus Service (after NeoSystem is initialized)
+                // It needs Log access which might be configured within NeoSystem/Settings
+                PrometheusService.Instance.Start(prometheusSettings);
+
+                // Output debug information about Prometheus settings
+                if (prometheusSettings != null && prometheusSettings.Enabled)
+                {
+                    ConsoleHelper.Info($"Prometheus metrics available at: http://{prometheusSettings.Host}:{prometheusSettings.Port}/metrics");
+                    ConsoleHelper.Info($"Note: Use 127.0.0.1 to connect to Prometheus if using IPv4 locally");
+                }
             }
             catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
             {
@@ -450,10 +466,6 @@ namespace Neo.CLI
                     "Download from https://github.com/neo-project/neo/releases");
                 return;
             }
-
-            // Start Prometheus Service (after NeoSystem is initialized)
-            // It needs Log access which might be configured within NeoSystem/Settings
-            PrometheusService.Instance.Start(prometheusSettings);
 
             NeoSystem.AddService(this);
 

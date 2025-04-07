@@ -14,6 +14,7 @@ using Neo.Cryptography.ECC;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Monitoring;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins.DBFTPlugin.Messages;
@@ -25,7 +26,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Neo.Monitoring;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {

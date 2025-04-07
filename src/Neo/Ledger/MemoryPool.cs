@@ -11,6 +11,7 @@
 
 #nullable enable
 
+using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -21,7 +22,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Neo.Monitoring;
 
 namespace Neo.Ledger
 {

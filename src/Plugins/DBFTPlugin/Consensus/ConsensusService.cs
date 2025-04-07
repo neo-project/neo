@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.Extensions;
 using Neo.Ledger;
+using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
@@ -21,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Neo.Ledger.Blockchain;
-using Neo.Monitoring;
 
 namespace Neo.Plugins.DBFTPlugin.Consensus
 {
