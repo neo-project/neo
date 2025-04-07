@@ -133,7 +133,7 @@ namespace Neo.IO.Caching
                 if (_innerDictionary.Count >= maxCapacity)
                 {
                     var prev = _head.RemovePrevious();
-                    if (prev is not null) RemoveInternal(prev);
+                    if (prev is not null) RemoveInternal(prev.Key);
                 }
 
                 var added = new CacheItem(key, item);
@@ -241,9 +241,7 @@ namespace Neo.IO.Caching
         {
             lock (_lock)
             {
-                if (!_innerDictionary.TryGetValue(key, out var cached)) return false;
-                RemoveInternal(cached);
-                return true;
+                return RemoveInternal(key);
             }
         }
 
@@ -254,15 +252,16 @@ namespace Neo.IO.Caching
             return Remove(GetKeyForItem(item));
         }
 
-        private void RemoveInternal(CacheItem item)
+        private bool RemoveInternal(TKey key)
         {
-            _innerDictionary.Remove(item.Key);
-            item.Unlink();
+            if (!_innerDictionary.Remove(key, out var item)) return false;
 
+            item.Unlink();
             if (IsDisposable && item.Value is IDisposable disposable)
             {
                 disposable.Dispose();
             }
+            return true;
         }
 
         public bool TryGet(TKey key, out TValue item)
