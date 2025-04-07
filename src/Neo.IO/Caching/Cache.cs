@@ -111,6 +111,8 @@ namespace Neo.IO.Caching
 
         public bool IsReadOnly => false;
 
+        public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(typeof(TValue));
+
         public void Add(TValue item)
         {
             var key = GetKeyForItem(item);
@@ -154,17 +156,24 @@ namespace Neo.IO.Caching
 
         public void Clear()
         {
-            CacheItem[] items;
+            CacheItem[]? items = null;
+
             lock (_lock)
             {
-                items = _innerDictionary.Values.ToArray();
+                if (IsDisposable)
+                {
+                    items = [.. _innerDictionary.Values];
+                }
                 _innerDictionary.Clear();
                 _head.Unlink();
             }
 
-            foreach (var item in items)
+            if (items != null)
             {
-                if (item.Value is IDisposable disposable) disposable.Dispose();
+                foreach (var item in items)
+                {
+                    if (item.Value is IDisposable disposable) disposable.Dispose();
+                }
             }
         }
 
@@ -249,7 +258,8 @@ namespace Neo.IO.Caching
         {
             _innerDictionary.Remove(item.Key);
             item.Unlink();
-            if (item.Value is IDisposable disposable)
+
+            if (IsDisposable && item.Value is IDisposable disposable)
             {
                 disposable.Dispose();
             }
