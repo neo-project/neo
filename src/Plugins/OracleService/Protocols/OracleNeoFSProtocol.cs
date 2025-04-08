@@ -15,6 +15,7 @@ using Neo.FileStorage.API.Cryptography;
 using Neo.FileStorage.API.Refs;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,6 +32,8 @@ namespace Neo.Plugins.OracleService
     class OracleNeoFSProtocol : IOracleProtocol
     {
         private readonly ECDsa privateKey;
+
+        private readonly ILogger _log = Log.ForContext<OracleNeoFSProtocol>();
 
         public OracleNeoFSProtocol(Wallet wallet, ECPoint[] oracles)
         {
@@ -49,16 +52,16 @@ namespace Neo.Plugins.OracleService
 
         public async Task<(OracleResponseCode, string)> ProcessAsync(Uri uri, CancellationToken cancellation)
         {
-            Serilog.Log.Logger.ForContext<OracleNeoFSProtocol>().Debug("Request: {Uri}", uri.AbsoluteUri);
+            _log.Debug("Request: {Uri}", uri.AbsoluteUri);
             try
             {
                 (OracleResponseCode code, string data) = await GetAsync(uri, Settings.Default.NeoFS.EndPoint, cancellation);
-                Serilog.Log.Logger.ForContext<OracleNeoFSProtocol>().Debug("NeoFS result, code: {Code}, data: {Data}", code, data);
+                _log.Debug("NeoFS result, code: {Code}, data: {Data}", code, data);
                 return (code, data);
             }
             catch (Exception e)
             {
-                Serilog.Log.Logger.ForContext<OracleNeoFSProtocol>().Debug("NeoFS result: error,{e.Message}", e.Message);
+                _log.Debug("NeoFS result: error,{e.Message}", e.Message);
                 return (OracleResponseCode.Error, null);
             }
         }

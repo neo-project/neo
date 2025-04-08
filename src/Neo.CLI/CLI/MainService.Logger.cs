@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration; // Needed for config loading
 using Neo.ConsoleService;
 using Neo.Extensions;
 //using Neo.Json; // Not directly used in this part
@@ -30,103 +31,203 @@ namespace Neo.CLI
         private bool _isFileSinkPresent;   // Tracks if the file sink *should* be part of the config
         private bool _isConsoleLogVisible; // Tracks if the console sink is currently showing output (vs. hidden)
 
-        private void InitializeLoggingState()
+        // Method to configure Serilog based ONLY on settings
+        private void ConfigureLoggerFromSettings()
         {
-            // Inspect the statically configured logger from Program.cs
-            var initialLogger = Serilog.Log.Logger;
-            if (initialLogger == null)
+            // Defaults
+            LogEventLevel minimumLevel = LogEventLevel.Information;
+            bool configConsoleOutput = true; // Default: console enabled if not specified
+            string configLogPath = "Logs"; // Default log path
+            bool configFileActive = false; // Default: file disabled
+
+            // --- 1. Load Settings --- 
+            try
             {
-                ConsoleHelper.Warning("Logger not initialized yet. Using default log states.");
-                _currentLogLevel = LogEventLevel.Information;
-                _isConsoleSinkPresent = false;
-                _isFileSinkPresent = false;
-                _isConsoleLogVisible = false;
-                return;
+                if (Settings.Default == null) {
+                     Console.Error.WriteLine("Warning: Settings.Default is null during logger configuration. Using hardcoded defaults.");
+                     try { Settings.Initialize(new ConfigurationBuilder().Build()); } catch { }
+                }
+
+                // Get logger settings from Settings.Default, using defaults if null
+                configLogPath = Settings.Default?.Logger?.Path ?? configLogPath;
+                configConsoleOutput = Settings.Default?.Logger?.ConsoleOutput ?? configConsoleOutput;
+                configFileActive = Settings.Default?.Logger?.Active ?? configFileActive;
+
+                Log.Debug("Using settings: LogPath={path}, ConsoleOutput={console}, Active={active}", configLogPath, configConsoleOutput, configFileActive);
+
+                // Display initial status based on settings
+                if (!configFileActive) Console.WriteLine("File logging is disabled in settings.");
+                if (!configConsoleOutput) Console.WriteLine("Console logging disabled in settings.");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error accessing settings: {ex.Message}. Using hardcoded logger defaults.");
+                // Reset to hardcoded defaults if settings access fails
+                minimumLevel = LogEventLevel.Information;
+                configConsoleOutput = true;
+                configLogPath = "Logs";
+                configFileActive = false;
             }
 
-            var sinks = initialLogger.GetSinks();
-            _isConsoleSinkPresent = sinks.Any(s => s.GetType().Name.Contains("Console", StringComparison.OrdinalIgnoreCase));
-            _isFileSinkPresent = sinks.Any(s => s.GetType().Name.Contains("File", StringComparison.OrdinalIgnoreCase));
-            // Initial visibility depends on whether the console sink is present and not effectively disabled by a high level (like Program.cs does)
-            // We infer visibility based on presence for simplicity here, as Program.cs manages the initial 'hidden' state.
-            _isConsoleLogVisible = _isConsoleSinkPresent;
-
-            Log.Debug("Initial log state captured: Level={level}, ConsolePresent={consoleP}, FilePresent={fileP}, ConsoleVisible={consoleV}",
-                _currentLogLevel, _isConsoleSinkPresent, _isFileSinkPresent, _isConsoleLogVisible);
-        }
-
-        // Central method to reconfigure Serilog based on desired state
-        private void ReconfigureLogger(LogEventLevel? newLevel = null, bool? enableConsole = null, bool? enableFile = null, bool? showConsole = null)
-        {
-            // Determine target state
-            var targetLevel = newLevel ?? _currentLogLevel;
-            var targetConsolePresent = enableConsole ?? _isConsoleSinkPresent;
-            var targetFilePresent = enableFile ?? _isFileSinkPresent;
-            // Visibility change only matters if console *should* be present
-            var targetConsoleVisible = targetConsolePresent && (showConsole ?? _isConsoleLogVisible);
-
-            // Prevent hiding if console logging is being explicitly disabled
-            if (enableConsole == false) targetConsoleVisible = false;
-            // Prevent showing if console logging is not present
-            if (!targetConsolePresent) targetConsoleVisible = false;
-
-            Log.Information("Reconfiguring logger: Target Level={level}, ConsolePresent={consoleP}, FilePresent={fileP}, ConsoleVisible={consoleV}",
-                targetLevel, targetConsolePresent, targetFilePresent, targetConsoleVisible);
-
+            // --- 2. Configure Serilog --- 
             var logConfig = new LoggerConfiguration()
-                .MinimumLevel.Is(targetLevel) // Set the global minimum level
+                .MinimumLevel.Is(minimumLevel) // Always use the hardcoded default level
                 .Enrich.FromLogContext()
                 .Enrich.WithThreadId();
 
-            // Configure Console Sink
-            if (targetConsolePresent)
+            // --- 3. Configure Console Sink --- 
+            bool actualConsoleSinkPresent = false;
+            if (configConsoleOutput) // Use the setting directly
             {
-                // Determine the effective minimum level for the console sink
-                var consoleSinkLevel = targetConsoleVisible ? targetLevel : (LogEventLevel.Fatal + 1); // Use high level to hide
-
                 logConfig = logConfig.WriteTo.Console(
                     outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-                    restrictedToMinimumLevel: consoleSinkLevel); // Control visibility via level restriction
+                    restrictedToMinimumLevel: minimumLevel);
+                actualConsoleSinkPresent = true;
+                Console.WriteLine("Console logging configured.");
             }
 
-            // Configure File Sink
-            if (targetFilePresent)
+            // --- 4. Configure File Sink (if Active is true) ---
+            bool actualFileSinkPresent = false;
+            string finalLogPath = configLogPath; // Start with configured path
+
+            if (configFileActive) // Only attempt file logging if Active: true
             {
-                var logPath = Settings.Default.Logger.Path;
                 try
                 {
-                    if (!Directory.Exists(logPath))
+                    // Attempt to ensure the configured directory exists
+                    if (!Directory.Exists(configLogPath))
                     {
-                        Directory.CreateDirectory(logPath);
-                        Log.Information("Created log directory: {path}", Path.GetFullPath(logPath));
+                        Directory.CreateDirectory(configLogPath);
                     }
-
-                    logConfig = logConfig.WriteTo.File(
-                       Path.Combine(logPath, "neo-node-.log"),
-                       rollingInterval: RollingInterval.Day,
-                       retainedFileCountLimit: 7,
-                       buffered: true,
-                       outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}");
+                    // If we reach here, the configured path is usable (or was just created)
+                    finalLogPath = configLogPath;
                 }
                 catch (Exception ex)
                 {
-                    ConsoleHelper.Error($"Failed to ensure log directory '{logPath}' or add file sink: {ex.Message}. File logging remains disabled for this session.");
-                    targetFilePresent = false; // Update state if sink couldn't be added
+                    // Configured path failed, fall back to current directory
+                    Console.Error.WriteLine($"Error creating configured log directory '{configLogPath}': {ex.Message}. Falling back to current directory.");
+                    Log.Warning(ex, "Failed to create configured log directory {ConfigPath}, falling back to current directory.", configLogPath);
+                    finalLogPath = "."; // Fallback path
+                    // We don't need to create ".", it always exists.
+                }
+
+                // Now, add the file sink using the determined finalLogPath
+                try
+                {
+                    logConfig = logConfig.WriteTo.File(
+                        Path.Combine(finalLogPath, "neo-node-.log"),
+                        rollingInterval: RollingInterval.Day,
+                        fileSizeLimitBytes: 52428800,
+                        retainedFileCountLimit: 7,
+                        buffered: false, // Keep unbuffered
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}",
+                        restrictedToMinimumLevel: minimumLevel);
+                    actualFileSinkPresent = true; // Sink was successfully added
+                    Console.WriteLine($"File logging configured. Path: {Path.GetFullPath(finalLogPath)}");
+                }
+                catch (Exception sinkEx)
+                {
+                     // Catch errors during sink configuration itself (e.g., locking)
+                     Console.Error.WriteLine($"Failed to configure file sink at '{finalLogPath}': {sinkEx.Message}. File logging disabled for this session.");
+                     Log.Error(sinkEx, "Failed to configure file sink at {Path}.", finalLogPath);
+                     actualFileSinkPresent = false; // Ensure state reflects failure
                 }
             }
 
-            // Create and assign the new logger
+            // --- 5. Assign Logger and Set Internal State --- 
             var oldLogger = Serilog.Log.Logger;
             Serilog.Log.Logger = logConfig.CreateLogger();
-            (oldLogger as IDisposable)?.Dispose(); // Dispose the old logger
+            (oldLogger as IDisposable)?.Dispose();
 
-            // Update internal state tracking
+            // Set internal tracking state based on the final configuration outcome
+            _currentLogLevel = minimumLevel;
+            _isConsoleSinkPresent = actualConsoleSinkPresent;
+            _isFileSinkPresent = actualFileSinkPresent; // Reflects if sink was actually added
+            _isConsoleLogVisible = actualConsoleSinkPresent;
+
+            Log.Information("Logger configured: Level={level}, Console={console}, File={file}, Path={path}",
+                _currentLogLevel, _isConsoleSinkPresent, _isFileSinkPresent, actualFileSinkPresent ? finalLogPath : "(disabled)"); // Log final path only if active
+        }
+
+        // ReconfigureLogger needs update to respect initial _isFileSinkPresent
+        private void ReconfigureLogger(LogEventLevel? newLevel = null, bool? enableConsole = null, bool? showConsole = null)
+        {
+            var targetLevel = newLevel ?? _currentLogLevel;
+            var targetConsolePresent = enableConsole ?? _isConsoleSinkPresent;
+            var targetFilePresent = _isFileSinkPresent; // Keep initial file state
+            var targetConsoleVisible = targetConsolePresent && (showConsole ?? _isConsoleLogVisible);
+
+            if (enableConsole == false) targetConsoleVisible = false;
+            if (!targetConsolePresent) targetConsoleVisible = false;
+
+            Log.Information("Reconfiguring logger: Target Level={level}, ConsolePresent={consoleP}, FilePresent={fileP} (Initial), ConsoleVisible={consoleV}",
+                targetLevel, targetConsolePresent, targetFilePresent, targetConsoleVisible);
+
+            var logConfig = new LoggerConfiguration()
+                .MinimumLevel.Is(targetLevel)
+                .Enrich.FromLogContext()
+                .Enrich.WithThreadId();
+
+            if (targetConsolePresent)
+            {
+                var consoleSinkLevel = targetConsoleVisible ? targetLevel : (LogEventLevel.Fatal + 1);
+                logConfig = logConfig.WriteTo.Console(
+                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+                    restrictedToMinimumLevel: consoleSinkLevel);
+            }
+
+            // Configure File Sink (Only if it was initially present)
+            if (targetFilePresent)
+            {
+                string logPath = Settings.Default.Logger.Path; // Use path from settings
+                string finalLogPath = logPath;
+                try
+                {
+                    // Ensure directory exists - might have been deleted or become inaccessible since startup?
+                    if (!Directory.Exists(logPath))
+                    {
+                         Log.Warning("Log directory {path} missing during reconfigure. Attempting to create.", logPath);
+                        Directory.CreateDirectory(logPath);
+                        Log.Information("Recreated log directory: {path}", Path.GetFullPath(logPath));
+                    }
+                }
+                catch (Exception dirEx)
+                {
+                     Console.Error.WriteLine($"Error ensuring configured log directory '{logPath}' during reconfigure: {dirEx.Message}. Falling back to current directory for this reconfiguration.");
+                     Log.Warning(dirEx, "Failed to ensure configured log directory {ConfigPath} during reconfigure, falling back to current directory.", logPath);
+                     finalLogPath = "."; // Fallback for this specific reconfiguration
+                }
+                
+                // Try adding file sink with potentially adjusted path
+                try 
+                {
+                     logConfig = logConfig.WriteTo.File(
+                        Path.Combine(finalLogPath, "neo-node-.log"),
+                        rollingInterval: RollingInterval.Day,
+                        fileSizeLimitBytes: 52428800,
+                        retainedFileCountLimit: 7,
+                        buffered: false, // Keep unbuffered
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}",
+                        restrictedToMinimumLevel: targetLevel); // Use the potentially updated targetLevel
+                }
+                catch (Exception sinkEx)
+                {
+                     Console.Error.WriteLine($"Failed to re-add file sink at '{finalLogPath}' during reconfigure: {sinkEx.Message}.");
+                     Log.Error(sinkEx, "Failed to re-add file sink at {Path} during reconfigure.", finalLogPath);
+                     // Don't change _isFileSinkPresent state, just log the failure to re-add
+                }
+            }
+
+            var oldLogger = Serilog.Log.Logger;
+            Serilog.Log.Logger = logConfig.CreateLogger();
+            (oldLogger as IDisposable)?.Dispose();
+
             _currentLogLevel = targetLevel;
             _isConsoleSinkPresent = targetConsolePresent;
-            _isFileSinkPresent = targetFilePresent;
-            _isConsoleLogVisible = targetConsoleVisible; // Visibility depends on presence AND show state
+            // _isFileSinkPresent remains unchanged from initial state
+            _isConsoleLogVisible = targetConsoleVisible;
 
-            Log.Information("Logger reconfigured. Current State: Level={level}, ConsolePresent={consoleP}, FilePresent={fileP}, ConsoleVisible={consoleV}",
+            Log.Information("Logger reconfigured. Current State: Level={level}, ConsolePresent={consoleP}, FilePresent={fileP} (Initial), ConsoleVisible={consoleV}",
                  _currentLogLevel, _isConsoleSinkPresent, _isFileSinkPresent, _isConsoleLogVisible);
         }
 
@@ -210,35 +311,6 @@ namespace Neo.CLI
             }
             ReconfigureLogger(showConsole: false);
             ConsoleHelper.Info("Console output is now hidden.");
-        }
-
-        /// <summary>
-        /// Ensures the file log sink is active (added to the configuration).
-        /// </summary>
-        /// <example>
-        /// log file enable
-        /// </example>
-        [ConsoleCommand("log file enable", Category = "Log Commands", Description = "Ensures the file log sink is active.")]
-        private void OnEnableFileLogCmd()
-        {
-            ReconfigureLogger(enableFile: true);
-            if (_isFileSinkPresent) // Check state *after* reconfiguration attempt
-                ConsoleHelper.Info($"File logging enabled. Path: {Path.GetFullPath(Settings.Default.Logger.Path)}");
-            else
-                ConsoleHelper.Error("Failed to enable file logging (check previous errors).");
-        }
-
-        /// <summary>
-        /// Disables file logging by removing the file sink from the configuration.
-        /// </summary>
-        /// <example>
-        /// log file disable
-        /// </example>
-        [ConsoleCommand("log file disable", Category = "Log Commands", Description = "Disables the file log sink entirely.")]
-        private void OnDisableFileLogCmd()
-        {
-            ReconfigureLogger(enableFile: false);
-            ConsoleHelper.Info("File logging disabled (sink removed).");
         }
 
         /// <summary>

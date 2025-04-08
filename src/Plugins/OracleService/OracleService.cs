@@ -171,14 +171,18 @@ namespace Neo.Plugins.OracleService
         private void OnStop()
         {
             _log.Information("Stopping Oracle service...");
-            cancelSource.Cancel();
+            if (!cancelSource.IsCancellationRequested)
+            {
+                cancelSource.Cancel();
+                _log.Information("Cancellation requested via CancelSource.");
+            }
             if (timer != null)
             {
                 timer.Dispose();
                 timer = null;
+                _log.Debug("Oracle timer disposed.");
             }
-            status = OracleStatus.Stopped;
-            _log.Information("Oracle service stop requested.");
+            _log.Information("Oracle service stop request processed.");
         }
 
         [ConsoleCommand("oracle status", Category = "Oracle", Description = "Show oracle status")]
@@ -420,6 +424,7 @@ namespace Neo.Plugins.OracleService
             _log.Information("Oracle request processing loop started.");
             while (!cancelSource.IsCancellationRequested)
             {
+                _log.Verbose("Oracle loop iteration start.");
                 try
                 {
                     using (var snapshot = _system.GetSnapshotCache())
@@ -431,32 +436,64 @@ namespace Neo.Plugins.OracleService
                         int processedCount = 0;
                         foreach (var (id, request) in pendingRequests)
                         {
-                            if (cancelSource.IsCancellationRequested) break;
+                            if (cancelSource.IsCancellationRequested) 
+                            {
+                                _log.Debug("Cancellation requested during request processing.");
+                                break; // Exit inner loop
+                            }
                             if (!finishedCache.ContainsKey(id) && (!pendingQueue.TryGetValue(id, out OracleTask task) || task.Tx is null))
                             {
                                 _log.Debug("Found new/unprocessed oracle request {RequestId} for URL <{Url}>", id, request.Url);
-                                await ProcessRequestAsync(snapshot, request);
+                                await ProcessRequestAsync(snapshot, request); // Await the processing
                                 processedCount++;
                             }
-                            // else: Request is finished or already being processed (has Tx)
                         }
                         if (processedCount == 0) _log.Verbose("No new oracle requests to process this iteration.");
                     }
                 }
                 catch (Exception ex)
                 {
+                    // Catch OperationCanceledException specifically if it bubbles up unexpectedly
+                    if (ex is OperationCanceledException oce)
+                    {
+                        _log.Information(oce, "OperationCanceledException caught in main loop body. Stopping loop.");
+                        break;
+                    }
                     _log.Error(ex, "Unhandled exception in Oracle request processing loop.");
                     // Avoid tight loop on persistent errors
-                    await Task.Delay(5000, cancelSource.Token);
+                     try
+                     {
+                         _log.Verbose("Delaying after error...");
+                         await Task.Delay(5000, cancelSource.Token); 
+                     }
+                     catch (OperationCanceledException)
+                     {
+                         _log.Information("Delay cancelled during error handling, stopping loop.");
+                         break; // Exit loop if delay is cancelled
+                     }
                 }
 
-                if (cancelSource.IsCancellationRequested) break;
-                _log.Verbose("Oracle processing loop delay...");
-                await Task.Delay(500, cancelSource.Token);
+                if (cancelSource.IsCancellationRequested) 
+                {
+                    _log.Debug("Cancellation requested before final delay.");
+                    break; // Check again before delay
+                }
+                _log.Verbose("Oracle processing loop delay (500ms)...");
+                 try
+                 {
+                     await Task.Delay(500, cancelSource.Token);
+                     _log.Verbose("Loop delay completed.");
+                 }
+                 catch (OperationCanceledException)
+                 {
+                     _log.Information("Delay cancelled, stopping loop.");
+                     break; // Exit loop if delay is cancelled
+                 }
+                 _log.Verbose("Oracle loop iteration end.");
             }
 
-            status = OracleStatus.Stopped;
-            _log.Information("Oracle request processing loop stopped.");
+            status = OracleStatus.Stopped; 
+            _log.Information("Oracle request processing loop stopped cleanly.");
         }
 
         private void SyncPendingQueue(DataCache snapshot)

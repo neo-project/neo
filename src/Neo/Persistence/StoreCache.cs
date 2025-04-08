@@ -37,7 +37,6 @@ namespace Neo.Persistence
         public StoreCache(IStore store, bool readOnly = true) : base(readOnly)
         {
             if (store is null) throw new ArgumentNullException(nameof(store));
-            _log.Verbose("Creating StoreCache (ReadOnly={ReadOnly}) from IStore ({StoreType})", readOnly, store.GetType().Name);
             _store = store;
         }
 
@@ -48,7 +47,6 @@ namespace Neo.Persistence
         public StoreCache(IStoreSnapshot snapshot) : base(false)
         {
             if (snapshot is null) throw new ArgumentNullException(nameof(snapshot));
-            _log.Verbose("Creating StoreCache (Writable) from IStoreSnapshot ({SnapshotType})", snapshot.GetType().Name);
             _store = snapshot;
             _snapshot = snapshot;
         }
@@ -57,19 +55,16 @@ namespace Neo.Persistence
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            _log.Verbose("[SnapshotCache] Updating key {KeyId}:{KeyHex}", key.Id, key.Key.Span.ToHexString());
             _snapshot?.Put(key.ToArray(), value.ToArray());
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {
-            _log.Verbose("[SnapshotCache] Adding key {KeyId}:{KeyHex}", key.Id, key.Key.Span.ToHexString());
             _snapshot?.Put(key.ToArray(), value.ToArray());
         }
 
         protected override void DeleteInternal(StorageKey key)
         {
-            _log.Verbose("[SnapshotCache] Deleting key {KeyId}:{KeyHex}", key.Id, key.Key.Span.ToHexString());
             _snapshot?.Delete(key.ToArray());
         }
 
@@ -95,14 +90,12 @@ namespace Neo.Persistence
 
         protected override bool ContainsInternal(StorageKey key)
         {
-            _log.Verbose("ContainsInternal check for key {KeyId}:{KeyHex}", key.Id, key.Key.Span.ToHexString());
             return _store.Contains(key.ToArray());
         }
 
         /// <inheritdoc/>
         protected override StorageItem GetInternal(StorageKey key)
         {
-            _log.Verbose("GetInternal for key {KeyId}:{KeyHex}", key.Id, key.Key.Span.ToHexString());
             byte[] keyBytes = key.ToArray();
             if (_store.TryGet(keyBytes, out var value))
                 return new(value);
@@ -112,14 +105,12 @@ namespace Neo.Persistence
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            _log.Verbose("SeekInternal with prefix {PrefixHex}, Direction: {Direction}", keyOrPrefix != null ? keyOrPrefix.ToHexString() : "<null>", direction);
             return _store.Find(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
         /// <inheritdoc/>
         protected override StorageItem? TryGetInternal(StorageKey key)
         {
-            _log.Verbose("TryGetInternal for key {KeyId}:{KeyHex}", key.Id, key.Key.Span.ToHexString());
             return _store.TryGet(key.ToArray(), out var value) ? new(value) : null;
         }
 

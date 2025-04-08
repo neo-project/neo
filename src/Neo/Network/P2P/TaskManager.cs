@@ -255,7 +255,7 @@ namespace Neo.Network.P2P
                     OnTerminated(terminated.ActorRef);
                     break;
                 default:
-                    _log.Warning("TaskManager received unknown message type: {MessageType}", message.GetType().Name);
+                    // _log.Warning("TaskManager received unknown message type: {MessageType}", message.GetType().Name);
                     Unhandled(message);
                     break;
             }
@@ -300,8 +300,9 @@ namespace Neo.Network.P2P
             knownHashes.Add(inventory.Hash);
             if (globalInvTasks.Remove(inventory.Hash))
                 _log.Verbose("Removed global task for hash {InvHash}", inventory.Hash);
-            else
-                _log.Warning("Completed task for hash {InvHash} was not in globalInvTasks?", inventory.Hash);
+            // else
+
+                // _log.Warning("Completed task for hash {InvHash} was not in globalInvTasks?", inventory.Hash);
 
             if (block is not null)
             {

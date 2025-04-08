@@ -39,6 +39,7 @@ using System.Threading.Tasks;
 using Array = System.Array;
 using ECCurve = Neo.Cryptography.ECC.ECCurve;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using Serilog; // Needed for CloseAndFlush
 
 namespace Neo.CLI
 {
@@ -83,6 +84,8 @@ namespace Neo.CLI
         /// </summary>
         public MainService() : base()
         {
+            // Logger configuration now happens in OnStart
+            // Command handlers registration
             RegisterCommandHandler<string, UInt160>(false, str => StringToAddress(str, NeoSystem.Settings.AddressVersion));
             RegisterCommandHandler<string, UInt256>(false, UInt256.Parse);
             RegisterCommandHandler<string[], UInt256[]>(str => str.Select(u => UInt256.Parse(u.Trim())).ToArray());
@@ -347,14 +350,23 @@ namespace Neo.CLI
 
         public override bool OnStart(string[] args)
         {
-            if (!base.OnStart(args)) return false;
+            // Configure logger first using settings ONLY
+            ConfigureLoggerFromSettings(); 
+
+            // Now call base OnStart which might use the configured logger
+            if (!base.OnStart(args)) return false; 
+            
+            // Proceed with CLI-specific startup (which now also uses the configured logger)
             return OnStartWithCommandLine(args) != 1;
         }
 
         public override void OnStop()
         {
             base.OnStop();
-            Stop();
+            Stop(); // Existing NeoSystem Stop method
+            // Ensure logger is flushed on clean shutdown
+            Log.Information("MainService stopped. Flushing logs...");
+            Log.CloseAndFlush();
         }
 
         public void OpenWallet(string path, string password)

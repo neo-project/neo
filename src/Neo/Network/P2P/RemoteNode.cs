@@ -120,12 +120,6 @@ namespace Neo.Network.P2P
         /// <param name="message">The message to be added.</param>
         private void EnqueueMessage(Message message)
         {
-            _log?.Verbose("Enqueuing {Command} ({Priority} priority). Queue sizes: High={HighCount}, Low={LowCount}",
-                message.Command,
-                message.Command switch { MessageCommand.Alert or MessageCommand.Extensible or MessageCommand.FilterAdd or MessageCommand.FilterClear or MessageCommand.FilterLoad or MessageCommand.GetAddr or MessageCommand.Mempool => "High", _ => "Low" },
-                message_queue_high.Count,
-                message_queue_low.Count);
-
             bool is_single = message.Command switch
             {
                 MessageCommand.Addr or MessageCommand.GetAddr or MessageCommand.GetBlocks or MessageCommand.GetHeaders or MessageCommand.Mempool or MessageCommand.Ping or MessageCommand.Pong => true,
@@ -153,13 +147,11 @@ namespace Neo.Network.P2P
 
         protected override void OnData(ByteString data)
         {
-            _log?.Verbose("Received {DataLength} bytes", data.Count);
             msg_buffer = msg_buffer.Concat(data);
 
             int count = 0;
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
             {
-                _log?.Debug("Parsed message {Command} (Length: {Length})", message.Command, message.Size);
                 count++;
                 OnMessage(message);
             }
@@ -202,17 +194,14 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            _log?.Verbose("Preparing to relay inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
             if (!IsFullNode)
             {
-                _log?.Verbose("Relay skipped: Not a full node.");
                 return;
             }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                 {
-                    _log?.Verbose("Relay skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
                     return;
                 }
             }
@@ -221,17 +210,14 @@ namespace Neo.Network.P2P
 
         private void OnSend(IInventory inventory)
         {
-            _log?.Verbose("Preparing direct send of inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
             if (!IsFullNode)
             {
-                _log?.Verbose("Direct send skipped: Not a full node.");
                 return;
             }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                 {
-                    _log?.Verbose("Direct send skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
                     return;
                 }
             }
@@ -259,8 +245,6 @@ namespace Neo.Network.P2P
 
         private void SendMessage(Message message)
         {
-            _log?.Debug("Sending message {Command} (Length: {Length}, Compressed: {Compressed})",
-                message.Command, message.Size, Version?.AllowCompression ?? false);
             ack = false;
             // Here it is possible that we dont have the Version message yet,
             // so we need to send the message uncompressed

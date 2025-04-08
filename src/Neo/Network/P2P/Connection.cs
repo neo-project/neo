@@ -130,7 +130,7 @@ namespace Neo.Network.P2P
                     Context.Stop(Self);
                     break;
                 default:
-                    _log?.Warning("Connection received unknown message type: {MessageType}", message.GetType().Name);
+                    // _log?.Warning("Connection received unknown message type: {MessageType}", message.GetType().Name);
                     Unhandled(message);
                     break;
             }

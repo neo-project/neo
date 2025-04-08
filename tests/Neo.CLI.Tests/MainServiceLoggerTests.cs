@@ -258,50 +258,6 @@ namespace Neo.CLI.Tests
         }
 
         [TestMethod]
-        public void ReconfigureLogger_EnableFile_WhenDisabled_UpdatesStateAndAddsSink()
-        {
-            // Arrange
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Information().WriteTo.Console().CreateLogger(); // No File Sink
-            var mainService = new MainService();
-            SetPrivateField(mainService, "_currentLogLevel", LogEventLevel.Information);
-            SetPrivateField(mainService, "_isConsoleSinkPresent", true);
-            SetPrivateField(mainService, "_isFileSinkPresent", false);
-            SetPrivateField(mainService, "_isConsoleLogVisible", true);
-
-            // Act
-            InvokePrivateMethod<object>(mainService, "ReconfigureLogger", (object[])[LogEventLevel.Information, true, true, true]); // Enable file
-
-            // Assert State
-            Assert.IsTrue(GetPrivateField<bool>(mainService, "_isConsoleSinkPresent"));
-            Assert.IsTrue(GetPrivateField<bool>(mainService, "_isFileSinkPresent")); // File sink added
-            Assert.IsTrue(GetPrivateField<bool>(mainService, "_isConsoleLogVisible"));
-        }
-
-        [TestMethod]
-        public void ReconfigureLogger_EnableFile_InvalidPath_DisablesFileLogging()
-        {
-            // Arrange
-            string invalidPath = Path.Combine("Inv:", "InvalidChars");
-            var appConfigSection = new ConfigurationBuilder().AddJsonFile("config.json").Build().GetSection("ApplicationConfiguration");
-            Settings.Custom = new Settings() { Logger = new LoggerSettings(appConfigSection.GetSection("Logger")) { Path = invalidPath } /* Other settings */ };
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Information().WriteTo.Console().CreateLogger(); // No File Sink
-            var mainService = new MainService();
-            SetPrivateField(mainService, "_currentLogLevel", LogEventLevel.Information);
-            SetPrivateField(mainService, "_isConsoleSinkPresent", true);
-            SetPrivateField(mainService, "_isFileSinkPresent", false);
-            SetPrivateField(mainService, "_isConsoleLogVisible", true);
-
-            // Act
-            InvokePrivateMethod<object>(mainService, "ReconfigureLogger", (object[])[LogEventLevel.Information, true, true, true]); // Attempt to enable file
-
-            // Assert State
-            Assert.IsFalse(GetPrivateField<bool>(mainService, "_isFileSinkPresent"), "File sink should remain disabled due to error");
-        }
-
-
-        // --- Command Tests ---
-
-        [TestMethod]
         public void OnSetLogLevel_CallsReconfigureAndPrintsMessage()
         {
             // Arrange
@@ -401,17 +357,17 @@ namespace Neo.CLI.Tests
             };
             Settings.Custom = testSettingsConfig;
 
-            // Set specific runtime logger state
+            // Set specific runtime logger state - NO FILE SINK due to config
             (Serilog.Log.Logger as IDisposable)?.Dispose();
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Fatal + 1).WriteTo.File(Path.Combine(TestLogDir, "rt.log")).CreateLogger();
-            Directory.CreateDirectory(TestLogDir);
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Fatal + 1).CreateLogger(); // No file sink
+            // Directory.CreateDirectory(TestLogDir); // No need to create dir if file sink isn't added
 
             var mainService = new MainService();
-            // Manually set internal state to match the logger above
+            // Manually set internal state to match the logger above & initial config
             SetPrivateField(mainService, "_currentLogLevel", LogEventLevel.Verbose);
-            SetPrivateField(mainService, "_isConsoleSinkPresent", true);
-            SetPrivateField(mainService, "_isFileSinkPresent", true);
-            SetPrivateField(mainService, "_isConsoleLogVisible", false);
+            SetPrivateField(mainService, "_isConsoleSinkPresent", true); // Console is present
+            SetPrivateField(mainService, "_isFileSinkPresent", false); // File is NOT present initially
+            SetPrivateField(mainService, "_isConsoleLogVisible", false); // Console is hidden
 
             // Act
             InvokePrivateMethod<object>(mainService, "OnLogStatus");
@@ -428,8 +384,10 @@ namespace Neo.CLI.Tests
             StringAssert.Contains(output, "[Runtime Status]");
             StringAssert.Contains(output, "- Current Minimum Level: Verbose");
             StringAssert.Contains(output, "- Console Sink Present: True");
-            StringAssert.Contains(output, "- Console Output Visible: False", "Visibility output should indicate False when hidden.");
-            StringAssert.Contains(output, "- File Sink Present: True");
+            StringAssert.Contains(output, "- Console Output Visible: False");
+            Assert.IsTrue(output.Contains("- Console Output Visible: False") && !output.Contains("(Sink not present)"), "Visibility output incorrect when hidden but present.");
+            StringAssert.Contains(output, "- File Sink Present: False"); // Assert runtime file state is false
+            Assert.IsFalse(output.Contains("- Current Log Path:"), "Current Log Path should not be shown if file sink is not present");
         }
 
         [TestMethod]
@@ -492,45 +450,6 @@ namespace Neo.CLI.Tests
             Assert.IsFalse(GetPrivateField<bool>(mainService, "_isConsoleSinkPresent"), "Console sink should remain disabled");
             Assert.IsFalse(GetPrivateField<bool>(mainService, "_isConsoleLogVisible"), "Console visibility should remain false");
             StringAssert.Contains(_consoleOutput!.ToString(), "Console logging is not enabled. Use 'log console enable' first.", "Warning message mismatch.");
-        }
-
-        [TestMethod]
-        public void OnEnableFileLogCmd_WhenAlreadyEnabled_IsIdempotent()
-        {
-            // Arrange
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Information().WriteTo.Console().WriteTo.File(Path.Combine(TestLogDir, "test.log")).CreateLogger();
-            var mainService = new MainService();
-            SetPrivateField(mainService, "_currentLogLevel", LogEventLevel.Information);
-            SetPrivateField(mainService, "_isConsoleSinkPresent", true);
-            SetPrivateField(mainService, "_isFileSinkPresent", true);
-            SetPrivateField(mainService, "_isConsoleLogVisible", true);
-            _consoleOutput!.GetStringBuilder().Clear();
-
-            // Act
-            InvokePrivateMethod<object>(mainService, "OnEnableFileLogCmd");
-
-            // Assert State
-            Assert.IsTrue(GetPrivateField<bool>(mainService, "_isFileSinkPresent"), "File sink should remain present");
-            StringAssert.Contains(_consoleOutput!.ToString(), "File logging enabled.", "Console output message mismatch.");
-        }
-
-        [TestMethod]
-        public void OnDisableFileLogCmd_WhenEnabled_RemovesSinkAndUpdatesState()
-        {
-            // Arrange
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Information().WriteTo.Console().WriteTo.File(Path.Combine(TestLogDir, "test.log")).CreateLogger();
-            var mainService = new MainService();
-            SetPrivateField(mainService, "_currentLogLevel", LogEventLevel.Information);
-            SetPrivateField(mainService, "_isConsoleSinkPresent", true);
-            SetPrivateField(mainService, "_isFileSinkPresent", true);
-            SetPrivateField(mainService, "_isConsoleLogVisible", true);
-
-            // Act
-            InvokePrivateMethod<object>(mainService, "OnDisableFileLogCmd");
-
-            // Assert State
-            Assert.IsFalse(GetPrivateField<bool>(mainService, "_isFileSinkPresent"), "File sink should be marked as not present");
-            StringAssert.Contains(_consoleOutput!.ToString(), "File logging disabled (sink removed).", "Console output message mismatch.");
         }
     }
 }
