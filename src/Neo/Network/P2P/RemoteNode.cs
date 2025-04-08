@@ -193,6 +193,10 @@ namespace Neo.Network.P2P
                 case StartProtocol _:
                     OnStartProtocol();
                     break;
+                case Tcp.ConnectionClosed cc:
+                    _log.Information("Connection closed: {Reason}", cc.ToString());
+                    Context.Stop(Self);
+                    break;
             }
         }
 
@@ -242,7 +246,7 @@ namespace Neo.Network.P2P
 
         protected override void PostStop()
         {
-            _log.Debug("RemoteNode stopped");
+            _log.Debug("RemoteNode stopped for {RemoteEndPoint}", Remote);
             timer.CancelIfNotNull();
             localNode.RemoteNodes.TryRemove(Self, out _);
             base.PostStop();
@@ -267,7 +271,13 @@ namespace Neo.Network.P2P
         private Message TryParseMessage()
         {
             var length = Message.TryDeserialize(msg_buffer, out var msg);
-            if (length <= 0) return null;
+            if (length < 0)
+            {
+                _log.Warning("Failed to deserialize message from buffer (Length={BufferLength}). Discarding buffer.", msg_buffer.Count);
+                msg_buffer = ByteString.Empty;
+                return null;
+            }
+            if (length == 0) return null;
 
             msg_buffer = msg_buffer.Slice(length).Compact();
             return msg;

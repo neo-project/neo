@@ -32,7 +32,7 @@ namespace Neo.Plugins.ApplicationLogs
 {
     public class LogReader : Plugin, ICommittingHandler, ICommittedHandler, ILogHandler
     {
-        private static readonly ILogger _log = Log.ForContext<LogReader>();
+        private readonly ILogger _log;
 
         #region Globals
 
@@ -50,7 +50,8 @@ namespace Neo.Plugins.ApplicationLogs
 
         public LogReader()
         {
-            _log.Debug("LogReader instance created");
+            _log = Log.ForContext<LogReader>();
+            _log.Verbose("LogReader instance created");
             _logEvents = new();
             Blockchain.Committing += ((ICommittingHandler)this).Blockchain_Committing_Handler;
             Blockchain.Committed += ((ICommittedHandler)this).Blockchain_Committed_Handler;
@@ -70,7 +71,7 @@ namespace Neo.Plugins.ApplicationLogs
             if (Settings.Default.Debug)
                 ApplicationEngine.Log -= ((ILogHandler)this).ApplicationEngine_Log_Handler;
             _neostore?.Dispose();
-            _log.Debug("LogReader disposed");
+            _log.Verbose("LogReader disposed");
             GC.SuppressFinalize(this);
         }
 
@@ -265,12 +266,12 @@ namespace Neo.Plugins.ApplicationLogs
                     _logEvents.Clear();
                 }
                 sw.Stop();
-                _log.Debug("Blockchain Committing: Batch processing finished for Block {BlockIndex} in {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
+                _log.Debug("Blockchain Committing: Batch processing finished for Block {BlockIndex} ({BlockHash}) in {DurationMs} ms", block.Index, block.Hash, sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
                 sw.Stop();
-                _log.Error(ex, "Error during Blockchain_Committing for Block {BlockIndex} after {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
+                _log.Error(ex, "Error during Blockchain_Committing for Block {BlockIndex} ({BlockHash}) after {DurationMs} ms", block.Index, block.Hash, sw.ElapsedMilliseconds);
             }
         }
 
@@ -288,12 +289,12 @@ namespace Neo.Plugins.ApplicationLogs
             {
                 _neostore.CommitBlockLog();
                 sw.Stop();
-                _log.Information("Blockchain Committed: Batch committed for Block {BlockIndex} in {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
+                _log.Information("Blockchain Committed: Batch committed for Block {BlockIndex} ({BlockHash}) in {DurationMs} ms", block.Index, block.Hash, sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
                 sw.Stop();
-                _log.Error(ex, "Error during Blockchain_Committed for Block {BlockIndex} after {DurationMs} ms", block.Index, sw.ElapsedMilliseconds);
+                _log.Error(ex, "Error during Blockchain_Committed for Block {BlockIndex} ({BlockHash}) after {DurationMs} ms", block.Index, block.Hash, sw.ElapsedMilliseconds);
             }
         }
 

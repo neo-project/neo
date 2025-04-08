@@ -112,7 +112,7 @@ namespace Neo.Plugins
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "Failed to configure plugin {PluginName}", GetType().FullName);
+                Log.Error(ex, "Failed to configure plugin {PluginName}", Name);
             }
         }
 
@@ -130,7 +130,7 @@ namespace Neo.Plugins
             {
                 case ".json":
                 case ".dll":
-                    Serilog.Log.Warning("File {FileName} was {ChangeType}, node restart required for changes to take effect.", e.Name, e.ChangeType);
+                    Log.Warning("File {FileName} was {ChangeType}, node restart required for changes to take effect.", e.Name, e.ChangeType);
                     break;
             }
         }
@@ -157,12 +157,12 @@ namespace Neo.Plugins
 
             try
             {
-                Serilog.Log.Verbose("Attempting to load assembly by path: {AssemblyPath}", path);
+                Log.Verbose("Attempting to load assembly by path: {AssemblyPath}", path);
                 return Assembly.Load(File.ReadAllBytes(path));
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "Failed to resolve or load assembly {AssemblyName} from path {AssemblyPath}", args.Name, path);
+                Log.Error(ex, "Failed to resolve or load assembly {AssemblyName} from path {AssemblyPath}", args.Name, path);
                 return null;
             }
         }
@@ -193,41 +193,54 @@ namespace Neo.Plugins
 
                 try
                 {
-                    Serilog.Log.Information("Loading plugin: {PluginType}", type.FullName);
+                    Log.Information("Loading plugin type: {PluginType}", type.FullName);
                     constructor.Invoke(null);
-                    Serilog.Log.Information("Plugin {PluginType} loaded successfully.", type.FullName);
+                    Log.Information("Plugin type {PluginType} loaded successfully.", type.FullName);
                 }
                 catch (Exception ex)
                 {
-                    Serilog.Log.Error(ex, "Failed to load plugin {PluginType}", type.FullName);
+                    Log.Error(ex, "Failed to load plugin type {PluginType}", type.FullName);
                 }
             }
         }
 
         internal static void LoadPlugins()
         {
-            if (!Directory.Exists(PluginsDirectory)) return;
-            Serilog.Log.Information("Loading plugins from directory: {PluginsDirectory}", PluginsDirectory);
+            if (!Directory.Exists(PluginsDirectory))
+            {
+                Log.Information("Plugins directory not found at {PluginsDirectory}, skipping plugin loading.", PluginsDirectory);
+                return;
+            }
+            Log.Information("Loading plugins from directory: {PluginsDirectory}", PluginsDirectory);
             List<Assembly> assemblies = [];
             foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
+                Log.Debug("Scanning plugin directory: {PluginRootPath}", rootPath);
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
                     try
                     {
+                        Log.Verbose("Attempting to load assembly: {AssemblyPath}", filename);
                         assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
                     }
-                    catch { }
+                    catch (BadImageFormatException ex)
+                    {
+                        Log.Warning(ex, "Skipping file, not a valid assembly: {AssemblyPath}", filename);
+                    }
+                    catch (Exception ex) // Catch other potential exceptions during assembly loading
+                    {
+                        Log.Error(ex, "Failed to load assembly: {AssemblyPath}", filename);
+                    }
                 }
             }
 
-            Serilog.Log.Information("Found {AssemblyCount} assemblies in plugin directories.", assemblies.Count);
+            Log.Information("Found {AssemblyCount} candidate assemblies in plugin directories.", assemblies.Count);
 
             foreach (var assembly in assemblies)
             {
                 LoadPlugin(assembly);
             }
-            Serilog.Log.Information("Finished loading plugins. Total loaded: {PluginCount}", Plugins.Count);
+            Log.Information("Finished loading plugins. Total loaded: {PluginCount}", Plugins.Count);
         }
 
         /// <summary>
@@ -256,12 +269,12 @@ namespace Neo.Plugins
         /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
         public static bool SendMessage(object message)
         {
-            Serilog.Log.Debug("Sending message to plugins: {MessageType}", message.GetType().Name);
+            Log.Debug("Sending message to plugins: {MessageType}", message.GetType().Name);
             foreach (var plugin in Plugins)
             {
                 if (plugin.IsStopped)
                 {
-                    Serilog.Log.Verbose("Skipping message {MessageType} for stopped plugin {PluginName}", message.GetType().Name, plugin.Name);
+                    Log.Verbose("Skipping message {MessageType} for stopped plugin {PluginName}", message.GetType().Name, plugin.Name);
                     continue;
                 }
 
@@ -272,19 +285,19 @@ namespace Neo.Plugins
                 }
                 catch (Exception ex)
                 {
-                    Serilog.Log.Error(ex, "Unhandled exception in plugin {PluginName} OnMessage handler", plugin.Name);
+                    Log.Error(ex, "Unhandled exception in plugin {PluginName} OnMessage handler", plugin.Name);
 
                     switch (plugin.ExceptionPolicy)
                     {
                         case UnhandledExceptionPolicy.StopNode:
-                            Serilog.Log.Fatal("Plugin {PluginName} caused StopNode due to unhandled exception in OnMessage", plugin.Name);
+                            Log.Fatal("Plugin {PluginName} caused StopNode due to unhandled exception in OnMessage", plugin.Name);
                             throw;
                         case UnhandledExceptionPolicy.StopPlugin:
-                            Serilog.Log.Error("Stopping plugin {PluginName} due to unhandled exception in OnMessage", plugin.Name);
+                            Log.Error("Stopping plugin {PluginName} due to unhandled exception in OnMessage", plugin.Name);
                             plugin.IsStopped = true;
                             break;
                         case UnhandledExceptionPolicy.Ignore:
-                            Serilog.Log.Warning("Ignoring exception in plugin {PluginName} OnMessage handler (Policy=Ignore)", plugin.Name);
+                            Log.Warning("Ignoring exception in plugin {PluginName} OnMessage handler (Policy=Ignore)", plugin.Name);
                             break;
                         default:
                             throw new InvalidCastException($"The exception policy {plugin.ExceptionPolicy} is not valid.");
@@ -295,12 +308,12 @@ namespace Neo.Plugins
 
                 if (result)
                 {
-                    Serilog.Log.Debug("Message {MessageType} handled by plugin {PluginName}", message.GetType().Name, plugin.Name);
+                    Log.Debug("Message {MessageType} handled by plugin {PluginName}", message.GetType().Name, plugin.Name);
                     return true;
                 }
             }
 
-            Serilog.Log.Debug("Message {MessageType} was not handled by any plugin", message.GetType().Name);
+            Log.Debug("Message {MessageType} was not handled by any plugin", message.GetType().Name);
             return false;
         }
 

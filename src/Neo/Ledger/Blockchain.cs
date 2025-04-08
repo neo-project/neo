@@ -203,17 +203,22 @@ namespace Neo.Ledger
                 foreach (var unverifiedBlock in list.Blocks)
                 {
                     if (block.Hash == unverifiedBlock.Hash)
-                        return;
+                    {
+                        _log.Verbose("Block {BlockHash} (Index {BlockIndex}) already in unverified cache.", block.Hash, block.Index);
+                        return; // Already in cache
+                    }
                 }
 
                 if (!list.Nodes.Add(Sender))
                 {
                     // Same index with different hash
+                    _log.Warning("Different block {BlockHash} received for same index {BlockIndex} from {SenderPath}. Aborting sender.", block.Hash, block.Index, Sender.Path);
                     Sender.Tell(Tcp.Abort.Instance);
                     return;
                 }
             }
 
+            _log.Verbose("Adding Block {BlockHash} (Index {BlockIndex}) to unverified cache from {SenderPath}.", block.Hash, block.Index, Sender.Path);
             list.Blocks.Add(block);
         }
 
@@ -289,7 +294,9 @@ namespace Neo.Ledger
                 if (header == null || !blockHash.Equals(header.Hash))
                     return VerifyResult.Invalid;
             }
-            block_cache.TryAdd(blockHash, block);
+            if (block_cache.TryAdd(blockHash, block))
+                _log.Verbose("Added Block {BlockIndex} ({BlockHash}) to block_cache.", block.Index, blockHash);
+
             if (block.Index == currentHeight + 1)
             {
                 var block_persist = block;
@@ -303,6 +310,9 @@ namespace Neo.Ledger
                     if (!block_cache.TryGetValue(header.Hash, out block_persist)) break;
                 }
 
+                _log.Information("Persisting {BlockCount} blocks starting from Index {StartIndex} ({StartHash}) to {EndIndex} ({EndHash}).",
+                    blocksToPersistList.Count, blocksToPersistList[0].Index, blocksToPersistList[0].Hash, blocksToPersistList[^1].Index, blocksToPersistList[^1].Hash);
+
                 int blocksPersisted = 0;
                 uint extraRelayingBlocks = system.Settings.MillisecondsPerBlock < ProtocolSettings.Default.MillisecondsPerBlock
                     ? (ProtocolSettings.Default.MillisecondsPerBlock - system.Settings.MillisecondsPerBlock) / 1000
@@ -315,7 +325,7 @@ namespace Neo.Ledger
                     if (blocksPersisted++ < blocksToPersistList.Count - (2 + extraRelayingBlocks)) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
-
+                    _log.Debug("Relaying newly persisted Block {BlockIndex} ({BlockHash}).", blockToPersist.Index, blockToPersist.Hash);
                     if (blockToPersist.Index + 99 >= headerHeight)
                         system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
                 }
@@ -372,12 +382,23 @@ namespace Neo.Ledger
 
             switch (system.ContainsTransaction(hash))
             {
-                case ContainsTransactionType.ExistsInPool: return VerifyResult.AlreadyInPool;
-                case ContainsTransactionType.ExistsInLedger: return VerifyResult.AlreadyExists;
+                case ContainsTransactionType.ExistsInPool:
+                    _log.Debug("Transaction {TxHash} rejected: AlreadyInPool", hash);
+                    return VerifyResult.AlreadyInPool;
+                case ContainsTransactionType.ExistsInLedger:
+                    _log.Debug("Transaction {TxHash} rejected: AlreadyExists in Ledger", hash);
+                    return VerifyResult.AlreadyExists;
             }
 
-            if (system.ContainsConflictHash(hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
-            return system.MemPool.TryAdd(transaction, system.StoreView);
+            if (system.ContainsConflictHash(hash, transaction.Signers.Select(s => s.Account)))
+            {
+                _log.Debug("Transaction {TxHash} rejected: HasConflicts with ledger", hash);
+                return VerifyResult.HasConflicts;
+            }
+            var addResult = system.MemPool.TryAdd(transaction, system.StoreView);
+            if (addResult != VerifyResult.Succeed)
+                _log.Debug("Transaction {TxHash} rejected by MemPool: {Result}", hash, addResult);
+            return addResult;
         }
 
         private void OnPreverifyCompleted(TransactionRouter.PreverifyCompleted task)
@@ -439,14 +460,19 @@ namespace Neo.Ledger
             {
                 case ContainsTransactionType.ExistsInPool:
                     SendRelayResult(tx, VerifyResult.AlreadyInPool);
+                    _log.Debug("Transaction {TxHash} relay rejected: AlreadyInPool", hash);
                     break;
                 case ContainsTransactionType.ExistsInLedger:
                     SendRelayResult(tx, VerifyResult.AlreadyExists);
+                    _log.Debug("Transaction {TxHash} relay rejected: AlreadyExists in Ledger", hash);
                     break;
                 default:
                     {
                         if (system.ContainsConflictHash(hash, tx.Signers.Select(s => s.Account)))
+                        {
                             SendRelayResult(tx, VerifyResult.HasConflicts);
+                            _log.Debug("Transaction {TxHash} relay rejected: HasConflicts with ledger", hash);
+                        }
                         else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
                         break;
                     }
@@ -455,6 +481,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
+            _log.Information("Persisting Block {BlockIndex} ({BlockHash})...", block.Index, block.Hash);
             using (var snapshot = system.GetSnapshotCache())
             {
                 List<ApplicationExecuted> all_application_executed = new();
@@ -465,8 +492,12 @@ namespace Neo.Ledger
                     if (engine.Execute() != VMState.HALT)
                     {
                         if (engine.FaultException != null)
+                        {
+                            _log.Error(engine.FaultException, "OnPersist script failed for Block {BlockIndex} ({BlockHash}).", block.Index, block.Hash);
                             throw engine.FaultException;
-                        throw new InvalidOperationException();
+                        }
+                        _log.Error("OnPersist script did not HALT for Block {BlockIndex} ({BlockHash}). VMState: {VMState}", block.Index, block.Hash, engine.State);
+                        throw new InvalidOperationException($"OnPersist script failed for block {block.Index}");
                     }
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
@@ -499,8 +530,12 @@ namespace Neo.Ledger
                     if (engine.Execute() != VMState.HALT)
                     {
                         if (engine.FaultException != null)
+                        {
+                            _log.Error(engine.FaultException, "PostPersist script failed for Block {BlockIndex} ({BlockHash}).", block.Index, block.Hash);
                             throw engine.FaultException;
-                        throw new InvalidOperationException();
+                        }
+                        _log.Error("PostPersist script did not HALT for Block {BlockIndex} ({BlockHash}). VMState: {VMState}", block.Index, block.Hash, engine.State);
+                        throw new InvalidOperationException($"PostPersist script failed for block {block.Index}");
                     }
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
@@ -508,6 +543,7 @@ namespace Neo.Ledger
                 }
                 InvokeCommitting(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
+                _log.Debug("Snapshot committed for Block {BlockIndex} ({BlockHash}).", block.Index, block.Hash);
             }
             InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);

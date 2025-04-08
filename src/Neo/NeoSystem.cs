@@ -109,7 +109,7 @@ namespace Neo
         private int suspend = 0;
 
         // Serilog logger instance
-        private static readonly ILogger _log = Log.ForContext<NeoSystem>();
+        private readonly ILogger _log;
 
         static NeoSystem()
         {
@@ -139,13 +139,24 @@ namespace Neo
         /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
         public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
+            _log = Log.ForContext<NeoSystem>();
             _log.Information("Creating NeoSystem...");
             var sw = Stopwatch.StartNew();
 
             Settings = settings;
             GenesisBlock = CreateGenesisBlock(settings);
             this.storageProvider = storageProvider;
-            store = storageProvider.GetStore(storagePath);
+            try
+            {
+                store = storageProvider.GetStore(storagePath);
+                _log.Debug("Storage provider loaded successfully from path: {StoragePath}", storagePath ?? "Default (InMemory)");
+            }
+            catch (Exception ex)
+            {
+                _log.Fatal(ex, "Failed to load store from path: {StoragePath}", storagePath ?? "Default (InMemory)");
+                throw; // Re-throw after logging to ensure application fails correctly
+            }
+
             MemPool = new MemoryPool(this);
             Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
@@ -153,7 +164,18 @@ namespace Neo
             TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
-            Blockchain.Ask(new Blockchain.Initialize()).Wait();
+
+            try
+            {
+                _log.Debug("Initializing Blockchain actor...");
+                Blockchain.Ask(new Blockchain.Initialize()).Wait();
+                _log.Information("Blockchain actor initialized.");
+            }
+            catch (Exception ex)
+            {
+                _log.Fatal(ex, "Failed to initialize Blockchain actor.");
+                throw; // Re-throw after logging
+            }
 
             sw.Stop();
             _log.Information("NeoSystem created and started in {DurationMs} ms", sw.ElapsedMilliseconds);
