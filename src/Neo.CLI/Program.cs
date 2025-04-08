@@ -23,7 +23,7 @@ namespace Neo
         static void Main(string[] args)
         {
             // Default Log Level
-            LogEventLevel minimumLevel = LogEventLevel.Information;
+            var minimumLevel = LogEventLevel.Error;
 
             // Parse command line arguments for log level
             try
@@ -51,7 +51,7 @@ namespace Neo
             }
 
             // Programmatic Serilog Configuration
-            Serilog.Log.Logger = new LoggerConfiguration()
+            Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Is(minimumLevel) // Set the base minimum level
                 .Enrich.FromLogContext()
                 // Use the extension method from Serilog.Enrichers.Thread package
@@ -73,19 +73,19 @@ namespace Neo
             // Wrap execution in try/catch/finally
             try
             {
-                Serilog.Log.Information("Starting Neo CLI with Minimum Log Level: {MinLogLevel}", minimumLevel);
+                Log.Information("Starting Neo CLI with Minimum Log Level: {MinLogLevel}", minimumLevel);
                 var mainService = new MainService();
                 // Pass only the remaining args to MainService if needed, or let it handle them again
                 mainService.Run(args);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                Serilog.Log.Fatal(ex, "Application start-up failed");
+                Log.Fatal(ex, "Application start-up failed");
             }
             finally
             {
-                Serilog.Log.Information("Stopping Neo CLI");
-                Serilog.Log.CloseAndFlush(); // Ensure logs are flushed before exit
+                Log.Information("Stopping Neo CLI");
+                Log.CloseAndFlush(); // Ensure logs are flushed before exit
             }
         }
     }

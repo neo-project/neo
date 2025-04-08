@@ -49,4 +49,8 @@
     <Move SourceFiles="$(OutputPath)/RocksDBStore.dll" DestinationFolder="$(OutDir)/Plugins/RocksDBStore" />
   </Target>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.CLI.Tests" />
+  </ItemGroup>
+
 </Project>

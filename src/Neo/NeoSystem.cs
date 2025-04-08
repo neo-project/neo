@@ -108,8 +108,8 @@ namespace Neo
         private ChannelsConfig start_message = null;
         private int suspend = 0;
 
-        // Serilog logger instance
-        private readonly ILogger _log;
+        // Updated to field initialization pattern
+        private readonly ILogger _log = Log.ForContext<NeoSystem>();
 
         static NeoSystem()
         {
@@ -139,7 +139,6 @@ namespace Neo
         /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
         public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
-            _log = Log.ForContext<NeoSystem>();
             _log.Information("Creating NeoSystem...");
             var sw = Stopwatch.StartNew();
 

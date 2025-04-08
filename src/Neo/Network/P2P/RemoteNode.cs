@@ -88,7 +88,7 @@ namespace Neo.Network.P2P
             knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             localNode.RemoteNodes.TryAdd(Self, this);
-            _log.Debug("RemoteNode created");
+            _log?.Debug("RemoteNode created");
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Neo.Network.P2P
         /// <param name="message">The message to be added.</param>
         private void EnqueueMessage(Message message)
         {
-            _log.Verbose("Enqueuing {Command} ({Priority} priority). Queue sizes: High={HighCount}, Low={LowCount}",
+            _log?.Verbose("Enqueuing {Command} ({Priority} priority). Queue sizes: High={HighCount}, Low={LowCount}",
                 message.Command,
                 message.Command switch { MessageCommand.Alert or MessageCommand.Extensible or MessageCommand.FilterAdd or MessageCommand.FilterClear or MessageCommand.FilterLoad or MessageCommand.GetAddr or MessageCommand.Mempool => "High", _ => "Low" },
                 message_queue_high.Count,
@@ -146,24 +146,24 @@ namespace Neo.Network.P2P
 
         protected override void OnAck()
         {
-            _log.Verbose("Ack received");
+            _log?.Verbose("Ack received");
             ack = true;
             CheckMessageQueue();
         }
 
         protected override void OnData(ByteString data)
         {
-            _log.Verbose("Received {DataLength} bytes", data.Count);
+            _log?.Verbose("Received {DataLength} bytes", data.Count);
             msg_buffer = msg_buffer.Concat(data);
 
             int count = 0;
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
             {
-                _log.Debug("Parsed message {Command} (Length: {Length})", message.Command, message.Size);
+                _log?.Debug("Parsed message {Command} (Length: {Length})", message.Command, message.Size);
                 count++;
                 OnMessage(message);
             }
-            if (count > 1) _log.Debug("Processed {MessageCount} messages from buffer", count);
+            if (count > 1) _log?.Debug("Processed {MessageCount} messages from buffer", count);
         }
 
         protected override void OnReceive(object message)
@@ -194,7 +194,7 @@ namespace Neo.Network.P2P
                     OnStartProtocol();
                     break;
                 case Tcp.ConnectionClosed cc:
-                    _log.Information("Connection closed: {Reason}", cc.ToString());
+                    _log?.Information("Connection closed: {Reason}", cc.ToString());
                     Context.Stop(Self);
                     break;
             }
@@ -202,17 +202,17 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            _log.Verbose("Preparing to relay inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
+            _log?.Verbose("Preparing to relay inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
             if (!IsFullNode)
             {
-                _log.Verbose("Relay skipped: Not a full node.");
+                _log?.Verbose("Relay skipped: Not a full node.");
                 return;
             }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                 {
-                    _log.Verbose("Relay skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
+                    _log?.Verbose("Relay skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
                     return;
                 }
             }
@@ -221,17 +221,17 @@ namespace Neo.Network.P2P
 
         private void OnSend(IInventory inventory)
         {
-            _log.Verbose("Preparing direct send of inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
+            _log?.Verbose("Preparing direct send of inventory {InvType} {InvHash}", inventory.InventoryType, inventory.Hash);
             if (!IsFullNode)
             {
-                _log.Verbose("Direct send skipped: Not a full node.");
+                _log?.Verbose("Direct send skipped: Not a full node.");
                 return;
             }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                 {
-                    _log.Verbose("Direct send skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
+                    _log?.Verbose("Direct send skipped: Tx {InvHash} did not pass bloom filter.", inventory.Hash);
                     return;
                 }
             }
@@ -240,13 +240,13 @@ namespace Neo.Network.P2P
 
         private void OnStartProtocol()
         {
-            _log.Debug("Starting protocol, sending Version message.");
+            _log?.Debug("Starting protocol, sending Version message.");
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, localNode.GetNodeCapabilities())));
         }
 
         protected override void PostStop()
         {
-            _log.Debug("RemoteNode stopped for {RemoteEndPoint}", Remote);
+            _log?.Debug("RemoteNode stopped for {RemoteEndPoint}", Remote);
             timer.CancelIfNotNull();
             localNode.RemoteNodes.TryRemove(Self, out _);
             base.PostStop();
@@ -259,7 +259,7 @@ namespace Neo.Network.P2P
 
         private void SendMessage(Message message)
         {
-            _log.Debug("Sending message {Command} (Length: {Length}, Compressed: {Compressed})",
+            _log?.Debug("Sending message {Command} (Length: {Length}, Compressed: {Compressed})",
                 message.Command, message.Size, Version?.AllowCompression ?? false);
             ack = false;
             // Here it is possible that we dont have the Version message yet,
