@@ -73,16 +73,15 @@ namespace Neo.IO.Caching
             }
         }
 
-        // key-value in head is invalid, and it is used as a sentinel.
-        protected readonly CacheItem _head = new(default!, default!);
+        protected CacheItem Head { get; } = new(default!, default!);
 
 #if NET9_0_OR_GREATER
-        protected readonly Lock _lock = new();
+        private readonly Lock _lock = new();
 #else
-        protected readonly object _lock = new();
+        private readonly object _lock = new();
 #endif
 
-        protected readonly Dictionary<TKey, CacheItem> _innerDictionary = new(comparer);
+        private readonly Dictionary<TKey, CacheItem> _innerDictionary = new(comparer);
 
         public TValue this[TKey key]
         {
@@ -132,13 +131,13 @@ namespace Neo.IO.Caching
             {
                 if (_innerDictionary.Count >= maxCapacity)
                 {
-                    var prev = _head.RemovePrevious();
+                    var prev = Head.RemovePrevious();
                     if (prev is not null) RemoveInternal(prev.Key);
                 }
 
                 var added = new CacheItem(key, item);
                 _innerDictionary.Add(key, added);
-                _head.Add(added);
+                Head.Add(added);
             }
         }
 
@@ -165,7 +164,7 @@ namespace Neo.IO.Caching
                     items = [.. _innerDictionary.Values];
                 }
                 _innerDictionary.Clear();
-                _head.Unlink();
+                Head.Unlink();
             }
 
             if (items != null)

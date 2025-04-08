@@ -20,7 +20,7 @@ namespace Neo.IO.Caching
         protected override void OnAccess(CacheItem item)
         {
             item.Unlink();
-            _head.Add(item);
+            Head.Add(item);
         }
     }
 }
