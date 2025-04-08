@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native
             if (urlSize > MaxUrlLength)
                 throw new ArgumentException($"The url bytes size({urlSize}) cannot be greater than {MaxUrlLength}.");
 
-            var filterSize = filter == null ? 0 : filter.GetStrictUtf8ByteCount();
+            var filterSize = filter is null ? 0 : filter.GetStrictUtf8ByteCount();
             if (filterSize > MaxFilterLength)
                 throw new ArgumentException($"The filter bytes size({filterSize}) cannot be greater than {MaxFilterLength}.");
 
