@@ -120,9 +120,7 @@ namespace Neo.Plugins
         /// Called when the plugin is loaded and need to load the configure file,
         /// or the configuration file has been modified and needs to be reconfigured.
         /// </summary>
-        protected virtual void Configure()
-        {
-        }
+        protected virtual void Configure() { }
 
         private static void ConfigWatcher_Changed(object? sender, FileSystemEventArgs e)
         {
@@ -143,8 +141,7 @@ namespace Neo.Plugins
             AssemblyName an = new(args.Name);
 
             var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
-                           AppDomain.CurrentDomain.GetAssemblies()
-                           .FirstOrDefault(a => a.GetName().Name == an.Name);
+                           AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
             var filename = an.Name + ".dll";
@@ -167,9 +164,7 @@ namespace Neo.Plugins
             }
         }
 
-        public virtual void Dispose()
-        {
-        }
+        public virtual void Dispose() { }
 
         /// <summary>
         /// Loads the configuration file from the path of <see cref="ConfigFile"/>.
@@ -258,9 +253,7 @@ namespace Neo.Plugins
         /// Called when a <see cref="NeoSystem"/> is loaded.
         /// </summary>
         /// <param name="system">The loaded <see cref="NeoSystem"/>.</param>
-        protected internal virtual void OnSystemLoaded(NeoSystem system)
-        {
-        }
+        protected internal virtual void OnSystemLoaded(NeoSystem system) { }
 
         /// <summary>
         /// Sends a message to all plugins. It can be handled by <see cref="OnMessage"/>.

@@ -123,8 +123,14 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
-        /// <param name="storageProvider">The storage engine used to create the <see cref="IStoreProvider"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
-        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        /// <param name="storageProvider">
+        /// The storage engine used to create the <see cref="IStoreProvider"/> objects.
+        /// If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.
+        /// </param>
+        /// <param name="storagePath">
+        /// The path of the storage.
+        /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
+        /// </param>
         public NeoSystem(ProtocolSettings settings, string storageProvider = null, string storagePath = null) :
             this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore))
                 ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath)
@@ -136,7 +142,10 @@ namespace Neo
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageProvider">The <see cref="IStoreProvider"/> to use.</param>
-        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        /// <param name="storagePath">
+        /// The path of the storage.
+        /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
+        /// </param>
         public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
             _log.Information("Creating NeoSystem...");
@@ -247,7 +256,9 @@ namespace Neo
         /// Gets a specified type of service object from the <see cref="NeoSystem"/>.
         /// </summary>
         /// <typeparam name="T">The type of the service object.</typeparam>
-        /// <param name="filter">An action used to filter the service objects. This parameter can be <see langword="null"/>.</param>
+        /// <param name="filter">
+        /// An action used to filter the service objects. his parameter can be <see langword="null"/>.
+        /// </param>
         /// <returns>The service object found.</returns>
         public T GetService<T>(Func<T, bool> filter = null)
         {
@@ -298,7 +309,7 @@ namespace Neo
         /// <summary>
         /// Resumes the startup process of <see cref="LocalNode"/>.
         /// </summary>
-        /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>. </returns>
         public bool ResumeNodeStartup()
         {
             if (Interlocked.Decrement(ref suspend) != 0)
@@ -372,7 +383,9 @@ namespace Neo
         /// </summary>
         /// <param name="hash">The hash of the transaction</param>
         /// <param name="signers">The list of signer accounts of the transaction</param>
-        /// <returns><see langword="true"/> if the transaction conflicts with on-chain transaction; otherwise, <see langword="false"/>.</returns>
+        /// <returns>
+        /// <see langword="true"/> if the transaction conflicts with on-chain transaction; otherwise, <see langword="false"/>.
+        /// </returns>
         public bool ContainsConflictHash(UInt256 hash, IEnumerable<UInt160> signers)
         {
             return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, Settings.MaxTraceableBlocks);
