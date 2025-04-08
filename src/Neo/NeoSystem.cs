@@ -186,7 +186,8 @@ namespace Neo
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Log.Fatal(e.ExceptionObject as Exception ?? new Exception("Non-exception thrown: " + e.ExceptionObject), "Unhandled domain exception. IsTerminating={IsTerminating}", e.IsTerminating);
+            Log.Fatal(e.ExceptionObject as Exception ?? new Exception("Non-exception thrown: " + e.ExceptionObject),
+                "Unhandled domain exception. IsTerminating={IsTerminating}", e.IsTerminating);
             if (e.IsTerminating)
             {
                 Log.CloseAndFlush();
