@@ -341,6 +341,74 @@ namespace Neo.CLI
                         lineBuffer[linesWritten] = "└" + halfLine1 + "┴" + halfLine2 + "┘";
                         colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
 
+                        // Add sync progress bar if node is not fully synced
+                        if (height < maxPeerBlockHeight && maxPeerBlockHeight > 0)
+                        {
+                            // Calculate sync percentage
+                            double syncPercentage = (double)height / maxPeerBlockHeight * 100;
+
+                            // Create progress bar (width: boxWidth - 20)
+                            int progressBarWidth = boxWidth - 30; // Reduce bar width to save space for percentage
+                            int filledWidth = (int)Math.Round(progressBarWidth * syncPercentage / 100);
+                            if (filledWidth > progressBarWidth) filledWidth = progressBarWidth;
+
+                            string progressFilled = new string('█', filledWidth);
+                            string progressEmpty = new string('░', progressBarWidth - filledWidth);
+
+                            // Format with percentage as whole number
+                            string percentDisplay = $"{syncPercentage:F2}%";
+                            string barDisplay = $"[{progressFilled}{progressEmpty}]";
+                            string heightDisplay = $"({height}/{maxPeerBlockHeight})";
+                            string progressText = $" Syncing: {barDisplay} {percentDisplay} {heightDisplay}";
+
+                            // Check if we need to truncate the text to fit the line
+                            int maxWidth = boxWidth - 2;
+                            if (progressText.Length > maxWidth)
+                            {
+                                // Keep the percentage part and truncate other parts if needed
+                                int desiredLength = maxWidth - 3; // for "..."
+
+                                // Try to keep just the sync bar and percentage
+                                string shorterText = $" Syncing: {barDisplay} {percentDisplay}";
+
+                                if (shorterText.Length <= desiredLength)
+                                {
+                                    progressText = shorterText;
+                                }
+                                else
+                                {
+                                    // Even the shortened version is too long, need to shrink the bar
+                                    int barPartStart = " Syncing: ".Length;
+                                    int minBarSize = 10; // Keep at least [████...] so user can see something
+
+                                    int spaceForBar = desiredLength - barPartStart - percentDisplay.Length - 1; // -1 for space
+                                    int newBarLength = Math.Max(minBarSize, spaceForBar);
+
+                                    // Create a smaller bar with ... if needed
+                                    if (newBarLength < barDisplay.Length)
+                                    {
+                                        int filledToShow = Math.Min(filledWidth, newBarLength - 5); // -5 for "[...]"
+                                        barDisplay = "[" + new string('█', filledToShow) + "...]";
+                                    }
+
+                                    progressText = $" Syncing: {barDisplay} {percentDisplay}";
+
+                                    // Final check to ensure we're not still too long
+                                    if (progressText.Length > desiredLength)
+                                    {
+                                        progressText = $" Sync: {percentDisplay}"; // Absolute fallback
+                                    }
+                                }
+                            }
+
+                            // Pad to full width
+                            progressText = progressText.PadRight(maxWidth);
+
+                            // Add to buffer
+                            lineBuffer[linesWritten] = progressText;
+                            colorBuffer[linesWritten++] = ConsoleColor.Yellow;
+                        }
+
                         // Update maxLines for tracking
                         maxLines = Math.Max(maxLines, linesWritten);
 
