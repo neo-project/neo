@@ -17,6 +17,7 @@ using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
+using Serilog;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -42,6 +43,7 @@ namespace Neo.Network.P2P
         private ByteString msg_buffer = ByteString.Empty;
         private bool ack = true;
         private uint lastHeightSent = 0;
+        private readonly ILogger _log;
 
         /// <summary>
         /// The address of the remote Tcp server.
@@ -84,6 +86,7 @@ namespace Neo.Network.P2P
             _knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             _sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             localNode.RemoteNodes.TryAdd(Self, this);
+            _log?.Debug("RemoteNode created");
         }
 
         /// <summary>
@@ -135,6 +138,7 @@ namespace Neo.Network.P2P
 
         protected override void OnAck()
         {
+            _log?.Verbose("Ack received");
             ack = true;
             CheckMessageQueue();
         }
@@ -143,8 +147,13 @@ namespace Neo.Network.P2P
         {
             msg_buffer = msg_buffer.Concat(data);
 
+            int count = 0;
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            {
+                count++;
                 OnMessage(message);
+            }
+            if (count > 1) _log?.Debug("Processed {MessageCount} messages from buffer", count);
         }
 
         protected override void OnReceive(object message)
@@ -174,38 +183,54 @@ namespace Neo.Network.P2P
                 case StartProtocol _:
                     OnStartProtocol();
                     break;
+                case Tcp.ConnectionClosed cc:
+                    _log?.Information("Connection closed: {Reason}", cc.ToString());
+                    Context.Stop(Self);
+                    break;
             }
         }
 
         private void OnRelay(IInventory inventory)
         {
-            if (!IsFullNode) return;
+            if (!IsFullNode)
+            {
+                return;
+            }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
+                {
                     return;
+                }
             }
             EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }
 
         private void OnSend(IInventory inventory)
         {
-            if (!IsFullNode) return;
+            if (!IsFullNode)
+            {
+                return;
+            }
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
+                {
                     return;
+                }
             }
             EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
         private void OnStartProtocol()
         {
+            _log?.Debug("Starting protocol, sending Version message.");
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, localNode.GetNodeCapabilities())));
         }
 
         protected override void PostStop()
         {
+            _log?.Debug("RemoteNode stopped for {RemoteEndPoint}", Remote);
             timer.CancelIfNotNull();
             localNode.RemoteNodes.TryRemove(Self, out _);
             base.PostStop();
@@ -228,7 +253,13 @@ namespace Neo.Network.P2P
         private Message TryParseMessage()
         {
             var length = Message.TryDeserialize(msg_buffer, out var msg);
-            if (length <= 0) return null;
+            if (length < 0)
+            {
+                _log.Warning("Failed to deserialize message from buffer (Length={BufferLength}). Discarding buffer.", msg_buffer.Count);
+                msg_buffer = ByteString.Empty;
+                return null;
+            }
+            if (length == 0) return null;
 
             msg_buffer = msg_buffer.Slice(length).Compact();
             return msg;

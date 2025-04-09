@@ -42,7 +42,7 @@ namespace Neo.Plugins.StateService.Verification
         private void SendVote(VerificationContext context)
         {
             if (context.VoteMessage is null) return;
-            Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay vote, height={context.RootIndex}, retry={context.Retries}");
+            Serilog.Log.Logger.ForContext<VerificationService>().Information("relay vote, height={RootIndex}, retry={Retries}", context.RootIndex, context.Retries);
             StatePlugin._system.Blockchain.Tell(context.VoteMessage);
         }
 
@@ -59,7 +59,7 @@ namespace Neo.Plugins.StateService.Verification
             if (context.IsSender && context.CheckSignatures())
             {
                 if (context.StateRootMessage is null) return;
-                Utility.Log(nameof(VerificationService), LogLevel.Info, $"relay state root, height={context.StateRoot.Index}, root={context.StateRoot.RootHash}");
+                Serilog.Log.Logger.ForContext<VerificationService>().Information("relay state root, height={RootIndex}, root={RootHash}", context.StateRoot.Index, context.StateRoot.RootHash);
                 StatePlugin._system.Blockchain.Tell(context.StateRootMessage);
             }
         }
@@ -83,13 +83,13 @@ namespace Neo.Plugins.StateService.Verification
                 {
                     Index = index,
                 }, ActorRefs.NoSender);
-                Utility.Log(nameof(VerificationContext), LogLevel.Info, $"new validate process, height={index}, index={p.MyIndex}, ongoing={contexts.Count}");
+                Serilog.Log.Logger.ForContext<VerificationService>().Information("new validate process, height={Index}, index={MyIndex}, ongoing={Ongoing}", index, p.MyIndex, contexts.Count);
             }
         }
 
         private void OnValidatedRootPersisted(uint index)
         {
-            Utility.Log(nameof(VerificationService), LogLevel.Info, $"persisted state root, height={index}");
+            Serilog.Log.Logger.ForContext<VerificationService>().Information("persisted state root, height={Index}", index);
             foreach (var i in contexts.Where(i => i.Key <= index))
             {
                 if (contexts.TryRemove(i.Key, out var value))

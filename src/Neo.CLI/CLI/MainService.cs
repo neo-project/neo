@@ -23,6 +23,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
+using Serilog; // Needed for CloseAndFlush
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -83,6 +84,8 @@ namespace Neo.CLI
         /// </summary>
         public MainService() : base()
         {
+            // Logger configuration now happens in OnStart
+            // Command handlers registration
             RegisterCommandHandler<string, UInt160>(false, str => StringToAddress(str, NeoSystem.Settings.AddressVersion));
             RegisterCommandHandler<string, UInt256>(false, UInt256.Parse);
             RegisterCommandHandler<string[], UInt256[]>(str => str.Select(u => UInt256.Parse(u.Trim())).ToArray());
@@ -95,8 +98,6 @@ namespace Neo.CLI
             RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj);
 
             RegisterCommand(this);
-
-            Initialize_Logger();
         }
 
         internal UInt160 StringToAddress(string input, byte version)
@@ -349,14 +350,23 @@ namespace Neo.CLI
 
         public override bool OnStart(string[] args)
         {
+            // Configure logger first using settings ONLY
+            ConfigureLoggerFromSettings();
+
+            // Now call base OnStart which might use the configured logger
             if (!base.OnStart(args)) return false;
+
+            // Proceed with CLI-specific startup (which now also uses the configured logger)
             return OnStartWithCommandLine(args) != 1;
         }
 
         public override void OnStop()
         {
             base.OnStop();
-            Stop();
+            Stop(); // Existing NeoSystem Stop method
+            // Ensure logger is flushed on clean shutdown
+            Log.Information("MainService stopped. Flushing logs...");
+            Log.CloseAndFlush();
         }
 
         public void OpenWallet(string path, string password)
@@ -374,7 +384,6 @@ namespace Neo.CLI
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
-            Utility.LogLevel = options.Verbose;
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
@@ -511,7 +520,6 @@ namespace Neo.CLI
 
         public void Stop()
         {
-            Dispose_Logger();
             Interlocked.Exchange(ref _neoSystem, null)?.Dispose();
         }
 

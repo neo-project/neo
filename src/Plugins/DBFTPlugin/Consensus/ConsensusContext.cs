@@ -21,6 +21,7 @@ using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -185,7 +186,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             catch (Exception exception)
             {
-                Utility.Log(nameof(ConsensusContext), LogLevel.Debug, exception.ToString());
+                _log.Debug(exception, "Error loading consensus context from store");
                 return false;
             }
             return true;

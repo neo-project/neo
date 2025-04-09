@@ -157,11 +157,6 @@ namespace Neo.Plugins.Trackers
                 addressOrScriptHash.ToScriptHash(_neoSystem.Settings.AddressVersion) : UInt160.Parse(addressOrScriptHash);
         }
 
-        public void Log(string message, LogLevel level = LogLevel.Info)
-        {
-            Utility.Log(TrackName, level, message);
-        }
-
         public void Dispose()
         {
             Dispose(true);

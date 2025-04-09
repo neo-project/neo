@@ -21,10 +21,14 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo
@@ -48,7 +52,7 @@ namespace Neo
         /// The <see cref="Akka.Actor.ActorSystem"/> used to create actors for the <see cref="NeoSystem"/>.
         /// </summary>
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
-            $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
+            "akka { log-dead-letters = off , loglevel = warning }" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}");
@@ -104,6 +108,9 @@ namespace Neo
         private ChannelsConfig start_message = null;
         private int suspend = 0;
 
+        // Updated to field initialization pattern
+        private readonly ILogger _log = Log.ForContext<NeoSystem>();
+
         static NeoSystem()
         {
             // Unify unhandled exceptions
@@ -141,10 +148,23 @@ namespace Neo
         /// </param>
         public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
+            _log.Information("Creating NeoSystem...");
+            var sw = Stopwatch.StartNew();
+
             Settings = settings;
             GenesisBlock = CreateGenesisBlock(settings);
             this.storageProvider = storageProvider;
-            store = storageProvider.GetStore(storagePath);
+            try
+            {
+                store = storageProvider.GetStore(storagePath);
+                _log.Debug("Storage provider loaded successfully from path: {StoragePath}", storagePath ?? "Default (InMemory)");
+            }
+            catch (Exception ex)
+            {
+                _log.Fatal(ex, "Failed to load store from path: {StoragePath}", storagePath ?? "Default (InMemory)");
+                throw; // Re-throw after logging to ensure application fails correctly
+            }
+
             MemPool = new MemoryPool(this);
             Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
@@ -152,7 +172,21 @@ namespace Neo
             TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
-            Blockchain.Ask(new Blockchain.Initialize()).Wait();
+
+            try
+            {
+                _log.Debug("Initializing Blockchain actor...");
+                Blockchain.Ask(new Blockchain.Initialize()).Wait();
+                _log.Information("Blockchain actor initialized.");
+            }
+            catch (Exception ex)
+            {
+                _log.Fatal(ex, "Failed to initialize Blockchain actor.");
+                throw; // Re-throw after logging
+            }
+
+            sw.Stop();
+            _log.Information("NeoSystem created and started in {DurationMs} ms", sw.ElapsedMilliseconds);
         }
 
         /// <summary>
@@ -182,20 +216,30 @@ namespace Neo
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Utility.Log("UnhandledException", LogLevel.Fatal, e.ExceptionObject);
+            Log.Fatal(e.ExceptionObject as Exception ?? new Exception("Non-exception thrown: " + e.ExceptionObject),
+                "Unhandled domain exception. IsTerminating={IsTerminating}", e.IsTerminating);
+            if (e.IsTerminating)
+            {
+                Log.CloseAndFlush();
+            }
         }
 
         public void Dispose()
         {
+            _log.Information("Disposing NeoSystem...");
             EnsureStopped(LocalNode);
             EnsureStopped(Blockchain);
             foreach (var p in Plugin.Plugins)
+            {
+                _log.Debug("Disposing plugin {PluginName}", p.Name);
                 p.Dispose();
+            }
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
             HeaderCache.Dispose();
             store.Dispose();
+            _log.Information("NeoSystem disposed.");
         }
 
         /// <summary>
@@ -230,10 +274,26 @@ namespace Neo
         /// <param name="actor">The actor to wait.</param>
         public void EnsureStopped(IActorRef actor)
         {
+            if (actor is null || actor.IsNobody()) return; // Keep null check
+
+            _log.Debug("Ensuring actor {ActorPath} is stopped...", actor.Path);
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
-            ActorSystem.Stop(actor);
-            inbox.Receive(TimeSpan.FromSeconds(30));
+            // Use PoisonPill or system.Stop, PoisonPill is often preferred for graceful shutdown
+            actor.Tell(PoisonPill.Instance, ActorRefs.NoSender);
+            try
+            {
+                // Wait for the Terminated message
+                var terminated = inbox.Receive(TimeSpan.FromMinutes(1)); // Reduced timeout further?
+                if (terminated is Terminated t && t.ActorRef.Equals(actor))
+                    _log.Debug("Actor {ActorPath} terminated.", actor.Path);
+                else
+                    _log.Warning("Received unexpected message {MessageType} while waiting for termination of {ActorPath}", terminated?.GetType().Name ?? "null", actor.Path);
+            }
+            catch (TimeoutException)
+            {
+                _log.Warning("Actor {ActorPath} did not terminate within timeout.", actor.Path);
+            }
         }
 
         /// <summary>

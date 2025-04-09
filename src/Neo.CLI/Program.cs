@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Neo.CLI;
+using Serilog; // Keep for Log.Fatal/Information during startup/shutdown
+using System;
 
 namespace Neo
 {
@@ -17,8 +19,35 @@ namespace Neo
     {
         static void Main(string[] args)
         {
-            var mainService = new MainService();
-            mainService.Run(args);
+            // Serilog configuration is now handled by MainService
+            // Initialize logger to a temporary bootstrap logger until MainService configures it.
+            // This captures early startup errors if MainService creation fails.
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Warning() // Log warnings and errors during bootstrap
+                .WriteTo.Console()
+                .CreateLogger();
+
+            Log.Information("Program.Main started. Creating MainService...");
+
+            try
+            {
+                // MainService will handle settings loading, logger configuration, and execution.
+                var mainService = new MainService();
+                mainService.Run(args); // Pass args to MainService to handle
+            }
+            catch (Exception ex)
+            {
+                // Catch exceptions during MainService creation or Run setup
+                Log.Fatal(ex, "Fatal exception during MainService initialization or execution.");
+                Environment.Exit(1); // Exit with error code
+            }
+            finally
+            {
+                // Ensure final logs are flushed if MainService didn't do it.
+                // MainService.Run should ideally handle its own CloseAndFlush.
+                Log.Information("Program.Main exiting.");
+                Log.CloseAndFlush();
+            }
         }
     }
 }

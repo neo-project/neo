@@ -116,12 +116,12 @@ namespace Neo.Plugins.StateService.Verification
             if (M <= signatures.Count) return false;
             if (index < 0 || verifiers.Length <= index) return false;
             if (signatures.ContainsKey(index)) return false;
-            Utility.Log(nameof(VerificationContext), LogLevel.Info, $"vote received, height={rootIndex}, index={index}");
+            Serilog.Log.Logger.ForContext<VerificationContext>().Information("vote received, height={RootIndex}, index={Index}", rootIndex, index);
             ECPoint validator = verifiers[index];
             byte[] hash_data = StateRoot?.GetSignData(StatePlugin._system.Settings.Network);
             if (hash_data is null || !Crypto.VerifySignature(hash_data, sig, validator))
             {
-                Utility.Log(nameof(VerificationContext), LogLevel.Info, "incorrect vote, invalid signature");
+                Serilog.Log.Logger.ForContext<VerificationContext>().Information("incorrect vote, invalid signature");
                 return false;
             }
             return signatures.TryAdd(index, sig);
