@@ -11,13 +11,11 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Numerics;
@@ -56,33 +54,6 @@ namespace Neo.UnitTests
             byte[] testByteArray = TestUtils.GetByteArray(64, 0x42);
             UInt160 res = testByteArray.ToScriptHash();
             Assert.AreEqual(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), res);
-        }
-
-        [TestMethod]
-        public void TestRemoveHashsetHashSetCache()
-        {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new HashSetCache<int>(10)
-            {
-                2
-            };
-
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
-
-            b.Add(4);
-            b.Add(5);
-            b.Add(1);
-            a.Remove(b);
-
-            CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
         }
 
         [TestMethod]

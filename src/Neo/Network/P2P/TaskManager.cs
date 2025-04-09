@@ -17,7 +17,6 @@ using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -59,7 +58,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
-        private readonly HashSetCache<UInt256> knownHashes;
+        private readonly HashSetUInt256Cache _knownHashes;
         private readonly Dictionary<UInt256, int> globalInvTasks = new();
         private readonly Dictionary<uint, int> globalIndexTasks = new();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new();
@@ -75,7 +74,7 @@ namespace Neo.Network.P2P
         public TaskManager(NeoSystem system)
         {
             this.system = system;
-            knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
+            _knownHashes = new HashSetUInt256Cache(system.MemPool.Capacity * 2 / 5);
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
@@ -113,7 +112,7 @@ namespace Neo.Network.P2P
 
             HashSet<UInt256> hashes = new(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
-            hashes.Remove(knownHashes);
+            hashes.Remove(_knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
@@ -206,7 +205,7 @@ namespace Neo.Network.P2P
 
         private void OnRestartTasks(InvPayload payload)
         {
-            knownHashes.ExceptWith(payload.Hashes);
+            _knownHashes.ExceptWith(payload.Hashes);
             foreach (UInt256 hash in payload.Hashes)
                 globalInvTasks.Remove(hash);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
@@ -216,7 +215,7 @@ namespace Neo.Network.P2P
         private void OnTaskCompleted(IInventory inventory)
         {
             Block block = inventory as Block;
-            knownHashes.Add(inventory.Hash);
+            _knownHashes.Add(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
             if (block is not null)
                 globalIndexTasks.Remove(block.Index);
@@ -350,7 +349,7 @@ namespace Neo.Network.P2P
             // If there are pending tasks of InventoryType.Block we should process them
             if (session.AvailableTasks.Count > 0)
             {
-                session.AvailableTasks.Remove(knownHashes);
+                session.AvailableTasks.Remove(_knownHashes);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
                 HashSet<UInt256> hashes = new(session.AvailableTasks);
