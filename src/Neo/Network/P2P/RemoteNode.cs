@@ -83,10 +83,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.localNode = localNode;
-            _log = Log.ForContext<RemoteNode>().ForContext("Remote", remote).ForContext("Local", local);
-
-            knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
-            sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
+            _knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
+            _sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             localNode.RemoteNodes.TryAdd(Self, this);
             _log?.Debug("RemoteNode created");
         }

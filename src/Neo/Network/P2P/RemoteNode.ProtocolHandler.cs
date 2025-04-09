@@ -47,8 +47,8 @@ namespace Neo.Network.P2P
 
         private static readonly List<MessageReceivedHandler> handlers = new();
         private readonly PendingKnownHashesCollection pendingKnownHashes = new();
-        private readonly HashSetCache<UInt256> knownHashes;
-        private readonly HashSetCache<UInt256> sentHashes;
+        private readonly HashSetCache<UInt256> _knownHashes;
+        private readonly HashSetCache<UInt256> _sentHashes;
         private bool verack = false;
         private BloomFilter bloom_filter;
 
@@ -285,7 +285,7 @@ namespace Neo.Network.P2P
             _log.Verbose("Processing {ProcessCount}/{OriginalCount} hashes for GetData (duplicates/already sent ignored)", hashesToProcess.Count, payload.Hashes.Length);
 
             var notFound = new List<UInt256>();
-            foreach (UInt256 hash in hashesToProcess)
+            foreach (var hash in payload.Hashes.Where(_sentHashes.Add))
             {
                 switch (payload.Type)
                 {
@@ -366,12 +366,7 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            _log.Verbose("Received inventory for potential processing: Type={InvType}, Hash={InvHash}", inventory.InventoryType, inventory.Hash);
-            if (!knownHashes.Add(inventory.Hash))
-            {
-                _log.Verbose("Ignoring inventory {InvHash} (already known)", inventory.Hash);
-                return;
-            }
+            if (!_knownHashes.Add(inventory.Hash)) return;
             pendingKnownHashes.Remove(inventory.Hash);
             system.TaskManager.Tell(inventory);
             switch (inventory)
@@ -402,32 +397,31 @@ namespace Neo.Network.P2P
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            _log.Debug("Received Inv message: Type={InvType}, Count={HashCount}", payload.Type, payload.Hashes.Length);
-            UInt256[] hashes = payload.Hashes.Where(p => !pendingKnownHashes.Contains(p) && !knownHashes.Contains(p) && !sentHashes.Contains(p)).ToArray();
-            if (hashes.Length < payload.Hashes.Length)
-                _log.Verbose("Filtered Inv hashes: Processing {ProcessCount}/{OriginalCount} (pending/known/sent ignored)", hashes.Length, payload.Hashes.Length);
-
-            if (hashes.Length == 0) return;
+            UInt256[] hashes;
+            var source = payload.Hashes
+                .Where(p => !pendingKnownHashes.Contains(p) && !_knownHashes.Contains(p) && !_sentHashes.Contains(p));
             switch (payload.Type)
             {
                 case InventoryType.Block:
                     {
                         var snapshot = system.StoreView;
-                        hashes = hashes.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
-                        if (hashes.Length < payload.Hashes.Length) _log.Verbose("Filtered Block Inv hashes: Processing {ProcessCount} (already in ledger ignored)", hashes.Length);
+                        hashes = source.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
+                        break;
                     }
-                    break;
                 case InventoryType.TX:
                     {
                         var snapshot = system.StoreView;
-                        hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
-                        if (hashes.Length < payload.Hashes.Length) _log.Verbose("Filtered TX Inv hashes: Processing {ProcessCount} (already in ledger ignored)", hashes.Length);
+                        hashes = source.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
+                        break;
                     }
-                    break;
+                default:
+                    {
+                        hashes = source.ToArray();
+                        break;
+                    }
             }
             if (hashes.Length == 0) return;
-            _log.Debug("Registering {HashCount} new tasks with TaskManager for Inv type {InvType}", hashes.Length, payload.Type);
-            foreach (UInt256 hash in hashes)
+            foreach (var hash in hashes)
                 pendingKnownHashes.Add(Tuple.Create(hash, TimeProvider.Current.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
