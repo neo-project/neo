@@ -25,17 +25,17 @@ namespace Neo.Ledger
         /// <summary>
         /// Internal transaction for PoolItem
         /// </summary>
-        public readonly Transaction Tx;
+        public Transaction Tx { get; }
 
         /// <summary>
         /// Timestamp when transaction was stored on PoolItem
         /// </summary>
-        public readonly DateTime Timestamp;
+        public DateTime Timestamp { get; }
 
         /// <summary>
         /// Timestamp when this transaction was last broadcast to other nodes
         /// </summary>
-        public DateTime LastBroadcastTimestamp;
+        public DateTime LastBroadcastTimestamp { get; set; }
 
         internal PoolItem(Transaction tx)
         {
@@ -47,7 +47,8 @@ namespace Neo.Ledger
         public int CompareTo(Transaction otherTx)
         {
             if (otherTx == null) return 1;
-            int ret = (Tx.GetAttribute<HighPriorityAttribute>() != null).CompareTo(otherTx.GetAttribute<HighPriorityAttribute>() != null);
+            var ret = (Tx.GetAttribute<HighPriorityAttribute>() != null)
+                .CompareTo(otherTx.GetAttribute<HighPriorityAttribute>() != null);
             if (ret != 0) return ret;
             // Fees sorted ascending
             ret = Tx.FeePerByte.CompareTo(otherTx.FeePerByte);
