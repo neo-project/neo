@@ -52,8 +52,14 @@ namespace Neo.Persistence
         /// <summary>
         /// Get store from name
         /// </summary>
-        /// <param name="storageProvider">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
-        /// <param name="path">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        /// <param name="storageProvider">
+        /// The storage engine used to create the <see cref="IStore"/> objects.
+        /// If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.
+        /// </param>
+        /// <param name="path">
+        /// The path of the storage.
+        /// If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.
+        /// </param>
         /// <returns>The storage engine.</returns>
         public static IStore GetStore(string storageProvider, string path)
         {
