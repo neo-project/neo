@@ -45,6 +45,7 @@ namespace Neo.Network.P2P
 
         private static readonly List<MessageReceivedHandler> handlers = new();
         private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
+        private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
         private readonly HashSetCache<UInt256> _knownHashes;
         private readonly HashSetCache<UInt256> _sentHashes;
         private bool verack = false;
@@ -239,7 +240,7 @@ namespace Neo.Network.P2P
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             var notFound = new List<UInt256>();
-            foreach (UInt256 hash in payload.Hashes.Where(_sentHashes.Add))
+            foreach (var hash in payload.Hashes.Where(_sentHashes.Add))
             {
                 switch (payload.Type)
                 {
@@ -334,27 +335,31 @@ namespace Neo.Network.P2P
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            var hashes = payload.Hashes
-                .Where(p => !_pendingKnownHashes.Contains(p) && !_knownHashes.Contains(p) && !_sentHashes.Contains(p))
-                .ToArray();
-            if (hashes.Length == 0) return;
+            UInt256[] hashes;
+            var source = payload.Hashes
+                .Where(p => !_pendingKnownHashes.Contains(p) && !_knownHashes.Contains(p) && !_sentHashes.Contains(p));
             switch (payload.Type)
             {
                 case InventoryType.Block:
                     {
                         var snapshot = system.StoreView;
-                        hashes = hashes.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
+                        hashes = source.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
+                        break;
                     }
-                    break;
                 case InventoryType.TX:
                     {
                         var snapshot = system.StoreView;
-                        hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
+                        hashes = source.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
+                        break;
                     }
-                    break;
+                default:
+                    {
+                        hashes = source.ToArray();
+                        break;
+                    }
             }
             if (hashes.Length == 0) return;
-            foreach (UInt256 hash in hashes)
+            foreach (var hash in hashes)
                 _pendingKnownHashes.Add(Tuple.Create(hash, TimeProvider.Current.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
