@@ -461,7 +461,7 @@ namespace Neo.CLI
             // Wait for user input to exit
             Console.ReadKey(true);
             cancel.Cancel();
-            try { Task.WaitAll(task, broadcast); } catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException)) { /* Expected */ } catch { /* Other exceptions */ }
+            try { Task.WaitAll(task, broadcast); } catch { }
             Console.WriteLine();
             Console.CursorVisible = true;
             Console.ResetColor(); // Ensure color is reset on exit
