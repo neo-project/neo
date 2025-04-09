@@ -146,6 +146,19 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Check if exists the deployed contract with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the deployed contract.</param>
+        /// <returns>The deployed contract.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 14, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool IsContract(IReadOnlyStore snapshot, UInt160 hash)
+        {
+            var key = CreateStorageKey(Prefix_Contract, hash);
+            return snapshot.Contains(key);
+        }
+
+        /// <summary>
         /// Maps specified ID to deployed contract.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>

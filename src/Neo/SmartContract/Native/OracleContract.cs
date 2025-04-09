@@ -228,7 +228,7 @@ namespace Neo.SmartContract.Native
             item_id.Add(1);
 
             //Put the request to storage
-            if (ContractManagement.GetContract(engine.SnapshotCache, engine.CallingScriptHash) is null)
+            if (!ContractManagement.IsContract(engine.SnapshotCache, engine.CallingScriptHash))
                 throw new InvalidOperationException();
             var request = new OracleRequest
             {
