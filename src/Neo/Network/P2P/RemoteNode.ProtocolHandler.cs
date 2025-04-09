@@ -45,7 +45,6 @@ namespace Neo.Network.P2P
 
         private static readonly List<MessageReceivedHandler> handlers = new();
         private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
-        private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
         private readonly HashSetCache<UInt256> _knownHashes;
         private readonly HashSetCache<UInt256> _sentHashes;
         private bool verack = false;
