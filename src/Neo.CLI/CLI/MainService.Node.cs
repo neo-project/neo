@@ -106,6 +106,10 @@ namespace Neo.CLI
                         // Capture data (do this frequently)
                         uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
                         uint headerHeight = NeoSystem.HeaderCache.Last?.Index ?? height;
+
+                        // Get maximum block height from connected peers
+                        uint maxPeerBlockHeight = GetMaxPeerBlockHeight();
+
                         TimeSpan uptime = now - startTime;
                         long memoryUsage = GC.GetTotalMemory(false) / (1024 * 1024);
                         double cpuUsage = 0;
@@ -175,23 +179,19 @@ namespace Neo.CLI
                         lineBuffer[linesWritten] = "┌" + horizontalLine + "┐";
                         colorBuffer[linesWritten++] = ConsoleColor.DarkGreen;
 
-                        // ASCII Art Title (NEO NODE)
-                        string[] asciiTitle = {
-                            "  _   _ _____ ___    _   _  ___  ____  _____ ",
-                            " | \\ | | ____/ _ \\  | \\ | |/ _ \\|  _ \\| ____|",
-                            " |  \\| |  _|| | | | |  \\| | | | | | | |  _|  ",
-                            " | |\\  | |__| |_| | | |\\  | |_| | |_| | |___ ",
-                            " |_| \\_|_____\\___/  |_| \\_|\\___/|____/|_____|"
+                        // Simple smaller text for NEO NODE
+                        string[] largeText = {
+                            "           NEO NODE STATUS             ",
                         };
-                        int asciiWidth = asciiTitle.Max(s => s.Length);
+                        int textWidth = largeText.Max(s => s.Length);
                         int contentWidthForTitle = boxWidth - 2; // Width inside the │...│
-                        int asciiPadding = (contentWidthForTitle - asciiWidth) / 2;
-                        string leftAsciiPad = new string(' ', asciiPadding > 0 ? asciiPadding : 0);
+                        int textPadding = (contentWidthForTitle - textWidth) / 2;
+                        string leftTextPad = new string(' ', textPadding > 0 ? textPadding : 0);
 
-                        foreach (string line in asciiTitle)
+                        foreach (string line in largeText)
                         {
                             // Create the centered line segment
-                            string centeredLine = leftAsciiPad + line;
+                            string centeredLine = leftTextPad + line;
                             // Pad the result to the full content width
                             string finalPaddedLine = centeredLine.PadRight(contentWidthForTitle);
                             // Truncate just in case padding calculation had off-by-one on odd widths
@@ -324,13 +324,17 @@ namespace Neo.CLI
                         colorBuffer[linesWritten++] = ConsoleColor.Green;
 
                         var unverifiedStr = $" Unverified Txs: {unverifiedTxCount,10}";
-                        string leftCol5;
+                        var maxHeightStr = $" Max Block Height: {maxPeerBlockHeight,8}";
+                        string leftCol5, rightCol5;
                         if (unverifiedStr.Length > leftSectionWidth)
                             leftCol5 = unverifiedStr.Substring(0, leftSectionWidth - 3) + "...";
                         else
                             leftCol5 = unverifiedStr.PadRight(leftSectionWidth);
-                        string emptyRightColumn = new string(' ', rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftCol5 + "│" + emptyRightColumn + "│";
+                        if (maxHeightStr.Length > rightSectionWidth)
+                            rightCol5 = maxHeightStr.Substring(0, rightSectionWidth - 3) + "...";
+                        else
+                            rightCol5 = maxHeightStr.PadRight(rightSectionWidth);
+                        lineBuffer[linesWritten] = "│" + leftCol5 + "│" + rightCol5 + "│";
                         colorBuffer[linesWritten++] = ConsoleColor.Yellow;
 
                         // Bottom of main box
@@ -483,6 +487,18 @@ namespace Neo.CLI
             if (value < lowThreshold) return ConsoleColor.Green;
             if (value < highThreshold) return ConsoleColor.Yellow;
             return ConsoleColor.Red;
+        }
+
+        private uint GetMaxPeerBlockHeight()
+        {
+            uint maxPeerBlockHeight = 0;
+            foreach (var node in LocalNode.GetRemoteNodes().OrderByDescending(u => u.LastBlockIndex).Take(Console.WindowHeight - 2).ToArray())
+            {
+
+                if (node.LastBlockIndex > maxPeerBlockHeight)
+                    maxPeerBlockHeight = node.LastBlockIndex;
+            }
+            return maxPeerBlockHeight;
         }
     }
 }
