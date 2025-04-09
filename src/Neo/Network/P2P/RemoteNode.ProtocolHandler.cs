@@ -46,8 +46,8 @@ namespace Neo.Network.P2P
 
         private static readonly List<MessageReceivedHandler> handlers = new();
         private readonly PendingKnownHashesCollection pendingKnownHashes = new();
-        private readonly HashSetCache<UInt256> knownHashes;
-        private readonly HashSetCache<UInt256> sentHashes;
+        internal readonly HashSetCache<UInt256> knownHashes;
+        internal readonly HashSetCache<UInt256> sentHashes;
         private bool verack = false;
         private BloomFilter bloom_filter;
 
