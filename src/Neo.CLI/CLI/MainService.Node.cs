@@ -404,12 +404,7 @@ namespace Neo.CLI
 
                                     // Removed redundant clearing logic here
                                 }
-                                catch (ArgumentOutOfRangeException) // Catch specific exception for cursor/buffer issues
-                                {
-                                    // If we encounter a buffer-related error, stop rendering this frame
-                                    break;
-                                }
-                                catch (System.IO.IOException) // Catch potential IO errors during console writes
+                                catch // Catch potential IO errors during console writes
                                 {
                                     // Stop rendering this frame if console handle is invalid (e.g., closed window)
                                     break;
