@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,6 +55,23 @@ namespace Neo.CLI
             Console.WriteLine($"total: {NeoSystem.MemPool.Count}, verified: {verifiedCount}, unverified: {unverifiedCount}");
         }
 
+        private Task CreateBroadcastTask(CancellationToken cancellationToken)
+        {
+            return Task.Run(async () =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        NeoSystem.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView))));
+                        await Task.Delay(NeoSystem.Settings.TimePerBlock / 4, cancellationToken);
+                    }
+                    catch (TaskCanceledException) { break; }
+                    catch { await Task.Delay(500, cancellationToken); }
+                }
+            }, cancellationToken);
+        }
+
         /// <summary>
         /// Process "show state" command
         /// </summary>
@@ -67,24 +83,12 @@ namespace Neo.CLI
             Console.Clear();
 
             // Background task to send ping messages to peers
-            Task broadcast = Task.Run(async () =>
-            {
-                while (!cancel.Token.IsCancellationRequested)
-                {
-                    try
-                    {
-                        NeoSystem.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView))));
-                        await Task.Delay(NeoSystem.Settings.TimePerBlock / 4, cancel.Token);
-                    }
-                    catch (TaskCanceledException) { break; }
-                    catch { await Task.Delay(500, cancel.Token); }
-                }
-            });
+            var broadcast = CreateBroadcastTask(cancel.Token);
 
             // Display task
-            Task task = Task.Run(async () =>
+            var task = Task.Run(async () =>
             {
-                int maxLines = 0;
+                var maxLines = 0;
                 var startTime = DateTime.Now;
                 var refreshInterval = 1000; // Slower refresh to reduce flickering
                 var lastRefresh = DateTime.MinValue;
@@ -104,18 +108,18 @@ namespace Neo.CLI
                         var timeSinceRefresh = (now - lastRefresh).TotalMilliseconds;
 
                         // Capture data (do this frequently)
-                        uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
-                        uint headerHeight = NeoSystem.HeaderCache.Last?.Index ?? height;
+                        var height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+                        var headerHeight = NeoSystem.HeaderCache.Last?.Index ?? height;
 
                         // Get maximum block height from connected peers
-                        uint maxPeerBlockHeight = GetMaxPeerBlockHeight();
+                        var maxPeerBlockHeight = GetMaxPeerBlockHeight();
 
-                        TimeSpan uptime = now - startTime;
-                        long memoryUsage = GC.GetTotalMemory(false) / (1024 * 1024);
+                        var uptime = now - startTime;
+                        var memoryUsage = GC.GetTotalMemory(false) / (1024 * 1024);
                         double cpuUsage = 0;
                         try
                         {
-                            Process currentProcess = Process.GetCurrentProcess();
+                            var currentProcess = Process.GetCurrentProcess();
                             // Ensure uptime is not zero to avoid division by zero
                             if (uptime.TotalMilliseconds > 0 && Environment.ProcessorCount > 0)
                             {
@@ -126,14 +130,14 @@ namespace Neo.CLI
                             }
                         }
                         catch { /* Ignore CPU usage calculation errors */ }
-                        int txPoolSize = NeoSystem.MemPool.Count;
-                        int verifiedTxCount = NeoSystem.MemPool.VerifiedCount;
-                        int unverifiedTxCount = NeoSystem.MemPool.UnVerifiedCount;
-                        int connectedCount = LocalNode.ConnectedCount;
-                        int unconnectedCount = LocalNode.UnconnectedCount;
+                        var txPoolSize = NeoSystem.MemPool.Count;
+                        var verifiedTxCount = NeoSystem.MemPool.VerifiedCount;
+                        var unverifiedTxCount = NeoSystem.MemPool.UnVerifiedCount;
+                        var connectedCount = LocalNode.ConnectedCount;
+                        var unconnectedCount = LocalNode.UnconnectedCount;
 
                         // Check if we need to refresh screen based on changes or time
-                        bool needRefresh = timeSinceRefresh > refreshInterval ||
+                        var needRefresh = timeSinceRefresh > refreshInterval ||
                                           height != lastHeight ||
                                           headerHeight != lastHeaderHeight ||
                                           txPoolSize != lastTxPoolSize ||
@@ -168,32 +172,30 @@ namespace Neo.CLI
 
                         // Save console state and create new buffers
                         var originalColor = Console.ForegroundColor;
-                        int linesWritten = 0;
+                        var linesWritten = 0;
                         lineBuffer.Clear();
                         colorBuffer.Clear();
 
                         // Title box (calculate width based on VISIBLE console size)
-                        int boxWidth = Math.Min(70, Console.WindowWidth - 2); // Use WindowWidth
-                        string horizontalLine = new string('─', boxWidth - 2);
+                        var boxWidth = Math.Min(70, Console.WindowWidth - 2); // Use WindowWidth
+                        var horizontalLine = new string('─', boxWidth - 2);
 
                         lineBuffer[linesWritten] = "┌" + horizontalLine + "┐";
                         colorBuffer[linesWritten++] = ConsoleColor.DarkGreen;
 
                         // Simple smaller text for NEO NODE
-                        string[] largeText = {
-                            "           NEO NODE STATUS             ",
-                        };
-                        int textWidth = largeText.Max(s => s.Length);
-                        int contentWidthForTitle = boxWidth - 2; // Width inside the │...│
-                        int textPadding = (contentWidthForTitle - textWidth) / 2;
-                        string leftTextPad = new string(' ', textPadding > 0 ? textPadding : 0);
+                        string[] largeText = ["           NEO NODE STATUS             "];
+                        var textWidth = largeText.Max(s => s.Length);
+                        var contentWidthForTitle = boxWidth - 2; // Width inside the │...│
+                        var textPadding = (contentWidthForTitle - textWidth) / 2;
+                        var leftTextPad = new string(' ', textPadding > 0 ? textPadding : 0);
 
-                        foreach (string line in largeText)
+                        foreach (var line in largeText)
                         {
                             // Create the centered line segment
-                            string centeredLine = leftTextPad + line;
+                            var centeredLine = leftTextPad + line;
                             // Pad the result to the full content width
-                            string finalPaddedLine = centeredLine.PadRight(contentWidthForTitle);
+                            var finalPaddedLine = centeredLine.PadRight(contentWidthForTitle);
                             // Truncate just in case padding calculation had off-by-one on odd widths
                             if (finalPaddedLine.Length > contentWidthForTitle) finalPaddedLine = finalPaddedLine.Substring(0, contentWidthForTitle);
 
@@ -207,34 +209,34 @@ namespace Neo.CLI
 
                         // Current time and uptime line
                         var timeStr = $" Current Time: {now:yyyy-MM-dd HH:mm:ss}   Uptime: {uptime.Days}d {uptime.Hours:D2}h {uptime.Minutes:D2}m {uptime.Seconds:D2}s";
-                        int contentWidth = boxWidth - 2; // Use contentWidth for padding here
-                        string paddedTime = timeStr.PadRight(contentWidth);
+                        var contentWidth = boxWidth - 2; // Use contentWidth for padding here
+                        var paddedTime = timeStr.PadRight(contentWidth);
                         if (paddedTime.Length > contentWidth) paddedTime = paddedTime.Substring(0, contentWidth - 3) + "...";
                         else paddedTime = paddedTime.Substring(0, contentWidth);
                         lineBuffer[linesWritten] = "│" + paddedTime + "│";
                         colorBuffer[linesWritten++] = ConsoleColor.Gray;
 
                         // Calculate section widths directly based on boxWidth
-                        int totalHorizontal = boxWidth - 3; // Total space for dashes and content, excluding 3 vertical bars │..│..│
-                        int leftSectionWidth = totalHorizontal / 2;
-                        int rightSectionWidth = totalHorizontal - leftSectionWidth;
-                        string halfLine1 = new string('─', leftSectionWidth);
-                        string halfLine2 = new string('─', rightSectionWidth);
+                        var totalHorizontal = boxWidth - 3; // Total space for dashes and content, excluding 3 vertical bars │..│..│
+                        var leftSectionWidth = totalHorizontal / 2;
+                        var rightSectionWidth = totalHorizontal - leftSectionWidth;
+                        var halfLine1 = new string('─', leftSectionWidth);
+                        var halfLine2 = new string('─', rightSectionWidth);
 
                         // Separator between header and sections
                         lineBuffer[linesWritten] = "├" + halfLine1 + "┬" + halfLine2 + "┤";
                         colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
 
                         // BLOCKCHAIN SECTION & SYSTEM RESOURCES header row
-                        string blockchainHeader = " BLOCKCHAIN STATUS";
-                        string resourcesHeader = " SYSTEM RESOURCES";
+                        var blockchainHeader = " BLOCKCHAIN STATUS";
+                        var resourcesHeader = " SYSTEM RESOURCES";
                         string leftHeader, rightHeader;
                         if (blockchainHeader.Length > leftSectionWidth)
-                            leftHeader = blockchainHeader.Substring(0, leftSectionWidth - 3) + "...";
+                            leftHeader = blockchainHeader[..(leftSectionWidth - 3)] + "...";
                         else
                             leftHeader = blockchainHeader.PadRight(leftSectionWidth);
                         if (resourcesHeader.Length > rightSectionWidth)
-                            rightHeader = resourcesHeader.Substring(0, rightSectionWidth - 3) + "...";
+                            rightHeader = resourcesHeader[..(rightSectionWidth - 3)] + "...";
                         else
                             rightHeader = resourcesHeader.PadRight(rightSectionWidth);
                         lineBuffer[linesWritten] = "│" + leftHeader + "│" + rightHeader + "│";
@@ -248,11 +250,11 @@ namespace Neo.CLI
                         var memoryStr = $" Memory Usage:   {memoryUsage,10} MB";
                         string leftCol1, rightCol1;
                         if (heightStr.Length > leftSectionWidth)
-                            leftCol1 = heightStr.Substring(0, leftSectionWidth - 3) + "...";
+                            leftCol1 = heightStr[..(leftSectionWidth - 3)] + "...";
                         else
                             leftCol1 = heightStr.PadRight(leftSectionWidth);
                         if (memoryStr.Length > rightSectionWidth)
-                            rightCol1 = memoryStr.Substring(0, rightSectionWidth - 3) + "...";
+                            rightCol1 = memoryStr[..(rightSectionWidth - 3)] + "...";
                         else
                             rightCol1 = memoryStr.PadRight(rightSectionWidth);
                         lineBuffer[linesWritten] = "│" + leftCol1 + "│" + rightCol1 + "│";
@@ -262,11 +264,11 @@ namespace Neo.CLI
                         var cpuStr = $" CPU Usage:      {cpuUsage,10:F1} %";
                         string leftCol2, rightCol2;
                         if (headerStr.Length > leftSectionWidth)
-                            leftCol2 = headerStr.Substring(0, leftSectionWidth - 3) + "...";
+                            leftCol2 = headerStr[..(leftSectionWidth - 3)] + "...";
                         else
                             leftCol2 = headerStr.PadRight(leftSectionWidth);
                         if (cpuStr.Length > rightSectionWidth)
-                            rightCol2 = cpuStr.Substring(0, rightSectionWidth - 3) + "...";
+                            rightCol2 = cpuStr[..(rightSectionWidth - 3)] + "...";
                         else
                             rightCol2 = cpuStr.PadRight(rightSectionWidth);
                         lineBuffer[linesWritten] = "│" + leftCol2 + "│" + rightCol2 + "│";
@@ -277,15 +279,15 @@ namespace Neo.CLI
                         colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
 
                         // TRANSACTION POOL & NETWORK STATUS header row
-                        string txPoolHeader = " TRANSACTION POOL";
-                        string networkHeader = " NETWORK STATUS";
+                        var txPoolHeader = " TRANSACTION POOL";
+                        var networkHeader = " NETWORK STATUS";
                         string leftHeader2, rightHeader2;
                         if (txPoolHeader.Length > leftSectionWidth)
-                            leftHeader2 = txPoolHeader.Substring(0, leftSectionWidth - 3) + "...";
+                            leftHeader2 = txPoolHeader[..(leftSectionWidth - 3)] + "...";
                         else
                             leftHeader2 = txPoolHeader.PadRight(leftSectionWidth);
                         if (networkHeader.Length > rightSectionWidth)
-                            rightHeader2 = networkHeader.Substring(0, rightSectionWidth - 3) + "...";
+                            rightHeader2 = networkHeader[..(rightSectionWidth - 3)] + "...";
                         else
                             rightHeader2 = networkHeader.PadRight(rightSectionWidth);
                         lineBuffer[linesWritten] = "│" + leftHeader2 + "│" + rightHeader2 + "│";
@@ -299,11 +301,11 @@ namespace Neo.CLI
                         var connectedStr = $" Connected:      {connectedCount,10}";
                         string leftCol3, rightCol3;
                         if (totalTxStr.Length > leftSectionWidth)
-                            leftCol3 = totalTxStr.Substring(0, leftSectionWidth - 3) + "...";
+                            leftCol3 = totalTxStr[..(leftSectionWidth - 3)] + "...";
                         else
                             leftCol3 = totalTxStr.PadRight(leftSectionWidth);
                         if (connectedStr.Length > rightSectionWidth)
-                            rightCol3 = connectedStr.Substring(0, rightSectionWidth - 3) + "...";
+                            rightCol3 = connectedStr[..(rightSectionWidth - 3)] + "...";
                         else
                             rightCol3 = connectedStr.PadRight(rightSectionWidth);
                         lineBuffer[linesWritten] = "│" + leftCol3 + "│" + rightCol3 + "│";
@@ -313,11 +315,11 @@ namespace Neo.CLI
                         var unconnectedStr = $" Unconnected:    {unconnectedCount,10}";
                         string leftCol4, rightCol4;
                         if (verifiedStr.Length > leftSectionWidth)
-                            leftCol4 = verifiedStr.Substring(0, leftSectionWidth - 3) + "...";
+                            leftCol4 = verifiedStr[..(leftSectionWidth - 3)] + "...";
                         else
                             leftCol4 = verifiedStr.PadRight(leftSectionWidth);
                         if (unconnectedStr.Length > rightSectionWidth)
-                            rightCol4 = unconnectedStr.Substring(0, rightSectionWidth - 3) + "...";
+                            rightCol4 = unconnectedStr[..(rightSectionWidth - 3)] + "...";
                         else
                             rightCol4 = unconnectedStr.PadRight(rightSectionWidth);
                         lineBuffer[linesWritten] = "│" + leftCol4 + "│" + rightCol4 + "│";
@@ -327,11 +329,11 @@ namespace Neo.CLI
                         var maxHeightStr = $" Max Block Height: {maxPeerBlockHeight,8}";
                         string leftCol5, rightCol5;
                         if (unverifiedStr.Length > leftSectionWidth)
-                            leftCol5 = unverifiedStr.Substring(0, leftSectionWidth - 3) + "...";
+                            leftCol5 = unverifiedStr[..(leftSectionWidth - 3)] + "...";
                         else
                             leftCol5 = unverifiedStr.PadRight(leftSectionWidth);
                         if (maxHeightStr.Length > rightSectionWidth)
-                            rightCol5 = maxHeightStr.Substring(0, rightSectionWidth - 3) + "...";
+                            rightCol5 = maxHeightStr[..(rightSectionWidth - 3)] + "...";
                         else
                             rightCol5 = maxHeightStr.PadRight(rightSectionWidth);
                         lineBuffer[linesWritten] = "│" + leftCol5 + "│" + rightCol5 + "│";
@@ -345,31 +347,31 @@ namespace Neo.CLI
                         if (height < maxPeerBlockHeight && maxPeerBlockHeight > 0)
                         {
                             // Calculate sync percentage
-                            double syncPercentage = (double)height / maxPeerBlockHeight * 100;
+                            var syncPercentage = (double)height / maxPeerBlockHeight * 100;
 
                             // Create progress bar (width: boxWidth - 20)
-                            int progressBarWidth = boxWidth - 30; // Reduce bar width to save space for percentage
-                            int filledWidth = (int)Math.Round(progressBarWidth * syncPercentage / 100);
+                            var progressBarWidth = boxWidth - 25; // Reduce bar width to save space for percentage
+                            var filledWidth = (int)Math.Round(progressBarWidth * syncPercentage / 100);
                             if (filledWidth > progressBarWidth) filledWidth = progressBarWidth;
 
-                            string progressFilled = new string('█', filledWidth);
-                            string progressEmpty = new string('░', progressBarWidth - filledWidth);
+                            var progressFilled = new string('█', filledWidth);
+                            var progressEmpty = new string('░', progressBarWidth - filledWidth);
 
                             // Format with percentage as whole number
-                            string percentDisplay = $"{syncPercentage:F2}%";
-                            string barDisplay = $"[{progressFilled}{progressEmpty}]";
-                            string heightDisplay = $"({height}/{maxPeerBlockHeight})";
-                            string progressText = $" Syncing: {barDisplay} {percentDisplay} {heightDisplay}";
+                            var percentDisplay = $"{syncPercentage:F2}%";
+                            var barDisplay = $"[{progressFilled}{progressEmpty}]";
+                            var heightDisplay = $"({height}/{maxPeerBlockHeight})";
+                            var progressText = $" Syncing: {barDisplay} {percentDisplay} {heightDisplay}";
 
                             // Check if we need to truncate the text to fit the line
-                            int maxWidth = boxWidth - 2;
+                            var maxWidth = boxWidth - 2;
                             if (progressText.Length > maxWidth)
                             {
                                 // Keep the percentage part and truncate other parts if needed
-                                int desiredLength = maxWidth - 3; // for "..."
+                                var desiredLength = maxWidth - 3; // for "..."
 
                                 // Try to keep just the sync bar and percentage
-                                string shorterText = $" Syncing: {barDisplay} {percentDisplay}";
+                                var shorterText = $" Syncing: {barDisplay} {percentDisplay}";
 
                                 if (shorterText.Length <= desiredLength)
                                 {
@@ -378,16 +380,16 @@ namespace Neo.CLI
                                 else
                                 {
                                     // Even the shortened version is too long, need to shrink the bar
-                                    int barPartStart = " Syncing: ".Length;
-                                    int minBarSize = 10; // Keep at least [████...] so user can see something
+                                    var barPartStart = " Syncing: ".Length;
+                                    var minBarSize = 10; // Keep at least [████...] so user can see something
 
-                                    int spaceForBar = desiredLength - barPartStart - percentDisplay.Length - 1; // -1 for space
-                                    int newBarLength = Math.Max(minBarSize, spaceForBar);
+                                    var spaceForBar = desiredLength - barPartStart - percentDisplay.Length - 1; // -1 for space
+                                    var newBarLength = Math.Max(minBarSize, spaceForBar);
 
                                     // Create a smaller bar with ... if needed
                                     if (newBarLength < barDisplay.Length)
                                     {
-                                        int filledToShow = Math.Min(filledWidth, newBarLength - 5); // -5 for "[...]"
+                                        var filledToShow = Math.Min(filledWidth, newBarLength - 5); // -5 for "[...]"
                                         barDisplay = "[" + new string('█', filledToShow) + "...]";
                                     }
 
@@ -416,7 +418,7 @@ namespace Neo.CLI
                         try
                         {
                             // Calculate a safe position for the footer based on WINDOW height
-                            int footerPosition = Math.Min(Console.WindowHeight - 2, linesWritten + 1);
+                            var footerPosition = Math.Min(Console.WindowHeight - 2, linesWritten + 1);
 
                             // Make sure it's within bounds and at least one line below the content
                             footerPosition = Math.Max(linesWritten, footerPosition);
@@ -424,10 +426,10 @@ namespace Neo.CLI
                             if (footerPosition < Console.WindowHeight - 1) // Check against WindowHeight, fixed formatting
                             {
                                 // Footer message with auto-truncation to fit screen
-                                string footerMsg = "Press any key to exit | Refresh: every 1 second or on blockchain change";
-                                int footerMaxWidth = Console.WindowWidth - 2; // Use WindowWidth
+                                var footerMsg = "Press any key to exit | Refresh: every 1 second or on blockchain change";
+                                var footerMaxWidth = Console.WindowWidth - 2; // Use WindowWidth
                                 if (footerMsg.Length > footerMaxWidth)
-                                    footerMsg = footerMsg.Substring(0, footerMaxWidth - 3) + "...";
+                                    footerMsg = footerMsg[..(footerMaxWidth - 3)] + "...";
 
                                 lineBuffer[footerPosition] = footerMsg;
                                 colorBuffer[footerPosition] = ConsoleColor.DarkGreen;
@@ -437,10 +439,10 @@ namespace Neo.CLI
                             Console.SetCursorPosition(0, 0);
 
                             // Determine actual number of lines to render based on WINDOW height
-                            int linesToRender = Math.Min(maxLines, Console.WindowHeight - 1);
+                            var linesToRender = Math.Min(maxLines, Console.WindowHeight - 1);
 
                             // Write each line with proper colors and spacing
-                            for (int i = 0; i < linesToRender; i++)
+                            for (var i = 0; i < linesToRender; i++)
                             {
                                 try
                                 {
@@ -456,18 +458,18 @@ namespace Neo.CLI
                                     Console.SetCursorPosition(0, i);
 
                                     // Get content and color
-                                    string lineContent = lineBuffer.TryGetValue(i, out var content) ? content : string.Empty;
+                                    var lineContent = lineBuffer.TryGetValue(i, out var content) ? content : string.Empty;
                                     ConsoleColor color = colorBuffer.TryGetValue(i, out var lineColor) ? lineColor : originalColor;
 
                                     // Ensure line content does not exceed box width and pad/truncate
-                                    string lineToWrite = lineContent;
+                                    var lineToWrite = lineContent;
                                     if (lineToWrite.Length < boxWidth)
                                     {
                                         lineToWrite += new string(' ', boxWidth - lineToWrite.Length);
                                     }
                                     else if (lineToWrite.Length > boxWidth)
                                     {
-                                        lineToWrite = lineToWrite.Substring(0, boxWidth);
+                                        lineToWrite = lineToWrite[..boxWidth];
                                     }
 
                                     // Apply color and write content for the box
@@ -483,14 +485,13 @@ namespace Neo.CLI
                                 }
                             }
                             // Add blank lines below content if needed to clear previous footer etc. based on WINDOW height
-                            for (int i = linesToRender; i < maxLines; i++)
+                            for (var i = linesToRender; i < maxLines; i++)
                             {
                                 if (i >= Console.WindowHeight)
                                     break;
                                 Console.SetCursorPosition(0, i);
                                 Console.Write(new string(' ', Console.WindowWidth));
                             }
-
                         }
                         catch (Exception ex)
                         {
@@ -559,14 +560,10 @@ namespace Neo.CLI
 
         private uint GetMaxPeerBlockHeight()
         {
-            uint maxPeerBlockHeight = 0;
-            foreach (var node in LocalNode.GetRemoteNodes().OrderByDescending(u => u.LastBlockIndex).Take(Console.WindowHeight - 2).ToArray())
-            {
+            var nodes = LocalNode.GetRemoteNodes().ToArray();
+            if (nodes.Length == 0) return 0;
 
-                if (node.LastBlockIndex > maxPeerBlockHeight)
-                    maxPeerBlockHeight = node.LastBlockIndex;
-            }
-            return maxPeerBlockHeight;
+            return nodes.Select(u => u.LastBlockIndex).Max();
         }
     }
 }
