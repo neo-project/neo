@@ -489,7 +489,5 @@ namespace Neo.CLI
             if (value < highThreshold) return ConsoleColor.Yellow;
             return ConsoleColor.Red;
         }
-
-        // PadRight helper removed, logic is inline now.
     }
 }
