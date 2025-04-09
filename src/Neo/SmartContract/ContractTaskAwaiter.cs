@@ -15,17 +15,17 @@ using System.Threading;
 
 namespace Neo.SmartContract
 {
-    class ContractTaskAwaiter : INotifyCompletion
+    internal class ContractTaskAwaiter : INotifyCompletion
     {
-        private Action continuation;
-        private Exception exception;
+        private Action _continuation;
+        private Exception _exception;
 
         public bool IsCompleted { get; private set; }
 
         public void GetResult()
         {
-            if (exception is not null)
-                throw exception;
+            if (_exception is not null)
+                throw _exception;
         }
 
         public void SetResult() => RunContinuation();
@@ -34,35 +34,35 @@ namespace Neo.SmartContract
 
         public void SetException(Exception exception)
         {
-            this.exception = exception;
+            _exception = exception;
             RunContinuation();
         }
 
         public void OnCompleted(Action continuation)
         {
-            Interlocked.CompareExchange(ref this.continuation, continuation, null);
+            Interlocked.CompareExchange(ref _continuation, continuation, null);
         }
 
         protected void RunContinuation()
         {
             IsCompleted = true;
-            continuation?.Invoke();
+            _continuation?.Invoke();
         }
     }
 
-    class ContractTaskAwaiter<T> : ContractTaskAwaiter
+    internal class ContractTaskAwaiter<T> : ContractTaskAwaiter
     {
-        private T result;
+        private T _result;
 
         public new T GetResult()
         {
             base.GetResult();
-            return result;
+            return _result;
         }
 
         public void SetResult(T result)
         {
-            this.result = result;
+            _result = result;
             RunContinuation();
         }
 
