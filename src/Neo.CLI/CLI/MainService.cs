@@ -23,6 +23,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
+using Serilog; // Needed for CloseAndFlush
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -39,7 +40,6 @@ using System.Threading.Tasks;
 using Array = System.Array;
 using ECCurve = Neo.Cryptography.ECC.ECCurve;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
-using Serilog; // Needed for CloseAndFlush
 
 namespace Neo.CLI
 {
@@ -351,11 +351,11 @@ namespace Neo.CLI
         public override bool OnStart(string[] args)
         {
             // Configure logger first using settings ONLY
-            ConfigureLoggerFromSettings(); 
+            ConfigureLoggerFromSettings();
 
             // Now call base OnStart which might use the configured logger
-            if (!base.OnStart(args)) return false; 
-            
+            if (!base.OnStart(args)) return false;
+
             // Proceed with CLI-specific startup (which now also uses the configured logger)
             return OnStartWithCommandLine(args) != 1;
         }

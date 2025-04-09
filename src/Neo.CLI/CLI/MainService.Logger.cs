@@ -43,9 +43,10 @@ namespace Neo.CLI
             // --- 1. Load Settings --- 
             try
             {
-                if (Settings.Default == null) {
-                     Console.Error.WriteLine("Warning: Settings.Default is null during logger configuration. Using hardcoded defaults.");
-                     try { Settings.Initialize(new ConfigurationBuilder().Build()); } catch { }
+                if (Settings.Default == null)
+                {
+                    Console.Error.WriteLine("Warning: Settings.Default is null during logger configuration. Using hardcoded defaults.");
+                    try { Settings.Initialize(new ConfigurationBuilder().Build()); } catch { }
                 }
 
                 // Get logger settings from Settings.Default, using defaults if null
@@ -127,10 +128,10 @@ namespace Neo.CLI
                 }
                 catch (Exception sinkEx)
                 {
-                     // Catch errors during sink configuration itself (e.g., locking)
-                     Console.Error.WriteLine($"Failed to configure file sink at '{finalLogPath}': {sinkEx.Message}. File logging disabled for this session.");
-                     Log.Error(sinkEx, "Failed to configure file sink at {Path}.", finalLogPath);
-                     actualFileSinkPresent = false; // Ensure state reflects failure
+                    // Catch errors during sink configuration itself (e.g., locking)
+                    Console.Error.WriteLine($"Failed to configure file sink at '{finalLogPath}': {sinkEx.Message}. File logging disabled for this session.");
+                    Log.Error(sinkEx, "Failed to configure file sink at {Path}.", finalLogPath);
+                    actualFileSinkPresent = false; // Ensure state reflects failure
                 }
             }
 
@@ -186,35 +187,35 @@ namespace Neo.CLI
                     // Ensure directory exists - might have been deleted or become inaccessible since startup?
                     if (!Directory.Exists(logPath))
                     {
-                         Log.Warning("Log directory {path} missing during reconfigure. Attempting to create.", logPath);
+                        Log.Warning("Log directory {path} missing during reconfigure. Attempting to create.", logPath);
                         Directory.CreateDirectory(logPath);
                         Log.Information("Recreated log directory: {path}", Path.GetFullPath(logPath));
                     }
                 }
                 catch (Exception dirEx)
                 {
-                     Console.Error.WriteLine($"Error ensuring configured log directory '{logPath}' during reconfigure: {dirEx.Message}. Falling back to current directory for this reconfiguration.");
-                     Log.Warning(dirEx, "Failed to ensure configured log directory {ConfigPath} during reconfigure, falling back to current directory.", logPath);
-                     finalLogPath = "."; // Fallback for this specific reconfiguration
+                    Console.Error.WriteLine($"Error ensuring configured log directory '{logPath}' during reconfigure: {dirEx.Message}. Falling back to current directory for this reconfiguration.");
+                    Log.Warning(dirEx, "Failed to ensure configured log directory {ConfigPath} during reconfigure, falling back to current directory.", logPath);
+                    finalLogPath = "."; // Fallback for this specific reconfiguration
                 }
-                
+
                 // Try adding file sink with potentially adjusted path
-                try 
+                try
                 {
-                     logConfig = logConfig.WriteTo.File(
-                        Path.Combine(finalLogPath, "neo-node-.log"),
-                        rollingInterval: RollingInterval.Day,
-                        fileSizeLimitBytes: 52428800,
-                        retainedFileCountLimit: 7,
-                        buffered: false, // Keep unbuffered
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}",
-                        restrictedToMinimumLevel: targetLevel); // Use the potentially updated targetLevel
+                    logConfig = logConfig.WriteTo.File(
+                       Path.Combine(finalLogPath, "neo-node-.log"),
+                       rollingInterval: RollingInterval.Day,
+                       fileSizeLimitBytes: 52428800,
+                       retainedFileCountLimit: 7,
+                       buffered: false, // Keep unbuffered
+                       outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}",
+                       restrictedToMinimumLevel: targetLevel); // Use the potentially updated targetLevel
                 }
                 catch (Exception sinkEx)
                 {
-                     Console.Error.WriteLine($"Failed to re-add file sink at '{finalLogPath}' during reconfigure: {sinkEx.Message}.");
-                     Log.Error(sinkEx, "Failed to re-add file sink at {Path} during reconfigure.", finalLogPath);
-                     // Don't change _isFileSinkPresent state, just log the failure to re-add
+                    Console.Error.WriteLine($"Failed to re-add file sink at '{finalLogPath}' during reconfigure: {sinkEx.Message}.");
+                    Log.Error(sinkEx, "Failed to re-add file sink at {Path} during reconfigure.", finalLogPath);
+                    // Don't change _isFileSinkPresent state, just log the failure to re-add
                 }
             }
 

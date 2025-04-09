@@ -436,7 +436,7 @@ namespace Neo.Plugins.OracleService
                         int processedCount = 0;
                         foreach (var (id, request) in pendingRequests)
                         {
-                            if (cancelSource.IsCancellationRequested) 
+                            if (cancelSource.IsCancellationRequested)
                             {
                                 _log.Debug("Cancellation requested during request processing.");
                                 break; // Exit inner loop
@@ -461,38 +461,38 @@ namespace Neo.Plugins.OracleService
                     }
                     _log.Error(ex, "Unhandled exception in Oracle request processing loop.");
                     // Avoid tight loop on persistent errors
-                     try
-                     {
-                         _log.Verbose("Delaying after error...");
-                         await Task.Delay(5000, cancelSource.Token); 
-                     }
-                     catch (OperationCanceledException)
-                     {
-                         _log.Information("Delay cancelled during error handling, stopping loop.");
-                         break; // Exit loop if delay is cancelled
-                     }
+                    try
+                    {
+                        _log.Verbose("Delaying after error...");
+                        await Task.Delay(5000, cancelSource.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _log.Information("Delay cancelled during error handling, stopping loop.");
+                        break; // Exit loop if delay is cancelled
+                    }
                 }
 
-                if (cancelSource.IsCancellationRequested) 
+                if (cancelSource.IsCancellationRequested)
                 {
                     _log.Debug("Cancellation requested before final delay.");
                     break; // Check again before delay
                 }
                 _log.Verbose("Oracle processing loop delay (500ms)...");
-                 try
-                 {
-                     await Task.Delay(500, cancelSource.Token);
-                     _log.Verbose("Loop delay completed.");
-                 }
-                 catch (OperationCanceledException)
-                 {
-                     _log.Information("Delay cancelled, stopping loop.");
-                     break; // Exit loop if delay is cancelled
-                 }
-                 _log.Verbose("Oracle loop iteration end.");
+                try
+                {
+                    await Task.Delay(500, cancelSource.Token);
+                    _log.Verbose("Loop delay completed.");
+                }
+                catch (OperationCanceledException)
+                {
+                    _log.Information("Delay cancelled, stopping loop.");
+                    break; // Exit loop if delay is cancelled
+                }
+                _log.Verbose("Oracle loop iteration end.");
             }
 
-            status = OracleStatus.Stopped; 
+            status = OracleStatus.Stopped;
             _log.Information("Oracle request processing loop stopped cleanly.");
         }
 

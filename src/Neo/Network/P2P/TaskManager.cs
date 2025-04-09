@@ -302,7 +302,7 @@ namespace Neo.Network.P2P
                 _log.Verbose("Removed global task for hash {InvHash}", inventory.Hash);
             // else
 
-                // _log.Warning("Completed task for hash {InvHash} was not in globalInvTasks?", inventory.Hash);
+            // _log.Warning("Completed task for hash {InvHash} was not in globalInvTasks?", inventory.Hash);
 
             if (block is not null)
             {

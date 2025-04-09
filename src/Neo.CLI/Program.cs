@@ -11,7 +11,7 @@
 
 using Neo.CLI;
 using Serilog; // Keep for Log.Fatal/Information during startup/shutdown
-using System; 
+using System;
 
 namespace Neo
 {
@@ -26,13 +26,13 @@ namespace Neo
                 .MinimumLevel.Warning() // Log warnings and errors during bootstrap
                 .WriteTo.Console()
                 .CreateLogger();
-                
+
             Log.Information("Program.Main started. Creating MainService...");
 
             try
             {
                 // MainService will handle settings loading, logger configuration, and execution.
-                var mainService = new MainService(); 
+                var mainService = new MainService();
                 mainService.Run(args); // Pass args to MainService to handle
             }
             catch (Exception ex)
