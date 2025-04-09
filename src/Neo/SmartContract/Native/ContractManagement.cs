@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the deployed contract.</param>
-        /// <returns>The deployed contract.</returns>
+        /// <returns>True if deployed contract exists.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 14, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsContract(IReadOnlyStore snapshot, UInt160 hash)
         {
