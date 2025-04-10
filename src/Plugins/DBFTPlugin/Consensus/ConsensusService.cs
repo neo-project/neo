@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.Extensions;
 using Neo.Ledger;
+using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
@@ -74,6 +75,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"Persisted {nameof(Block)}: height={block.Index} hash={block.Hash} tx={block.Transactions.Length} nonce={block.Nonce}");
+            PrometheusService.Instance.IncConsensusNewBlockPersisted();
+
             knownHashes.Clear();
             InitializeConsensus(0);
         }
@@ -81,6 +84,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void InitializeConsensus(byte viewNumber)
         {
             context.Reset(viewNumber);
+            PrometheusService.Instance.SetConsensusHeight(context.Block.Index);
+            PrometheusService.Instance.SetConsensusView(context.ViewNumber);
+
             if (viewNumber > 0)
                 Log($"View changed: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"Initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
@@ -146,6 +152,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             started = true;
             if (!dbftSettings.IgnoreRecoveryLogs && context.Load())
             {
+                // Recovery logs loaded, indicating potential previous unexpected shutdown
+                PrometheusService.Instance.IncUnexpectedShutdown("ConsensusRecovery");
+
                 if (context.Transactions != null)
                 {
                     blockchain.Ask<FillCompleted>(new FillMemoryPool
@@ -171,6 +180,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (timer.Height != context.Block.Index || timer.ViewNumber != context.ViewNumber) return;
             if (context.IsPrimary && !context.RequestSentOrReceived)
             {
+                // Primary's timer expired before sending PrepareRequest - potential missed block
+                PrometheusService.Instance.IncValidatorMissedBlocks();
                 SendPrepareRequest();
             }
             else if ((context.IsPrimary && context.RequestSentOrReceived) || context.IsBackup)
@@ -199,7 +210,11 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void SendPrepareRequest()
         {
             Log($"Sending {nameof(PrepareRequest)}: height={context.Block.Index} view={context.ViewNumber}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+
+            using (PrometheusService.Instance.MeasureConsensusBlockGeneration())
+            {
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+            }
 
             if (context.Validators.Length == 1)
                 CheckPreparations();

@@ -16,6 +16,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
+using Neo.Monitoring;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
@@ -144,7 +145,13 @@ namespace Neo.Network.P2P
             msg_buffer = msg_buffer.Concat(data);
 
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+            {
+                if (PrometheusService.Instance.IsEnabled)
+                {
+                    PrometheusService.Instance.IncNetworkP2PMessagesReceived(message.Command.ToString());
+                }
                 OnMessage(message);
+            }
         }
 
         protected override void OnReceive(object message)
@@ -223,14 +230,36 @@ namespace Neo.Network.P2P
             // so we need to send the message uncompressed
             SendData(ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false)));
             sentCommands[(byte)message.Command] = true;
+
+            // Increment Prometheus counter for sent messages
+            if (PrometheusService.Instance.IsEnabled)
+            {
+                PrometheusService.Instance.IncNetworkP2PMessagesSent(message.Command.ToString());
+            }
         }
 
         private Message TryParseMessage()
         {
             var length = Message.TryDeserialize(msg_buffer, out var msg);
-            if (length <= 0) return null;
+            if (length <= 0)
+            {
+                // Increment counter for invalid/deserialization errors
+                if (length < 0) // -1 typically indicates insufficient data, 0 might mean error
+                {
+                    PrometheusService.Instance.IncInvalidP2PMessage("DeserializationError");
+                    // Consider clearing msg_buffer or closing connection if error is persistent/severe
+                    msg_buffer = ByteString.Empty; // Clear buffer on error
+                }
+                return null;
+            }
 
             msg_buffer = msg_buffer.Slice(length).Compact();
+            // TODO: Add basic payload verification here if possible and increment on failure
+            // if (!msg.VerifyPayload()) // Example
+            // {
+            //     PrometheusService.Instance.IncInvalidP2PMessage("PayloadVerificationFailed");
+            //     return null; // Discard invalid message
+            // }
             return msg;
         }
     }

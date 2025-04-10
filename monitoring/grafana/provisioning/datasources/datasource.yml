@@ -1,0 +1,7 @@
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090 # Use service name
+    isDefault: true
+    editable: true 

@@ -14,6 +14,7 @@ using Neo.ConsoleService;
 using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
+using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
@@ -305,10 +306,58 @@ namespace Neo.CLI
             var protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
+
+            // Initialize Prometheus from command line parameters
+            Neo.Monitoring.PrometheusSettings? monitoringPrometheusSettings = null;
+            if (!string.IsNullOrEmpty(options.Prometheus))
+            {
+                try
+                {
+                    var parts = options.Prometheus.Split(':');
+                    if (parts.Length == 2 && int.TryParse(parts[1], out int port))
+                    {
+                        // Create PrometheusSettings directly from command-line parameter
+                        monitoringPrometheusSettings = new Neo.Monitoring.PrometheusSettings
+                        {
+                            Enabled = true,
+                            Host = parts[0], // Use the host value the user provided in the --prometheus parameter
+                            Port = port
+                        };
+                        ConsoleHelper.Info($"Prometheus metrics enabled on {parts[0]}:{port}");
+                        ConsoleHelper.Info($"Access metrics via: http://localhost:{port}/metrics or http://{parts[0]}:{port}/metrics");
+                    }
+                    else
+                    {
+                        ConsoleHelper.Warning($"Invalid format for --prometheus option: '{options.Prometheus}'. Expected 'host:port'. Prometheus disabled.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ConsoleHelper.Error($"Error setting up Prometheus: {ex.Message}. Prometheus disabled.");
+                }
+            }
+
             try
             {
-                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine,
-                    string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+                // Get the configured storage path for NeoSystem and ensure it's absolute
+                string formattedStoragePath = string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8"));
+                if (!Path.IsPathRooted(formattedStoragePath))
+                    formattedStoragePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, formattedStoragePath));
+                ConsoleHelper.Info($"Using storage path: {formattedStoragePath}");
+
+                NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, formattedStoragePath);
+                // Start Prometheus Service with the parsed settings and the NeoSystem instance
+                PrometheusService.Instance.Start(monitoringPrometheusSettings, NeoSystem);
+
+                // Output additional debug information about Prometheus settings
+                if (monitoringPrometheusSettings != null && monitoringPrometheusSettings.Enabled)
+                {
+                    ConsoleHelper.Info($"Prometheus metrics available at: http://{monitoringPrometheusSettings.Host}:{monitoringPrometheusSettings.Port}/metrics");
+                    if (monitoringPrometheusSettings.Host == "0.0.0.0")
+                    {
+                        ConsoleHelper.Info($"Access locally via: http://127.0.0.1:{monitoringPrometheusSettings.Port}/metrics");
+                    }
+                }
             }
             catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))
             {
@@ -422,6 +471,8 @@ namespace Neo.CLI
         public void Stop()
         {
             Dispose_Logger();
+            // Stop Prometheus Service before disposing NeoSystem
+            PrometheusService.Instance.Dispose();
             Interlocked.Exchange(ref _neoSystem, null)?.Dispose();
         }
 

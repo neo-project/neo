@@ -13,6 +13,7 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
 using Neo.IO.Actors;
+using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -439,6 +440,9 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
+            // Start measuring block processing time
+            using var blockProcessingTimer = PrometheusService.Instance.MeasureBlockProcessing();
+
             using (var snapshot = system.GetSnapshotCache())
             {
                 List<ApplicationExecuted> all_application_executed = new();
@@ -462,6 +466,9 @@ namespace Neo.Ledger
                 foreach (TransactionState transactionState in transactionStates)
                 {
                     Transaction tx = transactionState.Transaction;
+                    // Start measuring transaction execution time
+                    var txSw = Stopwatch.StartNew();
+
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
@@ -473,6 +480,10 @@ namespace Neo.Ledger
                     {
                         clonedSnapshot = snapshot.CloneCache();
                     }
+                    // Record transaction execution time
+                    txSw.Stop();
+                    PrometheusService.Instance.RecordTransactionExecutionTime(txSw.Elapsed.TotalSeconds);
+
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
@@ -493,6 +504,31 @@ namespace Neo.Ledger
                 InvokeCommitting(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
+
+            // Calculate total fees for the block
+            long totalSystemFee = 0;
+            long totalNetworkFee = 0;
+            // Use the already committed snapshot to get fee information if needed, assuming fees are deterministic and available post-commit
+            // OR calculate fees *before* committing the snapshot if necessary.
+            using (var feeSnapshot = system.GetSnapshotCache()) // Use a fresh snapshot or the committed one if safe
+            {
+                foreach (var tx in block.Transactions)
+                {
+                    totalSystemFee += tx.SystemFee;
+                    totalNetworkFee += tx.NetworkFee;
+                }
+                // Get GAS generated for the block from settings (applied during PostPersist)
+                long gasGenerated = (long)NativeContract.NEO.GetGasPerBlock(feeSnapshot);
+
+                // Set block details for Prometheus (count, size, GAS, fees) before timer disposal
+                blockProcessingTimer.SetBlockDetails(
+                    block.Transactions.Length,
+                    block.Size,
+                    gasGenerated,
+                    totalSystemFee,
+                    totalNetworkFee);
+            }
+
             InvokeCommitted(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
