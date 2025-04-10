@@ -34,7 +34,7 @@ namespace Neo.Plugins.RpcServer
             {
                 Version = 0,
                 Nonce = (uint)random.Next(),
-                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(Snapshot) + system.Settings.MaxValidUntilBlockIncrement,
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(Snapshot) + system.GetMaxValidUntilBlockIncrement(),
                 Signers = signers,
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Script = script,

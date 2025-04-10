@@ -384,10 +384,11 @@ namespace Neo.Plugins.OracleService
             var m = n - (n - 1) / 3;
             var oracleSignContract = Contract.CreateMultiSigContract(m, oracleNodes);
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
-            var validUntilBlock = requestTx.BlockIndex + settings.MaxValidUntilBlockIncrement;
+            var maxVUB = snapshot.GetMaxValidUntilBlockIncrement(settings);
+            var validUntilBlock = requestTx.BlockIndex + maxVUB;
             while (useCurrentHeight && validUntilBlock <= height)
             {
-                validUntilBlock += settings.MaxValidUntilBlockIncrement;
+                validUntilBlock += maxVUB;
             }
             var tx = new Transaction()
             {
