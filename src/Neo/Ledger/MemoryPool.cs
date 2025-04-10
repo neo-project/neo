@@ -91,28 +91,6 @@ namespace Neo.Ledger
         /// </summary>
         private TransactionVerificationContext VerificationContext = new();
 
-        private long _verifiedTxSizeBytes = 0;
-        private long _unverifiedTxSizeBytes = 0;
-
-        /// <summary>
-        /// Gets the total size in bytes of all transactions (verified and unverified) in the memory pool.
-        /// </summary>
-        public long SizeBytes
-        {
-            get
-            {
-                _txRwLock.EnterReadLock();
-                try
-                {
-                    return _verifiedTxSizeBytes + _unverifiedTxSizeBytes;
-                }
-                finally
-                {
-                    _txRwLock.ExitReadLock();
-                }
-            }
-        }
-
         /// <summary>
         /// Total count of transactions in the pool.
         /// </summary>
@@ -365,7 +343,6 @@ namespace Neo.Ledger
                 _unsortedTransactions.Add(tx.Hash, poolItem);
                 VerificationContext.AddTransaction(tx);
                 _sortedTransactions.Add(poolItem);
-                _verifiedTxSizeBytes += tx.Size;
 
                 foreach (var conflict in conflictsToBeRemoved)
                 {
@@ -498,7 +475,6 @@ namespace Neo.Ledger
 
             _unsortedTransactions.Remove(hash);
             _sortedTransactions.Remove(item);
-            _verifiedTxSizeBytes -= item.Tx.Size;
 
             RemoveConflictsOfVerified(item);
 
@@ -533,7 +509,6 @@ namespace Neo.Ledger
 
                 _unverifiedTransactions.Remove(hash);
                 _unverifiedSortedTransactions.Remove(item);
-                _unverifiedTxSizeBytes -= item.Tx.Size;
                 removed = true;
             }
             finally
@@ -551,7 +526,6 @@ namespace Neo.Ledger
                 if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
                 {
                     _unverifiedSortedTransactions.Add(item);
-                    _unverifiedTxSizeBytes += item.Tx.Size;
                 }
             }
 
@@ -559,7 +533,6 @@ namespace Neo.Ledger
             VerificationContext = new TransactionVerificationContext();
             _sortedTransactions.Clear();
             _conflicts.Clear();
-            _verifiedTxSizeBytes = 0;
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
@@ -684,8 +657,6 @@ namespace Neo.Ledger
                         if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                         {
                             _sortedTransactions.Add(item);
-                            _verifiedTxSizeBytes += item.Tx.Size;
-                            _unverifiedTxSizeBytes -= item.Tx.Size;
                             VerificationContext.AddTransaction(item.Tx);
 
                             foreach (var conflict in conflictsToBeRemoved)
@@ -701,7 +672,6 @@ namespace Neo.Ledger
                     else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     {
                         invalidItems.Add(item);
-                        _unverifiedTxSizeBytes -= item.Tx.Size;
                     }
 
                     if (TimeProvider.Current.UtcNow > reverifyCutOffTimeStamp) break;
@@ -787,8 +757,6 @@ namespace Neo.Ledger
                 _unverifiedTransactions.Clear();
                 _unverifiedSortedTransactions.Clear();
                 VerificationContext = new();
-                _verifiedTxSizeBytes = 0;
-                _unverifiedTxSizeBytes = 0;
             }
             finally
             {
@@ -804,7 +772,6 @@ namespace Neo.Ledger
 
             _unverifiedTransactions.Remove(hash);
             _unverifiedSortedTransactions.Remove(item);
-            _unverifiedTxSizeBytes -= item.Tx.Size;
             return true;
         }
     }

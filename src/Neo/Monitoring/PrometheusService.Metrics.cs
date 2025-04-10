@@ -1,11 +1,11 @@
 // Copyright (C) 2015-2025 The Neo Project.
-// 
+//
 // PrometheusService.Metrics.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -50,8 +50,6 @@ namespace Neo.Monitoring
         // --- Transaction Pool (Mempool) Metrics ---
         public readonly Lazy<Gauge> MempoolSizeTransactions = NonCapturingLazyInitializer.CreateGauge(
              "neo_mempool_size_transactions", "Number of transactions currently in the mempool.");
-        public readonly Lazy<Gauge> MempoolSizeBytes = NonCapturingLazyInitializer.CreateGauge(
-            "neo_mempool_size_bytes", "Total size of transactions currently in the mempool.");
         public readonly Lazy<Counter> MempoolTransactionsAddedTotal = NonCapturingLazyInitializer.CreateCounter(
             "neo_mempool_transactions_added_total", "Total number of transactions successfully added to the mempool.");
         public readonly Lazy<Counter> MempoolTransactionsRejectedTotal = NonCapturingLazyInitializer.CreateCounter(
