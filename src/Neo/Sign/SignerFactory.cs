@@ -45,21 +45,21 @@ namespace Neo.Sign
         {
             if (string.IsNullOrEmpty(name)) throw new ArgumentException($"{nameof(name)} cannot be null or empty");
             if (signer is null) throw new ArgumentNullException(nameof(signer));
-            if (s_signers.ContainsKey(name)) throw new InvalidOperationException($"Signer {name} already registered");
 
-            s_signers[name] = signer;
+            if (!s_signers.TryAdd(name, signer)) throw new InvalidOperationException($"Signer {name} already exists");
         }
 
         /// <summary>
         /// Unregister a signer, and it only can be called before the node starts.
         /// </summary>
         /// <param name="name">The name of the signer</param>
-        public static void UnregisterSigner(string name)
+        /// <returns>
+        /// <see langword="true"/> if the signer is unregistered; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool UnregisterSigner(string name)
         {
-            if (!string.IsNullOrEmpty(name))
-            {
-                s_signers.TryRemove(name, out _);
-            }
+            if (string.IsNullOrEmpty(name)) return false;
+            return s_signers.TryRemove(name, out _);
         }
     }
 }
