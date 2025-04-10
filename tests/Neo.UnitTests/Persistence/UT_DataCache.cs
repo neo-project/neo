@@ -215,7 +215,7 @@ namespace Neo.UnitTests.IO.Caching
             Assert.AreEqual(key1, items.ElementAt(3).Key);
             Assert.AreEqual(value1, items.ElementAt(3).Value);
 
-            items = myDataCache.Find(key5.ToArray());
+            items = myDataCache.Find(key5);
             Assert.AreEqual(0, items.Count());
         }
 
@@ -389,7 +389,7 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value3.ToArray());
 
-            var items = myDataCache.Find().GetEnumerator();
+            var items = myDataCache.Find(SeekDirection.Forward).GetEnumerator();
             items.MoveNext();
             Assert.AreEqual(key1, items.Current.Key);
 

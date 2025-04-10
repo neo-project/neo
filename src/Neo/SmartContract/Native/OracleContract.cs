@@ -112,10 +112,10 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the pending requests.</returns>
-        public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
+        public IEnumerable<(ulong, OracleRequest)> GetRequests(IReadOnlyStore snapshot)
         {
             var key = CreateStorageKey(Prefix_Request);
-            return snapshot.Find(key.ToArray())
+            return snapshot.Find(key)
                 .Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.Span[1..]), p.Value.GetInteroperable<OracleRequest>()));
         }
 
@@ -170,12 +170,16 @@ namespace Neo.SmartContract.Native
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
-                using var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list);
-                if (!list.Remove(response.Id)) throw new InvalidOperationException();
-                if (list.Count == 0) engine.SnapshotCache.Delete(key);
+                using (var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list))
+                {
+                    if (!list.Remove(response.Id)) throw new InvalidOperationException();
+                    if (list.Count == 0) engine.SnapshotCache.Delete(key);
+                }
 
                 //Mint GAS for oracle nodes
-                nodes ??= RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.PersistingBlock.Index)
+                    .Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero))
+                    .ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
@@ -193,14 +197,26 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
+        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback,
+            StackItem userData, long gasForResponse /* In the unit of datoshi, 1 datoshi = 1e-8 GAS */)
         {
-            //Check the arguments
-            if (url.GetStrictUtf8ByteCount() > MaxUrlLength
-                || (filter != null && filter.GetStrictUtf8ByteCount() > MaxFilterLength)
-                || callback.GetStrictUtf8ByteCount() > MaxCallbackLength || callback.StartsWith('_')
-                || gasForResponse < 0_10000000)
-                throw new ArgumentException();
+            var urlSize = url.GetStrictUtf8ByteCount();
+            if (urlSize > MaxUrlLength)
+                throw new ArgumentException($"The url bytes size({urlSize}) cannot be greater than {MaxUrlLength}.");
+
+            var filterSize = filter is null ? 0 : filter.GetStrictUtf8ByteCount();
+            if (filterSize > MaxFilterLength)
+                throw new ArgumentException($"The filter bytes size({filterSize}) cannot be greater than {MaxFilterLength}.");
+
+            var callbackSize = callback is null ? 0 : callback.GetStrictUtf8ByteCount();
+            if (callbackSize > MaxCallbackLength)
+                throw new ArgumentException($"The callback bytes size({callbackSize}) cannot be greater than {MaxCallbackLength}.");
+
+            if (callback.StartsWith('_'))
+                throw new ArgumentException($"The callback cannot start with '_'.");
+
+            if (gasForResponse < 0_10000000)
+                throw new ArgumentException($"The gasForResponse({gasForResponse}) must be greater than or equal to 0.1 datoshi.");
 
             engine.AddFee(GetPrice(engine.SnapshotCache));
 
@@ -209,8 +225,8 @@ namespace Neo.SmartContract.Native
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
-            StorageItem item_id = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
-            ulong id = (ulong)(BigInteger)item_id;
+            var item_id = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
+            var id = (ulong)(BigInteger)item_id;
             item_id.Add(1);
 
             //Put the request to storage
@@ -229,15 +245,21 @@ namespace Neo.SmartContract.Native
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), StorageItem.CreateSealed(request));
 
             //Add the id to the IdList
-            using var sealInterop = engine.SnapshotCache.GetAndChange
+            using (var sealInterop = engine.SnapshotCache.GetAndChange
                 (CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList()))
-                .GetInteroperable(out IdList list);
+                .GetInteroperable(out IdList list))
+            {
+                if (list.Count >= 256)
+                    throw new InvalidOperationException("There are too many pending responses for this url");
+                list.Add(id);
+            }
 
-            if (list.Count >= 256)
-                throw new InvalidOperationException("There are too many pending responses for this url");
-            list.Add(id);
-
-            engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) { id, engine.CallingScriptHash.ToArray(), url, filter ?? StackItem.Null });
+            engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) {
+                id,
+                engine.CallingScriptHash.ToArray(),
+                url,
+                filter ?? StackItem.Null
+            });
         }
 
         [ContractMethod(CpuFee = 1 << 15)]

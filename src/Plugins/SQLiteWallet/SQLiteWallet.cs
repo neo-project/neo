@@ -403,11 +403,14 @@ namespace Neo.Wallets.SQLite
 
         private static byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
         {
-            ArgumentNullException.ThrowIfNull(data);
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(iv);
+            ArgumentNullException.ThrowIfNull(data, nameof(data));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(iv, nameof(iv));
 
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
+            if (data.Length % 16 != 0) throw new ArgumentException($"The data.Length({data.Length}) must be a multiple of 16.");
+            if (key.Length != 32) throw new ArgumentException($"The key.Length({key.Length}) must be 32.");
+            if (iv.Length != 16) throw new ArgumentException($"The iv.Length({iv.Length}) must be 16.");
+
             using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
             using var encryptor = aes.CreateEncryptor(key, iv);
@@ -416,11 +419,14 @@ namespace Neo.Wallets.SQLite
 
         private static byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
         {
-            ArgumentNullException.ThrowIfNull(data);
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(iv);
+            ArgumentNullException.ThrowIfNull(data, nameof(data));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(iv, nameof(iv));
 
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
+            if (data.Length % 16 != 0) throw new ArgumentException($"The data.Length({data.Length}) must be a multiple of 16.");
+            if (key.Length != 32) throw new ArgumentException($"The key.Length({key.Length}) must be 32.");
+            if (iv.Length != 16) throw new ArgumentException($"The iv.Length({iv.Length}) must be 16.");
+
             using var aes = Aes.Create();
             aes.Padding = PaddingMode.None;
             using var decryptor = aes.CreateDecryptor(key, iv);

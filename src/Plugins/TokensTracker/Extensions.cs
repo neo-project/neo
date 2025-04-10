@@ -47,7 +47,7 @@ namespace Neo.Plugins
             where TKey : ISerializable, new()
             where TValue : class, ISerializable, new()
         {
-            foreach (var (key, value) in db.Seek(prefix, SeekDirection.Forward))
+            foreach (var (key, value) in db.Find(prefix, SeekDirection.Forward))
             {
                 if (!key.AsSpan().StartsWith(prefix)) break;
                 yield return (key.AsSerializable<TKey>(1), value.AsSerializable<TValue>());
@@ -58,7 +58,7 @@ namespace Neo.Plugins
             where TKey : ISerializable, new()
             where TValue : class, ISerializable, new()
         {
-            foreach (var (key, value) in db.Seek(startKey, SeekDirection.Forward))
+            foreach (var (key, value) in db.Find(startKey, SeekDirection.Forward))
             {
                 if (key.AsSpan().SequenceCompareTo(endKey) > 0) break;
                 yield return (key.AsSerializable<TKey>(1), value.AsSerializable<TValue>());

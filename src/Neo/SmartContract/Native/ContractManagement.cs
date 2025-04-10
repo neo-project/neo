@@ -164,10 +164,10 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>Iterator with hashes of all deployed contracts.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetContractHashes(DataCache snapshot)
+        private IIterator GetContractHashes(IReadOnlyStore snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
-            byte[] prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
+            var prefix_key = CreateStorageKey(Prefix_ContractHash);
             var enumerator = snapshot.Find(prefix_key)
                 .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..])))
                 .Where(p => p.Id >= 0)
@@ -198,9 +198,9 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The deployed contracts.</returns>
-        public IEnumerable<ContractState> ListContracts(DataCache snapshot)
+        public IEnumerable<ContractState> ListContracts(IReadOnlyStore snapshot)
         {
-            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
+            var listContractsPrefix = CreateStorageKey(Prefix_Contract);
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
         }
 
@@ -264,7 +264,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
-            if (nefFile is null && manifest is null) throw new ArgumentException();
+            if (nefFile is null && manifest is null)
+                throw new ArgumentException("The nefFile and manifest cannot be null at the same time.");
 
             engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
@@ -272,8 +273,10 @@ namespace Neo.SmartContract.Native
                 ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
 
             using var sealInterop = contractState.GetInteroperable(out ContractState contract, false);
-            if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
-            if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
+            if (contract is null)
+                throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
+            if (contract.UpdateCounter == ushort.MaxValue)
+                throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
             if (nefFile != null)
             {
