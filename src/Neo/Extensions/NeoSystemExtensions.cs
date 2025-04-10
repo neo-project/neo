@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
@@ -57,6 +56,45 @@ namespace Neo
             {
                 // At the height of 0, the key not yet exists in the storage
                 return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
+            }
+        }
+
+        /// <summary>
+        /// Gets the upper increment size of blockchain height (in blocks) exceeding
+        /// that a transaction should fail validation.
+        /// </summary>
+        /// <param name="system">The NeoSystem instance.</param>
+        /// <returns>MaxValidUntilBlockIncrement value.</returns>
+        public static uint GetMaxValidUntilBlockIncrement(this NeoSystem system)
+        {
+            return system.StoreView.GetMaxValidUntilBlockIncrement(system.Settings);
+        }
+
+        /// <summary>
+        /// Gets the upper increment size of blockchain height (in blocks) exceeding
+        /// that a transaction should fail validation.
+        /// </summary>
+        /// <param name="snapshot">The snapshot of the store.</param>
+        /// <param name="settings">The protocol settings.</param>
+        /// <returns>MaxValidUntilBlockIncrement value.</returns>
+        public static uint GetMaxValidUntilBlockIncrement(this IReadOnlyStore snapshot, ProtocolSettings settings)
+        {
+            try
+            {
+                // Get the current block height from the blockchain.
+                var index = NativeContract.Ledger.CurrentIndex(snapshot);
+
+                // Before the Echidna hardfork, use the protocol settings.
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                    return settings.MaxValidUntilBlockIncrement;
+
+                // After the Echidna hardfork, get the current block time from the Policy contract.
+                return NativeContract.Policy.GetMaxValidUntilBlockIncrement(snapshot);
+            }
+            catch (KeyNotFoundException)
+            {
+                // At the height of 0, the key not yet exists in the storage.
+                return settings.MaxValidUntilBlockIncrement;
             }
         }
     }

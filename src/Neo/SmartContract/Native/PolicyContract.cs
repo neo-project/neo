@@ -11,6 +11,7 @@
 
 #pragma warning disable IDE0051
 
+using Akka.Dispatch;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
@@ -75,16 +76,23 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxBlockGenTime = 30_000;
 
+        /// <summary>
+        /// The maximum MaxValidUntilBlockIncrement value that the committee can set.
+        /// It is set to be a day of 1-second blocks.
+        /// </summary>
+        public const uint MaxMaxValidUntilBlockIncrement = 86400;
+
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
         private const byte Prefix_BlockGenTime = 21;
-
+        private const byte Prefix_MaxValidUntilBlockIncrement = 22;
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
+        private readonly StorageKey _maxValidUntilBlockIncrement;
 
         /// <summary>
         /// The storage key for the block generation time.
@@ -111,6 +119,7 @@ namespace Neo.SmartContract.Native
             _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
             _storagePrice = CreateStorageKey(Prefix_StoragePrice);
             _blockGenTime = CreateStorageKey(Prefix_BlockGenTime);
+            _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -126,6 +135,7 @@ namespace Neo.SmartContract.Native
             {
                 engine.SnapshotCache.Add(_blockGenTime, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
+                engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
             }
 
             return ContractTask.CompletedTask;
@@ -176,6 +186,18 @@ namespace Neo.SmartContract.Native
             // this should not be null since this method is only available after the HF_Echidna
             snapshot.TryGet(_blockGenTime, out var item);
             return (uint)(BigInteger)item;
+        }
+
+        /// <summary>
+        /// Gets the upper increment size of blockchain height (in blocks) exceeding
+        /// that a transaction should fail validation.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>MaxValidUntilBlockIncrement value.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMaxValidUntilBlockIncrement(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_maxValidUntilBlockIncrement];
         }
 
         /// <summary>
@@ -324,6 +346,14 @@ namespace Neo.SmartContract.Native
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_storagePrice).Set(value);
+        }
+
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxMaxValidUntilBlockIncrement) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
