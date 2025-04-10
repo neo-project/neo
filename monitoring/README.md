@@ -265,3 +265,38 @@ Once the script is running `neo-cli`:
 -   Use the query utility scripts:
     *   **Windows**: `.\scripts\monitoring\query_metrics.ps1`
     *   **Linux/macOS**: `./scripts/monitoring/query_metrics.sh`
+
+### 4. Run the Stack
+
+- **Using PowerShell (Windows):**
+  ```powershell
+  cd monitoring/scripts
+  .\start-neo-with-prometheus.ps1
+  ```
+  - Use `.\start-neo-with-prometheus.ps1 -help` for options like changing ports or data paths.
+
+- **Using Bash (Linux/macOS):**
+  ```bash
+  cd monitoring/scripts
+  ./start-neo-with-prometheus.sh
+  ```
+  - Use `./start-neo-with-prometheus.sh --help` for options.
+
+This will:
+- Start Neo-CLI with the `--prometheus <addr>` flag enabled.
+- Configure Prometheus (`prometheus.yml`) to scrape the Neo-CLI metrics endpoint.
+- Configure Grafana with the Prometheus datasource and import the Neo N3 dashboard.
+- Start Prometheus, Grafana, and Alertmanager processes in the background (Neo-CLI runs in the foreground).
+- **Load Alert Rules:** Prometheus is configured to load alert rules from `monitoring/prometheus/neo_alerts.yml`. These rules define conditions for potential issues based on the collected metrics.
+
+### 5. Access the Tools
+
+- **Neo-CLI Metrics:** `http://<neo_metrics_host>:<neo_metrics_port>/metrics` (Default: `http://127.0.0.1:9101/metrics`)
+- **Prometheus UI:** `http://<prometheus_host>:<prometheus_port>` (Default: `http://127.0.0.1:9090`)
+  - Check `Status -> Targets` to ensure the `neo-node` job is UP.
+  - Explore metrics in the `Graph` tab.
+- **Grafana UI:** `http://<grafana_host>:<grafana_port>` (Default: `http://127.0.0.1:3000`)
+  - Login with default credentials `admin`/`admin` (change it!).
+  - Navigate to `Dashboards` -> `Neo N3 Node Overview (Professional)`.
+- **Alertmanager UI:** `http://<alertmanager_host>:<alertmanager_port>` (Default: `http://127.0.0.1:9093`)
+  - View triggered alerts.

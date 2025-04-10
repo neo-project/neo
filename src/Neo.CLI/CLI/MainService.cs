@@ -380,8 +380,8 @@ namespace Neo.CLI
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
 
-            // Initialize Prometheus Settings (before NeoSystem initialization if possible, or right after)
-            PrometheusSettings? prometheusSettings = null;
+            // Initialize Prometheus from command line parameters
+            Neo.Monitoring.PrometheusSettings? monitoringPrometheusSettings = null;
             if (!string.IsNullOrEmpty(options.Prometheus))
             {
                 try
@@ -389,13 +389,15 @@ namespace Neo.CLI
                     var parts = options.Prometheus.Split(':');
                     if (parts.Length == 2 && int.TryParse(parts[1], out int port))
                     {
-                        // Bind to all interfaces (0.0.0.0) to allow both IPv4 and IPv6 connections
-                        prometheusSettings = new PrometheusSettings
+                        // Create PrometheusSettings directly from command-line parameter
+                        monitoringPrometheusSettings = new Neo.Monitoring.PrometheusSettings
                         {
                             Enabled = true,
-                            Host = "0.0.0.0", // Bind to all interfaces to allow connections from any source
+                            Host = parts[0], // Use the host value the user provided in the --prometheus parameter
                             Port = port
                         };
+                        ConsoleHelper.Info($"Prometheus metrics enabled on {parts[0]}:{port}");
+                        ConsoleHelper.Info($"Access metrics via: http://localhost:{port}/metrics or http://{parts[0]}:{port}/metrics");
                     }
                     else
                     {
@@ -404,7 +406,7 @@ namespace Neo.CLI
                 }
                 catch (Exception ex)
                 {
-                    ConsoleHelper.Error($"Error parsing --prometheus option: {ex.Message}. Prometheus disabled.");
+                    ConsoleHelper.Error($"Error setting up Prometheus: {ex.Message}. Prometheus disabled.");
                 }
             }
 
@@ -417,15 +419,17 @@ namespace Neo.CLI
                 ConsoleHelper.Info($"Using storage path: {formattedStoragePath}");
 
                 NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, formattedStoragePath);
-                // Start Prometheus Service (after NeoSystem is initialized)
-                // It needs Log access which might be configured within NeoSystem/Settings
-                PrometheusService.Instance.Start(prometheusSettings);
+                // Start Prometheus Service with the parsed settings and the NeoSystem instance
+                PrometheusService.Instance.Start(monitoringPrometheusSettings, NeoSystem);
 
-                // Output debug information about Prometheus settings
-                if (prometheusSettings != null && prometheusSettings.Enabled)
+                // Output additional debug information about Prometheus settings
+                if (monitoringPrometheusSettings != null && monitoringPrometheusSettings.Enabled)
                 {
-                    ConsoleHelper.Info($"Prometheus metrics available at: http://{prometheusSettings.Host}:{prometheusSettings.Port}/metrics");
-                    ConsoleHelper.Info($"Note: Use 127.0.0.1 to connect to Prometheus if using IPv4 locally");
+                    ConsoleHelper.Info($"Prometheus metrics available at: http://{monitoringPrometheusSettings.Host}:{monitoringPrometheusSettings.Port}/metrics");
+                    if (monitoringPrometheusSettings.Host == "0.0.0.0")
+                    {
+                        ConsoleHelper.Info($"Access locally via: http://127.0.0.1:{monitoringPrometheusSettings.Port}/metrics");
+                    }
                 }
             }
             catch (DllNotFoundException ex) when (ex.Message.Contains("libleveldb"))

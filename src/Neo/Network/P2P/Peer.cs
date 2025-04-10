@@ -293,7 +293,7 @@ namespace Neo.Network.P2P
                 if (ConnectedPeers.TryAdd(connection, remote))
                 {
                     // Update P2P connection gauge AFTER successfully adding
-                    PrometheusService.Instance.SetP2PConnections(ConnectedPeers.Count);
+                    PrometheusService.Instance.SetNetworkPeers(ConnectedPeers.Count);
                 }
                 OnTcpConnected(connection);
             }
@@ -334,7 +334,7 @@ namespace Neo.Network.P2P
                     ConnectedAddresses[endPoint.Address] = count;
 
                 // Update P2P connection gauge AFTER successfully removing
-                PrometheusService.Instance.SetP2PConnections(ConnectedPeers.Count);
+                PrometheusService.Instance.SetNetworkPeers(ConnectedPeers.Count);
             }
         }
 

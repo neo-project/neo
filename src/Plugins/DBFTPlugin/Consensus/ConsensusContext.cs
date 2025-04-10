@@ -265,6 +265,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 cachedMessages = new Dictionary<UInt256, ConsensusMessage>();
                 PrometheusService.Instance.SetConsensusHeight(Block.Index);
                 PrometheusService.Instance.SetConsensusView(viewNumber);
+                // Set Validator Active status gauge
+                PrometheusService.Instance.SetValidatorActive(!WatchOnly);
             }
             else
             {
@@ -292,6 +294,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
             // Update view gauge
             PrometheusService.Instance.SetConsensusView(viewNumber);
+            // Update validator active status gauge on view change too
+            PrometheusService.Instance.SetValidatorActive(!WatchOnly);
         }
 
         public void Save()

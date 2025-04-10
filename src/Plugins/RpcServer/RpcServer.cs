@@ -94,7 +94,12 @@ namespace Neo.Plugins.RpcServer
             byte[] pass = auths[(colonIndex + 1)..];
 
             // Always execute both checks, but both must evaluate to true
-            return CryptographicOperations.FixedTimeEquals(user, _rpcUser) & CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
+            bool success = CryptographicOperations.FixedTimeEquals(user, _rpcUser) & CryptographicOperations.FixedTimeEquals(pass, _rpcPass);
+            if (!success)
+            {
+                PrometheusService.Instance.IncFailedAuthentication("RPC");
+            }
+            return success;
         }
 
         private static JObject CreateErrorResponse(JToken id, RpcError rpcError)
@@ -285,91 +290,105 @@ namespace Neo.Plugins.RpcServer
         {
             if (!request.ContainsProperty("id")) return null;
             var @params = request["params"] ?? new JArray();
-            if (!request.ContainsProperty("method") || @params is not JArray)
-            {
-                return CreateErrorResponse(request["id"], RpcError.InvalidRequest);
-            }
+            string method = null; // Declare method here to be accessible in catch blocks
+            bool success = false; // Track success status
 
-            var jsonParameters = (JArray)@params;
-            var response = CreateResponse(request["id"]);
             try
             {
-                var method = request["method"].AsString();
-                (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
-
-                if (methods.TryGetValue(method, out var func))
+                if (!request.ContainsProperty("method") || @params is not JArray)
                 {
-                    response["result"] = func(jsonParameters) switch
-                    {
-                        JToken result => result,
-                        Task<JToken> task => await task,
-                        _ => throw new NotSupportedException()
-                    };
-                    return response;
+                    throw new RpcException(RpcError.InvalidRequest);
                 }
 
-                if (_methodsWithParams.TryGetValue(method, out var func2))
-                {
-                    var paramInfos = func2.Method.GetParameters();
-                    var args = new object[paramInfos.Length];
+                method = request["method"].AsString();
+                (CheckAuth(context) && !settings.DisabledMethods.Contains(method)).True_Or(RpcError.AccessDenied);
 
-                    for (var i = 0; i < paramInfos.Length; i++)
+                var jsonParameters = (JArray)@params;
+                var response = CreateResponse(request["id"]);
+
+                // Measure request duration using Prometheus histogram
+                using (PrometheusService.Instance.MeasureNodeApiRequestDuration(method))
+                {
+                    if (methods.TryGetValue(method, out var func))
                     {
-                        var param = paramInfos[i];
-                        if (jsonParameters.Count > i && jsonParameters[i] != null)
+                        response["result"] = func(jsonParameters) switch
                         {
-                            try
-                            {
-                                if (param.ParameterType == typeof(UInt160))
-                                {
-                                    args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i],
-                                        system.Settings.AddressVersion);
-                                }
-                                else
-                                {
-                                    args[i] = ParameterConverter.ConvertParameter(jsonParameters[i],
-                                        param.ParameterType);
-                                }
-                            }
-                            catch (Exception e) when (e is not RpcException)
-                            {
-                                throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
-                            }
-                        }
-                        else
+                            JToken result => result,
+                            Task<JToken> task => await task,
+                            _ => throw new NotSupportedException()
+                        };
+                    }
+                    else if (_methodsWithParams.TryGetValue(method, out var func2))
+                    {
+                        var paramInfos = func2.Method.GetParameters();
+                        var args = new object[paramInfos.Length];
+
+                        for (var i = 0; i < paramInfos.Length; i++)
                         {
-                            if (param.IsOptional)
+                            var param = paramInfos[i];
+                            if (jsonParameters.Count > i && jsonParameters[i] != null)
                             {
-                                args[i] = param.DefaultValue;
-                            }
-                            else if (param.ParameterType.IsValueType &&
-                                     Nullable.GetUnderlyingType(param.ParameterType) == null)
-                            {
-                                throw new ArgumentException($"Required parameter '{param.Name}' is missing");
+                                try
+                                {
+                                    if (param.ParameterType == typeof(UInt160))
+                                    {
+                                        args[i] = ParameterConverter.ConvertUInt160(jsonParameters[i],
+                                            system.Settings.AddressVersion);
+                                    }
+                                    else
+                                    {
+                                        args[i] = ParameterConverter.ConvertParameter(jsonParameters[i],
+                                            param.ParameterType);
+                                    }
+                                }
+                                catch (Exception e) when (e is not RpcException)
+                                {
+                                    throw new ArgumentException($"Invalid value for parameter '{param.Name}'", e);
+                                }
                             }
                             else
                             {
-                                args[i] = null;
+                                if (param.IsOptional)
+                                {
+                                    args[i] = param.DefaultValue;
+                                }
+                                else if (param.ParameterType.IsValueType &&
+                                         Nullable.GetUnderlyingType(param.ParameterType) == null)
+                                {
+                                    throw new ArgumentException($"Required parameter '{param.Name}' is missing");
+                                }
+                                else
+                                {
+                                    args[i] = null;
+                                }
                             }
                         }
-                    }
 
-                    response["result"] = func2.DynamicInvoke(args) switch
+                        response["result"] = func2.DynamicInvoke(args) switch
+                        {
+                            JToken result => result,
+                            Task<JToken> task => await task,
+                            _ => throw new NotSupportedException()
+                        };
+                    }
+                    else
                     {
-                        JToken result => result,
-                        Task<JToken> task => await task,
-                        _ => throw new NotSupportedException()
-                    };
-                    return response;
+                        throw new RpcException(RpcError.MethodNotFound.WithData(method));
+                    }
                 }
 
-                throw new RpcException(RpcError.MethodNotFound.WithData(method));
+                success = true; // Mark as success if no exception occurred
+                return response;
             }
             catch (FormatException ex)
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
             }
             catch (IndexOutOfRangeException ex)
+            {
+                return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
+            }
+            catch (ArgumentException ex) // Catch ArgumentException specifically for parameter errors
             {
                 return CreateErrorResponse(request["id"], RpcError.InvalidParams.WithData(ex.Message));
             }
@@ -392,6 +411,10 @@ namespace Neo.Plugins.RpcServer
                 return CreateErrorResponse(request["id"], ex.GetError());
 #endif
 
+            }
+            finally // Ensure the counter is incremented even if an unexpected error occurs
+            {
+                PrometheusService.Instance.IncNodeApiRequests(method, success);
             }
         }
 

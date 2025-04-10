@@ -38,6 +38,7 @@ Binaries for the monitoring stack will be downloaded if not found.
 Options:
   --neo-metrics-address <addr>         Neo-CLI metrics endpoint (default: $NEO_METRICS_ADDRESS)
                                        Neo-CLI will be started with '--prometheus <addr>'
+                                       The format should be 'host:port'
   --prometheus-listen-address <addr>   Prometheus server listen address (default: $PROMETHEUS_LISTEN_ADDRESS)
   --grafana-listen-address <addr>      Grafana server listen address (default: $GRAFANA_LISTEN_ADDRESS)
   --alertmanager-listen-address <addr> Alertmanager listen address (default: $ALERTMANAGER_LISTEN_ADDRESS)
@@ -395,6 +396,10 @@ sleep 5 # Grafana can take a moment
 
 # --- Start Neo-CLI (foreground) ---
 log_info "Starting Neo-CLI..."
+
+# Parse the host:port format
+IFS=':' read -r neo_metrics_host neo_metrics_port <<< "$NEO_METRICS_ADDRESS"
+
 neo_cli_args=(
     "$NEO_CLI_DLL_PATH"
     "--prometheus" "$NEO_METRICS_ADDRESS" # Pass prometheus endpoint via command line

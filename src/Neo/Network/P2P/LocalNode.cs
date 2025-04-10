@@ -46,6 +46,11 @@ namespace Neo.Network.P2P
         public class GetInstance { }
 
         /// <summary>
+        /// Sent to <see cref="LocalNode"/> to request the current count of connected peers.
+        /// </summary>
+        public class GetPeerCount { }
+
+        /// <summary>
         /// Indicates the protocol version of the local node.
         /// </summary>
         public const uint ProtocolVersion = 0;
@@ -243,6 +248,9 @@ namespace Neo.Network.P2P
                     break;
                 case GetInstance _:
                     Sender.Tell(this);
+                    break;
+                case GetPeerCount _:
+                    Sender.Tell(RemoteNodes.Count); // Respond with the current peer count
                     break;
             }
         }

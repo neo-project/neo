@@ -152,6 +152,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             started = true;
             if (!dbftSettings.IgnoreRecoveryLogs && context.Load())
             {
+                // Recovery logs loaded, indicating potential previous unexpected shutdown
+                PrometheusService.Instance.IncUnexpectedShutdown("ConsensusRecovery");
+
                 if (context.Transactions != null)
                 {
                     blockchain.Ask<FillCompleted>(new FillMemoryPool
@@ -177,6 +180,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (timer.Height != context.Block.Index || timer.ViewNumber != context.ViewNumber) return;
             if (context.IsPrimary && !context.RequestSentOrReceived)
             {
+                // Primary's timer expired before sending PrepareRequest - potential missed block
+                PrometheusService.Instance.IncValidatorMissedBlocks();
                 SendPrepareRequest();
             }
             else if ((context.IsPrimary && context.RequestSentOrReceived) || context.IsBackup)

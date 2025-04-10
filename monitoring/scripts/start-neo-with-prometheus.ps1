@@ -25,6 +25,7 @@ Binaries for the monitoring stack will be downloaded if not found.
 Options:
   -NeoMetricsAddress <addr>         Neo-CLI metrics endpoint (default: 127.0.0.1:9101)
                                     Neo-CLI will be started with '--prometheus <addr>'
+                                    The format should be 'host:port'
   -PrometheusListenAddress <addr>   Prometheus server listen address (default: 127.0.0.1:9090)
   -GrafanaListenAddress <addr>      Grafana server listen address (default: 127.0.0.1:3000)
   -AlertmanagerListenAddress <addr> Alertmanager listen address (default: 127.0.0.1:9093)
@@ -150,17 +151,33 @@ if (-not (Test-Path $grafanaDashboardsDir)) { New-Item -Path $grafanaDashboardsD
 
 
 # --- Setup Neo Data Directory ---
-if ($KeepExistingNeoData -and (-not [string]::IsNullOrEmpty($NeoDataPath)) -and (Test-Path $NeoDataPath)) {
-    Write-Host "Using existing Neo data directory: $NeoDataPath" -ForegroundColor Yellow
+$absoluteNeoDataPath = $null # Default: Let Neo-CLI use its internal defaults
+
+if (-not [string]::IsNullOrEmpty($NeoDataPath)) {
+    # User specified a path
+    if ($KeepExistingNeoData) {
+        if (Test-Path $NeoDataPath) {
+            Write-Host "Using existing Neo data directory (specified by user): $NeoDataPath" -ForegroundColor Yellow
+            $absoluteNeoDataPath = (Resolve-Path -LiteralPath $NeoDataPath).ProviderPath
+        } else {
+            Write-Error "Specified NeoDataPath '$NeoDataPath' does not exist and -KeepExistingNeoData was used. Exiting."
+            exit 1
+        }
+    } else {
+         # User specified a path but didn't say keep existing (or it doesn't exist)
+         # Create it if it doesn't exist
+         if (-not (Test-Path $NeoDataPath)) {
+            Write-Host "Creating specified Neo data directory: $NeoDataPath" -ForegroundColor Yellow
+            New-Item -Path $NeoDataPath -ItemType Directory -Force | Out-Null
+         } else {
+            Write-Host "Using specified Neo data directory: $NeoDataPath" -ForegroundColor Yellow
+         }
+         $absoluteNeoDataPath = (Resolve-Path -LiteralPath $NeoDataPath).ProviderPath
+    }
 } else {
-    $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-    # Create data dir inside monitoring folder for neatness
-    $NeoDataPath = Join-Path -Path $monitoringDir -ChildPath "neo-data_$timestamp"
-    Write-Host "Creating new Neo data directory: $NeoDataPath" -ForegroundColor Yellow
-    New-Item -Path $NeoDataPath -ItemType Directory -Force | Out-Null
+     Write-Host "Using default Neo-CLI data/log directory (relative to bin)." -ForegroundColor Yellow
+     # $absoluteNeoDataPath remains null
 }
-# Get absolute path for use in config.json
-$absoluteNeoDataPath = (Resolve-Path -LiteralPath $NeoDataPath).ProviderPath
 
 
 # --- Kill Existing Processes ---
@@ -204,32 +221,90 @@ Write-Host "Configuring Neo-CLI..." -ForegroundColor Cyan
 # Copy the default config to the bin directory
 Copy-Item -Path $sourceConfigPath -Destination $targetConfigPath -Force
 
-# Modify config for data path and logging (using JSON manipulation)
-try {
-    $configContent = Get-Content -Path $targetConfigPath -Raw
-    $config = $configContent | ConvertFrom-Json
+# Modify config for data path and logging ONLY IF user specified a path
+if ($absoluteNeoDataPath) {
+    # User specified a path, so update config
+    try {
+        $configContent = Get-Content -Path $targetConfigPath -Raw
+        $config = $configContent | ConvertFrom-Json
 
-    # Update Storage Path (use the correctly escaped absolute path)
-    $config.ApplicationConfiguration.Storage.Path = "$absoluteNeoDataPath\\Data_LevelDB_{0}"
+        # Update Storage Path
+        $config.ApplicationConfiguration.Storage.Path = "$absoluteNeoDataPath\Data_LevelDB_{0}" # Use the user-provided path
 
-    # Enable Logging
-    $config.ApplicationConfiguration.Logger.Active = $true
-    $config.ApplicationConfiguration.Logger.ConsoleOutput = $true
-    $config.ApplicationConfiguration.Logger.Path = "$absoluteNeoDataPath\\Logs"
+        # Enable Logging and set path relative to user-provided path
+        $config.ApplicationConfiguration.Logger.Active = $true
+        $config.ApplicationConfiguration.Logger.ConsoleOutput = $true
+        $config.ApplicationConfiguration.Logger.Path = "$absoluteNeoDataPath\Logs" # Use the user-provided path
 
-    # Remove Prometheus section if exists (we use command line arg)
-    if ($config.ApplicationConfiguration.PSObject.Properties.Name.Contains("Prometheus")) {
-        $config.ApplicationConfiguration.PSObject.Properties.Remove("Prometheus")
+        # Remove Prometheus section if exists (we use command line arg)
+        if ($config.ApplicationConfiguration.PSObject.Properties.Name.Contains("Prometheus")) {
+            $config.ApplicationConfiguration.PSObject.Properties.Remove("Prometheus")
+        }
+
+        # Save updated config
+        $config | ConvertTo-Json -Depth 10 | Set-Content -Path $targetConfigPath -NoNewline
+        Write-Host "  Neo-CLI config updated ($targetConfigPath): Set Data/Log paths to '$absoluteNeoDataPath'." -ForegroundColor Gray
+    } catch {
+         Write-Error ("Failed to update Neo-CLI config at '$targetConfigPath': " + $($_.Exception.Message))
+         exit 1
     }
+} else {
+    # Default behavior: Ensure logging is enabled in the copied config, but DON'T set paths
+    try {
+        $configContent = Get-Content -Path $targetConfigPath -Raw
+        $config = $configContent | ConvertFrom-Json
 
-    # Save updated config
-    $config | ConvertTo-Json -Depth 10 | Set-Content -Path $targetConfigPath -NoNewline
-    Write-Host "  Neo-CLI config updated ($targetConfigPath): Set Data/Log paths." -ForegroundColor Gray
-} catch {
-     Write-Error ("Failed to update Neo-CLI config at '$targetConfigPath': " + $($_.Exception.Message))
-     exit 1
+        # Ensure logging enabled, but paths use defaults
+        $config.ApplicationConfiguration.Logger.Active = $true
+        $config.ApplicationConfiguration.Logger.ConsoleOutput = $true
+        # Don't set $config.ApplicationConfiguration.Logger.Path
+        # Don't set $config.ApplicationConfiguration.Storage.Path
+
+        # Remove Prometheus section if exists (we use command line arg)
+        if ($config.ApplicationConfiguration.PSObject.Properties.Name.Contains("Prometheus")) {
+           $config.ApplicationConfiguration.PSObject.Properties.Remove("Prometheus")
+        }
+
+        $config | ConvertTo-Json -Depth 10 | Set-Content -Path $targetConfigPath -NoNewline
+        Write-Host "  Neo-CLI config updated ($targetConfigPath): Ensured logging enabled, using default paths." -ForegroundColor Gray
+    } catch {
+         Write-Error ("Failed to update Neo-CLI config at '$targetConfigPath': " + $($_.Exception.Message))
+         exit 1
+    }
 }
 
+# --- Configure Prometheus ---
+Write-Host "Configuring Prometheus..." -ForegroundColor Cyan
+# Parse the Neo metrics host:port from the parameter
+$neoMetricsHost, $neoMetricsPort = $NeoMetricsAddress -split ':'
+if ([string]::IsNullOrEmpty($neoMetricsHost) -or [string]::IsNullOrEmpty($neoMetricsPort)) {
+    Write-Error "Invalid NeoMetricsAddress format. Expected 'host:port'."
+    exit 1
+}
+
+# Update Prometheus config to use the provided Neo metrics address
+$prometheusConfig = Get-Content -Path $prometheusConfigPath -Raw
+# More specific regex that targets only the neo-node job section
+$prometheusConfig = $prometheusConfig -replace "(?<=job_name: 'neo-node'[^\[]+\[').*?(?='\])", $NeoMetricsAddress
+$prometheusConfig | Set-Content -Path $prometheusConfigPath -NoNewline
+Write-Host "  Prometheus config updated to scrape from: $NeoMetricsAddress" -ForegroundColor Gray
+
+# Update Grafana dashboard if it exists and Neo metrics address differs from the default
+$dashboardPath = Join-Path -Path $monitoringDir -ChildPath "grafana\dashboards\neo-node-dashboard.json"
+if (Test-Path $dashboardPath) {
+    $defaultMetricsAddress = "127.0.0.1:9101"
+    if ($NeoMetricsAddress -ne $defaultMetricsAddress) {
+        Write-Host "Updating Grafana dashboard to use Neo metrics from: $NeoMetricsAddress" -ForegroundColor Cyan
+        $dashboardContent = Get-Content -Path $dashboardPath -Raw
+        # Update all instance references in the dashboard queries
+        # Using single quotes for the regex pattern to avoid variable expansion issues
+        $pattern = 'instance="127.0.0.1:9101"'
+        $replacement = "instance=`"$NeoMetricsAddress`""
+        $dashboardContent = $dashboardContent -replace $pattern, $replacement
+        $dashboardContent | Set-Content -Path $dashboardPath -NoNewline
+        Write-Host "  Grafana dashboard updated to use instance: $NeoMetricsAddress" -ForegroundColor Gray
+    }
+}
 
 # --- Start Prometheus Server (in background) ---
 Write-Host "Starting Prometheus Server..." -ForegroundColor Green
@@ -314,16 +389,24 @@ Start-Sleep -Seconds 5 # Grafana can take longer to start fully
 
 # --- Start Neo-CLI (in foreground) ---
 Write-Host "Starting Neo-CLI..." -ForegroundColor Green
+
+# Parse the host:port format
+$neoMetricsHost, $neoMetricsPort = $NeoMetricsAddress -split ':'
+
 $neoCliArgs = @(
     # Config file is implicitly loaded from bin dir, no need for --config
-    "--prometheus", $NeoMetricsAddress, # Pass prometheus endpoint via command line
+    "--prometheus", "$NeoMetricsAddress", # Pass prometheus endpoint via command line
     "--verbose", "Info" # Set log level
 )
 $dotnetArgs = @("`"$neoCLIPath`"") + $neoCliArgs # Quote DLL path
 
 Write-Host "  Command: dotnet $($dotnetArgs -join ' ')" -ForegroundColor Magenta
 Write-Host "  Working Directory: $neoCLIBinDir" -ForegroundColor Cyan
-Write-Host "  Data Directory: $absoluteNeoDataPath" -ForegroundColor Cyan
+if ($absoluteNeoDataPath) {
+    Write-Host "  Data Directory: $absoluteNeoDataPath" -ForegroundColor Cyan
+} else {
+    Write-Host "  Data Directory: (Default Neo-CLI relative path within bin)" -ForegroundColor Cyan
+}
 Write-Host "  Neo Metrics Endpoint: http://$NeoMetricsAddress/metrics" -ForegroundColor Cyan
 
 Write-Host ""

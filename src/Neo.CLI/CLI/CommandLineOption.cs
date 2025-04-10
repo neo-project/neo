@@ -32,6 +32,7 @@ namespace Neo.CLI
                 !string.IsNullOrEmpty(Password) ||
                 !string.IsNullOrEmpty(DBEngine) ||
                 !string.IsNullOrEmpty(DBPath) ||
+                !string.IsNullOrEmpty(Prometheus) ||
                 (Plugins?.Length > 0) ||
                 NoVerify is not null;
     }

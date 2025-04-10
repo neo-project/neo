@@ -80,7 +80,7 @@
       },
       "id": 100,
       "panels": [],
-      "title": "Node Health & Overview",
+      "title": "Core Blockchain Metrics",
       "type": "row"
     },
     {
@@ -137,7 +137,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "max(neo_node_block_height{job=\"neo\", instance=\"127.0.0.1:9101\"})",
+          "expr": "max(neo_blockchain_block_height{job=\"neo-node\", instance=\"127.0.0.1:9101\"})",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -187,7 +187,7 @@
         "x": 4,
         "y": 1
       },
-      "id": 4,
+      "id": 3,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -211,7 +211,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_p2p_connections_total{job=\"neo\", instance=\"127.0.0.1:9101\"}",
+          "expr": "neo_network_peers_count{job=\"neo-node\", instance=\"127.0.0.1:9101\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -285,7 +285,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "rate(neo_process_cpu_seconds_total{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])",
+          "expr": "rate(neo_node_cpu_seconds_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -355,7 +355,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_process_working_set_bytes{job=\"neo\", instance=\"127.0.0.1:9101\"}",
+          "expr": "neo_node_memory_working_set_bytes{job=\"neo-node\", instance=\"127.0.0.1:9101\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -377,7 +377,7 @@
       },
       "id": 200,
       "panels": [],
-      "title": "RPC & Performance",
+      "title": "Node Performance Metrics",
       "type": "row"
     },
     {
@@ -479,7 +479,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(neo_rpc_requests_total{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])) by (method, status)",
+          "expr": "sum(rate(neo_node_api_requests_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])) by (method, status)",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -492,7 +492,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "RPC Request Rate (5m avg)",
+      "title": "API Request Rate (5m avg)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -628,7 +628,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(neo_rpc_request_duration_seconds_bucket{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])) by (le, method))",
+          "expr": "histogram_quantile(0.95, sum(rate(neo_node_api_request_duration_seconds_bucket{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])) by (le, method))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -642,7 +642,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(neo_rpc_request_duration_seconds_bucket{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])) by (le, method))",
+          "expr": "histogram_quantile(0.50, sum(rate(neo_node_api_request_duration_seconds_bucket{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])) by (le, method))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -656,7 +656,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "RPC Request Duration (p95, p50 - 5m avg)",
+      "title": "API Request Duration (p95, p50 - 5m avg)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -704,36 +704,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+          "color": {
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -742,10 +714,18 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                 "color": "orange",
+                 "value": 1
+              },
+              {
+                 "color": "red",
+                 "value": 3
               }
             ]
           },
-          "unit": "s"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -792,7 +772,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(neo_block_processing_duration_seconds_bucket{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(neo_block_processing_duration_seconds_bucket{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])) by (le))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -806,7 +786,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(neo_transaction_execution_duration_seconds_bucket{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(neo_transaction_execution_duration_seconds_bucket{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])) by (le))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -867,7 +847,7 @@
       },
       "id": 300,
       "panels": [],
-      "title": "Mempool",
+      "title": "Network Metrics",
       "type": "row"
     },
      {
@@ -924,11 +904,11 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_mempool_size_bytes{job=\"neo\", instance=\"127.0.0.1:9101\"}",
+          "expr": "neo_mempool_size_bytes{job=\"neo-node\", instance=\"127.0.0.1:9101\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
-          "legendFormat": "Mempool Size",
+          "legendFormat": "Size",
           "range": true,
           "refId": "A"
         }
@@ -990,16 +970,16 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_mempool_transactions_total{job=\"neo\", instance=\"127.0.0.1:9101\"}",
+          "expr": "neo_mempool_size_transactions{job=\"neo-node\", instance=\"127.0.0.1:9101\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
-          "legendFormat": "Mempool Transactions",
+          "legendFormat": "Transactions",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Mempool Transactions",
+      "title": "Mempool Size (Transactions)",
       "type": "stat"
     },
     {
@@ -1101,7 +1081,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(neo_mempool_transactions_added_total{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m]))",
+          "expr": "sum(rate(neo_mempool_transactions_added_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m]))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1115,7 +1095,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(neo_mempool_transactions_rejected_total{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])) by (reason)",
+          "expr": "sum(rate(neo_mempool_transactions_rejected_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])) by (reason)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1176,7 +1156,7 @@
       },
       "id": 400,
       "panels": [],
-      "title": "Consensus",
+      "title": "Consensus Metrics",
       "type": "row"
     },
      {
@@ -1233,7 +1213,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_consensus_height{job=\"neo\", instance=\"127.0.0.1:9101\"}",
+          "expr": "neo_consensus_current_height{job=\"neo-node\", instance=\"127.0.0.1:9101\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1307,7 +1287,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_consensus_view{job=\"neo\", instance=\"127.0.0.1:9101\"}",
+          "expr": "neo_consensus_current_view{job=\"neo-node\", instance=\"127.0.0.1:9101\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1418,7 +1398,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(neo_consensus_messages_received_total{job=\"neo\", instance=\"127.0.0.1:9101\"}[5m])) by (type)",
+          "expr": "sum(rate(neo_consensus_p2p_messages_received_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])) by (type)",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1474,54 +1454,105 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 40
       },
-      "id": 500,
+      "id": 300,
       "panels": [],
-      "title": "N3 Economics",
+      "title": "Validator Metrics",
       "type": "row"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "text": "Inactive"
+                },
+                "1": {
+                  "color": "green",
+                  "text": "Active"
+                }
+              },
+              "type": "value"
             }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 41
+      },
+      "id": 301,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.5.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "neo_validator_active{job=\"neo-node\", instance=\"127.0.0.1:9101\"}",
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Validator Status",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Validator Active Status",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -1530,6 +1561,10 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
               }
             ]
           },
@@ -1537,40 +1572,28 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 43
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 41
       },
-      "hiddenColumns": [],
-      "id": 28,
-      "legend": {
-        "alignAsTable": false,
-        "calcs": [
-          "lastNotNull"
-        ],
-        "displayMode": "list",
-        "placement": "bottom",
-        "showLegend": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
+      "id": 302,
       "options": {
-        "alertThreshold": true
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
       },
-      "percentage": false,
       "pluginVersion": "9.5.1",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
           "datasource": {
@@ -1578,55 +1601,103 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_block_gas_generated_total{job=\"neo\", instance=\"127.0.0.1:9101\"} / 100000000",
+          "expr": "increase(neo_validator_missed_blocks_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[1h])",
           "format": "time_series",
-          "instant": false,
+          "instant": true,
           "interval": "",
-          "legendFormat": "GAS Generated",
+          "legendFormat": "Missed Blocks (1h)",
           "range": true,
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GAS Generated per Block",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
+      "title": "Missed Block Proposals (1h)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 47
       },
-      "type": "timeseries",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
+      "id": 400,
+      "panels": [],
+      "title": "Security Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": "GAS",
-          "logBase": 1,
-          "max": null,
-          "min": 0,
-          "show": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "none"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 48
+      },
+      "id": 401,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.5.1",
+      "targets": [
         {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "increase(neo_failed_authentication_attempts_total{job=\"neo-node\", service=\"RPC\", instance=\"127.0.0.1:9101\"}[5m])",
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Failed RPC Logins (5m)",
+          "range": true,
+          "refId": "A"
         }
       ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Failed RPC Logins (5m)",
+      "type": "stat"
     },
     {
       "aliasColors": {},
@@ -1687,18 +1758,16 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 43
+        "h": 6,
+        "w": 12,
+        "x": 6,
+        "y": 48
       },
       "hiddenColumns": [],
-      "id": 30,
+      "id": 402,
       "legend": {
         "alignAsTable": false,
-        "calcs": [
-          "lastNotNull"
-        ],
+        "calcs": [],
         "displayMode": "list",
         "placement": "bottom",
         "showLegend": true
@@ -1725,11 +1794,11 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_block_system_fee_total{job=\"neo\", instance=\"127.0.0.1:9101\"} / 100000000",
+          "expr": "rate(neo_invalid_p2p_message_count_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])",
           "format": "time_series",
           "instant": false,
           "interval": "",
-          "legendFormat": "System Fee",
+          "legendFormat": "{{reason}}",
           "range": true,
           "refId": "A"
         }
@@ -1738,7 +1807,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "System Fee per Block",
+      "title": "Invalid P2P Message Rate (5m avg)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1754,8 +1823,8 @@
       },
       "yaxes": [
         {
-          "format": "short",
-          "label": "GAS",
+          "format": "none",
+          "label": "Rate/sec",
           "logBase": 1,
           "max": null,
           "min": 0,
@@ -1775,47 +1844,15 @@
         "alignLevel": null
       }
     },
-        {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
+    {
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+          "color": {
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -1824,6 +1861,10 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -1831,40 +1872,28 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 43
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 48
       },
-      "hiddenColumns": [],
-      "id": 32,
-      "legend": {
-        "alignAsTable": false,
-        "calcs": [
-          "lastNotNull"
-        ],
-        "displayMode": "list",
-        "placement": "bottom",
-        "showLegend": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
+      "id": 403,
       "options": {
-        "alertThreshold": true
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
       },
-      "percentage": false,
       "pluginVersion": "9.5.1",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
           "datasource": {
@@ -1872,61 +1901,23 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "neo_block_network_fee_total{job=\"neo\", instance=\"127.0.0.1:9101\"} / 100000000",
+          "expr": "increase(neo_unexpected_shutdowns_total{job=\"neo-node\", instance=\"127.0.0.1:9101\"}[5m])",
           "format": "time_series",
-          "instant": false,
+          "instant": true,
           "interval": "",
-          "legendFormat": "Network Fee",
+          "legendFormat": "Shutdowns (5m)",
           "range": true,
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Network Fee per Block",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "timeseries",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": "GAS",
-          "logBase": 1,
-          "max": null,
-          "min": 0,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Unexpected Shutdowns (5m)",
+      "type": "stat"
     }
   ],
   "refresh": "15s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["neo", "blockchain", "n3"],
+  "tags": ["neo", "blockchain", "n3", "node"],
   "templating": {
     "list": [
       {
@@ -1957,8 +1948,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Neo N3 Node Overview",
-  "uid": "neo-n3-node-overview",
-  "version": 1,
+  "title": "Neo N3 Node Overview (Professional)",
+  "uid": "neo-n3-node-overview-professional",
+  "version": 2,
   "weekStart": ""
 } 
