@@ -252,6 +252,54 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_SetMaxValidUntilBlockIncrement()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Fake blockchain
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
+
+            // Without signature
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(5760, ret.GetInteger());
+
+            // With signature, wrong value
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 100000000 });
+            });
+
+            ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(5760, ret.GetInteger());
+
+            // Proper set
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
+            Assert.IsTrue(ret.IsNull);
+
+            ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(123, ret.GetInteger());
+        }
+
+        [TestMethod]
         public void Check_BlockAccount()
         {
             var snapshot = _snapshotCache.CloneCache();
