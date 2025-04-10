@@ -35,7 +35,7 @@ namespace Neo.Monitoring
     /// Collects metrics related to P2P network, mempool, RPC, consensus,
     /// performance, and system resources.
     /// </summary>
-    public sealed class PrometheusService : IDisposable
+    public sealed partial class PrometheusService : IDisposable
     {
         private MetricServer? _metricServer;
         // private IDisposable? _systemMetricsCollector; // Commented out due to compatibility issues
@@ -63,99 +63,8 @@ namespace Neo.Monitoring
         /// </summary>
         public bool IsEnabled => _enabled;
 
-        // ======================= Metric Definitions (Aligned with prometheus.md) =======================
-
-        // --- Core Blockchain Metrics ---
-        public readonly Lazy<Gauge> BlockchainBlockHeight = NonCapturingLazyInitializer.CreateGauge(
-            "neo_blockchain_block_height", "Current validated block height of the node.");
-        public readonly Lazy<Gauge> BlockchainSyncStatus = NonCapturingLazyInitializer.CreateGauge(
-            "neo_blockchain_sync_status", "Sync progress from 0 (syncing) to 1 (synced)."); // Added based on doc
-        public readonly Lazy<Gauge> BlockchainChainTipLag = NonCapturingLazyInitializer.CreateGauge(
-            "neo_blockchain_chain_tip_lag", "Blocks behind the network chain tip."); // Added based on doc
-        // Note: Many other core metrics like block time, propagation, finality, forks require deeper integration.
-
-        // --- Node Performance Metrics ---
-        public readonly Lazy<Gauge> NodeMemoryWorkingSetBytes = NonCapturingLazyInitializer.CreateGauge(
-            "neo_node_memory_working_set_bytes", "Process working set memory in bytes."); // Renamed from ProcessWorkingSet
-        public readonly Lazy<Gauge> NodeCpuSecondsTotal = NonCapturingLazyInitializer.CreateGauge(
-            "neo_node_cpu_seconds_total", "Total process CPU time consumed in seconds since process start."); // Corrected back to Gauge
-        public readonly Lazy<Counter> NodeApiRequestsTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_node_api_requests_total", "Total number of RPC/API requests handled.", "method", "status"); // Renamed from RpcRequests
-        public readonly Lazy<Histogram> NodeApiRequestDurationSeconds = NonCapturingLazyInitializer.CreateHistogram(
-            "neo_node_api_request_duration_seconds", "Histogram of RPC/API request duration in seconds.",
-            new HistogramConfiguration { Buckets = Histogram.ExponentialBuckets(0.001, 2, 15), LabelNames = new[] { "method" } }); // Renamed from RpcRequestDuration
-        // Note: Other node metrics (heap, GC, disk, files) require deeper runtime/OS integration.
-
-        // --- Network Metrics ---
-        public readonly Lazy<Gauge> NetworkPeersCount = NonCapturingLazyInitializer.CreateGauge(
-            "neo_network_peers_count", "Current number of active P2P connections."); // Renamed from P2PConnections
-        public readonly Lazy<Counter> NetworkP2PMessagesReceivedTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_network_p2p_messages_received_total", "Total number of P2P messages received.", "type"); // Renamed from P2PMessagesReceived
-        public readonly Lazy<Counter> NetworkP2PMessagesSentTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_network_p2p_messages_sent_total", "Total number of P2P messages sent.", "type"); // Renamed from P2PMessagesSent
-        // Note: Other network metrics (traffic, latency, peer details) require deeper integration.
-
-        // --- Transaction Pool (Mempool) Metrics ---
-        public readonly Lazy<Gauge> MempoolSizeTransactions = NonCapturingLazyInitializer.CreateGauge(
-             "neo_mempool_size_transactions", "Number of transactions currently in the mempool."); // Renamed from MempoolTransactions
-        public readonly Lazy<Gauge> MempoolSizeBytes = NonCapturingLazyInitializer.CreateGauge(
-            "neo_mempool_size_bytes", "Total size of transactions currently in the mempool."); // Kept name
-        public readonly Lazy<Counter> MempoolTransactionsAddedTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_mempool_transactions_added_total", "Total number of transactions successfully added to the mempool."); // Renamed
-        public readonly Lazy<Counter> MempoolTransactionsRejectedTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_mempool_transactions_rejected_total", "Total number of transactions rejected from the mempool.", "reason"); // Renamed
-        // Note: Other mempool metrics (tx age, fee rate, propagation) require deeper integration.
-
-        // --- Consensus Metrics (dBFT Specific) ---
-        public readonly Lazy<Gauge> ConsensusCurrentHeight = NonCapturingLazyInitializer.CreateGauge(
-             "neo_consensus_current_height", "Current block height the consensus service is working on."); // Renamed from ConsensusHeight
-        public readonly Lazy<Gauge> ConsensusCurrentView = NonCapturingLazyInitializer.CreateGauge(
-            "neo_consensus_current_view", "Current view number in the consensus service."); // Renamed from ConsensusView
-        public readonly Lazy<Counter> ConsensusP2PMessagesReceivedTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_consensus_p2p_messages_received_total", "Total number of consensus messages received.", "type"); // Renamed from ConsensusMessagesReceived
-        public readonly Lazy<Histogram> ConsensusBlockGenerationDurationSeconds = NonCapturingLazyInitializer.CreateHistogram(
-             "neo_consensus_block_generation_duration_seconds", "Histogram of time taken to generate a block during consensus.",
-             new HistogramConfiguration { Buckets = Histogram.ExponentialBuckets(0.1, 2, 10) }); // Kept name
-        public readonly Lazy<Counter> ConsensusNewBlockPersistedTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_consensus_new_block_persisted_total", "Total number of new blocks persisted via consensus."); // Kept name
-        // Note: Other consensus metrics (validator status, participation, rewards) require deeper integration.
-
-        // --- Validator Metrics (dBFT Specific) ---
-        public readonly Lazy<Gauge> ValidatorActive = NonCapturingLazyInitializer.CreateGauge(
-            "neo_validator_active", "Indicates if the node is currently an active consensus validator (1 if active, 0 otherwise).");
-        public readonly Lazy<Counter> ValidatorMissedBlocksTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_validator_missed_blocks_total", "Total number of block proposals missed by this node when it was the primary validator.");
-
-        // --- Execution & Block Processing Metrics ---
-        public readonly Lazy<Histogram> TransactionExecutionDurationSeconds = NonCapturingLazyInitializer.CreateHistogram(
-             "neo_transaction_execution_duration_seconds", "Histogram of time taken to execute a transaction in the VM.",
-             new HistogramConfiguration { Buckets = Histogram.ExponentialBuckets(0.001, 2, 15) }); // Kept name
-        public readonly Lazy<Histogram> BlockProcessingDurationSeconds = NonCapturingLazyInitializer.CreateHistogram(
-            "neo_block_processing_duration_seconds", "Histogram of time taken to process and persist a block (verification, commit, events).",
-            new HistogramConfiguration { Buckets = Histogram.ExponentialBuckets(0.01, 2, 15) }); // Kept name
-        public readonly Lazy<Gauge> BlockProcessingTransactionsTotal = NonCapturingLazyInitializer.CreateGauge(
-             "neo_block_processing_transactions_total", "Number of transactions in the last processed block."); // Kept name
-        public readonly Lazy<Gauge> BlockProcessingSizeBytes = NonCapturingLazyInitializer.CreateGauge(
-            "neo_block_processing_size_bytes", "Size of the last processed block in bytes."); // Kept name
-
-        // --- N3 Economics Metrics ---
-        public readonly Lazy<Gauge> BlockGasGeneratedTotal = NonCapturingLazyInitializer.CreateGauge(
-            "neo_block_gas_generated_total", "GAS generated in the last processed block (in 10^-8 units)."); // Kept name
-        public readonly Lazy<Gauge> BlockSystemFeeTotal = NonCapturingLazyInitializer.CreateGauge(
-            "neo_block_system_fee_total", "System fee collected in the last processed block (in 10^-8 units)."); // Kept name
-        public readonly Lazy<Gauge> BlockNetworkFeeTotal = NonCapturingLazyInitializer.CreateGauge(
-            "neo_block_network_fee_total", "Network fee collected in the last processed block (in 10^-8 units)."); // Kept name
-
-        // --- Security Metrics ---
-        public readonly Lazy<Counter> FailedAuthenticationAttemptsTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_failed_authentication_attempts_total", "Total number of failed authentication attempts.", "service");
-        public readonly Lazy<Counter> InvalidP2PMessageCountTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_invalid_p2p_message_count_total", "Total number of invalid P2P messages received.", "reason");
-        public readonly Lazy<Counter> UnexpectedShutdownsTotal = NonCapturingLazyInitializer.CreateCounter(
-            "neo_unexpected_shutdowns_total", "Total number of unexpected node shutdowns detected (e.g., via recovery).", "reason");
-
         /// <summary>
-        /// Private constructor for singleton pattern. Use Instance property.
+        /// Private constructor for singleton pattern.
         /// </summary>
         private PrometheusService()
         {
@@ -230,33 +139,8 @@ namespace Neo.Monitoring
                         throw;
                     }
 
-                    // Test if we can access the metrics endpoint ourselves as a validation step
-                    try
-                    {
-                        Log(nameof(PrometheusService), LogLevel.Info, "Testing metrics endpoint connection...");
-                        // Use HttpClient instead of WebClient (which is obsolete)
-                        using var client = new System.Net.Http.HttpClient();
-                        // Try connecting via localhost regardless of binding for the test
-                        string testUrl = $"http://localhost:{settings.Port}/metrics";
-                        // Use a short timeout to avoid hanging if there's an issue
-                        client.Timeout = TimeSpan.FromSeconds(3);
-                        var response = client.GetAsync(testUrl).GetAwaiter().GetResult();
-                        if (response.IsSuccessStatusCode)
-                        {
-                            Log(nameof(PrometheusService), LogLevel.Info, $"Successfully verified metrics endpoint at {testUrl}");
-                        }
-                        else
-                        {
-                            Log(nameof(PrometheusService), LogLevel.Warning, $"Metrics endpoint returned status code {response.StatusCode}");
-                        }
-                    }
-                    catch (Exception testEx)
-                    {
-                        // Log but don't fail - this is just a test
-                        Log(nameof(PrometheusService), LogLevel.Warning, $"Unable to verify metrics endpoint: {testEx.Message}");
-                        Log(nameof(PrometheusService), LogLevel.Warning, "The server may still be working but you might need to check firewall settings or permissions");
-                    }
-                    // Start manual process metrics collection
+                    // Internal endpoint test was removed during development.
+
                     _processMetricsTimer = new Timer(UpdateProcessMetrics, null, _processMetricsInterval, _processMetricsInterval);
                     Log(nameof(PrometheusService), LogLevel.Info, $"Started manual process metrics collection (Update interval: {_processMetricsInterval.TotalSeconds}s).");
 
@@ -299,249 +183,6 @@ namespace Neo.Monitoring
             }
         }
 
-        #region Metric Recording Methods (Placeholder signatures might need core logic implementation)
-
-        // These methods provide a safe way to interact with metrics,
-        // checking if the service is enabled before accessing the Lazy<T>.Value.
-        // TODO: Implement the actual logic within Neo core to call these methods.
-
-        // --- Core Blockchain ---
-        public void SetBlockchainBlockHeight(uint height)
-        {
-            if (!_enabled) return;
-            BlockchainBlockHeight.Value.Set(height);
-        }
-
-        public void SetBlockchainSyncStatus(double status) // 0.0 to 1.0
-        {
-            if (!_enabled) return;
-            BlockchainSyncStatus.Value.Set(status);
-        }
-
-        public void SetBlockchainChainTipLag(long lag)
-        {
-            if (!_enabled) return;
-            BlockchainChainTipLag.Value.Set(lag);
-        }
-
-        // --- Node Performance ---
-        // Note: ProcessWorkingSet and ProcessCpuTotal are updated by UpdateProcessMetrics timer below
-
-        public void IncNodeApiRequests(string method, bool success)
-        {
-            if (!_enabled) return;
-            NodeApiRequestsTotal.Value.WithLabels(method ?? "unknown", success ? "success" : "error").Inc();
-        }
-
-        public IDisposable MeasureNodeApiRequestDuration(string method)
-        {
-            return _enabled ? NodeApiRequestDurationSeconds.Value.WithLabels(method ?? "unknown").NewTimer() : NullDisposable.Instance;
-        }
-
-        // --- Network ---
-        public void SetNetworkPeers(long count)
-        {
-            if (!_enabled) return;
-            NetworkPeersCount.Value.Set(count);
-        }
-
-        public void IncNetworkP2PMessagesReceived(string type)
-        {
-            if (!_enabled) return;
-            NetworkP2PMessagesReceivedTotal.Value.WithLabels(type ?? "unknown").Inc();
-        }
-
-        public void IncNetworkP2PMessagesSent(string type)
-        {
-            if (!_enabled) return;
-            NetworkP2PMessagesSentTotal.Value.WithLabels(type ?? "unknown").Inc();
-        }
-
-        // --- Mempool ---
-        public void SetMempoolSizeTransactions(long count)
-        {
-            if (!_enabled) return;
-            MempoolSizeTransactions.Value.Set(count);
-        }
-
-        public void SetMempoolSizeBytes(long bytes)
-        {
-            if (!_enabled) return;
-            MempoolSizeBytes.Value.Set(bytes);
-        }
-
-        public void IncMempoolTransactionsAdded()
-        {
-            if (!_enabled) return;
-            MempoolTransactionsAddedTotal.Value.Inc();
-        }
-
-        public void IncMempoolTransactionsRejected(string reason)
-        {
-            if (!_enabled) return;
-            MempoolTransactionsRejectedTotal.Value.WithLabels(reason ?? "unknown").Inc();
-        }
-
-        // --- Consensus ---
-        public void SetConsensusHeight(uint height) // TODO: Check if this is still needed if BlockchainBlockHeight exists
-        {
-            if (!_enabled) return;
-            ConsensusCurrentHeight.Value.Set(height);
-        }
-
-        public void SetConsensusView(byte view)
-        {
-            if (!_enabled) return;
-            ConsensusCurrentView.Value.Set(view);
-        }
-
-        public void IncConsensusMessagesReceived(string type)
-        {
-            if (!_enabled) return;
-            ConsensusP2PMessagesReceivedTotal.Value.WithLabels(type ?? "unknown").Inc();
-        }
-
-        public IDisposable MeasureConsensusBlockGeneration()
-        {
-            return _enabled ? ConsensusBlockGenerationDurationSeconds.Value.NewTimer() : NullDisposable.Instance;
-        }
-
-        public void IncConsensusNewBlockPersisted()
-        {
-            if (!_enabled) return;
-            ConsensusNewBlockPersistedTotal.Value.Inc();
-        }
-
-        // --- Validator ---
-        public void SetValidatorActive(bool isActive)
-        {
-            if (!_enabled) return;
-            ValidatorActive.Value.Set(isActive ? 1 : 0);
-        }
-
-        public void IncValidatorMissedBlocks()
-        {
-            if (!_enabled) return;
-            ValidatorMissedBlocksTotal.Value.Inc();
-        }
-
-        // --- Execution & Block Processing ---
-        public void RecordTransactionExecutionTime(double seconds)
-        {
-            if (!_enabled) return;
-            TransactionExecutionDurationSeconds.Value.Observe(seconds);
-        }
-
-        // Use: using (var timer = PrometheusService.Instance.MeasureBlockProcessing()) { ... timer.SetBlockDetails(...); ... return result; }
-        public IBlockProcessingTimer MeasureBlockProcessing()
-        {
-            // Returns a timer that also allows setting block-specific gauges upon disposal
-            return _enabled ? new BlockProcessingTimerImpl(
-                                BlockProcessingDurationSeconds.Value, // Use renamed metric
-                                BlockProcessingTransactionsTotal.Value, // Use renamed metric
-                                BlockProcessingSizeBytes.Value, // Use renamed metric
-                                BlockGasGeneratedTotal.Value, // Use renamed metric
-                                BlockSystemFeeTotal.Value, // Use renamed metric
-                                BlockNetworkFeeTotal.Value) // Use renamed metric
-                            : NullBlockProcessingTimer.Instance;
-        }
-
-        // Interface for the block processing timer to allow setting details
-        public interface IBlockProcessingTimer : IDisposable
-        {
-            /// <summary>
-            /// Sets the details for the block being processed. Call this before the timer is disposed.
-            /// </summary>
-            /// <param name="transactionCount">Number of transactions in the block.</param>
-            /// <param name="sizeBytes">Size of the block in bytes.</param>
-            /// <param name="gasGenerated">Total GAS generated in the block (10^-8 units).</param>
-            /// <param name="systemFee">Total system fee collected (10^-8 units).</param>
-            /// <param name="networkFee">Total network fee collected (10^-8 units).</param>
-            void SetBlockDetails(int transactionCount, long sizeBytes, long gasGenerated, long systemFee, long networkFee);
-        }
-
-        // Implementation of the block processing timer
-        private sealed class BlockProcessingTimerImpl : IBlockProcessingTimer
-        {
-            private readonly IDisposable _histogramTimer;
-            private readonly Gauge _txGauge;
-            private readonly Gauge _sizeGauge;
-            private readonly Gauge _gasGeneratedGauge;
-            private readonly Gauge _systemFeeGauge;
-            private readonly Gauge _networkFeeGauge;
-            private bool _disposed = false;
-            private int _txCount = 0;
-            private long _sizeBytes = 0;
-            private long _gasGenerated = 0;
-            private long _systemFee = 0;
-            private long _networkFee = 0;
-
-            public BlockProcessingTimerImpl(Histogram histogram,
-                                          Gauge txGauge, Gauge sizeGauge,
-                                          Gauge gasGeneratedGauge, Gauge systemFeeGauge, Gauge networkFeeGauge)
-            {
-                _histogramTimer = histogram.NewTimer();
-                _txGauge = txGauge;
-                _sizeGauge = sizeGauge;
-                _gasGeneratedGauge = gasGeneratedGauge;
-                _systemFeeGauge = systemFeeGauge;
-                _networkFeeGauge = networkFeeGauge;
-            }
-
-            public void SetBlockDetails(int transactionCount, long sizeBytes, long gasGenerated, long systemFee, long networkFee)
-            {
-                if (_disposed) return;
-                _txCount = transactionCount;
-                _sizeBytes = sizeBytes;
-                _gasGenerated = gasGenerated;
-                _systemFee = systemFee;
-                _networkFee = networkFee;
-            }
-
-            public void Dispose()
-            {
-                if (_disposed) return;
-                _txGauge.Set(_txCount);
-                _sizeGauge.Set(_sizeBytes);
-                _gasGeneratedGauge.Set(_gasGenerated);
-                _systemFeeGauge.Set(_systemFee);
-                _networkFeeGauge.Set(_networkFee);
-                _histogramTimer.Dispose();
-                _disposed = true;
-            }
-        }
-
-        // Null implementation for when Prometheus is disabled
-        private sealed class NullBlockProcessingTimer : IBlockProcessingTimer
-        {
-            public static readonly NullBlockProcessingTimer Instance = new NullBlockProcessingTimer();
-            private NullBlockProcessingTimer() { }
-            // Updated signature to match interface
-            public void SetBlockDetails(int transactionCount, long sizeBytes, long gasGenerated, long systemFee, long networkFee) { /* No-op */ }
-            public void Dispose() { /* No-op */ }
-        }
-
-        // --- Security ---
-        public void IncFailedAuthentication(string service)
-        {
-            if (!_enabled) return;
-            FailedAuthenticationAttemptsTotal.Value.WithLabels(service ?? "unknown").Inc();
-        }
-
-        public void IncInvalidP2PMessage(string reason)
-        {
-            if (!_enabled) return;
-            InvalidP2PMessageCountTotal.Value.WithLabels(reason ?? "unknown").Inc();
-        }
-
-        public void IncUnexpectedShutdown(string reason)
-        {
-            if (!_enabled) return;
-            UnexpectedShutdownsTotal.Value.WithLabels(reason ?? "unknown").Inc();
-        }
-
-        #endregion // Metric Recording Methods
-
         #region Process Metrics Update
 
         /// <summary>
@@ -554,11 +195,11 @@ namespace Neo.Monitoring
             try
             {
                 using var currentProcess = Process.GetCurrentProcess();
-                currentProcess.Refresh(); // Refresh process stats
+                currentProcess.Refresh();
 
-                // Update metrics - Accessing Lazy<T>.Value is thread-safe, .Set() is thread-safe
-                NodeMemoryWorkingSetBytes.Value.Set(currentProcess.WorkingSet64); // Use renamed metric
-                NodeCpuSecondsTotal.Value.Set(currentProcess.TotalProcessorTime.TotalSeconds); // Corrected back to use Set for Gauge
+                // Calls are to metrics defined in PrometheusService.Metrics.cs
+                NodeMemoryWorkingSetBytes.Value.Set(currentProcess.WorkingSet64);
+                NodeCpuSecondsTotal.Value.Set(currentProcess.TotalProcessorTime.TotalSeconds);
             }
             catch (Exception ex)
             {
@@ -591,11 +232,8 @@ namespace Neo.Monitoring
                 }
 
                 // --- Update Blockchain Metrics ---
-                // Get current persisted block height using LedgerContract
+                // Calls are to methods defined in PrometheusService.Recording.cs
                 uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-
-                // Get the highest known header height from the header cache
-                // Use currentHeight as fallback if cache is empty or hasn't advanced yet
                 uint headerHeight = headerCache.Last?.Index ?? currentHeight;
 
                 // Calculate Sync Status (0.0 to 1.0)
@@ -702,62 +340,6 @@ namespace Neo.Monitoring
             public static readonly NullDisposable Instance = new NullDisposable();
             private NullDisposable() { } // Prevent external instantiation
             public void Dispose() { }
-        }
-    }
-
-    /// <summary>
-    /// Configuration settings for the Prometheus service.
-    /// </summary>
-    public class PrometheusSettings
-    {
-        public bool Enabled { get; set; } = false; // Disabled by default
-        public string Host { get; set; } = "127.0.0.1"; // Default to loopback
-        public int Port { get; set; } = 9100; // Default Prometheus port often used
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PrometheusSettings"/> class.
-        /// Default values: Enabled = false, Host = 127.0.0.1, Port = 9100
-        /// </summary>
-        public PrometheusSettings()
-        {
-            // Default configuration values are set by property initializers
-        }
-    }
-
-    // Helper for lazy initialization of metrics without capturing 'this'
-    internal static class NonCapturingLazyInitializer
-    {
-        private static readonly LazyThreadSafetyMode Mode = LazyThreadSafetyMode.ExecutionAndPublication;
-
-        // Generic factory for any metric type if needed later
-        // public static Lazy<T> Create<T>(Func<T> factory) where T : class
-        // {
-        //     return new Lazy<T>(factory, Mode);
-        // }
-
-        public static Lazy<Counter> CreateCounter(string name, string help, params string[] labelNames)
-        {
-            return new Lazy<Counter>(() => Metrics.CreateCounter(name, help, new CounterConfiguration
-            {
-                LabelNames = labelNames ?? Array.Empty<string>() // Ensure not null
-            }), Mode);
-        }
-
-        public static Lazy<Gauge> CreateGauge(string name, string help, params string[] labelNames)
-        {
-            return new Lazy<Gauge>(() => Metrics.CreateGauge(name, help, new GaugeConfiguration
-            {
-                LabelNames = labelNames ?? Array.Empty<string>() // Ensure not null
-            }), Mode);
-        }
-
-        public static Lazy<Histogram> CreateHistogram(string name, string help, HistogramConfiguration? configuration = null)
-        {
-            configuration ??= new HistogramConfiguration();
-            // Ensure LabelNames is not null if provided within configuration
-            if (configuration.LabelNames == null) configuration.LabelNames = Array.Empty<string>();
-
-            return new Lazy<Histogram>(() => Metrics.CreateHistogram(name, help, configuration), Mode);
         }
     }
 }
