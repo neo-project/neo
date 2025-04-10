@@ -16,7 +16,7 @@ services:
   neo-cli:
     build:
       context: ..
-      dockerfile: monitoring/docker/neo-cli/Dockerfile
+      dockerfile: monitoring/docker/Dockerfile
     container_name: neo-cli
     volumes:
       - ../:/workspace:ro
@@ -39,7 +39,7 @@ services:
       # Mount the specific Docker config file for Prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       # Mount the alert rules file (copied into docker/prometheus earlier)
-      - ./docker/prometheus/neo_alerts.yml:/etc/prometheus/neo_alerts.yml:ro
+      - ./prometheus/neo_alerts.yml:/etc/prometheus/neo_alerts.yml:ro
       - prometheus-data:/prometheus
     networks:
       - neo-monitor-net
@@ -63,7 +63,7 @@ services:
     restart: unless-stopped
     volumes:
       # Mount the specific config file, not the directory
-      - ./docker/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
     networks:
       - neo-monitor-net
@@ -81,7 +81,7 @@ services:
     restart: unless-stopped
     volumes:
       # Mount Docker-specific Grafana provisioning directory
-      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
       # Mount original dashboards directory (as referenced by docker provisioning)
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
