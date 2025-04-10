@@ -448,7 +448,7 @@ namespace Neo.UnitTests.Wallets
             Assert.IsNotNull(signature);
             Assert.AreEqual(signature.Length, 64);
 
-            var isValid = Crypto.VerifySignature([0xa, 0xb, 0xc, 0xd], signature, glkey.PublicKey);
+            var isValid = Crypto.VerifySignature([0xa, 0xb, 0xc, 0xd], signature.Span, glkey.PublicKey);
             Assert.IsTrue(isValid);
 
             var key = new byte[32];

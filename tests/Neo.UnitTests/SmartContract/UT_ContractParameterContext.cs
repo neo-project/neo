@@ -13,6 +13,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -191,6 +193,43 @@ namespace Neo.UnitTests.SmartContract
             byte[] privateKey3 = Enumerable.Repeat((byte)0x01, 31).Append((byte)0x03).ToArray();
             var key3 = new KeyPair(privateKey3);
             Assert.IsFalse(context.AddSignature(multiSignContract, key3.PublicKey, [0x01]));
+        }
+
+        [TestMethod]
+        public void TestAddWithScriptHash()
+        {
+            var h160 = UInt160.Parse("0x902e0d38da5e513b6d07c1c55b85e77d3dce8063");
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var tx = TestUtils.GetTransaction(h160);
+            var context = new ContractParametersContext(snapshotCache, tx, TestProtocolSettings.Default.Network);
+            Assert.IsFalse(context.AddWithScriptHash(h160));
+
+            var contract = new ContractState()
+            {
+                Hash = h160,
+                Nef = new(),
+                Manifest = new()
+                {
+                    Name = "TestContract",
+                    Groups = [],
+                    SupportedStandards = [],
+                    Abi = new() { Methods = [new() { Name = ContractBasicMethod.Verify, Parameters = [] }], Events = [] }
+                }
+            };
+            snapshotCache.AddContract(h160, contract);
+            Assert.IsTrue(context.AddWithScriptHash(h160));
+
+            snapshotCache.DeleteContract(h160);
+            contract.Manifest.Abi = new()
+            {
+                Methods = [new() {
+                    Name = ContractBasicMethod.Verify,
+                    Parameters = [new() { Name = "signature", Type = ContractParameterType.Signature }],
+                }],
+                Events = []
+            };
+            snapshotCache.AddContract(h160, contract);
+            Assert.IsFalse(context.AddWithScriptHash(h160));
         }
     }
 }
