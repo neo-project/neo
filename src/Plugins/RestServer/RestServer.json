@@ -19,6 +19,10 @@
     "EnableSwagger": true,
     "MaxPageSize": 50,
     "MaxConcurrentConnections": 40,
-    "MaxGasInvoke": 200000000
+    "MaxGasInvoke": 200000000,
+    "EnableRateLimiting": true,
+    "RateLimitPermitLimit": 10,
+    "RateLimitWindowSeconds": 60,
+    "RateLimitQueueLimit": 0
   }
 }

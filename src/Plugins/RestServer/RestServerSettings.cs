@@ -44,6 +44,11 @@ namespace Neo.Plugins.RestServer
         public uint MaxPageSize { get; init; }
         public long MaxConcurrentConnections { get; init; }
         public long MaxGasInvoke { get; init; }
+        // Rate limiting settings
+        public bool EnableRateLimiting { get; init; }
+        public int RateLimitPermitLimit { get; init; }
+        public int RateLimitWindowSeconds { get; init; }
+        public int RateLimitQueueLimit { get; init; }
         public required JsonSerializerSettings JsonSerializerSettings { get; init; }
 
         #endregion
@@ -72,6 +77,11 @@ namespace Neo.Plugins.RestServer
             MaxPageSize = 50u,
             MaxConcurrentConnections = 40L,
             MaxGasInvoke = 0_200000000L,
+            // Default rate limiting settings
+            EnableRateLimiting = false,
+            RateLimitPermitLimit = 10,
+            RateLimitWindowSeconds = 60,
+            RateLimitQueueLimit = 0,
             JsonSerializerSettings = new JsonSerializerSettings()
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
@@ -149,6 +159,11 @@ namespace Neo.Plugins.RestServer
                 MaxPageSize = section.GetValue(nameof(MaxPageSize), Default.MaxPageSize),
                 MaxConcurrentConnections = section.GetValue(nameof(MaxConcurrentConnections), Default.MaxConcurrentConnections),
                 MaxGasInvoke = section.GetValue(nameof(MaxGasInvoke), Default.MaxGasInvoke),
+                // Load rate limiting settings
+                EnableRateLimiting = section.GetValue(nameof(EnableRateLimiting), Default.EnableRateLimiting),
+                RateLimitPermitLimit = section.GetValue(nameof(RateLimitPermitLimit), Default.RateLimitPermitLimit),
+                RateLimitWindowSeconds = section.GetValue(nameof(RateLimitWindowSeconds), Default.RateLimitWindowSeconds),
+                RateLimitQueueLimit = section.GetValue(nameof(RateLimitQueueLimit), Default.RateLimitQueueLimit),
                 JsonSerializerSettings = Default.JsonSerializerSettings,
             };
 

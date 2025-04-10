@@ -24,6 +24,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +45,7 @@ using System.Linq;
 using System.Net.Mime;
 using System.Net.Security;
 using System.Numerics;
+using System.Threading.RateLimiting;
 
 namespace Neo.Plugins.RestServer
 {
@@ -138,6 +140,46 @@ namespace Neo.Plugins.RestServer
                                     .WithMethods("GET", "POST");
                                 });
                             });
+                    }
+
+                    #endregion
+
+                    #region Rate Limiting
+
+                    if (_settings.EnableRateLimiting)
+                    {
+                        services.AddRateLimiter(options =>
+                        {
+                            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                                RateLimitPartition.GetFixedWindowLimiter(
+                                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+                                    factory: partition => new FixedWindowRateLimiterOptions
+                                    {
+                                        AutoReplenishment = true,
+                                        PermitLimit = _settings.RateLimitPermitLimit,
+                                        QueueLimit = _settings.RateLimitQueueLimit,
+                                        Window = TimeSpan.FromSeconds(_settings.RateLimitWindowSeconds),
+                                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                                    }));
+
+                            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                            options.OnRejected = async (context, token) =>
+                            {
+                                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                                context.HttpContext.Response.Headers["Retry-After"] = _settings.RateLimitWindowSeconds.ToString();
+                                context.HttpContext.Response.ContentType = "text/plain";
+
+                                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                                {
+                                    await context.HttpContext.Response.WriteAsync($"Too many requests. Please try again after {retryAfter.TotalSeconds} seconds.", token);
+                                }
+                                else
+                                {
+                                    await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", token);
+                                }
+                            };
+                        });
                     }
 
                     #endregion
@@ -367,15 +409,70 @@ namespace Neo.Plugins.RestServer
                 })
                 .Configure(app =>
                 {
+                    app.UseExceptionHandler(appError =>
+                    {
+                        appError.Run(async context =>
+                        {
+                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                            context.Response.ContentType = "application/json";
+
+                            var error = context.Features.Get<IExceptionHandlerFeature>();
+                            if (error != null)
+                            {
+                                try
+                                {
+                                    var errorModel = new Neo.Plugins.RestServer.Models.Error.ErrorModel
+                                    {
+                                        Message = error.Error.GetBaseException().Message,
+                                        Name = error.Error.GetType().Name
+                                    };
+                                    context.Response.ContentType = "application/json";
+                                    await context.Response.WriteAsync(
+                                        JsonConvert.SerializeObject(errorModel, _settings.JsonSerializerSettings),
+                                        context.RequestAborted);
+                                }
+                                catch (Exception e)
+                                {
+                                    var errorModel = new Neo.Plugins.RestServer.Models.Error.ErrorModel
+                                    {
+                                        Message = e.Message,
+                                        Name = "InternalServerError"
+                                    };
+                                    context.Response.ContentType = "application/json";
+                                    await context.Response.WriteAsync(
+                                        JsonConvert.SerializeObject(errorModel, _settings.JsonSerializerSettings),
+                                        context.RequestAborted);
+                                }
+                            }
+                            else
+                            {
+                                context.Response.StatusCode = StatusCodes.Status502BadGateway;
+                                context.Response.ContentType = "text/plain";
+                                await context.Response.WriteAsync("An error occurred processing your request.");
+                            }
+                        });
+                    });
+
+                    if (_settings.EnableRateLimiting)
+                    {
+                        app.UseRateLimiter();
+                    }
+
                     app.UseMiddleware<RestServerMiddleware>();
-
-                    if (_settings.EnableForwardedHeaders)
-                        app.UseForwardedHeaders();
-
-                    app.UseRouting();
 
                     if (_settings.EnableCors)
                         app.UseCors("All");
+
+                    if (_settings.EnableForwardedHeaders)
+                    {
+                        var forwardedHeaderOptions = new ForwardedHeadersOptions
+                        {
+                            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+                        };
+                        forwardedHeaderOptions.KnownNetworks.Clear();
+                        forwardedHeaderOptions.KnownProxies.Clear();
+                        app.UseForwardedHeaders(forwardedHeaderOptions);
+                    }
 
                     if (_settings.EnableCompression)
                         app.UseResponseCompression();
@@ -402,15 +499,21 @@ namespace Neo.Plugins.RestServer
 
                     if (_settings.EnableSwagger)
                     {
-                        app.UseSwagger();
-                        //app.UseSwaggerUI(options => options.DefaultModelsExpandDepth(-1));
+                        app.UseSwagger(options =>
+                        {
+                            options.RouteTemplate = "docs/{documentName}/swagger.json";
+                            options.PreSerializeFilters.Add((document, request) =>
+                            {
+                                document.Servers.Clear();
+                                string basePath = $"{request.Scheme}://{request.Host.Value}";
+                                document.Servers.Add(new OpenApiServer { Url = basePath });
+                            });
+                        });
                         app.UseSwaggerUI(options =>
                         {
-                            var apiVersionDescriptionProvider = app.ApplicationServices.GetRequiredService<IApiVersionDescriptionProvider>();
-                            foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
-                            {
-                                options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
-                            }
+                            options.RoutePrefix = "docs";
+                            foreach (var description in app.ApplicationServices.GetRequiredService<IApiVersionDescriptionProvider>().ApiVersionDescriptions)
+                                options.SwaggerEndpoint($"{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
                         });
                     }
 
