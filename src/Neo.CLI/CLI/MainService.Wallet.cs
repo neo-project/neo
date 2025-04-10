@@ -416,7 +416,7 @@ namespace Neo.CLI
                 {
                     type = "Standard";
                 }
-                else if (NativeContract.ContractManagement.GetContract(snapshot, account.ScriptHash) != null)
+                else if (NativeContract.ContractManagement.IsContract(snapshot, account.ScriptHash))
                 {
                     type = "Deployed-Nonstandard";
                 }
