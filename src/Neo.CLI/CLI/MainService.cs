@@ -415,7 +415,7 @@ namespace Neo.CLI
                 if (!Path.IsPathRooted(formattedStoragePath))
                     formattedStoragePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, formattedStoragePath));
                 ConsoleHelper.Info($"Using storage path: {formattedStoragePath}");
-                
+
                 NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, formattedStoragePath);
                 // Start Prometheus Service (after NeoSystem is initialized)
                 // It needs Log access which might be configured within NeoSystem/Settings
