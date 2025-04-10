@@ -43,7 +43,7 @@ This README provides an explanation for each field in the JSON configuration fil
 
 ### MillisecondsPerBlock
 - **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `15000` (15 seconds).
-  > **Note about Echidna hardfork**: After the Echidna hardfork, this parameter becomes obsolete. The block generation time is then managed by the PolicyContract with the same default value of `15000` milliseconds (15 seconds), but it can be changed by the committee using the PolicyContract's SetBlockGenTime method.
+  > **Note about Echidna hardfork**: After the Echidna hardfork, this parameter becomes obsolete. The block generation time is then managed by the PolicyContract with the same default value of `15000` milliseconds (15 seconds), but it can be changed by the committee using the PolicyContract's `setMSPerBlock` method.
 
 ### MaxTransactionsPerBlock
 - **MaxTransactionsPerBlock**: Maximum number of transactions allowed per block. Default is `512`.

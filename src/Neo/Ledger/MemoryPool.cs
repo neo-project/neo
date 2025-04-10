@@ -127,9 +127,9 @@ namespace Neo.Ledger
         {
             _system = system;
             Capacity = system.Settings.MemoryPoolMaxTransactions;
-            var blockGenTime = system.GetBlockGenTime();
-            MaxMillisecondsToReverifyTx = blockGenTime.TotalMilliseconds / 3;
-            MaxMillisecondsToReverifyTxPerIdle = blockGenTime.TotalMilliseconds / 15;
+            var blockGenTime = system.GetBlockGenTime().TotalMilliseconds;
+            MaxMillisecondsToReverifyTx = blockGenTime / 3;
+            MaxMillisecondsToReverifyTxPerIdle = blockGenTime / 15;
         }
 
         /// <summary>

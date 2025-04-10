@@ -89,6 +89,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_AttributeFee = 20;
         private const byte Prefix_BlockGenTime = 21;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
+
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
@@ -130,14 +131,12 @@ namespace Neo.SmartContract.Native
                 engine.SnapshotCache.Add(_execFeeFactor, new StorageItem(DefaultExecFeeFactor));
                 engine.SnapshotCache.Add(_storagePrice, new StorageItem(DefaultStoragePrice));
             }
-
             if (hardfork == Hardfork.HF_Echidna)
             {
                 engine.SnapshotCache.Add(_blockGenTime, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
             }
-
             return ContractTask.CompletedTask;
         }
 
@@ -254,7 +253,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        ///  Sets the block generation time in milliseconds.
+        /// Sets the block generation time in milliseconds.
         /// This can only be set by the committee after the HF_Echidna.
         /// The value must be between MinBlockGenTime and DefaultBlockGenTime.
         /// </summary>
@@ -274,7 +273,7 @@ namespace Neo.SmartContract.Native
             var oldTime = GetMSPerBlock(engine.SnapshotCache);
             engine.SnapshotCache.GetAndChange(_blockGenTime).Set(milliseconds);
 
-            // Emit the BlockGenTimeChanged event
+            // Emit the BlockGenTimeChanged event.
             engine.SendNotification(Hash, MSPerBlockChangedEvent,
                 [new VM.Types.Integer(oldTime), new VM.Types.Integer(milliseconds)]);
         }

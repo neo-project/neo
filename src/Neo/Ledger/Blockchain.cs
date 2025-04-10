@@ -288,7 +288,6 @@ namespace Neo.Ledger
                 }
 
                 int blocksPersisted = 0;
-                // Check if this system's block time is faster than the default
                 TimeSpan blockGenTime = system.GetBlockGenTime();
                 bool hasFasterBlockTime = blockGenTime.TotalMilliseconds < ProtocolSettings.Default.MillisecondsPerBlock;
                 uint extraRelayingBlocks = hasFasterBlockTime
