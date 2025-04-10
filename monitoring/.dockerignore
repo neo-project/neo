@@ -1,0 +1,18 @@
+# monitoring/.dockerignore
+**/.git
+**/.vs
+**/.vscode
+**/bin/
+**/obj/
+**/Data* # Exclude local data directories if any
+*.user
+*.suo
+*~
+
+# Exclude monitoring stack binaries/data from build context if they are inside ./docker
+docker/prometheus/data/
+docker/grafana/data/
+docker/alertmanager/data/
+docker/prometheus/prometheus.exe
+docker/grafana/bin/
+# Add other large files/dirs not needed for the neo-cli image build

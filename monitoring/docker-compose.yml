@@ -1,0 +1,97 @@
+# monitoring/docker-compose.yml
+version: '3.8'
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  alertmanager-data:
+  # Neo data volume is handled inside the neo-cli container for simplicity,
+  # or map a host directory if persistence across container deletion is needed.
+
+networks:
+  neo-monitor-net:
+    driver: bridge
+
+services:
+  neo-cli:
+    build:
+      context: ..
+      dockerfile: monitoring/docker/neo-cli/Dockerfile
+    container_name: neo-cli
+    volumes:
+      - ../:/workspace:ro
+      # Example persistent data mount (optional):
+      # - ./neo-cli-data:/app/Data
+    networks:
+      - neo-monitor-net
+    ports:
+      - "9101:9101"
+    # Revert command: Only pass options to the ENTRYPOINT
+    command: ["--prometheus", "0.0.0.0:9101"]
+    stdin_open: true
+    tty: true
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      # Mount the specific Docker config file for Prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Mount the alert rules file (copied into docker/prometheus earlier)
+      - ./docker/prometheus/neo_alerts.yml:/etc/prometheus/neo_alerts.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - neo-monitor-net
+    ports:
+      - "9090:9090"
+    command:
+      # Point to the default config file path
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.listen-address=:9090'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - neo-cli
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    volumes:
+      # Mount the specific config file, not the directory
+      - ./docker/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    networks:
+      - neo-monitor-net
+    ports:
+      - "9093:9093"
+    command:
+      # Ensure command points to the file within the mounted directory
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.listen-address=:9093'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    volumes:
+      # Mount Docker-specific Grafana provisioning directory
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      # Mount original dashboards directory (as referenced by docker provisioning)
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      # - GF_SECURITY_ADMIN_PASSWORD=your_strong_password
+    networks:
+      - neo-monitor-net
+    ports:
+      # Change host port to 3001 to avoid conflict
+      - "3001:3000"
+    depends_on:
+      - prometheus
