@@ -107,7 +107,6 @@ namespace Neo.Plugins.RestServer.Tests
             // This is a test-only approach to get the actual configuration logic
             try
             {
-                // In a real implementation, you would copy the actual configuration code
                 // Here we use the TestUtility helper
                 TestUtility.ConfigureRateLimiter(services, settings);
             }
