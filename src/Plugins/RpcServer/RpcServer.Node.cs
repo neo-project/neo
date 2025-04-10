@@ -145,7 +145,7 @@ namespace Neo.Plugins.RpcServer
             protocol["validatorscount"] = system.Settings.ValidatorsCount;
             protocol["msperblock"] = system.Settings.MillisecondsPerBlock;
             protocol["maxtraceableblocks"] = system.Settings.MaxTraceableBlocks;
-            protocol["maxvaliduntilblockincrement"] = system.Settings.MaxValidUntilBlockIncrement;
+            protocol["maxvaliduntilblockincrement"] = system.GetMaxValidUntilBlockIncrement();
             protocol["maxtransactionsperblock"] = system.Settings.MaxTransactionsPerBlock;
             protocol["memorypoolmaxtransactions"] = system.Settings.MemoryPoolMaxTransactions;
             protocol["initialgasdistribution"] = system.Settings.InitialGasDistribution;
