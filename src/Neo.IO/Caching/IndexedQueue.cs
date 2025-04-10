@@ -9,9 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Neo.IO.Caching
@@ -123,7 +126,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="item">The item</param>
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
-        public bool TryPeek(out T item)
+        public bool TryPeek([NotNullWhen(true)] out T? item)
         {
             if (_count == 0)
             {
@@ -132,7 +135,7 @@ namespace Neo.IO.Caching
             }
             else
             {
-                item = _array[_head];
+                item = _array[_head]!;
                 return true;
             }
         }
@@ -158,7 +161,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="item">The item</param>
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
-        public bool TryDequeue(out T item)
+        public bool TryDequeue([NotNullWhen(true)] out T? item)
         {
             if (_count == 0)
             {
@@ -167,7 +170,7 @@ namespace Neo.IO.Caching
             }
             else
             {
-                item = _array[_head];
+                item = _array[_head]!;
                 _array[_head] = default!;
                 ++_head;
                 _head %= _array.Length;
@@ -245,3 +248,5 @@ namespace Neo.IO.Caching
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
+
+#nullable disable

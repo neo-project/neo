@@ -26,7 +26,7 @@ namespace Neo.Persistence
     /// <summary>
     /// This interface provides methods to read from the database.
     /// </summary>
-    public interface IReadOnlyStore<TKey, TValue>
+    public interface IReadOnlyStore<TKey, TValue> where TKey : class?
     {
         /// <summary>
         /// Gets the entry with the specified key.
@@ -65,6 +65,14 @@ namespace Neo.Persistence
         /// <param name="key">The key of the entry.</param>
         /// <returns><see langword="true"/> if the database contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
         bool Contains(TKey key);
+
+        /// <summary>
+        /// Finds the entries starting with the specified prefix.
+        /// </summary>
+        /// <param name="key_prefix">The prefix of the key.</param>
+        /// <param name="direction">The search direction.</param>
+        /// <returns>The entries found with the desired prefix.</returns>
+        public IEnumerable<(TKey Key, TValue Value)> Find(TKey? key_prefix = null, SeekDirection direction = SeekDirection.Forward);
     }
 }
 

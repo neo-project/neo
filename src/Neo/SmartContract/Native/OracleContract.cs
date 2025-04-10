@@ -112,10 +112,10 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the pending requests.</returns>
-        public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
+        public IEnumerable<(ulong, OracleRequest)> GetRequests(IReadOnlyStore snapshot)
         {
             var key = CreateStorageKey(Prefix_Request);
-            return snapshot.Find(key.ToArray())
+            return snapshot.Find(key)
                 .Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.Span[1..]), p.Value.GetInteroperable<OracleRequest>()));
         }
 
@@ -170,9 +170,11 @@ namespace Neo.SmartContract.Native
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList, GetUrlHash(request.Url));
-                using var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list);
-                if (!list.Remove(response.Id)) throw new InvalidOperationException();
-                if (list.Count == 0) engine.SnapshotCache.Delete(key);
+                using (var sealInterop = engine.SnapshotCache.GetAndChange(key).GetInteroperable(out IdList list))
+                {
+                    if (!list.Remove(response.Id)) throw new InvalidOperationException();
+                    if (list.Count == 0) engine.SnapshotCache.Delete(key);
+                }
 
                 //Mint GAS for oracle nodes
                 nodes ??= RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.PersistingBlock.Index)
@@ -202,7 +204,7 @@ namespace Neo.SmartContract.Native
             if (urlSize > MaxUrlLength)
                 throw new ArgumentException($"The url bytes size({urlSize}) cannot be greater than {MaxUrlLength}.");
 
-            var filterSize = filter.GetStrictUtf8ByteCount();
+            var filterSize = filter is null ? 0 : filter.GetStrictUtf8ByteCount();
             if (filterSize > MaxFilterLength)
                 throw new ArgumentException($"The filter bytes size({filterSize}) cannot be greater than {MaxFilterLength}.");
 
@@ -223,8 +225,8 @@ namespace Neo.SmartContract.Native
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
-            StorageItem item_id = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
-            ulong id = (ulong)(BigInteger)item_id;
+            var item_id = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_RequestId));
+            var id = (ulong)(BigInteger)item_id;
             item_id.Add(1);
 
             //Put the request to storage
@@ -243,13 +245,14 @@ namespace Neo.SmartContract.Native
             engine.SnapshotCache.Add(CreateStorageKey(Prefix_Request, id), StorageItem.CreateSealed(request));
 
             //Add the id to the IdList
-            using var sealInterop = engine.SnapshotCache.GetAndChange
+            using (var sealInterop = engine.SnapshotCache.GetAndChange
                 (CreateStorageKey(Prefix_IdList, GetUrlHash(url)), () => new StorageItem(new IdList()))
-                .GetInteroperable(out IdList list);
-
-            if (list.Count >= 256)
-                throw new InvalidOperationException("There are too many pending responses for this url");
-            list.Add(id);
+                .GetInteroperable(out IdList list))
+            {
+                if (list.Count >= 256)
+                    throw new InvalidOperationException("There are too many pending responses for this url");
+                list.Add(id);
+            }
 
             engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) {
                 id,

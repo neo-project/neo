@@ -19,7 +19,7 @@ namespace Neo.Persistence
     /// This interface provides methods for reading, writing from/to database. Developers should implement this interface to provide new storage engines for NEO.
     /// </summary>
     public interface IStore :
-        IRawReadOnlyStore,
+        IReadOnlyStore<byte[], byte[]>,
         IWriteStore<byte[], byte[]>,
         IDisposable
     {
