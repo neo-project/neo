@@ -94,10 +94,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 return;
             }
 
-            // Timeout extension: prepare request has been received with success
-            // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
-            ExtendTimerByFactor(2);
-
             context.Block.Header.Timestamp = message.Timestamp;
             context.Block.Header.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
@@ -109,8 +105,20 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     if (!context.GetMessage<PrepareResponse>(context.PreparationPayloads[i]).PreparationHash.Equals(payload.Hash))
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[message.ValidatorIndex] = payload;
-            byte[] hashData = context.EnsureHeader().GetSignData(neoSystem.Settings.Network);
-            for (int i = 0; i < context.CommitPayloads.Length; i++)
+            var block = context.EnsureHeader();
+
+            if (!StorageItem.IsSerializable(TrimmedBlock.Create(block.Header, message.TransactionHashes)))
+            {
+                Log($"Proposed block can't be serialized", LogLevel.Warning);
+                return;
+            }
+
+            // Timeout extension: prepare request has been received with success
+            // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
+            ExtendTimerByFactor(2);
+
+            var hashData = block.GetSignData(neoSystem.Settings.Network);
+            for (var i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.GetMessage(context.CommitPayloads[i])?.ViewNumber == context.ViewNumber)
                     if (!Crypto.VerifySignature(hashData, context.GetMessage<Commit>(context.CommitPayloads[i]).Signature.Span, context.Validators[i]))
                         context.CommitPayloads[i] = null;
@@ -185,7 +193,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         {
             if (message.NewViewNumber <= context.ViewNumber)
                 OnRecoveryRequestReceived(payload, message);
-
             if (context.CommitSent) return;
 
             var expectedView = context.GetMessage<ChangeView>(context.ChangeViewPayloads[message.ValidatorIndex])?.NewViewNumber ?? 0;
@@ -212,7 +219,6 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 // Timeout extension: commit has been received with success
                 // around 4*15s/M=60.0s/5=12.0s ~ 80% block time (for M=5)
                 ExtendTimerByFactor(4);
-
                 Log($"{nameof(OnCommitReceived)}: height={commit.BlockIndex} view={commit.ViewNumber} index={commit.ValidatorIndex} nc={context.CountCommitted} nf={context.CountFailed}");
 
                 byte[] hashData = context.EnsureHeader()?.GetSignData(neoSystem.Settings.Network);
