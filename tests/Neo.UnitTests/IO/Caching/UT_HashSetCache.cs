@@ -24,14 +24,14 @@ namespace Neo.UnitTests.IO.Caching
         public void TestHashSetCache()
         {
             var bucket = new HashSetCache<int>(10);
-            for (int i = 1; i <= 100; i++)
+            for (var i = 1; i <= 100; i++)
             {
                 Assert.IsTrue(bucket.Add(i));
                 Assert.IsFalse(bucket.Add(i));
             }
             Assert.AreEqual(100, bucket.Count);
 
-            int sum = 0;
+            var sum = 0;
             foreach (var ele in bucket)
             {
                 sum += ele;
@@ -43,16 +43,18 @@ namespace Neo.UnitTests.IO.Caching
 
             var items = new int[10];
             var value = 11;
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 items[i] = value;
                 value += 2;
             }
             bucket.ExceptWith(items);
             Assert.AreEqual(81, bucket.Count);
-
             Assert.IsFalse(bucket.Contains(13));
             Assert.IsTrue(bucket.Contains(50));
+            Assert.AreEqual(81, bucket.Count);
+            bucket.Clear();
+            Assert.AreEqual(0, bucket.Count);
         }
 
         [TestMethod]

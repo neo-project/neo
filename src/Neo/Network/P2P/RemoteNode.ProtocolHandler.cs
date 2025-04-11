@@ -15,7 +15,6 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -45,7 +44,7 @@ namespace Neo.Network.P2P
         }
 
         private static readonly List<MessageReceivedHandler> handlers = new();
-        private readonly PendingKnownHashesCollection pendingKnownHashes = new();
+        private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
         private readonly HashSetCache<UInt256> _knownHashes;
         private readonly HashSetCache<UInt256> _sentHashes;
         private bool verack = false;
@@ -314,7 +313,7 @@ namespace Neo.Network.P2P
         private void OnInventoryReceived(IInventory inventory)
         {
             if (!_knownHashes.Add(inventory.Hash)) return;
-            pendingKnownHashes.Remove(inventory.Hash);
+            _pendingKnownHashes.Remove(inventory.Hash);
             system.TaskManager.Tell(inventory);
             switch (inventory)
             {
@@ -337,7 +336,7 @@ namespace Neo.Network.P2P
         {
             UInt256[] hashes;
             var source = payload.Hashes
-                .Where(p => !pendingKnownHashes.Contains(p) && !_knownHashes.Contains(p) && !_sentHashes.Contains(p));
+                .Where(p => !_pendingKnownHashes.Contains(p) && !_knownHashes.Contains(p) && !_sentHashes.Contains(p));
             switch (payload.Type)
             {
                 case InventoryType.Block:
@@ -360,7 +359,7 @@ namespace Neo.Network.P2P
             }
             if (hashes.Length == 0) return;
             foreach (var hash in hashes)
-                pendingKnownHashes.Add(Tuple.Create(hash, TimeProvider.Current.UtcNow));
+                _pendingKnownHashes.Add(Tuple.Create(hash, TimeProvider.Current.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
 
@@ -416,11 +415,11 @@ namespace Neo.Network.P2P
         private void OnTimer()
         {
             DateTime oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
-            while (pendingKnownHashes.Count > 0)
+            while (_pendingKnownHashes.Count > 0)
             {
-                var (_, time) = pendingKnownHashes.First;
+                var (_, time) = _pendingKnownHashes.First;
                 if (oneMinuteAgo <= time) break;
-                pendingKnownHashes.RemoveFirst();
+                _pendingKnownHashes.RemoveFirst();
             }
             if (oneMinuteAgo > lastSent)
                 EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView))));

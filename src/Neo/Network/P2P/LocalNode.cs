@@ -274,7 +274,7 @@ namespace Neo.Network.P2P
                 // new ArchivalNodeCapability()
             };
 
-            if (!EnableCompression)
+            if (!Config.EnableCompression)
             {
                 capabilities.Add(new DisableCompressionCapability());
             }
@@ -303,7 +303,7 @@ namespace Neo.Network.P2P
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(system, this, connection, remote, local);
+            return RemoteNode.Props(system, this, connection, remote, local, Config);
         }
     }
 }
