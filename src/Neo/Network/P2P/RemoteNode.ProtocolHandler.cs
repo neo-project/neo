@@ -15,7 +15,6 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -32,10 +31,7 @@ namespace Neo.Network.P2P
         private class Timer { }
         private class PendingKnownHashesCollection : KeyedCollectionSlim<UInt256, Tuple<UInt256, DateTime>>
         {
-            protected override UInt256 GetKeyForItem(Tuple<UInt256, DateTime> item)
-            {
-                return item.Item1;
-            }
+            protected override UInt256 GetKeyForItem(Tuple<UInt256, DateTime> item) => item.Item1;
         }
 
         public static event MessageReceivedHandler MessageReceived
@@ -415,12 +411,12 @@ namespace Neo.Network.P2P
 
         private void OnTimer()
         {
-            DateTime oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
+            var oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
             while (pendingKnownHashes.Count > 0)
             {
                 var (_, time) = pendingKnownHashes.First;
                 if (oneMinuteAgo <= time) break;
-                pendingKnownHashes.RemoveFirst();
+                if (!pendingKnownHashes.RemoveFirst()) break;
             }
             if (oneMinuteAgo > lastSent)
                 EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView))));
