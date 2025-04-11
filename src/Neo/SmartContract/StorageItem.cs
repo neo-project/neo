@@ -95,7 +95,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Create a new instance from an sealed <see cref="IInteroperable"/> class. 
+        /// Create a new instance from an sealed <see cref="IInteroperable"/> class.
         /// </summary>
         /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
         /// <returns><see cref="StorageItem"/> class</returns>
@@ -187,32 +187,60 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
         public T GetInteroperable<T>() where T : IInteroperable, new()
         {
-            if (_cache is null)
-            {
-                var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
-                _cache = interoperable;
-            }
+            _cache ??= GetInteroperableClone<T>();
             _value = null;
             return (T)_cache;
         }
 
         /// <summary>
-        /// Gets an <see cref="IInteroperable"/> from the storage.
+        /// Gets an <see cref="IInteroperableVerifiable"/> from the storage.
         /// </summary>
         /// <param name="verify">Verify deserialization</param>
-        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
-        /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
+        /// <typeparam name="T">The type of the <see cref="IInteroperableVerifiable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
         public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
-            if (_cache is null)
-            {
-                var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
-                _cache = interoperable;
-            }
+            _cache ??= GetInteroperableClone<T>(verify);
             _value = null;
             return (T)_cache;
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IInteroperable"/> from the storage not related to this <see cref="StorageItem"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
+        public T GetInteroperableClone<T>() where T : IInteroperable, new()
+        {
+            // If it's interoperable and not sealed
+            if (_value.IsEmpty && _cache is T interoperable)
+            {
+                // Refresh data without change _value
+                return (T)interoperable.Clone();
+            }
+
+            interoperable = new T();
+            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default));
+            return interoperable;
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IInteroperableVerifiable"/> from the storage not related to this <see cref="StorageItem"/>.
+        /// </summary>
+        /// <param name="verify">Verify deserialization</param>
+        /// <typeparam name="T">The type of the <see cref="IInteroperableVerifiable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperableVerifiable"/> in the storage.</returns>
+        public T GetInteroperableClone<T>(bool verify = true) where T : IInteroperableVerifiable, new()
+        {
+            // If it's interoperable and not sealed
+            if (_value.IsEmpty && _cache is T interoperable)
+            {
+                return (T)interoperable.Clone();
+            }
+
+            interoperable = new T();
+            interoperable.FromStackItem(BinarySerializer.Deserialize(_value, ExecutionEngineLimits.Default), verify);
+            return interoperable;
         }
 
         /// <summary>

@@ -83,10 +83,10 @@ namespace Neo.SmartContract
         public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, IReferenceCounter referenceCounter = null)
         {
             Stack<StackItem> deserialized = new();
-            int undeserialized = 1;
+            var undeserialized = 1;
             while (undeserialized-- > 0)
             {
-                StackItemType type = (StackItemType)reader.ReadByte();
+                var type = (StackItemType)reader.ReadByte();
                 switch (type)
                 {
                     case StackItemType.Any:
@@ -102,7 +102,7 @@ namespace Neo.SmartContract
                         deserialized.Push(reader.ReadVarMemory((int)maxSize));
                         break;
                     case StackItemType.Buffer:
-                        ReadOnlyMemory<byte> memory = reader.ReadVarMemory((int)maxSize);
+                        var memory = reader.ReadVarMemory((int)maxSize);
                         deserialized.Push(new Buffer(memory.Span));
                         break;
                     case StackItemType.Array:

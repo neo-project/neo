@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Add(skey, sItem);
             snapshot.AddContract(script.ToScriptHash(), contractState);
 
-            using ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             Debugger debugger = new(ae);
             ae.LoadScript(script);
             debugger.StepInto();
