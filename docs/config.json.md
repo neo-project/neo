@@ -42,7 +42,10 @@ This README provides an explanation for each field in the JSON configuration fil
 - **AddressVersion**: Version byte used in Neo address generation. Default is `53`.
 
 ### MillisecondsPerBlock
-- **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `15000` (15 seconds).
+- **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `15000` (15 seconds). Note that
+  starting from Echidna hardfork block generation time is managed by native Policy contract with the initial value
+  matching the MillisecondsPerBlock configuration parameter. Use native Policy's `getMSPerBlock` and `setMSPerBlock`
+  to manage block generation time starting from Echidna hardfork.
 
 ### MaxTransactionsPerBlock
 - **MaxTransactionsPerBlock**: Maximum number of transactions allowed per block. Default is `512`.
