@@ -57,6 +57,9 @@ This README provides an explanation for each field in the JSON configuration fil
 - **HF_Aspidochelone**: Block height for the Aspidochelone hard fork. MainNet is `1730000`, TestNet is `210000`.
 - **HF_Basilisk**: Block height for the Basilisk hard fork. MainNet is `4120000`, TestNet is `2680000`.
 - **HF_Cockatrice**: Block height for the Cockatrice hard fork. MainNet is `5450000`, TestNet is `3967000`.
+- **HF_Domovoi**: Block height for the Domovoi hard fork. MainNet is `5570000`, TestNet is `4144000`.
+- **HF_Echidna**: Block height for the Echidna hard fork.
+
 
 ### InitialGasDistribution
 - **InitialGasDistribution**: Total amount of GAS distributed initially. Default is `5,200,000,000,000,000 Datoshi` (`52,000,000 GAS`).
