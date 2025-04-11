@@ -58,12 +58,18 @@ namespace Neo
         public string[] SeedList { get; init; }
 
         /// <summary>
-        /// Indicates the time in milliseconds between two blocks.
+        /// Indicates the time in milliseconds between two blocks. Note that starting from
+        /// HF_Echidna block generation time is managed by native Policy contract, hence
+        /// use NeoSystemExtensions.GetTimePerBlock extension method instead of direct access
+        /// to this property.
         /// </summary>
         public uint MillisecondsPerBlock { get; init; }
 
         /// <summary>
-        /// Indicates the time between two blocks.
+        /// Indicates the time between two blocks. Note that starting from HF_Echidna block
+        /// generation time is managed by native Policy contract, hence use
+        /// NeoSystemExtensions.GetTimePerBlock extension method instead of direct access
+        /// to this property.
         /// </summary>
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
 

@@ -28,7 +28,6 @@ namespace Neo.Plugins.StateService.Verification
         public class BlockPersisted { public uint Index; }
         public const int MaxCachedVerificationProcessCount = 10;
         private class Timer { public uint Index; }
-        private static readonly uint TimeoutMilliseconds = StatePlugin._system.Settings.MillisecondsPerBlock;
         private static readonly uint DelayMilliseconds = 3000;
         private readonly Wallet wallet;
         private readonly ConcurrentDictionary<uint, VerificationContext> contexts = new ConcurrentDictionary<uint, VerificationContext>();
@@ -106,7 +105,7 @@ namespace Neo.Plugins.StateService.Verification
                 SendVote(context);
                 CheckVotes(context);
                 context.Timer.CancelIfNotNull();
-                context.Timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMilliseconds(TimeoutMilliseconds << context.Retries), Self, new Timer
+                context.Timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMilliseconds((uint)StatePlugin._system.GetTimePerBlock().TotalMilliseconds << context.Retries), Self, new Timer
                 {
                     Index = index,
                 }, ActorRefs.NoSender);

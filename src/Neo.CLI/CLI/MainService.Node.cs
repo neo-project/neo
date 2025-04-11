@@ -64,7 +64,7 @@ namespace Neo.CLI
                     try
                     {
                         NeoSystem.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView))));
-                        await Task.Delay(NeoSystem.Settings.TimePerBlock / 4, cancellationToken);
+                        await Task.Delay(NeoSystem.GetTimePerBlock() / 4, cancellationToken);
                     }
                     catch (TaskCanceledException) { break; }
                     catch { await Task.Delay(500, cancellationToken); }

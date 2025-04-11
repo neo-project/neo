@@ -89,11 +89,11 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             {
                 if (isRecovering)
                 {
-                    ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << (viewNumber + 1)));
+                    ChangeTimer(TimeSpan.FromMilliseconds((int)context.TimePerBlock.TotalMilliseconds << (viewNumber + 1)));
                 }
                 else
                 {
-                    TimeSpan span = neoSystem.Settings.TimePerBlock;
+                    TimeSpan span = context.TimePerBlock;
                     if (block_received_index + 1 == context.Block.Index)
                     {
                         var diff = TimeProvider.Current.UtcNow - block_received_time;
@@ -107,7 +107,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             }
             else
             {
-                ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << (viewNumber + 1)));
+                ChangeTimer(TimeSpan.FromMilliseconds((int)context.TimePerBlock.TotalMilliseconds << (viewNumber + 1)));
             }
         }
 
@@ -180,7 +180,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"Sending {nameof(RecoveryMessage)} to resend {nameof(Commit)}");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                    ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << 1));
+                    ChangeTimer(TimeSpan.FromMilliseconds((int)context.TimePerBlock.TotalMilliseconds << 1));
                 }
                 else
                 {
@@ -209,7 +209,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
-            ChangeTimer(TimeSpan.FromMilliseconds((neoSystem.Settings.MillisecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? neoSystem.Settings.MillisecondsPerBlock : 0)));
+            ChangeTimer(TimeSpan.FromMilliseconds(((int)context.TimePerBlock.TotalMilliseconds << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? context.TimePerBlock.TotalMilliseconds : 0)));
         }
 
         private void RequestRecovery()
@@ -226,7 +226,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // The latter may happen by nodes in higher views with, at least, `M` proofs
             byte expectedView = context.ViewNumber;
             expectedView++;
-            ChangeTimer(TimeSpan.FromMilliseconds(neoSystem.Settings.MillisecondsPerBlock << (expectedView + 1)));
+            ChangeTimer(TimeSpan.FromMilliseconds((int)context.TimePerBlock.TotalMilliseconds << (expectedView + 1)));
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
                 RequestRecovery();
@@ -320,7 +320,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
             TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started)
-                + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * neoSystem.Settings.MillisecondsPerBlock / (double)context.M);
+                + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * context.TimePerBlock.TotalMilliseconds / (double)context.M);
             if (!context.WatchOnly && !context.ViewChanging && !context.CommitSent && (nextDelay > TimeSpan.Zero))
                 ChangeTimer(nextDelay);
         }
