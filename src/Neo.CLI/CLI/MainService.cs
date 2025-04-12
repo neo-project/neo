@@ -18,6 +18,7 @@ using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -159,7 +160,9 @@ namespace Neo.CLI
                 ConsoleHelper.Info("ScriptHash: ", $"{account.ScriptHash}");
             }
             wallet.Save();
+
             CurrentWallet = wallet;
+            SignerFactory.RegisterSigner(wallet.Name, wallet);
         }
 
         private bool NoWallet()
@@ -291,10 +294,13 @@ namespace Neo.CLI
         {
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException();
+                throw new FileNotFoundException($"Wallet file \"{path}\" not found.");
             }
 
+            if (CurrentWallet is not null) SignerFactory.UnregisterSigner(CurrentWallet.Name);
+
             CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
+            SignerFactory.RegisterSigner(CurrentWallet.Name, CurrentWallet);
         }
 
         public async void Start(CommandLineOptions options)
