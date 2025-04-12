@@ -497,8 +497,7 @@ namespace Neo.Ledger
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            if (system.HeaderCache.TryRemoveFirst(out Header header)) { }
-            //Debug.Assert(header.Index == block.Index);
+            system.HeaderCache.TryRemoveFirst(out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
