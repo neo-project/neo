@@ -12,7 +12,6 @@
 using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Sign
 {
@@ -37,7 +36,7 @@ namespace Neo.Sign
         /// <param name="signData">The data to sign.</param>
         /// <param name="publicKey">The public key.</param>
         /// <returns>The signature.</returns>
-        byte[] Sign(byte[] signData, ECPoint publicKey);
+        ReadOnlyMemory<byte> Sign(byte[] signData, ECPoint publicKey);
 
         /// <summary>
         /// Checks if the wallet contains an account(has private key and is not locked) with the specified public key.
