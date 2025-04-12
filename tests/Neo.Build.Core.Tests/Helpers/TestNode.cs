@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Neo.Build.Core.Storage;
 using Neo.Build.Core.Wallets;
 using Neo.Persistence;
@@ -26,7 +27,7 @@ namespace Neo.Build.Core.Tests.Helpers
             logging.AddSimpleConsole(options =>
             {
                 options.SingleLine = true;
-                options.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Disabled;
+                options.ColorBehavior = LoggerColorBehavior.Disabled;
             });
         });
 
