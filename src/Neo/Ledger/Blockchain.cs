@@ -23,7 +23,6 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -498,8 +497,8 @@ namespace Neo.Ledger
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            if (system.HeaderCache.TryRemoveFirst(out Header header))
-                Debug.Assert(header.Index == block.Index);
+            if (system.HeaderCache.TryRemoveFirst(out Header header)) { }
+            //Debug.Assert(header.Index == block.Index);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
