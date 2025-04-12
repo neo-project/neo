@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="MSTest" Version="$(MSTestVersion)" />
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
