@@ -511,12 +511,14 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
             Assert.IsNull(NativeContract.ContractManagement.GetContract(engine.SnapshotCache, new UInt160(data1)));
+            Assert.IsFalse(NativeContract.ContractManagement.IsContract(engine.SnapshotCache, new UInt160(data1)));
 
             var state = TestUtils.GetContract();
             engine.SnapshotCache.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, engine.SnapshotCache);
             engine.LoadScript(new byte[] { 0x01 });
             Assert.AreEqual(state.Hash, NativeContract.ContractManagement.GetContract(engine.SnapshotCache, state.Hash).Hash);
+            Assert.IsTrue(NativeContract.ContractManagement.IsContract(engine.SnapshotCache, state.Hash));
         }
 
         [TestMethod]
