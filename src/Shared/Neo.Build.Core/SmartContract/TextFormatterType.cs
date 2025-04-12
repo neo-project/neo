@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2025 The Neo Project.
 //
-// ApplicationEngineSettings.cs file belongs to the neo project and is free
+// TextFormatterType.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,15 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.SmartContract.Native;
-using System.Numerics;
-
 namespace Neo.Build.Core.SmartContract
 {
-    public class ApplicationEngineSettings
+    public enum TextFormatterType : byte
     {
-        public long MaxGas { get; internal set; } = (long)BigInteger.Pow(20L, NativeContract.GAS.Decimals);
-
-        public StorageSettings Storage { get; set; } = new();
+        Default = 0,
+        HexString = 1,
+        Base64String = 2,
+        String = 3,
+        ArrayString = 4,
     }
 }

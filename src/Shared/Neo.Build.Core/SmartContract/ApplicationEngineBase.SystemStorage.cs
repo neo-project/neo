@@ -11,9 +11,11 @@
 
 using Microsoft.Extensions.Logging;
 using Neo.Build.Core.Logging;
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using System;
+using System.Linq;
 
 namespace Neo.Build.Core.SmartContract
 {
@@ -72,15 +74,15 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual ReadOnlyMemory<byte>? SystemStorageGet(StorageContext storageContext, byte[] key)
         {
-            var keyString = System.Convert.ToBase64String(key);
+            var keyString = GetStorageKeyValueString(key, _storageSettings.KeyFormat);
 
             _traceLogger.LogInformation(VMEventLog.StorageGet,
                 "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}",
                 nameof(System_Storage_Get), storageContext.Id, storageContext.IsReadOnly, keyString);
 
-            var result = Get(storageContext, key);
+            var result = Get(storageContext, key)?.Span.ToArray() ?? [];
 
-            var resultString = System.Convert.ToBase64String(result?.Span.ToArray() ?? []);
+            var resultString = GetStorageKeyValueString(result, _storageSettings.ValueFormat);
 
             _traceLogger.LogInformation(VMEventLog.StorageGet,
                 "{SysCall} result={Result}",
@@ -91,7 +93,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual IIterator SystemStorageFind(StorageContext storageContext, byte[] prefix, FindOptions options)
         {
-            var prefixString = System.Convert.ToBase64String(prefix);
+            var prefixString = GetStorageKeyValueString(prefix, _storageSettings.KeyFormat);
 
             _traceLogger.LogInformation(VMEventLog.StorageFind,
                 "{SysCall} id={Id}, readonly={ReadOnly}, prefix={Prefix}, options={Options}",
@@ -108,8 +110,8 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual void SystemStoragePut(StorageContext storageContext, byte[] key, byte[] value)
         {
-            var keyString = System.Convert.ToBase64String(key);
-            var valueString = System.Convert.ToBase64String(value);
+            var keyString = GetStorageKeyValueString(key, _storageSettings.KeyFormat);
+            var valueString = GetStorageKeyValueString(value, _storageSettings.ValueFormat);
 
             _traceLogger.LogInformation(VMEventLog.StoragePut,
                 "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}, value={Value}",
@@ -120,7 +122,7 @@ namespace Neo.Build.Core.SmartContract
 
         protected virtual void SystemStorageDelete(StorageContext storageContext, byte[] key)
         {
-            var keyString = System.Convert.ToBase64String(key);
+            var keyString = GetStorageKeyValueString(key, _storageSettings.KeyFormat);
 
             _traceLogger.LogInformation(VMEventLog.StorageDelete,
                 "{SysCall} id={Id}, readonly={ReadOnly}, key={Key}",
@@ -128,5 +130,16 @@ namespace Neo.Build.Core.SmartContract
 
             Delete(storageContext, key);
         }
+
+        private string GetStorageKeyValueString(byte[] data, TextFormatterType formatter) =>
+            formatter switch
+            {
+                TextFormatterType.HexString => data.ToHexString(),
+                TextFormatterType.String => _encoding.GetString(data),
+                TextFormatterType.ArrayString => $"[{string.Join(',', data.Select(static s => s.ToString("x02")))}]",
+                TextFormatterType.Default or
+                TextFormatterType.Base64String or
+                _ => System.Convert.ToBase64String(data),
+            };
     }
 }

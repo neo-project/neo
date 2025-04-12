@@ -56,6 +56,8 @@ namespace Neo.Build.Core.Wallets
             }
         }
 
+        public DevWallet(TestWalletModel walletModel) : this(walletModel, ProtocolSettings.Default) { }
+
         private readonly ConcurrentDictionary<UInt160, DevWalletAccount> _walletAccounts = new();
 
         private readonly string? _walletName;
@@ -115,7 +117,8 @@ namespace Neo.Build.Core.Wallets
 
         public override void Delete() { }
 
-        public override void Save() { }
+        public override void Save() =>
+            throw new NotImplementedException();
 
         public override bool ChangePassword(string oldPassword, string newPassword) =>
             throw new NotImplementedException();
