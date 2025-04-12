@@ -42,7 +42,7 @@ namespace Neo.Build.Core.Tests.Helpers
         static TestNode()
         {
             var walletModel = TestObjectHelper.CreateTestWalletModel();
-            Wallet = new(walletModel, ((dynamic)walletModel.Extra!).ProtocolConfiguration.ToObject());
+            Wallet = new(walletModel);
             NeoSystem = new(Wallet.ProtocolSettings, new StoreProvider());
         }
     }
