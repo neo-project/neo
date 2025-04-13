@@ -606,7 +606,3 @@ namespace Neo.Ledger
         }
     }
 }
-
-
-
-
