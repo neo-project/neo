@@ -71,7 +71,7 @@ namespace Neo.Network.P2P
         public int MaxConnectionsPerAddress { get; set; } = DefaultMaxConnectionsPerAddress;
 
         /// <summary>
-        /// Max knwon hashes
+        /// Max known hashes
         /// </summary>
         public int MaxKnownHashes { get; set; } = DefaultMaxKnownHashes;
     }
