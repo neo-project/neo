@@ -58,5 +58,45 @@ namespace Neo
                 return settings.MaxValidUntilBlockIncrement;
             }
         }
+
+        /// <summary>
+        /// Gets the length of the chain accessible to smart contracts based
+        /// on the current state of the blockchain.
+        /// </summary>
+        /// <param name="system">The NeoSystem instance.</param>
+        /// <returns>MaxTraceableBlocks value (in blocks).</returns>
+        public static uint GetMaxTraceableBlocks(this NeoSystem system)
+        {
+            return system.StoreView.GetMaxTraceableBlocks(system.Settings);
+        }
+
+        /// <summary>
+        /// Gets the length of the chain accessible to smart contracts based
+        /// on the current state of the blockchain.
+        /// </summary>
+        /// <param name="snapshot">The snapshot of the store.</param>
+        /// <param name="settings">The protocol settings.</param>
+        /// <returns>MaxTraceableBlocks value (in blocks).</returns>
+        public static uint GetMaxTraceableBlocks(this IReadOnlyStore snapshot, ProtocolSettings settings)
+        {
+            try
+            {
+                // Get the persisted block height from the blockchain.
+                var index = NativeContract.Ledger.CurrentIndex(snapshot);
+
+                // Use protocol settings configuration if HF_Echidna is not yet enabled.
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                    return settings.MaxTraceableBlocks;
+
+                // Retrieve MillisecondsPerBlock value from native Policy if HF_Echidna is enabled.
+                return NativeContract.Policy.GetMaxTraceableBlocks(snapshot);
+            }
+            catch (KeyNotFoundException)
+            {
+                // A special case if HF_Echidna is active starting from 0 height and
+                // if genesis block is not yet persisted.
+                return settings.MaxTraceableBlocks;
+            }
+        }
     }
 }

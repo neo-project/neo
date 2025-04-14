@@ -83,7 +83,10 @@ namespace Neo
         public int MemoryPoolMaxTransactions { get; init; }
 
         /// <summary>
-        /// Indicates the maximum number of blocks that can be traced in the smart contract.
+        /// Indicates the maximum number of blocks that can be traced in the smart contract. Note
+        /// that starting from HF_Echidna the maximum number of traceable blocks is managed by
+        /// native Policy contract, hence use NeoSystemExtensions.GetMaxTraceableBlocks extension
+        /// method instead of direct access to this property.
         /// </summary>
         public uint MaxTraceableBlocks { get; init; }
 

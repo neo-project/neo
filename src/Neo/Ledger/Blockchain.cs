@@ -207,13 +207,14 @@ namespace Neo.Ledger
             system.MemPool.InvalidateAllTransactions();
 
             var snapshot = system.StoreView;
+            var mtb = system.GetMaxTraceableBlocks();
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
                 if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                     continue;
-                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), system.Settings.MaxTraceableBlocks))
+                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), mtb))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 system.MemPool.TryRemoveUnVerified(tx.Hash, out _);

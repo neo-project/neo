@@ -51,7 +51,10 @@ This README provides an explanation for each field in the JSON configuration fil
 - **MemoryPoolMaxTransactions**: Maximum number of transactions that can be held in the memory pool. Default is `50000`.
 
 ### MaxTraceableBlocks
-- **MaxTraceableBlocks**: Maximum number of blocks that can be traced back. Default is `2102400`.
+- **MaxTraceableBlocks**: Maximum number of blocks that can be traced back. Default is `2102400`. Note that
+  starting from Echidna hardfork MaxTraceableBlocks value is managed by native Policy contract with the initial value
+  matching the MaxTraceableBlocks configuration parameter. Use native Policy's `getMaxTraceableBlocks` and `setMaxTraceableBlocks`
+  to manage the maximum number of traceable blocks starting from Echidna hardfork.
 
 ### Hardforks
 - **HF_Aspidochelone**: Block height for the Aspidochelone hard fork. MainNet is `1730000`, TestNet is `210000`.

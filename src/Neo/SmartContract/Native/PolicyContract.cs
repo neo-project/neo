@@ -71,17 +71,25 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxMaxValidUntilBlockIncrement = 86400;
 
+        /// <summary>
+        /// The maximum MaxTraceableBlocks value that the committee can set.
+        /// It is set to be a year of 15-second blocks.
+        /// </summary>
+        public const uint MaxMaxTraceableBlocks = 2102400;
+
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
+        private const byte Prefix_MaxTraceableBlocks = 23;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
         private readonly StorageKey _maxValidUntilBlockIncrement;
+        private readonly StorageKey _maxTraceableBlocks;
 
 
         internal PolicyContract() : base()
@@ -90,6 +98,7 @@ namespace Neo.SmartContract.Native
             _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
             _storagePrice = CreateStorageKey(Prefix_StoragePrice);
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
+            _maxTraceableBlocks = CreateStorageKey(Prefix_MaxTraceableBlocks);
         }
 
         internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
@@ -104,6 +113,7 @@ namespace Neo.SmartContract.Native
             {
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
+                engine.SnapshotCache.Add(_maxTraceableBlocks, new StorageItem(engine.ProtocolSettings.MaxTraceableBlocks));
             }
             return ContractTask.CompletedTask;
         }
@@ -151,6 +161,17 @@ namespace Neo.SmartContract.Native
         public uint GetMaxValidUntilBlockIncrement(IReadOnlyStore snapshot)
         {
             return (uint)(BigInteger)snapshot[_maxValidUntilBlockIncrement];
+        }
+
+        /// <summary>
+        /// Gets the length of the chain accessible to smart contracts.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>MaxTraceableBlocks value.</returns>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public uint GetMaxTraceableBlocks(IReadOnlyStore snapshot)
+        {
+            return (uint)(BigInteger)snapshot[_maxTraceableBlocks];
         }
 
         /// <summary>
@@ -281,6 +302,26 @@ namespace Neo.SmartContract.Native
             if (value == 0 || value > MaxMaxValidUntilBlockIncrement) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement).Set(value);
+        }
+
+        /// <summary>
+        /// Sets the length of the chain accessible to smart contracts.
+        /// </summary>
+        /// <param name="engine">The engine used to check committee witness and read data.</param>
+        /// <param name="value">MaxTraceableBlocks value.</param>
+        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetMaxTraceableBlocks(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxMaxTraceableBlocks)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MaxTraceableBlocks value should be between 1 and {MaxMaxTraceableBlocks}, got {value}");
+            var oldVal = GetMaxTraceableBlocks(engine.SnapshotCache);
+            if (value > oldVal)
+                throw new InvalidOperationException($"MaxTraceableBlocks can not be increased (old {oldVal}, new {value})");
+            var mVUBIncrement = GetMaxValidUntilBlockIncrement(engine.SnapshotCache);
+            if (value <= mVUBIncrement)
+                throw new InvalidOperationException($"MaxTraceableBlocks must be larger than MaxValidUntilBlockIncrement ({value} vs {mVUBIncrement})");
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("Invalid committee signature");
+            engine.SnapshotCache.GetAndChange(_maxTraceableBlocks).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

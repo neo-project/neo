@@ -410,5 +410,76 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.IsFalse(NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero));
         }
+
+        [TestMethod]
+        public void Check_SetMaxTraceableBlocks()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Fake blockchain.
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
+
+            // Without signature.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getMaxTraceableBlocks");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(2_102_400, ret.GetInteger());
+
+            // With signature, too big value.
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 2_102_401 });
+            });
+
+            // With signature, too small value.
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            });
+
+            // With signature, lower or equal to MaxValidUntilBlockIncrement.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 5760 });
+            });
+
+            // Ensure value is not changed.
+            ret = NativeContract.Policy.Call(snapshot, "getMaxTraceableBlocks");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(2102400, ret.GetInteger());
+
+            // Proper set.
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 5761 });
+            Assert.IsTrue(ret.IsNull);
+
+            // Ensure value is updated.
+            ret = NativeContract.Policy.Call(snapshot, "getMaxTraceableBlocks");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(5761, ret.GetInteger());
+
+            // Larger value should be prohibited.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 5762 });
+            });
+        }
     }
 }
