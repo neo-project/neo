@@ -297,6 +297,18 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(123, ret.GetInteger());
+
+            // Update MaxTraceableBlocks value for further test.
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setMaxTraceableBlocks", new ContractParameter(ContractParameterType.Integer) { Value = 6000 });
+            Assert.IsTrue(ret.IsNull);
+
+            // Set MaxValudUntilBlockIncrement to be larger or equal to MaxTraceableBlocks, it should fail.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMaxValidUntilBlockIncrement", new ContractParameter(ContractParameterType.Integer) { Value = 6000 });
+            });
         }
 
         [TestMethod]

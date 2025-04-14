@@ -300,6 +300,9 @@ namespace Neo.SmartContract.Native
         private void SetMaxValidUntilBlockIncrement(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxMaxValidUntilBlockIncrement) throw new ArgumentOutOfRangeException(nameof(value));
+            var mtb = GetMaxTraceableBlocks(engine.SnapshotCache);
+            if (value >= mtb)
+                throw new InvalidOperationException($"MaxValidUntilBlockIncrement must be lower than MaxTraceableBlocks ({value} vs {mtb})");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.SnapshotCache.GetAndChange(_maxValidUntilBlockIncrement).Set(value);
         }
