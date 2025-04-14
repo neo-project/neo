@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum block generation time that the committee can set in milliseconds.
         /// </summary>
-        public const uint MaxMSPerBlock = 30_000;
+        public const uint MaxMillisecondsPerBlock = 30_000;
 
         /// <summary>
         /// The maximum MaxValidUntilBlockIncrement value that the committee can set.
@@ -81,21 +81,21 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
-        private const byte Prefix_MSPerBlock = 21;
+        private const byte Prefix_MillisecondsPerBlock = 21;
         private const byte Prefix_MaxValidUntilBlockIncrement = 22;
 
         private readonly StorageKey _feePerByte;
         private readonly StorageKey _execFeeFactor;
         private readonly StorageKey _storagePrice;
-        private readonly StorageKey _msPerBlock;
+        private readonly StorageKey _millisecondsPerBlock;
         private readonly StorageKey _maxValidUntilBlockIncrement;
 
         /// <summary>
         /// The event name for the block generation time changed.
         /// </summary>
-        private const string MSPerBlockChangedEventName = "MSPerBlockChanged";
+        private const string MillisecondsPerBlockChangedEventName = "MillisecondsPerBlockChanged";
 
-        [ContractEvent(Hardfork.HF_Echidna, 0, name: MSPerBlockChangedEventName,
+        [ContractEvent(Hardfork.HF_Echidna, 0, name: MillisecondsPerBlockChangedEventName,
             "old", ContractParameterType.Integer,
             "new", ContractParameterType.Integer
         )]
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
             _feePerByte = CreateStorageKey(Prefix_FeePerByte);
             _execFeeFactor = CreateStorageKey(Prefix_ExecFeeFactor);
             _storagePrice = CreateStorageKey(Prefix_StoragePrice);
-            _msPerBlock = CreateStorageKey(Prefix_MSPerBlock);
+            _millisecondsPerBlock = CreateStorageKey(Prefix_MillisecondsPerBlock);
             _maxValidUntilBlockIncrement = CreateStorageKey(Prefix_MaxValidUntilBlockIncrement);
         }
 
@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
             if (hardfork == Hardfork.HF_Echidna)
             {
                 engine.SnapshotCache.Add(CreateStorageKey(Prefix_AttributeFee, (byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
-                engine.SnapshotCache.Add(_msPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
+                engine.SnapshotCache.Add(_millisecondsPerBlock, new StorageItem(engine.ProtocolSettings.MillisecondsPerBlock));
                 engine.SnapshotCache.Add(_maxValidUntilBlockIncrement, new StorageItem(engine.ProtocolSettings.MaxValidUntilBlockIncrement));
             }
             return ContractTask.CompletedTask;
@@ -164,9 +164,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The block generation time in milliseconds.</returns>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetMSPerBlock(IReadOnlyStore snapshot)
+        public uint GetMillisecondsPerBlock(IReadOnlyStore snapshot)
         {
-            return (uint)(BigInteger)snapshot[_msPerBlock];
+            return (uint)(BigInteger)snapshot[_millisecondsPerBlock];
         }
 
         /// <summary>
@@ -242,16 +242,16 @@ namespace Neo.SmartContract.Native
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided value is outside the allowed range.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the caller is not a committee member.</exception>
         [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        public void SetMSPerBlock(ApplicationEngine engine, uint value)
+        public void SetMillisecondsPerBlock(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > MaxMSPerBlock)
-                throw new ArgumentOutOfRangeException(nameof(value), $"MSPerBlock value should be between 1 and {MaxMSPerBlock}, got {value}");
+            if (value == 0 || value > MaxMillisecondsPerBlock)
+                throw new ArgumentOutOfRangeException(nameof(value), $"MillisecondsPerBlock value should be between 1 and {MaxMillisecondsPerBlock}, got {value}");
             if (!CheckCommittee(engine)) throw new InvalidOperationException("invalid committee signature");
 
-            var oldTime = GetMSPerBlock(engine.SnapshotCache);
-            engine.SnapshotCache.GetAndChange(_msPerBlock).Set(value);
+            var oldTime = GetMillisecondsPerBlock(engine.SnapshotCache);
+            engine.SnapshotCache.GetAndChange(_millisecondsPerBlock).Set(value);
 
-            engine.SendNotification(Hash, MSPerBlockChangedEventName,
+            engine.SendNotification(Hash, MillisecondsPerBlockChangedEventName,
                 [new VM.Types.Integer(oldTime), new VM.Types.Integer(value)]);
         }
 

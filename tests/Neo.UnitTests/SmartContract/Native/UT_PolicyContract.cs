@@ -300,7 +300,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_SetMSPerBlock()
+        public void Check_SetMillisecondsPerBlock()
         {
             var snapshot = _snapshotCache.CloneCache();
 
@@ -318,10 +318,10 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
-                "setMSPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
+                "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
             });
 
-            var ret = NativeContract.Policy.Call(snapshot, "getMSPerBlock");
+            var ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(15_000, ret.GetInteger());
 
@@ -330,28 +330,28 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "setMSPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 30_001 });
+                    "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 30_001 });
             });
 
             // With signature, too small value.
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                    "setMSPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+                    "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
             });
 
             // Ensure value is not changed.
-            ret = NativeContract.Policy.Call(snapshot, "getMSPerBlock");
+            ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(15_000, ret.GetInteger());
 
             // Proper set.
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
-                "setMSPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 3_000 });
+                "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 3_000 });
             Assert.IsTrue(ret.IsNull);
 
             // Ensure value is updated.
-            ret = NativeContract.Policy.Call(snapshot, "getMSPerBlock");
+            ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(3_000, ret.GetInteger());
         }

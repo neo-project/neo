@@ -48,8 +48,8 @@ namespace Neo
                 if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
                     return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
 
-                // Retrieve MSPerBlock value from native Policy if HFEchidna is enabled.
-                var milliseconds = NativeContract.Policy.GetMSPerBlock(snapshot);
+                // Retrieve MillisecondsPerBlock value from native Policy if HFEchidna is enabled.
+                var milliseconds = NativeContract.Policy.GetMillisecondsPerBlock(snapshot);
                 return TimeSpan.FromMilliseconds(milliseconds);
             }
             catch (KeyNotFoundException)
