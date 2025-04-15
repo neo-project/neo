@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Sign;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -69,6 +70,12 @@ namespace Neo.CLI
         private void OnCloseWalletCommand()
         {
             if (NoWallet()) return;
+
+            if (CurrentWallet is not null)
+            {
+                SignerFactory.UnregisterSigner(CurrentWallet.Name);
+            }
+
             CurrentWallet = null;
             ConsoleHelper.Info("Wallet is closed");
         }
@@ -416,7 +423,7 @@ namespace Neo.CLI
                 {
                     type = "Standard";
                 }
-                else if (NativeContract.ContractManagement.GetContract(snapshot, account.ScriptHash) != null)
+                else if (NativeContract.ContractManagement.IsContract(snapshot, account.ScriptHash))
                 {
                     type = "Deployed-Nonstandard";
                 }
