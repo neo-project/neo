@@ -83,24 +83,31 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var key = UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 
             // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.
+            var tx = new Transaction()
+            {
+                Script = new byte[] { (byte)OpCode.RET },
+                Witnesses = [Witness.Empty],
+                Signers = [new Signer() { Account = UInt160.Zero }],
+                Attributes = []
+            };
             var conflict = new TransactionState();
             snapshotCache.Add(key, new StorageItem(conflict));
-            Assert.IsTrue(test.Verify(snapshotCache, new Transaction()));
+            Assert.IsTrue(test.Verify(snapshotCache, tx));
 
             // Conflicting transaction is on-chain.
             snapshotCache.Delete(key);
             conflict = new TransactionState
             {
                 BlockIndex = 123,
-                Transaction = new Transaction(),
+                Transaction = tx,
                 State = VMState.NONE
             };
             snapshotCache.Add(key, new StorageItem(conflict));
-            Assert.IsFalse(test.Verify(snapshotCache, new Transaction()));
+            Assert.IsFalse(test.Verify(snapshotCache, tx));
 
             // There's no conflicting transaction at all.
             snapshotCache.Delete(key);
-            Assert.IsTrue(test.Verify(snapshotCache, new Transaction()));
+            Assert.IsTrue(test.Verify(snapshotCache, tx));
         }
     }
 }
