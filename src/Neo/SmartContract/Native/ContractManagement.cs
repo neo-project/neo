@@ -214,7 +214,7 @@ namespace Neo.SmartContract.Native
         public IEnumerable<ContractState> ListContracts(IReadOnlyStore snapshot)
         {
             var listContractsPrefix = CreateStorageKey(Prefix_Contract);
-            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>(false));
+            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperableClone<ContractState>(false));
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
