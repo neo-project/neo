@@ -102,7 +102,6 @@ namespace Neo.ConsoleService
                 do
                 {
                     key = Console.ReadKey(true);
-
                     if (t.IndexOf(key.KeyChar) != -1)
                     {
                         sb.Append(key.KeyChar);
