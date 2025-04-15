@@ -149,8 +149,8 @@ namespace Neo.UnitTests
                     },
                     new Witness
                     {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
+                        InvocationScript = [],
+                        VerificationScript = [],
                     }
                 ]
             };
