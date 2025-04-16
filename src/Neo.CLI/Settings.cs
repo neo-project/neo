@@ -113,6 +113,7 @@ namespace Neo
         public int MinDesiredConnections { get; }
         public int MaxConnections { get; }
         public int MaxConnectionsPerAddress { get; }
+        public int MaxKnownHashes { get; }
 
         public P2PSettings(IConfigurationSection section)
         {
@@ -120,6 +121,7 @@ namespace Neo
             EnableCompression = section.GetValue(nameof(EnableCompression), ChannelsConfig.DefaultEnableCompression);
             MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), ChannelsConfig.DefaultMinDesiredConnections);
             MaxConnections = section.GetValue(nameof(MaxConnections), ChannelsConfig.DefaultMaxConnections);
+            MaxKnownHashes = section.GetValue(nameof(MaxKnownHashes), ChannelsConfig.DefaultMaxKnownHashes);
             MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), ChannelsConfig.DefaultMaxConnectionsPerAddress);
         }
 
