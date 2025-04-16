@@ -34,7 +34,8 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
         private readonly IActorRef taskManager;
         private readonly IActorRef blockchain;
         private ICancelable timer_token;
-        private DateTime block_received_time;
+        private DateTime prepareRequestReceivedTime;
+        private uint prepareRequestReceivedBlockIndex;
         private uint block_received_index;
         private bool started = false;
 
@@ -94,9 +95,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 else
                 {
                     TimeSpan span = context.TimePerBlock;
-                    if (block_received_index + 1 == context.Block.Index)
+                    if (block_received_index + 1 == context.Block.Index && prepareRequestReceivedBlockIndex + 1 == context.Block.Index)
                     {
-                        var diff = TimeProvider.Current.UtcNow - block_received_time;
+                        // Include consensus time into the block acceptance interval.
+                        var diff = TimeProvider.Current.UtcNow - prepareRequestReceivedTime;
                         if (diff >= span)
                             span = TimeSpan.Zero;
                         else
