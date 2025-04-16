@@ -11,6 +11,7 @@
 
 using Neo.Persistence;
 using Neo.SmartContract.Native;
+using System;
 using System.Collections.Generic;
 
 namespace Neo
@@ -20,6 +21,45 @@ namespace Neo
     /// </summary>
     public static class NeoSystemExtensions
     {
+        /// <summary>
+        /// Gets the block generation time based on the current state of the blockchain.
+        /// </summary>
+        /// <param name="system">The NeoSystem instance.</param>
+        /// <returns>The block generation time as a TimeSpan.</returns>
+        public static TimeSpan GetTimePerBlock(this NeoSystem system)
+        {
+            return system.StoreView.GetTimePerBlock(system.Settings);
+        }
+
+        /// <summary>
+        /// Gets the block generation time based on the current state of the blockchain.
+        /// </summary>
+        /// <param name="snapshot">The snapshot of the store.</param>
+        /// <param name="settings">The protocol settings.</param>
+        /// <returns>The block generation time as a TimeSpan.</returns>
+        public static TimeSpan GetTimePerBlock(this IReadOnlyStore snapshot, ProtocolSettings settings)
+        {
+            try
+            {
+                // Get the persisted block height from the blockchain.
+                var index = NativeContract.Ledger.CurrentIndex(snapshot);
+
+                // Use protocol settings configuration if HF_Echidna is not yet enabled.
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Echidna, index))
+                    return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
+
+                // Retrieve MillisecondsPerBlock value from native Policy if HFEchidna is enabled.
+                var milliseconds = NativeContract.Policy.GetMillisecondsPerBlock(snapshot);
+                return TimeSpan.FromMilliseconds(milliseconds);
+            }
+            catch (KeyNotFoundException)
+            {
+                // A special case if HF_Echidna is active starting from 0 height and
+                // if genesis block is not yet persisted.
+                return TimeSpan.FromMilliseconds(settings.MillisecondsPerBlock);
+            }
+        }
+
         /// <summary>
         /// Gets the upper increment size of blockchain height (in blocks) exceeding
         /// that a transaction should fail validation.
