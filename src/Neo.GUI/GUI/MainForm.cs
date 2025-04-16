@@ -48,7 +48,7 @@ namespace Neo.GUI
         {
             InitializeComponent();
 
-            toolStripProgressBar1.Maximum = (int)Service.NeoSystem.Settings.TimePerBlock.TotalSeconds;
+            toolStripProgressBar1.Maximum = (int)Service.NeoSystem.GetTimePerBlock().TotalSeconds;
 
             if (xdoc != null)
             {
@@ -188,7 +188,7 @@ namespace Neo.GUI
             lbl_count_node.Text = Service.LocalNode.ConnectedCount.ToString();
             TimeSpan persistence_span = DateTime.UtcNow - persistence_time;
             if (persistence_span < TimeSpan.Zero) persistence_span = TimeSpan.Zero;
-            if (persistence_span > Service.NeoSystem.Settings.TimePerBlock)
+            if (persistence_span > Service.NeoSystem.GetTimePerBlock())
             {
                 toolStripProgressBar1.Style = ProgressBarStyle.Marquee;
             }
