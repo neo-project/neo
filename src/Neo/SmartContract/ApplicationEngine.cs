@@ -669,7 +669,7 @@ namespace Neo.SmartContract
                     Version = 0,
                     PrevHash = hash,
                     MerkleRoot = new UInt256(),
-                    Timestamp = currentBlock.Timestamp + settings.MillisecondsPerBlock,
+                    Timestamp = currentBlock.Timestamp + (uint)snapshot.GetTimePerBlock(settings).TotalMilliseconds,
                     Index = currentBlock.Index + 1,
                     NextConsensus = currentBlock.NextConsensus,
                     Witness = Witness.Empty,
