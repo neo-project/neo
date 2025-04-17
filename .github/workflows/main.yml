@@ -68,6 +68,7 @@ jobs:
     - name: Install missing workloads
       run: |
         dotnet workload update
+        dotnet workload restore
 
     - name: Test (MacOS)
       if: matrix.os == 'macos-latest'
@@ -89,6 +90,12 @@ jobs:
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
         dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-ubuntu.binlog
         dotnet test -v d --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*" -bl:test-ubuntu.binlog
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: ./bin/tests/Neo.UnitTests/net9.0/TestResults
 
     - uses: actions/upload-artifact@v4.6.2
       if: always()
