@@ -89,7 +89,7 @@ namespace Neo.CLI
             var task = Task.Run(async () =>
             {
                 var maxLines = 0;
-                var startTime = DateTime.Now;
+                var startTime = DateTime.UtcNow;
                 var refreshInterval = 1000; // Slower refresh to reduce flickering
                 var lastRefresh = DateTime.MinValue;
                 var lastHeight = 0u;
@@ -104,7 +104,7 @@ namespace Neo.CLI
                     try
                     {
                         // Only refresh data if time elapsed or significant changes
-                        var now = DateTime.Now;
+                        var now = DateTime.UtcNow;
                         var timeSinceRefresh = (now - lastRefresh).TotalMilliseconds;
 
                         // Capture data (do this frequently)
