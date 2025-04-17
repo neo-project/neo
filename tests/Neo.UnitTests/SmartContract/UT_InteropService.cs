@@ -37,12 +37,14 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_InteropService : TestKit
     {
+        private NeoSystem _system;
         private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            _system = TestBlockchain.GetSystem();
+            _snapshotCache = _system.GetSnapshotCache();
         }
 
         [TestMethod]
@@ -466,7 +468,7 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             Assert.IsNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, new UInt256(data1)));
-            Assert.IsNotNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, TestBlockchain.TheNeoSystem.GenesisBlock.Hash));
+            Assert.IsNotNull(NativeContract.Ledger.GetBlock(engine.SnapshotCache, _system.GenesisBlock.Hash));
         }
 
         [TestMethod]
@@ -782,7 +784,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = _snapshotCache.CloneCache();
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestProtocolSettings.Default, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
