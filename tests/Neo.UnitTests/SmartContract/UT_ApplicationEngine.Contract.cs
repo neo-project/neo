@@ -20,12 +20,14 @@ namespace Neo.UnitTests.SmartContract
 {
     public partial class UT_ApplicationEngine
     {
+        private NeoSystem _system;
         private DataCache _snapshotCache;
 
         [TestInitialize]
         public void TestSetup()
         {
-            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            _system = TestBlockchain.GetSystem();
+            _snapshotCache = _system.GetSnapshotCache();
         }
 
         [TestMethod]
@@ -50,7 +52,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
             var settings = TestProtocolSettings.Default;
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_CreateMultisigAccount, new object[]
