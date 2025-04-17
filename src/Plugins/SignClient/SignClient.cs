@@ -115,25 +115,29 @@ namespace Neo.Plugins.SignClient
                 return;
             }
 
-            var publicKey = ECPoint.DecodePoint(hexPublicKey.HexToBytes(), ECCurve.Secp256r1);
             try
             {
+                var publicKey = ECPoint.DecodePoint(hexPublicKey.HexToBytes(), ECCurve.Secp256r1);
                 var output = _client.GetAccountStatus(new()
                 {
                     PublicKey = ByteString.CopyFrom(publicKey.EncodePoint(true))
                 });
                 ConsoleHelper.Info($"Account status: {output.Status}");
             }
-            catch (RpcException ex)
+            catch (RpcException rpcEx)
             {
-                if (ex.StatusCode == StatusCode.Unavailable)
+                if (rpcEx.StatusCode == StatusCode.Unavailable)
                 {
                     ConsoleHelper.Error("No available signer service");
                 }
                 else
                 {
-                    ConsoleHelper.Error($"Failed to get account status: {ex.StatusCode}: {ex.Status.Detail}");
+                    ConsoleHelper.Error($"Failed to get account status: {rpcEx.StatusCode}: {rpcEx.Status.Detail}");
                 }
+            }
+            catch (FormatException formatEx)
+            {
+                ConsoleHelper.Error($"Invalid public key: {formatEx.Message}");
             }
         }
 
