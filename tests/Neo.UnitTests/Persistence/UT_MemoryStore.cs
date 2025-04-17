@@ -23,14 +23,14 @@ namespace Neo.UnitTests.Persistence
     [TestClass]
     public class UT_MemoryStore
     {
-        private NeoSystem _neoSystem;
+        private NeoSystem _system;
         private MemoryStore _memoryStore;
 
         [TestInitialize]
         public void Setup()
         {
             _memoryStore = new MemoryStore();
-            _neoSystem = new NeoSystem(TestProtocolSettings.Default, new TestMemoryStoreProvider(_memoryStore));
+            _system = new NeoSystem(TestProtocolSettings.Default, new TestMemoryStoreProvider(_memoryStore));
         }
 
         [TestCleanup]
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void LoadStoreTest()
         {
-            Assert.IsInstanceOfType<MemoryStore>(TestBlockchain.TheNeoSystem.LoadStore("abc"));
+            Assert.IsInstanceOfType<MemoryStore>(_system.LoadStore("abc"));
         }
 
         [TestMethod]
@@ -79,8 +79,8 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void NeoSystemStoreViewTest()
         {
-            Assert.IsNotNull(_neoSystem.StoreView);
-            var store = _neoSystem.StoreView;
+            Assert.IsNotNull(_system.StoreView);
+            var store = _system.StoreView;
             var key = new StorageKey(Encoding.UTF8.GetBytes("testKey"));
             var value = new StorageItem(Encoding.UTF8.GetBytes("testValue"));
 
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void NeoSystemStoreAddTest()
         {
-            var storeCache = _neoSystem.GetSnapshotCache();
+            var storeCache = _system.GetSnapshotCache();
             var key = new KeyBuilder(0, 0);
             storeCache.Add(key, new StorageItem(UInt256.Zero.ToArray()));
             storeCache.Commit();
@@ -111,7 +111,7 @@ namespace Neo.UnitTests.Persistence
         [TestMethod]
         public void NeoSystemStoreGetAndChange()
         {
-            var storeView = _neoSystem.GetSnapshotCache();
+            var storeView = _system.GetSnapshotCache();
             var key = new KeyBuilder(1, 1);
             var item = new StorageItem([1, 2, 3]);
             storeView.Delete(key);

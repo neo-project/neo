@@ -52,12 +52,6 @@ namespace Neo.UnitTests.SmartContract.Native
             };
         }
 
-        [TestCleanup]
-        public void Clean()
-        {
-            TestBlockchain.ResetStore();
-        }
-
         class active : IHardforkActivable
         {
             public Hardfork? ActiveIn { get; init; }
@@ -264,7 +258,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static ContractState Call_GetContract(DataCache snapshot, UInt160 address, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "getContract", address);
