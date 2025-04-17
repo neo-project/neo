@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -30,10 +30,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
 
@@ -58,10 +58,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -86,7 +86,7 @@ jobs:
         dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-ubuntu.binlog
         dotnet test --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*" -bl:test-ubuntu.binlog
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v4.6.2
       if: always()
       with:
         name: binlogs--${{ matrix.os }}
@@ -121,12 +121,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
       with:
         fetch-depth: 0
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
