@@ -128,8 +128,9 @@ namespace Neo.Ledger
         {
             _system = system;
             Capacity = system.Settings.MemoryPoolMaxTransactions;
-            MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
-            MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
+            var timePerBlock = system.GetTimePerBlock().TotalMilliseconds;
+            MaxMillisecondsToReverifyTx = timePerBlock / 3;
+            MaxMillisecondsToReverifyTxPerIdle = timePerBlock / 15;
         }
 
         /// <summary>
@@ -682,7 +683,7 @@ namespace Neo.Ledger
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.Settings.MillisecondsPerBlock * blocksTillRebroadcast);
+                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.GetTimePerBlock().TotalMilliseconds * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
                     if (_unsortedTransactions.ContainsKey(item.Tx.Hash))

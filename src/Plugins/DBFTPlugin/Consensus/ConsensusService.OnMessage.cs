@@ -84,7 +84,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (message.Version != context.Block.Version || message.PrevHash != context.Block.PrevHash) return;
             if (message.TransactionHashes.Length > neoSystem.Settings.MaxTransactionsPerBlock) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={message.BlockIndex} view={message.ViewNumber} index={message.ValidatorIndex} tx={message.TransactionHashes.Length}");
-            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * neoSystem.Settings.MillisecondsPerBlock).ToTimestampMS())
+            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMilliseconds(8 * context.TimePerBlock.TotalMilliseconds).ToTimestampMS())
             {
                 Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
                 return;
