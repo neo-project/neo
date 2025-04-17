@@ -54,6 +54,11 @@ namespace Neo.UnitTests.Extensions
 
             Assert.IsNotNull(item);
             Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
+
+            // Ensure GetInteroperableClone don't change nothing
+
+            item.GetInteroperableClone<AccountState>().Balance = 123;
+            Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);
         }
     }
 }
