@@ -19,7 +19,6 @@ using Neo.UnitTests.Extensions;
 using Neo.VM.Types;
 using System;
 using System.Numerics;
-using System.Threading.Tasks;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
