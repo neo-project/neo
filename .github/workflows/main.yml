@@ -67,7 +67,7 @@ jobs:
 
     - name: Install missing workloads
       run: |
-        dotnet workload install
+        dotnet workload update
 
     - name: Test (MacOS)
       if: matrix.os == 'macos-latest'
