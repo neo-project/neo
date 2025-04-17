@@ -170,7 +170,7 @@ namespace Neo.Plugins.SignClient.Tests
         }
 
         [TestMethod]
-        public void TestContainsSignable()
+        public void TestGetAccountStatus()
         {
             using var signClient = newClient();
 
@@ -184,6 +184,12 @@ namespace Neo.Plugins.SignClient.Tests
             // not exists
             contains = signClient.ContainsSignable(keypair.PublicKey);
             Assert.IsFalse(contains);
+
+            // exists
+            signClient.AccountStatusCommand(PublicKey);
+
+            // not exists
+            signClient.AccountStatusCommand(keypair.PublicKey.EncodePoint(true).ToHexString());
         }
     }
 }

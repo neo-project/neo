@@ -10,12 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using System.Net;
 
 namespace Neo.Plugins.SignClient
 {
     public class Settings : PluginSettings
     {
-        public const int DefaultPort = 9991;
+        public const ushort DefaultPort = 9991;
         public const string SectionName = "PluginConfiguration";
 
         /// <summary>
@@ -27,12 +28,12 @@ namespace Neo.Plugins.SignClient
         /// The host of the sign client(i.e. Signer).
         /// Only support local host at present, so host always is "127.0.0.1" or "::1" now.
         /// </summary>
-        public readonly string Host = "127.0.0.1";
+        public readonly IPAddress Host = IPAddress.Loopback;
 
         /// <summary>
         /// The port of the sign client(i.e. Signer).
         /// </summary>
-        public readonly int Port;
+        public readonly ushort Port;
 
         public Settings(IConfigurationSection section) : base(section)
         {

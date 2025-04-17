@@ -91,7 +91,7 @@ namespace Neo.Plugins.SignClient
             };
 
             // sign server run on localhost, so http is ok
-            var address = new IPEndPoint(IPAddress.Parse(settings.Host), settings.Port);
+            var address = new IPEndPoint(settings.Host, settings.Port);
             var channel = GrpcChannel.ForAddress($"http://{address}", new GrpcChannelOptions
             {
                 ServiceConfig = new ServiceConfig { MethodConfigs = { methodConfig } }
@@ -109,9 +109,32 @@ namespace Neo.Plugins.SignClient
         [ConsoleCommand("get account status", Category = "Signer Commands", Description = "Get account status")]
         public void AccountStatusCommand(string hexPublicKey)
         {
+            if (_client is null)
+            {
+                ConsoleHelper.Error("No signer service is connected");
+                return;
+            }
+
             var publicKey = ECPoint.DecodePoint(hexPublicKey.HexToBytes(), ECCurve.Secp256r1);
-            var status = GetAccountStatus(publicKey);
-            ConsoleHelper.Info("", $"Account status: {status}");
+            try
+            {
+                var output = _client.GetAccountStatus(new()
+                {
+                    PublicKey = ByteString.CopyFrom(publicKey.EncodePoint(true))
+                });
+                ConsoleHelper.Info($"Account status: {output.Status}");
+            }
+            catch (RpcException ex)
+            {
+                if (ex.StatusCode == StatusCode.Unavailable)
+                {
+                    ConsoleHelper.Error("No available signer service");
+                }
+                else
+                {
+                    ConsoleHelper.Error($"Failed to get account status: {ex.StatusCode}: {ex.Status.Detail}");
+                }
+            }
         }
 
         private AccountStatus GetAccountStatus(ECPoint publicKey)
