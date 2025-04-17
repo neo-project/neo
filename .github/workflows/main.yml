@@ -92,6 +92,7 @@ jobs:
         dotnet test -v d --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*" -bl:test-ubuntu.binlog
     
     - name: Upload test results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results
