@@ -32,9 +32,6 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetup()
         {
             _snapshotCache = TestBlockchain.GetTestSnapshotCache();
-
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshotCache, new Block { Header = new Header() }, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
-            NativeContract.ContractManagement.OnPersistAsync(engine);
         }
 
         [TestMethod]
@@ -297,6 +294,63 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getMaxValidUntilBlockIncrement");
             Assert.IsInstanceOfType(ret, typeof(Integer));
             Assert.AreEqual(123, ret.GetInteger());
+        }
+
+        [TestMethod]
+        public void Check_SetMillisecondsPerBlock()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            // Fake blockchain.
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
+
+            // Without signature.
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 123 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(15_000, ret.GetInteger());
+
+            // With signature, too big value.
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 30_001 });
+            });
+
+            // With signature, too small value.
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            });
+
+            // Ensure value is not changed.
+            ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(15_000, ret.GetInteger());
+
+            // Proper set.
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setMillisecondsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 3_000 });
+            Assert.IsTrue(ret.IsNull);
+
+            // Ensure value is updated.
+            ret = NativeContract.Policy.Call(snapshot, "getMillisecondsPerBlock");
+            Assert.IsInstanceOfType(ret, typeof(Integer));
+            Assert.AreEqual(3_000, ret.GetInteger());
         }
 
         [TestMethod]
