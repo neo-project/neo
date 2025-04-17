@@ -47,7 +47,7 @@ namespace Neo.Network
             "MX:3\r\n\r\n";
             var data = Encoding.ASCII.GetBytes(req);
             var ipe = new IPEndPoint(IPAddress.Broadcast, 1900);
-            var start = DateTime.Now;
+            var start = DateTime.UtcNow;
 
             try
             {
@@ -85,7 +85,7 @@ namespace Neo.Network
                     continue;
                 }
             }
-            while (DateTime.Now - start < TimeOut);
+            while (DateTime.UtcNow - start < TimeOut);
 
             return false;
         }
