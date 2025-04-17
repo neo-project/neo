@@ -18,39 +18,33 @@ namespace Neo.UnitTests.Extensions
     [TestClass]
     public class UT_ContractStateExtensions
     {
-        private NeoSystem system;
+        private NeoSystem _system;
 
         [TestInitialize]
         public void Initialize()
         {
-            system = TestBlockchain.TheNeoSystem;
-        }
-
-        [TestCleanup]
-        public void Clean()
-        {
-            TestBlockchain.ResetStore();
+            _system = TestBlockchain.GetSystem();
         }
 
         [TestMethod]
         public void TestGetStorage()
         {
-            var contractStorage = NativeContract.ContractManagement.FindContractStorage(system.StoreView, NativeContract.NEO.Id);
+            var contractStorage = NativeContract.ContractManagement.FindContractStorage(_system.StoreView, NativeContract.NEO.Id);
 
             Assert.IsNotNull(contractStorage);
 
-            var neoContract = NativeContract.ContractManagement.GetContractById(system.StoreView, NativeContract.NEO.Id);
+            var neoContract = NativeContract.ContractManagement.GetContractById(_system.StoreView, NativeContract.NEO.Id);
 
-            contractStorage = neoContract.FindStorage(system.StoreView);
+            contractStorage = neoContract.FindStorage(_system.StoreView);
 
             Assert.IsNotNull(contractStorage);
 
-            contractStorage = neoContract.FindStorage(system.StoreView, [20]);
+            contractStorage = neoContract.FindStorage(_system.StoreView, [20]);
 
             Assert.IsNotNull(contractStorage);
 
             UInt160 address = "0x9f8f056a53e39585c7bb52886418c7bed83d126b";
-            var item = neoContract.GetStorage(system.StoreView, [20, .. address.ToArray()]);
+            var item = neoContract.GetStorage(_system.StoreView, [20, .. address.ToArray()]);
 
             Assert.IsNotNull(item);
             Assert.AreEqual(100_000_000, item.GetInteroperable<AccountState>().Balance);

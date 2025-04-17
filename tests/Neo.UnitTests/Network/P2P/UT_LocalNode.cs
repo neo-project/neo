@@ -21,20 +21,20 @@ namespace Neo.UnitTests.Network.P2P
     [TestClass]
     public class UT_LocalNode : TestKit
     {
-        private static NeoSystem s_testBlockchain;
+        private static NeoSystem _system;
 
         [TestInitialize]
         public void Init()
         {
-            s_testBlockchain = TestBlockchain.TheNeoSystem;
+            _system = TestBlockchain.GetSystem();
         }
 
         [TestMethod]
         public void TestDefaults()
         {
             var senderProbe = CreateTestProbe();
-            senderProbe.Send(s_testBlockchain.LocalNode, new ChannelsConfig()); // No Tcp
-            senderProbe.Send(s_testBlockchain.LocalNode, new LocalNode.GetInstance());
+            senderProbe.Send(_system.LocalNode, new ChannelsConfig()); // No Tcp
+            senderProbe.Send(_system.LocalNode, new LocalNode.GetInstance());
             var localnode = senderProbe.ExpectMsg<LocalNode>();
 
             Assert.AreEqual(0, localnode.ListenerTcpPort);

@@ -13,40 +13,39 @@ using Akka.Actor;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Persistence.Providers;
-using System;
 
 namespace Neo.UnitTests
 {
     public static class TestBlockchain
     {
-        public static readonly NeoSystem TheNeoSystem;
-        public static readonly UInt160[] DefaultExtensibleWitnessWhiteList;
-        private static readonly MemoryStore Store = new();
-
-        private class StoreProvider : IStoreProvider
+        private class TestStoreProvider : IStoreProvider
         {
+            public readonly MemoryStore Store = new();
+
             public string Name => "TestProvider";
 
             public IStore GetStore(string path) => Store;
         }
 
-        static TestBlockchain()
+        public class TestNeoSystem(ProtocolSettings settings) : NeoSystem(settings, new TestStoreProvider())
         {
-            Console.WriteLine("initialize NeoSystem");
-            TheNeoSystem = new NeoSystem(TestProtocolSettings.Default, new StoreProvider());
+            public void ResetStore()
+            {
+                (StorageProvider as TestStoreProvider).Store.Reset();
+                Blockchain.Ask(new Blockchain.Initialize()).Wait();
+            }
+
+            public StoreCache GetTestSnapshotCache(bool reset = true)
+            {
+                if (reset)
+                    ResetStore();
+                return GetSnapshotCache();
+            }
         }
 
-        internal static void ResetStore()
-        {
-            Store.Reset();
-            TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
-        }
+        public static readonly UInt160[] DefaultExtensibleWitnessWhiteList;
 
-        internal static StoreCache GetTestSnapshotCache(bool reset = true)
-        {
-            if (reset)
-                ResetStore();
-            return TheNeoSystem.GetSnapshotCache();
-        }
+        public static TestNeoSystem GetSystem() => new(TestProtocolSettings.Default);
+        public static StoreCache GetTestSnapshotCache() => GetSystem().GetSnapshotCache();
     }
 }
