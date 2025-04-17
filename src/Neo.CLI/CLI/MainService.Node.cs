@@ -63,7 +63,8 @@ namespace Neo.CLI
                 {
                     try
                     {
-                        NeoSystem.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView))));
+                        var payload = PingPayload.Create(NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView));
+                        NeoSystem.LocalNode.Tell(Message.Create(MessageCommand.Ping, payload));
                         await Task.Delay(NeoSystem.GetTimePerBlock() / 4, cancellationToken);
                     }
                     catch (TaskCanceledException) { break; }
@@ -82,476 +83,554 @@ namespace Neo.CLI
             Console.CursorVisible = false;
             Console.Clear();
 
-            // Background task to send ping messages to peers
             var broadcast = CreateBroadcastTask(cancel.Token);
+            var task = Task.Run(async () => await RunDisplayLoop(cancel.Token), cancel.Token);
 
-            // Display task
-            var task = Task.Run(async () =>
+            WaitForExit(cancel, task, broadcast);
+        }
+
+        private class DisplayState
+        {
+            public DateTime StartTime { get; set; }
+            public DateTime LastRefresh { get; set; }
+            public uint LastHeight { get; set; }
+            public uint LastHeaderHeight { get; set; }
+            public int LastTxPoolSize { get; set; }
+            public int LastConnectedCount { get; set; }
+            public int MaxLines { get; set; }
+            public const int RefreshInterval = 1000;
+
+            public DisplayState()
             {
-                var maxLines = 0;
-                var startTime = DateTime.UtcNow;
-                var refreshInterval = 1000; // Slower refresh to reduce flickering
-                var lastRefresh = DateTime.MinValue;
-                var lastHeight = 0u;
-                var lastHeaderHeight = 0u;
-                var lastTxPoolSize = 0;
-                var lastConnectedCount = 0;
-                var lineBuffer = new Dictionary<int, string>();
-                var colorBuffer = new Dictionary<int, ConsoleColor>();
+                StartTime = DateTime.UtcNow;
+                LastRefresh = DateTime.MinValue;
+                LastHeight = 0;
+                LastHeaderHeight = 0;
+                LastTxPoolSize = 0;
+                LastConnectedCount = 0;
+                MaxLines = 0;
+            }
+        }
 
-                while (!cancel.Token.IsCancellationRequested)
+        private class StateShower
+        {
+            private readonly MainService _mainService;
+            public DisplayState DisplayState { get; set; }
+            public Dictionary<int, string> LineBuffer { get; set; }
+            public Dictionary<int, ConsoleColor> ColorBuffer { get; set; }
+
+            public StateShower(MainService mainService)
+            {
+                _mainService = mainService;
+                DisplayState = new DisplayState();
+                LineBuffer = new Dictionary<int, string>();
+                ColorBuffer = new Dictionary<int, ConsoleColor>();
+            }
+
+            public void RenderDisplay()
+            {
+                var originalColor = Console.ForegroundColor;
+                var boxWidth = Math.Min(70, Console.WindowWidth - 2);
+                var linesWritten = 0;
+
+                try
                 {
-                    try
+                    linesWritten = RenderTitleBox(boxWidth, linesWritten);
+                    linesWritten = RenderTimeAndUptime(boxWidth, linesWritten);
+                    linesWritten = RenderBlockchainAndResources(boxWidth, linesWritten);
+                    linesWritten = RenderTransactionAndNetwork(boxWidth, linesWritten);
+                    linesWritten = RenderSyncProgress(boxWidth, linesWritten);
+                    linesWritten = RenderFooter(boxWidth, linesWritten);
+
+                    DisplayState.MaxLines = Math.Max(DisplayState.MaxLines, linesWritten);
+                    FlushDisplayToConsole(boxWidth, originalColor);
+                }
+                catch (Exception ex)
+                {
+                    HandleRenderError(ex);
+                }
+                finally
+                {
+                    Console.ForegroundColor = originalColor;
+                }
+            }
+
+            private int RenderTitleBox(int boxWidth, int linesWritten)
+            {
+                var horizontalLine = new string('─', boxWidth - 2);
+                LineBuffer[linesWritten] = "┌" + horizontalLine + "┐";
+                ColorBuffer[linesWritten++] = ConsoleColor.DarkGreen;
+
+                string[] largeText = ["           NEO NODE STATUS             "];
+                var textWidth = largeText.Max(s => s.Length);
+                var contentWidthForTitle = boxWidth - 2;
+                var textPadding = (contentWidthForTitle - textWidth) / 2;
+                var leftTextPad = new string(' ', textPadding > 0 ? textPadding : 0);
+
+                foreach (var line in largeText)
+                {
+                    var centeredLine = leftTextPad + line;
+                    var finalPaddedLine = centeredLine.PadRight(contentWidthForTitle);
+                    if (finalPaddedLine.Length > contentWidthForTitle)
+                        finalPaddedLine = finalPaddedLine[..contentWidthForTitle];
+
+                    LineBuffer[linesWritten] = "│" + finalPaddedLine + "│";
+                    ColorBuffer[linesWritten++] = ConsoleColor.DarkGreen;
+                }
+
+                LineBuffer[linesWritten] = "├" + horizontalLine + "┤";
+                ColorBuffer[linesWritten++] = ConsoleColor.DarkGray;
+                return linesWritten;
+            }
+
+            private int RenderTimeAndUptime(int boxWidth, int linesWritten)
+            {
+                var now = DateTime.UtcNow;
+                var uptime = now - DisplayState.StartTime;
+                var time = $" Current Time: {now:yyyy-MM-dd HH:mm:ss}   Uptime: {uptime.Days}d {uptime.Hours:D2}h {uptime.Minutes:D2}m {uptime.Seconds:D2}s";
+                var contentWidth = boxWidth - 2;
+                var paddedTime = time.PadRight(contentWidth);
+                if (paddedTime.Length > contentWidth)
+                {
+                    paddedTime = paddedTime[..(contentWidth - 3)] + "...";
+                }
+                else
+                {
+                    paddedTime = paddedTime[..contentWidth];
+                }
+
+                LineBuffer[linesWritten] = "│" + paddedTime + "│";
+                ColorBuffer[linesWritten++] = ConsoleColor.Gray;
+                return linesWritten;
+            }
+
+            private int RenderBlockchainAndResources(int boxWidth, int linesWritten)
+            {
+                var totalHorizontal = boxWidth - 3;
+                var leftSectionWidth = totalHorizontal / 2;
+                var rightSectionWidth = totalHorizontal - leftSectionWidth;
+                linesWritten = RenderSplitLine(leftSectionWidth, rightSectionWidth, linesWritten, "┬");
+
+                const string blockchainHeader = " BLOCKCHAIN STATUS";
+                const string resourcesHeader = " SYSTEM RESOURCES";
+                linesWritten = RenderSectionHeaders(blockchainHeader, resourcesHeader, leftSectionWidth, rightSectionWidth, linesWritten);
+                linesWritten = RenderSplitLine(leftSectionWidth, rightSectionWidth, linesWritten, "┼");
+
+                // Blockchain content
+                return RenderBlockchainContent(leftSectionWidth, rightSectionWidth, linesWritten);
+            }
+
+            private int RenderSectionHeaders(string leftHeader, string rightHeader, int leftSectionWidth, int rightSectionWidth, int linesWritten)
+            {
+                string leftHeaderFormatted, rightHeaderFormatted;
+                if (leftHeader.Length > leftSectionWidth)
+                    leftHeaderFormatted = leftHeader[..(leftSectionWidth - 3)] + "...";
+                else
+                    leftHeaderFormatted = leftHeader.PadRight(leftSectionWidth);
+                if (rightHeader.Length > rightSectionWidth)
+                    rightHeaderFormatted = rightHeader[..(rightSectionWidth - 3)] + "...";
+                else
+                    rightHeaderFormatted = rightHeader.PadRight(rightSectionWidth);
+                LineBuffer[linesWritten] = "│" + leftHeaderFormatted + "│" + rightHeaderFormatted + "│";
+                ColorBuffer[linesWritten++] = ConsoleColor.White;
+                return linesWritten;
+            }
+
+            private int RenderBlockchainContent(int leftSectionWidth, int rightSectionWidth, int linesWritten)
+            {
+                var currentIndex = NativeContract.Ledger.CurrentIndex(_mainService.NeoSystem.StoreView);
+                var headerHeight = _mainService.NeoSystem.HeaderCache.Last?.Index ?? currentIndex;
+                var memoryUsage = GC.GetTotalMemory(false) / (1024 * 1024);
+                var cpuUsage = GetCpuUsage(DateTime.UtcNow - DisplayState.StartTime);
+
+                var height = $" Block Height:   {currentIndex,10}";
+                var memory = $" Memory Usage:   {memoryUsage,10} MB";
+                string leftCol1, rightCol1;
+                if (height.Length > leftSectionWidth)
+                    leftCol1 = height[..(leftSectionWidth - 3)] + "...";
+                else
+                    leftCol1 = height.PadRight(leftSectionWidth);
+                if (memory.Length > rightSectionWidth)
+                    rightCol1 = memory[..(rightSectionWidth - 3)] + "...";
+                else
+                    rightCol1 = memory.PadRight(rightSectionWidth);
+                LineBuffer[linesWritten] = "│" + leftCol1 + "│" + rightCol1 + "│";
+                ColorBuffer[linesWritten++] = ConsoleColor.Cyan;
+
+                var header = $" Header Height:  {headerHeight,10}";
+                var cpu = $" CPU Usage:      {cpuUsage,10:F1} %";
+                string leftCol2, rightCol2;
+                if (header.Length > leftSectionWidth)
+                    leftCol2 = header[..(leftSectionWidth - 3)] + "...";
+                else
+                    leftCol2 = header.PadRight(leftSectionWidth);
+                if (cpu.Length > rightSectionWidth)
+                    rightCol2 = cpu[..(rightSectionWidth - 3)] + "...";
+                else
+                    rightCol2 = cpu.PadRight(rightSectionWidth);
+                LineBuffer[linesWritten] = "│" + leftCol2 + "│" + rightCol2 + "│";
+                ColorBuffer[linesWritten++] = ConsoleColor.Cyan;
+                return linesWritten;
+            }
+
+            private int RenderSplitLine(int leftSectionWidth, int rightSectionWidth, int linesWritten,
+                 string middleSplitter, string leftSplitter = "├", string rightSplitter = "┤")
+            {
+                var halfLine1 = new string('─', leftSectionWidth);
+                var halfLine2 = new string('─', rightSectionWidth);
+                LineBuffer[linesWritten] = leftSplitter + halfLine1 + middleSplitter + halfLine2 + rightSplitter;
+                ColorBuffer[linesWritten++] = ConsoleColor.DarkGray;
+                return linesWritten;
+            }
+
+            private int RenderTransactionAndNetwork(int boxWidth, int linesWritten)
+            {
+                var totalHorizontal = boxWidth - 3;
+                var leftSectionWidth = totalHorizontal / 2;
+                var rightSectionWidth = totalHorizontal - leftSectionWidth;
+
+                // split line
+                linesWritten = RenderSplitLine(leftSectionWidth, rightSectionWidth, linesWritten, "┼");
+
+                // section headers
+                const string txPoolHeader = " TRANSACTION POOL";
+                const string networkHeader = " NETWORK STATUS";
+                linesWritten = RenderSectionHeaders(txPoolHeader, networkHeader, leftSectionWidth, rightSectionWidth, linesWritten);
+                linesWritten = RenderSplitLine(leftSectionWidth, rightSectionWidth, linesWritten, "┼");
+
+                // Content rows
+                linesWritten = RenderTransactionContent(leftSectionWidth, rightSectionWidth, linesWritten);
+                linesWritten = RenderNetworkContent(leftSectionWidth, rightSectionWidth, linesWritten);
+                return RenderSplitLine(leftSectionWidth, rightSectionWidth, linesWritten, "┴", "└", "┘");
+            }
+
+            private int RenderTransactionContent(int leftSectionWidth, int rightSectionWidth, int linesWritten)
+            {
+                var txPoolSize = _mainService.NeoSystem.MemPool.Count;
+                var verifiedTxCount = _mainService.NeoSystem.MemPool.VerifiedCount;
+                // var unverifiedTxCount = _mainService.NeoSystem.MemPool.UnVerifiedCount;
+                var connectedCount = _mainService.LocalNode.ConnectedCount;
+                var unconnectedCount = _mainService.LocalNode.UnconnectedCount;
+
+                var totalTx = $" Total Txs:      {txPoolSize,10}";
+                var connected = $" Connected:      {connectedCount,10}";
+                string leftCol3, rightCol3;
+                if (totalTx.Length > leftSectionWidth)
+                    leftCol3 = totalTx[..(leftSectionWidth - 3)] + "...";
+                else
+                    leftCol3 = totalTx.PadRight(leftSectionWidth);
+                if (connected.Length > rightSectionWidth)
+                    rightCol3 = connected[..(rightSectionWidth - 3)] + "...";
+                else
+                    rightCol3 = connected.PadRight(rightSectionWidth);
+                LineBuffer[linesWritten] = "│" + leftCol3 + "│" + rightCol3 + "│";
+                ColorBuffer[linesWritten++] = GetColorForValue(txPoolSize, 100, 500);
+
+                var verified = $" Verified Txs:   {verifiedTxCount,10}";
+                var unconnected = $" Unconnected:    {unconnectedCount,10}";
+                string leftCol4, rightCol4;
+                if (verified.Length > leftSectionWidth)
+                    leftCol4 = verified[..(leftSectionWidth - 3)] + "...";
+                else
+                    leftCol4 = verified.PadRight(leftSectionWidth);
+                if (unconnected.Length > rightSectionWidth)
+                    rightCol4 = unconnected[..(rightSectionWidth - 3)] + "...";
+                else
+                    rightCol4 = unconnected.PadRight(rightSectionWidth);
+                LineBuffer[linesWritten] = "│" + leftCol4 + "│" + rightCol4 + "│";
+                ColorBuffer[linesWritten++] = ConsoleColor.Green;
+                return linesWritten;
+            }
+
+            private int RenderNetworkContent(int leftSectionWidth, int rightSectionWidth, int linesWritten)
+            {
+                var unverifiedTxCount = _mainService.NeoSystem.MemPool.UnVerifiedCount;
+                var maxPeerBlockHeight = _mainService.GetMaxPeerBlockHeight();
+
+                var unverified = $" Unverified Txs: {unverifiedTxCount,10}";
+                var maxHeight = $" Max Block Height: {maxPeerBlockHeight,8}";
+                string leftCol5, rightCol5;
+                if (unverified.Length > leftSectionWidth)
+                    leftCol5 = unverified[..(leftSectionWidth - 3)] + "...";
+                else
+                    leftCol5 = unverified.PadRight(leftSectionWidth);
+                if (maxHeight.Length > rightSectionWidth)
+                    rightCol5 = maxHeight[..(rightSectionWidth - 3)] + "...";
+                else
+                    rightCol5 = maxHeight.PadRight(rightSectionWidth);
+                LineBuffer[linesWritten] = "│" + leftCol5 + "│" + rightCol5 + "│";
+                ColorBuffer[linesWritten++] = ConsoleColor.Yellow;
+
+                return linesWritten;
+            }
+
+            private int RenderSyncProgress(int boxWidth, int linesWritten)
+            {
+                var currentIndex = NativeContract.Ledger.CurrentIndex(_mainService.NeoSystem.StoreView);
+                var maxPeerBlockHeight = _mainService.GetMaxPeerBlockHeight();
+
+                if (currentIndex < maxPeerBlockHeight && maxPeerBlockHeight > 0)
+                {
+                    LineBuffer[linesWritten] = ProgressBar(currentIndex, maxPeerBlockHeight, boxWidth);
+                    ColorBuffer[linesWritten++] = ConsoleColor.Yellow;
+                }
+                return linesWritten;
+            }
+
+            private int RenderFooter(int boxWidth, int linesWritten)
+            {
+                var footerPosition = Math.Min(Console.WindowHeight - 2, linesWritten + 1);
+                footerPosition = Math.Max(linesWritten, footerPosition);
+
+                if (footerPosition < Console.WindowHeight - 1)
+                {
+                    var footerMsg = "Press any key to exit | Refresh: every 1 second or on blockchain change";
+                    var footerMaxWidth = Console.WindowWidth - 2;
+                    if (footerMsg.Length > footerMaxWidth)
+                        footerMsg = footerMsg[..(footerMaxWidth - 3)] + "...";
+
+                    LineBuffer[footerPosition] = footerMsg;
+                    ColorBuffer[footerPosition] = ConsoleColor.DarkGreen;
+                    linesWritten += 1;
+                }
+                return linesWritten;
+            }
+
+            private void FlushDisplayToConsole(int boxWidth, ConsoleColor originalColor)
+            {
+                Console.SetCursorPosition(0, 0);
+                var linesToRender = Math.Min(DisplayState.MaxLines, Console.WindowHeight - 1);
+
+                for (var i = 0; i < linesToRender; i++)
+                {
+                    if (i >= Console.WindowHeight) break;
+
+                    Console.SetCursorPosition(0, i);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, i);
+
+                    var lineContent = LineBuffer.TryGetValue(i, out var content) ? content : string.Empty;
+                    var color = ColorBuffer.TryGetValue(i, out var lineColor) ? lineColor : originalColor;
+
+                    var lineToWrite = lineContent;
+                    if (lineToWrite.Length < boxWidth)
+                        lineToWrite += new string(' ', boxWidth - lineToWrite.Length);
+                    else if (lineToWrite.Length > boxWidth)
+                        lineToWrite = lineToWrite[..boxWidth];
+
+                    Console.ForegroundColor = color;
+                    Console.Write(lineToWrite);
+                }
+
+                for (var i = linesToRender; i < DisplayState.MaxLines; i++)
+                {
+                    if (i >= Console.WindowHeight) break;
+                    Console.SetCursorPosition(0, i);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                }
+            }
+
+            public bool ShouldRefreshDisplay()
+            {
+                var now = DateTime.UtcNow;
+                var state = DisplayState;
+                var timeSinceRefresh = (now - state.LastRefresh).TotalMilliseconds;
+
+                var height = NativeContract.Ledger.CurrentIndex(_mainService.NeoSystem.StoreView);
+                var headerHeight = _mainService.NeoSystem.HeaderCache.Last?.Index ?? height;
+                var txPoolSize = _mainService.NeoSystem.MemPool.Count;
+                var connectedCount = _mainService.LocalNode.ConnectedCount;
+
+                return timeSinceRefresh > DisplayState.RefreshInterval ||
+                       height != state.LastHeight ||
+                       headerHeight != state.LastHeaderHeight ||
+                       txPoolSize != state.LastTxPoolSize ||
+                       connectedCount != state.LastConnectedCount;
+            }
+
+            public static bool ValidateConsoleWindow()
+            {
+                if (Console.WindowHeight < 23 || Console.WindowWidth < 70)
+                {
+                    Console.SetCursorPosition(0, 0);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write(new string(' ', Console.BufferWidth));
+                    Console.SetCursorPosition(0, 0);
+                    Console.WriteLine("Console window too small (Need at least 70x23 visible)...");
+                    return false;
+                }
+                return true;
+            }
+
+            public void UpdateDisplayState()
+            {
+                DisplayState.LastRefresh = DateTime.UtcNow;
+                DisplayState.LastHeight = NativeContract.Ledger.CurrentIndex(_mainService.NeoSystem.StoreView);
+                DisplayState.LastHeaderHeight = _mainService.NeoSystem.HeaderCache.Last?.Index ?? DisplayState.LastHeight;
+                DisplayState.LastTxPoolSize = _mainService.NeoSystem.MemPool.Count;
+                DisplayState.LastConnectedCount = _mainService.LocalNode.ConnectedCount;
+            }
+
+            private static void HandleRenderError(Exception ex)
+            {
+                try
+                {
+                    Console.Clear();
+                    Console.WriteLine($"Render error: {ex.Message}\nStack: {ex.StackTrace}");
+                }
+                catch { }
+            }
+
+            private static double GetCpuUsage(TimeSpan uptime)
+            {
+                try
+                {
+                    var currentProcess = Process.GetCurrentProcess();
+                    // Ensure uptime is not zero to avoid division by zero
+                    if (uptime.TotalMilliseconds > 0 && Environment.ProcessorCount > 0)
                     {
-                        // Only refresh data if time elapsed or significant changes
-                        var now = DateTime.UtcNow;
-                        var timeSinceRefresh = (now - lastRefresh).TotalMilliseconds;
-
-                        // Capture data (do this frequently)
-                        var height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
-                        var headerHeight = NeoSystem.HeaderCache.Last?.Index ?? height;
-
-                        // Get maximum block height from connected peers
-                        var maxPeerBlockHeight = GetMaxPeerBlockHeight();
-
-                        var uptime = now - startTime;
-                        var memoryUsage = GC.GetTotalMemory(false) / (1024 * 1024);
-                        double cpuUsage = 0;
-                        try
-                        {
-                            var currentProcess = Process.GetCurrentProcess();
-                            // Ensure uptime is not zero to avoid division by zero
-                            if (uptime.TotalMilliseconds > 0 && Environment.ProcessorCount > 0)
-                            {
-                                cpuUsage = Math.Round(currentProcess.TotalProcessorTime.TotalMilliseconds /
-                                    (Environment.ProcessorCount * uptime.TotalMilliseconds) * 100, 1);
-                                if (cpuUsage < 0) cpuUsage = 0; // Clamp negative values if system reports oddities
-                                if (cpuUsage > 100) cpuUsage = 100;
-                            }
-                        }
-                        catch { /* Ignore CPU usage calculation errors */ }
-                        var txPoolSize = NeoSystem.MemPool.Count;
-                        var verifiedTxCount = NeoSystem.MemPool.VerifiedCount;
-                        var unverifiedTxCount = NeoSystem.MemPool.UnVerifiedCount;
-                        var connectedCount = LocalNode.ConnectedCount;
-                        var unconnectedCount = LocalNode.UnconnectedCount;
-
-                        // Check if we need to refresh screen based on changes or time
-                        var needRefresh = timeSinceRefresh > refreshInterval ||
-                                          height != lastHeight ||
-                                          headerHeight != lastHeaderHeight ||
-                                          txPoolSize != lastTxPoolSize ||
-                                          connectedCount != lastConnectedCount;
-
-                        if (!needRefresh)
-                        {
-                            await Task.Delay(100, cancel.Token);
-                            continue;
-                        }
-
-                        // Make sure the console VISIBLE WINDOW is available and has a reasonable size
-                        if (Console.WindowHeight < 23 || Console.WindowWidth < 70) // Check WINDOW size, reduced height
-                        {
-                            // Wait and try again if console is too small
-                            Console.SetCursorPosition(0, 0);
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            // Clear previous message potentially
-                            Console.Write(new string(' ', Console.BufferWidth));
-                            Console.SetCursorPosition(0, 0);
-                            Console.WriteLine("Console window too small (Need at least 70x23 visible)...");
-                            await Task.Delay(500, cancel.Token);
-                            continue;
-                        }
-
-                        // Update last values
-                        lastRefresh = now;
-                        lastHeight = height;
-                        lastHeaderHeight = headerHeight;
-                        lastTxPoolSize = txPoolSize;
-                        lastConnectedCount = connectedCount;
-
-                        // Save console state and create new buffers
-                        var originalColor = Console.ForegroundColor;
-                        var linesWritten = 0;
-                        lineBuffer.Clear();
-                        colorBuffer.Clear();
-
-                        // Title box (calculate width based on VISIBLE console size)
-                        var boxWidth = Math.Min(70, Console.WindowWidth - 2); // Use WindowWidth
-                        var horizontalLine = new string('─', boxWidth - 2);
-
-                        lineBuffer[linesWritten] = "┌" + horizontalLine + "┐";
-                        colorBuffer[linesWritten++] = ConsoleColor.DarkGreen;
-
-                        // Simple smaller text for NEO NODE
-                        string[] largeText = ["           NEO NODE STATUS             "];
-                        var textWidth = largeText.Max(s => s.Length);
-                        var contentWidthForTitle = boxWidth - 2; // Width inside the │...│
-                        var textPadding = (contentWidthForTitle - textWidth) / 2;
-                        var leftTextPad = new string(' ', textPadding > 0 ? textPadding : 0);
-
-                        foreach (var line in largeText)
-                        {
-                            // Create the centered line segment
-                            var centeredLine = leftTextPad + line;
-                            // Pad the result to the full content width
-                            var finalPaddedLine = centeredLine.PadRight(contentWidthForTitle);
-                            // Truncate just in case padding calculation had off-by-one on odd widths
-                            if (finalPaddedLine.Length > contentWidthForTitle) finalPaddedLine = finalPaddedLine.Substring(0, contentWidthForTitle);
-
-                            lineBuffer[linesWritten] = "│" + finalPaddedLine + "│";
-                            colorBuffer[linesWritten++] = ConsoleColor.DarkGreen;
-                        }
-
-                        // Separator below ASCII title - Use full horizontal line
-                        lineBuffer[linesWritten] = "├" + horizontalLine + "┤";
-                        colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
-
-                        // Current time and uptime line
-                        var timeStr = $" Current Time: {now:yyyy-MM-dd HH:mm:ss}   Uptime: {uptime.Days}d {uptime.Hours:D2}h {uptime.Minutes:D2}m {uptime.Seconds:D2}s";
-                        var contentWidth = boxWidth - 2; // Use contentWidth for padding here
-                        var paddedTime = timeStr.PadRight(contentWidth);
-                        if (paddedTime.Length > contentWidth) paddedTime = paddedTime.Substring(0, contentWidth - 3) + "...";
-                        else paddedTime = paddedTime.Substring(0, contentWidth);
-                        lineBuffer[linesWritten] = "│" + paddedTime + "│";
-                        colorBuffer[linesWritten++] = ConsoleColor.Gray;
-
-                        // Calculate section widths directly based on boxWidth
-                        var totalHorizontal = boxWidth - 3; // Total space for dashes and content, excluding 3 vertical bars │..│..│
-                        var leftSectionWidth = totalHorizontal / 2;
-                        var rightSectionWidth = totalHorizontal - leftSectionWidth;
-                        var halfLine1 = new string('─', leftSectionWidth);
-                        var halfLine2 = new string('─', rightSectionWidth);
-
-                        // Separator between header and sections
-                        lineBuffer[linesWritten] = "├" + halfLine1 + "┬" + halfLine2 + "┤";
-                        colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
-
-                        // BLOCKCHAIN SECTION & SYSTEM RESOURCES header row
-                        var blockchainHeader = " BLOCKCHAIN STATUS";
-                        var resourcesHeader = " SYSTEM RESOURCES";
-                        string leftHeader, rightHeader;
-                        if (blockchainHeader.Length > leftSectionWidth)
-                            leftHeader = blockchainHeader[..(leftSectionWidth - 3)] + "...";
-                        else
-                            leftHeader = blockchainHeader.PadRight(leftSectionWidth);
-                        if (resourcesHeader.Length > rightSectionWidth)
-                            rightHeader = resourcesHeader[..(rightSectionWidth - 3)] + "...";
-                        else
-                            rightHeader = resourcesHeader.PadRight(rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftHeader + "│" + rightHeader + "│";
-                        colorBuffer[linesWritten++] = ConsoleColor.White;
-
-                        lineBuffer[linesWritten] = "├" + halfLine1 + "┼" + halfLine2 + "┤";
-                        colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
-
-                        // Block heights & Resources rows
-                        var heightStr = $" Block Height:   {height,10}";
-                        var memoryStr = $" Memory Usage:   {memoryUsage,10} MB";
-                        string leftCol1, rightCol1;
-                        if (heightStr.Length > leftSectionWidth)
-                            leftCol1 = heightStr[..(leftSectionWidth - 3)] + "...";
-                        else
-                            leftCol1 = heightStr.PadRight(leftSectionWidth);
-                        if (memoryStr.Length > rightSectionWidth)
-                            rightCol1 = memoryStr[..(rightSectionWidth - 3)] + "...";
-                        else
-                            rightCol1 = memoryStr.PadRight(rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftCol1 + "│" + rightCol1 + "│";
-                        colorBuffer[linesWritten++] = ConsoleColor.Cyan;
-
-                        var headerStr = $" Header Height:  {headerHeight,10}";
-                        var cpuStr = $" CPU Usage:      {cpuUsage,10:F1} %";
-                        string leftCol2, rightCol2;
-                        if (headerStr.Length > leftSectionWidth)
-                            leftCol2 = headerStr[..(leftSectionWidth - 3)] + "...";
-                        else
-                            leftCol2 = headerStr.PadRight(leftSectionWidth);
-                        if (cpuStr.Length > rightSectionWidth)
-                            rightCol2 = cpuStr[..(rightSectionWidth - 3)] + "...";
-                        else
-                            rightCol2 = cpuStr.PadRight(rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftCol2 + "│" + rightCol2 + "│";
-                        colorBuffer[linesWritten++] = ConsoleColor.Cyan;
-
-                        // Separator between first and second section groups
-                        lineBuffer[linesWritten] = "├" + halfLine1 + "┼" + halfLine2 + "┤";
-                        colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
-
-                        // TRANSACTION POOL & NETWORK STATUS header row
-                        var txPoolHeader = " TRANSACTION POOL";
-                        var networkHeader = " NETWORK STATUS";
-                        string leftHeader2, rightHeader2;
-                        if (txPoolHeader.Length > leftSectionWidth)
-                            leftHeader2 = txPoolHeader[..(leftSectionWidth - 3)] + "...";
-                        else
-                            leftHeader2 = txPoolHeader.PadRight(leftSectionWidth);
-                        if (networkHeader.Length > rightSectionWidth)
-                            rightHeader2 = networkHeader[..(rightSectionWidth - 3)] + "...";
-                        else
-                            rightHeader2 = networkHeader.PadRight(rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftHeader2 + "│" + rightHeader2 + "│";
-                        colorBuffer[linesWritten++] = ConsoleColor.White;
-
-                        lineBuffer[linesWritten] = "├" + halfLine1 + "┼" + halfLine2 + "┤";
-                        colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
-
-                        // Transaction data rows & Network data rows
-                        var totalTxStr = $" Total Txs:      {txPoolSize,10}";
-                        var connectedStr = $" Connected:      {connectedCount,10}";
-                        string leftCol3, rightCol3;
-                        if (totalTxStr.Length > leftSectionWidth)
-                            leftCol3 = totalTxStr[..(leftSectionWidth - 3)] + "...";
-                        else
-                            leftCol3 = totalTxStr.PadRight(leftSectionWidth);
-                        if (connectedStr.Length > rightSectionWidth)
-                            rightCol3 = connectedStr[..(rightSectionWidth - 3)] + "...";
-                        else
-                            rightCol3 = connectedStr.PadRight(rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftCol3 + "│" + rightCol3 + "│";
-                        colorBuffer[linesWritten++] = GetColorForValue(txPoolSize, 100, 500);
-
-                        var verifiedStr = $" Verified Txs:   {verifiedTxCount,10}";
-                        var unconnectedStr = $" Unconnected:    {unconnectedCount,10}";
-                        string leftCol4, rightCol4;
-                        if (verifiedStr.Length > leftSectionWidth)
-                            leftCol4 = verifiedStr[..(leftSectionWidth - 3)] + "...";
-                        else
-                            leftCol4 = verifiedStr.PadRight(leftSectionWidth);
-                        if (unconnectedStr.Length > rightSectionWidth)
-                            rightCol4 = unconnectedStr[..(rightSectionWidth - 3)] + "...";
-                        else
-                            rightCol4 = unconnectedStr.PadRight(rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftCol4 + "│" + rightCol4 + "│";
-                        colorBuffer[linesWritten++] = ConsoleColor.Green;
-
-                        var unverifiedStr = $" Unverified Txs: {unverifiedTxCount,10}";
-                        var maxHeightStr = $" Max Block Height: {maxPeerBlockHeight,8}";
-                        string leftCol5, rightCol5;
-                        if (unverifiedStr.Length > leftSectionWidth)
-                            leftCol5 = unverifiedStr[..(leftSectionWidth - 3)] + "...";
-                        else
-                            leftCol5 = unverifiedStr.PadRight(leftSectionWidth);
-                        if (maxHeightStr.Length > rightSectionWidth)
-                            rightCol5 = maxHeightStr[..(rightSectionWidth - 3)] + "...";
-                        else
-                            rightCol5 = maxHeightStr.PadRight(rightSectionWidth);
-                        lineBuffer[linesWritten] = "│" + leftCol5 + "│" + rightCol5 + "│";
-                        colorBuffer[linesWritten++] = ConsoleColor.Yellow;
-
-                        // Bottom of main box
-                        lineBuffer[linesWritten] = "└" + halfLine1 + "┴" + halfLine2 + "┘";
-                        colorBuffer[linesWritten++] = ConsoleColor.DarkGray;
-
-                        // Add sync progress bar if node is not fully synced
-                        if (height < maxPeerBlockHeight && maxPeerBlockHeight > 0)
-                        {
-                            // Calculate sync percentage
-                            var syncPercentage = (double)height / maxPeerBlockHeight * 100;
-
-                            // Create progress bar (width: boxWidth - 20)
-                            var progressBarWidth = boxWidth - 25; // Reduce bar width to save space for percentage
-                            var filledWidth = (int)Math.Round(progressBarWidth * syncPercentage / 100);
-                            if (filledWidth > progressBarWidth) filledWidth = progressBarWidth;
-
-                            var progressFilled = new string('█', filledWidth);
-                            var progressEmpty = new string('░', progressBarWidth - filledWidth);
-
-                            // Format with percentage as whole number
-                            var percentDisplay = $"{syncPercentage:F2}%";
-                            var barDisplay = $"[{progressFilled}{progressEmpty}]";
-                            var heightDisplay = $"({height}/{maxPeerBlockHeight})";
-                            var progressText = $" Syncing: {barDisplay} {percentDisplay} {heightDisplay}";
-
-                            // Check if we need to truncate the text to fit the line
-                            var maxWidth = boxWidth - 2;
-                            if (progressText.Length > maxWidth)
-                            {
-                                // Keep the percentage part and truncate other parts if needed
-                                var desiredLength = maxWidth - 3; // for "..."
-
-                                // Try to keep just the sync bar and percentage
-                                var shorterText = $" Syncing: {barDisplay} {percentDisplay}";
-
-                                if (shorterText.Length <= desiredLength)
-                                {
-                                    progressText = shorterText;
-                                }
-                                else
-                                {
-                                    // Even the shortened version is too long, need to shrink the bar
-                                    var barPartStart = " Syncing: ".Length;
-                                    var minBarSize = 10; // Keep at least [████...] so user can see something
-
-                                    var spaceForBar = desiredLength - barPartStart - percentDisplay.Length - 1; // -1 for space
-                                    var newBarLength = Math.Max(minBarSize, spaceForBar);
-
-                                    // Create a smaller bar with ... if needed
-                                    if (newBarLength < barDisplay.Length)
-                                    {
-                                        var filledToShow = Math.Min(filledWidth, newBarLength - 5); // -5 for "[...]"
-                                        barDisplay = "[" + new string('█', filledToShow) + "...]";
-                                    }
-
-                                    progressText = $" Syncing: {barDisplay} {percentDisplay}";
-
-                                    // Final check to ensure we're not still too long
-                                    if (progressText.Length > desiredLength)
-                                    {
-                                        progressText = $" Sync: {percentDisplay}"; // Absolute fallback
-                                    }
-                                }
-                            }
-
-                            // Pad to full width
-                            progressText = progressText.PadRight(maxWidth);
-
-                            // Add to buffer
-                            lineBuffer[linesWritten] = progressText;
-                            colorBuffer[linesWritten++] = ConsoleColor.Yellow;
-                        }
-
-                        // Update maxLines for tracking
-                        maxLines = Math.Max(maxLines, linesWritten);
-
-                        // Add footer
-                        try
-                        {
-                            // Calculate a safe position for the footer based on WINDOW height
-                            var footerPosition = Math.Min(Console.WindowHeight - 2, linesWritten + 1);
-
-                            // Make sure it's within bounds and at least one line below the content
-                            footerPosition = Math.Max(linesWritten, footerPosition);
-
-                            if (footerPosition < Console.WindowHeight - 1) // Check against WindowHeight, fixed formatting
-                            {
-                                // Footer message with auto-truncation to fit screen
-                                var footerMsg = "Press any key to exit | Refresh: every 1 second or on blockchain change";
-                                var footerMaxWidth = Console.WindowWidth - 2; // Use WindowWidth
-                                if (footerMsg.Length > footerMaxWidth)
-                                    footerMsg = footerMsg[..(footerMaxWidth - 3)] + "...";
-
-                                lineBuffer[footerPosition] = footerMsg;
-                                colorBuffer[footerPosition] = ConsoleColor.DarkGreen;
-                            }
-
-                            // Render buffer to screen efficiently
-                            Console.SetCursorPosition(0, 0);
-
-                            // Determine actual number of lines to render based on WINDOW height
-                            var linesToRender = Math.Min(maxLines, Console.WindowHeight - 1);
-
-                            // Write each line with proper colors and spacing
-                            for (var i = 0; i < linesToRender; i++)
-                            {
-                                try
-                                {
-                                    // Make sure we don't exceed the console WINDOW height
-                                    if (i >= Console.WindowHeight)
-                                        break;
-
-                                    // Clear entire line first based on WINDOW width
-                                    Console.SetCursorPosition(0, i);
-                                    Console.Write(new string(' ', Console.WindowWidth));
-
-                                    // Position cursor to write content
-                                    Console.SetCursorPosition(0, i);
-
-                                    // Get content and color
-                                    var lineContent = lineBuffer.TryGetValue(i, out var content) ? content : string.Empty;
-                                    ConsoleColor color = colorBuffer.TryGetValue(i, out var lineColor) ? lineColor : originalColor;
-
-                                    // Ensure line content does not exceed box width and pad/truncate
-                                    var lineToWrite = lineContent;
-                                    if (lineToWrite.Length < boxWidth)
-                                    {
-                                        lineToWrite += new string(' ', boxWidth - lineToWrite.Length);
-                                    }
-                                    else if (lineToWrite.Length > boxWidth)
-                                    {
-                                        lineToWrite = lineToWrite[..boxWidth];
-                                    }
-
-                                    // Apply color and write content for the box
-                                    Console.ForegroundColor = color;
-                                    Console.Write(lineToWrite);
-
-                                    // Removed redundant clearing logic here
-                                }
-                                catch // Catch potential IO errors during console writes
-                                {
-                                    // Stop rendering this frame if console handle is invalid (e.g., closed window)
-                                    break;
-                                }
-                            }
-                            // Add blank lines below content if needed to clear previous footer etc. based on WINDOW height
-                            for (var i = linesToRender; i < maxLines; i++)
-                            {
-                                if (i >= Console.WindowHeight)
-                                    break;
-                                Console.SetCursorPosition(0, i);
-                                Console.Write(new string(' ', Console.WindowWidth));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // Handle display errors gracefully
-                            try
-                            {
-                                Console.Clear(); // Attempt to clear console on error
-                                Console.WriteLine($"Display error: {ex.Message}\nStack: {ex.StackTrace}");
-                                await Task.Delay(1000, cancel.Token); // Pause to show error
-                            }
-                            catch { cancel.Cancel(); break; } // Exit loop if error handling fails
-                        }
-
-                        // Reset color
-                        Console.ForegroundColor = originalColor;
-
-                        // Wait before next update
-                        await Task.Delay(100, cancel.Token);
-                    }
-                    catch (TaskCanceledException) { break; }
-                    catch (Exception ex)
-                    {
-                        // Handle display errors gracefully
-                        try
-                        {
-                            Console.Clear();
-                            Console.WriteLine($"Outer loop error: {ex.Message}\nStack: {ex.StackTrace}");
-                            await Task.Delay(1000, cancel.Token);
-                        }
-                        catch { break; }
+                        var cpuUsage = Math.Round(currentProcess.TotalProcessorTime.TotalMilliseconds /
+                            (Environment.ProcessorCount * uptime.TotalMilliseconds) * 100, 1);
+                        if (cpuUsage < 0) cpuUsage = 0; // Clamp negative values if system reports oddities
+                        if (cpuUsage > 100) cpuUsage = 100;
+                        return cpuUsage;
                     }
                 }
-            });
+                catch { /* Ignore CPU usage calculation errors */ }
 
-            // Wait for user input to exit
+                return 0;
+            }
+
+            private static string ProgressBar(uint height, uint maxPeerBlockHeight, int boxWidth)
+            {
+                // Calculate sync percentage
+                var syncPercentage = (double)height / maxPeerBlockHeight * 100;
+
+                // Create progress bar (width: boxWidth - 20)
+                var progressBarWidth = boxWidth - 25; // Reduce bar width to save space for percentage
+                var filledWidth = (int)Math.Round(progressBarWidth * syncPercentage / 100);
+                if (filledWidth > progressBarWidth) filledWidth = progressBarWidth;
+
+                var progressFilled = new string('█', filledWidth);
+                var progressEmpty = new string('░', progressBarWidth - filledWidth);
+
+                // Format with percentage as whole number
+                var percentDisplay = $"{syncPercentage:F2}%";
+                var barDisplay = $"[{progressFilled}{progressEmpty}]";
+                var heightDisplay = $"({height}/{maxPeerBlockHeight})";
+                var progressText = $" Syncing: {barDisplay} {percentDisplay} {heightDisplay}";
+
+                // Check if we need to truncate the text to fit the line
+                var maxWidth = boxWidth - 2;
+                if (progressText.Length > maxWidth)
+                {
+                    // Keep the percentage part and truncate other parts if needed
+                    var desiredLength = maxWidth - 3; // for "..."
+
+                    // Try to keep just the sync bar and percentage
+                    var shorterText = $" Syncing: {barDisplay} {percentDisplay}";
+                    if (shorterText.Length <= desiredLength)
+                    {
+                        progressText = shorterText;
+                    }
+                    else
+                    {
+                        // Even the shortened version is too long, need to shrink the bar
+                        var barPartStart = " Syncing: ".Length;
+                        var minBarSize = 10; // Keep at least [████...] so user can see something
+
+                        var spaceForBar = desiredLength - barPartStart - percentDisplay.Length - 1; // -1 for space
+                        var newBarLength = Math.Max(minBarSize, spaceForBar);
+
+                        // Create a smaller bar with ... if needed
+                        if (newBarLength < barDisplay.Length)
+                        {
+                            var filledToShow = Math.Min(filledWidth, newBarLength - 5); // -5 for "[...]"
+                            barDisplay = "[" + new string('█', filledToShow) + "...]";
+                        }
+
+                        progressText = $" Syncing: {barDisplay} {percentDisplay}";
+
+                        // Final check to ensure we're not still too long
+                        if (progressText.Length > desiredLength)
+                        {
+                            progressText = $" Sync: {percentDisplay}"; // Absolute fallback
+                        }
+                    }
+                }
+
+                // Pad to full width
+                return progressText.PadRight(maxWidth);
+            }
+        }
+
+        private async Task RunDisplayLoop(CancellationToken cancellationToken)
+        {
+            var stateShower = new StateShower(this);
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    if (stateShower.ShouldRefreshDisplay())
+                    {
+                        if (!StateShower.ValidateConsoleWindow())
+                        {
+                            await Task.Delay(500, cancellationToken);
+                            continue;
+                        }
+
+                        stateShower.UpdateDisplayState();
+                        stateShower.RenderDisplay();
+                    }
+
+                    await Task.Delay(100, cancellationToken);
+                }
+                catch (TaskCanceledException) { break; }
+                catch (Exception ex)
+                {
+                    await HandleDisplayError(ex, cancellationToken);
+                }
+            }
+        }
+
+        private static void WaitForExit(CancellationTokenSource cancel, Task task, Task broadcast)
+        {
             Console.ReadKey(true);
             cancel.Cancel();
             try { Task.WaitAll(task, broadcast); } catch { }
             Console.WriteLine();
             Console.CursorVisible = true;
-            Console.ResetColor(); // Ensure color is reset on exit
-            Console.Clear(); // Clear the status screen on exit
+            Console.ResetColor();
+            Console.Clear();
         }
 
-        /// <summary>
-        /// Returns an appropriate console color based on latency value
-        /// </summary>
-        private ConsoleColor GetColorForLatency(double latency)
+        private static async Task HandleDisplayError(Exception ex, CancellationToken cancellationToken)
         {
-            if (latency < 100) return ConsoleColor.Green;
-            if (latency < 300) return ConsoleColor.DarkGreen;
-            if (latency < 1000) return ConsoleColor.Yellow;
-            if (latency < 3000) return ConsoleColor.DarkYellow;
-            return ConsoleColor.Red;
+            try
+            {
+                Console.Clear();
+                Console.WriteLine($"Display error: {ex.Message}\nStack: {ex.StackTrace}");
+                await Task.Delay(1000, cancellationToken);
+            }
+            catch { }
         }
+
+        // /// <summary>
+        // /// Returns an appropriate console color based on latency value
+        // /// </summary>
+        // private static ConsoleColor GetColorForLatency(double latency)
+        // {
+        //     if (latency < 100) return ConsoleColor.Green;
+        //     if (latency < 300) return ConsoleColor.DarkGreen;
+        //     if (latency < 1000) return ConsoleColor.Yellow;
+        //     if (latency < 3000) return ConsoleColor.DarkYellow;
+        //     return ConsoleColor.Red;
+        // }
 
         /// <summary>
         /// Returns an appropriate console color based on a value's proximity to thresholds
         /// </summary>
-        private ConsoleColor GetColorForValue(int value, int lowThreshold, int highThreshold)
+        private static ConsoleColor GetColorForValue(int value, int lowThreshold, int highThreshold)
         {
             if (value < lowThreshold) return ConsoleColor.Green;
             if (value < highThreshold) return ConsoleColor.Yellow;
