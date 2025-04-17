@@ -71,20 +71,20 @@ jobs:
         brew install leveldb
         brew install gperftools
         dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-macos.binlog
-        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-macos.binlog -p:TestTfmsInParallel=false
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-macos.binlog
 
     - name: Test (windows)
       if: matrix.os == 'windows-latest'
       run: |
         dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-windows.binlog
-        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-windows.binlog -p:TestTfmsInParallel=false
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-windows.binlog
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
         dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-ubuntu.binlog
-        dotnet test -v d --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*" -bl:test-ubuntu.binlog -p:TestTfmsInParallel=false
+        dotnet test -v d --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*" -bl:test-ubuntu.binlog
     
     - name: Upload test results
       if: always()
