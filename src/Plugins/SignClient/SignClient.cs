@@ -261,6 +261,5 @@ namespace Neo.Plugins.SignClient
             _channel?.Dispose();
             base.Dispose();
         }
-
     }
 }
