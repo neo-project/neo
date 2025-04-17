@@ -65,6 +65,10 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
+    - name: Install missing workloads
+      run: |
+        dotnet workload install
+
     - name: Test (MacOS)
       if: matrix.os == 'macos-latest'
       run: |
