@@ -40,7 +40,7 @@ namespace Neo.UnitTests.Ledger
                 Signers = [new Signer { Account = UInt160.Zero }],
                 Witnesses = []
             };
-            _system.MemPool.TryAdd(txSample, TestBlockchain.GetTestSnapshotCache());
+            _system.MemPool.TryAdd(txSample, _system.GetSnapshotCache());
         }
 
         [TestMethod]
