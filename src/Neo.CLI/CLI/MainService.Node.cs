@@ -102,7 +102,7 @@ namespace Neo.CLI
 
             public DisplayState()
             {
-                StartTime = DateTime.Now;
+                StartTime = DateTime.UtcNow;
                 LastRefresh = DateTime.MinValue;
                 LastHeight = 0;
                 LastHeaderHeight = 0;
@@ -185,7 +185,7 @@ namespace Neo.CLI
 
             private int RenderTimeAndUptime(int boxWidth, int linesWritten)
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
                 var uptime = now - DisplayState.StartTime;
                 var time = $" Current Time: {now:yyyy-MM-dd HH:mm:ss}   Uptime: {uptime.Days}d {uptime.Hours:D2}h {uptime.Minutes:D2}m {uptime.Seconds:D2}s";
                 var contentWidth = boxWidth - 2;
@@ -241,7 +241,7 @@ namespace Neo.CLI
                 var currentIndex = NativeContract.Ledger.CurrentIndex(_mainService.NeoSystem.StoreView);
                 var headerHeight = _mainService.NeoSystem.HeaderCache.Last?.Index ?? currentIndex;
                 var memoryUsage = GC.GetTotalMemory(false) / (1024 * 1024);
-                var cpuUsage = GetCpuUsage(DateTime.Now - DisplayState.StartTime);
+                var cpuUsage = GetCpuUsage(DateTime.UtcNow - DisplayState.StartTime);
 
                 var height = $" Block Height:   {currentIndex,10}";
                 var memory = $" Memory Usage:   {memoryUsage,10} MB";
@@ -432,7 +432,7 @@ namespace Neo.CLI
 
             public bool ShouldRefreshDisplay()
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
                 var state = DisplayState;
                 var timeSinceRefresh = (now - state.LastRefresh).TotalMilliseconds;
 
@@ -464,7 +464,7 @@ namespace Neo.CLI
 
             public void UpdateDisplayState()
             {
-                DisplayState.LastRefresh = DateTime.Now;
+                DisplayState.LastRefresh = DateTime.UtcNow;
                 DisplayState.LastHeight = NativeContract.Ledger.CurrentIndex(_mainService.NeoSystem.StoreView);
                 DisplayState.LastHeaderHeight = _mainService.NeoSystem.HeaderCache.Last?.Index ?? DisplayState.LastHeight;
                 DisplayState.LastTxPoolSize = _mainService.NeoSystem.MemPool.Count;
