@@ -99,12 +99,12 @@ namespace Neo.SmartContract.Native
         /// ensures whether deposited amount of GAS is enough to pay the actual sender's fee.
         /// </summary>
         /// <param name="engine">ApplicationEngine</param>
-        /// <param name="sig">Signature</param>
+        /// <param name="signature">Signature</param>
         /// <returns>Whether transaction is valid.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private bool Verify(ApplicationEngine engine, byte[] sig)
+        private bool Verify(ApplicationEngine engine, byte[] signature)
         {
-            if (sig is null || sig.Length != 64) return false;
+            if (signature is null || signature.Length != 64) return false;
             var tx = engine.ScriptContainer as Transaction;
             if (tx?.GetAttribute<NotaryAssisted>() is null) return false;
             foreach (var signer in tx.Signers)
@@ -124,7 +124,7 @@ namespace Neo.SmartContract.Native
             }
             var notaries = GetNotaryNodes(engine.SnapshotCache);
             var hash = tx.GetSignData(engine.GetNetwork());
-            return notaries.Any(n => Crypto.VerifySignature(hash, sig, n));
+            return notaries.Any(n => Crypto.VerifySignature(hash, signature, n));
         }
 
         /// <summary>
@@ -168,19 +168,19 @@ namespace Neo.SmartContract.Native
         /// Lock asset until the specified height is unlocked.
         /// </summary>
         /// <param name="engine">ApplicationEngine</param>
-        /// <param name="addr">Account</param>
+        /// <param name="account">Account</param>
         /// <param name="till">specified height</param>
         /// <returns>Whether deposit lock height was successfully updated.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        public bool LockDepositUntil(ApplicationEngine engine, UInt160 addr, uint till)
+        public bool LockDepositUntil(ApplicationEngine engine, UInt160 account, uint till)
         {
-            if (!engine.CheckWitnessInternal(addr)) return false;
+            if (!engine.CheckWitnessInternal(account)) return false;
             if (till < Ledger.CurrentIndex(engine.SnapshotCache) + 2) return false; // deposit must be valid at least until the next block after persisting block.
-            var deposit = GetDepositFor(engine.SnapshotCache, addr);
+            var deposit = GetDepositFor(engine.SnapshotCache, account);
             if (deposit is null || till < deposit.Till) return false;
             deposit.Till = till;
 
-            PutDepositFor(engine, addr, deposit);
+            PutDepositFor(engine, account, deposit);
             return true;
         }
 
@@ -188,12 +188,12 @@ namespace Neo.SmartContract.Native
         /// ExpirationOf returns deposit lock height for specified address.
         /// </summary>
         /// <param name="snapshot">DataCache</param>
-        /// <param name="acc">Account</param>
+        /// <param name="account">Account</param>
         /// <returns>Deposit lock height of the specified address.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint ExpirationOf(DataCache snapshot, UInt160 acc)
+        public uint ExpirationOf(DataCache snapshot, UInt160 account)
         {
-            var deposit = GetDepositFor(snapshot, acc);
+            var deposit = GetDepositFor(snapshot, account);
             if (deposit is null) return 0;
             return deposit.Till;
         }
@@ -202,12 +202,12 @@ namespace Neo.SmartContract.Native
         /// BalanceOf returns deposited GAS amount for specified address.
         /// </summary>
         /// <param name="snapshot">DataCache</param>
-        /// <param name="acc">Account</param>
+        /// <param name="account">Account</param>
         /// <returns>Deposit balance of the specified account.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger BalanceOf(DataCache snapshot, UInt160 acc)
+        public BigInteger BalanceOf(DataCache snapshot, UInt160 account)
         {
-            var deposit = GetDepositFor(snapshot, acc);
+            var deposit = GetDepositFor(snapshot, account);
             if (deposit is null) return 0;
             return deposit.Amount;
         }
