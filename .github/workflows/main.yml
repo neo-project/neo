@@ -86,13 +86,6 @@ jobs:
         dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-ubuntu.binlog
         dotnet test -v d --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*" -bl:test-ubuntu.binlog
     
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results--${{ matrix.os }}
-        path: ./bin/tests/Neo.UnitTests/net9.0/TestResults
-
     - uses: actions/upload-artifact@v4.6.2
       if: always()
       with:
