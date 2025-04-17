@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestNotify()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(System.Array.Empty<byte>());
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
@@ -67,11 +67,12 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateDummyBlock()
         {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var system = TestBlockchain.GetSystem();
+            var snapshotCache = system.GetTestSnapshotCache();
             byte[] SyscallSystemRuntimeCheckWitnessHash = [0x68, 0xf8, 0x27, 0xec, 0x8c];
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshotCache, settings: TestProtocolSettings.Default);
             Assert.AreEqual(0u, engine.PersistingBlock.Version);
-            Assert.AreEqual(TestBlockchain.TheNeoSystem.GenesisBlock.Hash, engine.PersistingBlock.PrevHash);
+            Assert.AreEqual(system.GenesisBlock.Hash, engine.PersistingBlock.PrevHash);
             Assert.AreEqual(new UInt256(), engine.PersistingBlock.MerkleRoot);
         }
 
