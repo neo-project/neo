@@ -73,7 +73,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abc");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abcd");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckEncode", new byte[] { 1, 2, 3 });
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckDecode", "3DUz7ncyT");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckDecode", "AA");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.FAULT);
@@ -133,7 +133,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckDecode", null);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.FAULT);
@@ -153,7 +153,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 3);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "d", 0);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -173,7 +173,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 3, false);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "d", 0, false);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -193,7 +193,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 3, true);
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "d", 0, true);
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -214,7 +214,7 @@ namespace Neo.UnitTests.SmartContract.Native
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "a,b", ",");
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -236,7 +236,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "ã");
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "a");
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -258,7 +258,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", badStr);
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", badStr + "ab");
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -279,7 +279,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "null");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -295,7 +295,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "***");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.FAULT);
@@ -308,7 +308,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123.45");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.FAULT);
@@ -339,7 +339,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     }
                 });
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -358,7 +358,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.FAULT);
@@ -377,7 +377,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", 100);
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", "test");
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -398,7 +398,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "280474657374".HexToBytes());
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "210164".HexToBytes());
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -418,7 +418,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlEncode", "Subject=test@example.com&Issuer=https://example.com");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "base64UrlDecode", "U3ViamVjdD10ZXN0QGV4YW1wbGUuY29tJklzc3Vlcj1odHRwczovL2V4YW1wbGUuY29t");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
