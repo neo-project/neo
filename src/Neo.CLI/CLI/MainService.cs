@@ -379,6 +379,7 @@ namespace Neo.CLI
                 Tcp = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.Port),
                 MinDesiredConnections = Settings.Default.P2P.MinDesiredConnections,
                 MaxConnections = Settings.Default.P2P.MaxConnections,
+                MaxKnownHashes = Settings.Default.P2P.MaxKnownHashes,
                 MaxConnectionsPerAddress = Settings.Default.P2P.MaxConnectionsPerAddress
             });
 

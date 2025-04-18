@@ -14,6 +14,7 @@
       "EnableCompression": true,
       "MinDesiredConnections": 10,
       "MaxConnections": 40,
+      "MaxKnownHashes": 1000,
       "MaxConnectionsPerAddress": 3
     },
     "UnlockWallet": {
