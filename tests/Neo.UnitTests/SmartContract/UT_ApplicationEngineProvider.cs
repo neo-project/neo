@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = _snapshotCache.CloneCache();
 
             using var appEngine = ApplicationEngine.Create(TriggerType.Application,
-                null, snapshot, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
+                null, snapshot, gas: 0, settings: TestProtocolSettings.Default);
             Assert.IsTrue(appEngine is TestEngine);
         }
 
@@ -53,7 +53,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
             using var appEngine = ApplicationEngine.Create(TriggerType.Application,
-                null, snapshot, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
+                null, snapshot, gas: 0, settings: TestProtocolSettings.Default);
             Assert.IsTrue(appEngine is ApplicationEngine);
         }
 
@@ -62,7 +62,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var block = new Block { Header = new() { Nonce = 0x0102030405060708 } };
             using var app = new TestEngine(TriggerType.Application,
-                null, null, block, TestBlockchain.TheNeoSystem.Settings, 0, null, null);
+                null, null, block, TestProtocolSettings.Default, 0, null, null);
 
             var nonceData = typeof(ApplicationEngine)
                 .GetField("nonceData", BindingFlags.NonPublic | BindingFlags.Instance)

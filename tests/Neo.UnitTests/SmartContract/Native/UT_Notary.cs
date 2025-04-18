@@ -252,7 +252,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Execute OnPersist script.
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
-            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
             Assert.IsTrue(engine.Execute() == VMState.HALT);
             snapshot.Commit();
@@ -316,7 +316,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static BigInteger Call_BalanceOf(DataCache snapshot, byte[] address, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "balanceOf", address);
@@ -332,7 +332,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static BigInteger Call_ExpirationOf(DataCache snapshot, byte[] address, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "expirationOf", address);
@@ -348,7 +348,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Call_LockDepositUntil(DataCache snapshot, byte[] address, uint till, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = new UInt160(address), Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = new UInt160(address), Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "lockDepositUntil", address, till);
@@ -369,7 +369,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 accFrom = new UInt160(from);
             }
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = accFrom, Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = accFrom, Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "withdraw", from, to);
@@ -400,7 +400,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeAddress), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeAddress), snapshot, persistingBlock, settings: TestProtocolSettings.Default);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "setMaxNotValidBeforeDelta", 100);
             engine.LoadScript(script.ToArray());
@@ -504,7 +504,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Commit();
 
             // Process tx2 with NotaryAssisted attribute.
-            engine = ApplicationEngine.Create(TriggerType.Application, tx2, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, tx2.SystemFee);
+            engine = ApplicationEngine.Create(TriggerType.Application, tx2, snapshot, persistingBlock, settings: TestProtocolSettings.Default, tx2.SystemFee);
             engine.LoadScript(tx2.Script);
             Assert.IsTrue(engine.Execute() == VMState.HALT);
             snapshot.Commit();
@@ -581,7 +581,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
-            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             // Check that block's Primary balance is 0.
             ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);

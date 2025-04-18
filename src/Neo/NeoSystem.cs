@@ -100,7 +100,7 @@ namespace Neo
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly IStore store;
-        private readonly IStoreProvider storageProvider;
+        protected readonly IStoreProvider StorageProvider;
         private ChannelsConfig start_message = null;
         private int suspend = 0;
 
@@ -143,7 +143,7 @@ namespace Neo
         {
             Settings = settings;
             GenesisBlock = CreateGenesisBlock(settings);
-            this.storageProvider = storageProvider;
+            StorageProvider = storageProvider;
             store = storageProvider.GetStore(storagePath);
             MemPool = new MemoryPool(this);
             Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
@@ -243,7 +243,7 @@ namespace Neo
         /// <returns>The loaded <see cref="IStore"/>.</returns>
         public IStore LoadStore(string path)
         {
-            return storageProvider.GetStore(path);
+            return StorageProvider.GetStore(path);
         }
 
         /// <summary>
@@ -328,7 +328,7 @@ namespace Neo
         /// </returns>
         public bool ContainsConflictHash(UInt256 hash, IEnumerable<UInt160> signers)
         {
-            return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, Settings.MaxTraceableBlocks);
+            return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, this.GetMaxTraceableBlocks());
         }
     }
 }

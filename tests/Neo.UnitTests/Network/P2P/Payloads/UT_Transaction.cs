@@ -32,51 +32,45 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Transaction
     {
-        Transaction uut;
+        Transaction _uut;
 
         [TestInitialize]
         public void TestSetup()
         {
-            uut = new Transaction();
-        }
-
-        [TestCleanup]
-        public void Clean()
-        {
-            TestBlockchain.ResetStore();
+            _uut = new Transaction();
         }
 
         [TestMethod]
         public void Script_Get()
         {
-            Assert.IsTrue(uut.Script.IsEmpty);
+            Assert.IsTrue(_uut.Script.IsEmpty);
         }
 
         [TestMethod]
         public void FromStackItem()
         {
-            Assert.ThrowsExactly<NotSupportedException>(() => ((IInteroperable)uut).FromStackItem(StackItem.Null));
+            Assert.ThrowsExactly<NotSupportedException>(() => ((IInteroperable)_uut).FromStackItem(StackItem.Null));
         }
 
         [TestMethod]
         public void TestEquals()
         {
-            Assert.IsTrue(uut.Equals(uut));
-            Assert.IsFalse(uut.Equals(null));
+            Assert.IsTrue(_uut.Equals(_uut));
+            Assert.IsFalse(_uut.Equals(null));
         }
 
         [TestMethod]
         public void InventoryType_Get()
         {
-            Assert.AreEqual(InventoryType.TX, ((IInventory)uut).InventoryType);
+            Assert.AreEqual(InventoryType.TX, ((IInventory)_uut).InventoryType);
         }
 
         [TestMethod]
         public void Script_Set()
         {
             byte[] val = TestUtils.GetByteArray(32, 0x42);
-            uut.Script = val;
-            var span = uut.Script.Span;
+            _uut.Script = val;
+            var span = _uut.Script.Span;
             Assert.AreEqual(32, span.Length);
             for (int i = 0; i < val.Length; i++)
             {
@@ -87,29 +81,29 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Gas_Get()
         {
-            Assert.AreEqual(0, uut.SystemFee);
+            Assert.AreEqual(0, _uut.SystemFee);
         }
 
         [TestMethod]
         public void Gas_Set()
         {
             long val = 4200000000;
-            uut.SystemFee = val;
-            Assert.AreEqual(val, uut.SystemFee);
+            _uut.SystemFee = val;
+            Assert.AreEqual(val, _uut.SystemFee);
         }
 
         [TestMethod]
         public void Size_Get()
         {
-            uut.Script = TestUtils.GetByteArray(32, 0x42);
-            uut.Signers = [];
-            uut.Attributes = [];
-            uut.Witnesses = [Witness.Empty];
+            _uut.Script = TestUtils.GetByteArray(32, 0x42);
+            _uut.Signers = [];
+            _uut.Attributes = [];
+            _uut.Witnesses = [Witness.Empty];
 
-            Assert.AreEqual(0, uut.Version);
-            Assert.AreEqual(32, uut.Script.Length);
-            Assert.AreEqual(33, uut.Script.GetVarSize());
-            Assert.AreEqual(63, uut.Size);
+            Assert.AreEqual(0, _uut.Version);
+            Assert.AreEqual(32, _uut.Script.Length);
+            Assert.AreEqual(33, _uut.Script.GetVarSize());
+            Assert.AreEqual(63, _uut.Size);
         }
 
         [TestMethod]
@@ -198,7 +192,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -274,7 +268,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             foreach (var witness in tx.Witnesses)
             {
                 using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -380,7 +374,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -461,7 +455,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -546,7 +540,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -678,7 +672,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -1072,7 +1066,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             foreach (var witness in tx.Witnesses)
             {
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -1091,13 +1085,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void ToJson()
         {
-            uut.Script = TestUtils.GetByteArray(32, 0x42);
-            uut.SystemFee = 4200000000;
-            uut.Signers = [new() { Account = UInt160.Zero }];
-            uut.Attributes = [];
-            uut.Witnesses = [Witness.Empty];
+            _uut.Script = TestUtils.GetByteArray(32, 0x42);
+            _uut.SystemFee = 4200000000;
+            _uut.Signers = [new() { Account = UInt160.Zero }];
+            _uut.Attributes = [];
+            _uut.Witnesses = [Witness.Empty];
 
-            JObject jObj = uut.ToJson(ProtocolSettings.Default);
+            JObject jObj = _uut.ToJson(ProtocolSettings.Default);
             Assert.IsNotNull(jObj);
             Assert.AreEqual("0x0ab073429086d9e48fc87386122917989705d1c81fe4a60bf90e2fc228de3146", jObj["hash"].AsString());
             Assert.AreEqual(84, jObj["size"].AsNumber());

@@ -98,6 +98,9 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
+            prepareRequestReceivedTime = TimeProvider.Current.UtcNow;
+            prepareRequestReceivedBlockIndex = message.BlockIndex;
+
             context.Block.Header.Timestamp = message.Timestamp;
             context.Block.Header.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
@@ -124,11 +127,12 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
             Dictionary<UInt256, Transaction> mempoolVerified = neoSystem.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
+            var mtb = neoSystem.GetMaxTraceableBlocks();
             foreach (UInt256 hash in context.TransactionHashes)
             {
                 if (mempoolVerified.TryGetValue(hash, out Transaction tx))
                 {
-                    if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), neoSystem.Settings.MaxTraceableBlocks))
+                    if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), mtb))
                     {
                         Log($"Invalid request: transaction has on-chain conflict", LogLevel.Warning);
                         return;
@@ -141,7 +145,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
                 {
                     if (neoSystem.MemPool.TryGetValue(hash, out tx))
                     {
-                        if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), neoSystem.Settings.MaxTraceableBlocks))
+                        if (NativeContract.Ledger.ContainsConflictHash(context.Snapshot, hash, tx.Signers.Select(s => s.Account), mtb))
                         {
                             Log($"Invalid request: transaction has on-chain conflict", LogLevel.Warning);
                             return;
