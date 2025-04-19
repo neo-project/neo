@@ -58,11 +58,11 @@ namespace Neo.Plugins.SignClient
 
         private void Reset(string name, SecureSign.SecureSignClient? client)
         {
-            if (_client is not null) SignerFactory.UnregisterSigner(_name);
+            if (_client is not null) SignerManager.UnregisterSigner(_name);
 
             _name = name;
             _client = client;
-            if (!string.IsNullOrEmpty(_name)) SignerFactory.RegisterSigner(_name, this);
+            if (!string.IsNullOrEmpty(_name)) SignerManager.RegisterSigner(_name, this);
         }
 
         private void Reset(Settings settings)
@@ -159,7 +159,12 @@ namespace Neo.Plugins.SignClient
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Check if the account is signable
+        /// </summary>
+        /// <param name="publicKey">The public key</param>
+        /// <returns>True if the account is signable, false otherwise</returns>
+        /// <exception cref="SignException">If no signer service is available, or other rpc error occurs.</exception>
         public bool ContainsSignable(ECPoint publicKey)
         {
             var status = GetAccountStatus(publicKey);
@@ -227,7 +232,12 @@ namespace Neo.Plugins.SignClient
             return succeed;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Signs the <see cref="ContractParametersContext"/> with the signer.
+        /// </summary>
+        /// <param name="context">The context of the transaction</param>
+        /// <returns>True if the transaction is signed, false otherwise</returns>
+        /// <exception cref="SignException">If no signer service is available, or other rpc error occurs.</exception>
         public bool Sign(ContractParametersContext context)
         {
             if (_client is null) throw new SignException("No signer service is connected");
@@ -254,7 +264,13 @@ namespace Neo.Plugins.SignClient
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Signs the specified data with the corresponding private key of the specified public key.
+        /// </summary>
+        /// <param name="signData">The data to sign</param>
+        /// <param name="publicKey">The public key</param>
+        /// <returns>The signature</returns>
+        /// <exception cref="SignException">If no signer service is available, or other rpc error occurs.</exception>
         public ReadOnlyMemory<byte> Sign(byte[] signData, ECPoint publicKey)
         {
             if (_client is null) throw new SignException("No signer service is connected");
