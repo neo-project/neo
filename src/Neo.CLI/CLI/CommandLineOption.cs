@@ -21,6 +21,7 @@ namespace Neo.CLI
         public string? DBPath { get; init; }
         public LogLevel Verbose { get; init; } = LogLevel.Info;
         public bool? NoVerify { get; init; }
+        public string? Prometheus { get; init; } // Format: "host:port"
 
         /// <summary>
         /// Check if CommandLineOptions was configured
@@ -31,6 +32,7 @@ namespace Neo.CLI
                 !string.IsNullOrEmpty(Password) ||
                 !string.IsNullOrEmpty(DBEngine) ||
                 !string.IsNullOrEmpty(DBPath) ||
+                !string.IsNullOrEmpty(Prometheus) ||
                 (Plugins?.Length > 0) ||
                 NoVerify is not null;
     }

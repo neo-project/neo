@@ -13,6 +13,7 @@ using Akka.Actor;
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Ledger;
+using Neo.Monitoring;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
@@ -33,6 +34,7 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             try
             {
                 message = context.GetMessage(payload);
+                PrometheusService.Instance.IncConsensusMessagesReceived(message.GetType().Name);
             }
             catch (Exception ex)
             {

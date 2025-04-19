@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Akka.IO;
 using Neo.Extensions;
+using Neo.Monitoring;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -289,7 +290,11 @@ namespace Neo.Network.P2P
                 IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
-                ConnectedPeers.TryAdd(connection, remote);
+                if (ConnectedPeers.TryAdd(connection, remote))
+                {
+                    // Update P2P connection gauge AFTER successfully adding
+                    PrometheusService.Instance.SetNetworkPeers(ConnectedPeers.Count);
+                }
                 OnTcpConnected(connection);
             }
         }
@@ -327,6 +332,9 @@ namespace Neo.Network.P2P
                     ConnectedAddresses.Remove(endPoint.Address);
                 else
                     ConnectedAddresses[endPoint.Address] = count;
+
+                // Update P2P connection gauge AFTER successfully removing
+                PrometheusService.Instance.SetNetworkPeers(ConnectedPeers.Count);
             }
         }
 
