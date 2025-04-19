@@ -161,7 +161,7 @@ namespace Neo.CLI
             wallet.Save();
 
             CurrentWallet = wallet;
-            SignerFactory.RegisterSigner(wallet.Name, wallet);
+            SignerManager.RegisterSigner(wallet.Name, wallet);
         }
 
         private bool NoWallet()
@@ -296,10 +296,10 @@ namespace Neo.CLI
                 throw new FileNotFoundException($"Wallet file \"{path}\" not found.");
             }
 
-            if (CurrentWallet is not null) SignerFactory.UnregisterSigner(CurrentWallet.Name);
+            if (CurrentWallet is not null) SignerManager.UnregisterSigner(CurrentWallet.Name);
 
             CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
-            SignerFactory.RegisterSigner(CurrentWallet.Name, CurrentWallet);
+            SignerManager.RegisterSigner(CurrentWallet.Name, CurrentWallet);
         }
 
         public async void Start(CommandLineOptions options)

@@ -21,7 +21,7 @@ namespace Neo.Sign
     public interface ISigner
     {
         /// <summary>
-        /// Signs the <see cref="ContractParametersContext"/> with the wallet.
+        /// Signs the <see cref="ContractParametersContext"/> with the signer.
         /// </summary>
         /// <param name="context">The <see cref="ContractParametersContext"/> to be used.</param>
         /// <returns>

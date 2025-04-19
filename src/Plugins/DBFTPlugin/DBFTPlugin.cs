@@ -87,7 +87,7 @@ namespace Neo.Plugins.DBFTPlugin
         [ConsoleCommand("start consensus", Category = "Consensus", Description = "Start consensus service (dBFT)")]
         private void OnStart(string signerName = "")
         {
-            var signer = SignerFactory.GetSignerOrDefault(signerName);
+            var signer = SignerManager.GetSignerOrDefault(signerName);
             Start(signer ?? walletProvider.GetWallet());
         }
 

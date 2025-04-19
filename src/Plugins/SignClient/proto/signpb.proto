@@ -1,0 +1,64 @@
+// Copyright (C) 2015-2025 The Neo Project.
+//
+// signpb.proto file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+syntax = "proto3";
+
+package signpb;
+
+message AccountSign {
+    // the signature
+    bytes signature = 1;
+
+    // the compressed or uncompressed public key
+    bytes public_key = 2;
+}
+
+message AccountContract {
+    // the contract script
+    bytes script = 1;
+
+    // the contract parameters
+    repeated uint32 parameters = 2;
+
+    // if the contract is deployed
+    bool deployed = 3;
+}
+
+enum AccountStatus {
+    /// no such account
+    NoSuchAccount = 0;
+
+    /// no private key
+    NoPrivateKey = 1;
+
+    /// single sign
+    Single = 2;
+   
+    /// multiple signs, aka. multisig
+    Multiple = 3;
+    
+    /// this key-pair is locked
+    Locked = 4;
+}
+
+message AccountSigns {
+    // if the status is Single, there is only one sign
+    // if the status is Multiple, there are multiple signs
+    // if the status is NoSuchAccount, NoPrivateKey or Locked, there are no signs
+    repeated AccountSign signs = 1;
+
+    // the account contract
+    // If the account hasn't a contract, the contract is null
+    AccountContract contract = 2;
+
+    // the account status
+    AccountStatus status = 3;
+}

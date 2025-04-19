@@ -1,0 +1,6 @@
+{
+    "PluginConfiguration": {
+        "Name": "SignClient",
+        "Port": 9991
+    }
+}
