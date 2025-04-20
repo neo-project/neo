@@ -23,13 +23,7 @@ namespace Neo.Plugins.StorageDumper
     public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
         private NeoSystem? _system;
-
-        private StreamWriter? _writer;
-        /// <summary>
-        /// _currentBlock stores the last cached item
-        /// </summary>
-        private JObject? _currentBlock;
-        private string? _lastCreateDirectory;
+        private readonly Dictionary<uint, JArray> bs_cache = new Dictionary<uint, JArray>();
         protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
         public override string Description => "Exports Neo-CLI status data";
@@ -88,7 +82,6 @@ namespace Neo.Plugins.StorageDumper
 
         void ICommittingHandler.Blockchain_Committing_Handler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
         {
-            InitFileWriter(system.Settings.Network, snapshot);
             OnPersistStorage(system.Settings.Network, snapshot);
         }
 
@@ -97,7 +90,7 @@ namespace Neo.Plugins.StorageDumper
             var blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
             if (blockIndex >= Settings.Default!.HeightToBegin)
             {
-                var stateChangeArray = new JArray();
+                JArray array = new JArray();
 
                 foreach (var trackable in snapshot.GetChangeSet())
                 {
@@ -124,57 +117,50 @@ namespace Neo.Plugins.StorageDumper
                             state["key"] = Convert.ToBase64String(trackable.Key.ToArray());
                             break;
                     }
-                    stateChangeArray.Add(state);
+                    array.Add(state);
                 }
 
                 var bs_item = new JObject();
                 bs_item["block"] = blockIndex;
-                bs_item["size"] = stateChangeArray.Count;
-                bs_item["storage"] = stateChangeArray;
-                _currentBlock = bs_item;
+                bs_item["size"] = array.Count;
+                bs_item["storage"] = array;
+                if (!bs_cache.TryGetValue(network, out var cache))
+                {
+                    cache = new JArray();
+                }
+                cache.Add(bs_item);
+                bs_cache[network] = cache;
             }
         }
 
 
         void ICommittedHandler.Blockchain_Committed_Handler(NeoSystem system, Block block)
         {
-            OnCommitStorage(system.Settings.Network);
+            OnCommitStorage(system.Settings.Network, system);
         }
 
-        void OnCommitStorage(uint network)
+        void OnCommitStorage(uint network, NeoSystem system)
         {
-            if (_currentBlock != null && _writer != null)
+            if (!bs_cache.TryGetValue(network, out var cache)) return;
+            if (cache.Count == 0) return;
+            uint blockIndex = NativeContract.Ledger.CurrentIndex(system.GetSnapshotCache());
+            if (blockIndex % Settings.Default!.BlockCacheSize == 0)
             {
-                _writer.WriteLine(_currentBlock.ToString());
-                _writer.Flush();
+                string path = HandlePaths(network, blockIndex);
+                path = $"{path}/dump-block-{blockIndex}.json";
+                File.WriteAllText(path, cache.ToString());
+                cache.Clear();
             }
         }
 
-        private void InitFileWriter(uint network, IReadOnlyStore snapshot)
+        private static string HandlePaths(uint network, uint blockIndex)
         {
-            uint blockIndex = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (_writer == null
-                || blockIndex % Settings.Default!.BlockCacheSize == 0)
-            {
-                string path = GetOrCreateDirectory(network, blockIndex);
-                var filepart = (blockIndex / Settings.Default!.BlockCacheSize) * Settings.Default.BlockCacheSize;
-                path = $"{path}/dump-block-{filepart}.dump";
-                if (_writer != null)
-                {
-                    _writer.Dispose();
-                }
-                _writer = new StreamWriter(new FileStream(path, FileMode.Append));
-            }
-        }
-
-        private string GetOrCreateDirectory(uint network, uint blockIndex)
-        {
-            string dirPathWithBlock = GetDirectoryPath(network, blockIndex);
-            if (_lastCreateDirectory != dirPathWithBlock)
-            {
-                Directory.CreateDirectory(dirPathWithBlock);
-                _lastCreateDirectory = dirPathWithBlock;
-            }
+            uint storagePerFolder = Settings.Default!.StoragePerFolder;
+            uint folder = (((blockIndex - 1) / storagePerFolder) + 1) * storagePerFolder;
+            if (blockIndex == 0)
+                folder = 0;
+            string dirPathWithBlock = $"./Storage_{network:x8}/BlockStorage_{folder}";
+            Directory.CreateDirectory(dirPathWithBlock);
             return dirPathWithBlock;
         }
 
