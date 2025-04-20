@@ -23,7 +23,7 @@ namespace Neo.Plugins.StorageDumper
     public class StorageDumper : Plugin, ICommittingHandler, ICommittedHandler
     {
         private NeoSystem? _system;
-        private readonly Dictionary<uint, JArray> bs_cache = new Dictionary<uint, JArray>();
+        private readonly Dictionary<uint, JArray> bs_cache = [];
         protected override UnhandledExceptionPolicy ExceptionPolicy => Settings.Default?.ExceptionPolicy ?? UnhandledExceptionPolicy.Ignore;
 
         public override string Description => "Exports Neo-CLI status data";
