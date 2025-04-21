@@ -135,7 +135,7 @@ namespace Neo.SmartContract.Native
         /// <param name="from">GAS sender</param>
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="data">Deposit-related data: optional To value (treated as deposit owner if set) and Till height after which deposit can be withdrawn </param>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data)
         {
             if (engine.CallingScriptHash != GAS.Hash) throw new InvalidOperationException(string.Format("only GAS can be accepted for deposit, got {0}", engine.CallingScriptHash.ToString()));
@@ -220,7 +220,7 @@ namespace Neo.SmartContract.Native
         /// <param name="from">From Account</param>
         /// <param name="to">To Account</param>
         /// <returns>Whether withdrawal was successfull.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.All)]
         private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
         {
             if (!engine.CheckWitnessInternal(from)) return false;
