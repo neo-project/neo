@@ -121,5 +121,32 @@ namespace Neo.Extensions
             return sb.ToString();
 #endif
         }
+
+        /// <summary>
+        /// Converts a byte array to a read-only span.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <returns>The converted read-only span.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<byte> AsReadOnlySpan(this byte[] value) => value;
+
+        /// <summary>
+        /// All bytes are zero or not in a byte array
+        /// </summary>
+        /// <param name="x">The byte array</param>
+        /// <returns>false if all bytes are zero, true otherwise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool NotZero(this ReadOnlySpan<byte> x)
+        {
+#if NET7_0_OR_GREATER
+            return x.IndexOfAnyExcept((byte)0) >= 0;
+#else
+            for (var i = 0; i < x.Length; i++)
+            {
+                if (x[i] != 0) return true;
+            }
+            return false;
+#endif
+        }
     }
 }
