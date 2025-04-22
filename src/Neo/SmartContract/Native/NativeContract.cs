@@ -420,12 +420,7 @@ namespace Neo.SmartContract.Native
                 if (method.DeprecatedIn is not null && engine.IsHardforkEnabled(method.DeprecatedIn.Value))
                     throw new InvalidOperationException($"Cannot call this method after hardfork {method.DeprecatedIn}.");
                 var state = context.GetState<ExecutionContextState>();
-                var requiredFlags = method.RequiredCallFlags;
-                // A special case for `deploy` and `update` methods of native ContractManagement contract
-                // for pre-Aspidochelone blocks to avoid breaking existing chains, ref. #2653, #2673.
-                if (!engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone) && Id == -1 && (method.Name == "deploy" || method.Name == "update"))
-                    requiredFlags &= CallFlags.States | CallFlags.AllowNotify;
-                if (!state.CallFlags.HasFlag(requiredFlags))
+                if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 engine.AddFee(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
