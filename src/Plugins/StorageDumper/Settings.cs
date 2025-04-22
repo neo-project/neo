@@ -40,7 +40,7 @@ namespace Neo.Plugins.StorageDumper
             StoragePerFolder = section.GetValue("StoragePerFolder", 100000u);
             Exclude = section.GetSection("Exclude").Exists()
                 ? section.GetSection("Exclude").GetChildren().Select(p => int.Parse(p.Value!)).ToArray()
-                : new[] { NativeContract.Ledger.Id };
+                : [NativeContract.Ledger.Id];
         }
 
         public static void Load(IConfigurationSection section)
