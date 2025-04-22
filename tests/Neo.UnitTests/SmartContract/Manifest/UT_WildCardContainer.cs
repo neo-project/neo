@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_WildCardContainer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
@@ -26,76 +25,75 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestFromJson()
         {
             JString jstring = new JString("*");
-            WildcardContainer<string> s = WildcardContainer<string>.FromJson(jstring, u => u.AsString());
-            s.Should().BeEmpty();
+            var s = WildcardContainer<string>.FromJson(jstring, u => u.AsString());
+            Assert.IsTrue(s.IsWildcard);
+            Assert.AreEqual(0, s.Count);
 
             jstring = new JString("hello world");
-            Action action = () => WildcardContainer<string>.FromJson(jstring, u => u.AsString());
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jstring, u => u.AsString()));
 
             JObject alice = new JObject();
             alice["name"] = "alice";
             alice["age"] = 30;
             JArray jarray = new JArray { alice };
             WildcardContainer<string> r = WildcardContainer<string>.FromJson(jarray, u => u.AsString());
-            r[0].Should().Be("{\"name\":\"alice\",\"age\":30}");
+            Assert.AreEqual("{\"name\":\"alice\",\"age\":30}", r[0]);
 
             JBoolean jbool = new JBoolean();
-            action = () => WildcardContainer<string>.FromJson(jbool, u => u.AsString());
-            action.Should().Throw<FormatException>();
+            Assert.ThrowsExactly<FormatException>(() => _ = WildcardContainer<string>.FromJson(jbool, u => u.AsString()));
         }
 
         [TestMethod]
         public void TestGetCount()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
-            container.Count.Should().Be(2);
+            Assert.AreEqual(2, container.Count);
 
             s = null;
             container = WildcardContainer<string>.Create(s);
-            container.Count.Should().Be(0);
+            Assert.AreEqual(0, container.Count);
         }
 
         [TestMethod]
         public void TestGetItem()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
-            container[0].Should().Be("hello");
-            container[1].Should().Be("world");
+            Assert.AreEqual("hello", container[0]);
+            Assert.AreEqual("world", container[1]);
         }
 
         [TestMethod]
         public void TestGetEnumerator()
         {
             string[] s = null;
-            IReadOnlyList<string> rs = new string[0];
+            IReadOnlyList<string> rs = Array.Empty<string>();
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             IEnumerator<string> enumerator = container.GetEnumerator();
-            enumerator.Should().Be(rs.GetEnumerator());
+            Assert.AreEqual(rs.GetEnumerator(), enumerator);
 
-            s = new string[] { "hello", "world" };
+            s = ["hello", "world"];
             container = WildcardContainer<string>.Create(s);
             enumerator = container.GetEnumerator();
             foreach (string _ in s)
             {
                 enumerator.MoveNext();
-                enumerator.Current.Should().Be(_);
+                Assert.AreEqual(_, enumerator.Current);
             }
         }
 
         [TestMethod]
         public void TestIEnumerableGetEnumerator()
         {
-            string[] s = new string[] { "hello", "world" };
+            string[] s = ["hello", "world"];
             WildcardContainer<string> container = WildcardContainer<string>.Create(s);
             IEnumerable enumerable = container;
             var enumerator = enumerable.GetEnumerator();
             foreach (string _ in s)
             {
                 enumerator.MoveNext();
-                enumerator.Current.Should().Be(_);
+                Assert.AreEqual(_, enumerator.Current);
             }
         }
     }

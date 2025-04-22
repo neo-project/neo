@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_DataCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence;
 using Neo.SmartContract;
+using System;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -23,95 +24,85 @@ namespace Neo.UnitTests
         public void TestCachedFind_Between()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var storages = snapshotCache.CreateSnapshot();
+            var storages = snapshotCache.CloneCache();
             var cache = new ClonedCache(storages);
 
-            storages.Add
-                (
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            storages.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            storages.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x03 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
 
             CollectionAssert.AreEqual(
                 cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x01, 0x02, 0x03 }
-                );
+            );
         }
 
         [TestMethod]
         public void TestCachedFind_Last()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var storages = snapshotCache.CreateSnapshot();
+            var storages = snapshotCache.CloneCache();
             var cache = new ClonedCache(storages);
 
-            storages.Add
-                (
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            storages.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            storages.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            CollectionAssert.AreEqual(cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            CollectionAssert.AreEqual(
+                cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x01, 0x02 }
-                );
+             );
         }
 
         [TestMethod]
         public void TestCachedFind_Empty()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            var storages = snapshotCache.CreateSnapshot();
+            var storages = snapshotCache.CloneCache();
             var cache = new ClonedCache(storages);
 
-            cache.Add
-                (
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
-            cache.Add
-                (
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
+            cache.Add(
                 new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
-                );
+                new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
+            );
 
             CollectionAssert.AreEqual(
                 cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x02 }
-                );
+            );
         }
     }
 }

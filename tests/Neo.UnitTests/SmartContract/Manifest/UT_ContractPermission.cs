@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ContractPermission.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -26,7 +27,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         {
             // null
             ContractPermission contractPermission = ContractPermission.DefaultPermission;
-            Struct s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounter());
+            Struct s = (Struct)contractPermission.ToStackItem(new ReferenceCounter());
 
             contractPermission = s.ToInteroperable<ContractPermission>();
             Assert.IsTrue(contractPermission.Contract.IsWildcard);
@@ -38,7 +39,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Contract = ContractPermissionDescriptor.Create(UInt160.Zero),
                 Methods = WildcardContainer<string>.Create("test")
             };
-            s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounter());
+            s = (Struct)contractPermission.ToStackItem(new ReferenceCounter());
 
             contractPermission = s.ToInteroperable<ContractPermission>();
             Assert.IsFalse(contractPermission.Contract.IsWildcard);
@@ -53,13 +54,13 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractManifest contractManifest1 = TestUtils.CreateDefaultManifest();
             ContractPermission contractPermission1 = ContractPermission.DefaultPermission;
             contractPermission1.Contract = ContractPermissionDescriptor.Create(UInt160.Zero);
-            Assert.AreEqual(true, contractPermission1.IsAllowed(new ContractState() { Hash = UInt160.Zero, Manifest = contractManifest1 }, "AAA"));
+            Assert.IsTrue(contractPermission1.IsAllowed(new() { Hash = UInt160.Zero, Manifest = contractManifest1 }, "AAA"));
             contractPermission1.Contract = ContractPermissionDescriptor.CreateWildcard();
 
             ContractManifest contractManifest2 = TestUtils.CreateDefaultManifest();
             ContractPermission contractPermission2 = ContractPermission.DefaultPermission;
             contractPermission2.Contract = ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001"));
-            Assert.AreEqual(false, contractPermission2.IsAllowed(new ContractState() { Hash = UInt160.Zero, Manifest = contractManifest2 }, "AAA"));
+            Assert.IsFalse(contractPermission2.IsAllowed(new() { Hash = UInt160.Zero, Manifest = contractManifest2 }, "AAA"));
             contractPermission2.Contract = ContractPermissionDescriptor.CreateWildcard();
 
             Random random = new();
@@ -67,10 +68,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
             random.NextBytes(privateKey3);
             ECPoint publicKey3 = ECCurve.Secp256r1.G * privateKey3;
             ContractManifest contractManifest3 = TestUtils.CreateDefaultManifest();
-            contractManifest3.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey3 } };
+            contractManifest3.Groups = [new ContractGroup() { PubKey = publicKey3 }];
             ContractPermission contractPermission3 = ContractPermission.DefaultPermission;
             contractPermission3.Contract = ContractPermissionDescriptor.Create(publicKey3);
-            Assert.AreEqual(true, contractPermission3.IsAllowed(new ContractState() { Hash = UInt160.Zero, Manifest = contractManifest3 }, "AAA"));
+            Assert.IsTrue(contractPermission3.IsAllowed(new() { Hash = UInt160.Zero, Manifest = contractManifest3 }, "AAA"));
             contractPermission3.Contract = ContractPermissionDescriptor.CreateWildcard();
 
             byte[] privateKey41 = new byte[32];
@@ -80,10 +81,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
             random.NextBytes(privateKey42);
             ECPoint publicKey42 = ECCurve.Secp256r1.G * privateKey42;
             ContractManifest contractManifest4 = TestUtils.CreateDefaultManifest();
-            contractManifest4.Groups = new ContractGroup[] { new ContractGroup() { PubKey = publicKey42 } };
+            contractManifest4.Groups = [new ContractGroup() { PubKey = publicKey42 }];
             ContractPermission contractPermission4 = ContractPermission.DefaultPermission;
             contractPermission4.Contract = ContractPermissionDescriptor.Create(publicKey41);
-            Assert.AreEqual(false, contractPermission4.IsAllowed(new ContractState() { Hash = UInt160.Zero, Manifest = contractManifest4 }, "AAA"));
+            Assert.IsFalse(contractPermission4.IsAllowed(new() { Hash = UInt160.Zero, Manifest = contractManifest4 }, "AAA"));
             contractPermission4.Contract = ContractPermissionDescriptor.CreateWildcard();
         }
     }

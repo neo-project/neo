@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Options.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -16,13 +16,13 @@ namespace Neo.Plugins.Storage
     public static class Options
     {
         public static readonly DbOptions Default = CreateDbOptions();
-        public static readonly ReadOptions ReadDefault = new ReadOptions();
-        public static readonly WriteOptions WriteDefault = new WriteOptions();
+        public static readonly ReadOptions ReadDefault = new();
+        public static readonly WriteOptions WriteDefault = new();
         public static readonly WriteOptions WriteDefaultSync = new WriteOptions().SetSync(true);
 
         public static DbOptions CreateDbOptions()
         {
-            DbOptions options = new DbOptions();
+            var options = new DbOptions();
             options.SetCreateMissingColumnFamilies(true);
             options.SetCreateIfMissing(true);
             options.SetErrorIfExists(false);

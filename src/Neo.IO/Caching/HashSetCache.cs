@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // HashSetCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -8,6 +8,8 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+#nullable enable
 
 using System;
 using System.Collections;
@@ -20,7 +22,7 @@ namespace Neo.IO.Caching
         /// <summary>
         /// Sets where the Hashes are stored
         /// </summary>
-        private readonly LinkedList<HashSet<T>> _sets = new();
+        private readonly LinkedList<HashSet<T>> _sets;
 
         /// <summary>
         /// Maximum capacity of each bucket inside each HashSet of <see cref="_sets"/>.
@@ -37,6 +39,13 @@ namespace Neo.IO.Caching
         /// </summary>
         public int Count { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the HashSetCache class with the specified bucket capacity and maximum number of buckets.
+        /// The total entries will be bucketCapacity * maxBucketCount
+        /// </summary>
+        /// <param name="bucketCapacity">The maximum number of items each HashSet bucket can hold. Must be greater than 0.</param>
+        /// <param name="maxBucketCount">The maximum number of HashSet buckets the cache can maintain. Must be greater than 0.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when either bucketCapacity or maxBucketCount is less than or equal to 0.</exception>
         public HashSetCache(int bucketCapacity, int maxBucketCount = 10)
         {
             if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCapacity)} should be greater than 0");
@@ -45,14 +54,18 @@ namespace Neo.IO.Caching
             Count = 0;
             _bucketCapacity = bucketCapacity;
             _maxBucketCount = maxBucketCount;
-            _sets.AddFirst([]);
+            _sets = new LinkedList<HashSet<T>>([]);
         }
 
         public bool Add(T item)
         {
             if (Contains(item)) return false;
             Count++;
-            if (_sets.First?.Value.Count < _bucketCapacity) return _sets.First.Value.Add(item);
+            if (_sets.First?.Value.Count < _bucketCapacity)
+            {
+                return _sets.First.Value.Add(item);
+            }
+
             var newSet = new HashSet<T>
             {
                 item
@@ -60,7 +73,7 @@ namespace Neo.IO.Caching
             _sets.AddFirst(newSet);
             if (_sets.Count > _maxBucketCount)
             {
-                Count -= _sets.Last?.Value.Count ?? 0;
+                Count -= _sets.Last!.Value.Count;
                 _sets.RemoveLast();
             }
             return true;
@@ -75,9 +88,20 @@ namespace Neo.IO.Caching
             return false;
         }
 
+        public void Clear()
+        {
+            foreach (var set in _sets)
+            {
+                set.Clear();
+            }
+
+            _sets.Clear();
+            Count = 0;
+        }
+
         public void ExceptWith(IEnumerable<T> items)
         {
-            List<HashSet<T>> removeList = default!;
+            List<HashSet<T>> removeList = [];
             foreach (var item in items)
             {
                 foreach (var set in _sets)
@@ -87,14 +111,12 @@ namespace Neo.IO.Caching
                         Count--;
                         if (set.Count == 0)
                         {
-                            removeList ??= [];
                             removeList.Add(set);
                         }
                         break;
                     }
                 }
             }
-            if (removeList == null) return;
             foreach (var set in removeList)
             {
                 _sets.Remove(set);
@@ -115,3 +137,5 @@ namespace Neo.IO.Caching
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
+
+#nullable disable

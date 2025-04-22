@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_ContractEventDescriptor.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,12 +20,12 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestFromJson()
         {
-            ContractEventDescriptor expected = new ContractEventDescriptor
+            var expected = new ContractEventDescriptor
             {
                 Name = "AAA",
-                Parameters = new ContractParameterDefinition[0]
+                Parameters = [],
             };
-            ContractEventDescriptor actual = ContractEventDescriptor.FromJson(expected.ToJson());
+            var actual = ContractEventDescriptor.FromJson(expected.ToJson());
             Assert.AreEqual(expected.Name, actual.Name);
             Assert.AreEqual(0, actual.Parameters.Length);
         }

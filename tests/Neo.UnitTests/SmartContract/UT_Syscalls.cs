@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Syscalls.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,11 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -27,20 +28,28 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_Syscalls : TestKit
     {
+        private DataCache _snapshotCache;
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            _snapshotCache = TestBlockchain.GetTestSnapshotCache();
+        }
+
         [TestMethod]
         public void System_Blockchain_GetBlock()
         {
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
+                Attributes = [],
+                Signers = [],
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
-                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+                Witnesses = [new() { VerificationScript = new byte[] { 0x07 } }],
             };
 
             var block = new TrimmedBlock()
@@ -49,27 +58,23 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Index = 0,
                     Timestamp = 2,
-                    Witness = new Witness()
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = Array.Empty<byte>()
-                    },
+                    Witness = Witness.Empty,
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     PrimaryIndex = 1,
                     NextConsensus = UInt160.Zero,
                 },
-                Hashes = new[] { tx.Hash }
+                Hashes = [tx.Hash]
             };
 
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var snapshot = _snapshotCache.CloneCache();
 
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock", block.Hash.ToArray());
 
             // Without block
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -81,18 +86,18 @@ namespace Neo.UnitTests.SmartContract
             const byte Prefix_Transaction = 11;
             const byte Prefix_CurrentBlock = 12;
 
-            TestUtils.BlocksAdd(snapshotCache, block.Hash, block);
+            TestUtils.BlocksAdd(snapshot, block.Hash, block);
 
-            var height = snapshotCache[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
+            var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
             height.Index = block.Index + TestProtocolSettings.Default.MaxTraceableBlocks;
 
-            snapshotCache.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
+            snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
             {
                 BlockIndex = block.Index,
                 Transaction = tx
             }));
 
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -101,10 +106,10 @@ namespace Neo.UnitTests.SmartContract
 
             // With block
 
-            height = snapshotCache[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
+            height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
             height.Index = block.Index;
 
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -117,13 +122,13 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void System_ExecutionEngine_GetScriptContainer()
         {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var snapshot = _snapshotCache.CloneCache();
             using ScriptBuilder script = new();
             script.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer);
 
             // Without tx
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.FAULT);
@@ -134,26 +139,27 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Signers = new Signer[] {
-                    new Signer()
+                Signers =
+                [
+                    new()
                     {
                         Account = UInt160.Zero,
                         Scopes = WitnessScope.None,
-                        AllowedContracts = Array.Empty<UInt160>(),
-                        AllowedGroups = Array.Empty<ECPoint>(),
-                        Rules = Array.Empty<WitnessRule>(),
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
                     }
-                },
-                Attributes = Array.Empty<TransactionAttribute>(),
+                ],
+                Attributes = [],
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
-                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+                Witnesses = [new() { VerificationScript = new byte[] { 0x07 } }],
             };
 
-            engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache);
+            engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -166,7 +172,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void System_Runtime_GasLeft()
         {
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var snapshot = _snapshotCache.CloneCache();
 
             using (var script = new ScriptBuilder())
             {
@@ -181,7 +187,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, gas: 100_000_000);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -202,7 +208,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
                 // Check the results
@@ -217,8 +223,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void System_Runtime_GetInvocationCounter()
         {
+            var snapshot = _snapshotCache.CloneCache();
             ContractState contractA, contractB, contractC;
-            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             // Create dummy contracts
 
@@ -236,15 +242,15 @@ namespace Neo.UnitTests.SmartContract
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments
 
-                snapshotCache.DeleteContract(contractA.Hash);
-                snapshotCache.DeleteContract(contractB.Hash);
-                snapshotCache.DeleteContract(contractC.Hash);
+                snapshot.DeleteContract(contractA.Hash);
+                snapshot.DeleteContract(contractB.Hash);
+                snapshot.DeleteContract(contractC.Hash);
                 contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
                 contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
                 contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
-                snapshotCache.AddContract(contractA.Hash, contractA);
-                snapshotCache.AddContract(contractB.Hash, contractB);
-                snapshotCache.AddContract(contractC.Hash, contractC);
+                snapshot.AddContract(contractA.Hash, contractA);
+                snapshot.AddContract(contractB.Hash, contractB);
+                snapshot.AddContract(contractC.Hash, contractC);
             }
 
             // Call A,B,B,C
@@ -258,23 +264,15 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, null, ProtocolSettings.Default);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(VMState.HALT, engine.Execute());
 
                 // Check the results
 
-                CollectionAssert.AreEqual
-                    (
+                CollectionAssert.AreEqual(
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
-                    new int[]
-                        {
-                        1, /* A */
-                        1, /* B */
-                        2, /* B */
-                        1  /* C */
-                        }
-                    );
+                    new int[] { 1 /* A */, 1 /* B */, 2 /* B */, 1  /* C */});
             }
         }
     }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Tree.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -14,7 +14,7 @@ using System.Collections.Generic;
 
 namespace Neo.Plugins.RpcServer
 {
-    class Tree<T>
+    public class Tree<T>
     {
         public TreeNode<T> Root { get; private set; }
 

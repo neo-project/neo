@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_JObject.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -46,91 +46,93 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAsBoolean()
         {
-            alice.AsBoolean().Should().BeTrue();
+            Assert.IsTrue(alice.AsBoolean());
         }
 
         [TestMethod]
         public void TestAsNumber()
         {
-            alice.AsNumber().Should().Be(double.NaN);
+            Assert.AreEqual(double.NaN, alice.AsNumber());
         }
 
         [TestMethod]
         public void TestParse()
         {
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => JObject.Parse("", -1));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("aaa"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("hello world"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("100.a"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("100.+"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"\\s\""));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"a"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\",\"k1\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"k1\":\"v1\""));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
-            Assert.ThrowsException<FormatException>(() => JObject.Parse("\"\\uDBFF\\u0DFFF\""));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = JObject.Parse("", -1));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("aaa"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("hello world"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("100.a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("100.+"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"\\s\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"a"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\",\"k1\":\"v2\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\",\"k1\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"k1\":\"v1\""));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse(new byte[] { 0x22, 0x01, 0x22 }));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"red\",\"\\uDBFF\\u0DFFF\":\"#f00\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("{\"color\":\"\\uDBFF\\u0DFFF\"}"));
+            Assert.ThrowsExactly<FormatException>(() => _ = JObject.Parse("\"\\uDBFF\\u0DFFF\""));
 
-            JObject.Parse("null").Should().BeNull();
-            JObject.Parse("true").AsBoolean().Should().BeTrue();
-            JObject.Parse("false").AsBoolean().Should().BeFalse();
-            JObject.Parse("\"hello world\"").AsString().Should().Be("hello world");
-            JObject.Parse("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"").AsString().Should().Be("\"\\/\b\f\n\r\t");
-            JObject.Parse("\"\\u0030\"").AsString().Should().Be("0");
-            JObject.Parse("{\"k1\":\"v1\"}", 100).ToString().Should().Be("{\"k1\":\"v1\"}");
+            Assert.IsNull(JObject.Parse("null"));
+            Assert.IsTrue(JObject.Parse("true").AsBoolean());
+            Assert.IsFalse(JObject.Parse("false").AsBoolean());
+            Assert.AreEqual("hello world", JObject.Parse("\"hello world\"").AsString());
+            Assert.AreEqual("\"\\/\b\f\n\r\t", JObject.Parse("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"").AsString());
+            Assert.AreEqual("0", JObject.Parse("\"\\u0030\"").AsString());
+            Assert.AreEqual("{\"k1\":\"v1\"}", JObject.Parse("{\"k1\":\"v1\"}", 100).ToString());
         }
 
         [TestMethod]
         public void TestGetEnum()
         {
-            alice.AsEnum<Woo>().Should().Be(Woo.Tom);
+            Assert.AreEqual(Woo.Tom, alice.AsEnum<Woo>());
 
             Action action = () => alice.GetEnum<Woo>();
-            action.Should().Throw<InvalidCastException>();
+            Assert.ThrowsExactly<InvalidCastException>(action);
         }
 
         [TestMethod]
         public void TestOpImplicitEnum()
         {
             JToken obj = Woo.Tom;
-            obj.AsString().Should().Be("Tom");
+            Assert.AreEqual("Tom", obj.AsString());
         }
 
         [TestMethod]
         public void TestOpImplicitString()
         {
             JToken obj = null;
-            obj.Should().BeNull();
+            Assert.IsNull(obj);
 
             obj = "{\"aaa\":\"111\"}";
-            obj.AsString().Should().Be("{\"aaa\":\"111\"}");
+            Assert.AreEqual("{\"aaa\":\"111\"}", obj.AsString());
         }
 
         [TestMethod]
         public void TestGetNull()
         {
-            JToken.Null.Should().BeNull();
+            Assert.IsNull(JToken.Null);
         }
 
         [TestMethod]
         public void TestClone()
         {
             var bobClone = (JObject)bob.Clone();
-            bobClone.Should().NotBeSameAs(bob);
+            Assert.AreNotSame(bob, bobClone);
             foreach (var key in bobClone.Properties.Keys)
             {
                 switch (bob[key])
                 {
                     case JToken.Null:
-                        bobClone[key].Should().BeNull();
+                        Assert.IsNull(bobClone[key]);
                         break;
                     case JObject obj:
-                        ((JObject)bobClone[key]).Properties.Should().BeEquivalentTo(obj.Properties);
+                        CollectionAssert.AreEqual(
+                            ((JObject)bob[key]).Properties.ToList(),
+                            ((JObject)bobClone[key]).Properties.ToList());
                         break;
                     default:
-                        bobClone[key].Should().BeEquivalentTo(bob[key]);
+                        Assert.AreEqual(bob[key], bobClone[key]);
                         break;
                 }
             }

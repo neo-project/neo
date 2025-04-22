@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // MainService.Blockchain.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -20,32 +20,6 @@ namespace Neo.CLI
 {
     partial class MainService
     {
-        /// <summary>
-        /// Process "export blocks" command
-        /// </summary>
-        /// <param name="start">Start</param>
-        /// <param name="count">Number of blocks</param>
-        /// <param name="path">Path</param>
-        [ConsoleCommand("export blocks", Category = "Blockchain Commands")]
-        private void OnExportBlocksStartCountCommand(uint start, uint count = uint.MaxValue, string? path = null)
-        {
-            uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
-            if (height < start)
-            {
-                ConsoleHelper.Error("invalid start height.");
-                return;
-            }
-
-            count = Math.Min(count, height - start + 1);
-
-            if (string.IsNullOrEmpty(path))
-            {
-                path = $"chain.{start}.acc";
-            }
-
-            WriteBlocks(start, count, path, true);
-        }
-
         [ConsoleCommand("show block", Category = "Blockchain Commands")]
         private void OnShowBlockCommand(string indexOrHash)
         {
@@ -119,7 +93,7 @@ namespace Neo.CLI
             {
                 var tx = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, hash);
 
-                if (tx is null)
+                if (tx?.Transaction is null)
                 {
                     ConsoleHelper.Error($"Transaction {hash} doesn't exist.");
                     return;
@@ -127,7 +101,7 @@ namespace Neo.CLI
 
                 var block = NativeContract.Ledger.GetHeader(NeoSystem.StoreView, tx.BlockIndex);
 
-                DateTime transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                var transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 transactionDatetime = transactionDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
 
                 ConsoleHelper.Info("", "-------------", "Transaction", "-------------");
@@ -211,6 +185,10 @@ namespace Neo.CLI
                             case NotValidBefore n:
                                 ConsoleHelper.Info("", "    Type: ", $"{n.Type}");
                                 ConsoleHelper.Info("", "  Height: ", $"{n.Height}");
+                                break;
+                            case NotaryAssisted n:
+                                ConsoleHelper.Info("", "    Type: ", $"{n.Type}");
+                                ConsoleHelper.Info("", "   NKeys: ", $"{n.NKeys}");
                                 break;
                             default:
                                 ConsoleHelper.Info("", "  Type: ", $"{attribute.Type}");

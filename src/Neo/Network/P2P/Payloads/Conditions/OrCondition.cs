@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // OrCondition.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -18,13 +18,15 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
     /// <summary>
     /// Represents the condition that any of the conditions meets.
     /// </summary>
-    public class OrCondition : WitnessCondition
+    public class OrCondition : WitnessCondition, IEquatable<OrCondition>
     {
         /// <summary>
         /// The expressions of the condition.
@@ -34,10 +36,32 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.Or;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(OrCondition other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null) return false;
+            return
+                Type == other.Type &&
+                Expressions.SequenceEqual(other.Expressions);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            return obj is OrCondition oc && Equals(oc);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, Expressions);
+        }
+
         protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
-            Expressions = DeserializeConditions(ref reader, maxNestDepth - 1);
+            Expressions = DeserializeConditions(ref reader, maxNestDepth);
             if (Expressions.Length == 0) throw new FormatException();
         }
 
@@ -53,7 +77,6 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            if (maxNestDepth <= 0) throw new FormatException();
             JArray expressions = (JArray)json["expressions"];
             if (expressions.Count > MaxSubitems) throw new FormatException();
             Expressions = expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1)).ToArray();
@@ -69,9 +92,27 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override StackItem ToStackItem(IReferenceCounter referenceCounter)
         {
-            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
-            result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
+            var result = (Array)base.ToStackItem(referenceCounter);
+            result.Add(new Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(OrCondition left, OrCondition right)
+        {
+            if (left is null || right is null)
+                return Equals(left, right);
+
+            return left.Equals(right);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(OrCondition left, OrCondition right)
+        {
+            if (left is null || right is null)
+                return !Equals(left, right);
+
+            return !left.Equals(right);
         }
     }
 }

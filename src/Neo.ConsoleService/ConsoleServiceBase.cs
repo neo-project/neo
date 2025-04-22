@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ConsoleServiceBase.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -18,6 +18,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.ServiceProcess;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,6 +26,8 @@ namespace Neo.ConsoleService
 {
     public abstract class ConsoleServiceBase
     {
+        const int HistorySize = 100;
+
         protected virtual string? Depends => null;
         protected virtual string Prompt => "service";
 
@@ -39,14 +42,13 @@ namespace Neo.ConsoleService
         private readonly Dictionary<string, object> _instances = new();
         private readonly Dictionary<Type, Func<List<CommandToken>, bool, object>> _handlers = new();
 
+        private readonly List<string> _commandHistory = new();
+
         private bool OnCommand(string commandLine)
         {
-            if (string.IsNullOrEmpty(commandLine))
-            {
-                return true;
-            }
+            if (string.IsNullOrEmpty(commandLine)) return true;
 
-            string? possibleHelp = null;
+            var possibleHelp = "";
             var commandArgs = CommandToken.Parse(commandLine).ToArray();
             var availableCommands = new List<(ConsoleCommandMethod Command, object?[] Arguments)>();
 
@@ -54,46 +56,37 @@ namespace Neo.ConsoleService
             {
                 foreach (var command in entries)
                 {
-                    if (command.IsThisCommand(commandArgs, out var consumedArgs))
+                    if (!command.IsThisCommand(commandArgs, out var consumedArgs)) continue;
+
+                    var arguments = new List<object?>();
+                    var args = commandArgs.Skip(consumedArgs).ToList();
+
+                    CommandSpaceToken.Trim(args);
+                    try
                     {
-                        var arguments = new List<object?>();
-                        var args = commandArgs.Skip(consumedArgs).ToList();
-
-                        CommandSpaceToken.Trim(args);
-
-                        try
+                        var parameters = command.Method.GetParameters();
+                        foreach (var arg in parameters)
                         {
-                            var parameters = command.Method.GetParameters();
-
-                            foreach (var arg in parameters)
+                            // Parse argument
+                            if (TryProcessValue(arg.ParameterType, args, arg == parameters.Last(), out var value))
                             {
-                                // Parse argument
-
-                                if (TryProcessValue(arg.ParameterType, args, arg == parameters.Last(), out var value))
-                                {
-                                    arguments.Add(value);
-                                }
-                                else
-                                {
-                                    if (arg.HasDefaultValue)
-                                    {
-                                        arguments.Add(arg.DefaultValue);
-                                    }
-                                    else
-                                    {
-                                        throw new ArgumentException(arg.Name);
-                                    }
-                                }
+                                arguments.Add(value);
                             }
+                            else
+                            {
+                                if (!arg.HasDefaultValue)
+                                    throw new ArgumentException($"Missing argument: {arg.Name}");
+                                arguments.Add(arg.DefaultValue);
+                            }
+                        }
 
-                            availableCommands.Add((command, arguments.ToArray()));
-                        }
-                        catch (Exception ex)
-                        {
-                            // Skip parse errors
-                            possibleHelp = command.Key;
-                            ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}");
-                        }
+                        availableCommands.Add((command, arguments.ToArray()));
+                    }
+                    catch (Exception ex)
+                    {
+                        // Skip parse errors
+                        possibleHelp = command.Key;
+                        ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}");
                     }
                 }
             }
@@ -120,8 +113,8 @@ namespace Neo.ConsoleService
                 default:
                     {
                         // Show Ambiguous call
-
-                        throw new ArgumentException("Ambiguous calls for: " + string.Join(',', availableCommands.Select(u => u.Command.Key).Distinct()));
+                        var ambiguousCommands = availableCommands.Select(u => u.Command.Key).Distinct().ToList();
+                        throw new ArgumentException($"Ambiguous calls for: {string.Join(',', ambiguousCommands)}");
                     }
             }
         }
@@ -157,29 +150,25 @@ namespace Neo.ConsoleService
         /// Process "help" command
         /// </summary>
         [ConsoleCommand("help", Category = "Base Commands")]
-        protected void OnHelpCommand(string key)
+        protected void OnHelpCommand(string key = "")
         {
             var withHelp = new List<ConsoleCommandMethod>();
 
             // Try to find a plugin with this name
-
             if (_instances.TryGetValue(key.Trim().ToLowerInvariant(), out var instance))
             {
                 // Filter only the help of this plugin
-
                 key = "";
                 foreach (var commands in _verbs.Values.Select(u => u))
                 {
-                    withHelp.AddRange
-                        (
+                    withHelp.AddRange(
                         commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory) && u.Instance == instance)
-                        );
+                    );
                 }
             }
             else
             {
                 // Fetch commands
-
                 foreach (var commands in _verbs.Values.Select(u => u))
                 {
                     withHelp.AddRange(commands.Where(u => !string.IsNullOrEmpty(u.HelpCategory)));
@@ -213,7 +202,7 @@ namespace Neo.ConsoleService
                     Console.WriteLine(" " + string.Join(' ',
                         command.Method.GetParameters()
                         .Select(u => u.HasDefaultValue ? $"[{u.Name}={(u.DefaultValue == null ? "null" : u.DefaultValue.ToString())}]" : $"<{u.Name}>"))
-                        );
+                    );
                 }
             }
             else
@@ -244,7 +233,7 @@ namespace Neo.ConsoleService
                     Console.WriteLine(" " + string.Join(' ',
                         command.Method.GetParameters()
                         .Select(u => u.HasDefaultValue ? $"[{u.Name}={u.DefaultValue?.ToString() ?? "null"}]" : $"<{u.Name}>"))
-                        );
+                    );
                 }
 
                 if (!found)
@@ -323,7 +312,6 @@ namespace Neo.ConsoleService
         protected ConsoleServiceBase()
         {
             // Register self commands
-
             RegisterCommandHandler<string>((args, canConsumeAll) => CommandToken.ReadString(args, canConsumeAll) ?? "");
 
             RegisterCommandHandler<string[]>((args, canConsumeAll) =>
@@ -332,10 +320,10 @@ namespace Neo.ConsoleService
                 {
                     var ret = CommandToken.ToString(args);
                     args.Clear();
-                    return ret.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    return ret.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
                 }
 
-                return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? Array.Empty<string>();
+                return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? [];
             });
 
             RegisterCommandHandler<string, byte>(false, str => byte.Parse(str));
@@ -403,19 +391,16 @@ namespace Neo.ConsoleService
                 foreach (var attribute in method.GetCustomAttributes<ConsoleCommandAttribute>())
                 {
                     // Check handlers
-
                     if (!method.GetParameters().All(u => u.ParameterType.IsEnum || _handlers.ContainsKey(u.ParameterType)))
                     {
-                        throw new ArgumentException("Handler not found for the command: " + method);
+                        throw new ArgumentException($"Handler not found for the command: {method}");
                     }
 
                     // Add command
-
                     var command = new ConsoleCommandMethod(instance, method, attribute);
-
                     if (!_verbs.TryGetValue(command.Key, out var commands))
                     {
-                        _verbs.Add(command.Key, new List<ConsoleCommandMethod>(new[] { command }));
+                        _verbs.Add(command.Key, [command]);
                     }
                     else
                     {
@@ -436,11 +421,14 @@ namespace Neo.ConsoleService
                         ConsoleHelper.Warning("Only support for installing services on Windows.");
                         return;
                     }
-                    string arguments = string.Format("create {0} start= auto binPath= \"{1}\"", ServiceName, Process.GetCurrentProcess().MainModule!.FileName);
+
+                    var fileName = Process.GetCurrentProcess().MainModule!.FileName;
+                    var arguments = $"create {ServiceName} start= auto binPath= \"{fileName}\"";
                     if (!string.IsNullOrEmpty(Depends))
                     {
-                        arguments += string.Format(" depend= {0}", Depends);
+                        arguments += $" depend= {Depends}";
                     }
+
                     Process? process = Process.Start(new ProcessStartInfo
                     {
                         Arguments = arguments,
@@ -497,10 +485,109 @@ namespace Neo.ConsoleService
             }
         }
 
+        private string? ReadTask()
+        {
+            var historyIndex = -1;
+            var input = new StringBuilder();
+            var cursor = 0;
+            var promptLength = ShowPrompt ? Prompt.Length + 2 /* '> ' */ : 0;
+            var rewrite = () =>
+            {
+                if (Console.WindowWidth > 0) Console.Write("\r" + new string(' ', Console.WindowWidth - 1));
+                if (ShowPrompt)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write($"\r{Prompt}> ");
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                if (input.Length > 0) Console.Write(input);
+                Console.SetCursorPosition(promptLength + cursor, Console.CursorTop);
+            };
+
+            while (true)
+            {
+                var key = Console.ReadKey();
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    var result = input.ToString();
+                    if (!string.IsNullOrWhiteSpace(result)) _commandHistory.Add(result);
+                    if (_commandHistory.Count > HistorySize) _commandHistory.RemoveAt(0);
+                    return result;
+                }
+                else if (key.Key == ConsoleKey.Escape)
+                {
+                    Console.WriteLine('\r');
+                    return string.Empty;
+                }
+                else if (key.Key == ConsoleKey.UpArrow)
+                {
+                    if (historyIndex < _commandHistory.Count - 1)
+                    {
+                        historyIndex++;
+                        input.Clear();
+                        input.Append(_commandHistory[_commandHistory.Count - 1 - historyIndex]);
+                        cursor = input.Length;
+                        rewrite();
+                    }
+                }
+                else if (key.Key == ConsoleKey.DownArrow)
+                {
+                    if (historyIndex > 0)
+                    {
+                        historyIndex--;
+                        input.Clear();
+                        input.Append(_commandHistory[_commandHistory.Count - 1 - historyIndex]);
+                        cursor = input.Length;
+                        rewrite();
+                    }
+                    else
+                    {
+                        historyIndex = -1;
+                        input.Clear();
+                        cursor = 0;
+                        rewrite();
+                    }
+                }
+                else if (key.Key == ConsoleKey.LeftArrow)
+                {
+                    if (cursor > 0)
+                    {
+                        cursor--;
+                        Console.SetCursorPosition(promptLength + cursor, Console.CursorTop);
+                    }
+                }
+                else if (key.Key == ConsoleKey.RightArrow)
+                {
+                    if (cursor < input.Length)
+                    {
+                        cursor++;
+                        Console.SetCursorPosition(promptLength + cursor, Console.CursorTop);
+                    }
+                }
+                else if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (cursor > 0)
+                    {
+                        input.Remove(cursor - 1, 1);
+                        cursor--;
+                    }
+                    rewrite();
+                }
+                else
+                {
+                    input.Insert(cursor, key.KeyChar);
+                    cursor++;
+                    if (cursor < input.Length) rewrite();
+                }
+            }
+        }
+
         protected string? ReadLine()
         {
-            Task<string?> readLineTask = Task.Run(Console.ReadLine);
-
+            var isWin = Environment.OSVersion.Platform == PlatformID.Win32NT;
+            Task<string?> readLineTask = !isWin ? Task.Run(ReadTask) : Task.Run(Console.ReadLine);
             try
             {
                 readLineTask.Wait(_shutdownTokenSource.Token);
@@ -517,11 +604,13 @@ namespace Neo.ConsoleService
         {
             _running = true;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
                 try
                 {
                     Console.Title = ServiceName;
                 }
                 catch { }
+            }
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.SetIn(new StreamReader(Console.OpenStandardInput(), Console.InputEncoding, false, ushort.MaxValue));
@@ -535,7 +624,7 @@ namespace Neo.ConsoleService
                 }
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                string? line = ReadLine()?.Trim();
+                var line = ReadLine()?.Trim();
                 if (line == null) break;
                 Console.ForegroundColor = ConsoleColor.White;
 

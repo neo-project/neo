@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  DOTNET_VERSION: 8.0.x
+  DOTNET_VERSION: 9.0.x
 
 jobs:
 
@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -30,15 +30,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }} 
 
     - name: Build (Everything)
-      run: dotnet build
+      run: dotnet build --disable-parallel -p:GITHUB_ACTIONS=true
 
     - name: Install dependencies
       run: |
@@ -52,63 +52,68 @@ jobs:
     needs: [Format]
     timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: Test
-      if: matrix.os != 'ubuntu-latest'
+
+    - name: Test (MacOS)
+      if: matrix.os == 'macos-latest'
       run: |
-        dotnet sln neo.sln remove ./tests/Neo.Plugins.Storage.Tests/Neo.Plugins.Storage.Tests.csproj
-        dotnet build
-        dotnet test --blame-hang --blame-crash --no-build
+        brew install leveldb
+        brew install gperftools
+        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-macos.binlog
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-macos.binlog
+
+    - name: Test (windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-windows.binlog
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -bl:test-windows.binlog
 
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get --assume-yes install libleveldb-dev librocksdb-dev
+        dotnet build --disable-parallel -p:GITHUB_ACTIONS=true -bl:build-ubuntu.binlog
+        dotnet test --no-build -p:GITHUB_ACTIONS=true -p:Exclude="[Neo.UnitTests]*" -bl:test-ubuntu.binlog
 
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --output ./bin/tests/Neo.Cryptography.BLS12_381.Tests
-        dotnet test ./tests/Neo.ConsoleService.Tests --output ./bin/tests/Neo.ConsoleService.Tests
-        dotnet test ./tests/Neo.UnitTests --output ./bin/tests/Neo.UnitTests
-        dotnet test ./tests/Neo.VM.Tests --output ./bin/tests/Neo.VM.Tests
-        dotnet test ./tests/Neo.Json.UnitTests --output ./bin/tests/Neo.Json.UnitTests
-        dotnet test ./tests/Neo.Extensions.Tests --output ./bin/tests/Neo.Extensions.Tests
-
-        # Plugins
-        dotnet test ./tests/Neo.Cryptography.MPTTrie.Tests --output ./bin/tests/Neo.Cryptography.MPTTrie.Tests
-        dotnet test ./tests/Neo.Network.RPC.Tests --output ./bin/tests/Neo.Network.RPC.Tests
-        dotnet test ./tests/Neo.Plugins.OracleService.Tests --output ./bin/tests/Neo.Plugins.OracleService.Tests
-        dotnet test ./tests/Neo.Plugins.RpcServer.Tests --output ./bin/tests/Neo.Plugins.RpcServer.Tests
-        dotnet test ./tests/Neo.Plugins.Storage.Tests --output ./bin/tests/Neo.Plugins.Storage.Tests
-        dotnet test ./tests/Neo.Plugins.ApplicationLogs.Tests --output ./bin/tests/Neo.Plugins.ApplicationLogs.Tests
+    - uses: actions/upload-artifact@v4.6.2
+      if: always()
+      with:
+        name: binlogs--${{ matrix.os }}
+        path: "*.binlog"
 
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@v2.3.0
+      uses: coverallsapp/github-action@v2.3.6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        debug: false
+        measure: true
+        allow-empty: true
+        format: lcov
         files:
-          ${{ github.workspace }}/tests/Neo.Cryptography.BLS12_381.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.ConsoleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.UnitTests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.VM.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Json.UnitTests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Cryptography.MPTTrie.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Network.RPC.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.OracleService.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.RpcServer.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.Storage.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Plugins.ApplicationLogs.Tests/TestResults/coverage.info
-          ${{ github.workspace }}/tests/Neo.Extensions.Tests/TestResults/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.UnitTests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Cryptography.BLS12_381.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.ConsoleService.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.VM.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Json.UnitTests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Cryptography.MPTTrie.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Network.RPC.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.OracleService.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.RpcServer.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.Storage.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Plugins.ApplicationLogs.Tests/coverage.info
+          ${{ github.workspace }}/TestResults/Neo.Extensions.Tests/coverage.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
@@ -116,12 +121,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
       with:
         fetch-depth: 0
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4.3.1
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -133,7 +138,8 @@ jobs:
         dotnet pack \
         --configuration Release \
         --output ./out \
-        --version-suffix ${{ env.VERSION_SUFFIX }}
+        --version-suffix ${{ env.VERSION_SUFFIX }} \
+        -p:GITHUB_ACTIONS=true
 
     - name: Publish to Github Packages
       working-directory: ./out

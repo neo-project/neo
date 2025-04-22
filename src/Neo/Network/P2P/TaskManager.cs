@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TaskManager.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -17,7 +17,6 @@ using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -59,7 +58,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
-        private readonly HashSetCache<UInt256> knownHashes;
+        private readonly HashSetCache<UInt256> _knownHashes;
         private readonly Dictionary<UInt256, int> globalInvTasks = new();
         private readonly Dictionary<uint, int> globalIndexTasks = new();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new();
@@ -75,7 +74,8 @@ namespace Neo.Network.P2P
         public TaskManager(NeoSystem system)
         {
             this.system = system;
-            knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
+            // Exactly the same as mempool
+            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, system.MemPool.Capacity / 10), 10);
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
@@ -113,7 +113,7 @@ namespace Neo.Network.P2P
 
             HashSet<UInt256> hashes = new(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
-            hashes.Remove(knownHashes);
+            hashes.Remove(_knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
@@ -133,7 +133,7 @@ namespace Neo.Network.P2P
                 session.InvTasks[hash] = TimeProvider.Current.UtcNow;
             }
 
-            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
+            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes))
                 Sender.Tell(Message.Create(MessageCommand.GetData, group));
         }
 
@@ -206,7 +206,7 @@ namespace Neo.Network.P2P
 
         private void OnRestartTasks(InvPayload payload)
         {
-            knownHashes.ExceptWith(payload.Hashes);
+            _knownHashes.ExceptWith(payload.Hashes);
             foreach (UInt256 hash in payload.Hashes)
                 globalInvTasks.Remove(hash);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
@@ -216,7 +216,7 @@ namespace Neo.Network.P2P
         private void OnTaskCompleted(IInventory inventory)
         {
             Block block = inventory as Block;
-            knownHashes.Add(inventory.Hash);
+            _knownHashes.Add(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
             if (block is not null)
                 globalIndexTasks.Remove(block.Index);
@@ -317,18 +317,9 @@ namespace Neo.Network.P2P
         {
             foreach (TaskSession session in sessions.Values)
             {
-                foreach (var (hash, time) in session.InvTasks.ToArray())
-                    if (TimeProvider.Current.UtcNow - time > TaskTimeout)
-                    {
-                        if (session.InvTasks.Remove(hash))
-                            DecrementGlobalTask(hash);
-                    }
-                foreach (var (index, time) in session.IndexTasks.ToArray())
-                    if (TimeProvider.Current.UtcNow - time > TaskTimeout)
-                    {
-                        if (session.IndexTasks.Remove(index))
-                            DecrementGlobalTask(index);
-                    }
+                var now = TimeProvider.Current.UtcNow;
+                session.InvTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
+                session.IndexTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
             }
             foreach (var (actor, session) in sessions)
                 RequestTasks(actor, session);
@@ -354,26 +345,24 @@ namespace Neo.Network.P2P
         {
             if (session.HasTooManyTasks) return;
 
-            DataCache snapshot = system.StoreView;
+            var snapshot = system.StoreView;
 
             // If there are pending tasks of InventoryType.Block we should process them
             if (session.AvailableTasks.Count > 0)
             {
-                session.AvailableTasks.Remove(knownHashes);
+                session.AvailableTasks.Remove(_knownHashes);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
                 HashSet<UInt256> hashes = new(session.AvailableTasks);
                 if (hashes.Count > 0)
                 {
-                    foreach (UInt256 hash in hashes.ToArray())
-                    {
-                        if (!IncrementGlobalTask(hash))
-                            hashes.Remove(hash);
-                    }
+                    hashes.RemoveWhere(p => !IncrementGlobalTask(p));
                     session.AvailableTasks.Remove(hashes);
+
                     foreach (UInt256 hash in hashes)
                         session.InvTasks[hash] = DateTime.UtcNow;
-                    foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
+
+                    foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes))
                         remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
                     return;
                 }
@@ -415,7 +404,7 @@ namespace Neo.Network.P2P
 
     internal class TaskManagerMailbox : PriorityMailbox
     {
-        public TaskManagerMailbox(Akka.Actor.Settings settings, Config config)
+        public TaskManagerMailbox(Settings settings, Config config)
             : base(settings, config)
         {
         }

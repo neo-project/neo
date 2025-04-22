@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Program.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -14,57 +14,23 @@ using BenchmarkDotNet.Running;
 using Neo.VM.Benchmark;
 using System.Reflection;
 
-// Flag to determine if running benchmark or running methods
-// If `NEO_VM_BENCHMARK` environment variable is set, run benchmark no matter.
-var runBenchmark = true;
-
 // Define the benchmark or execute class
-var benchmarkType = typeof(Benchmarks_PoCs);
-
-/*
- +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- |                                                                           |
- |                    DO NOT MODIFY THE CODE BELOW                           |
- |                                                                           |
- |              All configuration should be done above this line             |
- |                                                                           |
- +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-*/
-
-// Explanation:
-// Benchmark methods must contain no parameters to be valid.
-// This is because we need to be able to invoke these methods repeatedly
-// without any external input. All necessary data should be set up in the Setup method
-// or as properties of the benchmark class.
-
-// Example:
-
-// [Benchmark]
-// public void BenchmarkMethod()
-// {
-//     // Benchmark code here
-// }
-if (Environment.GetEnvironmentVariable("NEO_VM_BENCHMARK") != null || runBenchmark)
+if (Environment.GetEnvironmentVariable("NEO_VM_BENCHMARK") != null)
 {
-    BenchmarkRunner.Run(benchmarkType);
+    BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 }
 else
 {
+    var benchmarkType = typeof(Benchmarks_PoCs);
     var instance = Activator.CreateInstance(benchmarkType);
-    var setupMethod = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-        .FirstOrDefault(m => m.GetCustomAttribute<GlobalSetupAttribute>() != null);
-    if (setupMethod != null)
-    {
-        setupMethod.Invoke(instance, null);
-    }
+    benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        .FirstOrDefault(m => m.GetCustomAttribute<GlobalSetupAttribute>() != null)?
+        .Invoke(instance, null); // setup
 
-    var methods = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-
+    var methods = benchmarkType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        .Where(m => m.DeclaringType == benchmarkType && !m.GetCustomAttributes<GlobalSetupAttribute>().Any());
     foreach (var method in methods)
     {
-        if (method.DeclaringType == benchmarkType && !method.GetCustomAttributes<GlobalSetupAttribute>().Any())
-        {
-            method.Invoke(instance, null);
-        }
+        method.Invoke(instance, null);
     }
 }

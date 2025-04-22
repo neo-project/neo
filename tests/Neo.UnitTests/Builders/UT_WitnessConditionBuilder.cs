@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_WitnessConditionBuilder.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -13,11 +13,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Builders;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads.Conditions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Builders
 {

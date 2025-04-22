@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractManifest.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The JSON <see cref="string"/>.</param>
         /// <returns>The parsed manifest.</returns>
-        public static ContractManifest Parse(string json) => Parse(Utility.StrictUTF8.GetBytes(json));
+        public static ContractManifest Parse(string json) => Parse(json.ToStrictUtf8Bytes());
 
         /// <summary>
         /// Converts the manifest to a JSON object.

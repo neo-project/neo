@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RelayCache.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,12 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.IO.Caching
 {
-    internal class RelayCache
-        (int max_capacity) : FIFOCache<UInt256, IInventory>(max_capacity)
+    internal class RelayCache(int maxCapacity) : FIFOCache<UInt256, IInventory>(maxCapacity)
     {
         protected override UInt256 GetKeyForItem(IInventory item)
         {
@@ -22,3 +23,5 @@ namespace Neo.IO.Caching
         }
     }
 }
+
+#nullable disable

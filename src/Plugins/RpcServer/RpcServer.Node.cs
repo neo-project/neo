@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // RpcServer.Node.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -143,9 +143,9 @@ namespace Neo.Plugins.RpcServer
             protocol["addressversion"] = system.Settings.AddressVersion;
             protocol["network"] = system.Settings.Network;
             protocol["validatorscount"] = system.Settings.ValidatorsCount;
-            protocol["msperblock"] = system.Settings.MillisecondsPerBlock;
-            protocol["maxtraceableblocks"] = system.Settings.MaxTraceableBlocks;
-            protocol["maxvaliduntilblockincrement"] = system.Settings.MaxValidUntilBlockIncrement;
+            protocol["msperblock"] = system.GetTimePerBlock().TotalMilliseconds;
+            protocol["maxtraceableblocks"] = system.GetMaxTraceableBlocks();
+            protocol["maxvaliduntilblockincrement"] = system.GetMaxValidUntilBlockIncrement();
             protocol["maxtransactionsperblock"] = system.Settings.MaxTransactionsPerBlock;
             protocol["memorypoolmaxtransactions"] = system.Settings.MemoryPoolMaxTransactions;
             protocol["initialgasdistribution"] = system.Settings.InitialGasDistribution;

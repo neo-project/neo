@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // NeoStore.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -24,7 +24,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
         #region Globals
 
         private readonly IStore _store;
-        private ISnapshot _blocklogsnapshot;
+        private IStoreSnapshot _blocklogsnapshot;
 
         #endregion
 
@@ -42,6 +42,7 @@ namespace Neo.Plugins.ApplicationLogs.Store
 
         public void Dispose()
         {
+            _blocklogsnapshot?.Dispose();
             _store?.Dispose();
             GC.SuppressFinalize(this);
         }

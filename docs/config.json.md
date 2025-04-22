@@ -42,7 +42,10 @@ This README provides an explanation for each field in the JSON configuration fil
 - **AddressVersion**: Version byte used in Neo address generation. Default is `53`.
 
 ### MillisecondsPerBlock
-- **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `15000` (15 seconds).
+- **MillisecondsPerBlock**: Time interval between blocks in milliseconds. Default is `15000` (15 seconds). Note that
+  starting from Echidna hardfork block generation time is managed by native Policy contract with the initial value
+  matching the MillisecondsPerBlock configuration parameter. Use native Policy's `getMillisecondsPerBlock` and `setMillisecondsPerBlock`
+  to manage block generation time starting from Echidna hardfork.
 
 ### MaxTransactionsPerBlock
 - **MaxTransactionsPerBlock**: Maximum number of transactions allowed per block. Default is `512`.
@@ -51,12 +54,18 @@ This README provides an explanation for each field in the JSON configuration fil
 - **MemoryPoolMaxTransactions**: Maximum number of transactions that can be held in the memory pool. Default is `50000`.
 
 ### MaxTraceableBlocks
-- **MaxTraceableBlocks**: Maximum number of blocks that can be traced back. Default is `2102400`.
+- **MaxTraceableBlocks**: Maximum number of blocks that can be traced back. Default is `2102400`. Note that
+  starting from Echidna hardfork MaxTraceableBlocks value is managed by native Policy contract with the initial value
+  matching the MaxTraceableBlocks configuration parameter. Use native Policy's `getMaxTraceableBlocks` and `setMaxTraceableBlocks`
+  to manage the maximum number of traceable blocks starting from Echidna hardfork.
 
 ### Hardforks
 - **HF_Aspidochelone**: Block height for the Aspidochelone hard fork. MainNet is `1730000`, TestNet is `210000`.
 - **HF_Basilisk**: Block height for the Basilisk hard fork. MainNet is `4120000`, TestNet is `2680000`.
 - **HF_Cockatrice**: Block height for the Cockatrice hard fork. MainNet is `5450000`, TestNet is `3967000`.
+- **HF_Domovoi**: Block height for the Domovoi hard fork. MainNet is `5570000`, TestNet is `4144000`.
+- **HF_Echidna**: Block height for the Echidna hard fork.
+
 
 ### InitialGasDistribution
 - **InitialGasDistribution**: Total amount of GAS distributed initially. Default is `5,200,000,000,000,000 Datoshi` (`52,000,000 GAS`).

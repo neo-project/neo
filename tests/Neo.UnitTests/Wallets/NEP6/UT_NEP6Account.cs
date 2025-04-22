@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_NEP6Account.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Json;
@@ -50,26 +49,26 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestChangePassword()
         {
             _account = new NEP6Account(_wallet, _hash, _nep2);
-            _account.ChangePasswordPrepare("b", "Satoshi").Should().BeTrue();
+            Assert.IsTrue(_account.ChangePasswordPrepare("b", "Satoshi"));
             _account.ChangePasswordCommit();
             _account.Contract = new Contract();
-            _account.ChangePasswordPrepare("b", "Satoshi").Should().BeFalse();
-            _account.ChangePasswordPrepare("Satoshi", "b").Should().BeTrue();
+            Assert.IsFalse(_account.ChangePasswordPrepare("b", "Satoshi"));
+            Assert.IsTrue(_account.ChangePasswordPrepare("Satoshi", "b"));
             _account.ChangePasswordCommit();
-            _account.VerifyPassword("b").Should().BeTrue();
-            _account.ChangePasswordPrepare("b", "Satoshi").Should().BeTrue();
+            Assert.IsTrue(_account.VerifyPassword("b"));
+            Assert.IsTrue(_account.ChangePasswordPrepare("b", "Satoshi"));
             _account.ChangePasswordCommit();
-            _account.ChangePasswordPrepare("Satoshi", "b").Should().BeTrue();
+            Assert.IsTrue(_account.ChangePasswordPrepare("Satoshi", "b"));
             _account.ChangePasswordRollback();
-            _account.VerifyPassword("Satoshi").Should().BeTrue();
+            Assert.IsTrue(_account.VerifyPassword("Satoshi"));
         }
 
         [TestMethod]
         public void TestConstructorWithNep2Key()
         {
-            _account.ScriptHash.Should().Be(_hash);
-            _account.Decrypted.Should().BeTrue();
-            _account.HasKey.Should().BeFalse();
+            Assert.AreEqual(_hash, _account.ScriptHash);
+            Assert.IsTrue(_account.Decrypted);
+            Assert.IsFalse(_account.HasKey);
         }
 
         [TestMethod]
@@ -80,9 +79,9 @@ namespace Neo.UnitTests.Wallets.NEP6
             byte[] array1 = { 0x01 };
             var hash = new UInt160(Crypto.Hash160(array1));
             NEP6Account account = new(wallet, hash, _keyPair, password);
-            account.ScriptHash.Should().Be(hash);
-            account.Decrypted.Should().BeTrue();
-            account.HasKey.Should().BeTrue();
+            Assert.AreEqual(hash, account.ScriptHash);
+            Assert.IsTrue(account.Decrypted);
+            Assert.IsTrue(account.HasKey);
         }
 
         [TestMethod]
@@ -97,35 +96,35 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["contract"] = null;
             json["extra"] = null;
             NEP6Account account = NEP6Account.FromJson(json, _wallet);
-            account.ScriptHash.Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion));
-            account.Label.Should().BeNull();
-            account.IsDefault.Should().BeTrue();
-            account.Lock.Should().BeFalse();
-            account.Contract.Should().BeNull();
-            account.Extra.Should().BeNull();
-            account.GetKey().Should().BeNull();
+            Assert.AreEqual("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion), account.ScriptHash);
+            Assert.IsNull(account.Label);
+            Assert.IsTrue(account.IsDefault);
+            Assert.IsFalse(account.Lock);
+            Assert.IsNull(account.Contract);
+            Assert.IsNull(account.Extra);
+            Assert.IsNull(account.GetKey());
 
             json["key"] = "6PYRjVE1gAbCRyv81FTiFz62cxuPGw91vMjN4yPa68bnoqJtioreTznezn";
             json["label"] = "label";
             account = NEP6Account.FromJson(json, _wallet);
-            account.Label.Should().Be("label");
-            account.HasKey.Should().BeTrue();
+            Assert.AreEqual("label", account.Label);
+            Assert.IsTrue(account.HasKey);
         }
 
         [TestMethod]
         public void TestGetKey()
         {
-            _account.GetKey().Should().BeNull();
+            Assert.IsNull(_account.GetKey());
             _account = new NEP6Account(_wallet, _hash, _nep2);
-            _account.GetKey().Should().Be(_keyPair);
+            Assert.AreEqual(_keyPair, _account.GetKey());
         }
 
         [TestMethod]
         public void TestGetKeyWithString()
         {
-            _account.GetKey("Satoshi").Should().BeNull();
+            Assert.IsNull(_account.GetKey("Satoshi"));
             _account = new NEP6Account(_wallet, _hash, _nep2);
-            _account.GetKey("Satoshi").Should().Be(_keyPair);
+            Assert.AreEqual(_keyPair, _account.GetKey("Satoshi"));
         }
 
         [TestMethod]
@@ -144,25 +143,25 @@ namespace Neo.UnitTests.Wallets.NEP6
             nep6contract["deployed"] = false;
             _account.Contract = NEP6Contract.FromJson(nep6contract);
             JObject json = _account.ToJson();
-            json["address"].AsString().Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf");
-            json["label"].Should().BeNull();
-            json["isDefault"].ToString().Should().Be("false");
-            json["lock"].ToString().Should().Be("false");
-            json["key"].Should().BeNull();
-            json["contract"]["script"].ToString().Should().Be(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""");
-            json["extra"].Should().BeNull();
+            Assert.AreEqual("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf", json["address"].AsString());
+            Assert.IsNull(json["label"]);
+            Assert.AreEqual("false", json["isDefault"].ToString());
+            Assert.AreEqual("false", json["lock"].ToString());
+            Assert.IsNull(json["key"]);
+            Assert.AreEqual(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""", json["contract"]["script"].ToString());
+            Assert.IsNull(json["extra"]);
 
             _account.Contract = null;
             json = _account.ToJson();
-            json["contract"].Should().BeNull();
+            Assert.IsNull(json["contract"]);
         }
 
         [TestMethod]
         public void TestVerifyPassword()
         {
             _account = new NEP6Account(_wallet, _hash, _nep2);
-            _account.VerifyPassword("Satoshi").Should().BeTrue();
-            _account.VerifyPassword("b").Should().BeFalse();
+            Assert.IsTrue(_account.VerifyPassword("Satoshi"));
+            Assert.IsFalse(_account.VerifyPassword("b"));
         }
     }
 }

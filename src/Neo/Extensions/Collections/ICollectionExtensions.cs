@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ICollectionExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -52,7 +52,7 @@ namespace Neo.Extensions
             {
                 value_size = value.Count * Marshal.SizeOf<T>();
             }
-            return UnsafeData.GetVarSize(value.Count) + value_size;
+            return value.Count.GetVarSize() + value_size;
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ApplicationEngine.Runtime.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -35,6 +35,11 @@ namespace Neo.SmartContract
         /// The maximum size of notification objects.
         /// </summary>
         public const int MaxNotificationSize = 1024;
+
+        /// <summary>
+        /// The maximum number of notifications per application execution.
+        /// </summary>
+        public const int MaxNotificationCount = 512;
 
         private uint random_times = 0;
 
@@ -331,7 +336,7 @@ namespace Neo.SmartContract
             if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
             try
             {
-                string message = Utility.StrictUTF8.GetString(state);
+                string message = state.ToStrictUtf8String();
                 Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
             }
             catch
@@ -354,7 +359,8 @@ namespace Neo.SmartContract
                 return;
             }
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
-            string name = Utility.StrictUTF8.GetString(eventName);
+
+            string name = eventName.ToStrictUtf8String();
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
             if (contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
@@ -383,7 +389,7 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
+            SendNotification(CurrentScriptHash, eventName.ToStrictUtf8String(), state);
         }
 
         /// <summary>
@@ -394,9 +400,16 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
+            notifications ??= new List<NotifyEventArgs>();
+            // Restrict the number of notifications for Application executions. Do not check
+            // persisting triggers to avoid native persist failure. Do not check verification
+            // trigger since verification context is loaded with ReadOnly flag.
+            if (IsHardforkEnabled(Hardfork.HF_Echidna) && Trigger == TriggerType.Application && notifications.Count >= MaxNotificationCount)
+            {
+                throw new InvalidOperationException($"Maximum number of notifications `{MaxNotificationCount}` is reached.");
+            }
             NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
-            notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
             CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
         }
@@ -466,7 +479,7 @@ namespace Neo.SmartContract
                         {
                             try
                             {
-                                _ = Utility.StrictUTF8.GetString(item.GetSpan()); // Prevent any non-UTF8 string
+                                _ = item.GetSpan().ToStrictUtf8String(); // Prevent any non-UTF8 string
                                 return true;
                             }
                             catch { }

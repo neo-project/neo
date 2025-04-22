@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // IndexedQueue.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,9 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Neo.IO.Caching
@@ -123,7 +126,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="item">The item</param>
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
-        public bool TryPeek(out T item)
+        public bool TryPeek([NotNullWhen(true)] out T? item)
         {
             if (_count == 0)
             {
@@ -132,7 +135,7 @@ namespace Neo.IO.Caching
             }
             else
             {
-                item = _array[_head];
+                item = _array[_head]!;
                 return true;
             }
         }
@@ -146,6 +149,7 @@ namespace Neo.IO.Caching
             if (_count == 0)
                 throw new InvalidOperationException("The queue is empty");
             var result = _array[_head];
+            _array[_head] = default!;
             ++_head;
             _head %= _array.Length;
             --_count;
@@ -157,7 +161,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="item">The item</param>
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
-        public bool TryDequeue(out T item)
+        public bool TryDequeue([NotNullWhen(true)] out T? item)
         {
             if (_count == 0)
             {
@@ -166,7 +170,8 @@ namespace Neo.IO.Caching
             }
             else
             {
-                item = _array[_head];
+                item = _array[_head]!;
+                _array[_head] = default!;
                 ++_head;
                 _head %= _array.Length;
                 --_count;
@@ -179,6 +184,7 @@ namespace Neo.IO.Caching
         /// </summary>
         public void Clear()
         {
+            Array.Clear(_array, _head, _count);
             _head = 0;
             _count = 0;
         }
@@ -242,3 +248,5 @@ namespace Neo.IO.Caching
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
+
+#nullable disable

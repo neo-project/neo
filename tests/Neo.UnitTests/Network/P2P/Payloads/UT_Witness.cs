@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_Witness.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,10 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -26,18 +24,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Witness
     {
-        Witness uut;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            uut = new Witness();
-        }
 
         [TestMethod]
         public void InvocationScript_Get()
         {
-            uut.InvocationScript.IsEmpty.Should().BeTrue();
+            var uut = Witness.Empty;
+            Assert.IsTrue(uut.InvocationScript.IsEmpty);
         }
 
         private static Witness PrepareDummyWitness(int pubKeys, int m)
@@ -65,19 +57,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var data = new ContractParametersContext(snapshotCache, new Transaction()
             {
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new[] {new Signer()
-                {
-                    Account = multiSignContract.ScriptHash,
-                    Scopes = WitnessScope.CalledByEntry
-                }},
+                Attributes = [],
+                Signers = [new() { Account = multiSignContract.ScriptHash, Scopes = WitnessScope.CalledByEntry }],
                 NetworkFee = 0,
                 Nonce = 0,
-                Script = Array.Empty<byte>(),
+                Script = ReadOnlyMemory<byte>.Empty,
                 SystemFee = 0,
                 ValidUntilBlock = 0,
                 Version = 0,
-                Witnesses = Array.Empty<Witness>()
+                Witnesses = []
             }, TestProtocolSettings.Default.Network);
 
             for (int x = 0; x < m; x++)
@@ -96,9 +84,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check max size
 
-            witness.Size.Should().Be(1023);
-            witness.InvocationScript.GetVarSize().Should().Be(663);
-            witness.VerificationScript.GetVarSize().Should().Be(360);
+            Assert.AreEqual(1023, witness.Size);
+            Assert.AreEqual(663, witness.InvocationScript.GetVarSize());
+            Assert.AreEqual(360, witness.VerificationScript.GetVarSize());
 
             var copy = witness.ToArray().AsSerializable<Witness>();
 
@@ -117,58 +105,69 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check max size
 
-            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
 
             // Check max size
 
             witness.InvocationScript = new byte[10];
             witness.VerificationScript = new byte[1025];
-            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
+            Assert.ThrowsExactly<FormatException>(() => _ = witness.ToArray().AsSerializable<Witness>());
         }
 
         [TestMethod]
         public void InvocationScript_Set()
         {
-            byte[] dataArray = new byte[] { 0, 32, 32, 20, 32, 32 };
-            uut.InvocationScript = dataArray;
-            uut.InvocationScript.Length.Should().Be(6);
-            Assert.AreEqual(uut.InvocationScript.Span.ToHexString(), "002020142020");
+            var uut = new Witness() { InvocationScript = new byte[] { 0, 32, 32, 20, 32, 32 } };
+            Assert.AreEqual(6, uut.InvocationScript.Length);
+            Assert.AreEqual("002020142020", uut.InvocationScript.Span.ToHexString());
         }
 
-        private static void SetupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
+        private static Witness MakeWitnessWithValues(int lenghtInvocation, int lengthVerification)
         {
-            invocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20);
-            verificationScript = TestUtils.GetByteArray(lengthVerification, 0x20);
-            uut.InvocationScript = invocationScript;
-            uut.VerificationScript = verificationScript;
+            return new()
+            {
+                InvocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20),
+                VerificationScript = TestUtils.GetByteArray(lengthVerification, 0x20)
+            };
         }
 
         [TestMethod]
         public void SizeWitness_Small_Arrary()
         {
-            SetupWitnessWithValues(uut, 252, 253, out _, out _);
-
-            uut.Size.Should().Be(509); // (1 + 252*1) + (1 + 2 + 253*1)
+            var uut = MakeWitnessWithValues(252, 253);
+            Assert.AreEqual(509, uut.Size); // (1 + 252*1) + (1 + 2 + 253*1)
         }
 
         [TestMethod]
         public void SizeWitness_Large_Arrary()
         {
-            SetupWitnessWithValues(uut, 65535, 65536, out _, out _);
-
-            uut.Size.Should().Be(131079); // (1 + 2 + 65535*1) + (1 + 4 + 65536*1)
+            var uut = MakeWitnessWithValues(65535, 65536);
+            Assert.AreEqual(131079, uut.Size); // (1 + 2 + 65535*1) + (1 + 4 + 65536*1)
         }
 
         [TestMethod]
         public void ToJson()
         {
-            SetupWitnessWithValues(uut, 2, 3, out _, out _);
-
+            var uut = MakeWitnessWithValues(2, 3);
             JObject json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));
             Assert.IsTrue(json.ContainsProperty("verification"));
-            Assert.AreEqual(json["invocation"].AsString(), "ICA=");
-            Assert.AreEqual(json["verification"].AsString(), "ICAg");
+            Assert.AreEqual("ICA=", json["invocation"].AsString());
+            Assert.AreEqual("ICAg", json["verification"].AsString());
+        }
+
+        [TestMethod]
+        public void TestEmpty()
+        {
+            var w1 = Witness.Empty;
+            var w2 = Witness.Empty;
+            Assert.AreEqual(2, w1.Size);
+            Assert.AreEqual(0, w1.InvocationScript.Length);
+            Assert.AreEqual(0, w1.VerificationScript.Length);
+            Assert.AreEqual(2, w2.Size);
+            Assert.AreEqual(0, w2.InvocationScript.Length);
+            Assert.AreEqual(0, w2.VerificationScript.Length);
+            Assert.IsFalse(ReferenceEquals(w1, w2));
         }
     }
 }

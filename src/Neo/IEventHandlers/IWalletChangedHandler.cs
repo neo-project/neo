@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // IWalletChangedHandler.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,15 +11,16 @@
 
 using Neo.Wallets;
 
-namespace Neo.IEventHandlers;
-
-public interface IWalletChangedHandler
+namespace Neo.IEventHandlers
 {
-    /// <summary>
-    /// The handler of WalletChanged event from the <see cref="IWalletProvider"/>.
-    /// Triggered when a new wallet is assigned to the node.
-    /// </summary>
-    /// <param name="sender">The source of the event</param>
-    /// <param name="wallet">The new wallet being assigned to the system.</param>
-    void IWalletProvider_WalletChanged_Handler(object sender, Wallet wallet);
+    public interface IWalletChangedHandler
+    {
+        /// <summary>
+        /// The handler of WalletChanged event from the <see cref="IWalletProvider"/>.
+        /// Triggered when a new wallet is assigned to the node.
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="wallet">The new wallet being assigned to the system.</param>
+        void IWalletProvider_WalletChanged_Handler(object sender, Wallet wallet);
+    }
 }

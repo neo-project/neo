@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Slot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -12,6 +12,7 @@
 using Neo.VM.Types;
 using System.Collections;
 using System.Collections.Generic;
+using Array = System.Array;
 
 namespace Neo.VM
 {
@@ -70,7 +71,7 @@ namespace Neo.VM
         {
             this.referenceCounter = referenceCounter;
             items = new StackItem[count];
-            System.Array.Fill(items, StackItem.Null);
+            Array.Fill(items, StackItem.Null);
             referenceCounter.AddStackReference(StackItem.Null, count);
         }
 

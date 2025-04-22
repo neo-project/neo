@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_PolicyAPI.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,9 +11,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.Wallets;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -33,7 +33,7 @@ namespace Neo.Network.RPC.Tests
         {
             keyPair1 = new KeyPair(Wallet.GetPrivateKeyFromWIF("KyXwTh1hB76RRMquSvnxZrJzQx7h9nQP2PCRL38v6VDb5ip3nf1p"));
             sender = Contract.CreateSignatureRedeemScript(keyPair1.PublicKey).ToScriptHash();
-            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, new byte[0]);
+            rpcClientMock = UT_TransactionManager.MockRpcClient(sender, []);
             policyAPI = new PolicyAPI(rpcClientMock.Object);
         }
 
@@ -73,7 +73,7 @@ namespace Neo.Network.RPC.Tests
             byte[] testScript = NativeContract.Policy.Hash.MakeScript("isBlocked", UInt160.Zero);
             UT_TransactionManager.MockInvokeScript(rpcClientMock, testScript, new ContractParameter { Type = ContractParameterType.Boolean, Value = true });
             var result = await policyAPI.IsBlockedAsync(UInt160.Zero);
-            Assert.AreEqual(true, result);
+            Assert.IsTrue(result);
         }
     }
 }

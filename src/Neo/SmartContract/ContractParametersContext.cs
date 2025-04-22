@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // ContractParametersContext.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,10 +10,12 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -218,6 +220,30 @@ namespace Neo.SmartContract
             }
         }
 
+        /// <summary>
+        /// Try to add a deployed contract(get from ContractManagement by scriptHash) to this context.
+        /// </summary>
+        /// <param name="scriptHash">The script hash of the contract.</param>
+        /// <returns>
+        /// <see langword="true"/> if the contract is added successfully; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool AddWithScriptHash(UInt160 scriptHash)
+        {
+            // Try Smart contract verification
+            var contract = NativeContract.ContractManagement.GetContract(SnapshotCache, scriptHash);
+            if (contract != null)
+            {
+                var deployed = new DeployedContract(contract);
+
+                // Only works with verify without parameters
+                if (deployed.ParameterList.Length == 0)
+                {
+                    return Add(deployed);
+                }
+            }
+            return false;
+        }
+
         private ContextItem CreateItem(Contract contract)
         {
             if (ContextItems.TryGetValue(contract.ScriptHash, out ContextItem item))
@@ -324,7 +350,7 @@ namespace Neo.SmartContract
                 witnesses[i] = new Witness
                 {
                     InvocationScript = sb.ToArray(),
-                    VerificationScript = item.Script ?? Array.Empty<byte>()
+                    VerificationScript = item.Script ?? ReadOnlyMemory<byte>.Empty,
                 };
             }
             return witnesses;

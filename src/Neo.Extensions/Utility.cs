@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Akka.Event;
+using Neo.Extensions;
 using System.Text;
 
 namespace Neo
@@ -31,19 +32,14 @@ namespace Neo
             }
         }
 
+        public static LogLevel LogLevel { get; set; } = LogLevel.Info;
+
         public static event LogEventHandler? Logging;
 
         /// <summary>
         /// A strict UTF8 encoding used in NEO system.
         /// </summary>
-        public static Encoding StrictUTF8 { get; }
-
-        static Utility()
-        {
-            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
-            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
-            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
-        }
+        public static Encoding StrictUTF8 => StringExtensions.StrictUTF8;
 
         /// <summary>
         /// Writes a log.
@@ -53,6 +49,8 @@ namespace Neo
         /// <param name="message">The message of the log.</param>
         public static void Log(string source, LogLevel level, object message)
         {
+            if ((int)level < (int)LogLevel) return;
+
             Logging?.Invoke(source, level, message);
         }
     }

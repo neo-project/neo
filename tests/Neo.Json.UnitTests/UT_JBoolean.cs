@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // UT_JBoolean.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -29,29 +29,29 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestAsNumber()
         {
-            jFalse.AsNumber().Should().Be(0);
-            jTrue.AsNumber().Should().Be(1);
+            Assert.AreEqual(0, jFalse.AsNumber());
+            Assert.AreEqual(1, jTrue.AsNumber());
         }
 
         [TestMethod]
         public void TestDefaultConstructor()
         {
             var defaultJBoolean = new JBoolean();
-            defaultJBoolean.AsNumber().Should().Be(0);
+            Assert.AreEqual(0, defaultJBoolean.AsNumber());
         }
 
         [TestMethod]
         public void TestExplicitFalse()
         {
             var explicitFalse = new JBoolean(false);
-            explicitFalse.AsNumber().Should().Be(0);
+            Assert.AreEqual(0, explicitFalse.AsNumber());
         }
 
         [TestMethod]
         public void TestNullJBoolean()
         {
             JBoolean nullJBoolean = null;
-            Assert.ThrowsException<NullReferenceException>(() => nullJBoolean.AsNumber());
+            Assert.ThrowsExactly<NullReferenceException>(() => _ = nullJBoolean.AsNumber());
         }
 
         [TestMethod]
@@ -84,7 +84,7 @@ namespace Neo.Json.UnitTests
             Assert.IsTrue(jTrue != new JBoolean(false));
             Assert.IsTrue(jFalse.Equals(new JBoolean()));
             Assert.IsTrue(jFalse == new JBoolean());
-            Assert.IsTrue(jFalse.GetBoolean().ToString().ToLowerInvariant() == jFalse.ToString());
+            Assert.AreEqual(jFalse.ToString(), jFalse.GetBoolean().ToString().ToLowerInvariant());
         }
     }
 }

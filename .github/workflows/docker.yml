@@ -5,7 +5,7 @@ on:
     types: [published]
 
 env:
-  DOTNET_VERSION: 8.0.x
+  DOTNET_VERSION: 9.0.x
   DIST_DIR: ./dist
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
     - name: Build (neo-cli)
       run: |
         dotnet publish ./src/Neo.CLI \
-          --framework net8.0 \
+          --framework net9.0 \
           --configuration Release \
           --runtime linux-x64 \
           --self-contained true \
@@ -43,24 +43,40 @@ jobs:
           -p:PublishSingleFile=true \
           -p:PublishReadyToRun=true \
           -p:EnableCompressionInSingleFile=true \
-          -p:DebugType=embedded \
-          -p:ServerGarbageCollection=true
+          -p:DebugSymbols=false \
+          -p:DebugType=none \
+          -p:ServerGarbageCollection=true \
+          -p:TieredCompilation=true \
+          -p:TieredCompilationQuickJitForLoops=false \
+          -p:TieredPGO=true \
+          -p:GenerateDocumentationFile=false \
+          -p:PublishDocumentationFiles=false \
+          -p:PublishReferencesDocumentationFiles=false \
+          -p:GITHUB_ACTIONS=true
 
     - name: Build (LevelDbStore)
       run: |
         dotnet build ./src/Plugins/LevelDBStore \
-          --framework net8.0 \
+          --framework net9.0 \
           --configuration Release \
           --output ${{ env.DIST_DIR }}/Plugins/LevelDBStore \
           --verbosity normal \
-          -p:VersionPrefix=${{ env.APP_VERSION }}
+          -p:VersionPrefix=${{ env.APP_VERSION }} \
+          -p:DebugSymbols=false \
+          -p:DebugType=none \
+          -p:ServerGarbageCollection=true \
+          -p:TieredCompilation=true \
+          -p:TieredCompilationQuickJitForLoops=false \
+          -p:TieredPGO=true \
+          -p:GenerateDocumentationFile=false \
+          -p:PublishDocumentationFiles=false \
+          -p:PublishReferencesDocumentationFiles=false \
+          -p:GITHUB_ACTIONS=true
 
     - name: Remove (junk)
       run: |
+        rm -v -R ${{ env.DIST_DIR }}/Plugins/LevelDBStore/runtimes
         rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/Neo*
-        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.pdb
-        rm -v ${{ env.DIST_DIR }}/Plugins/LevelDBStore/*.xml
-        rm -v ${{ env.DIST_DIR }}/*.xml
 
     - name: Docker Login
       run: |
@@ -73,5 +89,6 @@ jobs:
         docker build . \
           --file ./.neo/docker/neo-cli/Dockerfile \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:latest \
+          --tag ghcr.io/${{ github.repository_owner }}/neo-cli:mainnet \
           --tag ghcr.io/${{ github.repository_owner }}/neo-cli:${{ env.APP_VERSION }} \
           --push

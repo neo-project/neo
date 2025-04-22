@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,58 +9,18 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo.VM
 {
     public static class Utility
     {
-        public static Encoding StrictUTF8 { get; }
-
-        static Utility()
-        {
-            StrictUTF8 = (Encoding)Encoding.UTF8.Clone();
-            StrictUTF8.DecoderFallback = DecoderFallback.ExceptionFallback;
-            StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
-        }
-
-        public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
-        {
-            try
-            {
-                value = StrictUTF8.GetString(bytes);
-                return true;
-            }
-            catch
-            {
-                value = default;
-                return false;
-            }
-        }
-
-        public static BigInteger ModInverse(this BigInteger value, BigInteger modulus)
-        {
-            if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
-            if (modulus < 2) throw new ArgumentOutOfRangeException(nameof(modulus));
-            BigInteger r = value, old_r = modulus, s = 1, old_s = 0;
-            while (r > 0)
-            {
-                var q = old_r / r;
-                (old_r, r) = (r, old_r % r);
-                (old_s, s) = (s, old_s - q * s);
-            }
-            var result = old_s % modulus;
-            if (result < 0) result += modulus;
-            if (!(value * result % modulus).IsOne) throw new InvalidOperationException();
-            return result;
-        }
-
         public static BigInteger Sqrt(this BigInteger value)
         {
-            if (value < 0) throw new InvalidOperationException("value can not be negative");
+            if (value < 0) throw new InvalidOperationException($"value {value} can not be negative for {nameof(Integer)}.{nameof(Sqrt)}.");
             if (value.IsZero) return BigInteger.Zero;
             if (value < 4) return BigInteger.One;
 

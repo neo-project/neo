@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // LocalNode.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -11,7 +11,9 @@
 
 using Akka.Actor;
 using Neo.IO;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -263,6 +265,25 @@ namespace Neo.Network.P2P
                 SendToRemoteNodes(message);
         }
 
+        public NodeCapability[] GetNodeCapabilities()
+        {
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
+                // Wait for 3.9
+                // new ArchivalNodeCapability()
+            };
+
+            if (!Config.EnableCompression)
+            {
+                capabilities.Add(new DisableCompressionCapability());
+            }
+
+            if (ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)ListenerTcpPort));
+
+            return [.. capabilities];
+        }
+
         private void OnSendDirectly(IInventory inventory) => SendToRemoteNodes(inventory);
 
         protected override void OnTcpConnected(IActorRef connection)
@@ -282,7 +303,7 @@ namespace Neo.Network.P2P
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(system, this, connection, remote, local);
+            return RemoteNode.Props(system, this, connection, remote, local, Config);
         }
     }
 }

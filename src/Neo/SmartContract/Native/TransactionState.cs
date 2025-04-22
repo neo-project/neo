@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2025 The Neo Project.
 //
 // TransactionState.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -9,13 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using Neo.Extensions;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
@@ -27,52 +26,37 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The block containing this transaction.
         /// </summary>
-        public uint BlockIndex;
+        public uint BlockIndex { get; set; }
 
         /// <summary>
         /// The transaction, if the transaction is trimmed this value will be null
         /// </summary>
-        public Transaction Transaction;
+        public Transaction? Transaction { get; set; }
 
         /// <summary>
         /// The execution state
         /// </summary>
-        public VMState State;
-
-        private ReadOnlyMemory<byte> _rawTransaction;
-
-        IInteroperable IInteroperable.Clone()
-        {
-            return new TransactionState
-            {
-                BlockIndex = BlockIndex,
-                Transaction = Transaction,
-                State = State,
-                _rawTransaction = _rawTransaction
-            };
-        }
+        public VMState State { get; set; }
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            TransactionState from = (TransactionState)replica;
+            var from = (TransactionState)replica;
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
-            if (_rawTransaction.IsEmpty)
-                _rawTransaction = from._rawTransaction;
         }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             BlockIndex = (uint)@struct[0].GetInteger();
 
             // Conflict record.
             if (@struct.Count == 1) return;
 
             // Fully-qualified transaction.
-            _rawTransaction = ((ByteString)@struct[1]).Memory;
-            Transaction = _rawTransaction.AsSerializable<Transaction>();
+            var rawTransaction = ((ByteString)@struct[1]).Memory;
+            Transaction = rawTransaction.AsSerializable<Transaction>();
             State = (VMState)(byte)@struct[2].GetInteger();
         }
 
@@ -80,9 +64,9 @@ namespace Neo.SmartContract.Native
         {
             if (Transaction is null)
                 return new Struct(referenceCounter) { BlockIndex };
-            if (_rawTransaction.IsEmpty)
-                _rawTransaction = Transaction.ToArray();
-            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
+            return new Struct(referenceCounter) { BlockIndex, Transaction.ToArray(), (byte)State };
         }
     }
 }
+
+#nullable disable
