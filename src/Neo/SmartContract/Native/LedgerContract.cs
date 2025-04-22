@@ -92,6 +92,35 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(CreateStorageKey(Prefix_Block)).Any();
         }
 
+        /// <summary>
+        /// Checks whether block with the specified index is reachable from the smart contract
+        /// based on the current state of application engine with respect to MaxTraceableBlocks
+        /// setting stored in native Policy smartcontract starting from HF_Echidna.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="index">The index of the block.</param>
+        /// <returns>Whether the block is traceable.</returns>
+        private bool IsTraceableBlock(ApplicationEngine engine, uint index)
+        {
+            var mtb = engine.ProtocolSettings.MaxTraceableBlocks;
+            if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
+                mtb = Policy.GetMaxTraceableBlocks(engine.SnapshotCache);
+            return IsTraceableBlock(engine.SnapshotCache, index, mtb);
+        }
+
+        /// <summary>
+        /// Checks whether block with the specified index is reachable from the smart contract
+        /// based on the current state of snapshot and provided maxTraceableBlocks value. It's
+        /// the caller's duty to provide proper maxTraceableBlocks value with respect to
+        /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
+        /// HF_Echidna.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="index">The index of the block.</param>
+        /// <param name="maxTraceableBlocks">The maximum number of traceable blocks with respect to
+        /// MaxTraceableBlocks setting stored in native Policy smartcontract starting from
+        /// HF_Echidna.</param>
+        /// <returns>Whether the block is traceable.</returns>
         private bool IsTraceableBlock(IReadOnlyStore snapshot, uint index, uint maxTraceableBlocks)
         {
             uint currentIndex = CurrentIndex(snapshot);
@@ -239,7 +268,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException(null, nameof(indexOrHash));
             if (hash is null) return null;
             TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
-            if (block is null || !IsTraceableBlock(engine.SnapshotCache, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
             return block;
         }
 
@@ -328,7 +357,7 @@ namespace Neo.SmartContract.Native
         private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
             return state.Transaction;
         }
 
@@ -336,7 +365,7 @@ namespace Neo.SmartContract.Native
         private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return null;
             return state.Transaction.Signers;
         }
 
@@ -344,7 +373,7 @@ namespace Neo.SmartContract.Native
         private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return VMState.NONE;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return VMState.NONE;
             return state.State;
         }
 
@@ -352,7 +381,7 @@ namespace Neo.SmartContract.Native
         private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.SnapshotCache, hash);
-            if (state is null || !IsTraceableBlock(engine.SnapshotCache, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return -1;
+            if (state is null || !IsTraceableBlock(engine, state.BlockIndex)) return -1;
             return (int)state.BlockIndex;
         }
 
@@ -368,7 +397,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException(null, nameof(blockIndexOrHash));
             if (hash is null) return null;
             TrimmedBlock block = GetTrimmedBlock(engine.SnapshotCache, hash);
-            if (block is null || !IsTraceableBlock(engine.SnapshotCache, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (block is null || !IsTraceableBlock(engine, block.Index)) return null;
             if (txIndex < 0 || txIndex >= block.Hashes.Length)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));
             return GetTransaction(engine.SnapshotCache, block.Hashes[txIndex]);
