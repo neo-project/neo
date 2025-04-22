@@ -514,7 +514,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.SnapshotCache, engine.ProtocolSettings.ValidatorsCount);
             var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             NativeContract.GAS.BalanceOf(snapshot, primary).Should().Be(netFee - expectedNotaryReward);
-            NativeContract.GAS.BalanceOf(engine.SnapshotCache, key1.PublicKey.EncodePoint(true).ToScriptHash()).Should().Be(expectedNotaryReward);
+            NativeContract.GAS.BalanceOf(engine.SnapshotCache, Contract.CreateSignatureRedeemScript(key1.PublicKey).ToScriptHash()).Should().Be(expectedNotaryReward);
         }
 
         [TestMethod]
@@ -598,9 +598,9 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, engine.Notifications[2].State[2]);
             NativeContract.GAS.BalanceOf(engine.SnapshotCache, primary).Should().Be(netFee1 + netFee2 - expectedNotaryReward);
             Assert.AreEqual(expectedNotaryReward / 2, engine.Notifications[3].State[2]);
-            NativeContract.GAS.BalanceOf(engine.SnapshotCache, key1.PublicKey.EncodePoint(true).ToScriptHash()).Should().Be(expectedNotaryReward / 2);
+            NativeContract.GAS.BalanceOf(engine.SnapshotCache, Contract.CreateSignatureRedeemScript(key1.PublicKey).ToScriptHash()).Should().Be(expectedNotaryReward / 2);
             Assert.AreEqual(expectedNotaryReward / 2, engine.Notifications[4].State[2]);
-            NativeContract.GAS.BalanceOf(engine.SnapshotCache, key2.PublicKey.EncodePoint(true).ToScriptHash()).Should().Be(expectedNotaryReward / 2);
+            NativeContract.GAS.BalanceOf(engine.SnapshotCache, Contract.CreateSignatureRedeemScript(key2.PublicKey).ToScriptHash()).Should().Be(expectedNotaryReward / 2);
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)
