@@ -246,6 +246,40 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestAggregateExceptionUnwrapping()
+        {
+            // Create an RpcException to be wrapped
+            var innerException = new RpcException(RpcError.InvalidRequest);
+
+            // Create an AggregateException that wraps the RpcException
+            var aggregateException = new AggregateException("Aggregate exception for testing", innerException);
+
+            // Get the UnwrapException method via reflection
+            var unwrapMethod = typeof(RpcServer).GetMethod("UnwrapException",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(unwrapMethod, "UnwrapException method should exist");
+
+            // Invoke the UnwrapException method
+            var unwrappedException = unwrapMethod.Invoke(null, [aggregateException]);
+
+            // Verify that the unwrapped exception is the original RpcException
+            Assert.IsInstanceOfType<RpcException>(unwrappedException);
+            Assert.AreEqual(RpcError.InvalidRequest.Code, ((Exception)unwrappedException).HResult);
+
+            // Verify it's the same instance as the inner exception
+            Assert.AreSame(innerException, unwrappedException);
+
+            // Also test with multiple inner exceptions
+            var multiException = new AggregateException("Multiple exceptions",
+                new RpcException(RpcError.InvalidRequest),
+                new ArgumentException("Test argument exception"));
+
+            // With multiple inner exceptions, the AggregateException should not be unwrapped
+            var multiUnwrapped = unwrapMethod.Invoke(null, [multiException]);
+            Assert.AreSame(multiException, multiUnwrapped);
+        }
+
+        [TestMethod]
         public async Task TestDynamicInvokeExceptionUnwrapping()
         {
             // Create a valid transaction

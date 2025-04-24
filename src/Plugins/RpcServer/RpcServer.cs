@@ -112,7 +112,7 @@ namespace Neo.Plugins.RpcServer
 
         /// <summary>
         /// Unwraps an exception to get the original exception.
-        /// This is particularly useful for TargetInvocationException which wraps the actual exception.
+        /// This is particularly useful for TargetInvocationException and AggregateException which wrap the actual exception.
         /// </summary>
         /// <param name="ex">The exception to unwrap</param>
         /// <returns>The unwrapped exception</returns>
@@ -120,6 +120,11 @@ namespace Neo.Plugins.RpcServer
         {
             if (ex is TargetInvocationException targetEx && targetEx.InnerException != null)
                 return targetEx.InnerException;
+
+            // Also handle AggregateException with a single inner exception
+            if (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1)
+                return aggEx.InnerExceptions[0];
+
             return ex;
         }
 
