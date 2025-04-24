@@ -217,15 +217,22 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperableClone<ContractState>(false));
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
+            // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            {
+                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.CallFlags.HasFlag(CallFlags.All))
+                    throw new InvalidOperationException($"Cannot call Deploy with the flag {state.CallFlags}.");
+            }
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
@@ -268,15 +275,22 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.All)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
+            // Require CallFlags.All flag for post-Aspidochelone transactions, ref. #2653, #2673.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            {
+                var state = engine.CurrentContext.GetState<ExecutionContextState>();
+                if (!state.CallFlags.HasFlag(CallFlags.All))
+                    throw new InvalidOperationException($"Cannot call Update with the flag {state.CallFlags}.");
+            }
             if (nefFile is null && manifest is null)
                 throw new ArgumentException("The nefFile and manifest cannot be null at the same time.");
 
