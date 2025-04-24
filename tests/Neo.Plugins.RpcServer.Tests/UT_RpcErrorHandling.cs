@@ -201,6 +201,51 @@ namespace Neo.Plugins.RpcServer.Tests
         }
 
         [TestMethod]
+        public void TestDynamicInvokeDelegateExceptionUnwrapping()
+        {
+            // Create a delegate that throws an RpcException
+            Func<string> testDelegate = () =>
+            {
+                // Throw an RpcException with a specific error code
+                throw new RpcException(RpcError.InvalidRequest);
+            };
+
+            // Get the UnwrapException method via reflection
+            var unwrapMethod = typeof(RpcServer).GetMethod("UnwrapException",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(unwrapMethod, "UnwrapException method should exist");
+
+            try
+            {
+                // Use DynamicInvoke to call the delegate, which will wrap the exception
+                testDelegate.DynamicInvoke();
+                Assert.Fail("Expected TargetInvocationException");
+            }
+            catch (TargetInvocationException ex)
+            {
+                // Verify that the inner exception is an RpcException with the correct error code
+                Assert.IsInstanceOfType<RpcException>(ex.InnerException);
+                var rpcEx = (RpcException)ex.InnerException;
+                Assert.AreEqual(RpcError.InvalidRequest.Code, rpcEx.HResult);
+
+                // Verify that the error object has the correct code
+                var error = rpcEx.GetError();
+                Assert.AreEqual(RpcError.InvalidRequest.Code, error.Code);
+                Assert.AreEqual(RpcError.InvalidRequest.Message, error.Message);
+
+                // Invoke the UnwrapException method
+                var unwrappedException = unwrapMethod.Invoke(null, [ex]);
+
+                // Verify that the unwrapped exception is the original RpcException
+                Assert.IsInstanceOfType<RpcException>(unwrappedException);
+                Assert.AreEqual(RpcError.InvalidRequest.Code, ((Exception)unwrappedException).HResult);
+
+                // Verify it's the same instance as the inner exception
+                Assert.AreSame(ex.InnerException, unwrappedException);
+            }
+        }
+
+        [TestMethod]
         public async Task TestDynamicInvokeExceptionUnwrapping()
         {
             // Create a valid transaction
