@@ -117,7 +117,7 @@ namespace Neo.Benchmarks
         {
             for (int i = 0; i < OperationCount; i++)
             {
-                var ok = _hashSetCache.Add(i);
+                var ok = _hashSetCache.TryAdd(i);
                 Debug.Assert(ok);
             }
             if (_hashSetCache.Count != CacheSize)

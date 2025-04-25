@@ -23,11 +23,11 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestHashSetCache()
         {
-            var bucket = new HashSetCache<int>(10);
+            var bucket = new HashSetCache<int>(100);
             for (var i = 1; i <= 100; i++)
             {
-                Assert.IsTrue(bucket.Add(i));
-                Assert.IsFalse(bucket.Add(i));
+                Assert.IsTrue(bucket.TryAdd(i));
+                Assert.IsFalse(bucket.TryAdd(i));
             }
             Assert.AreEqual(100, bucket.Count);
 
@@ -38,8 +38,8 @@ namespace Neo.UnitTests.IO.Caching
             }
             Assert.AreEqual(5050, sum);
 
-            bucket.Add(101);
-            Assert.AreEqual(91, bucket.Count);
+            bucket.TryAdd(101);
+            Assert.AreEqual(100, bucket.Count);
 
             var items = new int[10];
             var value = 11;
@@ -49,12 +49,10 @@ namespace Neo.UnitTests.IO.Caching
                 value += 2;
             }
             bucket.ExceptWith(items);
-            Assert.AreEqual(81, bucket.Count);
+            Assert.AreEqual(90, bucket.Count);
+
             Assert.IsFalse(bucket.Contains(13));
             Assert.IsTrue(bucket.Contains(50));
-            Assert.AreEqual(81, bucket.Count);
-            bucket.Clear();
-            Assert.AreEqual(0, bucket.Count);
         }
 
         [TestMethod]
@@ -63,53 +61,37 @@ namespace Neo.UnitTests.IO.Caching
             Action action1 = () => new HashSetCache<UInt256>(-1);
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action1());
 
-            Action action2 = () => new HashSetCache<UInt256>(1, -1);
+            Action action2 = () => new HashSetCache<UInt256>(-1);
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => action2());
         }
 
         [TestMethod]
         public void TestAdd()
         {
-            var a = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01
-            });
-            var b = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-            var set = new HashSetCache<UInt256>(1, 1)
-            {
-                a,
-                b
-            };
+            var key1 = Enumerable.Repeat((byte)1, 32).ToArray();
+            var a = new UInt256(key1);
+
+            var key2 = Enumerable.Repeat((byte)1, 31).Append((byte)2).ToArray();
+            var b = new UInt256(key2);
+
+            var set = new HashSetCache<UInt256>(1);
+            set.TryAdd(a);
+            set.TryAdd(b);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b });
         }
 
         [TestMethod]
         public void TestGetEnumerator()
         {
-            var a = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01
-            });
-            var b = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-            var set = new HashSetCache<UInt256>(1, 1)
-            {
-                a,
-                b
-            };
+            var key1 = Enumerable.Repeat((byte)1, 32).ToArray();
+            var a = new UInt256(key1);
+
+            var key2 = Enumerable.Repeat((byte)1, 31).Append((byte)2).ToArray();
+            var b = new UInt256(key2);
+
+            var set = new HashSetCache<UInt256>(1);
+            set.TryAdd(a);
+            set.TryAdd(b);
             IEnumerable ie = set;
             Assert.IsNotNull(ie.GetEnumerator());
         }
@@ -117,52 +99,37 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestExceptWith()
         {
-            var a = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01
-            });
-            var b = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-            var c = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x03
-            });
+            var key1 = Enumerable.Repeat((byte)1, 32).ToArray();
+            var a = new UInt256(key1);
 
-            var set = new HashSetCache<UInt256>(10)
-            {
-                a,
-                b,
-                c
-            };
-            set.ExceptWith(new UInt256[] { b, c });
+            var key2 = Enumerable.Repeat((byte)1, 31).Append((byte)2).ToArray();
+            var b = new UInt256(key2);
+
+            var key3 = Enumerable.Repeat((byte)1, 31).Append((byte)3).ToArray();
+            var c = new UInt256(key3);
+
+            var set = new HashSetCache<UInt256>(10);
+            set.TryAdd(a);
+            set.TryAdd(b);
+            set.TryAdd(c);
+            set.ExceptWith([b, c]);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a });
-            set.ExceptWith(new UInt256[] { a });
+
+            set.ExceptWith([a]);
             CollectionAssert.AreEqual(set.ToArray(), Array.Empty<UInt256>());
 
-            set = new HashSetCache<UInt256>(10)
-            {
-                a,
-                b,
-                c
-            };
-            set.ExceptWith(new UInt256[] { a });
+            set = new HashSetCache<UInt256>(10);
+            set.TryAdd(a);
+            set.TryAdd(b);
+            set.TryAdd(c);
+            set.ExceptWith([a]);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, c });
 
-            set = new HashSetCache<UInt256>(10)
-            {
-                a,
-                b,
-                c
-            };
-            set.ExceptWith(new UInt256[] { c });
+            set = new HashSetCache<UInt256>(10);
+            set.TryAdd(a);
+            set.TryAdd(b);
+            set.TryAdd(c);
+            set.ExceptWith([c]);
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, b });
         }
     }
