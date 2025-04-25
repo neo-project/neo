@@ -35,7 +35,7 @@ namespace Neo.IO.Caching
         /// <summary>
         /// Gets the first item in the collection, or the default value if the collection is empty.
         /// </summary>
-        public TItem? FirstOrDefault => _items.First?.Value ?? default;
+        public TItem? FirstOrDefault => _items.First is not null ? _items.First.Value : default;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyedCollectionSlim{TKey, TItem}"/> class.
