@@ -30,7 +30,6 @@ namespace Neo.IO.Caching
         }
 
         private readonly int _capacity;
-
         private readonly Items _items;
 
         /// <summary>
