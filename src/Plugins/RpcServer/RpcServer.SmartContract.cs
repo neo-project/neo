@@ -290,7 +290,7 @@ namespace Neo.Plugins.RpcServer
             return json;
         }
 
-        static string GetExceptionMessage(Exception exception)
+        static string GetExceptionMessage(Exception? exception)
         {
             if (exception == null) return null;
 
