@@ -132,6 +132,11 @@ namespace Neo.UnitTests.Extensions
         public static StackItem Call(this NativeContract contract, DataCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+            return Call(contract, engine, method, args);
+        }
+
+        public static StackItem Call(this NativeContract contract, ApplicationEngine engine, string method, params ContractParameter[] args)
+        {
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(contract.Hash, method, args);
             engine.LoadScript(script.ToArray());

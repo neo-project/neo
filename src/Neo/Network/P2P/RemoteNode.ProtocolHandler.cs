@@ -236,7 +236,7 @@ namespace Neo.Network.P2P
         private void OnGetDataMessageReceived(InvPayload payload)
         {
             var notFound = new List<UInt256>();
-            foreach (var hash in payload.Hashes.Where(_sentHashes.Add))
+            foreach (var hash in payload.Hashes.Where(_sentHashes.TryAdd))
             {
                 switch (payload.Type)
                 {
@@ -309,7 +309,7 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            if (!_knownHashes.Add(inventory.Hash)) return;
+            if (!_knownHashes.TryAdd(inventory.Hash)) return;
             _pendingKnownHashes.Remove(inventory.Hash);
             system.TaskManager.Tell(inventory);
             switch (inventory)

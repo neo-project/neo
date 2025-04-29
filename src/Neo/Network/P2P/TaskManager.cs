@@ -62,7 +62,8 @@ namespace Neo.Network.P2P
         private readonly Dictionary<UInt256, int> globalInvTasks = new();
         private readonly Dictionary<uint, int> globalIndexTasks = new();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new();
-        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
+        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+            TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private uint lastSeenPersistedIndex = 0;
 
         private bool HasHeaderTask => globalInvTasks.ContainsKey(HeaderTaskHash);
@@ -75,15 +76,14 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             // Exactly the same as mempool
-            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, system.MemPool.Capacity / 10), 10);
+            _knownHashes = new HashSetCache<UInt256>(Math.Max(100, system.MemPool.Capacity));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
         private void OnHeaders(Header[] _)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
+            if (!sessions.TryGetValue(Sender, out var session)) return;
             if (session.InvTasks.Remove(HeaderTaskHash))
                 DecrementGlobalTask(HeaderTaskHash);
             RequestTasks(Sender, session);
@@ -92,15 +92,18 @@ namespace Neo.Network.P2P
         private void OnInvalidBlock(Block invalidBlock)
         {
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out Block block))
+            {
+                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out var block))
+                {
                     if (block.Hash == invalidBlock.Hash)
                         actor.Tell(Tcp.Abort.Instance);
+                }
+            }
         }
 
         private void OnNewTasks(InvPayload payload)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
+            if (!sessions.TryGetValue(Sender, out var session)) return;
 
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
             uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(system.StoreView), lastSeenPersistedIndex);
@@ -199,30 +202,40 @@ namespace Neo.Network.P2P
 
         private void OnUpdate(Update update)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
+            if (!sessions.TryGetValue(Sender, out var session)) return;
             session.LastBlockIndex = update.LastBlockIndex;
         }
 
         private void OnRestartTasks(InvPayload payload)
         {
             _knownHashes.ExceptWith(payload.Hashes);
-            foreach (UInt256 hash in payload.Hashes)
+            foreach (var hash in payload.Hashes)
+            {
                 globalInvTasks.Remove(hash);
-            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
+            }
+
+            foreach (var group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
+            {
                 system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
+            }
         }
 
         private void OnTaskCompleted(IInventory inventory)
         {
-            Block block = inventory as Block;
-            _knownHashes.Add(inventory.Hash);
+            var block = inventory as Block;
+            _knownHashes.TryAdd(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
             if (block is not null)
+            {
                 globalIndexTasks.Remove(block.Index);
-            foreach (TaskSession ms in sessions.Values)
+            }
+
+            foreach (var ms in sessions.Values)
+            {
                 ms.AvailableTasks.Remove(inventory.Hash);
-            if (sessions.TryGetValue(Sender, out TaskSession session))
+            }
+
+            if (sessions.TryGetValue(Sender, out var session))
             {
                 session.InvTasks.Remove(inventory.Hash);
                 if (block is not null)
@@ -280,8 +293,8 @@ namespace Neo.Network.P2P
                 globalInvTasks[hash] = 1;
                 return true;
             }
-            if (value >= MaxConcurrentTasks)
-                return false;
+
+            if (value >= MaxConcurrentTasks) return false;
 
             globalInvTasks[hash] = value + 1;
             return true;
@@ -295,8 +308,8 @@ namespace Neo.Network.P2P
                 globalIndexTasks[index] = 1;
                 return true;
             }
-            if (value >= MaxConcurrentTasks)
-                return false;
+
+            if (value >= MaxConcurrentTasks) return false;
 
             globalIndexTasks[index] = value + 1;
             return true;
@@ -304,25 +317,31 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actor)
         {
-            if (!sessions.TryGetValue(actor, out TaskSession session))
-                return;
-            foreach (UInt256 hash in session.InvTasks.Keys)
+            if (!sessions.TryGetValue(actor, out var session)) return;
+            foreach (var hash in session.InvTasks.Keys)
+            {
                 DecrementGlobalTask(hash);
-            foreach (uint index in session.IndexTasks.Keys)
+            }
+            foreach (var index in session.IndexTasks.Keys)
+            {
                 DecrementGlobalTask(index);
+            }
             sessions.Remove(actor);
         }
 
         private void OnTimer()
         {
-            foreach (TaskSession session in sessions.Values)
+            foreach (var session in sessions.Values)
             {
                 var now = TimeProvider.Current.UtcNow;
                 session.InvTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
                 session.IndexTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
             }
+
             foreach (var (actor, session) in sessions)
+            {
                 RequestTasks(actor, session);
+            }
         }
 
         protected override void PostStop()

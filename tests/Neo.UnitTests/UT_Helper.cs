@@ -61,25 +61,16 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestRemoveHashsetHashSetCache()
         {
-            var a = new HashSet<int>
-            {
-                1,
-                2,
-                3
-            };
-
-            var b = new HashSetCache<int>(10)
-            {
-                2
-            };
+            var a = new HashSet<int> { 1, 2, 3 };
+            var b = new HashSetCache<int>(10);
+            b.TryAdd(2);
 
             a.Remove(b);
-
             CollectionAssert.AreEqual(new int[] { 1, 3 }, a.ToArray());
 
-            b.Add(4);
-            b.Add(5);
-            b.Add(1);
+            b.TryAdd(4);
+            b.TryAdd(5);
+            b.TryAdd(1);
             a.Remove(b);
 
             CollectionAssert.AreEqual(new int[] { 3 }, a.ToArray());
