@@ -12,6 +12,7 @@
     <InternalsVisibleTo Include="Neo.UnitTests" />
     <InternalsVisibleTo Include="Neo.Extensions" />
     <InternalsVisibleTo Include="Neo.Extensions.Tests" />
+    <InternalsVisibleTo Include="Neo.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>

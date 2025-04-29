@@ -292,7 +292,13 @@ namespace Neo.Plugins.RpcServer
 
         static string GetExceptionMessage(Exception exception)
         {
-            return exception?.GetBaseException().Message;
+            if (exception == null) return null;
+
+            // First unwrap any TargetInvocationException
+            var unwrappedException = UnwrapException(exception);
+
+            // Then get the base exception message
+            return unwrappedException.GetBaseException().Message;
         }
     }
 }

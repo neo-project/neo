@@ -33,13 +33,14 @@ namespace Neo.UnitTests.Network.P2P
         public void TestDefaults()
         {
             var senderProbe = CreateTestProbe();
+            senderProbe.Send(_system.LocalNode, new ChannelsConfig()); // No Tcp
             senderProbe.Send(_system.LocalNode, new LocalNode.GetInstance());
             var localnode = senderProbe.ExpectMsg<LocalNode>();
 
             Assert.AreEqual(0, localnode.ListenerTcpPort);
-            Assert.AreEqual(3, localnode.MaxConnectionsPerAddress);
-            Assert.AreEqual(10, localnode.MinDesiredConnections);
-            Assert.AreEqual(40, localnode.MaxConnections);
+            Assert.AreEqual(3, localnode.Config.MaxConnectionsPerAddress);
+            Assert.AreEqual(10, localnode.Config.MinDesiredConnections);
+            Assert.AreEqual(40, localnode.Config.MaxConnections);
             Assert.AreEqual(0, localnode.UnconnectedCount);
 
             CollectionAssert.AreEqual(Array.Empty<RemoteNode>(), localnode.GetRemoteNodes().ToArray());

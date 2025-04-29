@@ -9,109 +9,101 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Neo.IO.Caching
 {
+    /// <summary>
+    /// A cache that uses a hash set to store items.
+    /// </summary>
+    /// <typeparam name="T">The type of the items in the cache.</typeparam>
     internal class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
-        /// <summary>
-        /// Sets where the Hashes are stored
-        /// </summary>
-        private readonly LinkedList<HashSet<T>> _sets = new();
-
-        /// <summary>
-        /// Maximum capacity of each bucket inside each HashSet of <see cref="_sets"/>.
-        /// </summary>
-        private readonly int _bucketCapacity;
-
-        /// <summary>
-        /// Maximum number of buckets for the LinkedList, meaning its maximum cardinality.
-        /// </summary>
-        private readonly int _maxBucketCount;
-
-        /// <summary>
-        /// Entry count
-        /// </summary>
-        public int Count { get; private set; }
-
-        public HashSetCache(int bucketCapacity, int maxBucketCount = 10)
+        private class Items(int initialCapacity) : KeyedCollectionSlim<T, T>(initialCapacity)
         {
-            if (bucketCapacity <= 0) throw new ArgumentOutOfRangeException($"{nameof(bucketCapacity)} should be greater than 0");
-            if (maxBucketCount <= 0) throw new ArgumentOutOfRangeException($"{nameof(maxBucketCount)} should be greater than 0");
-
-            Count = 0;
-            _bucketCapacity = bucketCapacity;
-            _maxBucketCount = maxBucketCount;
-            _sets.AddFirst([]);
+            protected sealed override T GetKeyForItem(T item) => item;
         }
 
-        public bool Add(T item)
+        private readonly int _capacity;
+        private readonly Items _items;
+
+        /// <summary>
+        /// Gets the number of items in the cache.
+        /// </summary>
+        public int Count => _items.Count;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HashSetCache{T}"/> class.
+        /// </summary>
+        /// <param name="capacity">The maximum number of items in the cache.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than 0.</exception>
+        public HashSetCache(int capacity)
         {
-            if (Contains(item)) return false;
-            Count++;
-            if (_sets.First?.Value.Count < _bucketCapacity) return _sets.First.Value.Add(item);
-            var newSet = new HashSet<T>
-            {
-                item
-            };
-            _sets.AddFirst(newSet);
-            if (_sets.Count > _maxBucketCount)
-            {
-                Count -= _sets.Last?.Value.Count ?? 0;
-                _sets.RemoveLast();
-            }
+            if (capacity <= 0) throw new ArgumentOutOfRangeException(nameof(capacity), $"{capacity} less than 0.");
+
+            _capacity = capacity;
+            // Avoid allocating a large memory at initialization
+            _items = new(Math.Min(capacity, 4096));
+        }
+
+        /// <summary>
+        /// Adds an item to the cache.
+        /// </summary>
+        /// <param name="item">The item to add.</param>
+        /// <returns>
+        /// <see langword="true"/> if the item was added; otherwise, <see langword="false"/>.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryAdd(T item)
+        {
+            if (!_items.TryAdd(item)) return false;
+            if (_items.Count > _capacity) _items.RemoveFirst();
             return true;
         }
 
-        public bool Contains(T item)
-        {
-            foreach (var set in _sets)
-            {
-                if (set.Contains(item)) return true;
-            }
-            return false;
-        }
+        /// <summary>
+        /// Determines whether the cache contains an item.
+        /// </summary>
+        /// <param name="item">The item to locate in the cache.</param>
+        /// <returns>
+        /// <see langword="true"/> if the item is found in the cache; otherwise, <see langword="false"/>.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(T item) => _items.Contains(item);
 
+        /// <summary>
+        /// Removes all items from the cache.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clear() => _items.Clear();
+
+        /// <summary>
+        /// Removes an item from the cache.
+        /// </summary>
+        /// <param name="items">The items to remove.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ExceptWith(IEnumerable<T> items)
         {
-            List<HashSet<T>> removeList = default!;
-            foreach (var item in items)
-            {
-                foreach (var set in _sets)
-                {
-                    if (set.Remove(item))
-                    {
-                        Count--;
-                        if (set.Count == 0)
-                        {
-                            removeList ??= [];
-                            removeList.Add(set);
-                        }
-                        break;
-                    }
-                }
-            }
-            if (removeList == null) return;
-            foreach (var set in removeList)
-            {
-                _sets.Remove(set);
-            }
+            foreach (var item in items) _items.Remove(item);
         }
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            foreach (var set in _sets)
-            {
-                foreach (var item in set)
-                {
-                    yield return item;
-                }
-            }
-        }
+        /// <summary>
+        /// Returns an enumerator that iterates through the cache.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate through the cache.</returns>
+        public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        /// <summary>
+        /// Returns an enumerator that iterates through the cache.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate through the cache.</returns>
+        IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
     }
 }
+
+#nullable disable

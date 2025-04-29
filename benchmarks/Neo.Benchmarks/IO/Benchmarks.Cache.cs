@@ -12,6 +12,7 @@
 using BenchmarkDotNet.Attributes;
 using Neo.IO.Caching;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Benchmarks
 {
@@ -22,11 +23,23 @@ namespace Neo.Benchmarks
         protected override long GetKeyForItem(long item) => item;
     }
 
+    class BenchmarkKeyedCollectionSlim : KeyedCollectionSlim<long, long>
+    {
+        public BenchmarkKeyedCollectionSlim(int capacity) : base(capacity) { }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected override long GetKeyForItem(long item) => item;
+    }
+
     public class Benchmarks_Cache
     {
-        private readonly BenchmarkFIFOCache _cache = new(100);
-        private readonly int _iterationCount = 1000;
-        private readonly int _cacheSize = 100;
+        const int CacheSize = 1000;
+
+        private readonly BenchmarkFIFOCache _cache = new(CacheSize);
+
+        private readonly HashSetCache<long> _hashSetCache = new(CacheSize);
+
+        private long[] _items = [];
 
         [Params(1000, 10000)]
         public int OperationCount { get; set; }
@@ -35,7 +48,7 @@ namespace Neo.Benchmarks
         public void Setup()
         {
             // Initialize cache with some data
-            for (int i = 0; i < _cacheSize; i++)
+            for (int i = 0; i < CacheSize; i++)
             {
                 _cache.Add(i);
             }
@@ -44,7 +57,7 @@ namespace Neo.Benchmarks
         [Benchmark]
         public void FIFOCacheAdd()
         {
-            for (int i = 0; i < _iterationCount; i++)
+            for (int i = 0; i < OperationCount; i++)
             {
                 _cache.Add(i);
             }
@@ -53,11 +66,66 @@ namespace Neo.Benchmarks
         [Benchmark]
         public void FIFOCacheContains()
         {
-            for (long i = 0; i < _iterationCount; i++)
+            for (long i = 0; i < OperationCount; i++)
             {
-                var ok = _cache.TryGet(i % _cacheSize, out _);
+                var ok = _cache.TryGet(i, out _);
                 Debug.Assert(ok);
             }
+        }
+
+        [Benchmark]
+        public void KeyedCollectionSlimAdd()
+        {
+            var keyed = new BenchmarkKeyedCollectionSlim(CacheSize);
+            for (int i = 0; i < OperationCount; i++)
+            {
+                keyed.TryAdd(i);
+            }
+        }
+
+        [Benchmark]
+        public void KeyedCollectionSlimMixed()
+        {
+            var keyed = new BenchmarkKeyedCollectionSlim(CacheSize);
+            for (long i = 0; i < OperationCount; i++)
+            {
+                keyed.TryAdd(i);
+
+                var ok = keyed.Contains(i);
+                Debug.Assert(ok);
+            }
+
+            for (long i = 0; i < OperationCount; i++)
+            {
+                var ok = keyed.Remove(i);
+                Debug.Assert(ok);
+            }
+        }
+
+        [GlobalSetup(Target = nameof(HashSetCache))]
+        public void SetupHashSetCache()
+        {
+            _items = new long[OperationCount];
+            for (int i = 0; i < OperationCount; i++)
+            {
+                _items[i] = i;
+            }
+        }
+
+        [Benchmark]
+        public void HashSetCache()
+        {
+            for (int i = 0; i < OperationCount; i++)
+            {
+                var ok = _hashSetCache.TryAdd(i);
+                Debug.Assert(ok);
+            }
+            if (_hashSetCache.Count != CacheSize)
+                throw new Exception($"HashSetCacheAdd: {_hashSetCache.Count}");
+
+            _hashSetCache.ExceptWith(_items);
+            if (_hashSetCache.Count > 0)
+                throw new Exception($"HashSetCacheExceptWith: {_hashSetCache.Count}");
         }
     }
 }

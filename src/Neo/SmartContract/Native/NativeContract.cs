@@ -104,6 +104,11 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public static OracleContract Oracle { get; } = new();
 
+        /// <summary>
+        /// Gets the instance of the <see cref="Notary"/> class.
+        /// </summary>
+        public static Notary Notary { get; } = new();
+
         #endregion
 
         /// <summary>
@@ -290,8 +295,8 @@ namespace Neo.SmartContract.Native
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
-                    // If is not set in the configuration is treated as enabled from the genesis
-                    activeIn = 0;
+                    // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
+                    continue;
                 }
 
                 if (activeIn == index)
