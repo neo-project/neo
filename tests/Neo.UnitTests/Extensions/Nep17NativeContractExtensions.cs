@@ -53,11 +53,37 @@ namespace Neo.UnitTests.Extensions
 
         public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock)
         {
+            return Transfer(contract, snapshot, from, to, amount, signFrom, persistingBlock, null);
+        }
+
+        public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock, object data)
+        {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock, settings: TestProtocolSettings.Default);
 
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, null);
+            script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, data);
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                throw engine.FaultException;
+            }
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsInstanceOfType(result, typeof(Boolean));
+
+            return result.GetBoolean();
+        }
+
+        public static bool TransferWithTransaction(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock, object data)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Transaction() { Signers = [new() { Account = signFrom ? new(from) : null, Scopes = WitnessScope.Global }], Attributes = [] },
+                snapshot, persistingBlock, settings: TestProtocolSettings.Default);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, data);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
