@@ -53,7 +53,7 @@ namespace Neo.Cryptography.ECC
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
         {
-            var n = (int)VM.Utility.GetBitLength(k);
+            var n = (int)k.GetBitLength();
             var s = k.GetLowestSetBit();
 
             BigInteger Uh = 1;
@@ -125,7 +125,7 @@ namespace Neo.Cryptography.ECC
                 BigInteger P;
                 do
                 {
-                    P = rand.NextBigInteger((int)VM.Utility.GetBitLength(_curve.Q));
+                    P = rand.NextBigInteger((int)_curve.Q.GetBitLength());
                 }
                 while (P >= _curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, _curve.Q) != qMinusOne);
                 var result = FastLucasSequence(_curve.Q, P, Q, k);
