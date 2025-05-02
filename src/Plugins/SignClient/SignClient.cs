@@ -90,9 +90,7 @@ namespace Neo.Plugins.SignClient
                 }
             };
 
-            // sign server run on localhost, so http is ok
-            var address = new IPEndPoint(settings.Host, settings.Port);
-            var channel = GrpcChannel.ForAddress($"http://{address}", new GrpcChannelOptions
+            var channel = GrpcChannel.ForAddress(settings.Endpoint, new GrpcChannelOptions
             {
                 ServiceConfig = new ServiceConfig { MethodConfigs = { methodConfig } }
             });

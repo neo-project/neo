@@ -25,15 +25,15 @@ namespace Neo.Plugins.SignClient
         public readonly string Name;
 
         /// <summary>
-        /// The host of the sign client(i.e. Signer).
-        /// Only support local host at present, so host always is "127.0.0.1" or "::1" now.
-        /// </summary>
-        public readonly IPAddress Host = IPAddress.Loopback;
-
-        /// <summary>
         /// The port of the sign client(i.e. Signer).
         /// </summary>
         public readonly ushort Port;
+
+        /// <summary>
+        /// The host of the sign client(i.e. Signer).
+        /// Only support local host at present, so host always is "127.0.0.1" or "::1" now.
+        /// </summary>
+        public string Endpoint => $"http://{IPAddress.Loopback}:{Port}";
 
         public Settings(IConfigurationSection section) : base(section)
         {
