@@ -19,8 +19,8 @@ The LedgerDebugger plugin provides functionality to capture and replay blockchai
 
 ### Prerequisites
 
-- [Neo Node](https://github.com/neo-project/neo-node) v3.5.0 or later
-- [.NET SDK](https://dotnet.microsoft.com/download) 6.0 or later
+- [Neo Node](https://github.com/neo-project/neo-node) latest version
+- [.NET SDK](https://dotnet.microsoft.com/download) 9.0 or later
 
 ### Setup
 
@@ -32,23 +32,10 @@ The LedgerDebugger plugin provides functionality to capture and replay blockchai
 
 2. Copy the plugin files to your Neo Node's `Plugins` directory:
    ```bash
-   cp src/LedgerDebugger/bin/Release/net6.0/ /path/to/neo-node/Plugins/
+   cp src/Plugins/LedgerDebugger/bin/Release/net9.0/* /path/to/neo-node/Plugins/
    ```
 
-3. Add the plugin to your node configuration:
-   ```json
-   {
-     "PluginConfiguration": {
-       "Plugins": [
-         {
-           "Plugin": "LedgerDebugger",
-           "Name": "LedgerDebugger",
-           "Config": "config.json"
-         }
-       ]
-     }
-   }
-   ```
+3. Update your Neo Node configuration to include the plugin.
 
 ## Configuration
 
@@ -64,38 +51,11 @@ The plugin is configured through the `LedgerDebugger.json` file:
 }
 ```
 
-| Option | Description | Default |
-|--------|-------------|---------|
+| Option | Description | Default Value |
+|--------|-------------|---------------|
 | `Path` | Storage path pattern. `{0}` is replaced with network identifier | `ReadSets_{0}` |
-| `StoreProvider` | Storage provider type (`LevelDBStore`, `RocksDBStore`) | `LevelDBStore` |
+| `StoreProvider` | Storage provider type (e.g., `LevelDBStore`, `RocksDBStore`, `MemoryStore`) | `LevelDBStore` |
 | `MaxReadSetsToKeep` | Maximum number of read sets to keep before cleanup | `10000` |
-
-## Usage
-
-### Console Commands
-
-The plugin adds the following console commands to the Neo CLI:
-
-#### Execute Block
-
-```
-execute block <block_index> [tx_hash]
-```
-
-Re-executes a previously recorded block with its captured state.
-
-- `block_index`: Index of the block to execute (required)
-- `tx_hash`: Optional transaction hash to focus on during execution
-
-**Example:**
-```
-neo> execute block 12345
-```
-
-**Example with transaction focus:**
-```
-neo> execute block 12345 0xd5a99a8a3d1845cd579e13f643054dc08c7af1e5a288657b2b17c9b6455a21b5
-```
 
 ## Technical Details
 
