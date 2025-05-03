@@ -1,0 +1,7 @@
+{
+  "PluginConfiguration": {
+    "Path": "ReadSets_{0}",
+    "StoreProvider": "LevelDBStore",
+    "MaxReadSetsToKeep": 10000
+  }
+}

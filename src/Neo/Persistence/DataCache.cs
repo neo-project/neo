@@ -45,6 +45,8 @@ namespace Neo.Persistence
         private readonly Dictionary<StorageKey, Trackable> _dictionary = [];
         private readonly HashSet<StorageKey>? _changeSet;
 
+        internal Dictionary<StorageKey, StorageItem>? ReadSet { get; }
+
         /// <summary>
         /// True if DataCache is readOnly
         /// </summary>
@@ -83,8 +85,13 @@ namespace Neo.Persistence
         /// <param name="readOnly">True if you don't want to allow writes</param>
         protected DataCache(bool readOnly)
         {
-            if (!readOnly)
-                _changeSet = [];
+            if (readOnly) return;
+            _changeSet = [];
+
+            if (Neo.Plugins.Plugin.Plugins.Any(p => p.Name.Contains("LedgerDebugger")))
+            {
+                ReadSet = [];
+            }
         }
 
         /// <summary>
@@ -218,7 +225,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null) return;
                     _dictionary.Add(key, new Trackable(item, TrackState.Deleted));
                     _changeSet?.Add(key);
@@ -390,7 +397,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null)
                     {
                         if (factory == null) return null;
@@ -405,6 +412,15 @@ namespace Neo.Persistence
                 }
                 return trackable.Item;
             }
+        }
+
+
+        private StorageItem? TryGetInternalWrapper(StorageKey key)
+        {
+            var item = TryGetInternal(key);
+            if (item == null) return null;
+            ReadSet?.TryAdd(key, item);
+            return item;
         }
 
         /// <summary>
@@ -440,7 +456,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    var item = TryGetInternal(key);
+                    var item = TryGetInternalWrapper(key);
                     if (item == null)
                     {
                         trackable = new Trackable(factory(), TrackState.Added);
@@ -538,7 +554,7 @@ namespace Neo.Persistence
                         return null;
                     return trackable.Item;
                 }
-                var value = TryGetInternal(key);
+                var value = TryGetInternalWrapper(key);
                 if (value == null) return null;
                 _dictionary.Add(key, new Trackable(value, TrackState.None));
                 return value;
@@ -558,7 +574,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        protected abstract StorageItem? TryGetInternal(StorageKey key);
+        internal abstract StorageItem? TryGetInternal(StorageKey key);
 
         /// <summary>
         /// Updates an entry in the underlying storage.
