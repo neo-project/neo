@@ -39,6 +39,10 @@ namespace Neo.Cryptography
         public int HashSize => HashSizeInBits;
 
 #if NET8_0_OR_GREATER
+        // The Tail struct is used to store up to 16 bytes of unprocessed data
+        // when computing the hash. It leverages the InlineArray attribute for
+        // efficient memory usage in .NET 8.0 or greater, avoiding heap allocations
+        // and improving performance for small data sizes.
         [InlineArray(16)]
         private struct Tail
         {
