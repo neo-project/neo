@@ -23,7 +23,12 @@ namespace Neo.CLI
         [ConsoleCommand("list nativecontract", Category = "Native Contract")]
         private void OnListNativeContract()
         {
-            NativeContract.Contracts.ToList().ForEach(p => ConsoleHelper.Info($"\t{p.Name,-20}", $"{p.Hash}"));
+            var currentIndex = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+            NativeContract.Contracts.ToList().ForEach(contract =>
+            {
+                var active = contract.IsActive(NeoSystem.Settings, currentIndex) ? "" : "not active yet";
+                ConsoleHelper.Info($"\t{contract.Name,-20}", $"{contract.Hash} {active}");
+            });
         }
     }
 }
