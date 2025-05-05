@@ -16,7 +16,10 @@ namespace Neo.Plugins.SignClient
 {
     public class Settings : PluginSettings
     {
-        public const ushort DefaultPort = 9991;
+        /// <summary>
+        /// Only support local host at present, so host always is "127.0.0.1" or "::1" now.
+        /// </summary>
+        public static readonly string DefaultEndpoint = $"http://{IPAddress.Loopback}:9991";
         public const string SectionName = "PluginConfiguration";
 
         /// <summary>
@@ -25,20 +28,14 @@ namespace Neo.Plugins.SignClient
         public readonly string Name;
 
         /// <summary>
-        /// The port of the sign client(i.e. Signer).
-        /// </summary>
-        public readonly ushort Port;
-
-        /// <summary>
         /// The host of the sign client(i.e. Signer).
-        /// Only support local host at present, so host always is "127.0.0.1" or "::1" now.
         /// </summary>
-        public string Endpoint => $"http://{IPAddress.Loopback}:{Port}";
+        public readonly string Endpoint;
 
         public Settings(IConfigurationSection section) : base(section)
         {
             Name = section.GetValue("Name", "SignClient");
-            Port = section.GetValue("Port", DefaultPort);
+            Endpoint = section.GetValue("Endpoint", DefaultEndpoint);
         }
 
         public static Settings Default
@@ -49,7 +46,7 @@ namespace Neo.Plugins.SignClient
                     .AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         [SectionName + ":Name"] = "SignClient",
-                        [SectionName + ":Port"] = DefaultPort.ToString()
+                        [SectionName + ":Endpoint"] = DefaultEndpoint
                     })
                     .Build()
                     .GetSection(SectionName);

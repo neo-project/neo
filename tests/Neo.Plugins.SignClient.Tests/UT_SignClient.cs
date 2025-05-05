@@ -37,17 +37,17 @@ namespace Neo.Plugins.SignClient.Tests
 
         private static readonly ECPoint s_publicKey = ECPoint.DecodePoint(PublicKey.HexToBytes(), ECCurve.Secp256r1);
 
-        private static SignClient newClient()
+        private static SignClient NewClient()
         {
-            // for test sign service, set SIGN_SERVICE_PORT env
-            var port = Environment.GetEnvironmentVariable("SIGN_SERVICE_PORT");
-            if (port is not null)
+            // for test sign service, set SIGN_SERVICE_ENDPOINT env
+            var endPoint = Environment.GetEnvironmentVariable("SIGN_SERVICE_ENDPOINT");
+            if (endPoint is not null)
             {
                 var section = new ConfigurationBuilder()
                     .AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         [Settings.SectionName + ":Name"] = "SignClient",
-                        [Settings.SectionName + ":Port"] = port
+                        [Settings.SectionName + ":EndPoint"] = endPoint
                     })
                     .Build()
                     .GetSection(Settings.SectionName);
@@ -129,7 +129,7 @@ namespace Neo.Plugins.SignClient.Tests
         [TestMethod]
         public void TestSignPublicKey()
         {
-            using var signClient = newClient();
+            using var signClient = NewClient();
 
             // sign with public key
             var signature = signClient.Sign([1, 2, 3], s_publicKey);
@@ -150,7 +150,7 @@ namespace Neo.Plugins.SignClient.Tests
         [TestMethod]
         public void TestSignContext()
         {
-            using var signClient = newClient();
+            using var signClient = NewClient();
             using var store = new MemoryStore();
             using var snapshot = new StoreCache(store, false);
 
@@ -172,7 +172,7 @@ namespace Neo.Plugins.SignClient.Tests
         [TestMethod]
         public void TestGetAccountStatus()
         {
-            using var signClient = newClient();
+            using var signClient = NewClient();
 
             // exists
             var contains = signClient.ContainsSignable(s_publicKey);

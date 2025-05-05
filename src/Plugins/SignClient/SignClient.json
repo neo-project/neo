@@ -1,6 +1,6 @@
 {
-    "PluginConfiguration": {
-        "Name": "SignClient",
-        "Port": 9991
-    }
+  "PluginConfiguration": {
+    "Name": "SignClient",
+    "EndPoint": "http://127.0.0.1:9991"
+  }
 }
