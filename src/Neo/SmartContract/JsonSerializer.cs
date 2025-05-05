@@ -96,6 +96,7 @@ namespace Neo.SmartContract
             using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
             {
                 Indented = false,
+                Encoder = JToken.DefaultEncoder,
                 SkipValidation = false
             });
             Stack stack = new();
