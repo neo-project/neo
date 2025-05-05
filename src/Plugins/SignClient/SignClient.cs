@@ -22,9 +22,7 @@ using Neo.SmartContract;
 using Servicepb;
 using Signpb;
 using System.Diagnostics.CodeAnalysis;
-using System.Net;
 using static Neo.SmartContract.Helper;
-
 
 namespace Neo.Plugins.SignClient
 {
