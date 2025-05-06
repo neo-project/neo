@@ -8,7 +8,7 @@ WORKDIR /Neo.CLI
 RUN dotnet restore && dotnet publish  -f net9.0 -c Release -o /app 
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:9.0 AS Final
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends\
   screen \
   libleveldb-dev \
   sqlite3
