@@ -330,7 +330,7 @@ namespace Neo.SmartContract.Native
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="blockHeight">Block height</param>
         /// <returns>True if the native contract is active</returns>
-        internal bool IsActive(ProtocolSettings settings, uint blockHeight)
+        public bool IsActive(ProtocolSettings settings, uint blockHeight)
         {
             if (ActiveIn is null) return true;
 
