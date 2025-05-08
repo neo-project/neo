@@ -703,15 +703,11 @@ namespace Neo.Wallets
                 throw new SignException($"Network is not matching({ProtocolSettings.Network} != {network})");
 
             var account = GetAccount(publicKey);
-            if (account is null)
-                throw new SignException("No such account found");
+            if (account is null) throw new SignException("No such account found");
 
             var privateKey = account.GetKey()?.PrivateKey;
-            if (privateKey is null)
-                throw new SignException("No private key found for the given public key");
-
-            if (account.Lock)
-                throw new SignException("Account is locked");
+            if (privateKey is null) throw new SignException("No private key found for the given public key");
+            if (account.Lock) throw new SignException("Account is locked");
 
             var signData = block.GetSignData(network);
             return Crypto.Sign(signData, privateKey);
