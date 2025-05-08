@@ -307,7 +307,8 @@ namespace Neo.Plugins.RpcServer
                     tx.NetworkFee = calFee;
             }
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
-            if (relay) {
+            if (relay)
+            {
                 return SignAndRelay(snapshot, tx);
             }
             else
@@ -390,7 +391,8 @@ namespace Neo.Plugins.RpcServer
                     tx.NetworkFee = calFee;
             }
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
-            if (relay) {
+            if (relay)
+            {
                 return SignAndRelay(snapshot, tx);
             }
             else
