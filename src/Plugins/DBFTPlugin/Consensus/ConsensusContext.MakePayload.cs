@@ -11,11 +11,10 @@
 
 using Neo.Extensions;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Plugins.DBFTPlugin.Messages;
 using Neo.Plugins.DBFTPlugin.Types;
-using Neo.SmartContract;
+using Neo.Sign;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -40,10 +39,10 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
             if (CommitPayloads[MyIndex] is not null)
                 return CommitPayloads[MyIndex];
 
-            var signData = EnsureHeader().GetSignData(dbftSettings.Network);
+            var block = EnsureHeader();
             CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = _signer.Sign(signData, _myPublicKey)
+                Signature = _signer.SignBlock(block, _myPublicKey, dbftSettings.Network)
             });
             return CommitPayloads[MyIndex];
         }
@@ -60,18 +59,18 @@ namespace Neo.Plugins.DBFTPlugin.Consensus
 
         private void SignPayload(ExtensiblePayload payload)
         {
-            ContractParametersContext sc;
+            Witness[] witnesses = null;
             try
             {
-                sc = new ContractParametersContext(neoSystem.StoreView, payload, dbftSettings.Network);
-                _signer.Sign(sc);
+                witnesses = _signer.SignExtensiblePayload(payload, Snapshot, dbftSettings.Network);
             }
-            catch (InvalidOperationException exception)
+            catch (InvalidOperationException ex)
             {
-                Utility.Log(nameof(ConsensusContext), LogLevel.Debug, exception.ToString());
+                Utility.Log(nameof(ConsensusContext), LogLevel.Debug, ex.ToString());
                 return;
             }
-            payload.Witness = sc.GetWitnesses()[0];
+
+            payload.Witness = witnesses[0];
         }
 
         /// <summary>
