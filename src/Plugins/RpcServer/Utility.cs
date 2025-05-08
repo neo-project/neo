@@ -10,7 +10,9 @@
 // modifications are permitted.
 
 using Neo.Json;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.Linq;
 
 namespace Neo.Plugins.RpcServer
@@ -29,6 +31,7 @@ namespace Neo.Plugins.RpcServer
             JObject json = tx.ToJson(settings);
             json["sysfee"] = tx.SystemFee.ToString();
             json["netfee"] = tx.NetworkFee.ToString();
+            json["raw"] = Convert.ToBase64String(tx.ToArray());
             return json;
         }
     }

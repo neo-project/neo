@@ -268,7 +268,7 @@ namespace Neo.Plugins.RpcServer
         /// <summary>
         /// Transfers an asset from a specific address to another address.
         /// </summary>
-        /// <param name="_params">An array containing asset ID, from address, to address, amount, and optional signers.</param>
+        /// <param name="_params">An array containing asset ID, from address, to address, amount, optional signers and optional relay flag.</param>
         /// <returns>The transaction details if successful, or the contract parameters if signatures are incomplete.</returns>
         /// <exception cref="RpcException">Thrown when no wallet is open, parameters are invalid, or there are insufficient funds.</exception>
         [RpcMethod]
@@ -283,6 +283,7 @@ namespace Neo.Plugins.RpcServer
             BigDecimal amount = new(BigInteger.Parse(_params[3].AsString()), descriptor.Decimals);
             (amount.Sign > 0).True_Or(RpcErrorFactory.InvalidParams("Amount can't be negative."));
             Signer[] signers = _params.Count >= 5 ? ((JArray)_params[4]).Select(p => new Signer() { Account = AddressToScriptHash(p.AsString(), system.Settings.AddressVersion), Scopes = WitnessScope.CalledByEntry }).ToArray() : null;
+            var relay = _params.Count >= 6 ? _params[5].AsBoolean() : true;
 
             Transaction tx = Result.Ok_Or(() => wallet.MakeTransaction(snapshot, new[]
             {
@@ -306,7 +307,13 @@ namespace Neo.Plugins.RpcServer
                     tx.NetworkFee = calFee;
             }
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
-            return SignAndRelay(snapshot, tx);
+            if (relay) {
+                return SignAndRelay(snapshot, tx);
+            }
+            else
+            {
+                return SignAndNoRelay(snapshot, tx);
+            }
         }
 
         /// <summary>
@@ -321,6 +328,7 @@ namespace Neo.Plugins.RpcServer
         ///     - "address": The recipient address as a string.
         /// [2] (optional): An array of signers, each containing:
         ///     - The address of the signer as a string.
+        /// [3] (optional): Broadcast flag. Set false not to relay transaction but only return tx data.
         /// </param>
         /// <returns>
         /// If the transaction is successfully created and all signatures are present:
@@ -367,6 +375,7 @@ namespace Neo.Plugins.RpcServer
                 };
                 (outputs[i].Value.Sign > 0).True_Or(RpcErrorFactory.InvalidParams($"Amount of '{asset_id}' can't be negative."));
             }
+            var relay = _params.Count >= to_start + 3 ? _params[to_start + 2].AsBoolean() : true;
             Transaction tx = wallet.MakeTransaction(snapshot, outputs, from, signers).NotNull_Or(RpcError.InsufficientFunds);
 
             ContractParametersContext transContext = new(snapshot, tx, settings.Network);
@@ -381,13 +390,19 @@ namespace Neo.Plugins.RpcServer
                     tx.NetworkFee = calFee;
             }
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
-            return SignAndRelay(snapshot, tx);
+            if (relay) {
+                return SignAndRelay(snapshot, tx);
+            }
+            else
+            {
+                return SignAndNoRelay(snapshot, tx);
+            }
         }
 
         /// <summary>
         /// Transfers an asset to a specific address.
         /// </summary>
-        /// <param name="_params">An array containing asset ID, to address, and amount.</param>
+        /// <param name="_params">An array containing asset ID, to address, amount and optional relay flag.</param>
         /// <returns>The transaction details if successful, or the contract parameters if signatures are incomplete.</returns>
         /// <exception cref="RpcException">Thrown when no wallet is open, parameters are invalid, or there are insufficient funds.</exception>
         [RpcMethod]
@@ -399,6 +414,7 @@ namespace Neo.Plugins.RpcServer
             using var snapshot = system.GetSnapshotCache();
             AssetDescriptor descriptor = new(snapshot, system.Settings, assetId);
             BigDecimal amount = new(BigInteger.Parse(_params[2].AsString()), descriptor.Decimals);
+            var relay = _params.Count >= 4 ? _params[3].AsBoolean() : true;
             (amount.Sign > 0).True_Or(RpcError.InvalidParams);
             Transaction tx = wallet.MakeTransaction(snapshot, new[]
             {
@@ -422,7 +438,14 @@ namespace Neo.Plugins.RpcServer
                     tx.NetworkFee = calFee;
             }
             (tx.NetworkFee <= settings.MaxFee).True_Or(RpcError.WalletFeeLimit);
-            return SignAndRelay(snapshot, tx);
+            if (relay)
+            {
+                return SignAndRelay(snapshot, tx);
+            }
+            else
+            {
+                return SignAndNoRelay(snapshot, tx);
+            }
         }
 
         /// <summary>
@@ -547,6 +570,27 @@ namespace Neo.Plugins.RpcServer
             {
                 tx.Witnesses = context.GetWitnesses();
                 system.Blockchain.Tell(tx);
+                return Utility.TransactionToJson(tx, system.Settings);
+            }
+            else
+            {
+                return context.ToJson();
+            }
+        }
+
+        /// <summary>
+        /// Signs transaction without relaying.
+        /// </summary>
+        /// <param name="snapshot">The data snapshot.</param>
+        /// <param name="tx">The transaction to sign and relay.</param>
+        /// <returns>A JSON object containing the transaction details.</returns>
+        private JObject SignAndNoRelay(DataCache snapshot, Transaction tx)
+        {
+            ContractParametersContext context = new(snapshot, tx, settings.Network);
+            wallet.Sign(context);
+            if (context.Completed)
+            {
+                tx.Witnesses = context.GetWitnesses();
                 return Utility.TransactionToJson(tx, system.Settings);
             }
             else
