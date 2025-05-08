@@ -98,7 +98,7 @@ namespace Neo.Persistence
         }
 
         /// <inheritdoc/>
-        protected override StorageItem? TryGetInternal(StorageKey key)
+        internal override StorageItem? TryGetInternal(StorageKey key)
         {
             return _store.TryGet(key.ToArray(), out var value) ? new(value) : null;
         }
