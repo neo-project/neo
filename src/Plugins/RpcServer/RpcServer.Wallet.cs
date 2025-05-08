@@ -176,11 +176,11 @@ namespace Neo.Plugins.RpcServer
             UInt160 scriptHash = AddressToScriptHash(address, system.Settings.AddressVersion);
             WalletAccount account = wallet.GetAccount(scriptHash);
             if (account is null)
-                {
-                    account = wallet.CreateAccount(scriptHash);
-                    if (wallet is NEP6Wallet nep6wallet)
-                        nep6wallet.Save();
-                }
+            {
+                account = wallet.CreateAccount(scriptHash);
+                if (wallet is NEP6Wallet nep6wallet)
+                    nep6wallet.Save();
+            }
             return new JObject
             {
                 ["address"] = account.Address,
