@@ -163,6 +163,34 @@ namespace Neo.Plugins.RpcServer
         }
 
         /// <summary>
+        /// Imports watch only address into the wallet.
+        /// </summary>
+        /// <param name="_params">An array containing the address as a string.</param>
+        /// <returns>A JSON object containing information about the imported account.</returns>
+        /// <exception cref="RpcException">Thrown when no wallet is open or the address is invalid.</exception>
+        [RpcMethod]
+        protected internal virtual JToken ImportWatchOnly(JArray _params)
+        {
+            CheckWallet();
+            string address = _params[0].AsString();
+            UInt160 scriptHash = AddressToScriptHash(address, system.Settings.AddressVersion);
+            WalletAccount account = wallet.GetAccount(scriptHash);
+            if (account is null)
+                {
+                    account = wallet.CreateAccount(scriptHash);
+                    if (wallet is NEP6Wallet nep6wallet)
+                        nep6wallet.Save();
+                }
+            return new JObject
+            {
+                ["address"] = account.Address,
+                ["haskey"] = account.HasKey,
+                ["label"] = account.Label,
+                ["watchonly"] = account.WatchOnly
+            };
+        }
+
+        /// <summary>
         /// Calculates the network fee for a given transaction.
         /// </summary>
         /// <param name="_params">An array containing the Base64-encoded serialized transaction.</param>
